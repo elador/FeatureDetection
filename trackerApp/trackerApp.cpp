@@ -108,7 +108,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	while (running) {
 
-		frames++;
+		++frames;
 		gettimeofday(&frameStart);
 		capture >> frame;
 
@@ -145,13 +145,56 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			gettimeofday(&detEnd);
 
+			std::string best_s;
+			float best_f;
+
+			int vec_idx_best;
+			float vec_all_best = 0.0f;
+			//for(std::vector<FdPatch*>::iterator it = ert->candidates.begin(); it != ert->candidates.end(); ++it) {
+			for(unsigned int i=0; i < ert->candidates.size(); ++i) {
+				CertaintyMap::const_iterator cit = ert->candidates[i]->certainty.find(ert->svm->getIdentifier());
+				if(cit != ert->candidates[i]->certainty.end()) {
+					best_f = cit->second;
+					best_s = ert->svm->getIdentifier();
+				}
+				CertaintyMap::const_iterator citl = ert->candidates[i]->certainty.find(ert->svml->getIdentifier());
+				if(citl != ert->candidates[i]->certainty.end()) {
+					if(citl->second > best_f) {
+						best_f = citl->second;
+						best_s = ert->svml->getIdentifier();
+					}
+				}
+				CertaintyMap::const_iterator citr = ert->candidates[i]->certainty.find(ert->svmr->getIdentifier());
+				if(citr != ert->candidates[i]->certainty.end()) {
+					if(citr->second > best_f) {
+						best_f = citr->second;
+						best_s = ert->svmr->getIdentifier();
+					}
+				}
+				if(best_f > vec_all_best) {
+					vec_all_best = best_f;
+					vec_idx_best = i;
+				}
+			}
+			if(ert->candidates.size() > 1) {
+				ert->candidates.erase(ert->candidates.begin()+vec_idx_best+1, ert->candidates.end());
+			}
+			if(ert->candidates.size() > 1) {
+				ert->candidates.erase(ert->candidates.begin(), ert->candidates.begin()+vec_idx_best);
+			}
+
+
 			image = frame;
 			Logger->drawBoxesWithAngleColor(image, ert->candidates, ert->wvr->getIdentifier());
+			Logger->drawAllScaleBoxes(image, &myimg->pyramids, ert->wvr->getIdentifier(), 20, 20);
+			
 			imshow(videoWindowName, image);
 			delete myimg;
 			//Sleep(10);	// 10ms
-			//stm << filename << frames << ".png";
-			//imwrite(stm.str(), image);
+			stm << filename << setfill('0') << setw(5) << frames << ".png";
+			imwrite(stm.str(), image);
+			//std::cout << stm.str() << std::endl;
+			stm.str("");
 
 			gettimeofday(&frameEnd);
 

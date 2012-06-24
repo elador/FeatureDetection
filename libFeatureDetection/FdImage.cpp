@@ -5,9 +5,6 @@
 FdImage::FdImage(void)
 {
 
-	//subsamplingLevels=subsamplingStartLevel=0; subsampfac=NULL; 
-	//pyramid=NULL; this_pyramid=NULL;
-	//iimg_x_pyramid=NULL; iimg_xx_pyramid=NULL; iimg_x=NULL; iimg_xx=NULL;
 }
 
 
@@ -41,8 +38,13 @@ int FdImage::load(const std::string filename)
 		std::cout << "Error: cv::imread: Loading image " << filename << std::endl;
 		return 0;
 	}
+
+	this->filename = filename;
+
+	Logger->LogImgInputRGB(&this->data_matbgr, this->filename);
 	cv::cvtColor(this->data_matbgr, this->data_matgray, CV_BGR2GRAY);
 	// Mat.convertTo(dst, CV_8U); not working (stays bgr)... maybe doesn't copy?
+	Logger->LogImgInputGray(&this->data_matgray, this->filename);
 
 	this->w = this->data_matgray.cols;
 	this->h = this->data_matgray.rows;
@@ -72,48 +74,92 @@ int FdImage::load(const std::string filename)
 		loop = !(bool)cv::waitKey();
 	}*/
 
+	return 1;
+}
+
+int FdImage::load(const cv::Mat* mat)
+{
+	
+	if (mat->empty()) {
+		std::cout << "Error: cv::imread: Loading image " << filename << std::endl;
+		return 0;
+	}
+	cv::cvtColor(*mat, this->data_matgray, CV_BGR2GRAY);
+	// Mat.convertTo(dst, CV_8U); not working (stays bgr)... maybe doesn't copy?
+
+	this->w = this->data_matgray.cols;
+	this->h = this->data_matgray.rows;
+
+	this->data = new unsigned char[w*h];
+	std::cout << "[FdImage] Allocating space for image. Cols(=width): " << w << ", Rows(=height): " << h << ", Size: " << w*h << std::endl;
+
+	for (int i=0; i<this->data_matgray.rows; i++)
+	{
+		for (int j=0; j<this->data_matgray.cols; j++)
+		{
+			this->data[i*w+j] = this->data_matgray.at<uchar>(i, j); // (y, x) !!! i=row, j=column (matrix)
+		}
+	}
+	//double* row = mat.ptr<double>(i);
+	//to get pointer to i'th row and row[j] to get j'th value.
+
+	//cv::namedWindow("image", CV_WINDOW_AUTOSIZE);
+	//cv::imshow("image", this->data_matgray);
+	//cv::waitKey();
+	
+	//cv::Mat test = cv::imread(filename, 0);
+	//cv::imshow("image", test);
+
+	/*bool loop = true;
+	while(loop) {
+		loop = !(bool)cv::waitKey();
+	}*/
+
 	this->filename = filename;
 
 	return 1;
 }
 
+
 //int FdImage::createPyramid(float factorFromOrig, float subsampFacForOneDown)
-int FdImage::createPyramid(int pyrIdx, int* pyrWidthList)
+int FdImage::createPyramid(int pyrIdx, int* pyrWidthList, std::string detectorId)
 {
 	std::cout << "[FdImage] Creating pyramid (w=" << pyrWidthList[pyrIdx] << ")";
 	//calc width
 	//int pyr_width = (int)(this->w*factorFromOrig+0.5);
-	if(this->pyramids.find(pyrWidthList[pyrIdx]) != this->pyramids.end()) {
+	PyramidMap::iterator it = this->pyramids.find(pyrWidthList[pyrIdx]);
+	if(it != this->pyramids.end()) {
 		// already in map
 		std::cout << "... skipping, already created" << std::endl;
+		it->second->detectorIds.insert(detectorId);
 		return 1;
 	}
 	std::cout << std::endl;
 	// else: create pyramid
 	// check if one-step-larger already exists. If yes, use that.
 	//pyr_width = (int)(pyr_width/subsampFacForOneDown+0.5);
-	if(pyrIdx!=0) {
+	if(pyrIdx!=0) {		// TODO I think there's room for improvement here. If pyrIdx is 0, there could nevertheless be a pyramid already created that we could use (i think)
 		PyramidMap::iterator it = this->pyramids.find(pyrWidthList[pyrIdx-1]);
 		if(it != this->pyramids.end()) {
 			// one size bigger is already in map
 			Pyramid *pyr = new Pyramid();
 			float tmp = (float)pyrWidthList[pyrIdx]/(float)pyrWidthList[pyrIdx-1];
 			this->rescale(*it->second, *pyr, tmp);
+			pyr->detectorIds.insert(detectorId);
 			pyramids.insert(PyramidMap::value_type(pyr->w, pyr));
 
-			//pyr->writePNG();
+			Logger->LogImgPyramid(pyr, this->filename, pyrIdx);
 		}
 	} else { // First pyramid and not already in map: create from orig.
 		// create from orig-img
 		Pyramid *pyr = new Pyramid();
 		float tmp = (float)pyrWidthList[pyrIdx]/(float)this->w;
 		this->rescale(*this, *pyr, tmp);
+		pyr->detectorIds.insert(detectorId);
 		pyramids.insert(PyramidMap::value_type(pyr->w, pyr));
 
-		//pyr->writePNG();
+		Logger->LogImgPyramid(pyr, this->filename, pyrIdx);
 	}
-
-
 
 	return 1;
 }
@@ -136,9 +182,9 @@ int FdImage::rescale(StdImage& in, StdImage& out, float factor) // better: make 
 		std::cout << (int)in.data[i] << " "; // TODO remove (debug) */
 
   	int oil = 0;
-  	int oir = w;
+	int oir = in.w;
   	int oit = 0;
-  	int oib = h;
+	int oib = in.h;
 
   	// each pixel in the output image (x,y) maps into a region of pixels
   	// in the original image: ((int)xl + (float)xlf, (int)yt + (float)ytf,

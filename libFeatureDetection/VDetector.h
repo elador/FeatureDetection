@@ -11,6 +11,7 @@ public:
 	int initROI(FdImage*);
 
 	std::string getIdentifier();
+	void setIdentifier(std::string);
 
 	char outputPath[_MAX_PATH];
 	int expected_num_faces[2];

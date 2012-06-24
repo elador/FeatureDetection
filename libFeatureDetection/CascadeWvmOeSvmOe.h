@@ -1,11 +1,11 @@
 #pragma once
-
+#include "VDetector.h"
 #include "DetectorWVM.h"
 #include "DetectorSVM.h"
 #include "OverlapElimination.h"
 #include "SLogger.h"
 
-class CascadeWvmOeSvmOe
+class CascadeWvmOeSvmOe : public VDetector
 {
 public:
 	CascadeWvmOeSvmOe(void);

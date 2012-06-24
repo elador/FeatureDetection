@@ -25,5 +25,6 @@ protected:
 	float posterior_svm[2];	// probabilistic svm output: p(ffp|t) = 1 / (1 + exp(p[0]*t +p[1]))
 
 	float limit_reliability;	// if fout>=limit_reliability(threshold_fullsvm), then its a face. (MR default: -1.2)
+
 };
 

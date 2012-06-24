@@ -23,6 +23,11 @@ std::string OverlapElimination::getIdentifier()
 	return this->identifier;
 }
 
+void OverlapElimination::setIdentifier(std::string identifier)
+{
+	this->identifier = identifier;
+}
+
 int OverlapElimination::load(const char* filename)
 {
 	//char* configFile = "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat";
@@ -88,7 +93,7 @@ int OverlapElimination::load(const char* filename)
 //   The max. distance of the centre coord. is smaller as thresholds[0] and 
 //	 the ratio of the obj. width is smaller as thresholds[1].
 //	 The distance is messured in pixel if thresholds[0]>1 else rel. to patch width.
-std::vector<FdPatch*> OverlapElimination::eliminate(std::vector<FdPatch*> &patchvec)
+std::vector<FdPatch*> OverlapElimination::eliminate(std::vector<FdPatch*> &patchvec, std::string detectorIdForSorting)
 {
 
 	std::cout << "[OverlapElimination] Running OverlapElimination..." << std::endl;
@@ -168,8 +173,10 @@ std::vector<FdPatch*> OverlapElimination::eliminate(std::vector<FdPatch*> &patch
 */	
 /*============================================================================*/
 
-
-     std::sort(candidates.begin(), candidates.end(), FdPatch::SortByDetectorWVMCertainty());	// TODO: On SVMOe, this has to be SVMCert!
+		//FdPatch::SortByCertainty bla;
+		//bla.detectorType = "DetectorWVM";
+	
+	std::sort(candidates.begin(), candidates.end(), FdPatch::SortByCertainty(detectorIdForSorting));
 	 
      //int K = 9999;// how many to keep, 1-X
      //int L = 1; //(level_span>0) ? level_span : 1;
@@ -207,42 +214,20 @@ std::vector<FdPatch*> OverlapElimination::eliminate(std::vector<FdPatch*> &patch
 
      //std::cout << "\t\tto:" << candidates.size() << "\n" << std::flush; }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 	return candidates; //candidates_of_OE1;// candidates;
 }
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-std::vector<FdPatch*> OverlapElimination::exp_num_fp_elimination(std::vector<FdPatch*> &patchvec)
+std::vector<FdPatch*> OverlapElimination::exp_num_fp_elimination(std::vector<FdPatch*> &patchvec, std::string detectorIdForSorting)
 {
 	std::cout << "[OverlapElimination] Running exp_num_fp_elimination, eliminating to the " << this->expected_num_faces[1] << " patches with highest probability." << std::endl;
 	if(patchvec.size() > this->expected_num_faces[1])
 	{
 		std::vector<FdPatch*> candidates;
-		std::sort(patchvec.begin(), patchvec.end(), FdPatch::SortByDetectorSVMCertainty());
+		
+		std::sort(patchvec.begin(), patchvec.end(), FdPatch::SortByCertainty(detectorIdForSorting));
+		
 		for(int i=0; i < this->expected_num_faces[1]; i++) {
 			candidates.push_back(patchvec[i]);
 		}

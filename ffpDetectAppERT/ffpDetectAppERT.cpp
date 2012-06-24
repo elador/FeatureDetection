@@ -85,18 +85,12 @@ int main(int argc, char *argv[])		// Peter
 	}
 
 	char* fn_detFrontal = "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat";
+	char* fn_detRight= "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_re.mat";	// wvmr	
+	char* fn_detLeft = "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_le.mat";	// wvml fd_hq64-scasferetmp+40 = subject looking LEFT
 	char* fn_regrSVR = "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_ra.mat";
 	char* fn_regrWVR = "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_la.mat";
 	
-	FdImage *myimg;// = new FdImage();
-	//myimg->load("D:\\CloudStation\\libFD_patrik2011\\data\\firstrun\\ws_220.tiff");
-	//myimg->load("D:\\CloudStation\\libFD_patrik2011\\horse.jpg");
-	//myimg->load("D:\\CloudStation\\libFD_patrik2011\\ws_220.jpg");
-	//myimg->load("D:\\CloudStation\\libFD_patrik2011\\ws_115.jpg");
-	
-	//myimg->load("D:\\CloudStation\\libFD_patrik2011\\ws_220.tif");
-//	myimg->load("D:\\CloudStation\\libFD_patrik2011\\ws_71.tif");
-	//myimg->load("D:\\CloudStation\\libFD_patrik2011\\color_feret_00194_940128_hr.png");
+	FdImage *myimg;
 
 	const float DETECT_MAX_DIST_X = 0.33f;
 	const float DETECT_MAX_DIST_Y = 0.33f;
@@ -141,6 +135,14 @@ int main(int argc, char *argv[])		// Peter
 	// All filesnames now in "filenames", either way
 	// All groundtruth now in "rects" IF available (read from .lst)
 
+	Logger->setVerboseLevelText(verbose_level_text);
+	Logger->setVerboseLevelImages(verbose_level_images);
+	Logger->global.img.writeDetectorCandidates = true;	// Write images of all 5 stages
+	Logger->global.img.writeRegressor = true;
+	Logger->global.img.writeRegressorPyramids = true;
+	Logger->global.img.drawRegressorFoutAsText = true;
+	Logger->global.img.drawScales = true;
+
 	int TOT = 0;
 	int TACC = 0;
 	int FACC = 0;
@@ -150,11 +152,17 @@ int main(int argc, char *argv[])		// Peter
 	CascadeERT *ert = new CascadeERT();
 	ert->wvm->load(fn_detFrontal);
 	ert->svm->load(fn_detFrontal);
+	ert->oe->load(fn_detFrontal);
+	ert->wvmr->load(fn_detRight);
+	ert->svmr->load(fn_detRight);
+	ert->oer->load(fn_detRight);
+	ert->wvml->load(fn_detLeft);
+	ert->svml->load(fn_detLeft);
+	ert->oel->load(fn_detLeft);
 	ert->wvr->load(fn_regrWVR);
 	ert->svr->load(fn_regrSVR);
 
 
-	//std::vector<FdPatch*> result;
 	for(unsigned int i=0; i< filenames.size(); i++) {
 		myimg = new FdImage();
 		myimg->load(filenames[i]);
@@ -164,21 +172,6 @@ int main(int argc, char *argv[])		// Peter
 		ert->detect_on_image(myimg);	// See file CascadeERT.cpp for details!
 		/* END TREE */
 
-		/* We could also do this instead, this outputs an image of the WVR for each scale: */
-			/*ert->wvr->init_for_image(myimg);
-			ert->wvr->extract(myimg);
-			std::vector<FdPatch*> candidates = ert->wvr->detect_on_image(myimg);
-	
-			char* fn = new char[500];
-			cv::Mat tmp[9];
-			for(int i=0; i<=8; i++) {
-				tmp[i] = myimg->data_matbgr.clone();
-				Logger->drawCenterpointsWithYawAngleColor(tmp[i], candidates, i);
-				sprintf(fn, "yaw_scale%d.png", i);
-				cv::imwrite(fn, tmp[i]);
-			}
-			*/
-		/* END Scale-images output */
 
 		TOT++;
 		if(ert->candidates.size()<1) {
@@ -227,7 +220,7 @@ int main(int argc, char *argv[])		// Peter
 	std::cout << "[ffpDetectAppERT] NOCAND:  " << NOCAND << std::endl;
 	std::cout << "[ffpDetectAppERT] DONTKNOW:  " << DONTKNOW << std::endl;
 	std::cout << "[ffpDetectAppERT] =====================================" << std::endl;
-	
+
 	delete ert;
 
 	return 0;

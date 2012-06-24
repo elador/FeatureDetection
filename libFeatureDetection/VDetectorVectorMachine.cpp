@@ -18,7 +18,7 @@ VDetectorVectorMachine::VDetectorVectorMachine(void)
 
 	subsamplingMinHeight = 0;
 	subsamplingFactor = 0;
-	subsampfac = NULL;
+	//subsampfac = NULL;
 	numSubsamplingLevels = 0;
 	subsamplingLevelStart = 0;
 	subsamplingLevelEnd = 0;
@@ -41,7 +41,7 @@ VDetectorVectorMachine::VDetectorVectorMachine(void)
 
 VDetectorVectorMachine::~VDetectorVectorMachine(void)
 {
-	delete[] subsampfac;
+	//delete[] subsampfac;
 	delete[] pyramid_widths;
 	delete[] LUT_bin; LUT_bin=NULL;
 }
@@ -79,15 +79,18 @@ int VDetectorVectorMachine::initPyramids( FdImage *img )
  		floor(log(filter_size_y/(float)img->h)/log(subsamplingFactor)), numSubsamplingLevels
  		);
 
-	if(subsampfac!=NULL) {
+	/*if(subsampfac!=NULL) {
 		delete[] subsampfac;
 		subsampfac = NULL;
-	}
+	}*/
+	if(subsampfac.size()>0)	// If I come here and its not empty, then I need to delete it, because I'm working on a completely new image!
+		subsampfac.empty();
+
 	if(pyramid_widths!=NULL) {
 		delete[] pyramid_widths;
 		pyramid_widths = NULL;
 	}
-	subsampfac = new float[numSubsamplingLevels];	// we only need 9!
+	//subsampfac = new float[numSubsamplingLevels];	// we only need 9!
 	//subsampfac[0] = (float)pow(subsamplingFactor,subsamplingLevelStart);
 
 	pyramid_widths = new int[numSubsamplingLevels];
@@ -97,12 +100,14 @@ int VDetectorVectorMachine::initPyramids( FdImage *img )
 	for(int i=1; i<=subsamplingLevelStart; i++) {
 		curr_width = (int)(curr_width*subsamplingFactor+0.5);
 	}
-	subsampfac[0] = (float)curr_width/(float)img->w;
+	subsampfac.insert(std::map<int, float>::value_type(curr_width, (float)curr_width/(float)img->w));
+	//subsampfac[0] = (float)curr_width/(float)img->w;
 	pyramid_widths[0] = curr_width;
 	for(int i=1; i<numSubsamplingLevels; i++) {
 		pyramid_widths[i] = (int)(pyramid_widths[i-1]*subsamplingFactor+0.5);
 		//curr_width = (int)(curr_width*subsamplingFactor+0.5);
-		subsampfac[i] = (float)pyramid_widths[i]/(float)img->w;
+		//subsampfac[i] = (float)pyramid_widths[i]/(float)img->w;
+		subsampfac.insert(std::map<int, float>::value_type(pyramid_widths[i], (float)pyramid_widths[i]/(float)img->w));
 	}
 
 	/*img->createPyramid(subsampfac[0], subsamplingFactor);
@@ -111,7 +116,7 @@ int VDetectorVectorMachine::initPyramids( FdImage *img )
 		img->createPyramid(subsampfac[i], subsamplingFactor);
 	}*/
 	for(int i=0; i<numSubsamplingLevels; i++) {
-		img->createPyramid(i, pyramid_widths);
+		img->createPyramid(i, pyramid_widths, this->identifier);	// pyramid_widths unnecessary now? subsampfac has everything in it?
 	}
 	//TODO: Sanity check:
 		//if ((pyramid[i].Width()<=detector.filter_size.cx) || (pyramid[i].Height()<=detector.filter_size.cy)) {
@@ -120,14 +125,15 @@ int VDetectorVectorMachine::initPyramids( FdImage *img )
 	return 1;
 }
 
-int VDetectorVectorMachine::extract(FdImage *img)
+int VDetectorVectorMachine::extractToPyramids(FdImage *img)
 {
 	std::cout << "[VDetVecMach] Extracting..." << std::endl;
 	//for(int current_scale = 0; current_scale < this->numSubsamplingLevels; current_scale++) {// TODO: Careful: numSubsamplingLevels is not necessarily the actual number of available pyramids. if the image is too small, it may be less...
 	for(int current_scale = this->numSubsamplingLevels-1; current_scale >=0 ; current_scale--) {
 
 		PyramidMap::iterator it = img->pyramids.find(this->pyramid_widths[current_scale]);
-		float coef = this->subsampfac[current_scale];
+		float coef = this->subsampfac[this->pyramid_widths[current_scale]];
+		//float coef = this->subsampfac[current_scale];
 		int pyrw = it->second->w;
 		int pyrh = it->second->h;
 
@@ -153,7 +159,7 @@ int VDetectorVectorMachine::extract(FdImage *img)
 				std::pair<FdPatchSet::iterator, bool> patch_pair = it->second->patches.insert(fp);
 
 				if(patch_pair.second == true) {	// insert made, fp is new
-					fp->c.s = current_scale; // maybe I need to/should use the pyr_width here instead?
+					fp->c.s = pyrw; // current_scale is not unique! Better use pyrw instead!
 
 					fp->c.x=(int)(x/coef);
 					fp->c.y=(int)(y/coef);
@@ -175,8 +181,73 @@ int VDetectorVectorMachine::extract(FdImage *img)
 	return 1;
 }
 
+std::vector<FdPatch*> VDetectorVectorMachine::getPatchesROI(FdImage *img, int x_py, int y_py, int scale, int x_offset, int y_offset, int s_offset, std::string detectorId)
+{
+	std::cout << "[VDetVecMach] Extracting patches around a ROI..." << std::endl;
+
+	std::vector<FdPatch*> extractedPatches;
+
+	for(unsigned int curr_x = x_py-x_offset; curr_x <= x_py+x_offset; ++curr_x) {
+		for(unsigned int curr_y = y_py-y_offset; curr_y <= y_py+y_offset; ++curr_y) {
+			for(int curr_s = -s_offset; curr_s <= s_offset; ++curr_s) {	// have to find the right pyramid
+				int idx; // Todo maybe a failsafe... if scale not found...
+				for(int i=0; i<this->numSubsamplingLevels; ++i) {
+					if(this->pyramid_widths[i]==scale) {
+						idx=i;
+						break;
+					}
+				}
+				PyramidMap::iterator it = img->pyramids.find(this->pyramid_widths[idx+curr_s]);
+				// IF NOT FOUND, SKIP. TODO: UNTESTED
+				if(it == img->pyramids.end()) {
+					std::cout << "Patch is at border. No lower/higher scale to use for ROI." << std::endl;
+					continue;
+				}
+				float coef = this->subsampfac[this->pyramid_widths[idx+curr_s]];
+				int pyrw = it->second->w;
+				int pyrh = it->second->h;
+
+				//Check if the patch is already in the Set
+				FdPatch* fp = new FdPatch();	// we dont have to delete this because the FdPatchSet takes ownership!
+				fp->c.x_py = curr_x;
+				fp->c.y_py = curr_y;	
+				fp->w = filter_size_x;
+				fp->h = filter_size_y;	
+
+				//std::pair<FdPatchSet::iterator, bool> patch_pair = it->second->patches.insert(fp);
+				FdPatchSet::iterator pit = it->second->patches.find(fp);
+				//if(patch_pair.second == true) {	// insert made, fp is new
+				if(pit == it->second->patches.end()) {
+					// TODO Sanity check if the ROI of the patch isn't out of the whole-img-ROI.
+					// For now: We take for granted that the whole det-ROI is in the pyramid. So if the patch is not in the pyramid here, we can skip it as it is out of the whole-img-ROI/out of img!
+
+					std::cout << "Patch is not in pyramid, probably at border / not in whole-img-ROI. Skipping..." << std::endl;
+					/*fp->c.s = scale;
+					fp->c.x=(int)(curr_x/coef);	// coef...
+					fp->c.y=(int)(curr_y/coef);
+					fp->w_inFullImg=(int)(filter_size_x/coef);
+					fp->h_inFullImg=(int)(filter_size_y/coef);
+					//fp.setHasData(true);
+					extractAndHistEq64(it->second, fp);	// Extract + Normalize (1 step). Data is now in fp
+														// it->second is the current pyramid
+					//TODO add fp to set
+					//it->second->patches.insert(fp);	// this_pyr->patches
+					extractedPatches.push_back(fp);*/
+				} else {
+					//std::cout << "!";
+					delete fp;	// because we dont use this, but use the one thats already in the patchlist!
+					//extractedPatches.push_back( (*patch_pair.first) );
+					extractedPatches.push_back(*pit);
+				}
+			}
+		}
+	}
+	return extractedPatches;
+}
+
+
 // Returns a vector with the extracted, valid patches!
-std::vector<FdPatch*> VDetectorVectorMachine::extractPatches(FdImage *img, std::vector<FdPatch*>& patchesToExtract)
+/*std::vector<FdPatch*> VDetectorVectorMachine::extractPatches(FdImage *img, std::vector<FdPatch*>& patchesToExtract)
 {
 	std::cout << "[VDetVecMach] Extracting patches..." << std::endl;
 
@@ -235,13 +306,13 @@ std::vector<FdPatch*> VDetectorVectorMachine::extractPatches(FdImage *img, std::
 		}
 		FdPatchSet::iterator p2it = it->second->patches.find(fp);
 		std::cout << fp->fout << std::endl;
-		std::cout << (*p2it)->fout << std::endl;*/
+		std::cout << (*p2it)->fout << std::endl;
 
 
 
 	}
 	return extractedPatches;
-}
+}*/
 
 
 /*
@@ -259,7 +330,7 @@ std::vector<FdPatch*> VDetectorVectorMachine::detect_on_image(FdImage *img)
 	for(int current_scale = this->numSubsamplingLevels-1; current_scale >=0 ; current_scale--) { // For each pyramid, go through the patchlist and classify
 
 		PyramidMap::iterator it = img->pyramids.find(this->pyramid_widths[current_scale]);
-		float coef = this->subsampfac[current_scale];
+		float coef = this->subsampfac[this->pyramid_widths[current_scale]];
 
 		FdPatchSet::iterator pit = it->second->patches.begin();
 
@@ -272,7 +343,6 @@ std::vector<FdPatch*> VDetectorVectorMachine::detect_on_image(FdImage *img)
 		}
 
 	}
-		
 	return candidates;
 }
 
@@ -367,14 +437,14 @@ int VDetectorVectorMachine::extractAndHistEq64(const Pyramid* pyr, FdPatch* fp)
 			/*if(LUTeq[this_pyramid->data[start_orig]] > 255) {
 				printf("hq error 1...\n");
 			}*/
-			if(floor(LUTeq[pyr->data[start_orig]]+0.5) > 255) {
-				printf("\nhq overflow error: %f -> %d. Check the stretch factor!\n", floor(LUTeq[pyr->data[start_orig]]+0.5), (unsigned char)floor(LUTeq[pyr->data[start_orig]]+0.5));
+			//if(floor(LUTeq[pyr->data[start_orig]]+0.5) > 255) { // deleted because of speed :-)
+				//printf("\nhq overflow error: %f -> %d. Check the stretch factor!\n", floor(LUTeq[pyr->data[start_orig]]+0.5), (unsigned char)floor(LUTeq[pyr->data[start_orig]]+0.5));
 
 				/* for(int tt=0; tt<256; tt++) {
 					printf("%d, ", LUT_bin[tt]);
 				} LUT_bin is OK */
 
-			}
+			//}// deleted because of speed :-)
 			/*if((unsigned char)floor(LUTeq[this_pyramid->data[start_orig]]+0.5) > 255) {
 				printf("hq error 3...\n");
 			}*/

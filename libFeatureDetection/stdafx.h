@@ -22,5 +22,8 @@
 #include "opencv2/highgui/highgui.hpp"
 
 #include <set>
+#include <map>
 
 #include "utility.h"
+
+#include "SLogger.h"

@@ -38,6 +38,7 @@
 //#include "DetectorWVM.h"
 #include "CascadeWvmSvm.h"
 #include "CascadeWvmOeSvmOe.h"
+#include "OverlapElimination.h"
 //#include "RegressorSVR.h"
 
 #include "SLogger.h"

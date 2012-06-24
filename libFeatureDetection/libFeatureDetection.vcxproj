@@ -78,8 +78,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CascadeERT.h" />
+    <ClInclude Include="CascadeFacialFeaturePoints.h" />
+    <ClInclude Include="CascadeFacialFeaturePointsSimple.h" />
     <ClInclude Include="CascadeWvmOeSvmOe.h" />
     <ClInclude Include="CascadeWvmSvm.h" />
+    <ClInclude Include="CircleDetector.h" />
     <ClInclude Include="DetectorSVM.h" />
     <ClInclude Include="DetectorWVM.h" />
     <ClInclude Include="FdImage.h" />
@@ -92,18 +95,23 @@
     <ClInclude Include="Rect.h" />
     <ClInclude Include="RegressorSVR.h" />
     <ClInclude Include="RegressorWVR.h" />
+    <ClInclude Include="SkinDetector.h" />
     <ClInclude Include="SLogger.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StdImage.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="utility.h" />
+    <ClInclude Include="VCascade.h" />
     <ClInclude Include="VDetector.h" />
     <ClInclude Include="VDetectorVectorMachine.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CascadeERT.cpp" />
+    <ClCompile Include="CascadeFacialFeaturePoints.cpp" />
+    <ClCompile Include="CascadeFacialFeaturePointsSimple.cpp" />
     <ClCompile Include="CascadeWvmOeSvmOe.cpp" />
     <ClCompile Include="CascadeWvmSvm.cpp" />
+    <ClCompile Include="CircleDetector.cpp" />
     <ClCompile Include="DetectorSVM.cpp" />
     <ClCompile Include="DetectorWVM.cpp" />
     <ClCompile Include="FdImage.cpp" />
@@ -116,12 +124,14 @@
     <ClCompile Include="Rect.cpp" />
     <ClCompile Include="RegressorSVR.cpp" />
     <ClCompile Include="RegressorWVR.cpp" />
+    <ClCompile Include="SkinDetector.cpp" />
     <ClCompile Include="SLogger.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="StdImage.cpp" />
+    <ClCompile Include="VCascade.cpp" />
     <ClCompile Include="VDetector.cpp" />
     <ClCompile Include="VDetectorVectorMachine.cpp" />
   </ItemGroup>

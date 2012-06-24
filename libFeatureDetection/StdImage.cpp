@@ -38,7 +38,7 @@ void StdImage::writePNG(void)
 	// TODO: If needed sometime: This should also work when colordepth is not 8 (=grayscale).
 }
 
-void StdImage::writePNG(char* filename)
+void StdImage::writePNG(const std::string filename) const
 {
 	cv::Mat test(this->h, this->w, CV_8UC1, this->data);
 	cv::imwrite(filename, test);

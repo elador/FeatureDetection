@@ -9,12 +9,13 @@ public:
 	OverlapElimination(void);
 	~OverlapElimination(void);
 
-	std::vector<FdPatch*> eliminate(std::vector<FdPatch*>&);
-	std::vector<FdPatch*> exp_num_fp_elimination(std::vector<FdPatch*>&);
+	std::vector<FdPatch*> eliminate(std::vector<FdPatch*>&, std::string);
+	std::vector<FdPatch*> exp_num_fp_elimination(std::vector<FdPatch*>&, std::string);
 
 	int load(const char*);
 
 	std::string getIdentifier();
+	void setIdentifier(std::string);
 
 	int doOE;	//Reduce detections per cluster; Values: int (0:only after last stage to one (the best) per cluster, 
 				//n: reduce to n best detections after the WRVM- and best after fullSVM-stage per cluster); Default: 3
@@ -32,5 +33,6 @@ protected:
 	int expected_num_faces[2];
 
 	std::string identifier;
+
 };
 

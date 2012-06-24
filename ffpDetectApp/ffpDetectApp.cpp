@@ -84,37 +84,9 @@ int main(int argc, char *argv[])		// Peter
 		return 1;
 	}
 
-	char* fn_detFrontal = "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat";
-	char* fn_regrSVR = "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_ra.mat";
-	char* fn_regrWVR = "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_la.mat";
+	char* fn_detFrontal = "D:\\FeatureDetection\\config\\fdetection\\fd_config_ffd_fd.mat";
 	
-	FdImage *myimg;// = new FdImage();
-	//myimg->load("D:\\CloudStation\\libFD_patrik2011\\data\\firstrun\\ws_220.tiff");
-	//myimg->load("D:\\CloudStation\\libFD_patrik2011\\horse.jpg");
-	//myimg->load("D:\\CloudStation\\libFD_patrik2011\\ws_220.jpg");
-	//myimg->load("D:\\CloudStation\\libFD_patrik2011\\ws_115.jpg");
-	
-	//myimg->load("D:\\CloudStation\\libFD_patrik2011\\ws_220.tif");
-//	myimg->load("D:\\CloudStation\\libFD_patrik2011\\ws_71.tif");
-	//myimg->load("D:\\CloudStation\\libFD_patrik2011\\color_feret_00194_940128_hr.png");
-
-/*	CascadeERT *ert = new CascadeERT();
-	//ert->wvm->load(fn_detFrontal);
-	//ert->svm->load(fn_detFrontal);
-	ert->wvr->load(fn_regrWVR);
-	//ert->svr->load(fn_regrSVR);
-	ert->wvr->init_for_image(myimg);
-	ert->wvr->extract(myimg);
-	std::vector<FdPatch*> candidates = ert->wvr->detect_on_image(myimg);
-	
-	char* fn = new char[500];
-	cv::Mat tmp[9];
-	for(int i=0; i<=8; i++) {
-		tmp[i] = myimg->data_matbgr.clone();
-		Logger->drawCenterpointsWithYawAngleColor(tmp[i], candidates, i);
-		sprintf(fn, "yaw_%d.png", i);
-		cv::imwrite(fn, tmp[i]);
-	}*/
+	FdImage *myimg;
 
 	const float DETECT_MAX_DIST_X = 0.33f;
 	const float DETECT_MAX_DIST_Y = 0.33f;
@@ -165,14 +137,18 @@ int main(int argc, char *argv[])		// Peter
 	int NOCAND = 0;
 	int DONTKNOW = 0;
 
+	Logger->setVerboseLevelText(verbose_level_text);
+	Logger->setVerboseLevelImages(verbose_level_images);
+	Logger->global.img.writeDetectorCandidates = true;	// Write images of all 5 stages
 
 	CascadeWvmOeSvmOe* casc = new CascadeWvmOeSvmOe(fn_detFrontal);
-	//std::vector<FdPatch*> result;
+
 	for(unsigned int i=0; i< filenames.size(); i++) {
 		myimg = new FdImage();
 		myimg->load(filenames[i]);
 		casc->init_for_image(myimg);
 		casc->detect_on_image(myimg);
+		Logger->LogImgDetectorFinal(myimg, casc->candidates, casc->svm->getIdentifier(), "Final");
 		TOT++;
 		if(casc->candidates.size()<1) {
 			std::cout << "[ffpDetectApp] No face-candidates at all found:  " << filenames[i] << std::endl;
@@ -221,36 +197,32 @@ int main(int argc, char *argv[])		// Peter
 	std::cout << "[ffpDetectApp] DONTKNOW:  " << DONTKNOW << std::endl;
 	std::cout << "[ffpDetectApp] =====================================" << std::endl;
 	
-//	Logger->drawBoxes(myimg->data_matbgr, casc->candidates);
-//	cv::imwrite("fdsa.png", myimg->data_matbgr);
-
-	//delete fn;
-	
-	//delete ert;
 	delete casc;
-	//delete myimg;
 
 	return 0;
 }
 
 
 	// TODO important:
-	
-// implement OE and then test on lfw-big 1k
-
+	// getPatchesROI Bug bei skalen, schraeg verschoben (?) bei x,y=0, s=1 sichtbar. No, I think I looked at this with MR, and the code was actually correct?
 // Copy and = c'tors
 	// pub/private
 	// ALL in RegressorWVR.h/cpp is the same as in DetWVM! Except the classify loop AND threshold loading. -> own class (?)
 	// Logger.drawscales
 	// Logger draw 1 scale only, and points with color instead of boxes
 	// logger filter lvls etc
-	// CascadeWvmOeSvmOe should be a VDetVec... and returnFilterSize should return wvm->filtersizex... etc
 	// problem when 2 diff. featuredet run on same scale
 	// results dir from config etc
 	// Diff. patch sizes: Cascade is a VDetectorVM, and calculates ONE subsampfac for the master-detector in his size. Then, for second det with diff. patchsize, calc remaining pyramids.
 	// Test limit_reliability (SVM)	
+	// Draw FFPs in different colors, and as points (symbols), not as boxes. See lib MR
+	// Bisschen durcheinander mit pyramid_widths, subsampfac. Pyr_widths not necessary anymore? Pyr_widths are per detector
 //  WVM/R: bisschen viele *thresh*...?
 // wie verhaelt sich alles bei GRAY input image?? (imread, Logger)
+
+// Error handling when something (eg det, img) not found -> STOP
+
+// FFP-App: Read master-config. (Clean this up... keine vererbung mehr etc). FD. Then start as many FFD Det's as there are in the configs.
 
 // @MR: Warum "-b" ? ComparisonRegr.xlsx 6grad systemat. fehler da ML +3.3, MR -3.3
 
@@ -268,6 +240,9 @@ int main(int argc, char *argv[])		// Peter
 
 /* 
 /	Todo:
+	* .lst: #=comment, ignore line
+	* DetID alles int machen. Und dann mapper von int zu String (wo sich jeder Det am anfang eintraegt)
+	* CascadeWvmOeSvmOe is a VDetVec... and returnFilterSize should return wvm->filtersizex... etc
 	* I think the whole det-naming system ["..."] collapses when someone uses custom names (which we have to when using features)
 /	* Filelists
 	* optimizations (eg const)
@@ -282,7 +257,11 @@ int main(int argc, char *argv[])		// Peter
 	 * i++ --> ++i (faster)
 */
 
+/*
+*setIdentifier() has to be done before init_for_image, else the detector doesnt get registered in the pyramid. Also doesnt draw scales then.
+Problematic if I skip init_for_image for a detector?
 
+*/
 
 
 

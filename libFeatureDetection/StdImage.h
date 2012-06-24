@@ -14,7 +14,7 @@ public:
 	std::string filename;
 
 	void writePNG(void);
-	void writePNG(char*);
+	void writePNG(const std::string) const;
 
 	unsigned char  pixelAt(int x, int y) const { return data[y*w+x]; }
 	unsigned char& pixelAt(int x, int y)       { return data[y*w+x]; }

@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ffpDetectAppERT", "ffpDetec
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "trackerApp", "trackerApp\trackerApp.vcxproj", "{D2617077-A861-47C0-A297-811445851D95}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "condensationTrackerApp", "condensationTrackerApp\condensationTrackerApp.vcxproj", "{AFA04EC7-9519-4CE2-ACE4-99F52D7250F5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -39,6 +41,10 @@ Global
 		{D2617077-A861-47C0-A297-811445851D95}.Debug|Win32.Build.0 = Debug|Win32
 		{D2617077-A861-47C0-A297-811445851D95}.Release|Win32.ActiveCfg = Release|Win32
 		{D2617077-A861-47C0-A297-811445851D95}.Release|Win32.Build.0 = Release|Win32
+		{AFA04EC7-9519-4CE2-ACE4-99F52D7250F5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AFA04EC7-9519-4CE2-ACE4-99F52D7250F5}.Debug|Win32.Build.0 = Debug|Win32
+		{AFA04EC7-9519-4CE2-ACE4-99F52D7250F5}.Release|Win32.ActiveCfg = Release|Win32
+		{AFA04EC7-9519-4CE2-ACE4-99F52D7250F5}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -38,3 +38,8 @@ std::string VDetector::getIdentifier()
 {
 	return this->identifier;
 }
+
+void VDetector::setIdentifier(std::string identifier)
+{
+	this->identifier = identifier;
+}

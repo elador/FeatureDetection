@@ -37,7 +37,7 @@ int CascadeWvmSvm::init_for_image(FdImage* myimg)
 int CascadeWvmSvm::detect_on_image(FdImage* myimg)
 {
 
-	wvm->extract(myimg);
+	wvm->extractToPyramids(myimg);
 	this->candidates = wvm->detect_on_image(myimg);
 	std::vector<FdPatch*> tmp;
 	tmp = svm->detect_on_patchvec(this->candidates);

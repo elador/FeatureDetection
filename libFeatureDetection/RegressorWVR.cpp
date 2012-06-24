@@ -330,7 +330,7 @@ int RegressorWVR::load(const char* filename)
 		"FD.limit_reliability_filter",this->limit_reliability_filter);
 	else this->limit_reliability_filter=(float)atof(buff);*/
 
-	//Klassifikator
+	//Kassifikator
 	char fn_classifier[500];
 	if (!configReader->getKey("FD.classificator", fn_classifier))
 		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: '%s'\n",

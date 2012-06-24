@@ -4,6 +4,7 @@
 #include "DetectorSVM.h"
 #include "RegressorWVR.h"
 #include "RegressorSVR.h"
+#include "OverlapElimination.h"
 #include "SLogger.h"
 
 class CascadeERT : public VDetector
@@ -17,8 +18,19 @@ public:
 
 	DetectorSVM *svm;
 	DetectorWVM *wvm;
+	OverlapElimination *oe;
+
+	DetectorSVM *svml;
+	DetectorWVM *wvml;
+	OverlapElimination *oel;
+
+	DetectorSVM *svmr;
+	DetectorWVM *wvmr;
+	OverlapElimination *oer;
+
 	RegressorSVR *svr;
 	RegressorWVR *wvr;
+
 
 	std::vector<FdPatch*> candidates;
 	

@@ -31,6 +31,7 @@
 // TODO: reference additional headers your program requires here
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 
 #include "opencv2/core/core.hpp" // for FdImage.h
 #include "opencv2/imgproc/imgproc.hpp"

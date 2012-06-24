@@ -34,15 +34,15 @@ public:
 	IImg* iimg_x;
 	IImg* iimg_xx;
 
-	struct SortByDetectorSVMCertainty {
+
+	class SortByCertainty {
+	public:
+		SortByCertainty(std::string detectorType) { this->detectorType = detectorType; };
 		bool operator ()(FdPatch *lhs, FdPatch *rhs) {	// greater than ("<" would be "less" operator)
-			return lhs->certainty.find("DetectorSVM")->second > rhs->certainty.find("DetectorSVM")->second;
-		}
-	};
-	struct SortByDetectorWVMCertainty {
-		bool operator ()(FdPatch *lhs, FdPatch *rhs) {	// greater than ("<" would be "less" operator)
-			return lhs->certainty.find("DetectorWVM")->second > rhs->certainty.find("DetectorWVM")->second;
-		}
+			return lhs->certainty.find(detectorType)->second > rhs->certainty.find(detectorType)->second;
+		};
+	private:
+		std::string detectorType;
 	};
  
 

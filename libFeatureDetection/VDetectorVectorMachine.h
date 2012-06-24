@@ -16,8 +16,8 @@ public:
 	int initPyramids(FdImage*);	// img -> pyrs (save in img)
 	std::vector<FdPatch*> detect_on_image(FdImage*);
 	std::vector<FdPatch*> detect_on_patchvec(std::vector<FdPatch*>&);
-	int extract(FdImage*);	// all pyrs -> patches (save in img)
-	std::vector<FdPatch*> extractPatches(FdImage*, std::vector<FdPatch*>&);
+	int extractToPyramids(FdImage*);	// all pyrs -> patches (save in img)
+	std::vector<FdPatch*> getPatchesROI(FdImage*, int, int, int, int, int, int, std::string);
 
 protected:
 	int extractAndHistEq64(const Pyramid*, FdPatch*);	// private (one patch out of pyr)
@@ -36,7 +36,8 @@ protected:
 
 	int subsamplingLevelStart;
 	int subsamplingLevelEnd;
-	float *subsampfac;
+	//float *subsampfac;
+	std::map<int, float> subsampfac;
 
 	int *pyramid_widths;
 

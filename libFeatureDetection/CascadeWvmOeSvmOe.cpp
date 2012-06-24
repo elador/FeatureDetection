@@ -38,62 +38,39 @@ int CascadeWvmOeSvmOe::init_for_image(FdImage* myimg)
 
 int CascadeWvmOeSvmOe::detect_on_image(FdImage* myimg)
 {
-
-	wvm->extract(myimg);
+	wvm->extractToPyramids(myimg);
 	this->candidates = wvm->detect_on_image(myimg);
-
-	// extract the basename
-	std::stringstream ss(myimg->filename);
-    std::string item;
-	std::vector<std::string> elems;
-	char delim = '\\';
-    while(std::getline(ss, item, delim)) {
-        if(item!="")
-			elems.push_back(item);
-    }
-	unsigned int elems_end = elems.size()-1;
-	std::ostringstream fn_1RVM;
-	fn_1RVM << "out\\" << elems[elems_end] << "_1RVM.png" << std::ends;
-
-	Logger->drawBoxes(myimg->data_matbgr, this->candidates, wvm->getIdentifier(), true, fn_1RVM.str());
+	Logger->LogImgDetectorCandidates(myimg, candidates, wvm->getIdentifier(), "1RVM");
 	
 	std::vector<FdPatch*> afterFirstOE;
 	//0: only after SVM, 1: only before SVM, n: Reduce each cluster to n before SVM and to 1 after; Default: 1
 	if(oe->doOE!=0) {		// do overlapeliminiation after RVM before SVM
 		if (oe->doOE==1)
-			afterFirstOE = oe->eliminate(this->candidates);
+			afterFirstOE = oe->eliminate(this->candidates, wvm->getIdentifier());
 		else
 			//oe->eliminate(faces, args.pp_oe_percent, args.doesPPOverlapElimination, false);	// reduce to "doOE"-num Clusters
-			afterFirstOE = oe->eliminate(this->candidates);
+			afterFirstOE = oe->eliminate(this->candidates, wvm->getIdentifier());
 			
 	} else {
 		afterFirstOE = this->candidates;
 	}
-	std::ostringstream fn_2RVMoe;
-	fn_2RVMoe << "out\\" << elems[elems_end] << "_2RVMoe.png" << std::ends;
-	Logger->drawBoxes(myimg->data_matbgr, afterFirstOE, wvm->getIdentifier(), true, fn_2RVMoe.str());
+	Logger->LogImgDetectorCandidates(myimg, afterFirstOE, wvm->getIdentifier(), "2RVMoe"); // 4th argument optional: colorBy=string getID
 
 	std::vector<FdPatch*> tmp;
 	tmp = svm->detect_on_patchvec(afterFirstOE);
-	std::ostringstream fn_3SVM;
-	fn_3SVM << "out\\" << elems[elems_end] << "_3SVM.png" << std::ends;
-	Logger->drawBoxes(myimg->data_matbgr, tmp, svm->getIdentifier(), true, fn_3SVM.str());
+	Logger->LogImgDetectorCandidates(myimg, tmp, svm->getIdentifier(), "3SVM");
 
 	this->candidates.clear();
 	// OE after SVM:
 	//float dist = dist;
 	//float ratio = 0.0;
-	this->candidates = oe->eliminate(tmp);	// always do it. But doesnt do anything more than already done by first OE?
-	std::ostringstream fn_4SVMoe;
-	fn_4SVMoe << "out\\" << elems[elems_end] << "_4SVMoe.png" << std::ends;
-	Logger->drawBoxes(myimg->data_matbgr, this->candidates, svm->getIdentifier(), true, fn_4SVMoe.str());
+	this->candidates = oe->eliminate(tmp, svm->getIdentifier());	// always do it. But doesnt do anything more than already done by first OE?
+	Logger->LogImgDetectorCandidates(myimg, candidates, svm->getIdentifier(), "4SVMoe");
 	
 	tmp.clear();
-	tmp = oe->exp_num_fp_elimination(this->candidates);
-	std::ostringstream fn_5ExpNum;
-	fn_5ExpNum << "out\\" << elems[elems_end] << "_5ExpNum.png" << std::ends;
-	Logger->drawBoxes(myimg->data_matbgr, tmp, svm->getIdentifier(), true, fn_5ExpNum.str());
-	
+	tmp = oe->exp_num_fp_elimination(this->candidates, svm->getIdentifier());
+	Logger->LogImgDetectorCandidates(myimg, tmp, svm->getIdentifier(), "5ExpNum");
+
 	this->candidates = tmp;
 	return 1;
 }

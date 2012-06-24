@@ -11,8 +11,9 @@ public:
 	~FdImage(void);
 	FdImage(unsigned char*, int, int, int=8);
 	int load(const std::string);
+	int load(const cv::Mat*);
 
-	int createPyramid(int, int*);
+	int createPyramid(int, int*, std::string);
 
 	cv::Mat data_matbgr;
 	cv::Mat data_matgray;
