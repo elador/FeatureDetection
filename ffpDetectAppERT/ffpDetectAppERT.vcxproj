@@ -51,7 +51,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\CloudStation\libFD_patrik2011\FeatureDetection\libFeatureDetection;C:\Program Files %28x86%29\MATLAB\R2012a\extern\include;D:\ocvsvn\opencv\modules\core\include;D:\ocvsvn\opencv\modules\imgproc\include;D:\ocvsvn\opencv\modules\highgui\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\FeatureDetection\FeatureDetection\libFeatureDetection;C:\Program Files %28x86%29\MATLAB\R2012a\extern\include;D:\ocvsvn\opencv\modules\core\include;D:\ocvsvn\opencv\modules\imgproc\include;D:\ocvsvn\opencv\modules\highgui\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -67,7 +67,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\CloudStation\libFD_patrik2011\FeatureDetection\libFeatureDetection;C:\Program Files %28x86%29\MATLAB\R2011a\extern\include;D:\ocvsvn\opencv\modules\core\include;D:\ocvsvn\opencv\modules\imgproc\include;D:\ocvsvn\opencv\modules\highgui\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\FeatureDetection\FeatureDetection\libFeatureDetection;C:\Program Files %28x86%29\MATLAB\R2011a\extern\include;D:\ocvsvn\opencv\modules\core\include;D:\ocvsvn\opencv\modules\imgproc\include;D:\ocvsvn\opencv\modules\highgui\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
