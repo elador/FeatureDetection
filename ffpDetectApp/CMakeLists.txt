@@ -1,5 +1,6 @@
 SET( SUBPROJECT_NAME ffpDetectApp )	# my own variable, not cmake's
 PROJECT( ${SUBPROJECT_NAME} )
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
@@ -19,6 +20,9 @@ ENDIF(MATLAB_FOUND)
 INCLUDE_DIRECTORIES(${MATLAB_INCLUDE_DIR})
 
 #Boost:
+#set(Boost_USE_STATIC_LIBS        ON)
+#set(Boost_USE_MULTITHREADED      ON)
+#set(Boost_USE_STATIC_RUNTIME    OFF)
 FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED) # others (e.g.): system filesystem
 if(Boost_FOUND)
   MESSAGE(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
