@@ -16,8 +16,10 @@ ostream& operator<<(ostream& os, const vector<T>& v)
 //int _tmain(int argc, _TCHAR* argv[])	// VS10
 int main(int argc, char *argv[])		// Peter
 {
+	#ifdef WIN32
 	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF ); // dump leaks at return
 	//_CrtSetBreakAlloc(17534);
+	#endif
 	
 	int verbose_level_text;
 	int verbose_level_images;

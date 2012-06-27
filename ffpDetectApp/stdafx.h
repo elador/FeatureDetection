@@ -15,7 +15,10 @@
 // For memory leak debugging: http://msdn.microsoft.com/en-us/library/x98tx3cf(v=VS.100).aspx
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
-#include <crtdbg.h>
+
+#ifdef WIN32
+	#include <crtdbg.h>
+#endif
 
 #ifdef _DEBUG
    #ifndef DBG_NEW
