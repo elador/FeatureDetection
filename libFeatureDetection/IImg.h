@@ -9,7 +9,7 @@ public:
 	float* data;
 	int w, h, size, rowsize, colordepth;
 
-	char filename[_MAX_PATH];
+	//std::string filename;
 
 	IImg(void);
 	IImg(int, int, int);

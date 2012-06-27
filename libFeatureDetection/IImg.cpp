@@ -6,7 +6,6 @@ IImg::IImg(void) : data(0), w(0), h(0), colordepth(0)
 {
 	rowsize=0;
 	size=0;
-	filename[0]=0;    
 }
 
 IImg::IImg(int _w, int _h, int _colordepth=32) : data(0), w(_w), h(_h), colordepth(_colordepth) {
@@ -14,7 +13,6 @@ IImg::IImg(int _w, int _h, int _colordepth=32) : data(0), w(_w), h(_h), colordep
 	if (w && h)
 		data = new float[rowsize*h];
 	size=w*h;
-	filename[0]=0;    
 }
 
 
@@ -22,7 +20,6 @@ IImg::~IImg(void)
 {
 	delete[] data;
 	data = 0;
-	filename[0]=0;
 }
 
 
