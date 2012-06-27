@@ -17,14 +17,23 @@ ELSE(MATLAB_FOUND)
   MESSAGE(FATAL_ERROR "Matlab not found")
 ENDIF(MATLAB_FOUND)
 INCLUDE_DIRECTORIES(${MATLAB_INCLUDE_DIR})
+#  MESSAGE(STATUS "1 found at ${MATLAB_MX_LIBRARY}")
+#    MESSAGE(STATUS "2 found at ${MATLAB_LIBRARIES}")
+
+
+
 #Boost:
-FIND_PACKAGE( Boost REQUIRED )
+#FIND_PACKAGE( Boost REQUIRED )
+#find_package(Boost COMPONENTS system filesystem program_options REQUIRED) #better
+find_package(Boost COMPONENTS program_options REQUIRED)
 if(Boost_FOUND)
   MESSAGE(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
 ELSE(Boost_FOUND)
   MESSAGE(FATAL_ERROR "Boost not found")
 ENDIF()
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+#link_directories(${Boost_LIBRARY_DIRS})
+
 
 #Source and header files:
 SET(SOURCE
@@ -42,5 +51,6 @@ ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
 
 MESSAGE(STATUS "Adding includes and lib: ${libFeatureDetection_SOURCE_DIR}")
 include_directories( ${libFeatureDetection_SOURCE_DIR} )
-#Make the app depend on the library.
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} libFeatureDetection )
+#Make the app depend on the libraries
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} libFeatureDetection ${OpenCV_LIBS} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )
+#${Boost_LIBRARIES}

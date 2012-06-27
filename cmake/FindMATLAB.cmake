@@ -4,6 +4,7 @@
 #  MATLAB_LIBRARIES:   required libraries: libmex, etc
 #  MATLAB_MEX_LIBRARY: path to libmex.lib
 #  MATLAB_MX_LIBRARY:  path to libmx.lib
+#  MATLAB_MAT_LIBRARY:  path to libmat.lib # added
 #  MATLAB_ENG_LIBRARY: path to libeng.lib
 #  MATLAB_ROOT: path to Matlab's root directory
 
@@ -94,6 +95,10 @@ IF(WIN32)
     libmx
     ${MATLAB_LIBRARIES_DIR}
     )
+  FIND_LIBRARY(MATLAB_MAT_LIBRARY
+    libmat
+    ${MATLAB_LIBRARIES_DIR}
+    )
   FIND_LIBRARY(MATLAB_ENG_LIBRARY
     libeng
     ${MATLAB_LIBRARIES_DIR}
@@ -157,6 +162,11 @@ ELSE(WIN32)
     COMMAND find "${MATLAB_ROOT}/bin" -name libmx${LIBRARY_EXTENSION}
     COMMAND xargs echo -n
     OUTPUT_VARIABLE MATLAB_MX_LIBRARY
+    )
+  EXECUTE_PROCESS(
+    COMMAND find "${MATLAB_ROOT}/bin" -name libmat${LIBRARY_EXTENSION}
+    COMMAND xargs echo -n
+    OUTPUT_VARIABLE MATLAB_MAT_LIBRARY
     )
   EXECUTE_PROCESS(
     COMMAND find "${MATLAB_ROOT}/bin" -name libeng${LIBRARY_EXTENSION}
