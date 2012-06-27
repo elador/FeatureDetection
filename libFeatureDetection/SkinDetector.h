@@ -1,5 +1,5 @@
 #pragma once
-#include "vdetector.h"
+#include "VDetector.h"
 class SkinDetector : public VDetector
 {
 public:

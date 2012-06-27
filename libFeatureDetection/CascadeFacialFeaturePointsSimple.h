@@ -1,5 +1,5 @@
 #pragma once
-#include "vdetector.h"
+#include "VDetector.h"
 #include "CascadeWvmOeSvmOe.h"
 
 class CascadeFacialFeaturePointsSimple : public VDetector

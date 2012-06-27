@@ -1,5 +1,5 @@
 #pragma once
-#include "vdetector.h"
+#include "VDetector.h"
 #include "FdImage.h"
 #include "Rect.h"
 #include "utility.h"

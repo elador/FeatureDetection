@@ -1,5 +1,5 @@
 #pragma once
-#include "vdetectorvectormachine.h"
+#include "VDetectorVectorMachine.h"
 #include "FdPatch.h"
 #include "MatlabReader.h"
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "vdetector.h"
+#include "VDetector.h"
 #include "CascadeWvmOeSvmOe.h"
 #include "CircleDetector.h"
 #include "SkinDetector.h"

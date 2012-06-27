@@ -1,5 +1,5 @@
 #pragma once
-#include "vdetector.h"
+#include "VDetector.h"
 class CircleDetector : public VDetector
 {
 public:
