@@ -63,9 +63,9 @@ int main(int argc, char *argv[])		// Peter
         }
         if (vm.count("input-file"))
         {
-            cout << "[ffpDetectApp] Using input images: " << vm["input-file"].as<vector<string>>() << "\n";
+            cout << "[ffpDetectApp] Using input images: " << vm["input-file"].as< vector<string> >() << "\n";
 			useImgs = true;
-			filenames = vm["input-file"].as<vector<string>>();
+			filenames = vm["input-file"].as< vector<string> >();
         }
         if (vm.count("verbose-text")) {
             cout << "[ffpDetectApp] Verbose level for text: " << vm["verbose-text"].as<int>() << "\n";
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])		// Peter
 	
 	if(useFileList) {
 		std::ifstream fileList;
-		fileList.open(fn_fileList, std::ios::in);
+		fileList.open(fn_fileList.c_str(), std::ios::in);
 		if (!fileList.is_open()) {
 			std::cout << "[ffpDetectApp] Error opening file list!" << std::endl;
 			return 0;
