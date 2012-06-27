@@ -10,7 +10,7 @@
 #endif
 
 #include <stdio.h>
-#include <tchar.h>
+//#include <tchar.h>
 
 // For memory leak debugging: http://msdn.microsoft.com/en-us/library/x98tx3cf(v=VS.100).aspx
 #define _CRTDBG_MAP_ALLOC
