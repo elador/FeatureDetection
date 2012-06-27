@@ -36,15 +36,5 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "mat.h"
 
+#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #include <boost/program_options.hpp>
-
-//#include "DetectorSVM.h"
-//#include "DetectorWVM.h"
-#include "CascadeWvmSvm.h"
-#include "CascadeWvmOeSvmOe.h"
-//#include "RegressorSVR.h"
-
-#include "SLogger.h"
-
-#include "CascadeERT.h"
-#include "FdImage.h"

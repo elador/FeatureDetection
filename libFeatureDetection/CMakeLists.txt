@@ -1,5 +1,4 @@
 SET( SUBPROJECT_NAME libFeatureDetection )	# my own variable, not cmake's
-#CMAKE_MINIMUM_REQUIRED( VERSION 2.8 ) # dont set in non-project cmake files
 PROJECT( ${SUBPROJECT_NAME} )
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
@@ -8,6 +7,7 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 FIND_PACKAGE( OpenCV REQUIRED core imgproc highgui)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
+
 #Matlab:
 SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
 FIND_PACKAGE( MATLAB REQUIRED )

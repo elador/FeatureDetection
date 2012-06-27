@@ -3,6 +3,17 @@
 
 #include "stdafx.h"
 
+//#include "DetectorSVM.h"
+//#include "DetectorWVM.h"
+#include "CascadeWvmSvm.h"
+#include "CascadeWvmOeSvmOe.h"
+//#include "RegressorSVR.h"
+
+#include "SLogger.h"
+
+#include "CascadeERT.h"
+#include "FdImage.h"
+
 namespace po = boost::program_options;
 using namespace std;
 

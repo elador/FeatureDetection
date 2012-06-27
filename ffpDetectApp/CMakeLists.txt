@@ -1,5 +1,4 @@
 SET( SUBPROJECT_NAME ffpDetectApp )	# my own variable, not cmake's
-#CMAKE_MINIMUM_REQUIRED( VERSION 2.8 ) # dont set in non-project cmake files
 PROJECT( ${SUBPROJECT_NAME} )
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
@@ -8,6 +7,7 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 FIND_PACKAGE( OpenCV REQUIRED core imgproc highgui)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
+
 #Matlab:
 SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
 FIND_PACKAGE( MATLAB REQUIRED )
@@ -17,23 +17,15 @@ ELSE(MATLAB_FOUND)
   MESSAGE(FATAL_ERROR "Matlab not found")
 ENDIF(MATLAB_FOUND)
 INCLUDE_DIRECTORIES(${MATLAB_INCLUDE_DIR})
-#  MESSAGE(STATUS "1 found at ${MATLAB_MX_LIBRARY}")
-#    MESSAGE(STATUS "2 found at ${MATLAB_LIBRARIES}")
-
-
 
 #Boost:
-#FIND_PACKAGE( Boost REQUIRED )
-#find_package(Boost COMPONENTS system filesystem program_options REQUIRED) #better
-find_package(Boost COMPONENTS program_options REQUIRED)
+FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED) # others (e.g.): system filesystem
 if(Boost_FOUND)
   MESSAGE(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
 ELSE(Boost_FOUND)
   MESSAGE(FATAL_ERROR "Boost not found")
 ENDIF()
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-#link_directories(${Boost_LIBRARY_DIRS})
-
 
 #Source and header files:
 SET(SOURCE
@@ -52,5 +44,5 @@ ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
 MESSAGE(STATUS "Adding includes and lib: ${libFeatureDetection_SOURCE_DIR}")
 include_directories( ${libFeatureDetection_SOURCE_DIR} )
 #Make the app depend on the libraries
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} libFeatureDetection ${OpenCV_LIBS} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )
-#${Boost_LIBRARIES}
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} libFeatureDetection ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )
+MESSAGE(STATUS "Boost libs inc: ${Boost_LIBRARIES}")
