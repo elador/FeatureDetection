@@ -43,7 +43,6 @@ SET(SOURCE
 	SLogger.cpp
 	stdafx.cpp
 	StdImage.cpp
-	VCascade.cpp
 	VDetector.cpp
 	VDetectorVectorMachine.cpp
 )
@@ -73,7 +72,6 @@ SET(HEADERS
 	StdImage.h
 	targetver.h
 	utility.h
-	VCascade.h
 	VDetector.h
 	VDetectorVectorMachine.h
 )

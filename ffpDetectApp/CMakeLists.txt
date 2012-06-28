@@ -20,9 +20,6 @@ ENDIF(MATLAB_FOUND)
 INCLUDE_DIRECTORIES(${MATLAB_INCLUDE_DIR})
 
 #Boost:
-#set(Boost_USE_STATIC_LIBS        ON)
-#set(Boost_USE_MULTITHREADED      ON)
-#set(Boost_USE_STATIC_RUNTIME    OFF)
 FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED) # others (e.g.): system filesystem
 if(Boost_FOUND)
   MESSAGE(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
@@ -49,4 +46,4 @@ MESSAGE(STATUS "Adding includes and lib: ${libFeatureDetection_SOURCE_DIR}")
 include_directories( ${libFeatureDetection_SOURCE_DIR} )
 #Make the app depend on the libraries
 TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} libFeatureDetection ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )
-MESSAGE(STATUS "Boost libs inc: ${Boost_LIBRARIES}")
+#MESSAGE(STATUS "Boost libs inc: ${Boost_LIBRARIES}")

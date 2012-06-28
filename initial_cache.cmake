@@ -6,7 +6,7 @@ set( BOOST_ROOT     "D:/boost/boost_1_47"    CACHE STRING "Boost search location
 
 # This CAN be set if the automatic script fails, but usually it works.
 #set( MATLAB_ROOT     "C:/Program Files (x86)/MATLAB/R2012a/extern"    CACHE STRING "Matlab search location" )
-
+#Note: I think this path should be given without "/extern", but I can't test it since it works on my system.
 
 # Mechanism via ConfigLIB.cmake in lib dir
 # ==============================
