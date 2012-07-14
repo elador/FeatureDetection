@@ -1,6 +1,11 @@
 #include "stdafx.h"
 #include "RegressorWVR.h"
 
+#include "MatlabReader.h"
+#include "FdPatch.h"
+#include "IImg.h"
+
+#include <iostream>
 
 RegressorWVR::RegressorWVR(void)
 {

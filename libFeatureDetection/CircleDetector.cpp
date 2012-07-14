@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "CircleDetector.h"
 
+#include "SLogger.h"
 #include "FdImage.h"
 
 #include "opencv2/core/core.hpp"

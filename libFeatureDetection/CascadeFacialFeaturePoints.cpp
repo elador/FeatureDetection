@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "CascadeFacialFeaturePoints.h"
 
+#include "SLogger.h"
+#include "FdPatch.h"
 
 CascadeFacialFeaturePoints::CascadeFacialFeaturePoints(void)
 {

@@ -1,7 +1,5 @@
 #pragma once
 #include "VDetectorVectorMachine.h"
-#include "FdPatch.h"
-#include "MatlabReader.h"
 
 class RegressorSVR : public VDetectorVectorMachine
 {

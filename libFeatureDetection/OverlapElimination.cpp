@@ -2,6 +2,7 @@
 #include "OverlapElimination.h"
 
 #include "FdPatch.h"
+#include "MatlabReader.h"
 
 #include <vector>
 #include <algorithm>

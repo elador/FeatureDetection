@@ -1,8 +1,11 @@
 #pragma once
 #include "StdImage.h"
-#include "Pyramid.h"
-#include <iostream>
+
+#include "opencv2/core/core.hpp"
+
 #include <map>
+
+class Pyramid;
 
 typedef std::map<int, Pyramid*> PyramidMap;
 

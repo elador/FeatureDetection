@@ -1,8 +1,12 @@
 #include "stdafx.h"
 #include "DetectorSVM.h"
 
+#include "MatlabReader.h"
+#include "FdPatch.h"
 
-DetectorSVM::DetectorSVM(void)// : faces(NULL)
+#include <iostream>
+
+DetectorSVM::DetectorSVM(void)
 {
 	identifier = "DetectorSVM";
 	numSV = 0;

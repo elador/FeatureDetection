@@ -2,6 +2,9 @@
 #include "VDetectorVectorMachine.h"
 
 #include "FdImage.h"
+#include "Pyramid.h"
+
+#include <iostream>
 
 VDetectorVectorMachine::VDetectorVectorMachine(void)
 {

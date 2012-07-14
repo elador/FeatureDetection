@@ -3,7 +3,7 @@
 
 #include "SLogger.h"
 
-//#include "Rect.h"
+#include "Rect.h"
 #include "FdImage.h"
 
 VDetector::VDetector(void)

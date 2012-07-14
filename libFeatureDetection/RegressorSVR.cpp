@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include "RegressorSVR.h"
 
+#include "MatlabReader.h"
+#include "FdPatch.h"
+
+#include <iostream>
 
 RegressorSVR::RegressorSVR(void)// : faces(NULL)
 {

@@ -13,6 +13,7 @@
 
 #include "CascadeERT.h"
 #include "FdImage.h"
+#include "FdPatch.h"
 
 namespace po = boost::program_options;
 using namespace std;

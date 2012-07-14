@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "CascadeWvmOeSvmOe.h"
 
+#include "SLogger.h"
 
 CascadeWvmOeSvmOe::CascadeWvmOeSvmOe(void)
 {

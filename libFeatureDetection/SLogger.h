@@ -1,7 +1,5 @@
 #pragma once
 
-#include <iostream>
-#include <iomanip>
 #include <vector>
 #include <string>
 #include "opencv2/core/core.hpp"
@@ -14,7 +12,6 @@ class FdPatch;
 typedef std::map<int, Pyramid*> PyramidMap;
 
 #define Logger SLogger::Instance()
-
 
 class SLogger
 {

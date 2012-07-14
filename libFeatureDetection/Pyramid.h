@@ -1,7 +1,8 @@
 #pragma once
 #include "StdImage.h"
-#include "utility.h"
+
 #include "FdPatch.h"
+
 #include <set>
 #include <string>
 

@@ -71,7 +71,6 @@ SET(HEADERS
 	stdafx.h
 	StdImage.h
 	targetver.h
-	utility.h
 	VDetector.h
 	VDetectorVectorMachine.h
 )

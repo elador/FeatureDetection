@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "CascadeERT.h"
 
+#include "SLogger.h"
+#include "FdPatch.h"
 
 CascadeERT::CascadeERT(void)
 {

@@ -3,6 +3,10 @@
 
 #include "FdPatch.h"
 #include "FdImage.h"
+#include "Pyramid.h"
+
+#include <iostream>
+#include <iomanip>
 
 
 SLogger::SLogger(void)

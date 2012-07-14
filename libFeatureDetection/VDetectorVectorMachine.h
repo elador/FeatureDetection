@@ -1,10 +1,12 @@
 #pragma once
 #include "VDetector.h"
 
-#include "utility.h"
-
-#include <iostream>
 #include <vector>
+#include <map>
+
+class FdPatch;
+class FdImage;
+class Pyramid;
 
 class VDetectorVectorMachine : public VDetector
 {

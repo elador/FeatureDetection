@@ -1,11 +1,11 @@
 #pragma once
 #include "VDetector.h"
+
 #include "DetectorWVM.h"
 #include "DetectorSVM.h"
 #include "RegressorWVR.h"
 #include "RegressorSVR.h"
 #include "OverlapElimination.h"
-#include "SLogger.h"
 
 class CascadeERT : public VDetector
 {

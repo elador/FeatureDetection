@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "FdPatch.h"
 
+#include "IImg.h"
 
 FdPatch::FdPatch(void) : w_inFullImg(0), h_inFullImg(0), iimg_x(NULL), iimg_xx(NULL), sampleID(0)
 {

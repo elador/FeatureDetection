@@ -1,6 +1,14 @@
 #include "stdafx.h"
 #include "FdImage.h"
 
+#include "SLogger.h"
+#include "Pyramid.h"
+
+#include "opencv2/core/core.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
+
+#include <iostream>
 
 FdImage::FdImage(void)
 {

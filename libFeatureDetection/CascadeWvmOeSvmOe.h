@@ -3,7 +3,6 @@
 #include "DetectorWVM.h"
 #include "DetectorSVM.h"
 #include "OverlapElimination.h"
-#include "SLogger.h"
 
 class CascadeWvmOeSvmOe : public VDetector
 {

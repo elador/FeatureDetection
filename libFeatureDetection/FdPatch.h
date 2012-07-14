@@ -1,9 +1,12 @@
 #pragma once
-#include "FdPoint.h"
 #include "StdImage.h"
-#include "IImg.h"
+
+#include "FdPoint.h"
+
 #include <map>
 #include <set>
+
+class IImg;
 
 typedef std::map<std::string, double> CertaintyMap;
 typedef std::map<std::string, double> FoutMap;

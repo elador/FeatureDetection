@@ -1,6 +1,11 @@
 #include "stdafx.h"
 #include "DetectorWVM.h"
 
+#include "MatlabReader.h"
+#include "FdPatch.h"
+#include "IImg.h"
+
+#include <iostream>
 
 DetectorWVM::DetectorWVM(void)
 {

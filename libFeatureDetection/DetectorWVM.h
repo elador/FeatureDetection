@@ -1,7 +1,7 @@
 #pragma once
 #include "VDetectorVectorMachine.h"
-#include "FdPatch.h"
-#include "MatlabReader.h"
+
+class IImg;
 
 class DetectorWVM : public VDetectorVectorMachine
 {
