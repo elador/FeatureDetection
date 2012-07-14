@@ -10,7 +10,7 @@ public:
 	VDetectorVectorMachine(void);
 	virtual ~VDetectorVectorMachine(void);
 
-	virtual int load(const char* filename) = 0;
+	virtual int load(const std::string filename) = 0;
 	virtual bool classify(FdPatch*) = 0;
 
 	int initPyramids(FdImage*);	// img -> pyrs (save in img)

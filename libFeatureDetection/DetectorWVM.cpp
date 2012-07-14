@@ -256,7 +256,7 @@ float DetectorWVM::lin_eval_wvm_histeq64(
 }
 
 
-int DetectorWVM::load(const char* filename)
+int DetectorWVM::load(const std::string filename)
 {
 	//char* configFile = "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat";
 	std::cout << "[DetWVM] Loading " << filename << std::endl;
@@ -325,7 +325,7 @@ int DetectorWVM::load(const char* filename)
 	if (!configReader->getKey("FD.numUsedFilter",buff))
 		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n",
 		"FD.numUsedFilter",this->numUsedFilter);
-	else this->numUsedFilter=max(0,atoi(buff));
+	else this->numUsedFilter=std::max(0,atoi(buff));
 
 	//Grenze der Zuverlaesigkeit ab der Gesichter aufgenommen werden (Diffwert fr W-RSV's-Schwellen)
 	// zB. +0.1 => weniger patches drüber(mehr rejected, langsamer),    dh. mehr fn(FRR), weniger fp(FAR)  und
@@ -356,14 +356,14 @@ int DetectorWVM::load(const char* filename)
 	double *matdata;
 	pmatfile = matOpen(fn_classifier, "r");
 	if (pmatfile == NULL) {
-		std::cout << "Error: Opening file" << std::endl;
-		return -1;
+		std::cout << "[DetWVM] Error opening file." << std::endl;
+		exit(EXIT_FAILURE);
 	}
 
 	pmxarray = matGetVariable(pmatfile, "num_hk");
 	if (pmxarray == 0) {
-		std::cout << "Error: There is a no num_hk in the file." << std::endl;
-		return 0;
+		std::cout << "[DetWVM] Error: There is a no num_hk in the file." << std::endl;
+		exit(EXIT_FAILURE);
 	}
 	matdata = mxGetPr(pmxarray);
 	int nfilter = (int)matdata[0];
@@ -374,7 +374,7 @@ int DetectorWVM::load(const char* filename)
 	if (pmxarray != 0) { // read area
 		std::cout << "[DetWVM] Found structur 'wrvm', reading the TODO 280 non linear filters support_hk* and weight_hk* at once" << std::endl;
 		std::cout << "[DetWVM] Stopping, because this is not yet tested!" << std::endl;
-		return 0;
+		exit(EXIT_FAILURE);
 		/*
 				//read dim. hxw of support_hk's 
 				mxArray* msup=mxGetField(pmxarray, 0, "dim");
@@ -492,11 +492,11 @@ int DetectorWVM::load(const char* filename)
 
 		if (pmxarray == 0) {
 			printf("[DetWVM]  Unable to find the matrix \'support_hk%d\'\n", 1);
-			return 0;
+			exit(EXIT_FAILURE);
 		}
 		if (mxGetNumberOfDimensions(pmxarray) != 2) {
 			fprintf(stderr, "\nThe matrix \'filter%d\' in the file should have 2 dimensions\7\n", 1);
-			return 4;
+			exit(EXIT_FAILURE);
 		}
 		mxDestroyArray(pmxarray);
 
@@ -506,11 +506,11 @@ int DetectorWVM::load(const char* filename)
 			pmxarray = matGetVariable(pmatfile, str);
 			if (pmxarray == 0) {
 				printf("\nfd_ReadDetector(): Unable to find the matrix \'support_hk%d\'\n", i+1);
-				return 0;
+				exit(EXIT_FAILURE);
 			}
 			if (mxGetNumberOfDimensions(pmxarray) != 2) {
 				fprintf(stderr, "\nThe matrix \'filter%d\' in the file should have 2 dimensions\7\n", i+1);
-				return 4;
+				exit(EXIT_FAILURE);
 			}
 
 			matdata = mxGetPr(pmxarray);
@@ -527,7 +527,7 @@ int DetectorWVM::load(const char* filename)
 				const mwSize *dim = mxGetDimensions(pmxarray);
 				if ((dim[1] != i+1) && (dim[0] != i+1)) {
 					fprintf(stderr, "\nThe matrix %s in the file should have a dimensions 1x%d or %dx1\7\n", str, i+1, i+1);
-					return 4;
+					exit(EXIT_FAILURE);
 				}
 				matdata = mxGetPr(pmxarray);
 				for (int j = 0; j <= i; ++j) {
@@ -574,7 +574,7 @@ int DetectorWVM::load(const char* filename)
 		mxDestroyArray(pmxarray);
 	} else {
 		printf("fd_ReadDetector(): 'num_hk_wvm' not found in:\n");
-		return 1;
+		exit(EXIT_FAILURE);
 	}
 	// number of levels with filters (eg 20)
 	pmxarray = matGetVariable(pmatfile, "num_lev_wvm");
@@ -585,7 +585,7 @@ int DetectorWVM::load(const char* filename)
 		mxDestroyArray(pmxarray);
 	} else {
 		printf("fd_ReadDetector(): 'num_lev_wvm' not found in:\n \n");
-		return 0;
+		exit(EXIT_FAILURE);
 	}
 
   
@@ -607,11 +607,11 @@ int DetectorWVM::load(const char* filename)
 		int nHK=(int)dim[1];
 		if (this->nLinFilters!=nHK){
 			fprintf(stderr, "\nfd_ReadDetector(): 'area' not right dim:%d (==%d)\n",nHK,this->nLinFilters);
-			return 4;
+			exit(EXIT_FAILURE);
 		}
 		if ((this->nLinFilters_wvm*this->nLevels_wvm)!=nHK){
 			fprintf(stderr, "\nfd_ReadDetector(): 'area' not right dim:%d (==%d)\n",nHK,this->nLinFilters);
-			return 4;
+			exit(EXIT_FAILURE);
 		}
 
 		this->area = new Area*[nHK];
@@ -622,7 +622,7 @@ int DetectorWVM::load(const char* filename)
 			mxArray* mval=mxGetField(pmxarray,hrsv,valstr);
  			if (mval == NULL ) {
 				printf("\nfd_ReadDetector(): '%s' not found (WVM: 'val_u', else: 'val', right *.mat/kernel?)\n",valstr);
-				return 1;
+				exit(EXIT_FAILURE);
 			}
 			dim=mxGetDimensions(mval);
 			cntval=(int)dim[1];
@@ -674,7 +674,7 @@ int DetectorWVM::load(const char* filename)
 
 	} else {
 		printf("\nfd_ReadDetector(): 'area' not found (right *.mat/kernel?) \n");
-		return 1;
+		exit(EXIT_FAILURE);
 	}
 	//printf("[DetWVM] Done\n");
 
@@ -687,7 +687,7 @@ int DetectorWVM::load(const char* filename)
 		int nHK=(int)dim[1];
 		if (this->nLinFilters!=nHK){
 			fprintf(stderr, "fd_ReadDetector(): 'app_rsv_convol' not right dim:%d (==%d)\n",nHK,this->nLinFilters);
-			return 1;
+			exit(EXIT_FAILURE);
 		}
 		this->app_rsv_convol = new double[nHK];
 		for (int hrsv=0; hrsv<nHK; ++hrsv)
@@ -695,7 +695,7 @@ int DetectorWVM::load(const char* filename)
 		mxDestroyArray(pmxarray);
 	} else {
 		printf("fd_ReadDetector(): 'app_rsv_convol' not found\n");
-		return 1;
+		exit(EXIT_FAILURE);
 	}
 
 	if (matClose(pmatfile) != 0) {
@@ -712,7 +712,7 @@ int DetectorWVM::load(const char* filename)
 	pmatfile = matOpen(fn_threshold, "r");
 	if (pmatfile == 0) {
 		printf("fd_ReadDetector(): Unable to open the file (wrong format?):\n'%s' \n", fn_threshold);
-		return 1;
+		exit(EXIT_FAILURE);
 	} else {
 		pmxarray = matGetVariable(pmatfile, "hierar_thresh");
 		if (pmxarray == 0) {

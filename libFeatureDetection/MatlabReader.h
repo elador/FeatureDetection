@@ -4,7 +4,7 @@ class MatlabReader
 {
 public:
 	MatlabReader(void);
-	MatlabReader(const char*);
+	MatlabReader(const std::string);
 	~MatlabReader(void);
 
 	int getKey(const char*, char*); // liest einen Key oder eine Section

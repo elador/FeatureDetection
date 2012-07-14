@@ -15,7 +15,7 @@ CascadeWvmSvm::~CascadeWvmSvm(void)
 	delete svm;
 }
 
-CascadeWvmSvm::CascadeWvmSvm(char* mat_fn)
+CascadeWvmSvm::CascadeWvmSvm(const std::string mat_fn)
 {
 	
 	wvm = new DetectorWVM();	// only init and set everything to 0

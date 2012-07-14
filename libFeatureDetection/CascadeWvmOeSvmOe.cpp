@@ -17,7 +17,7 @@ CascadeWvmOeSvmOe::~CascadeWvmOeSvmOe(void)
 	delete svm;
 }
 
-CascadeWvmOeSvmOe::CascadeWvmOeSvmOe(char* mat_fn)
+CascadeWvmOeSvmOe::CascadeWvmOeSvmOe(std::string mat_fn)
 {
 	wvm = new DetectorWVM();	// only init and set everything to 0
 	wvm->load(mat_fn);

@@ -9,7 +9,7 @@ public:
 	CascadeWvmSvm(void);
 	~CascadeWvmSvm(void);
 
-	CascadeWvmSvm(char* matfile);
+	CascadeWvmSvm(const std::string matfile);
 
 	int init_for_image(FdImage*);
 	int detect_on_image(FdImage*);

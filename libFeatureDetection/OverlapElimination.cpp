@@ -28,7 +28,7 @@ void OverlapElimination::setIdentifier(std::string identifier)
 	this->identifier = identifier;
 }
 
-int OverlapElimination::load(const char* filename)
+int OverlapElimination::load(const std::string filename)
 {
 	//char* configFile = "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat";
 	std::cout << "[OverlapElimination] Loading " << filename << std::endl;
@@ -188,9 +188,9 @@ std::vector<FdPatch*> OverlapElimination::eliminate(std::vector<FdPatch*> &patch
          //for (int pro=acc+1; pro<candidates.size(); )
          for (std::vector<FdPatch*>::iterator proband = accepted+1; proband!= candidates.end(); )
          {
-			 if (dist<=1.0) d=dist*max((*accepted)->w_inFullImg,(*proband)->w_inFullImg); else d=dist;
+			 if (dist<=1.0) d=dist*std::max((*accepted)->w_inFullImg,(*proband)->w_inFullImg); else d=dist;
              //if ( abs(candidates[acc].s-candidates[pro].s)<L && sq_dist(candidates[acc],candidates[pro])<R )
-             if (  (abs((*accepted)->c.x-(*proband)->c.x) < d) && (abs((*accepted)->c.y-(*proband)->c.y) < d) && (((float)min((*accepted)->w_inFullImg,(*proband)->w_inFullImg)/(float)max((*accepted)->w_inFullImg,(*proband)->w_inFullImg)) > ratio) )
+             if (  (abs((*accepted)->c.x-(*proband)->c.x) < d) && (abs((*accepted)->c.y-(*proband)->c.y) < d) && (((float)std::min((*accepted)->w_inFullImg,(*proband)->w_inFullImg)/(float)std::max((*accepted)->w_inFullImg,(*proband)->w_inFullImg)) > ratio) )
              {
                  //candidates.erase((candidates.begin()+pro));
                  proband = candidates.erase(proband);

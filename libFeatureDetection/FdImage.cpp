@@ -36,7 +36,7 @@ int FdImage::load(const std::string filename)
 
 	if (this->data_matbgr.empty()) {
 		std::cout << "Error: cv::imread: Loading image " << filename << std::endl;
-		return 0;
+		exit(EXIT_FAILURE);
 	}
 
 	this->filename = filename;
@@ -221,17 +221,17 @@ int FdImage::rescale(StdImage& in, StdImage& out, float factor) // better: make 
   			if (xrf > 1.0f) {
   				xrf--; xr++;
   			}
-  			for (y_pix = max(oit, yt); y_pix < min(oib, yb); y_pix++) {
+  			for (y_pix = std::max(oit, yt); y_pix < std::min(oib, yb); y_pix++) {
   				if (xl >= oil)
   					sum -= in.pixelAt(xl, y_pix) * xlf;
-  				for (x_pix = max(oil, xl); x_pix < min(oir, xr); x_pix++)
+  				for (x_pix = std::max(oil, xl); x_pix < std::min(oir, xr); x_pix++)
   					  sum += in.pixelAt(x_pix, y_pix); 
 //  					{ sum += in.pixelAt(x_pix, y_pix); if (x_pix>700) break; }
 //printf("x_pix:%d, oir:%d, xr:%d, min:%d, x_pix < min(oir, xr):%d\n",x_pix,oir,xr,min(oir, xr),x_pix < (min(oir, xr)));
   				if (xr < oir)
   					sum += in.pixelAt(xr, y_pix) * xrf;
   			}
-  			for (x_pix = max(oil, xl); x_pix < min(oir, xr); x_pix++) {
+  			for (x_pix = std::max(oil, xl); x_pix < std::min(oir, xr); x_pix++) {
   				if (yt >= oit)
   					sum -= in.pixelAt(x_pix, yt) * ytf;
   				if (yb < oib)

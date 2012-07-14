@@ -68,7 +68,7 @@ float RegressorSVR::kernel(unsigned char* data, unsigned char* support, int nonL
 
 }
 
-int RegressorSVR::load(const char* filename)
+int RegressorSVR::load(const std::string filename)
 {
 	//char* configFile = "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat";
 	std::cout << "[RegrSVR] Loading " << filename << std::endl;
@@ -154,13 +154,13 @@ int RegressorSVR::load(const char* filename)
 	pmatfile = matOpen(fn_classifier, "r");
 	if (pmatfile == NULL) {
 		std::cout << "Error: Opening file" << std::endl;
-		return -1;
+		exit(EXIT_FAILURE);
 	}
 
 	pmxarray = matGetVariable(pmatfile, "param_nonlin1");
 	if (pmxarray == 0) {
 		std::cout << "Error: There is a no param_nonlin1 in the file." << std::endl;
-		return 0;
+		exit(EXIT_FAILURE);
 	}
 	std::cout << "[RegrSVR] Reading param_nonlin1" << std::endl;
 	matdata = mxGetPr(pmxarray);
@@ -174,11 +174,11 @@ int RegressorSVR::load(const char* filename)
 	pmxarray = matGetVariable(pmatfile, "support_nonlin1");
 	if (pmxarray == 0) {
 		std::cout << "Error: There is a nonlinear SVM in the file, but the matrix support_nonlin1 is lacking!" << std::endl;
-		return 0;
+		exit(EXIT_FAILURE);
 	} 
 	if (mxGetNumberOfDimensions(pmxarray) != 3) {
 		std::cout << "Error: The matrix support_nonlin1 in the file should have 3 dimensions." << std::endl;
-		return 0;
+		exit(EXIT_FAILURE);
 	}
 	const mwSize *dim = mxGetDimensions(pmxarray);
 	this->numSV = (int)dim[2];
@@ -205,7 +205,7 @@ int RegressorSVR::load(const char* filename)
 	pmxarray = matGetVariable(pmatfile, "weight_nonlin1");
 	if (pmxarray == 0) {
 		std::cout << "Error: There is a nonlinear SVM in the file but the matrix threshold_nonlin is lacking." << std::endl;
-		return 0;
+		exit(EXIT_FAILURE);
 	}
 	matdata = mxGetPr(pmxarray);
 	for (is = 0; is < this->numSV; ++is)

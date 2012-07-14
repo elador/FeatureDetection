@@ -7,11 +7,12 @@ MatlabReader::MatlabReader(void)
 	this->matFile = NULL;
 }
 
-MatlabReader::MatlabReader(const char* filename)
+MatlabReader::MatlabReader(const std::string filename)
 {
-	this->matFile = matOpen(filename, "r");
+	this->matFile = matOpen(filename.c_str(), "r");
 	if (this->matFile == 0) {
-		std::cout << "MatlabReader: Error: Unable to open file" << filename << std::endl;
+		std::cout << "[MatlabReader] Error: Unable to open file " << filename << std::endl;
+		exit(EXIT_FAILURE);
 		return;
 	}
 	std::cout << "[MatlabReader] opened " << filename << std::endl;
@@ -21,7 +22,7 @@ MatlabReader::~MatlabReader(void)
 {
 	if(this->matFile!=NULL) {
 		if (matClose(this->matFile) != 0) {
-			std::cout << "MatlabReader: Error closing file" << std::endl;
+			std::cout << "[MatlabReader] Error closing file." << std::endl;
 		}
 	}
 }
@@ -30,7 +31,7 @@ MatlabReader::~MatlabReader(void)
 int MatlabReader::getKey(const char *key, char *buffer) // liest einen Key oder eine Section
 {
 	if (this->matFile==NULL) {
-		std::cout << "MatlabReader: Error: file not opened" << std::endl;
+		std::cout << "[MatlabReader] Error: file not opened." << std::endl;
 		return false;
 	} else {
 		char sc[255]="",ky[255]="";

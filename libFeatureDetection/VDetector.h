@@ -13,7 +13,7 @@ public:
 	std::string getIdentifier();
 	void setIdentifier(std::string);
 
-	char outputPath[_MAX_PATH];
+	char outputPath[_MAX_PATH];	// TODO: Delete this / use std::string
 	int expected_num_faces[2];
 
 	Rect roi;

@@ -12,7 +12,7 @@ public:
 	std::vector<FdPatch*> eliminate(std::vector<FdPatch*>&, std::string);
 	std::vector<FdPatch*> exp_num_fp_elimination(std::vector<FdPatch*>&, std::string);
 
-	int load(const char*);
+	int load(const std::string);
 
 	std::string getIdentifier();
 	void setIdentifier(std::string);

@@ -29,7 +29,7 @@ int main(int argc, char *argv[])		// Peter
 {
 	#ifdef WIN32
 	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF ); // dump leaks at return
-	//_CrtSetBreakAlloc(17534);
+	//_CrtSetBreakAlloc(287);
 	#endif
 	
 	int verbose_level_text;
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])		// Peter
 		return 1;
 	}
 
-	char* fn_detFrontal = "D:\\FeatureDetection\\config\\fdetection\\fd_config_ffd_fd.mat";
+	std::string fn_detFrontal = "C:\\Users\\Patrik\\Documents\\GitHub\\config\\fdetection\\fd_config_ffd_fd.mat";
 	
 	FdImage *myimg;
 

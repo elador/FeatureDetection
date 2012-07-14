@@ -11,7 +11,7 @@ public:
 	CascadeWvmOeSvmOe(void);
 	~CascadeWvmOeSvmOe(void);
 
-	CascadeWvmOeSvmOe(char* matfile);
+	CascadeWvmOeSvmOe(const std::string matfile);
 
 	int init_for_image(FdImage*);
 	int detect_on_image(FdImage*);

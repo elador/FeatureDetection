@@ -9,7 +9,7 @@ public:
 	RegressorSVR(void);
 	~RegressorSVR(void);
 
-	int load(const char*);
+	int load(const std::string);
 	int init_for_image(FdImage*);
 	bool classify(FdPatch*);
 

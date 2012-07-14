@@ -55,16 +55,16 @@ int VDetectorVectorMachine::initPyramids( FdImage *img )
 	//int numSubsamplingLevels = subsamplingLevels;
 	// with 2^x=b => log(b)=x, l: levels, f: factor, w: weight =>
 	// w*f^l = 20 => f^l = 20/w => l*log(f) = log(20/w)  =>   l = log(20/w) / log(f)
-	subsamplingLevelEnd = (int) min(
+	subsamplingLevelEnd = (int) std::min(
 		floor(log(filter_size_x/(float)img->w)/log(subsamplingFactor)),
 		floor(log(filter_size_y/(float)img->h)/log(subsamplingFactor)) );
 
-	subsamplingLevelStart = (int) min(
+	subsamplingLevelStart = (int) std::min(
 		subsamplingLevelEnd,
-		floor(log(filter_size_y/(float)max(filter_size_y, subsamplingMinHeight))/log(subsamplingFactor)) );
+		(int)floor(log(filter_size_y/(float)std::max(filter_size_y, subsamplingMinHeight))/log(subsamplingFactor)) );
 
 	if (subsamplingLevelEnd != -1) // never? if not set in config, WARNING and is 0
- 		subsamplingLevelEnd = min(subsamplingLevelEnd, subsamplingLevelStart+numSubsamplingLevels-1);
+ 		subsamplingLevelEnd = std::min(subsamplingLevelEnd, subsamplingLevelStart+numSubsamplingLevels-1);
  
  	if(subsamplingLevelEnd<=0) {
 		fprintf(stderr,"\n\nERROR: subsamplingLevels(%d)<=0 => Image to small (h,w:%d,%d)\n",subsamplingLevelEnd,img->h,img->w);
@@ -140,14 +140,14 @@ int VDetectorVectorMachine::extractToPyramids(FdImage *img)
 		Rect roi((int)(this->roi_inImg.left*coef), (int)(this->roi_inImg.top*coef), (int)(this->roi_inImg.right*coef), (int)(this->roi_inImg.bottom*coef));
 
 		int stepsize_from_config = 1;
-		int ss=max(1, int(coef * stepsize_from_config + 0.5f)); // stepsize, from config
+		int ss=std::max(1, int(coef * stepsize_from_config + 0.5f)); // stepsize, from config
 		//int ss = 1;
 		printf("[VDetVecMach] Scale: %d: faceh:%d, coef:%1.4f, step:%d (%1.4f)\n",current_scale,(int)(filter_size_y/coef),coef,ss,coef * stepsize_from_config);
-		int h_prim = min(pyrh-filter_size_y/2,roi.bottom);
-		int w_prim = min(pyrw-filter_size_x/2,roi.right);
+		int h_prim = std::min(pyrh-filter_size_y/2,roi.bottom);
+		int w_prim = std::min(pyrw-filter_size_x/2,roi.right);
 		int y1, y2, x1, x2;
-		for (int y = max(roi.top,filter_size_y/2),y1=y-filter_size_y/2,y2=y+filter_size_y/2-1; y < h_prim; y+=ss,y1+=ss,y2+=ss) {
-			for (int x = max(filter_size_x/2,roi.left),x1=x-filter_size_x/2,x2=x+filter_size_x/2-1; x < w_prim; x+=ss,x1+=ss,x2+=ss) {
+		for (int y = std::max(roi.top,filter_size_y/2),y1=y-filter_size_y/2,y2=y+filter_size_y/2-1; y < h_prim; y+=ss,y1+=ss,y2+=ss) {
+			for (int x = std::max(filter_size_x/2,roi.left),x1=x-filter_size_x/2,x2=x+filter_size_x/2-1; x < w_prim; x+=ss,x1+=ss,x2+=ss) {
 				
 				//Check if the patch is already in the Set
 				FdPatch* fp = new FdPatch();	// we dont have to delete this because the FdPatchSet takes ownership!
