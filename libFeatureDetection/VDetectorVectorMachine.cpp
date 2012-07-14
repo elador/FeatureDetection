@@ -88,7 +88,7 @@ int VDetectorVectorMachine::initPyramids( FdImage *img )
 		subsampfac = NULL;
 	}*/
 	if(subsampfac.size()>0)	// If I come here and its not empty, then I need to delete it, because I'm working on a completely new image!
-		subsampfac.empty();
+		subsampfac.clear();	// The "if" here might be unnecessary?
 
 	if(pyramid_widths!=NULL) {
 		delete[] pyramid_widths;
@@ -149,9 +149,9 @@ int VDetectorVectorMachine::extractToPyramids(FdImage *img)
 		printf("[VDetVecMach] Scale: %d: faceh:%d, coef:%1.4f, step:%d (%1.4f)\n",current_scale,(int)(filter_size_y/coef),coef,ss,coef * stepsize_from_config);
 		int h_prim = std::min(pyrh-filter_size_y/2,roi.bottom);
 		int w_prim = std::min(pyrw-filter_size_x/2,roi.right);
-		int y1, y2, x1, x2;
-		for (int y = std::max(roi.top,filter_size_y/2),y1=y-filter_size_y/2,y2=y+filter_size_y/2-1; y < h_prim; y+=ss,y1+=ss,y2+=ss) {
-			for (int x = std::max(filter_size_x/2,roi.left),x1=x-filter_size_x/2,x2=x+filter_size_x/2-1; x < w_prim; x+=ss,x1+=ss,x2+=ss) {
+		
+		for (int y = std::max(roi.top,filter_size_y/2); y < h_prim; y+=ss) {
+			for (int x = std::max(filter_size_x/2,roi.left); x < w_prim; x+=ss) {
 				
 				//Check if the patch is already in the Set
 				FdPatch* fp = new FdPatch();	// we dont have to delete this because the FdPatchSet takes ownership!

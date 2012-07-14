@@ -88,8 +88,8 @@ bool DetectorWVM::classify(FdPatch* fp)
 		std::cout << "[DetectorWVM] An element 'fout' already exists for this detector. 'fout' not changed. You ran the same detector twice over a patch." << std::endl;
 	}
 	std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]))));
-	if(fout_insert.second == false) {
-		std::cout << "[DetectorWVM] An element 'fout' already exists for this detector. 'fout' not changed. You ran the same detector twice over a patch." << std::endl;
+	if(certainty_insert.second == false) {
+		std::cout << "[DetectorWVM] An element 'certainty' already exists for this detector. 'certainty' not changed. You ran the same detector twice over a patch." << std::endl;
 	}
 	//fp->certainty = 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]));
 	// TODO: filter statistics, nDropedOutAsNonFace[filter_level]++;
