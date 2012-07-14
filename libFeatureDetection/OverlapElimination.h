@@ -1,7 +1,11 @@
 #pragma once
 
 #include "MatlabReader.h"
-#include <iterator>
+
+#include <vector>
+#include <iostream>
+
+class FdPatch;
 
 class OverlapElimination
 {

@@ -1,5 +1,9 @@
 #pragma once
 
+#include "mat.h"
+
+#include <string>
+
 class MatlabReader
 {
 public:

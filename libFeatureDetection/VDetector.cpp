@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include "VDetector.h"
 
+#include "SLogger.h"
+
+//#include "Rect.h"
+#include "FdImage.h"
 
 VDetector::VDetector(void)
 {

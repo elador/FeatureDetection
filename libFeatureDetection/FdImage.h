@@ -1,6 +1,8 @@
 #pragma once
 #include "StdImage.h"
 #include "Pyramid.h"
+#include <iostream>
+#include <map>
 
 typedef std::map<int, Pyramid*> PyramidMap;
 

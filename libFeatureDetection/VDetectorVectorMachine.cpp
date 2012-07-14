@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "VDetectorVectorMachine.h"
 
+#include "FdImage.h"
 
 VDetectorVectorMachine::VDetectorVectorMachine(void)
 {

@@ -14,20 +14,21 @@
 
 
 // TODO: reference additional headers your program requires here
-#include <iostream>
-#include <sstream>
-#include <iomanip> // setprecision
+//#include <iostream>
+//#include <sstream>
+//#include <iomanip> // setprecision
+//#include <algorithm> // for min/max
 
-#include <cstdlib>
+//#include <cstdlib>	// for exit()
 
-#include "mat.h"
-#include "opencv2/core/core.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/highgui/highgui.hpp"
+//#include "mat.h"
+//#include "opencv2/core/core.hpp"
+//#include "opencv2/imgproc/imgproc.hpp"
+//#include "opencv2/highgui/highgui.hpp"
 
-#include <set>
-#include <map>
+//#include <set>
+//#include <map>
 
-#include "utility.h"
+//#include "utility.h"
 
-#include "SLogger.h"
+//#include "SLogger.h"

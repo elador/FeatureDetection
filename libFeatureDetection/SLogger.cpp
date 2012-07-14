@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "SLogger.h"
 
+#include "FdPatch.h"
+#include "FdImage.h"
+
 
 SLogger::SLogger(void)
 {

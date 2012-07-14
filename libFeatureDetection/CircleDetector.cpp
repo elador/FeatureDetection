@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include "CircleDetector.h"
 
+#include "FdImage.h"
+
+#include "opencv2/core/core.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
 
 CircleDetector::CircleDetector(void)
 {

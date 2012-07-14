@@ -1,6 +1,10 @@
 #pragma once
+
+#include <string>
 #include "Rect.h"
-#include "FdImage.h"
+
+//class Rect;
+class FdImage;
 
 class VDetector
 {

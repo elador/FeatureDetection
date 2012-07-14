@@ -1,6 +1,11 @@
 #include "stdafx.h"
 #include "OverlapElimination.h"
 
+#include "FdPatch.h"
+
+#include <vector>
+#include <algorithm>
+#include <iostream>
 
 OverlapElimination::OverlapElimination(void)
 {

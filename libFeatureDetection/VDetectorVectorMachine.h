@@ -1,8 +1,10 @@
 #pragma once
 #include "VDetector.h"
-#include "FdImage.h"
-#include "Rect.h"
+
 #include "utility.h"
+
+#include <iostream>
+#include <vector>
 
 class VDetectorVectorMachine : public VDetector
 {

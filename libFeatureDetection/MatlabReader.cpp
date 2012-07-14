@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "MatlabReader.h"
 
+#include <iostream>
 
 MatlabReader::MatlabReader(void)
 {

@@ -1,13 +1,20 @@
 #pragma once
-#include "FdPatch.h"
-#include "FdImage.h"
-//#include "Pyramid.h"
+
+#include <iostream>
+#include <iomanip>
+#include <vector>
+#include <string>
+#include "opencv2/core/core.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
+
+class FdImage;
+class Pyramid;
+class FdPatch;
+typedef std::map<int, Pyramid*> PyramidMap;
 
 #define Logger SLogger::Instance()
 
-class FdImage;
-//typedef std::map<int, Pyramid*> PyramidMap;
-//typedef PyramidMap;
 
 class SLogger
 {
