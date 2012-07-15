@@ -28,6 +28,15 @@ RegressorSVR::~RegressorSVR(void)
 bool RegressorSVR::classify(FdPatch* fp)
 {
 	//std::cout << "[RegrSVR] Classifying!\n";
+
+	// Check if the patch has already been classified by this detector! If yes, don't do it again.
+	FoutMap::iterator it = fp->fout.find(this->getIdentifier());
+	if(it!=fp->fout.end()) {	// The fout value is already in the map
+								// Assumption: When fp->fout is not found, we assume that also fp->certainty is not yet set! This assumption should always hold.
+		std::cout << "[RegressorSVR] An element 'fout' already exists for this detector. 'fout' not changed. Not running the same detector twice over a patch." << std::endl;
+		return true;
+	} // else: The fout value is not already computed. Go ahead.
+
 	
 	float res = -this->nonlin_threshold;	// TODO ASK MR Why minus???
 	for (int i = 0; i != this->numSV; ++i) {
@@ -36,7 +45,7 @@ bool RegressorSVR::classify(FdPatch* fp)
 	//fp->fout = res;
 	std::pair<FoutMap::iterator, bool> fout_insert = fp->fout.insert(FoutMap::value_type(this->identifier, res));
 	if(fout_insert.second == false) {
-		std::cout << "[RegressorSVR] An element 'fout' already exists for this detector. 'fout' not changed. You ran the same detector twice over a patch." << std::endl;
+		std::cout << "[RegressorSVR] An element 'fout' already exists for this detector, you classified the same patch twice. This should never happen." << std::endl;
 	}
 	//fp->certainty = NOTCOMPUTED; //1.0f / (1.0f + exp(posterior_svm[0]*res + posterior_svm[1]));
 	//std::cout << fp->fout << ", " << fp->certainty << std::endl;

@@ -31,6 +31,18 @@ DetectorSVM::~DetectorSVM(void)
 bool DetectorSVM::classify(FdPatch* fp)
 {
 	//std::cout << "[DetSVM] Classifying!\n";
+
+	// Check if the patch has already been classified by this detector! If yes, don't do it again.
+	FoutMap::iterator it = fp->fout.find(this->getIdentifier());
+	if(it!=fp->fout.end()) {	// The fout value is already in the map
+								// Assumption: When fp->fout is not found, we assume that also fp->certainty is not yet set! This assumption should always hold.
+		std::cout << "[DetectorSVM] An element 'fout' already exists for this detector. 'fout' not changed. Not running the same detector twice over a patch." << std::endl;
+		if (it->second >= this->limit_reliability) {
+			return true;
+		} else {
+			return false;
+		}
+	} // else: The fout value is not already computed. Go ahead.
 	
 	float res = -this->nonlin_threshold;	// TODO ASK MR Why minus???
 	for (int i = 0; i != this->numSV; ++i) {
@@ -39,12 +51,12 @@ bool DetectorSVM::classify(FdPatch* fp)
 	//fp->fout = res;
 	std::pair<FoutMap::iterator, bool> fout_insert = fp->fout.insert(FoutMap::value_type(this->identifier, res));
 	if(fout_insert.second == false) {
-		std::cout << "[DetectorSVM] An element 'fout' already exists for this detector. 'fout' not changed. You ran the same detector twice over a patch." << std::endl;
+		std::cout << "[DetectorSVM] An element 'fout' already exists for this detector, you classified the same patch twice. This should never happen." << std::endl;
 	}
 	//fp->certainty = 1.0f / (1.0f + exp(posterior_svm[0]*res + posterior_svm[1]));
 	std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 1.0f / (1.0f + exp(posterior_svm[0]*res + posterior_svm[1]))));
 	if(certainty_insert.second == false) {
-		std::cout << "[DetectorSVM] An element 'certainty' already exists for this detector. 'certainty' not changed. You ran the same detector twice over a patch." << std::endl;
+		std::cout << "[DetectorSVM] An element 'certainty' already exists for this detector, you classified the same patch twice. This should never happen." << std::endl;
 	}
 	
 	if (res >= this->limit_reliability) {

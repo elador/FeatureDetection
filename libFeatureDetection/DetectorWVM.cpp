@@ -62,6 +62,14 @@ bool DetectorWVM::classify(FdPatch* fp)
 {
 	//std::cout << "[DetWVM] Classifying!\n";
 
+	// Check if the patch has already been classified by this detector! If yes, don't do it again.
+	// OK. We can't do this here! Because we do not know/save "filter_level". So we don't know when
+	// the patch dropped out. Only the fout-value is not sufficient. So we can't know if we should
+	// return true or false.
+	// Possible solution: Store the filter_level somewhere.
+
+	// So: The fout value is not already computed. Go ahead.
+
 	// patch II of fp already calc'ed?
 	if(fp->iimg_x == NULL) {
 		fp->iimg_x = new IImg(this->filter_size_x, this->filter_size_y, 8);
@@ -85,11 +93,11 @@ bool DetectorWVM::classify(FdPatch* fp)
 	//fp->fout = fout;
 	std::pair<FoutMap::iterator, bool> fout_insert = fp->fout.insert(FoutMap::value_type(this->identifier, fout));
 	if(fout_insert.second == false) {
-		std::cout << "[DetectorWVM] An element 'fout' already exists for this detector. 'fout' not changed. You ran the same detector twice over a patch." << std::endl;
+		std::cout << "[DetectorWVM] An element 'fout' already exists for this detector, you classified the same patch twice. This should never happen." << std::endl;
 	}
 	std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]))));
 	if(certainty_insert.second == false) {
-		std::cout << "[DetectorWVM] An element 'certainty' already exists for this detector. 'certainty' not changed. You ran the same detector twice over a patch." << std::endl;
+		std::cout << "[DetectorWVM] An element 'certainty' already exists for this detector, you classified the same patch twice. This should never happen." << std::endl;
 	}
 	//fp->certainty = 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]));
 	// TODO: filter statistics, nDropedOutAsNonFace[filter_level]++;

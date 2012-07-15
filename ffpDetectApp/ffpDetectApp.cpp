@@ -216,6 +216,7 @@ int main(int argc, char *argv[])		// Peter
 	return 0;
 }
 
+	// My cmdline-arguments: -f C:\Users\Patrik\Documents\GitHub\data\firstrun\theRealWorld_png2.lst
 
 	// TODO important:
 	// getPatchesROI Bug bei skalen, schraeg verschoben (?) bei x,y=0, s=1 sichtbar. No, I think I looked at this with MR, and the code was actually correct?
