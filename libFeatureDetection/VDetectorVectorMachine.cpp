@@ -5,6 +5,7 @@
 #include "Pyramid.h"
 
 #include <iostream>
+#include <cstdio>
 
 VDetectorVectorMachine::VDetectorVectorMachine(void)
 {

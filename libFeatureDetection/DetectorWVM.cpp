@@ -6,6 +6,7 @@
 #include "IImg.h"
 
 #include <iostream>
+#include <cmath>
 
 DetectorWVM::DetectorWVM(void)
 {

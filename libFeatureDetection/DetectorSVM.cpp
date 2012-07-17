@@ -5,6 +5,7 @@
 #include "FdPatch.h"
 
 #include <iostream>
+#include <cmath>
 
 DetectorSVM::DetectorSVM(void)
 {

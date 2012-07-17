@@ -31,7 +31,7 @@ protected:
 					//Values: float (0.0: off; >0.0, <=1.0: on), e.g. smallest/larges feature < maxratio => same cluster; Default: 0.65
 					//pp_oe_percent[1];
 
-	char outputPath[_MAX_PATH];
+	char outputPath[255];
 	int expected_num_faces[2];
 
 	std::string identifier;

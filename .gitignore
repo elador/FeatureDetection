@@ -19,3 +19,12 @@
 
 # Ignore MS Visual Studio 2010 ipch files/folder
 #*.ipch
+
+# Ignore Eclipse project files
+.project
+.cproject
+
+# Debug/Release directories
+Debug/
+Release/
+

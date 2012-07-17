@@ -154,22 +154,22 @@ ELSE(WIN32)
 
   # Get path to the MEX libraries
   EXECUTE_PROCESS(
-    COMMAND find "${MATLAB_ROOT}/bin" -name libmex${LIBRARY_EXTENSION}
+    COMMAND find "${MATLAB_ROOT}/extern/lib" -name libmex${LIBRARY_EXTENSION}
     COMMAND xargs echo -n
     OUTPUT_VARIABLE MATLAB_MEX_LIBRARY
     )
   EXECUTE_PROCESS(
-    COMMAND find "${MATLAB_ROOT}/bin" -name libmx${LIBRARY_EXTENSION}
+    COMMAND find "${MATLAB_ROOT}/extern/lib" -name libmx${LIBRARY_EXTENSION}
     COMMAND xargs echo -n
     OUTPUT_VARIABLE MATLAB_MX_LIBRARY
     )
   EXECUTE_PROCESS(
-    COMMAND find "${MATLAB_ROOT}/bin" -name libmat${LIBRARY_EXTENSION}
+    COMMAND find "${MATLAB_ROOT}/extern/lib" -name libmat${LIBRARY_EXTENSION}
     COMMAND xargs echo -n
     OUTPUT_VARIABLE MATLAB_MAT_LIBRARY
     )
   EXECUTE_PROCESS(
-    COMMAND find "${MATLAB_ROOT}/bin" -name libeng${LIBRARY_EXTENSION}
+    COMMAND find "${MATLAB_ROOT}/extern/lib" -name libeng${LIBRARY_EXTENSION}
     COMMAND xargs echo -n
     OUTPUT_VARIABLE MATLAB_ENG_LIBRARY
     )

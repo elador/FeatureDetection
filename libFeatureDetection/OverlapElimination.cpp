@@ -7,6 +7,7 @@
 #include <vector>
 #include <algorithm>
 #include <iostream>
+#include <cstring>
 
 OverlapElimination::OverlapElimination(void)
 {

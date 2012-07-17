@@ -2,6 +2,7 @@
 #include "MatlabReader.h"
 
 #include <iostream>
+#include <cstring>
 
 MatlabReader::MatlabReader(void)
 {

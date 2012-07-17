@@ -6,6 +6,7 @@
 #include "IImg.h"
 
 #include <iostream>
+#include <cmath>
 
 RegressorWVR::RegressorWVR(void)
 {
@@ -235,7 +236,7 @@ float RegressorWVR::lin_eval_wvm_histeq64(
 
 	//3rd term: p'*p (convolution of the appr. RSV - constrant calculated at the training)
 	//spp_begin = clock();
-	sum_pp=app_rsv_convol[level]; // patrik: überflüssig?
+	sum_pp=app_rsv_convol[level]; // patrik: ï¿½berflï¿½ssig?
 	norm_new+=app_rsv_convol[level];
 	//Profiler.spp += (double)(clock()-spp_begin);
 
@@ -335,8 +336,8 @@ int RegressorWVR::load(const std::string filename)
 	else this->numUsedFilter=std::max(0,atoi(buff));
 
 	//Grenze der Zuverlaesigkeit ab der Gesichter aufgenommen werden (Diffwert fr W-RSV's-Schwellen)
-	// zB. +0.1 => weniger patches drüber(mehr rejected, langsamer),    dh. mehr fn(FRR), weniger fp(FAR)  und
-	// zB. -0.1 => mehr patches drüber(mehr nicht rejected, schneller), dh. weniger fn(FRR), mehr fp(FAR)
+	// zB. +0.1 => weniger patches drï¿½ber(mehr rejected, langsamer),    dh. mehr fn(FRR), weniger fp(FAR)  und
+	// zB. -0.1 => mehr patches drï¿½ber(mehr nicht rejected, schneller), dh. weniger fn(FRR), mehr fp(FAR)
 	//We don't need this for Regression!
 	/*if (!configReader->getKey("FD.limit_reliability_filter",buff))
 		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %g\n",
