@@ -58,7 +58,9 @@ int FdImage::load(const std::string filename)
 	this->h = this->data_matgray.rows;
 
 	this->data = new unsigned char[w*h];
-	std::cout << "[FdImage] Allocating space for image. Cols(=width): " << w << ", Rows(=height): " << h << ", Size: " << w*h << std::endl;
+	if(Logger->getVerboseLevelText()>=2) {
+		std::cout << "[FdImage] Allocating space for image. Cols(=width): " << w << ", Rows(=height): " << h << ", Size: " << w*h << std::endl;
+	}
 
 	for (int i=0; i<this->data_matgray.rows; i++)
 	{
@@ -132,17 +134,23 @@ int FdImage::load(const cv::Mat* mat)
 //int FdImage::createPyramid(float factorFromOrig, float subsampFacForOneDown)
 int FdImage::createPyramid(int pyrIdx, int* pyrWidthList, std::string detectorId)
 {
-	std::cout << "[FdImage] Creating pyramid (w=" << pyrWidthList[pyrIdx] << ")";
+	if(Logger->getVerboseLevelText()>=3) {
+		std::cout << "[FdImage] Creating pyramid (w=" << pyrWidthList[pyrIdx] << ")";
+	}
 	//calc width
 	//int pyr_width = (int)(this->w*factorFromOrig+0.5);
 	PyramidMap::iterator it = this->pyramids.find(pyrWidthList[pyrIdx]);
 	if(it != this->pyramids.end()) {
 		// already in map
-		std::cout << "... skipping, already created" << std::endl;
+		if(Logger->getVerboseLevelText()>=3) {
+			std::cout << "... skipping, already created" << std::endl;
+		}
 		it->second->detectorIds.insert(detectorId);
 		return 1;
 	}
-	std::cout << std::endl;
+	if(Logger->getVerboseLevelText()>=3) {
+		std::cout << std::endl;
+	}
 	// else: create pyramid
 	// check if one-step-larger already exists. If yes, use that.
 	//pyr_width = (int)(pyr_width/subsampFacForOneDown+0.5);

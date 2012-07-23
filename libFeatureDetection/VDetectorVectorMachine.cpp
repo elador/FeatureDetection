@@ -3,6 +3,7 @@
 
 #include "FdImage.h"
 #include "Pyramid.h"
+#include "SLogger.h"
 
 #include <iostream>
 
@@ -75,14 +76,15 @@ int VDetectorVectorMachine::initPyramids( FdImage *img )
  		return(-1);
  	}
 
-	printf("[VDetVecMach] subsamplingLevels:%g^%d->%g^%d (img(h,w:)%d,%d) => imgh min:%d, max:%d; => face_h min:%d, max:%d; maxpossiblelev(w,h):%g,%g, arg.maxlev:%d\n",
- 		subsamplingFactor,subsamplingLevelStart,subsamplingFactor,subsamplingLevelEnd,img->h,img->w,
- 		(int)(img->h*(float)pow(subsamplingFactor,subsamplingLevelEnd)), (int)(img->h*(float)pow(subsamplingFactor,subsamplingLevelStart)),
- 		(int)(filter_size_y/(float)pow(subsamplingFactor,subsamplingLevelStart)), (int)(filter_size_y/(float)pow(subsamplingFactor,subsamplingLevelEnd)),
- 		floor(log(filter_size_x/(float)img->w)/log(subsamplingFactor)),
- 		floor(log(filter_size_y/(float)img->h)/log(subsamplingFactor)), numSubsamplingLevels
- 		);
-
+	if(Logger->getVerboseLevelText()>=3) {
+		printf("[VDetVecMach] subsamplingLevels:%g^%d->%g^%d (img(h,w:)%d,%d) => imgh min:%d, max:%d; => face_h min:%d, max:%d; maxpossiblelev(w,h):%g,%g, arg.maxlev:%d\n",
+ 			subsamplingFactor,subsamplingLevelStart,subsamplingFactor,subsamplingLevelEnd,img->h,img->w,
+ 			(int)(img->h*(float)pow(subsamplingFactor,subsamplingLevelEnd)), (int)(img->h*(float)pow(subsamplingFactor,subsamplingLevelStart)),
+ 			(int)(filter_size_y/(float)pow(subsamplingFactor,subsamplingLevelStart)), (int)(filter_size_y/(float)pow(subsamplingFactor,subsamplingLevelEnd)),
+ 			floor(log(filter_size_x/(float)img->w)/log(subsamplingFactor)),
+ 			floor(log(filter_size_y/(float)img->h)/log(subsamplingFactor)), numSubsamplingLevels
+ 			);
+	}
 	/*if(subsampfac!=NULL) {
 		delete[] subsampfac;
 		subsampfac = NULL;
@@ -131,7 +133,9 @@ int VDetectorVectorMachine::initPyramids( FdImage *img )
 
 int VDetectorVectorMachine::extractToPyramids(FdImage *img)
 {
-	std::cout << "[VDetVecMach] Extracting..." << std::endl;
+	if(Logger->getVerboseLevelText()>=2) {
+		std::cout << "[VDetVecMach] Extracting..." << std::endl;
+	}
 	//for(int current_scale = 0; current_scale < this->numSubsamplingLevels; current_scale++) {// TODO: Careful: numSubsamplingLevels is not necessarily the actual number of available pyramids. if the image is too small, it may be less...
 	for(int current_scale = this->numSubsamplingLevels-1; current_scale >=0 ; current_scale--) {
 
@@ -146,7 +150,9 @@ int VDetectorVectorMachine::extractToPyramids(FdImage *img)
 		int stepsize_from_config = 1;
 		int ss=std::max(1, int(coef * stepsize_from_config + 0.5f)); // stepsize, from config
 		//int ss = 1;
-		printf("[VDetVecMach] Scale: %d: faceh:%d, coef:%1.4f, step:%d (%1.4f)\n",current_scale,(int)(filter_size_y/coef),coef,ss,coef * stepsize_from_config);
+		if(Logger->getVerboseLevelText()>=3) {
+			printf("[VDetVecMach] Scale: %d: faceh:%d, coef:%1.4f, step:%d (%1.4f)\n",current_scale,(int)(filter_size_y/coef),coef,ss,coef * stepsize_from_config);
+		}
 		int h_prim = std::min(pyrh-filter_size_y/2,roi.bottom);
 		int w_prim = std::min(pyrw-filter_size_x/2,roi.right);
 		
@@ -326,8 +332,9 @@ Additionally, returns a vec with pointer to candidates (which are PatchList) whi
 */
 std::vector<FdPatch*> VDetectorVectorMachine::detect_on_image(FdImage *img)
 {
-
-	std::cout << "[VDetVecMach] Detecting on image..." << std::endl;
+	if(Logger->getVerboseLevelText()>=2) {
+		std::cout << "[VDetVecMach] Detecting on image..." << std::endl;
+	}
 	std::vector<FdPatch*> candidates;
 
 	//for(int current_scale = 0; current_scale < this->numSubsamplingLevels; current_scale++) {// TODO: Careful: numSubsamplingLevels is not necessarily the actual number of available pyramids. if the image is too small, it may be less...
@@ -356,7 +363,9 @@ std::vector<FdPatch*> VDetectorVectorMachine::detect_on_image(FdImage *img)
 //		-SVM: All >0 (respectively limit_reliability)
 std::vector<FdPatch*> VDetectorVectorMachine::detect_on_patchvec(std::vector<FdPatch*> &patchvec)
 {
-	std::cout << "[VDetVecMach] Detecting on list of patches..." << std::endl;
+	if(Logger->getVerboseLevelText()>=2) {
+		std::cout << "[VDetVecMach] Detecting on list of patches..." << std::endl;
+	}
 	std::vector<FdPatch*> candidates;
 
 	bool passed = false;

@@ -4,6 +4,7 @@
 #include "MatlabReader.h"
 #include "FdPatch.h"
 #include "IImg.h"
+#include "SLogger.h"
 
 #include <iostream>
 
@@ -93,11 +94,15 @@ bool DetectorWVM::classify(FdPatch* fp)
 	//fp->fout = fout;
 	std::pair<FoutMap::iterator, bool> fout_insert = fp->fout.insert(FoutMap::value_type(this->identifier, fout));
 	if(fout_insert.second == false) {
-		std::cout << "[DetectorWVM] An element 'fout' already exists for this detector, you classified the same patch twice. This should never happen." << std::endl;
+		if(Logger->getVerboseLevelText()>=4) {
+			std::cout << "[DetectorWVM] An element 'fout' already exists for this detector, you classified the same patch twice. We can't circumvent this for now." << std::endl;
+		}
 	}
 	std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]))));
 	if(certainty_insert.second == false) {
-		std::cout << "[DetectorWVM] An element 'certainty' already exists for this detector, you classified the same patch twice. This should never happen." << std::endl;
+		if(Logger->getVerboseLevelText()>=4) {
+			std::cout << "[DetectorWVM] An element 'certainty' already exists for this detector, you classified the same patch twice. We can't circumvent this for now." << std::endl;
+		}
 	}
 	//fp->certainty = 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]));
 	// TODO: filter statistics, nDropedOutAsNonFace[filter_level]++;
@@ -271,21 +276,27 @@ float DetectorWVM::lin_eval_wvm_histeq64(
 
 int DetectorWVM::load(const std::string filename)
 {
-	//char* configFile = "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat";
-	std::cout << "[DetWVM] Loading " << filename << std::endl;
-
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetWVM] Loading " << filename << std::endl;
+	}
+	
 	MatlabReader *configReader = new MatlabReader(filename);
 	int id;
 	char buff[255], key[255], pos[255];
 
-	if(!configReader->getKey("FD.ffp", buff))	// which feature point does this detector detect?
+	if(!configReader->getKey("FD.ffp", buff)) {	// which feature point does this detector detect?
 		std::cout << "Warning: Key in Config nicht gefunden, key:'" << "FD.ffp" << "'" << std::endl;
-	else
-		std::cout << "[DetWVM] ffp: " << atoi(buff) << std::endl;
+	} else {
+		if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+			std::cout << "[DetWVM] ffp: " << atoi(buff) << std::endl;
+		}
+	}
 
 	if (!configReader->getKey("ALLGINFO.outputdir", this->outputPath)) // Output folder of this detector
 		std::cout << "Warning: Key in Config nicht gefunden, key:'" << "ALLGINFO.outputdir" << "'" << std::endl;
-	std::cout << "[DetWVM] outputdir: " << this->outputPath << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetWVM] outputdir: " << this->outputPath << std::endl;
+	}
 
 	//min. und max. erwartete Anzahl Gesichter im Bild (vorerst null bis eins);											  
 	sprintf(pos,"FD.expected_number_faces.#%d",0);																		  
@@ -298,8 +309,10 @@ int DetectorWVM::load(const std::string filename)
 		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", pos,this->expected_num_faces[1]);
 	else
 		this->expected_num_faces[1]=atoi(buff);
-
-	std::cout << "[DetWVM] expected_num_faces: " << this->expected_num_faces[0] << ", " << this->expected_num_faces[1] << std::endl;
+	
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetWVM] expected_num_faces: " << this->expected_num_faces[0] << ", " << this->expected_num_faces[1] << std::endl;
+	}
 
 	//Grenze der Zuverlaesigkeit ab der Gesichter aufgenommen werden (Diffwert fr SVM-Schwelle)
 	/*if (!configReader->getKey("FD.limit_reliability",buff))
@@ -322,17 +335,23 @@ int DetectorWVM::load(const std::string filename)
 	//Minimale Gesichtsoehe in Pixel 
 	if (!configReader->getInt("FD.face_size_min",&this->subsamplingMinHeight))
 		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", "FD.face_size_min",this->subsamplingMinHeight);
-	std::cout << "[DetWVM] face_size_min: " << this->subsamplingMinHeight << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetWVM] face_size_min: " << this->subsamplingMinHeight << std::endl;
+	}
 	//Anzahl der Skalierungen
 	if (!configReader->getInt("FD.maxscales",&this->numSubsamplingLevels))
 		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", "FD.maxscales",this->numSubsamplingLevels);
-	std::cout << "[DetWVM] maxscales: " << this->numSubsamplingLevels << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetWVM] maxscales: " << this->numSubsamplingLevels << std::endl;
+	}
 	//Scalierungsfaktor 
 	if (!configReader->getKey("FD.scalefactor",buff))
 		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %g\n", "FD.scalefactor",this->subsamplingFactor);
 	else
 		this->subsamplingFactor=(float)atof(buff);
-	std::cout << "[DetWVM] scalefactor: " << this->subsamplingFactor << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetWVM] scalefactor: " << this->subsamplingFactor << std::endl;
+	}
 
 	//Number filters to use
 	if (!configReader->getKey("FD.numUsedFilter",buff))
@@ -362,8 +381,9 @@ int DetectorWVM::load(const std::string filename)
 
 	delete configReader;
 
-	
-	std::cout << "[DetWVM] Loading " << fn_classifier << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetWVM] Loading " << fn_classifier << std::endl;
+	}
 	MATFile *pmatfile;
 	mxArray *pmxarray; // =mat
 	double *matdata;
@@ -381,7 +401,9 @@ int DetectorWVM::load(const std::string filename)
 	matdata = mxGetPr(pmxarray);
 	int nfilter = (int)matdata[0];
 	mxDestroyArray(pmxarray);
-	std::cout << "[DetWVM] Found " << nfilter << " WVM filters" << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetWVM] Found " << nfilter << " WVM filters" << std::endl;
+	}
 
 	pmxarray = matGetVariable(pmatfile, "wrvm");
 	if (pmxarray != 0) { // read area
@@ -482,7 +504,9 @@ int DetectorWVM::load(const std::string filename)
 
 
 	} else {	// read seq.
-		std::cout << "[DetWVM] Unable to find structur 'wrvm', reading the " << nfilter << " non linear filters support_hk* and weight_hk* sequentially (slower)" << std::endl;
+		if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+			std::cout << "[DetWVM] Unable to find structur 'wrvm', reading the " << nfilter << " non linear filters support_hk* and weight_hk* sequentially (slower)" << std::endl;
+		}
 		char str[100];
 		sprintf(str, "support_hk%d", 1);
 		pmxarray = matGetVariable(pmatfile, str);
@@ -548,8 +572,10 @@ int DetectorWVM::load(const std::string filename)
 				}
 				mxDestroyArray(pmxarray);
 			}
-		}	// end for over numHKs	
-		printf("[DetWVM] Done\n");
+		}	// end for over numHKs
+		if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+			printf("[DetWVM] Done\n");
+		}
 	}// end else read vecs/weights sequentially
 	
 	pmxarray = matGetVariable(pmatfile, "param_nonlin1_rvm");
@@ -603,7 +629,9 @@ int DetectorWVM::load(const std::string filename)
 
   
 	//read recangles in area
-	printf("[DetWVM] Reading rectangles in area...\n");
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		printf("[DetWVM] Reading rectangles in area...\n");
+	}
 	pmxarray = matGetVariable(pmatfile, "area");
 	if (pmxarray != 0 && mxIsStruct(pmxarray)) {
 		int r,v,hrsv,w,h;
@@ -714,8 +742,9 @@ int DetectorWVM::load(const std::string filename)
 	if (matClose(pmatfile) != 0) {
 		std::cout << "Error closing file" << std::endl;
 	}
-
-	std::cout << "[DetWVM] Done reading WVM!" << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=1) {
+		std::cout << "[DetWVM] Done reading WVM!" << std::endl;
+	}
 
 
 	
@@ -778,8 +807,9 @@ int DetectorWVM::load(const std::string filename)
 
 	//for (i = 0; i < this->nLinFilters; ++i) printf("b%d=%g ",i+1,this->lin_hierar_thresh[i]);
 	//printf("\n");
-
-	std::cout << "[DetWVM] Done reading WVM-threshold file " << fn_threshold << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=1) {
+		std::cout << "[DetWVM] Done reading WVM-threshold file " << fn_threshold << std::endl;
+	}
 
 	this->stretch_fac = 255.0f/(float)(filter_size_x*filter_size_y);	// HistEq64 initialization
 	

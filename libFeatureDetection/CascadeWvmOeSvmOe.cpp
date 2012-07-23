@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "CascadeWvmOeSvmOe.h"
 
+#include "FdImage.h"
 #include "SLogger.h"
 
 CascadeWvmOeSvmOe::CascadeWvmOeSvmOe(void)
@@ -73,5 +74,10 @@ int CascadeWvmOeSvmOe::detect_on_image(FdImage* myimg)
 	Logger->LogImgDetectorCandidates(myimg, tmp, svm->getIdentifier(), "5ExpNum");
 
 	this->candidates = tmp;
+	
+	if(Logger->getVerboseLevelText()>=1) {
+		std::cout << "[CascadeWvmOeSvmOe] Finished detecting on " << myimg->filename << "." << std::endl;
+	}
+
 	return 1;
 }
