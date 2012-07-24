@@ -3,6 +3,7 @@
 
 #include "MatlabReader.h"
 #include "FdPatch.h"
+#include "SLogger.h"
 
 #include <iostream>
 #include <cmath>
@@ -34,7 +35,9 @@ bool RegressorSVR::classify(FdPatch* fp)
 	FoutMap::iterator it = fp->fout.find(this->getIdentifier());
 	if(it!=fp->fout.end()) {	// The fout value is already in the map
 								// Assumption: When fp->fout is not found, we assume that also fp->certainty is not yet set! This assumption should always hold.
-		std::cout << "[RegressorSVR] An element 'fout' already exists for this detector. 'fout' not changed. Not running the same detector twice over a patch." << std::endl;
+		if(Logger->getVerboseLevelText()>=4) {
+			std::cout << "[RegressorSVR] An element 'fout' already exists for this detector. 'fout' not changed. Not running the same detector twice over a patch." << std::endl;
+		}
 		return true;
 	} // else: The fout value is not already computed. Go ahead.
 

@@ -24,6 +24,11 @@ private:
 public:
 	static SLogger* Instance(void);
 
+	typedef struct textparams {		// Overwrites the default loglevels if set
+		bool outputFullStartup;		// Output all starting messages
+		bool outputPyramidCreation;	// todo
+	};
+
 private:
 	/* struct
 		-for each detector: output each individual patch
@@ -38,9 +43,7 @@ private:
 		bool drawRegressorFoutAsText;	// Requires writeRegressor to be true (of course). Additionally draws the fout-value as text.
 		bool drawScales;				// Draw the scale (box-width) into output images
 	};
-	typedef struct textparams {
-		bool todo;
-	};
+
 
 	typedef struct params {
 		textparams text;
@@ -63,6 +66,7 @@ private:
 public:
 
 	void setVerboseLevelText(int);
+	int getVerboseLevelText(void);
 	void setVerboseLevelImages(int);
 
 	/* Verbose-level Images:
@@ -95,6 +99,20 @@ public:
 	void drawScaleBox(cv::Mat, int, int);	// Draws a box with (w, h) into the original image, to display the size of the detector scales
 	void drawAllScaleBoxes(cv::Mat, const PyramidMap*, std::string, int, int); // Loops through all pyramids and draws a box with (w, h) into the original image, for each pyramid that is used by the given DetectorId.
 	
+
+	/* Verbose-level Text:
+		0: Don't even print a single line of text!
+		1: Output only very few print outputs (like final results if available)
+			On startup, only print final messages.
+		2: A bit more text, e.g. let each detector print a bit
+			On startup, output all.
+		3: Write much more, like full creation of pyramids, ...
+		4: Output really everything, like doubly-classified patches, etc.
+
+		// Todo: structure more logically, like per img?
+	*/
+
+
 	
 	/* Old stuff below! */
 	//void drawSinglePatchYawAngleColor(cv::Mat, FdPatch);	// draws a bounding box around a single e.g. 20x20 patch with the yaw angle color.

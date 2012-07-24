@@ -30,6 +30,11 @@ void SLogger::setVerboseLevelText(int level)
 	this->verboseLevelText = level;
 }
 
+int SLogger::getVerboseLevelText(void)
+{
+	return this->verboseLevelText;
+}
+
 void SLogger::setVerboseLevelImages(int level)
 {
 	this->verboseLevelImages = level;

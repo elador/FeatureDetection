@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "MatlabReader.h"
 
+#include "SLogger.h"
+
 #include <iostream>
 #include <cstring>
 
@@ -17,7 +19,9 @@ MatlabReader::MatlabReader(const std::string filename)
 		exit(EXIT_FAILURE);
 		return;
 	}
-	std::cout << "[MatlabReader] opened " << filename << std::endl;
+	if(Logger->getVerboseLevelText()>=3) {
+		std::cout << "[MatlabReader] opened " << filename << std::endl;
+	}
 }
 
 MatlabReader::~MatlabReader(void)

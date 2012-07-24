@@ -3,6 +3,7 @@
 
 #include "MatlabReader.h"
 #include "FdPatch.h"
+#include "SLogger.h"
 
 #include <iostream>
 #include <cmath>
@@ -37,7 +38,9 @@ bool DetectorSVM::classify(FdPatch* fp)
 	FoutMap::iterator it = fp->fout.find(this->getIdentifier());
 	if(it!=fp->fout.end()) {	// The fout value is already in the map
 								// Assumption: When fp->fout is not found, we assume that also fp->certainty is not yet set! This assumption should always hold.
-		std::cout << "[DetectorSVM] An element 'fout' already exists for this detector. 'fout' not changed. Not running the same detector twice over a patch." << std::endl;
+		if(Logger->getVerboseLevelText()>=4) {
+			std::cout << "[DetectorSVM] An element 'fout' already exists for this detector. 'fout' not changed. Not running the same detector twice over a patch." << std::endl;
+		}
 		if (it->second >= this->limit_reliability) {
 			return true;
 		} else {
@@ -97,21 +100,27 @@ float DetectorSVM::kernel(unsigned char* data, unsigned char* support, int nonLi
 
 int DetectorSVM::load(const std::string filename)
 {
-	//char* configFile = "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat";
-	std::cout << "[DetSVM] Loading " << filename << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetSVM] Loading " << filename << std::endl;
+	}
 
 	MatlabReader *configReader = new MatlabReader(filename);
 	int id;
 	char buff[255], key[255], pos[255];
 
-	if(!configReader->getKey("FD.ffp", buff))	// which feature point does this detector detect?
+	if(!configReader->getKey("FD.ffp", buff)) {	// which feature point does this detector detect?
 		std::cout << "Warning: Key in Config nicht gefunden, key:'" << "FD.ffp" << "'" << std::endl;
-	else
-		std::cout << "[DetSVM] ffp: " << atoi(buff) << std::endl;
+	} else {
+		if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+			std::cout << "[DetSVM] ffp: " << atoi(buff) << std::endl;
+		}
+	}
 
 	if (!configReader->getKey("ALLGINFO.outputdir", this->outputPath)) // Output folder of this detector
 		std::cout << "Warning: Key in Config nicht gefunden, key:'" << "ALLGINFO.outputdir" << "'" << std::endl;
-	std::cout << "[DetSVM] outputdir: " << this->outputPath << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetSVM] outputdir: " << this->outputPath << std::endl;
+	}
 
 	//min. und max. erwartete Anzahl Gesichter im Bild (vorerst null bis eins);											  
 	sprintf(pos,"FD.expected_number_faces.#%d",0);																		  
@@ -125,7 +134,9 @@ int DetectorSVM::load(const std::string filename)
 	else
 		this->expected_num_faces[1]=atoi(buff);
 
-	std::cout << "[DetSVM] expected_num_faces: " << this->expected_num_faces[0] << ", " << this->expected_num_faces[1] << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetSVM] expected_num_faces: " << this->expected_num_faces[0] << ", " << this->expected_num_faces[1] << std::endl;
+	}
 
 	//Grenze der Zuverlaesigkeit ab der Gesichter aufgenommen werden (Diffwert fr SVM-Schwelle)
 	if (!configReader->getKey("FD.limit_reliability",buff))
@@ -148,17 +159,23 @@ int DetectorSVM::load(const std::string filename)
 	//Minimale Gesichtsoehe in Pixel 
 	if (!configReader->getInt("FD.face_size_min",&this->subsamplingMinHeight))
 		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", "FD.face_size_min",this->subsamplingMinHeight);
-	std::cout << "[DetSVM] face_size_min: " << this->subsamplingMinHeight << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetSVM] face_size_min: " << this->subsamplingMinHeight << std::endl;
+	}
 	//Anzahl der Skalierungen
 	if (!configReader->getInt("FD.maxscales",&this->numSubsamplingLevels))
 		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", "FD.maxscales",this->numSubsamplingLevels);
-	std::cout << "[DetSVM] maxscales: " << this->numSubsamplingLevels << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetSVM] maxscales: " << this->numSubsamplingLevels << std::endl;
+	}
 	//Scalierungsfaktor 
 	if (!configReader->getKey("FD.scalefactor",buff))
 		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %g\n", "FD.scalefactor",this->subsamplingFactor);
 	else
 		this->subsamplingFactor=(float)atof(buff);
-	std::cout << "[DetSVM] scalefactor: " << this->subsamplingFactor << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetSVM] scalefactor: " << this->subsamplingFactor << std::endl;
+	}
 
 	//Kassifikator
 	char fn_classifier[500];
@@ -174,7 +191,9 @@ int DetectorSVM::load(const std::string filename)
 
 	delete configReader;
 
-	std::cout << "[DetSVM] Loading " << fn_classifier << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetSVM] Loading " << fn_classifier << std::endl;
+	}
 	MATFile *pmatfile;
 	mxArray *pmxarray; // =mat
 	double *matdata;
@@ -189,7 +208,9 @@ int DetectorSVM::load(const std::string filename)
 		std::cout << "[DetSVM] Error: There is a no param_nonlin1 in the file." << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	std::cout << "[DetSVM] Reading param_nonlin1" << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetSVM] Reading param_nonlin1" << std::endl;
+	}
 	matdata = mxGetPr(pmxarray);
 	this->nonlin_threshold = (float)matdata[0];
 	this->nonLinType       = (int)matdata[1];
@@ -269,9 +290,12 @@ int DetectorSVM::load(const std::string filename)
 		}
 		matClose(pmatfile);
 	}
-	std::cout << "[DetSVM] Done reading posterior_svm [" << posterior_svm[0] << ", " << posterior_svm[1] << "] from threshold file " << fn_threshold << std::endl;
-
-	std::cout << "[DetSVM] Done reading SVM!" << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[DetSVM] Done reading posterior_svm [" << posterior_svm[0] << ", " << posterior_svm[1] << "] from threshold file " << fn_threshold << std::endl;
+	}
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=1) {
+		std::cout << "[DetSVM] Done reading SVM!" << std::endl;
+	}
 
 	this->stretch_fac = 255.0f/(float)(filter_size_x*filter_size_y);	// HistEq64 initialization
 

@@ -3,6 +3,7 @@
 
 #include "FdPatch.h"
 #include "MatlabReader.h"
+#include "SLogger.h"
 
 #include <vector>
 #include <algorithm>
@@ -37,21 +38,27 @@ void OverlapElimination::setIdentifier(std::string identifier)
 
 int OverlapElimination::load(const std::string filename)
 {
-	//char* configFile = "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat";
-	std::cout << "[OverlapElimination] Loading " << filename << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[OverlapElimination] Loading " << filename << std::endl;
+	}
 
 	MatlabReader *configReader = new MatlabReader(filename);
 	int id;
 	char buff[255], key[255], pos[255];
 
-	if(!configReader->getKey("FD.ffp", buff))	// which feature point does this detector detect?
+	if(!configReader->getKey("FD.ffp", buff)) {	// which feature point does this detector detect?
 		std::cout << "Warning: Key in Config nicht gefunden, key:'" << "FD.ffp" << "'" << std::endl;
-	else
-		std::cout << "[OverlapElimination] ffp: " << atoi(buff) << std::endl;
+	} else {
+		if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+			std::cout << "[OverlapElimination] ffp: " << atoi(buff) << std::endl;
+		}
+	}
 
 	if (!configReader->getKey("ALLGINFO.outputdir", this->outputPath)) // Output folder of this detector
 		std::cout << "Warning: Key in Config nicht gefunden, key:'" << "ALLGINFO.outputdir" << "'" << std::endl;
-	std::cout << "[OverlapElimination] outputdir: " << this->outputPath << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[OverlapElimination] outputdir: " << this->outputPath << std::endl;
+	}
 
 	//min. und max. erwartete Anzahl Gesichter im Bild (vorerst null bis eins);											  
 	sprintf(pos,"FD.expected_number_faces.#%d",0);																		  
@@ -65,7 +72,9 @@ int OverlapElimination::load(const std::string filename)
 	else
 		this->expected_num_faces[1]=atoi(buff);
 
-	std::cout << "[OverlapElimination] expected_num_faces: " << this->expected_num_faces[0] << ", " << this->expected_num_faces[1] << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[OverlapElimination] expected_num_faces: " << this->expected_num_faces[0] << ", " << this->expected_num_faces[1] << std::endl;
+	}
 
 
 	//Does overlap elimination 
@@ -85,8 +94,9 @@ int OverlapElimination::load(const std::string filename)
 	else this->ratio=(float)atof(buff);
 
 	delete configReader;
-
-	std::cout << "[OverlapElimination] Done reading OverlapElimination parameters!" << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=1) {
+		std::cout << "[OverlapElimination] Done reading OverlapElimination parameters!" << std::endl;
+	}
 	return 1;
 
 }
@@ -103,7 +113,9 @@ int OverlapElimination::load(const std::string filename)
 std::vector<FdPatch*> OverlapElimination::eliminate(std::vector<FdPatch*> &patchvec, std::string detectorIdForSorting)
 {
 
-	std::cout << "[OverlapElimination] Running OverlapElimination..." << std::endl;
+	if(Logger->getVerboseLevelText()>=2) {
+		std::cout << "[OverlapElimination] Running OverlapElimination..." << std::endl;
+	}
 	if(this->doOE > 1) {
 		std::cout << "[OverlapElimination] I am sorry, FD.doesPPOverlapElimination > 1 is not yet implemented. I'm going to set it to 1 and continue with this." << std::endl;
 		this->doOE = 1;
@@ -228,7 +240,9 @@ std::vector<FdPatch*> OverlapElimination::eliminate(std::vector<FdPatch*> &patch
 
 std::vector<FdPatch*> OverlapElimination::exp_num_fp_elimination(std::vector<FdPatch*> &patchvec, std::string detectorIdForSorting)
 {
-	std::cout << "[OverlapElimination] Running exp_num_fp_elimination, eliminating to the " << this->expected_num_faces[1] << " patches with highest probability." << std::endl;
+	if(Logger->getVerboseLevelText()>=2) {
+		std::cout << "[OverlapElimination] Running exp_num_fp_elimination, eliminating to the " << this->expected_num_faces[1] << " patches with highest probability." << std::endl;
+	}
 	if(patchvec.size() > this->expected_num_faces[1])
 	{
 		std::vector<FdPatch*> candidates;
