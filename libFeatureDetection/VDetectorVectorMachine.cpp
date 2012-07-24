@@ -130,6 +130,23 @@ int VDetectorVectorMachine::initPyramids( FdImage *img )
 	return 1;
 }
 
+FdPatch* VDetectorVectorMachine::extractPatchToPyramid(FdImage *image, int x, int y, int width) {
+	Pyramid* pyramid = getPyramid(image, getDepthIndex(width));
+	if (pyramid == NULL)
+		return NULL;
+	float scale = this->subsampfac[pyramid->w];
+	int scaledX = (int)(scale * x + 0.5f);
+	int scaledY = (int)(scale * y + 0.5f);
+	int patchBeginX = scaledX - filter_size_x / 2; // inclusive
+	int patchBeginY = scaledY - filter_size_y / 2; // inclusive
+	int patchEndX = patchBeginX + filter_size_x; // exclusive
+	int patchEndY = patchBeginY + filter_size_y; // exclusive
+	if (patchBeginX < 0 || patchEndX > pyramid->w
+				|| patchEndY < 0 || patchEndY > pyramid->h)
+		return NULL;
+	return insertPatchIntoPyramid(pyramid, x, y, scaledX, scaledY, scale);
+}
+
 int VDetectorVectorMachine::extractToPyramids(FdImage *img)
 {
 	std::cout << "[VDetVecMach] Extracting..." << std::endl;
@@ -381,6 +398,47 @@ std::vector<FdPatch*> VDetectorVectorMachine::detect_on_patchvec(std::vector<FdP
 	return candidates;
 }
 
+bool VDetectorVectorMachine::detect_on_patch(FdPatch* patch) {
+	if (patch->w != this->filter_size_x || patch->h != this->filter_size_y)
+		return false;
+	return classify(patch);
+}
+
+
+int VDetectorVectorMachine::getDepthIndex(int patchWidth) {
+	double factor = (double)filter_size_x / (double)patchWidth;
+	double power = log(factor) / log(subsamplingFactor);
+	return (int)(power + 0.5) - subsamplingLevelStart;
+}
+
+Pyramid* VDetectorVectorMachine::getPyramid(const FdImage *image, int depthIndex) {
+	if (depthIndex < 0 || depthIndex >= this->numSubsamplingLevels)
+		return NULL;
+	int pyramidWidth = this->pyramid_widths[depthIndex];
+	PyramidMap::const_iterator pmIt = image->pyramids.find(pyramidWidth);
+	if (pmIt == image->pyramids.end())
+		return NULL;
+	return pmIt->second;
+}
+
+FdPatch* VDetectorVectorMachine::insertPatchIntoPyramid(Pyramid* pyramid,
+		int origX, int origY, int scaledX, int scaledY, float scale) {
+	FdPatch* patch = new FdPatch(scaledX, scaledY, filter_size_x, filter_size_y);
+	std::pair<FdPatchSet::iterator, bool> insertion = pyramid->patches.insert(patch);
+	if (insertion.second) { // patch was inserted (was not existing before)
+		patch->c.s = pyramid->w;
+		patch->c.x = origX;
+		patch->c.y = origY;
+		patch->w_inFullImg = (int)(filter_size_x / scale + 0.5f);
+		patch->h_inFullImg = (int)(filter_size_y / scale + 0.5f);
+		//patch->setHasData(true);
+		extractAndHistEq64(pyramid, patch);	// extract and normalize, data is now in the patch
+	} else { // patch already exists
+		delete patch;
+		patch = *insertion.first;
+	}
+	return patch;
+}
 
 int VDetectorVectorMachine::extractAndHistEq64(const Pyramid* pyr, FdPatch* fp)
 {
