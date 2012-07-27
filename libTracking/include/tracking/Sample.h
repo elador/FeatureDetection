@@ -105,11 +105,28 @@ public:
 		this->weight = weight;
 	}
 
+	/**
+	 * @return True if this sample represents the object, false otherwise.
+	 */
+	inline bool isObject() const {
+		return object;
+	}
+
+	/**
+	 * Changes whether this sample represents the object.
+	 *
+	 * @param[in] object Flag that indicates whether this sample represents the object.
+	 */
+	inline void setObject(bool object) {
+		this->object = object;
+	}
+
 private:
-	int x;					///< The x coordinate.
-	int y;					///< The y coordinate.
-	int size;				///< The size (width).
-	double weight;	///< The weight.
+	int x;         ///< The x coordinate.
+	int y;         ///< The y coordinate.
+	int size;      ///< The size (width).
+	double weight; ///< The weight.
+	bool object;   ///< Flag that indicates whether this sample represents the object.
 };
 
 } /* namespace tracking */

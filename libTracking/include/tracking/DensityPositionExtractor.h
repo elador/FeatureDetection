@@ -16,7 +16,7 @@
 namespace tracking {
 
 /**
- * UNRELIABLE Position extractor that uses kernel density estimation to deliver the most probable position.
+ * Position extractor that uses kernel density estimation to deliver the most probable position.
  */
 class DensityPositionExtractor : public PositionExtractor {
 public:
@@ -68,9 +68,8 @@ protected:
 	}
 
 private:
-	int bandwidth;										///< The kernel bandwidth used for density estimation.
-	double invertedBandwidth;					///< The inverted kernel bandwidth.
-	double invertedBandwidthProduct;	///< The product of the inverted bandwidths of all three dimensions.
+	double invertedBandwidth;        ///< The inverted kernel bandwidth.
+	double invertedBandwidthProduct; ///< The product of the inverted bandwidths of all three dimensions.
 };
 
 } /* namespace tracking */

@@ -9,9 +9,9 @@
 
 namespace tracking {
 
-Sample::Sample() : x(0), y(0), size(0), weight(1) {}
+Sample::Sample() : x(0), y(0), size(0), weight(1), object(false) {}
 
-Sample::Sample(int x, int y, int size) : x(x), y(y), size(size), weight(1) {}
+Sample::Sample(int x, int y, int size) : x(x), y(y), size(size), weight(0), object(false) {}
 
 Sample::~Sample() {}
 

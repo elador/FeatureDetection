@@ -12,8 +12,10 @@ FIND_PACKAGE(OpenCV REQUIRED core)
 SET(HEADERS
 	include/tracking/CondensationTracker.h
 	include/tracking/DensityPositionExtractor.h
-	include/tracking/DualSvmMeasurementModel.h
+	include/tracking/DualSvmModel.h
+	include/tracking/FilteringPositionExtractor.h
 	include/tracking/LowVarianceSampling.h
+	include/tracking/MaxWeightPositionExtractor.h
 	include/tracking/MeasurementModel.h
 	include/tracking/PositionExtractor.h
 	include/tracking/Rectangle.h
@@ -22,16 +24,20 @@ SET(HEADERS
 	include/tracking/SimpleTransitionModel.h
 	include/tracking/TransitionModel.h
 	include/tracking/WeightedMeanPositionExtractor.h
+	include/tracking/WvmOeSvmModel.h
 )
 SET(SOURCE
 	src/tracking/CondensationTracker.cpp
 	src/tracking/DensityPositionExtractor.cpp
-	src/tracking/DualSvmMeasurementModel.cpp
+	src/tracking/DualSvmModel.cpp
+	src/tracking/FilteringPositionExtractor.cpp
 	src/tracking/LowVarianceSampling.cpp
+	src/tracking/MaxWeightPositionExtractor.cpp
 	src/tracking/Rectangle.cpp
 	src/tracking/Sample.cpp
 	src/tracking/SimpleTransitionModel.cpp
 	src/tracking/WeightedMeanPositionExtractor.cpp
+	src/tracking/WvmOeSvmModel.cpp
 )
 
 include_directories( "include" )

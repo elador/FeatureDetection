@@ -8,8 +8,13 @@
 #include "FaceTracking.h"
 #include "tracking/LowVarianceSampling.h"
 #include "tracking/SimpleTransitionModel.h"
-#include "tracking/DualSvmMeasurementModel.h"
+//#include "tracking/DualSvmModel.h"
+#include "tracking/WvmOeSvmModel.h"
+#include "OverlapElimination.h"
+#include "tracking/FilteringPositionExtractor.h"
+#include "tracking/DensityPositionExtractor.h"
 #include "tracking/WeightedMeanPositionExtractor.h"
+#include "tracking/MaxWeightPositionExtractor.h"
 #include "tracking/Rectangle.h"
 #include "tracking/Sample.h"
 #include "VDetectorVectorMachine.h"
@@ -46,15 +51,20 @@ void FaceTracking::init(std::string video, int device, bool cam, bool realtime) 
 }
 
 CondensationTracker* FaceTracking::createTracker() {
-	unsigned int count = 500;
+	unsigned int count = 800;
 	double randomRate = 0.2;
 	VDetectorVectorMachine* wvm = new DetectorWVM();
 	wvm->load(svmConfigFile);
 	VDetectorVectorMachine* svm = new DetectorSVM();
 	svm->load(svmConfigFile);
+	OverlapElimination* oe = new OverlapElimination();
+	oe->load(svmConfigFile);
 	return new CondensationTracker(count, randomRate, new LowVarianceSampling(),
-			new SimpleTransitionModel(), new DualSvmMeasurementModel(wvm, svm),
-			new WeightedMeanPositionExtractor());
+//			new SimpleTransitionModel(0.2), new DualSvmModel(wvm, svm),
+			new SimpleTransitionModel(0.2), new WvmOeSvmModel(wvm, svm, oe),
+			new FilteringPositionExtractor(new WeightedMeanPositionExtractor()));
+//			new FilteringPositionExtractor(new DensityPositionExtractor(50)));
+//			new FilteringPositionExtractor(new MaxWeightPositionExtractor()));
 }
 
 void FaceTracking::drawDebug(cv::Mat& image, CondensationTracker* tracker) {
@@ -62,8 +72,8 @@ void FaceTracking::drawDebug(cv::Mat& image, CondensationTracker* tracker) {
 	cv::Scalar red(0, 0, 255); // blue, green, red
 	const std::vector<Sample> samples = tracker->getSamples();
 	for (std::vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
-		cv::Scalar& color = (sit->getWeight() > 0.5) ? red : black;
-		cv::circle(image, cv::Point(sit->getX(), sit->getY()), 1, color);
+		cv::Scalar& color = (sit->isObject() > 0.5) ? red : black;
+		cv::circle(image, cv::Point(sit->getX(), sit->getY()), 3, color);
 //		Rectangle bounds = sit->getBounds();
 //		cv::rectangle(image, cv::Point(bounds.getX(), bounds.getY()),
 //				cv::Point(bounds.getX() + bounds.getWidth(), bounds.getY() + bounds.getHeight()), color);

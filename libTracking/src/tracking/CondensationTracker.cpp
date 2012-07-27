@@ -13,7 +13,6 @@
 #include "tracking/PositionExtractor.h"
 #include "FdImage.h"
 #include <algorithm>
-#include <iostream>
 
 namespace tracking {
 
@@ -21,8 +20,9 @@ CondensationTracker::CondensationTracker(unsigned int count, double randomRate, 
 		TransitionModel* transitionModel, MeasurementModel* measurementModel, PositionExtractor* extractor) :
 				count(count),
 				randomRate(randomRate),
-				samples(count),
-				oldSamples(count),
+				samples(),
+				oldSamples(),
+				oldPosition(),
 				offset(3),
 				resamplingAlgorithm(resamplingAlgorithm),
 				transitionModel(transitionModel),
@@ -31,8 +31,8 @@ CondensationTracker::CondensationTracker(unsigned int count, double randomRate, 
 				generator(boost::mt19937(time(0))),
 				distribution(boost::uniform_int<>()) {
 	randomRate = std::max(0.0, std::min(1.0, randomRate));
-	samples.clear();
-	oldSamples.clear();
+	samples.reserve(count);
+	oldSamples.reserve(count);
 	offset.push_back(0);
 	offset.push_back(0);
 	offset.push_back(0);
@@ -64,6 +64,17 @@ boost::optional<Rectangle> CondensationTracker::process(FdImage* image) {
 	// evaluate samples and extract position
 	measurementModel->evaluate(image, samples);
 	boost::optional<Sample> position = extractor->extract(samples);
+	// update offset
+	if (oldPosition && position) {
+		offset[0] = position->getX() - oldPosition->getX();
+		offset[1] = position->getY() - oldPosition->getY();
+		offset[2] = position->getSize() - oldPosition->getSize();
+	} else {
+		offset[0] = 0;
+		offset[1] = 0;
+		offset[2] = 0;
+	}
+	// return position
 	if (position)
 		return boost::optional<Rectangle>(position->getBounds());
 	return boost::optional<Rectangle>();

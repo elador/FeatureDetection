@@ -32,8 +32,8 @@ public:
 	void predict(Sample& sample, const std::vector<double>& offset);
 
 private:
-	double scatter;		///< The scatter that controls the diffusion.
-	boost::variate_generator<boost::mt19937, boost::normal_distribution<> > generator;	///< Random number generator.
+	double scatter; ///< The scatter that controls the diffusion.
+	boost::variate_generator<boost::mt19937, boost::normal_distribution<> > generator; ///< Random number generator.
 };
 
 } /* namespace tracking */

@@ -56,10 +56,10 @@ public:
 	}
 
 private:
-	const int x;	///< The x coordinate of the upper left corner.
-	const int y;	///< The y coordinate of the upper left corner.
-	const int w;	///< The width.
-	const int h;	///< The height.
+	const int x; ///< The x coordinate of the upper left corner.
+	const int y; ///< The y coordinate of the upper left corner.
+	const int w; ///< The width.
+	const int h; ///< The height.
 };
 
 } /* namespace tracking */

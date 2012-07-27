@@ -8,7 +8,7 @@
 #include "tracking/SimpleTransitionModel.h"
 #include "tracking/Sample.h"
 
-#include <time.h>
+#include <ctime>
 #include <cmath>
 
 namespace tracking {

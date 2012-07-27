@@ -27,8 +27,7 @@ class MeasurementModel;
 class PositionExtractor;
 
 /**
- * Tracker of objects in image/video streams based on the Condensation algorithm (aka Particle Filter).
- * For now, only a single object can be tracked.
+ * Tracker of a single object in image/video streams based on the Condensation algorithm (aka Particle Filter).
  */
 class CondensationTracker {
 public:
@@ -38,10 +37,10 @@ public:
 	 *
 	 * @param[in] count The number of samples.
 	 * @param[in] randomRate The percentage of samples that should be equally distributed.
-	 * @param[in] resamplingAlgorithm The resampling algorithm.
-	 * @param[in] transitionModel The transition model.
-	 * @param[in] measurementModel The measurement model.
-	 * @param[in] extractor The position extractor.
+	 * @param[in] resamplingAlgorithm The resampling algorithm. Will be deleted at destruction.
+	 * @param[in] transitionModel The transition model. Will be deleted at destruction.
+	 * @param[in] measurementModel The measurement model. Will be deleted at destruction.
+	 * @param[in] extractor The position extractor. Will be deleted at destruction.
 	 */
 	explicit CondensationTracker(unsigned int count, double randomRate, ResamplingAlgorithm* resamplingAlgorithm,
 			TransitionModel* transitionModel, MeasurementModel* measurementModel, PositionExtractor* extractor);
@@ -81,20 +80,21 @@ private:
 	 */
 	void sampleValid(Sample& sample, const FdImage* image);
 
-	unsigned int count;								///< The number of samples.
-	double randomRate;								///< The percentage of samples that should be equally distributed.
-	std::vector<Sample> samples;			///< The current samples.
-	std::vector<Sample> oldSamples;		///< The previous samples.
+	unsigned int count;             ///< The number of samples.
+	double randomRate;              ///< The percentage of samples that should be equally distributed.
+	std::vector<Sample> samples;    ///< The current samples.
+	std::vector<Sample> oldSamples; ///< The previous samples.
 
-	std::vector<double> offset;		///< The movement of the tracked object's center of the previous time step.
+	boost::optional<Sample> oldPosition; ///< The previous position.
+	std::vector<double> offset;          ///< The movement of the tracked object's center of the previous time step.
 
-	ResamplingAlgorithm* resamplingAlgorithm;	///< The resampling algorithm.
-	TransitionModel* transitionModel;					///< The transition model.
-	MeasurementModel* measurementModel;				///< The measurement model.
-	PositionExtractor* extractor;							///< The position extractor.
+	ResamplingAlgorithm* resamplingAlgorithm; ///< The resampling algorithm.
+	TransitionModel* transitionModel;         ///< The transition model.
+	MeasurementModel* measurementModel;       ///< The measurement model.
+	PositionExtractor* extractor;             ///< The position extractor.
 
-	boost::mt19937 generator; 					///< Random number generator.
-	boost::uniform_int<> distribution;	///< Uniform integer distribution.
+	boost::mt19937 generator;          ///< Random number generator.
+	boost::uniform_int<> distribution; ///< Uniform integer distribution.
 };
 
 } /* namespace tracking */

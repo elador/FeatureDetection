@@ -39,8 +39,8 @@ private:
 	 */
 	double computeAverageWeight(const std::vector<Sample>& samples);
 
-	boost::mt19937 generator; 				///< Random number generator.
-	boost::uniform_01<> distribution;	///< Uniform real distribution.
+	boost::mt19937 generator;         ///< Random number generator.
+	boost::uniform_01<> distribution; ///< Uniform real distribution.
 };
 
 } /* namespace tracking */
