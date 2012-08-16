@@ -1,5 +1,5 @@
 /*
- * DualSvmMeasurementModel.cpp
+ * DualSvmModel.cpp
  *
  *  Created on: 12.07.2012
  *      Author: poschmann

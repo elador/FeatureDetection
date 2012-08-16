@@ -21,8 +21,7 @@ class FdImage;
 
 namespace tracking {
 
-class ResamplingAlgorithm;
-class TransitionModel;
+class Sampler;
 class MeasurementModel;
 class PositionExtractor;
 
@@ -35,15 +34,11 @@ public:
 	/**
 	 * Constructs a new condensation tracker.
 	 *
-	 * @param[in] count The number of samples.
-	 * @param[in] randomRate The percentage of samples that should be equally distributed.
-	 * @param[in] resamplingAlgorithm The resampling algorithm. Will be deleted at destruction.
-	 * @param[in] transitionModel The transition model. Will be deleted at destruction.
+	 * @param[in] sampler The sampler.
 	 * @param[in] measurementModel The measurement model. Will be deleted at destruction.
 	 * @param[in] extractor The position extractor. Will be deleted at destruction.
 	 */
-	explicit CondensationTracker(unsigned int count, double randomRate, ResamplingAlgorithm* resamplingAlgorithm,
-			TransitionModel* transitionModel, MeasurementModel* measurementModel, PositionExtractor* extractor);
+	explicit CondensationTracker(Sampler* sampler, MeasurementModel* measurementModel, PositionExtractor* extractor);
 	virtual ~CondensationTracker();
 
 	/**
@@ -61,40 +56,31 @@ public:
 		return samples;
 	}
 
+	/**
+	 * @return The sampler.
+	 */
+	inline Sampler* getSampler() {
+		return sampler;
+	}
+
+	/**
+	 * @param[in] sampler The new sampler.
+	 */
+	inline void setSampler(Sampler* sampler) {
+		this->sampler = sampler;
+	}
+
 private:
 
-	/**
-	 * Determines whether a sample is valid for a certain image.
-	 *
-	 * @param[in] sample The sample.
-	 * @param[in] image The image.
-	 * @return True if the sample is valid, false otherwise.
-	 */
-	bool isValid(const Sample& sample, const FdImage* image);
-
-	/**
-	 * Randomly samples new valid values for a sample.
-	 *
-	 * @param[in,out] sample The sample.
-	 * @param[in] image The image.
-	 */
-	void sampleValid(Sample& sample, const FdImage* image);
-
-	unsigned int count;             ///< The number of samples.
-	double randomRate;              ///< The percentage of samples that should be equally distributed.
 	std::vector<Sample> samples;    ///< The current samples.
 	std::vector<Sample> oldSamples; ///< The previous samples.
 
 	boost::optional<Sample> oldPosition; ///< The previous position.
 	std::vector<double> offset;          ///< The movement of the tracked object's center of the previous time step.
 
-	ResamplingAlgorithm* resamplingAlgorithm; ///< The resampling algorithm.
-	TransitionModel* transitionModel;         ///< The transition model.
-	MeasurementModel* measurementModel;       ///< The measurement model.
-	PositionExtractor* extractor;             ///< The position extractor.
-
-	boost::mt19937 generator;          ///< Random number generator.
-	boost::uniform_int<> distribution; ///< Uniform integer distribution.
+	Sampler* sampler;                   ///< The sampler.
+	MeasurementModel* measurementModel; ///< The measurement model.
+	PositionExtractor* extractor;       ///< The position extractor.
 };
 
 } /* namespace tracking */

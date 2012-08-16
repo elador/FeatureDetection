@@ -101,7 +101,9 @@ int FdImage::load(const cv::Mat* mat)
 	this->h = this->data_matgray.rows;
 
 	this->data = new unsigned char[w*h];
-	std::cout << "[FdImage] Allocating space for image. Cols(=width): " << w << ", Rows(=height): " << h << ", Size: " << w*h << std::endl;
+	if(Logger->getVerboseLevelText()>=2) {
+		std::cout << "[FdImage] Allocating space for image. Cols(=width): " << w << ", Rows(=height): " << h << ", Size: " << w*h << std::endl;
+	}
 
 	for (int i=0; i<this->data_matgray.rows; i++)
 	{

@@ -1,5 +1,5 @@
 /*
- * AdaptivePredictor.cpp
+ * SimpleTransitionModel.cpp
  *
  *  Created on: 10.07.2012
  *      Author: poschmann

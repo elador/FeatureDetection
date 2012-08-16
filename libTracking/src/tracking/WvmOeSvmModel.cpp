@@ -36,8 +36,6 @@ WvmOeSvmModel::~WvmOeSvmModel() {
 void WvmOeSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
 	wvm->initPyramids(image);
 	wvm->initROI(image);
-	svm->initPyramids(image);
-	svm->initROI(image);
 	std::vector<FdPatch*> remainingPatches;
 	std::map<FdPatch*, Sample*> patch2sample;
 	for (std::vector<Sample>::iterator sit = samples.begin(); sit < samples.end(); ++sit) {
@@ -54,25 +52,30 @@ void WvmOeSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
 			sample.setWeight(0.5 * patch->certainty[wvm->getIdentifier()]);
 		}
 	}
-	//remainingPatches = oe->eliminate(remainingPatches, wvm->getIdentifier());
-	remainingPatches = eliminate(remainingPatches, wvm->getIdentifier());
-	std::vector<FdPatch*> objectPatches = svm->detect_on_patchvec(remainingPatches);
-	for (std::vector<FdPatch*>::iterator pit = remainingPatches.begin(); pit < remainingPatches.end(); ++pit) {
-		FdPatch* patch = (*pit);
-		Sample* sample = patch2sample[patch];
-		sample->setWeight(2 * sample->getWeight() * patch->certainty[svm->getIdentifier()]);
-	}
-	for (std::vector<FdPatch*>::iterator pit = objectPatches.begin(); pit < objectPatches.end(); ++pit) {
-		Sample* sample = patch2sample[(*pit)];
-		sample->setObject(true);
+	if (!remainingPatches.empty()) {
+		//remainingPatches = oe->eliminate(remainingPatches, wvm->getIdentifier());
+		remainingPatches = eliminate(remainingPatches, wvm->getIdentifier());
+		svm->initPyramids(image);
+		svm->initROI(image);
+		std::vector<FdPatch*> objectPatches = svm->detect_on_patchvec(remainingPatches);
+		for (std::vector<FdPatch*>::iterator pit = remainingPatches.begin(); pit < remainingPatches.end(); ++pit) {
+			FdPatch* patch = (*pit);
+			Sample* sample = patch2sample[patch];
+			sample->setWeight(2 * sample->getWeight() * patch->certainty[svm->getIdentifier()]);
+		}
+		for (std::vector<FdPatch*>::iterator pit = objectPatches.begin(); pit < objectPatches.end(); ++pit) {
+			Sample* sample = patch2sample[(*pit)];
+			sample->setObject(true);
+		}
 	}
 }
 
 std::vector<FdPatch*> WvmOeSvmModel::eliminate(const std::vector<FdPatch*>& patches, std::string detectorId) {
 	std::vector<FdPatch*> remaining = patches;
-	std::sort(remaining.begin(), remaining.end(), FdPatch::SortByCertainty(detectorId));
-	if (remaining.size() > 10)
+	if (remaining.size() > 10) {
+		std::sort(remaining.begin(), remaining.end(), FdPatch::SortByCertainty(detectorId));
 		remaining.resize(10);
+	}
 	return remaining;
 }
 

@@ -6,39 +6,51 @@
  */
 
 #include "FaceTracking.h"
+#include "tracking/ResamplingSampler.h"
+#include "tracking/GridSampler.h"
 #include "tracking/LowVarianceSampling.h"
 #include "tracking/SimpleTransitionModel.h"
-//#include "tracking/DualSvmModel.h"
-#include "tracking/WvmOeSvmModel.h"
+#include "tracking/SvmTraining.h"
+#include "tracking/FrameBasedSvmTraining.h"
 #include "OverlapElimination.h"
 #include "tracking/FilteringPositionExtractor.h"
-#include "tracking/DensityPositionExtractor.h"
 #include "tracking/WeightedMeanPositionExtractor.h"
-#include "tracking/MaxWeightPositionExtractor.h"
 #include "tracking/Rectangle.h"
 #include "tracking/Sample.h"
 #include "VDetectorVectorMachine.h"
 #include "DetectorWVM.h"
 #include "DetectorSVM.h"
+#include "tracking/ChangableDetectorSvm.h"
 #include "FdImage.h"
 #include "boost/optional.hpp"
 #include <vector>
 #include <iostream>
+#include <sstream>
 #include <cstring>
 #include <sys/time.h>
 
 const std::string FaceTracking::svmConfigFile = "/home/poschmann/projects/ffd/config/fdetection/fd_config_fft_fd.mat";
+const std::string FaceTracking::negativesFile = "/home/poschmann/projects/ffd/config/nonfaces_1000";
 const std::string FaceTracking::videoWindowName = "Image";
+const std::string FaceTracking::controlWindowName = "Controls";
 
 FaceTracking::FaceTracking(int device) {
 	init("", device, true, false);
+	initGui();
 }
 
 FaceTracking::FaceTracking(std::string video, bool realtime) {
 	init(video, 0, false, realtime);
+	initGui();
 }
 
-FaceTracking::~FaceTracking() {}
+FaceTracking::~FaceTracking() {
+	if (tracker->getSampler() != resamplingSampler)
+		delete resamplingSampler;
+	else if (tracker->getSampler() != gridSampler)
+		delete gridSampler;
+	delete tracker;
+}
 
 void FaceTracking::init(std::string video, int device, bool cam, bool realtime) {
 	this->video = video;
@@ -48,36 +60,79 @@ void FaceTracking::init(std::string video, int device, bool cam, bool realtime) 
 
 	frameWidth = 640;
 	frameHeight = 480;
-}
 
-CondensationTracker* FaceTracking::createTracker() {
-	unsigned int count = 800;
-	double randomRate = 0.2;
+	// create SVM training
+	svmTraining = new FrameBasedSvmTraining(5, 4, negativesFile, 200);
+
+	// create measurement model
 	VDetectorVectorMachine* wvm = new DetectorWVM();
 	wvm->load(svmConfigFile);
 	VDetectorVectorMachine* svm = new DetectorSVM();
 	svm->load(svmConfigFile);
+	ChangableDetectorSvm* dynamicSvm = new ChangableDetectorSvm();
+	dynamicSvm->load(svmConfigFile);
 	OverlapElimination* oe = new OverlapElimination();
 	oe->load(svmConfigFile);
-	return new CondensationTracker(count, randomRate, new LowVarianceSampling(),
-//			new SimpleTransitionModel(0.2), new DualSvmModel(wvm, svm),
-			new SimpleTransitionModel(0.2), new WvmOeSvmModel(wvm, svm, oe),
+	measurementModel = new SelfLearningWvmOeSvmModel(wvm, svm, dynamicSvm, oe, svmTraining);
+
+	// create tracker
+	unsigned int count = 800;
+	double randomRate = 0.3;
+	resamplingSampler = new ResamplingSampler(count, randomRate, new LowVarianceSampling(), new SimpleTransitionModel(0.2));
+	gridSampler = new GridSampler(0.2, 0.8, 1.2, 0.1);
+	tracker = new CondensationTracker(resamplingSampler, measurementModel,
 			new FilteringPositionExtractor(new WeightedMeanPositionExtractor()));
-//			new FilteringPositionExtractor(new DensityPositionExtractor(50)));
-//			new FilteringPositionExtractor(new MaxWeightPositionExtractor()));
 }
 
-void FaceTracking::drawDebug(cv::Mat& image, CondensationTracker* tracker) {
+void FaceTracking::initGui() {
+	drawSamples = true;
+
+	cvNamedWindow(controlWindowName.c_str(), CV_WINDOW_AUTOSIZE);
+	cvMoveWindow(controlWindowName.c_str(), 750, 50);
+
+	cv::createTrackbar("Grid/Resampling", controlWindowName, NULL, 1, samplerChanged, this);
+	cv::setTrackbarPos("Grid/Resampling", controlWindowName, tracker->getSampler() == gridSampler ? 0 : 1);
+
+	cv::createTrackbar("Self-learning active", controlWindowName, NULL, 1, selfLearningChanged, this);
+	cv::setTrackbarPos("Self-learning active", controlWindowName, measurementModel->isSelfLearningActive() ? 1 : 0);
+
+	cv::createTrackbar("Draw samples", controlWindowName, NULL, 1, drawSamplesChanged, this);
+	cv::setTrackbarPos("Draw samples", controlWindowName, drawSamples ? 1 : 0);
+}
+
+void FaceTracking::samplerChanged(int state, void* userdata) {
+	FaceTracking *tracking = (FaceTracking*)userdata;
+	tracking->tracker->setSampler(state == 0 ? tracking->gridSampler : tracking->resamplingSampler);
+}
+
+void FaceTracking::selfLearningChanged(int state, void* userdata) {
+	FaceTracking *tracking = (FaceTracking*)userdata;
+	tracking->measurementModel->setSelfLearningActive(state == 1);
+}
+
+void FaceTracking::drawSamplesChanged(int state, void* userdata) {
+	FaceTracking *tracking = (FaceTracking*)userdata;
+	tracking->drawSamples = (state == 1);
+}
+
+void FaceTracking::drawDebug(cv::Mat& image) {
 	cv::Scalar black(0, 0, 0); // blue, green, red
 	cv::Scalar red(0, 0, 255); // blue, green, red
-	const std::vector<Sample> samples = tracker->getSamples();
-	for (std::vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
-		cv::Scalar& color = (sit->isObject() > 0.5) ? red : black;
-		cv::circle(image, cv::Point(sit->getX(), sit->getY()), 3, color);
-//		Rectangle bounds = sit->getBounds();
-//		cv::rectangle(image, cv::Point(bounds.getX(), bounds.getY()),
-//				cv::Point(bounds.getX() + bounds.getWidth(), bounds.getY() + bounds.getHeight()), color);
+	cv::Scalar green(0, 255, 0); // blue, green, red
+	if (drawSamples) {
+		const std::vector<Sample> samples = tracker->getSamples();
+		for (std::vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
+			cv::Scalar& color = (sit->isObject() > 0.5) ? red : black;
+			cv::circle(image, cv::Point(sit->getX(), sit->getY()), 3, color);
+		}
 	}
+	cv::Scalar& svmIndicatorColor = measurementModel->isUsingDynamicSvm() ? green : red;
+	cv::circle(image, cv::Point(10, 10), 5, svmIndicatorColor, -1);
+	std::ostringstream patchText;
+	patchText << svmTraining->getPositiveSampleCount() << '/' << svmTraining->getRequiredPositiveSampleCount();
+	bool enoughSamples = (svmTraining->getPositiveSampleCount() >= svmTraining->getRequiredPositiveSampleCount());
+	cv::Scalar& textColor = enoughSamples ? green : red;
+	cv::putText(image, patchText.str(), cv::Point(20, 15), cv::FONT_HERSHEY_SIMPLEX, 0.5, textColor);
 }
 
 void FaceTracking::run() {
@@ -104,9 +159,6 @@ void FaceTracking::run() {
 		frameWidth = static_cast<int>(capture.get(CV_CAP_PROP_FRAME_WIDTH));
 		frameHeight = static_cast<int>(capture.get(CV_CAP_PROP_FRAME_HEIGHT));
 	}
-
-	CondensationTracker* tracker = createTracker();
-	//initGui(tracker);
 
 	bool first = true;
 	cv::Mat frame, image;
@@ -146,7 +198,7 @@ void FaceTracking::run() {
 			delete myImage;
 			gettimeofday(&detEnd, 0);
 			image = frame;
-			drawDebug(image, tracker);
+			drawDebug(image);
 			if (face)
 				cv::rectangle(image, cv::Point(face->getX(), face->getY()),
 						cv::Point(face->getX() + face->getWidth(), face->getY() + face->getHeight()), green);
@@ -171,7 +223,6 @@ void FaceTracking::run() {
 	}
 
 	capture.release();
-	delete tracker;
 }
 
 void FaceTracking::stop() {

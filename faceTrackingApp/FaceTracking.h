@@ -9,6 +9,9 @@
 #define FACETRACKING_H_
 
 #include "tracking/CondensationTracker.h"
+#include "tracking/SelfLearningWvmOeSvmModel.h"
+#include "tracking/FrameBasedSvmTraining.h"
+#include "tracking/Sampler.h"
 #include "opencv2/highgui/highgui.hpp"
 #include <string>
 
@@ -25,12 +28,18 @@ public:
 
 private:
 
+	static void samplerChanged(int state, void* userdata);
+	static void selfLearningChanged(int state, void* userdata);
+	static void drawSamplesChanged(int state, void* userdata);
+
 	void init(std::string video, int device, bool cam, bool realtime);
-	CondensationTracker* createTracker();
-	void drawDebug(cv::Mat& image, CondensationTracker* tracker);
+	void initGui();
+	void drawDebug(cv::Mat& image);
 
 	static const std::string svmConfigFile;
+	static const std::string negativesFile;
 	static const std::string videoWindowName;
+	static const std::string controlWindowName;
 
 	std::string video;
 	int device;
@@ -41,6 +50,13 @@ private:
 	int frameWidth;
 
 	bool running;
+	bool drawSamples;
+
+	CondensationTracker* tracker;
+	SelfLearningWvmOeSvmModel* measurementModel;
+	FrameBasedSvmTraining* svmTraining;
+	Sampler* resamplingSampler;
+	Sampler* gridSampler;
 };
 
 #endif /* FACETRACKING_H_ */
