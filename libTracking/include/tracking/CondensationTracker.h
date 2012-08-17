@@ -10,14 +10,13 @@
 
 #include "tracking/Rectangle.h"
 #include "tracking/Sample.h"
-
+#include "boost/shared_ptr.hpp"
 #include "boost/optional.hpp"
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_int.hpp>
-
 #include <vector>
 
 class FdImage;
+
+using boost::shared_ptr;
 
 namespace tracking {
 
@@ -35,11 +34,13 @@ public:
 	 * Constructs a new condensation tracker.
 	 *
 	 * @param[in] sampler The sampler.
-	 * @param[in] measurementModel The measurement model. Will be deleted at destruction.
-	 * @param[in] extractor The position extractor. Will be deleted at destruction.
+	 * @param[in] measurementModel The measurement model.
+	 * @param[in] extractor The position extractor.
 	 */
-	explicit CondensationTracker(Sampler* sampler, MeasurementModel* measurementModel, PositionExtractor* extractor);
-	virtual ~CondensationTracker();
+	explicit CondensationTracker(shared_ptr<Sampler> sampler,
+			shared_ptr<MeasurementModel> measurementModel, shared_ptr<PositionExtractor> extractor);
+
+	~CondensationTracker();
 
 	/**
 	 * Processes the next image and returns the most probable object position.
@@ -59,14 +60,14 @@ public:
 	/**
 	 * @return The sampler.
 	 */
-	inline Sampler* getSampler() {
+	inline shared_ptr<Sampler> getSampler() {
 		return sampler;
 	}
 
 	/**
 	 * @param[in] sampler The new sampler.
 	 */
-	inline void setSampler(Sampler* sampler) {
+	inline void setSampler(shared_ptr<Sampler> sampler) {
 		this->sampler = sampler;
 	}
 
@@ -78,9 +79,9 @@ private:
 	boost::optional<Sample> oldPosition; ///< The previous position.
 	std::vector<double> offset;          ///< The movement of the tracked object's center of the previous time step.
 
-	Sampler* sampler;                   ///< The sampler.
-	MeasurementModel* measurementModel; ///< The measurement model.
-	PositionExtractor* extractor;       ///< The position extractor.
+	shared_ptr<Sampler> sampler;                   ///< The sampler.
+	shared_ptr<MeasurementModel> measurementModel; ///< The measurement model.
+	shared_ptr<PositionExtractor> extractor;       ///< The position extractor.
 };
 
 } /* namespace tracking */

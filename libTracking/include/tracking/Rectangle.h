@@ -25,6 +25,7 @@ public:
 	 * @param[in] h The height.
 	 */
 	explicit Rectangle(int x, int y, int w, int h);
+
 	~Rectangle();
 
 	/**

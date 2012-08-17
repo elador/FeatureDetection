@@ -12,6 +12,7 @@
 #include "tracking/SimpleTransitionModel.h"
 #include "tracking/SvmTraining.h"
 #include "tracking/FrameBasedSvmTraining.h"
+#include "tracking/ApproximateSigmoidParameterComputation.h"
 #include "OverlapElimination.h"
 #include "tracking/FilteringPositionExtractor.h"
 #include "tracking/WeightedMeanPositionExtractor.h"
@@ -22,6 +23,7 @@
 #include "DetectorSVM.h"
 #include "tracking/ChangableDetectorSvm.h"
 #include "FdImage.h"
+#include "boost/make_shared.hpp"
 #include "boost/optional.hpp"
 #include <vector>
 #include <iostream>
@@ -44,13 +46,7 @@ FaceTracking::FaceTracking(std::string video, bool realtime) {
 	initGui();
 }
 
-FaceTracking::~FaceTracking() {
-	if (tracker->getSampler() != resamplingSampler)
-		delete resamplingSampler;
-	else if (tracker->getSampler() != gridSampler)
-		delete gridSampler;
-	delete tracker;
-}
+FaceTracking::~FaceTracking() {}
 
 void FaceTracking::init(std::string video, int device, bool cam, bool realtime) {
 	this->video = video;
@@ -62,26 +58,27 @@ void FaceTracking::init(std::string video, int device, bool cam, bool realtime) 
 	frameHeight = 480;
 
 	// create SVM training
-	svmTraining = new FrameBasedSvmTraining(5, 4, negativesFile, 200);
+	svmTraining = make_shared<FrameBasedSvmTraining>(5, 4, negativesFile, 200);
 
 	// create measurement model
-	VDetectorVectorMachine* wvm = new DetectorWVM();
+	shared_ptr<VDetectorVectorMachine> wvm = make_shared<DetectorWVM>();
 	wvm->load(svmConfigFile);
-	VDetectorVectorMachine* svm = new DetectorSVM();
+	shared_ptr<VDetectorVectorMachine> svm = make_shared<DetectorSVM>();
 	svm->load(svmConfigFile);
-	ChangableDetectorSvm* dynamicSvm = new ChangableDetectorSvm();
+	shared_ptr<ChangableDetectorSvm> dynamicSvm = make_shared<ChangableDetectorSvm>();
 	dynamicSvm->load(svmConfigFile);
-	OverlapElimination* oe = new OverlapElimination();
+	shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>();
 	oe->load(svmConfigFile);
-	measurementModel = new SelfLearningWvmOeSvmModel(wvm, svm, dynamicSvm, oe, svmTraining);
+	measurementModel = make_shared<SelfLearningWvmOeSvmModel>(wvm, svm, dynamicSvm, oe, svmTraining);
 
 	// create tracker
 	unsigned int count = 800;
 	double randomRate = 0.3;
-	resamplingSampler = new ResamplingSampler(count, randomRate, new LowVarianceSampling(), new SimpleTransitionModel(0.2));
-	gridSampler = new GridSampler(0.2, 0.8, 1.2, 0.1);
-	tracker = new CondensationTracker(resamplingSampler, measurementModel,
-			new FilteringPositionExtractor(new WeightedMeanPositionExtractor()));
+	resamplingSampler = make_shared<ResamplingSampler>(count, randomRate, make_shared<LowVarianceSampling>(),
+			make_shared<SimpleTransitionModel>(0.2));
+	gridSampler = make_shared<GridSampler>(0.2, 0.8, 1.2, 0.1);
+	tracker = auto_ptr<CondensationTracker>(new CondensationTracker(resamplingSampler, measurementModel,
+			make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>())));
 }
 
 void FaceTracking::initGui() {

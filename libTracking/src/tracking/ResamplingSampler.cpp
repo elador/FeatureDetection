@@ -14,7 +14,7 @@
 namespace tracking {
 
 ResamplingSampler::ResamplingSampler(unsigned int count, double randomRate,
-		ResamplingAlgorithm* resamplingAlgorithm, TransitionModel* transitionModel) :
+		shared_ptr<ResamplingAlgorithm> resamplingAlgorithm, shared_ptr<TransitionModel> transitionModel) :
 				count(count),
 				randomRate(randomRate),
 				resamplingAlgorithm(resamplingAlgorithm),
@@ -24,10 +24,7 @@ ResamplingSampler::ResamplingSampler(unsigned int count, double randomRate,
 	randomRate = std::max(0.0, std::min(1.0, randomRate));
 }
 
-ResamplingSampler::~ResamplingSampler() {
-	delete resamplingAlgorithm;
-	delete transitionModel;
-}
+ResamplingSampler::~ResamplingSampler() {}
 
 void ResamplingSampler::sample(const std::vector<Sample>& samples, const std::vector<double>& offset,
 			const FdImage* image, std::vector<Sample>& newSamples) {

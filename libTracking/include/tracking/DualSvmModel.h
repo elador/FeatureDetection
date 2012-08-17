@@ -9,8 +9,11 @@
 #define DUALSVMMODEL_H_
 
 #include "tracking/MeasurementModel.h"
+#include "boost/shared_ptr.hpp"
 
 class VDetectorVectorMachine;
+
+using boost::shared_ptr;
 
 namespace tracking {
 
@@ -26,17 +29,18 @@ public:
 	/**
 	 * Constructs a new dual SVM measurement model.
 	 *
-	 * @param[in] preStage The (fast) pre-stage SVM. Will be deleted at destruction.
-	 * @param[in] mainStage The (slow) main SVM. Will be deleted at destruction.
+	 * @param[in] preStage The (fast) pre-stage SVM.
+	 * @param[in] mainStage The (slow) main SVM.
 	 */
-	DualSvmModel(VDetectorVectorMachine* preStage, VDetectorVectorMachine* mainStage);
-	virtual ~DualSvmModel();
+	DualSvmModel(shared_ptr<VDetectorVectorMachine> preStage, shared_ptr<VDetectorVectorMachine> mainStage);
+
+	~DualSvmModel();
 
 	void evaluate(FdImage* image, std::vector<Sample>& samples);
 
 private:
-	VDetectorVectorMachine* preStage;  ///< The (fast) pre-stage SVM.
-	VDetectorVectorMachine* mainStage; ///< The (slow) main SVM.
+	shared_ptr<VDetectorVectorMachine> preStage;  ///< The (fast) pre-stage SVM.
+	shared_ptr<VDetectorVectorMachine> mainStage; ///< The (slow) main SVM.
 };
 
 } /* namespace tracking */

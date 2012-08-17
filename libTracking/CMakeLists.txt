@@ -20,7 +20,6 @@ SET(HEADERS
 	include/tracking/FilteringPositionExtractor.h
 	include/tracking/FrameBasedSvmTraining.h
 	include/tracking/GridSampler.h
-	include/tracking/LearningMeasurementModel.h
 	include/tracking/LowVarianceSampling.h
 	include/tracking/MaxWeightPositionExtractor.h
 	include/tracking/MeasurementModel.h

@@ -25,9 +25,10 @@ public:
 	 * Constructs a new extact sigmoid parameter computation.
 	 */
 	explicit ExactSigmoidParameterComputation();
-	virtual ~ExactSigmoidParameterComputation();
 
-	std::pair<double, double> computeSigmoidParameters(ChangableDetectorSvm* svm, const struct svm_model *model,
+	~ExactSigmoidParameterComputation();
+
+	std::pair<double, double> computeSigmoidParameters(const ChangableDetectorSvm& svm, const struct svm_model *model,
 			struct svm_node **positiveSamples, unsigned int positiveCount,
 			struct svm_node **negativeSamples, unsigned int negativeCount);
 };

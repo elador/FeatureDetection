@@ -38,7 +38,7 @@ public:
 	 * @param negativeCount The amount of negative samples.
 	 * @return A pair containing the parameters A and B.
 	 */
-	virtual std::pair<double, double> computeSigmoidParameters(ChangableDetectorSvm* svm, const struct svm_model *model,
+	virtual std::pair<double, double> computeSigmoidParameters(const ChangableDetectorSvm& svm, const struct svm_model *model,
 			struct svm_node **positiveSamples, unsigned int positiveCount,
 			struct svm_node **negativeSamples, unsigned int negativeCount) = 0;
 

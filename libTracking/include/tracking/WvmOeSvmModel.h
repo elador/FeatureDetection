@@ -9,11 +9,14 @@
 #define WVMOESVMMODEL_H_
 
 #include "tracking/MeasurementModel.h"
+#include "boost/shared_ptr.hpp"
 #include <string>
 
 class VDetectorVectorMachine;
 class OverlapElimination;
 class FdPatch;
+
+using boost::shared_ptr;
 
 namespace tracking {
 
@@ -29,19 +32,14 @@ public:
 	/**
 	 * Constructs a new WVM OE SVM measurement model. The machines and algorithm must have been initialized.
 	 *
-	 * @param[in] wvm The fast WVM. Will be deleted at destruction.
-	 * @param[in] svm The slower SVM. Will be deleted at destruction.
-	 * @param[in] oe The overlap elimination algorithm. Will be deleted at destruction.
+	 * @param[in] wvm The fast WVM.
+	 * @param[in] svm The slower SVM.
+	 * @param[in] oe The overlap elimination algorithm.
 	 */
-	explicit WvmOeSvmModel(VDetectorVectorMachine* wvm, VDetectorVectorMachine* svm, OverlapElimination* oe);
+	explicit WvmOeSvmModel(shared_ptr<VDetectorVectorMachine> wvm, shared_ptr<VDetectorVectorMachine> svm,
+			shared_ptr<OverlapElimination> oe);
 
-	/**
-	 * Constructs a new WVM OE SVM measurement model with default SVMs and overlapping elimination.
-	 *
-	 * @param[in] configFilename The name of the Matlab config file containing the parameters.
-	 */
-	explicit WvmOeSvmModel(std::string configFilename);
-	virtual ~WvmOeSvmModel();
+	~WvmOeSvmModel();
 
 	void evaluate(FdImage* image, std::vector<Sample>& samples);
 
@@ -54,11 +52,11 @@ private:
 	 * @param[in] detectorId The identifier of the detector used for computing the certainties.
 	 * @return A new vector containing the remaining patches.
 	 */
-	std::vector<FdPatch*> eliminate(const std::vector<FdPatch*>& patches, std::string detectorId);
+	std::vector<FdPatch*> eliminate(std::vector<FdPatch*> patches, std::string detectorId);
 
-	VDetectorVectorMachine* wvm; ///< The fast WVM.
-	VDetectorVectorMachine* svm; ///< The slower SVM.
-	OverlapElimination* oe;      ///< The overlap elimination algorithm.
+	shared_ptr<VDetectorVectorMachine> wvm; ///< The fast WVM.
+	shared_ptr<VDetectorVectorMachine> svm; ///< The slower SVM.
+	shared_ptr<OverlapElimination> oe;      ///< The overlap elimination algorithm.
 };
 
 } /* namespace tracking */

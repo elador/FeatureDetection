@@ -27,7 +27,8 @@ public:
 	 * @param[in] bandwidth The kernel bandwidth used for density estimation.
 	 */
 	explicit DensityPositionExtractor(int bandwidth);
-	virtual ~DensityPositionExtractor();
+
+	~DensityPositionExtractor();
 
 	boost::optional<Sample> extract(const std::vector<Sample>& samples);
 

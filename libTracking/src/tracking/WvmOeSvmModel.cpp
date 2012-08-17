@@ -17,21 +17,10 @@
 
 namespace tracking {
 
-WvmOeSvmModel::WvmOeSvmModel(VDetectorVectorMachine* wvm, VDetectorVectorMachine* svm, OverlapElimination* oe)
-		: wvm(wvm), svm(svm), oe(oe) {}
+WvmOeSvmModel::WvmOeSvmModel(shared_ptr<VDetectorVectorMachine> wvm, shared_ptr<VDetectorVectorMachine> svm,
+		shared_ptr<OverlapElimination> oe) : wvm(wvm), svm(svm), oe(oe) {}
 
-WvmOeSvmModel::WvmOeSvmModel(std::string configFilename) : wvm(new DetectorWVM()), svm(new DetectorSVM()),
-		oe(new OverlapElimination()) {
-	wvm->load(configFilename);
-	svm->load(configFilename);
-	oe->load(configFilename);
-}
-
-WvmOeSvmModel::~WvmOeSvmModel() {
-	delete wvm;
-	delete svm;
-	delete oe;
-}
+WvmOeSvmModel::~WvmOeSvmModel() {}
 
 void WvmOeSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
 	wvm->initPyramids(image);
@@ -70,13 +59,12 @@ void WvmOeSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
 	}
 }
 
-std::vector<FdPatch*> WvmOeSvmModel::eliminate(const std::vector<FdPatch*>& patches, std::string detectorId) {
-	std::vector<FdPatch*> remaining = patches;
-	if (remaining.size() > 10) {
-		std::sort(remaining.begin(), remaining.end(), FdPatch::SortByCertainty(detectorId));
-		remaining.resize(10);
+std::vector<FdPatch*> WvmOeSvmModel::eliminate(std::vector<FdPatch*> patches, std::string detectorId) {
+	if (patches.size() > 10) {
+		std::sort(patches.begin(), patches.end(), FdPatch::SortByCertainty(detectorId));
+		patches.resize(10);
 	}
-	return remaining;
+	return patches;
 }
 
 } /* namespace tracking */

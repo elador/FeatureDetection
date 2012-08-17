@@ -22,7 +22,8 @@ public:
 	 * Constructs a new max weight position extractor.
 	 */
 	explicit MaxWeightPositionExtractor();
-	virtual ~MaxWeightPositionExtractor();
+
+	~MaxWeightPositionExtractor();
 
 	boost::optional<Sample> extract(const std::vector<Sample>& samples);
 };

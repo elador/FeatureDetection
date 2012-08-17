@@ -9,9 +9,9 @@
 #define SIMPLETRANSITIONMODEL_H_
 
 #include "tracking/TransitionModel.h"
-#include <boost/random/normal_distribution.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/variate_generator.hpp>
+#include "boost/random/normal_distribution.hpp"
+#include "boost/random/mersenne_twister.hpp"
+#include "boost/random/variate_generator.hpp"
 
 namespace tracking {
 
@@ -27,7 +27,8 @@ public:
 	 * @param[in] The scatter that controls the diffusion.
 	 */
 	SimpleTransitionModel(double scatter = 0.25);
-	virtual ~SimpleTransitionModel();
+
+	~SimpleTransitionModel();
 
 	void predict(Sample& sample, const std::vector<double>& offset);
 

@@ -27,7 +27,8 @@ public:
 	 * @param[in] stepSize The step size relative to the sample size.
 	 */
 	explicit GridSampler(float minSize, float maxSize, float sizeScale, float stepSize);
-	virtual ~GridSampler();
+
+	~GridSampler();
 
 	void sample(const std::vector<Sample>& samples, const std::vector<double>& offset,
 				const FdImage* image, std::vector<Sample>& newSamples);

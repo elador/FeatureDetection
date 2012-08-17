@@ -9,6 +9,9 @@
 #define FILTERINGPOSITIONEXTRACTOR_H_
 
 #include "tracking/PositionExtractor.h"
+#include "boost/shared_ptr.hpp"
+
+using boost::shared_ptr;
 
 namespace tracking {
 
@@ -22,15 +25,16 @@ public:
 	/**
 	 * Constructs a new filtering position extractor.
 	 *
-	 * @param[in] extractor The wrapped position extractor. Will be deleted at destruction.
+	 * @param[in] extractor The wrapped position extractor.
 	 */
-	explicit FilteringPositionExtractor(PositionExtractor* extractor);
-	virtual ~FilteringPositionExtractor();
+	explicit FilteringPositionExtractor(shared_ptr<PositionExtractor> extractor);
+
+	~FilteringPositionExtractor();
 
 	boost::optional<Sample> extract(const std::vector<Sample>& samples);
 
 private:
-	PositionExtractor* extractor; ///< The wrapped position extractor.
+	shared_ptr<PositionExtractor> extractor; ///< The wrapped position extractor.
 };
 
 } /* namespace tracking */

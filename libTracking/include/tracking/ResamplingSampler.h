@@ -9,8 +9,11 @@
 #define RESAMPLINGSAMPLER_H_
 
 #include "tracking/Sampler.h"
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_int.hpp>
+#include "boost/shared_ptr.hpp"
+#include "boost/random/mersenne_twister.hpp"
+#include "boost/random/uniform_int.hpp"
+
+using boost::shared_ptr;
 
 namespace tracking {
 
@@ -29,12 +32,13 @@ public:
 	 *
 	 * @param[in] count The number of samples.
 	 * @param[in] randomRate The percentage of samples that should be equally distributed.
-	 * @param[in] resamplingAlgorithm The resampling algorithm. Will be deleted at destruction.
-	 * @param[in] transitionModel The transition model. Will be deleted at destruction.
+	 * @param[in] resamplingAlgorithm The resampling algorithm.
+	 * @param[in] transitionModel The transition model.
 	 */
 	explicit ResamplingSampler(unsigned int count, double randomRate,
-			ResamplingAlgorithm* resamplingAlgorithm, TransitionModel* transitionModel);
-	virtual ~ResamplingSampler();
+			shared_ptr<ResamplingAlgorithm> resamplingAlgorithm, shared_ptr<TransitionModel> transitionModel);
+
+	~ResamplingSampler();
 
 	void sample(const std::vector<Sample>& samples, const std::vector<double>& offset,
 				const FdImage* image, std::vector<Sample>& newSamples);
@@ -60,8 +64,8 @@ private:
 
 	unsigned int count; ///< The number of samples.
 	double randomRate;  ///< The percentage of samples that should be equally distributed.
-	ResamplingAlgorithm* resamplingAlgorithm; ///< The resampling algorithm.
-	TransitionModel* transitionModel;         ///< The transition model.
+	shared_ptr<ResamplingAlgorithm> resamplingAlgorithm; ///< The resampling algorithm.
+	shared_ptr<TransitionModel> transitionModel;         ///< The transition model.
 
 	boost::mt19937 generator;          ///< Random number generator.
 	boost::uniform_int<> distribution; ///< Uniform integer distribution.

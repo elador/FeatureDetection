@@ -12,6 +12,8 @@
 #include "tracking/SigmoidParameterComputation.h"
 #include "tracking/ApproximateSigmoidParameterComputation.h"
 #include "svm.h"
+#include "boost/shared_ptr.hpp"
+#include "boost/make_shared.hpp"
 #include <string>
 #include <vector>
 #include <utility>
@@ -19,6 +21,9 @@
 class FdPatch;
 struct svm_node;
 struct svm_model;
+
+using boost::shared_ptr;
+using boost::make_shared;
 
 namespace tracking {
 
@@ -35,13 +40,15 @@ public:
 	 * @param[in] minAvgSamples The minimum average positive samples per frame for the training to be reasonable.
 	 * @param[in] negativesFilename The name of the file containing the static negative samples.
 	 * @param[in] negatives The amount of static negative samples to use.
-	 * @param[in] sigmoidParameterComputation The computation of the sigmoid parameters. Will be deleted at destruction.
+	 * @param[in] sigmoidParameterComputation The computation of the sigmoid parameters.
 	 */
 	explicit FrameBasedSvmTraining(int frameLength, float minAvgSamples, std::string negativesFilename, int negatives,
-			SigmoidParameterComputation *sigmoidParameterComputation = new ApproximateSigmoidParameterComputation());
-	virtual ~FrameBasedSvmTraining();
+			shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation
+					= make_shared<ApproximateSigmoidParameterComputation>());
 
-	bool retrain(ChangableDetectorSvm* svm, const std::vector<FdPatch*>& positivePatches,
+	~FrameBasedSvmTraining();
+
+	bool retrain(ChangableDetectorSvm& svm, const std::vector<FdPatch*>& positivePatches,
 			const std::vector<FdPatch*>& negativePatches);
 
 	/**
@@ -111,7 +118,7 @@ private:
 	 * @param[in] svm The SVM that should be trained.
 	 * @return True if the training was successful, false otherwise.
 	 */
-	bool train(ChangableDetectorSvm* svm);
+	bool train(ChangableDetectorSvm& svm);
 
 	/**
 	 * Creates the libSVM parameters.
@@ -139,7 +146,7 @@ private:
 	 * @param[in] positiveCount The amount of positive samples used for the training of the SVM.
 	 * @param[in] negativeCount The amount of negative samples used for the training of the SVM.
 	 */
-	void changeSvmParameters(ChangableDetectorSvm* svm, struct svm_model *model,
+	void changeSvmParameters(ChangableDetectorSvm& svm, struct svm_model *model,
 			struct svm_problem *problem, unsigned int positiveCount, unsigned int negativeCount);
 
 	int frameLength;     ///< The length of the memory in frames.
@@ -148,7 +155,7 @@ private:
 	std::vector<std::vector<struct svm_node *> > positiveSamples; ///< The positive samples of the last frames.
 	std::vector<std::vector<struct svm_node *> > negativeSamples; ///< The negative samples of the last frames.
 	int oldestEntry;                                              ///< The index of the oldest sample entry.
-	SigmoidParameterComputation *sigmoidParameterComputation; ///< The computation of the sigmoid parameters.
+	shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation; ///< The computation of the sigmoid parameters.
 };
 
 } /* namespace tracking */

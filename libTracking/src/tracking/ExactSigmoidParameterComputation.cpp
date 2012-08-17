@@ -16,7 +16,7 @@ ExactSigmoidParameterComputation::ExactSigmoidParameterComputation() {}
 
 ExactSigmoidParameterComputation::~ExactSigmoidParameterComputation() {}
 
-std::pair<double, double> ExactSigmoidParameterComputation::computeSigmoidParameters(ChangableDetectorSvm* svm,
+std::pair<double, double> ExactSigmoidParameterComputation::computeSigmoidParameters(const ChangableDetectorSvm& svm,
 		const struct svm_model *model, struct svm_node **positiveSamples, unsigned int positiveCount,
 		struct svm_node **negativeSamples, unsigned int negativeCount) {
 	double meanPositiveOutput = computeMeanSvmOutput(model, positiveSamples, positiveCount);

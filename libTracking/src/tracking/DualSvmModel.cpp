@@ -14,13 +14,10 @@
 
 namespace tracking {
 
-DualSvmModel::DualSvmModel(VDetectorVectorMachine* preStage, VDetectorVectorMachine* mainStage)
+DualSvmModel::DualSvmModel(shared_ptr<VDetectorVectorMachine> preStage, shared_ptr<VDetectorVectorMachine> mainStage)
 		: preStage(preStage), mainStage(mainStage) {}
 
-DualSvmModel::~DualSvmModel() {
-	delete preStage;
-	delete mainStage;
-}
+DualSvmModel::~DualSvmModel() {}
 
 void DualSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
 	preStage->initPyramids(image);

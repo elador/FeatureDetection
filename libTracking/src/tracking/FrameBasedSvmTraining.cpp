@@ -17,7 +17,7 @@
 namespace tracking {
 
 FrameBasedSvmTraining::FrameBasedSvmTraining(int frameLength, float minAvgSamples, std::string negativesFilename,
-		int negatives, SigmoidParameterComputation *sigmoidParameterComputation) : frameLength(frameLength),
+		int negatives, shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation) : frameLength(frameLength),
 				minAvgSamples(minAvgSamples), staticNegativeSamples(), positiveSamples(frameLength),
 				negativeSamples(frameLength), oldestEntry(0), sigmoidParameterComputation(sigmoidParameterComputation) {
 	staticNegativeSamples.reserve(negatives);
@@ -25,7 +25,6 @@ FrameBasedSvmTraining::FrameBasedSvmTraining(int frameLength, float minAvgSample
 }
 
 FrameBasedSvmTraining::~FrameBasedSvmTraining() {
-	delete sigmoidParameterComputation;
 	std::vector<std::vector<struct svm_node *> >::iterator sit;
 	for (sit = positiveSamples.begin(); sit < positiveSamples.end(); ++sit)
 		freeSamples(*sit);
@@ -81,7 +80,7 @@ bool FrameBasedSvmTraining::isTrainingReasonable() const {
 	return getPositiveSampleCount() >= getRequiredPositiveSampleCount();
 }
 
-bool FrameBasedSvmTraining::retrain(ChangableDetectorSvm* svm, const std::vector<FdPatch*>& positivePatches,
+bool FrameBasedSvmTraining::retrain(ChangableDetectorSvm& svm, const std::vector<FdPatch*>& positivePatches,
 		const std::vector<FdPatch*>& negativePatches) {
 	addSamples(positivePatches, negativePatches);
 	if (isTrainingReasonable())
@@ -128,7 +127,7 @@ int FrameBasedSvmTraining::getSampleCount(const std::vector<std::vector<struct s
 	return count;
 }
 
-bool FrameBasedSvmTraining::train(ChangableDetectorSvm* svm) {
+bool FrameBasedSvmTraining::train(ChangableDetectorSvm& svm) {
 	unsigned int positiveCount = getPositiveSampleCount();
 	unsigned int negativeCount = getNegativeSampleCount();
 	unsigned int count = positiveCount + negativeCount;
@@ -209,9 +208,9 @@ struct svm_problem *FrameBasedSvmTraining::createProblem(unsigned int count) {
 	return problem;
 }
 
-void FrameBasedSvmTraining::changeSvmParameters(ChangableDetectorSvm* svm, struct svm_model *model,
+void FrameBasedSvmTraining::changeSvmParameters(ChangableDetectorSvm& svm, struct svm_model *model,
 		struct svm_problem *problem, unsigned int positiveCount, unsigned int negativeCount) {
-	int dimensions = svm->getDimensions();
+	int dimensions = svm.getDimensions();
 	unsigned char** supportVectors = new unsigned char*[model->l];
 	float* alphas = new float[model->l];
 	for (int i = 0; i < model->l; ++i) {
@@ -231,7 +230,7 @@ void FrameBasedSvmTraining::changeSvmParameters(ChangableDetectorSvm* svm, struc
 	double gamma = model->param.gamma / (255 * 255); // because the support vectors were multiplied by 255
 	std::pair<double, double> sigmoidParams = sigmoidParameterComputation->computeSigmoidParameters(svm, model,
 			problem->x, positiveCount, problem->x + positiveCount, negativeCount);
-	svm->changeRbfParameters(model->l, supportVectors, alphas, rho, gamma, sigmoidParams.first, sigmoidParams.second);
+	svm.changeRbfParameters(model->l, supportVectors, alphas, rho, gamma, sigmoidParams.first, sigmoidParams.second);
 }
 
 } /* namespace tracking */

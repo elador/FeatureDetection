@@ -15,12 +15,16 @@
 #include "tracking/ChangableDetectorSvm.h"
 #include "tracking/FrameBasedSvmTraining.h"
 #include "tracking/Sample.h"
+#include "boost/make_shared.hpp"
 #include <map>
+
+using boost::make_shared;
 
 namespace tracking {
 
-SelfLearningWvmOeSvmModel::SelfLearningWvmOeSvmModel(VDetectorVectorMachine* wvm, VDetectorVectorMachine* staticSvm,
-		ChangableDetectorSvm* dynamicSvm, OverlapElimination* oe, SvmTraining* svmTraining,
+SelfLearningWvmOeSvmModel::SelfLearningWvmOeSvmModel(shared_ptr<VDetectorVectorMachine> wvm,
+		shared_ptr<VDetectorVectorMachine> staticSvm, shared_ptr<ChangableDetectorSvm> dynamicSvm,
+		shared_ptr<OverlapElimination> oe, shared_ptr<SvmTraining> svmTraining,
 		double positiveThreshold, double negativeThreshold) :
 				wvm(wvm),
 				staticSvm(staticSvm),
@@ -33,11 +37,11 @@ SelfLearningWvmOeSvmModel::SelfLearningWvmOeSvmModel(VDetectorVectorMachine* wvm
 				selfLearningActive(true) {}
 
 SelfLearningWvmOeSvmModel::SelfLearningWvmOeSvmModel(std::string configFilename, std::string negativesFilename) :
-		wvm(new DetectorWVM()),
-		staticSvm(new DetectorSVM()),
-		dynamicSvm(new ChangableDetectorSvm()),
-		oe(new OverlapElimination()),
-		svmTraining(new FrameBasedSvmTraining(5, 4, negativesFilename, 200)),
+		wvm(make_shared<DetectorWVM>()),
+		staticSvm(make_shared<DetectorSVM>()),
+		dynamicSvm(make_shared<ChangableDetectorSvm>()),
+		oe(make_shared<OverlapElimination>()),
+		svmTraining(make_shared<FrameBasedSvmTraining>(5, 4, negativesFilename, 200)),
 		usingDynamicSvm(false),
 		positiveThreshold(0.85),
 		negativeThreshold(0.4),
@@ -48,12 +52,7 @@ SelfLearningWvmOeSvmModel::SelfLearningWvmOeSvmModel(std::string configFilename,
 	oe->load(configFilename);
 }
 
-SelfLearningWvmOeSvmModel::~SelfLearningWvmOeSvmModel() {
-	delete wvm;
-	delete staticSvm;
-	delete dynamicSvm;
-	delete oe;
-}
+SelfLearningWvmOeSvmModel::~SelfLearningWvmOeSvmModel() {}
 
 void SelfLearningWvmOeSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
 	wvm->initPyramids(image);
@@ -79,18 +78,14 @@ void SelfLearningWvmOeSvmModel::evaluate(FdImage* image, std::vector<Sample>& sa
 	if (!remainingPatches.empty()) {
 		//remainingPatches = oe->eliminate(remainingPatches, wvm->getIdentifier());
 		remainingPatches = eliminate(remainingPatches, wvm->getIdentifier());
-		VDetectorVectorMachine* svm;
-		if (selfLearningActive && usingDynamicSvm)
-			svm = dynamicSvm;
-		else
-			svm = staticSvm;
-		svm->initPyramids(image);
-		svm->initROI(image);
-		std::vector<FdPatch*> objectPatches = svm->detect_on_patchvec(remainingPatches);
+		VDetectorVectorMachine& svm = (selfLearningActive && usingDynamicSvm) ? *dynamicSvm : *staticSvm;
+		svm.initPyramids(image);
+		svm.initROI(image);
+		std::vector<FdPatch*> objectPatches = svm.detect_on_patchvec(remainingPatches);
 		for (std::vector<FdPatch*>::iterator pit = remainingPatches.begin(); pit < remainingPatches.end(); ++pit) {
 			FdPatch* patch = (*pit);
 			Sample* sample = patch2sample[patch];
-			double certainty = patch->certainty[svm->getIdentifier()];
+			double certainty = patch->certainty[svm.getIdentifier()];
 			sample->setWeight(2 * sample->getWeight() * certainty);
 			if (selfLearningActive) {
 				if (certainty > positiveThreshold)
@@ -104,17 +99,15 @@ void SelfLearningWvmOeSvmModel::evaluate(FdImage* image, std::vector<Sample>& sa
 			sample->setObject(true);
 		}
 	}
-	usingDynamicSvm = svmTraining->retrain(dynamicSvm, positiveTrainingPatches, negativeTrainingPatches);
+	usingDynamicSvm = svmTraining->retrain(*dynamicSvm, positiveTrainingPatches, negativeTrainingPatches);
 }
 
-std::vector<FdPatch*> SelfLearningWvmOeSvmModel::eliminate(const std::vector<FdPatch*>& patches,
-		std::string detectorId) {
-	std::vector<FdPatch*> remaining = patches;
-	if (remaining.size() > 10) {
-		std::sort(remaining.begin(), remaining.end(), FdPatch::SortByCertainty(detectorId));
-		remaining.resize(10);
+std::vector<FdPatch*> SelfLearningWvmOeSvmModel::eliminate(std::vector<FdPatch*> patches, std::string detectorId) {
+	if (patches.size() > 10) {
+		std::sort(patches.begin(), patches.end(), FdPatch::SortByCertainty(detectorId));
+		patches.resize(10);
 	}
-	return remaining;
+	return patches;
 }
 
 } /* namespace tracking */

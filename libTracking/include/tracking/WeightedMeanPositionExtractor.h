@@ -22,7 +22,8 @@ public:
 	 * Constructs a new weighted mean position extractor.
 	 */
 	explicit WeightedMeanPositionExtractor();
-	virtual ~WeightedMeanPositionExtractor();
+
+	~WeightedMeanPositionExtractor();
 
 	boost::optional<Sample> extract(const std::vector<Sample>& samples);
 };

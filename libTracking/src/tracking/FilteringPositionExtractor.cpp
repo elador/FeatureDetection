@@ -10,11 +10,9 @@
 
 namespace tracking {
 
-FilteringPositionExtractor::FilteringPositionExtractor(PositionExtractor* extractor) : extractor(extractor) {}
+FilteringPositionExtractor::FilteringPositionExtractor(shared_ptr<PositionExtractor> extractor) : extractor(extractor) {}
 
-FilteringPositionExtractor::~FilteringPositionExtractor() {
-	delete extractor;
-}
+FilteringPositionExtractor::~FilteringPositionExtractor() {}
 
 boost::optional<Sample> FilteringPositionExtractor::extract(const std::vector<Sample>& samples) {
 	std::vector<Sample> objects;

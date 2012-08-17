@@ -13,8 +13,8 @@
 
 namespace tracking {
 
-CondensationTracker::CondensationTracker(Sampler* sampler,
-		MeasurementModel* measurementModel, PositionExtractor* extractor) :
+CondensationTracker::CondensationTracker(shared_ptr<Sampler> sampler,
+		shared_ptr<MeasurementModel> measurementModel, shared_ptr<PositionExtractor> extractor) :
 				samples(),
 				oldSamples(),
 				oldPosition(),
@@ -27,11 +27,7 @@ CondensationTracker::CondensationTracker(Sampler* sampler,
 	offset.push_back(0);
 }
 
-CondensationTracker::~CondensationTracker() {
-	delete sampler;
-	delete measurementModel;
-	delete extractor;
-}
+CondensationTracker::~CondensationTracker() {}
 
 boost::optional<Rectangle> CondensationTracker::process(FdImage* image) {
 	oldSamples = samples;

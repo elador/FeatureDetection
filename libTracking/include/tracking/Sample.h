@@ -31,6 +31,7 @@ public:
 	 * @param[in] size The size (width).
 	 */
 	explicit Sample(int x, int y, int size);
+
 	~Sample();
 
 	/**

@@ -22,7 +22,8 @@ public:
 	 * Constructs a new changable detector SVM.
 	 */
 	explicit ChangableDetectorSvm();
-	virtual ~ChangableDetectorSvm();
+
+	~ChangableDetectorSvm();
 
 	/**
 	 * @return The number of dimensions.

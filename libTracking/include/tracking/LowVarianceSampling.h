@@ -9,8 +9,8 @@
 #define LOWVARIANCESAMPLING_H_
 
 #include "tracking/ResamplingAlgorithm.h"
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_01.hpp>
+#include "boost/random/mersenne_twister.hpp"
+#include "boost/random/uniform_01.hpp"
 #include <vector>
 
 namespace tracking {
@@ -25,7 +25,8 @@ public:
 	 * Constructs a new low variance sampling algorithm.
 	 */
 	LowVarianceSampling();
-	virtual ~LowVarianceSampling();
+
+	~LowVarianceSampling();
 
 	void resample(const std::vector<Sample>& samples, unsigned int count, std::vector<Sample>& newSamples);
 

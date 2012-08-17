@@ -9,11 +9,14 @@
 #define SELFLEARNINGWVMOESVMMODEL_H_
 
 #include "tracking/MeasurementModel.h"
+#include "boost/shared_ptr.hpp"
 #include <string>
 
 class VDetectorVectorMachine;
 class OverlapElimination;
 class FdPatch;
+
+using boost::shared_ptr;
 
 namespace tracking {
 
@@ -34,27 +37,29 @@ public:
 	 * Constructs a new self-learning WVM OE SVM measurement model. The machines and algorithm
 	 * must have been initialized.
 	 *
-	 * @param[in] wvm The fast WVM. Will be deleted at destruction.
-	 * @param[in] staticSvm The slower static SVM. Will be deleted at destruction.
-	 * @param[in] dynamicSvm The dynamic SVM that will be re-trained. Will be deleted at destruction.
-	 * @param[in] oe The overlap elimination algorithm. Will be deleted at destruction.
+	 * @param[in] wvm The fast WVM.
+	 * @param[in] staticSvm The slower static SVM.
+	 * @param[in] dynamicSvm The dynamic SVM that will be re-trained.
+	 * @param[in] oe The overlap elimination algorithm.
 	 * @param[in] svmTraining The SVM training algorithm.
 	 * @param[in] positiveThreshold The threshold for patches to be used as positive samples (must be exceeded).
 	 * @param[in] negativeThreshold The threshold for patches to be used as negative samples (must fall below).
 	 */
-	explicit SelfLearningWvmOeSvmModel(VDetectorVectorMachine* wvm, VDetectorVectorMachine* staticSvm,
-			ChangableDetectorSvm* dynamicSvm, OverlapElimination* oe, SvmTraining* svmTraining,
+	explicit SelfLearningWvmOeSvmModel(shared_ptr<VDetectorVectorMachine> wvm,
+			shared_ptr<VDetectorVectorMachine> staticSvm, shared_ptr<ChangableDetectorSvm> dynamicSvm,
+			shared_ptr<OverlapElimination> oe, shared_ptr<SvmTraining> svmTraining,
 			double positiveThreshold = 0.85, double negativeThreshold = 0.4);
 
 	/**
-	 * Constructs a new self-learning WVM OE SVM measurement model with default SVMs and overlapping
-	 * elimination.
+	 * Constructs a new self-learning WVM OE SVM measurement model with default SVMs and overlap
+	 * elimination algorithm.
 	 *
 	 * @param[in] configFilename The name of the Matlab config file containing the parameters.
 	 * @param[in] negativesFilename The name of the file containing the static negative samples.
 	 */
 	explicit SelfLearningWvmOeSvmModel(std::string configFilename, std::string negativesFilename);
-	virtual ~SelfLearningWvmOeSvmModel();
+
+	~SelfLearningWvmOeSvmModel();
 
 	void evaluate(FdImage* image, std::vector<Sample>& samples);
 
@@ -88,17 +93,17 @@ private:
 	 * @param[in] detectorId The identifier of the detector used for computing the certainties.
 	 * @return A new vector containing the remaining patches.
 	 */
-	std::vector<FdPatch*> eliminate(const std::vector<FdPatch*>& patches, std::string detectorId);
+	std::vector<FdPatch*> eliminate(std::vector<FdPatch*> patches, std::string detectorId);
 
-	VDetectorVectorMachine* wvm;       ///< The fast WVM.
-	VDetectorVectorMachine* staticSvm; ///< The slower static SVM.
-	ChangableDetectorSvm* dynamicSvm;  ///< The dynamic SVM that will be re-trained.
-	OverlapElimination* oe;            ///< The overlap elimination algorithm.
-	SvmTraining* svmTraining;          ///< The SVM training algorithm.
-	bool usingDynamicSvm;              ///< Flag that indicates whether the dynamic SVM is used.
-	double positiveThreshold;          ///< The threshold for patches to be used as positive samples (must be exceeded).
-	double negativeThreshold;          ///< The threshold for patches to be used as negative samples (must fall below).
-	bool selfLearningActive;           ///< Flag that indicates whether self-learning is active.
+	shared_ptr<VDetectorVectorMachine> wvm;       ///< The fast WVM.
+	shared_ptr<VDetectorVectorMachine> staticSvm; ///< The slower static SVM.
+	shared_ptr<ChangableDetectorSvm> dynamicSvm;  ///< The dynamic SVM that will be re-trained.
+	shared_ptr<OverlapElimination> oe;            ///< The overlap elimination algorithm.
+	shared_ptr<SvmTraining> svmTraining;          ///< The SVM training algorithm.
+	bool usingDynamicSvm;     ///< Flag that indicates whether the dynamic SVM is used.
+	double positiveThreshold; ///< The threshold for patches to be used as positive samples (must be exceeded).
+	double negativeThreshold; ///< The threshold for patches to be used as negative samples (must fall below).
+	bool selfLearningActive;  ///< Flag that indicates whether self-learning is active.
 };
 
 } /* namespace tracking */

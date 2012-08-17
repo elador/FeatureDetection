@@ -13,8 +13,12 @@
 #include "tracking/FrameBasedSvmTraining.h"
 #include "tracking/Sampler.h"
 #include "opencv2/highgui/highgui.hpp"
+#include "boost/shared_ptr.hpp"
 #include <string>
 
+using std::auto_ptr;
+using boost::shared_ptr;
+using boost::make_shared;
 using namespace tracking;
 
 class FaceTracking {
@@ -52,11 +56,11 @@ private:
 	bool running;
 	bool drawSamples;
 
-	CondensationTracker* tracker;
-	SelfLearningWvmOeSvmModel* measurementModel;
-	FrameBasedSvmTraining* svmTraining;
-	Sampler* resamplingSampler;
-	Sampler* gridSampler;
+	auto_ptr<CondensationTracker> tracker;
+	shared_ptr<SelfLearningWvmOeSvmModel> measurementModel;
+	shared_ptr<FrameBasedSvmTraining> svmTraining;
+	shared_ptr<Sampler> resamplingSampler;
+	shared_ptr<Sampler> gridSampler;
 };
 
 #endif /* FACETRACKING_H_ */

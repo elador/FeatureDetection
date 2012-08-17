@@ -32,7 +32,7 @@ public:
 	 * @param[in] negativePatches The new negative patches.
 	 * @return True if the SVM was trained successfully, false otherwise.
 	 */
-	virtual bool retrain(ChangableDetectorSvm* svm,
+	virtual bool retrain(ChangableDetectorSvm& svm,
 			const std::vector<FdPatch*>& positivePatches, const std::vector<FdPatch*>& negativePatches) = 0;
 };
 
