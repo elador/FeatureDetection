@@ -1,11 +1,11 @@
 /*
- * SelfLearningWvmOeSvmModel.cpp
+ * SelfLearningWvmSvmModel.cpp
  *
  *  Created on: 31.07.2012
  *      Author: poschmann
  */
 
-#include "tracking/SelfLearningWvmOeSvmModel.h"
+#include "tracking/SelfLearningWvmSvmModel.h"
 #include "DetectorWVM.h"
 #include "DetectorSVM.h"
 #include "OverlapElimination.h"
@@ -22,7 +22,7 @@ using boost::make_shared;
 
 namespace tracking {
 
-SelfLearningWvmOeSvmModel::SelfLearningWvmOeSvmModel(shared_ptr<VDetectorVectorMachine> wvm,
+SelfLearningWvmSvmModel::SelfLearningWvmSvmModel(shared_ptr<VDetectorVectorMachine> wvm,
 		shared_ptr<VDetectorVectorMachine> staticSvm, shared_ptr<ChangableDetectorSvm> dynamicSvm,
 		shared_ptr<OverlapElimination> oe, shared_ptr<SvmTraining> svmTraining,
 		double positiveThreshold, double negativeThreshold) :
@@ -36,7 +36,7 @@ SelfLearningWvmOeSvmModel::SelfLearningWvmOeSvmModel(shared_ptr<VDetectorVectorM
 				negativeThreshold(negativeThreshold),
 				selfLearningActive(true) {}
 
-SelfLearningWvmOeSvmModel::SelfLearningWvmOeSvmModel(std::string configFilename, std::string negativesFilename) :
+SelfLearningWvmSvmModel::SelfLearningWvmSvmModel(std::string configFilename, std::string negativesFilename) :
 		wvm(make_shared<DetectorWVM>()),
 		staticSvm(make_shared<DetectorSVM>()),
 		dynamicSvm(make_shared<ChangableDetectorSvm>()),
@@ -52,9 +52,9 @@ SelfLearningWvmOeSvmModel::SelfLearningWvmOeSvmModel(std::string configFilename,
 	oe->load(configFilename);
 }
 
-SelfLearningWvmOeSvmModel::~SelfLearningWvmOeSvmModel() {}
+SelfLearningWvmSvmModel::~SelfLearningWvmSvmModel() {}
 
-void SelfLearningWvmOeSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
+void SelfLearningWvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
 	wvm->initPyramids(image);
 	wvm->initROI(image);
 	std::vector<FdPatch*> remainingPatches;
@@ -76,9 +76,11 @@ void SelfLearningWvmOeSvmModel::evaluate(FdImage* image, std::vector<Sample>& sa
 	std::vector<FdPatch*> positiveTrainingPatches;
 	std::vector<FdPatch*> negativeTrainingPatches;
 	if (!remainingPatches.empty()) {
-		//remainingPatches = oe->eliminate(remainingPatches, wvm->getIdentifier());
-		remainingPatches = eliminate(remainingPatches, wvm->getIdentifier());
-		VDetectorVectorMachine& svm = (selfLearningActive && usingDynamicSvm) ? *dynamicSvm : *staticSvm;
+		bool useDynamicSvm = selfLearningActive && usingDynamicSvm;
+		if (!useDynamicSvm)
+			//remainingPatches = oe->eliminate(remainingPatches, wvm->getIdentifier());
+			remainingPatches = eliminate(remainingPatches, wvm->getIdentifier());
+		VDetectorVectorMachine& svm = useDynamicSvm ? *dynamicSvm : *staticSvm;
 		svm.initPyramids(image);
 		svm.initROI(image);
 		std::vector<FdPatch*> objectPatches = svm.detect_on_patchvec(remainingPatches);
@@ -98,16 +100,47 @@ void SelfLearningWvmOeSvmModel::evaluate(FdImage* image, std::vector<Sample>& sa
 			Sample* sample = patch2sample[(*pit)];
 			sample->setObject(true);
 		}
+		positiveTrainingPatches = takeDistinctBest(positiveTrainingPatches, 10, svm.getIdentifier());
+		negativeTrainingPatches = takeDistinctWorst(negativeTrainingPatches, 10, svm.getIdentifier());
 	}
 	usingDynamicSvm = svmTraining->retrain(*dynamicSvm, positiveTrainingPatches, negativeTrainingPatches);
 }
 
-std::vector<FdPatch*> SelfLearningWvmOeSvmModel::eliminate(std::vector<FdPatch*> patches, std::string detectorId) {
+std::vector<FdPatch*> SelfLearningWvmSvmModel::eliminate(std::vector<FdPatch*> patches, std::string detectorId) {
 	if (patches.size() > 10) {
 		std::sort(patches.begin(), patches.end(), FdPatch::SortByCertainty(detectorId));
 		patches.resize(10);
 	}
 	return patches;
+}
+
+std::vector<FdPatch*> SelfLearningWvmSvmModel::takeDistinctBest(std::vector<FdPatch*> patches,
+		unsigned int count, std::string detectorId) {
+	std::sort(patches.begin(), patches.end(), FdPatch::SortByCertainty(detectorId));
+	return takeDistinct(patches, count);
+}
+
+std::vector<FdPatch*> SelfLearningWvmSvmModel::takeDistinctWorst(std::vector<FdPatch*> patches,
+		unsigned int count, std::string detectorId) {
+	std::sort(patches.begin(), patches.end(), FdPatch::SortByCertainty(detectorId));
+	std::reverse(patches.begin(), patches.end());
+	return takeDistinct(patches, count);
+}
+
+std::vector<FdPatch*> SelfLearningWvmSvmModel::takeDistinct(const std::vector<FdPatch*>& patches,
+		unsigned int count) {
+	if (patches.empty())
+		return patches;
+	std::vector<FdPatch*> remainingPatches;
+	remainingPatches.reserve(count);
+	std::vector<FdPatch*>::const_iterator pit = patches.begin();
+	remainingPatches.push_back(*pit);
+	pit++;
+	for (; remainingPatches.size() < count && pit < patches.end(); ++pit) {
+		if (*pit != remainingPatches.back())
+			remainingPatches.push_back(*pit);
+	}
+	return remainingPatches;
 }
 
 } /* namespace tracking */

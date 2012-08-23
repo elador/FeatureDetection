@@ -29,14 +29,14 @@ SET(HEADERS
 	include/tracking/ResamplingSampler.h
 	include/tracking/Sample.h
 	include/tracking/Sampler.h
-	include/tracking/SelfLearningWvmOeSvmModel.h
+	include/tracking/SelfLearningWvmSvmModel.h
 	include/tracking/SigmoidParameterComputation.h
 	include/tracking/SimpleTransitionModel.h
 	include/tracking/SvmTraining.h
 	include/tracking/TransitionModel.h
 	include/tracking/UnchangingSigmoidParameterComputation.h
 	include/tracking/WeightedMeanPositionExtractor.h
-	include/tracking/WvmOeSvmModel.h
+	include/tracking/WvmSvmModel.h
 )
 SET(SOURCE
 	src/svm.cpp
@@ -54,12 +54,12 @@ SET(SOURCE
 	src/tracking/Rectangle.cpp
 	src/tracking/ResamplingSampler.cpp
 	src/tracking/Sample.cpp
-	src/tracking/SelfLearningWvmOeSvmModel.cpp
+	src/tracking/SelfLearningWvmSvmModel.cpp
 	src/tracking/SigmoidParameterComputation.cpp
 	src/tracking/SimpleTransitionModel.cpp
 	src/tracking/UnchangingSigmoidParameterComputation.cpp
 	src/tracking/WeightedMeanPositionExtractor.cpp
-	src/tracking/WvmOeSvmModel.cpp
+	src/tracking/WvmSvmModel.cpp
 )
 
 include_directories( "include" )

@@ -6,6 +6,8 @@
  */
 
 #include "FaceTracking.h"
+#include "VideoImageSource.h"
+#include "DirectoryImageSource.h"
 #include "tracking/ResamplingSampler.h"
 #include "tracking/GridSampler.h"
 #include "tracking/LowVarianceSampling.h"
@@ -36,27 +38,14 @@ const std::string FaceTracking::negativesFile = "/home/poschmann/projects/ffd/co
 const std::string FaceTracking::videoWindowName = "Image";
 const std::string FaceTracking::controlWindowName = "Controls";
 
-FaceTracking::FaceTracking(int device) {
-	init("", device, true, false);
-	initGui();
-}
-
-FaceTracking::FaceTracking(std::string video, bool realtime) {
-	init(video, 0, false, realtime);
+FaceTracking::FaceTracking(auto_ptr<ImageSource> imageSource) : imageSource(imageSource) {
+	initTracking();
 	initGui();
 }
 
 FaceTracking::~FaceTracking() {}
 
-void FaceTracking::init(std::string video, int device, bool cam, bool realtime) {
-	this->video = video;
-	this->device = device;
-	this->cam = cam;
-	this->realtime = realtime;
-
-	frameWidth = 640;
-	frameHeight = 480;
-
+void FaceTracking::initTracking() {
 	// create SVM training
 	svmTraining = make_shared<FrameBasedSvmTraining>(5, 4, negativesFile, 200);
 
@@ -69,13 +58,14 @@ void FaceTracking::init(std::string video, int device, bool cam, bool realtime) 
 	dynamicSvm->load(svmConfigFile);
 	shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>();
 	oe->load(svmConfigFile);
-	measurementModel = make_shared<SelfLearningWvmOeSvmModel>(wvm, svm, dynamicSvm, oe, svmTraining);
+	measurementModel = make_shared<SelfLearningWvmSvmModel>(wvm, svm, dynamicSvm, oe, svmTraining, 0.85, 0.05);
 
 	// create tracker
 	unsigned int count = 800;
-	double randomRate = 0.3;
+	double randomRate = 0.35;
+	transitionModel = make_shared<SimpleTransitionModel>(0.2);
 	resamplingSampler = make_shared<ResamplingSampler>(count, randomRate, make_shared<LowVarianceSampling>(),
-			make_shared<SimpleTransitionModel>(0.2));
+			transitionModel);
 	gridSampler = make_shared<GridSampler>(0.2, 0.8, 1.2, 0.1);
 	tracker = auto_ptr<CondensationTracker>(new CondensationTracker(resamplingSampler, measurementModel,
 			make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>())));
@@ -87,24 +77,51 @@ void FaceTracking::initGui() {
 	cvNamedWindow(controlWindowName.c_str(), CV_WINDOW_AUTOSIZE);
 	cvMoveWindow(controlWindowName.c_str(), 750, 50);
 
+	cv::createTrackbar("Self-learning active", controlWindowName, NULL, 1, selfLearningChanged, this);
+	cv::setTrackbarPos("Self-learning active", controlWindowName, measurementModel->isSelfLearningActive() ? 1 : 0);
+
 	cv::createTrackbar("Grid/Resampling", controlWindowName, NULL, 1, samplerChanged, this);
 	cv::setTrackbarPos("Grid/Resampling", controlWindowName, tracker->getSampler() == gridSampler ? 0 : 1);
 
-	cv::createTrackbar("Self-learning active", controlWindowName, NULL, 1, selfLearningChanged, this);
-	cv::setTrackbarPos("Self-learning active", controlWindowName, measurementModel->isSelfLearningActive() ? 1 : 0);
+	cv::createTrackbar("Sample Count", controlWindowName, NULL, 1000, sampleCountChanged, this);
+	cv::setTrackbarPos("Sample Count", controlWindowName, resamplingSampler->getCount());
+
+	cv::createTrackbar("Random Rate", controlWindowName, NULL, 100, randomRateChanged, this);
+	cv::setTrackbarPos("Random Rate", controlWindowName, 100 * resamplingSampler->getRandomRate());
+
+	cv::createTrackbar("Scatter * 100", controlWindowName, NULL, 100, scatterChanged, this);
+	cv::setTrackbarPos("Scatter * 100", controlWindowName, 100 * transitionModel->getScatter());
 
 	cv::createTrackbar("Draw samples", controlWindowName, NULL, 1, drawSamplesChanged, this);
 	cv::setTrackbarPos("Draw samples", controlWindowName, drawSamples ? 1 : 0);
 }
 
-void FaceTracking::samplerChanged(int state, void* userdata) {
-	FaceTracking *tracking = (FaceTracking*)userdata;
-	tracking->tracker->setSampler(state == 0 ? tracking->gridSampler : tracking->resamplingSampler);
-}
-
 void FaceTracking::selfLearningChanged(int state, void* userdata) {
 	FaceTracking *tracking = (FaceTracking*)userdata;
 	tracking->measurementModel->setSelfLearningActive(state == 1);
+}
+
+void FaceTracking::samplerChanged(int state, void* userdata) {
+	FaceTracking *tracking = (FaceTracking*)userdata;
+	if (state == 0)
+		tracking->tracker->setSampler(tracking->gridSampler);
+	else
+		tracking->tracker->setSampler(tracking->resamplingSampler);
+}
+
+void FaceTracking::sampleCountChanged(int state, void* userdata) {
+	FaceTracking *tracking = (FaceTracking*)userdata;
+	tracking->resamplingSampler->setCount(state);
+}
+
+void FaceTracking::randomRateChanged(int state, void* userdata) {
+	FaceTracking *tracking = (FaceTracking*)userdata;
+	tracking->resamplingSampler->setRandomRate(0.01 * state);
+}
+
+void FaceTracking::scatterChanged(int state, void* userdata) {
+	FaceTracking *tracking = (FaceTracking*)userdata;
+	tracking->transitionModel->setScatter(0.01 * state);
 }
 
 void FaceTracking::drawSamplesChanged(int state, void* userdata) {
@@ -119,7 +136,7 @@ void FaceTracking::drawDebug(cv::Mat& image) {
 	if (drawSamples) {
 		const std::vector<Sample> samples = tracker->getSamples();
 		for (std::vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
-			cv::Scalar& color = (sit->isObject() > 0.5) ? red : black;
+			cv::Scalar color = sit->isObject() ? cv::Scalar(0, 0, sit->getWeight() * 255) : black;
 			cv::circle(image, cv::Point(sit->getX(), sit->getY()), 3, color);
 		}
 	}
@@ -134,51 +151,24 @@ void FaceTracking::drawDebug(cv::Mat& image) {
 
 void FaceTracking::run() {
 	running = true;
-
-	cv::VideoCapture capture;
-	if (cam) {
-		capture.open(device);
-		if (!capture.isOpened()) {
-			std::cerr << "Could not open stream from device " << device << std::endl;
-			return;
-		}
-		if (!capture.set(CV_CAP_PROP_FRAME_WIDTH, frameWidth)
-				|| !capture.set(CV_CAP_PROP_FRAME_HEIGHT, frameHeight))
-			std::cerr << "Could not change resolution to " << frameWidth << "x" << frameHeight << std::endl;
-		frameWidth = static_cast<int>(capture.get(CV_CAP_PROP_FRAME_WIDTH));
-		frameHeight = static_cast<int>(capture.get(CV_CAP_PROP_FRAME_HEIGHT));
-	} else {
-		capture.open(video);
-		if (!capture.isOpened()) {
-			std::cerr << "Could not open video file '" << video << "'" << std::endl;
-			return;
-		}
-		frameWidth = static_cast<int>(capture.get(CV_CAP_PROP_FRAME_WIDTH));
-		frameHeight = static_cast<int>(capture.get(CV_CAP_PROP_FRAME_HEIGHT));
-	}
+	paused = false;
 
 	bool first = true;
 	cv::Mat frame, image;
 	cv::Scalar green(0, 255, 0); // blue, green, red
+	cv::Scalar red(0, 0, 255); // blue, green, red
 
 	timeval start, detStart, detEnd, frameStart, frameEnd;
-	float allDetTimeS = 0;
+	float allIterationTimeSeconds = 0, allDetectionTimeSeconds = 0;
 
 	int frames = 0;
 	gettimeofday(&start, 0);
 	std::cout.precision(2);
 
 	while (running) {
-		/*while (!commandQueue.empty()) {
-			TrackerCommand *command = commandQueue.front();
-			commandQueue.pop();
-			command->run(trackerCtrl);
-			delete command;
-		}*/
-
 		frames++;
 		gettimeofday(&frameStart, 0);
-		capture >> frame;
+		frame = imageSource->get();
 
 		if (frame.empty()) {
 			std::cerr << "Could not capture frame" << std::endl;
@@ -192,34 +182,37 @@ void FaceTracking::run() {
 			myImage->load(&frame);
 			gettimeofday(&detStart, 0);
 			boost::optional<Rectangle> face = tracker->process(myImage);
-			delete myImage;
 			gettimeofday(&detEnd, 0);
+			delete myImage;
 			image = frame;
 			drawDebug(image);
+			cv::Scalar& color = measurementModel->isUsingDynamicSvm() ? green : red;
 			if (face)
 				cv::rectangle(image, cv::Point(face->getX(), face->getY()),
-						cv::Point(face->getX() + face->getWidth(), face->getY() + face->getHeight()), green);
+						cv::Point(face->getX() + face->getWidth(), face->getY() + face->getHeight()), color);
 			imshow(videoWindowName, image);
 			usleep(10000);
 
 			gettimeofday(&frameEnd, 0);
 
-			int itTimeMs = 1000 * (frameEnd.tv_sec - frameStart.tv_sec) + (frameEnd.tv_usec - frameStart.tv_usec) / 1000;
-			int detTimeMs = 1000 * (detEnd.tv_sec - detStart.tv_sec) + (detEnd.tv_usec - detStart.tv_usec) / 1000;
-			float allTimeS = 1.0 * (frameEnd.tv_sec - start.tv_sec) + 0.0000001 * (frameEnd.tv_usec - start.tv_usec);
-			float allFps = frames / allTimeS;
-			allDetTimeS += 0.001 * detTimeMs;
-			float detFps = frames / allDetTimeS;
-			std::cout << "frame: " << frames << "; time: " << itTimeMs << " ms (" << allFps << " fps); detection: " << detTimeMs << "ms (" << detFps << " fps)" << std::endl;
+			int iterationTimeMilliseconds = 1000 * (frameEnd.tv_sec - frameStart.tv_sec) + (frameEnd.tv_usec - frameStart.tv_usec) / 1000;
+			int detectionTimeMilliseconds = 1000 * (detEnd.tv_sec - detStart.tv_sec) + (detEnd.tv_usec - detStart.tv_usec) / 1000;
+			allIterationTimeSeconds += 0.001 * iterationTimeMilliseconds;
+			allDetectionTimeSeconds += 0.001 * detectionTimeMilliseconds;
+			float iterationFps = frames / allIterationTimeSeconds;
+			float detectionFps = frames / allDetectionTimeSeconds;
+			std::cout << "frame: " << frames << "; time: "
+					<< iterationTimeMilliseconds << " ms (" << iterationFps << " fps); detection: "
+					<< detectionTimeMilliseconds << " ms (" << detectionFps << " fps)" << std::endl;
 
-			int c = cv::waitKey(10);
-			if ((char) c == 'q') {
+			int delay = paused ? 0 : 10;
+			char c = (char)cv::waitKey(delay);
+			if (c == 'p')
+				paused = !paused;
+			else if (c == 'q')
 				stop();
-			}
 		}
 	}
-
-	capture.release();
 }
 
 void FaceTracking::stop() {
@@ -228,19 +221,23 @@ void FaceTracking::stop() {
 
 int main(int argc, char *argv[]) {
 	if (argc < 3) {
-		std::cout << "Usage: -c device OR -v filename" << std::endl;
+		std::cout << "Usage: -c device OR -v filename OR -i directory" << std::endl;
 		return -1;
 	}
-	FaceTracking *tracker = NULL;
+	auto_ptr<FaceTracking> tracker;
 	if (strcmp("-c", argv[1]) == 0) {
 		std::istringstream iss(argv[2]);
 		int device;
 		iss >> device;
-		tracker = new FaceTracking(device);
+		auto_ptr<ImageSource> imageSource(new VideoImageSource(device));
+		tracker.reset(new FaceTracking(imageSource));
 	} else if (strcmp("-v", argv[1]) == 0) {
-		tracker = new FaceTracking(argv[2], false);
+		auto_ptr<ImageSource> imageSource(new VideoImageSource(argv[2]));
+		tracker.reset(new FaceTracking(imageSource));
+	} else if (strcmp("-i", argv[1]) == 0) {
+		auto_ptr<ImageSource> imageSource(new DirectoryImageSource(argv[2]));
+		tracker.reset(new FaceTracking(imageSource));
 	}
 	tracker->run();
-	delete tracker;
 	return 0;
 }

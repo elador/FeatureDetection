@@ -1,12 +1,12 @@
 /*
- * WvmOeSvmModel.h
+ * WvmSvmModel.h
  *
  *  Created on: 25.07.2012
  *      Author: poschmann
  */
 
-#ifndef WVMOESVMMODEL_H_
-#define WVMOESVMMODEL_H_
+#ifndef WVMSVMMODEL_H_
+#define WVMSVMMODEL_H_
 
 #include "tracking/MeasurementModel.h"
 #include "boost/shared_ptr.hpp"
@@ -26,20 +26,20 @@ namespace tracking {
  * the two detectors, they will be regarded as being independent (although they are not). The certainties
  * for the SVM of samples that are not evaluated by it will be chosen to be 0.5 (unknown).
  */
-class WvmOeSvmModel : public MeasurementModel {
+class WvmSvmModel : public MeasurementModel {
 public:
 
 	/**
-	 * Constructs a new WVM OE SVM measurement model. The machines and algorithm must have been initialized.
+	 * Constructs a new WVM SVM measurement model. The machines and algorithm must have been initialized.
 	 *
 	 * @param[in] wvm The fast WVM.
 	 * @param[in] svm The slower SVM.
 	 * @param[in] oe The overlap elimination algorithm.
 	 */
-	explicit WvmOeSvmModel(shared_ptr<VDetectorVectorMachine> wvm, shared_ptr<VDetectorVectorMachine> svm,
+	explicit WvmSvmModel(shared_ptr<VDetectorVectorMachine> wvm, shared_ptr<VDetectorVectorMachine> svm,
 			shared_ptr<OverlapElimination> oe);
 
-	~WvmOeSvmModel();
+	~WvmSvmModel();
 
 	void evaluate(FdImage* image, std::vector<Sample>& samples);
 
@@ -60,4 +60,4 @@ private:
 };
 
 } /* namespace tracking */
-#endif /* WVMOESVMMODEL_H_ */
+#endif /* WVMSVMMODEL_H_ */

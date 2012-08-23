@@ -14,20 +14,24 @@
 namespace tracking {
 
 ResamplingSampler::ResamplingSampler(unsigned int count, double randomRate,
-		shared_ptr<ResamplingAlgorithm> resamplingAlgorithm, shared_ptr<TransitionModel> transitionModel) :
+		shared_ptr<ResamplingAlgorithm> resamplingAlgorithm, shared_ptr<TransitionModel> transitionModel,
+		float minSize, float maxSize) :
 				count(count),
 				randomRate(randomRate),
 				resamplingAlgorithm(resamplingAlgorithm),
 				transitionModel(transitionModel),
+				minSize(minSize),
+				maxSize(maxSize),
 				generator(boost::mt19937(time(0))),
 				distribution(boost::uniform_int<>()) {
-	randomRate = std::max(0.0, std::min(1.0, randomRate));
+	setRandomRate(randomRate);
 }
 
 ResamplingSampler::~ResamplingSampler() {}
 
 void ResamplingSampler::sample(const std::vector<Sample>& samples, const std::vector<double>& offset,
 			const FdImage* image, std::vector<Sample>& newSamples) {
+	unsigned int count = this->count;
 	resamplingAlgorithm->resample(samples, (1 - randomRate) * count, newSamples);
 	// predict the samples
 	for (std::vector<Sample>::iterator sit = newSamples.begin(); sit < newSamples.end(); ++sit) {
@@ -45,8 +49,8 @@ void ResamplingSampler::sample(const std::vector<Sample>& samples, const std::ve
 }
 
 bool ResamplingSampler::isValid(const Sample& sample, const FdImage* image) {
-	int minSize = 0.1 * std::min(image->w, image->h);
-	int maxSize = 0.8 * std::min(image->w, image->h);
+	int minSize = this->minSize * std::min(image->w, image->h);
+	int maxSize = this->maxSize * std::min(image->w, image->h);
 	int halfSize = sample.getSize() / 2;
 	int x = sample.getX() - halfSize;
 	int y = sample.getY() - halfSize;
@@ -56,8 +60,8 @@ bool ResamplingSampler::isValid(const Sample& sample, const FdImage* image) {
 }
 
 void ResamplingSampler::sampleValid(Sample& sample, const FdImage* image) {
-	int minSize = 0.1 * std::min(image->w, image->h);
-	int maxSize = 0.8 * std::min(image->w, image->h);
+	int minSize = this->minSize * std::min(image->w, image->h);
+	int maxSize = this->maxSize * std::min(image->w, image->h);
 	int size = distribution(generator, maxSize - minSize) + minSize;
 	int halfSize = size / 2;
 	sample.setSize(size);

@@ -19,6 +19,7 @@ SimpleTransitionModel::SimpleTransitionModel(double scatter) : scatter(scatter),
 SimpleTransitionModel::~SimpleTransitionModel() {}
 
 void SimpleTransitionModel::predict(Sample& sample, const std::vector<double>& offset) {
+	double scatter = this->scatter;
 	// drift using offset
 	double x = sample.getX() + offset[0];
 	double y = sample.getY() + offset[1];

@@ -13,7 +13,7 @@
 namespace tracking {
 
 /**
- * Creates new samples according to a grid.
+ * Creates new samples according to a grid (sliding-window like).
  */
 class GridSampler : public Sampler {
 public:

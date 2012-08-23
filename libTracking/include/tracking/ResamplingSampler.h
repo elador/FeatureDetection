@@ -34,14 +34,45 @@ public:
 	 * @param[in] randomRate The percentage of samples that should be equally distributed.
 	 * @param[in] resamplingAlgorithm The resampling algorithm.
 	 * @param[in] transitionModel The transition model.
+	 * @param[in] minSize The minimum size of a sample relative to the width or height of the image (whatever is smaller).
+	 * @param[in] maxSize The maximum size of a sample relative to the width or height of the image (whatever is smaller).
 	 */
 	explicit ResamplingSampler(unsigned int count, double randomRate,
-			shared_ptr<ResamplingAlgorithm> resamplingAlgorithm, shared_ptr<TransitionModel> transitionModel);
+			shared_ptr<ResamplingAlgorithm> resamplingAlgorithm, shared_ptr<TransitionModel> transitionModel,
+			float minSize = 0.1, float maxSize = 0.8);
 
 	~ResamplingSampler();
 
 	void sample(const std::vector<Sample>& samples, const std::vector<double>& offset,
 				const FdImage* image, std::vector<Sample>& newSamples);
+
+	/**
+	 * @return The number of samples.
+	 */
+	inline int getCount() {
+		return count;
+	}
+
+	/**
+	 * @param[in] The new number of samples.
+	 */
+	inline void setCount(unsigned int count) {
+		this->count = count;
+	}
+
+	/**
+	 * @return The percentage of samples that should be equally distributed.
+	 */
+	inline double getRandomRate() {
+		return randomRate;
+	}
+
+	/**
+	 * @param[in] The new percentage of samples that should be equally distributed.
+	 */
+	inline void setRandomRate(double randomRate) {
+		this->randomRate = std::max(0.0, std::min(1.0, randomRate));
+	}
 
 private:
 
@@ -66,6 +97,9 @@ private:
 	double randomRate;  ///< The percentage of samples that should be equally distributed.
 	shared_ptr<ResamplingAlgorithm> resamplingAlgorithm; ///< The resampling algorithm.
 	shared_ptr<TransitionModel> transitionModel;         ///< The transition model.
+
+	float minSize; ///< The minimum size of a sample relative to the width or height of the image (whatever is smaller).
+	float maxSize; ///< The maximum size of a sample relative to the width or height of the image (whatever is smaller).
 
 	boost::mt19937 generator;          ///< Random number generator.
 	boost::uniform_int<> distribution; ///< Uniform integer distribution.

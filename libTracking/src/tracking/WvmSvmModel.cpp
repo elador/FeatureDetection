@@ -1,11 +1,11 @@
 /*
- * WvmOeSvmModel.cpp
+ * WvmSvmModel.cpp
  *
  *  Created on: 25.07.2012
  *      Author: poschmann
  */
 
-#include "tracking/WvmOeSvmModel.h"
+#include "tracking/WvmSvmModel.h"
 #include "DetectorWVM.h"
 #include "DetectorSVM.h"
 #include "OverlapElimination.h"
@@ -17,12 +17,12 @@
 
 namespace tracking {
 
-WvmOeSvmModel::WvmOeSvmModel(shared_ptr<VDetectorVectorMachine> wvm, shared_ptr<VDetectorVectorMachine> svm,
+WvmSvmModel::WvmSvmModel(shared_ptr<VDetectorVectorMachine> wvm, shared_ptr<VDetectorVectorMachine> svm,
 		shared_ptr<OverlapElimination> oe) : wvm(wvm), svm(svm), oe(oe) {}
 
-WvmOeSvmModel::~WvmOeSvmModel() {}
+WvmSvmModel::~WvmSvmModel() {}
 
-void WvmOeSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
+void WvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
 	wvm->initPyramids(image);
 	wvm->initROI(image);
 	std::vector<FdPatch*> remainingPatches;
@@ -59,7 +59,7 @@ void WvmOeSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
 	}
 }
 
-std::vector<FdPatch*> WvmOeSvmModel::eliminate(std::vector<FdPatch*> patches, std::string detectorId) {
+std::vector<FdPatch*> WvmSvmModel::eliminate(std::vector<FdPatch*> patches, std::string detectorId) {
 	if (patches.size() > 10) {
 		std::sort(patches.begin(), patches.end(), FdPatch::SortByCertainty(detectorId));
 		patches.resize(10);
