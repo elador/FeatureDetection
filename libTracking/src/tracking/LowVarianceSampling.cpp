@@ -8,6 +8,8 @@
 #include "tracking/LowVarianceSampling.h"
 #include "tracking/Sample.h"
 
+#include <ctime>
+
 namespace tracking {
 
 LowVarianceSampling::LowVarianceSampling() : generator(boost::mt19937(time(0))),

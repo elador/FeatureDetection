@@ -6,6 +6,7 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # find dependencies
 FIND_PACKAGE(Boost REQUIRED random system filesystem)
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 FIND_PACKAGE(OpenCV REQUIRED core imgproc highgui)
 # Matlab
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
@@ -17,11 +18,13 @@ SET(HEADERS
 	FaceTracking.h
 	ImageSource.h
 	VideoImageSource.h
+	wingettimeofday.h
 )
 SET(SOURCE
 	DirectoryImageSource.cpp
 	FaceTracking.cpp
 	VideoImageSource.cpp
+	wingettimeofday.cpp
 )
 
 # add dependencies

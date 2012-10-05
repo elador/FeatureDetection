@@ -41,7 +41,7 @@ SelfLearningWvmSvmModel::SelfLearningWvmSvmModel(std::string configFilename, std
 		staticSvm(make_shared<DetectorSVM>()),
 		dynamicSvm(make_shared<ChangableDetectorSvm>()),
 		oe(make_shared<OverlapElimination>()),
-		svmTraining(make_shared<FrameBasedSvmTraining>(5, 4, negativesFilename, 200)),
+		svmTraining(boost::make_shared<FrameBasedSvmTraining>(5, 4, negativesFilename, 200)),
 		usingDynamicSvm(false),
 		positiveThreshold(0.85),
 		negativeThreshold(0.4),

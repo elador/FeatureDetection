@@ -31,7 +31,11 @@
 #include <iostream>
 #include <sstream>
 #include <cstring>
-#include <sys/time.h>
+#ifdef WIN32
+	#include "wingettimeofday.h"
+#else
+	#include <sys/time.h>
+#endif
 
 const std::string FaceTracking::svmConfigFile = "/home/poschmann/projects/ffd/config/fdetection/fd_config_fft_fd.mat";
 const std::string FaceTracking::negativesFile = "/home/poschmann/projects/ffd/config/nonfaces_1000";
@@ -47,7 +51,7 @@ FaceTracking::~FaceTracking() {}
 
 void FaceTracking::initTracking() {
 	// create SVM training
-	svmTraining = make_shared<FrameBasedSvmTraining>(5, 4, negativesFile, 200);
+	svmTraining = boost::make_shared<FrameBasedSvmTraining>(5, 4, negativesFile, 200);
 
 	// create measurement model
 	shared_ptr<VDetectorVectorMachine> wvm = make_shared<DetectorWVM>();
@@ -181,7 +185,7 @@ void FaceTracking::run() {
 			FdImage* myImage = new FdImage();
 			myImage->load(&frame);
 			gettimeofday(&detStart, 0);
-			boost::optional<Rectangle> face = tracker->process(myImage);
+			boost::optional<tracking::Rectangle> face = tracker->process(myImage);
 			gettimeofday(&detEnd, 0);
 			delete myImage;
 			image = frame;
@@ -191,7 +195,11 @@ void FaceTracking::run() {
 				cv::rectangle(image, cv::Point(face->getX(), face->getY()),
 						cv::Point(face->getX() + face->getWidth(), face->getY() + face->getHeight()), color);
 			imshow(videoWindowName, image);
-			usleep(10000);
+			#ifdef WIN32
+				Sleep(10);
+			#else
+				usleep(10000);
+			#endif
 
 			gettimeofday(&frameEnd, 0);
 

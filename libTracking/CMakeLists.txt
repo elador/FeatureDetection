@@ -6,6 +6,7 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # find dependencies
 FIND_PACKAGE(Boost REQUIRED)
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 FIND_PACKAGE(OpenCV REQUIRED core)
 
 # source and header files
@@ -68,5 +69,4 @@ include_directories( "include" )
 include_directories( ${libFeatureDetection_SOURCE_DIR} )
 
 # make library
-add_library( ${SUBPROJECT_NAME} SHARED ${SOURCE} ${HEADERS} )
-
+add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )

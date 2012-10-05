@@ -10,6 +10,7 @@
 #include "tracking/TransitionModel.h"
 #include "FdImage.h"
 #include <algorithm>
+#include <ctime>
 
 namespace tracking {
 
