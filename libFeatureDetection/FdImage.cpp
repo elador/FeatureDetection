@@ -58,7 +58,7 @@ int FdImage::load(const std::string filename)
 	this->h = this->data_matgray.rows;
 
 	this->data = new unsigned char[w*h];
-	if(Logger->getVerboseLevelText()>=2) {
+	if(Logger->getVerboseLevelText()>=2) {		// Todo: Check if this is consistent with the other log-levels (see SLogger.h)
 		std::cout << "[FdImage] Allocating space for image. Cols(=width): " << w << ", Rows(=height): " << h << ", Size: " << w*h << std::endl;
 	}
 
