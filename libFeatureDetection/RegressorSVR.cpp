@@ -87,21 +87,27 @@ float RegressorSVR::kernel(unsigned char* data, unsigned char* support, int nonL
 
 int RegressorSVR::load(const std::string filename)
 {
-	//char* configFile = "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat";
-	std::cout << "[RegrSVR] Loading " << filename << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[RegrSVR] Loading " << filename << std::endl;
+	}
 
 	MatlabReader *configReader = new MatlabReader(filename);
 	int id;
 	char buff[255], key[255], pos[255];
 
-	if(!configReader->getKey("FD.ffp", buff))	// which feature point does this detector detect?
+	if(!configReader->getKey("FD.ffp", buff)) {	// which feature point does this detector detect?
 		std::cout << "[RegrSVR] Warning: Key in Config nicht gefunden, key:'" << "FD.ffp" << "'" << std::endl;
-	else
-		std::cout << "[RegrSVR] ffp: " << atoi(buff) << std::endl;
+	} else {
+		if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+			std::cout << "[RegrSVR] ffp: " << atoi(buff) << std::endl;
+		}
+	}
 
-	if (!configReader->getKey("ALLGINFO.outputdir", this->outputPath)) // Output folder of this detector
-		std::cout << "[RegrSVR] Warning: Key in Config nicht gefunden, key:'" << "ALLGINFO.outputdir" << "'" << std::endl;
-	std::cout << "[RegrSVR] outputdir: " << this->outputPath << std::endl;
+//	if (!configReader->getKey("ALLGINFO.outputdir", this->outputPath)) // Output folder of this detector
+//		std::cout << "[RegrSVR] Warning: Key in Config nicht gefunden, key:'" << "ALLGINFO.outputdir" << "'" << std::endl;
+//	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+//		std::cout << "[RegrSVR] outputdir: " << this->outputPath << std::endl;
+//	}
 
 	//min. und max. erwartete Anzahl Gesichter im Bild (vorerst null bis eins);											  
 	sprintf(pos,"FD.expected_number_faces.#%d",0);																		  
@@ -115,7 +121,9 @@ int RegressorSVR::load(const std::string filename)
 	else
 		this->expected_num_faces[1]=atoi(buff);
 
-	std::cout << "[RegrSVR] expected_num_faces: " << this->expected_num_faces[0] << ", " << this->expected_num_faces[1] << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[RegrSVR] expected_num_faces: " << this->expected_num_faces[0] << ", " << this->expected_num_faces[1] << std::endl;
+	}
 
 	//Grenze der Zuverlaesigkeit ab der Gesichter aufgenommen werden (Diffwert fr SVM-Schwelle)
 	/*if (!configReader->getKey("FD.limit_reliability",buff))
@@ -138,17 +146,23 @@ int RegressorSVR::load(const std::string filename)
 	//Minimale Gesichtsoehe in Pixel 
 	if (!configReader->getInt("FD.face_size_min",&this->subsamplingMinHeight))
 		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'FD.face_size_min', nehme Default: " << this->subsamplingMinHeight << std::endl;
-	std::cout << "[RegrSVR] face_size_min: " << this->subsamplingMinHeight << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[RegrSVR] face_size_min: " << this->subsamplingMinHeight << std::endl;
+	}
 	//Anzahl der Skalierungen
 	if (!configReader->getInt("FD.maxscales",&this->numSubsamplingLevels))
 		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'FD.maxscales', nehme Default: " << this->numSubsamplingLevels << std::endl;
-	std::cout << "[RegrSVR] maxscales: " << this->numSubsamplingLevels << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[RegrSVR] maxscales: " << this->numSubsamplingLevels << std::endl;
+	}
 	//Scalierungsfaktor 
 	if (!configReader->getKey("FD.scalefactor",buff))
 		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'FD.scalefactor', nehme Default: " << this->subsamplingFactor << std::endl;
 	else
 		this->subsamplingFactor=(float)atof(buff);
-	std::cout << "[RegrSVR] scalefactor: " << this->subsamplingFactor << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[RegrSVR] scalefactor: " << this->subsamplingFactor << std::endl;
+	}
 
 	//Kassifikator
 	char fn_classifier[500];
@@ -163,7 +177,9 @@ int RegressorSVR::load(const std::string filename)
 
 	delete configReader;
 
-	std::cout << "[RegrSVR] Loading " << fn_classifier << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[RegrSVR] Loading " << fn_classifier << std::endl;
+	}
 	MATFile *pmatfile;
 	mxArray *pmxarray; // =mat
 	double *matdata;
@@ -178,7 +194,9 @@ int RegressorSVR::load(const std::string filename)
 		std::cout << "[RegrSVR] Error: There is a no param_nonlin1 in the file." << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	std::cout << "[RegrSVR] Reading param_nonlin1" << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[RegrSVR] Reading param_nonlin1" << std::endl;
+	}
 	matdata = mxGetPr(pmxarray);
 	this->nonlin_threshold = (float)matdata[0];
 	this->nonLinType       = (int)matdata[1];
@@ -260,7 +278,9 @@ int RegressorSVR::load(const std::string filename)
 	}
 	std::cout << "[RegrSVR] Done reading posterior_svm [" << posterior_svm[0] << ", " << posterior_svm[1] << "] from threshold file " << fn_threshold << std::endl;
 	*/
-	std::cout << "[RegrSVR] Done reading SVR! (we don't use/have a threshold file yet)" << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=1) {
+		std::cout << "[RegrSVR] Done reading SVR! (we don't use/have a threshold file yet)" << std::endl;
+	}
 
 	this->stretch_fac = 255.0f/(float)(filter_size_x*filter_size_y);	// HistEq64 initialization
 

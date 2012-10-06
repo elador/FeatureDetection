@@ -17,7 +17,7 @@ public:
 	std::string getIdentifier();
 	void setIdentifier(std::string);
 
-	char outputPath[255];	// TODO: Delete this / use std::string
+	//char outputPath[255];	// TODO: Delete this / use std::string
 	int expected_num_faces[2];
 
 	Rect roi;

@@ -269,21 +269,27 @@ float RegressorWVR::lin_eval_wvm_histeq64(
 
 int RegressorWVR::load(const std::string filename)
 {
-	//char* configFile = "D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat";
-	std::cout << "[RegrWVR] Loading " << filename << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[RegrWVR] Loading " << filename << std::endl;
+	}
 
 	MatlabReader *configReader = new MatlabReader(filename);
 	int id;
 	char buff[255], key[255], pos[255];
 
-	if(!configReader->getKey("FD.ffp", buff))	// which feature point does this detector detect?
+	if(!configReader->getKey("FD.ffp", buff)) {	// which feature point does this detector detect?
 		std::cout << "[RegrWVR] Warning: Key in Config nicht gefunden, key:'FD.ffp'" << std::endl;
-	else
-		std::cout << "[RegrWVR] ffp: " << atoi(buff) << std::endl;
+	} else {
+		if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+			std::cout << "[RegrWVR] ffp: " << atoi(buff) << std::endl;
+		}
+	}
 
-	if (!configReader->getKey("ALLGINFO.outputdir", this->outputPath)) // Output folder of this detector
-		std::cout << "[RegrWVR] Warning: Key in Config nicht gefunden, key:'ALLGINFO.outputdir'" << std::endl;
-	std::cout << "[RegrWVR] outputdir: " << this->outputPath << std::endl;
+//	if (!configReader->getKey("ALLGINFO.outputdir", this->outputPath)) // Output folder of this detector
+//		std::cout << "[RegrWVR] Warning: Key in Config nicht gefunden, key:'ALLGINFO.outputdir'" << std::endl;
+//	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+//		std::cout << "[RegrWVR] outputdir: " << this->outputPath << std::endl;
+//	}
 
 	//min. und max. erwartete Anzahl Gesichter im Bild (vorerst null bis eins);											  
 	sprintf(pos,"FD.expected_number_faces.#%d",0);																		  
@@ -297,7 +303,9 @@ int RegressorWVR::load(const std::string filename)
 	else
 		this->expected_num_faces[1]=atoi(buff);
 
-	std::cout << "[RegrWVR] expected_num_faces: " << this->expected_num_faces[0] << ", " << this->expected_num_faces[1] << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[RegrWVR] expected_num_faces: " << this->expected_num_faces[0] << ", " << this->expected_num_faces[1] << std::endl;
+	}
 
 	//Grenze der Zuverlaesigkeit ab der Gesichter aufgenommen werden (Diffwert fr SVM-Schwelle)
 	/*if (!configReader->getKey("FD.limit_reliability",buff))
@@ -320,17 +328,23 @@ int RegressorWVR::load(const std::string filename)
 	//Minimale Gesichtsoehe in Pixel 
 	if (!configReader->getInt("FD.face_size_min",&this->subsamplingMinHeight))
 		std::cout << "[RegrWVR] WARNING: Key in Config nicht gefunden, key:'FD.face_size_min', nehme Default: " << this->subsamplingMinHeight << std::endl;
-	std::cout << "[RegrWVR] face_size_min: " << this->subsamplingMinHeight << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[RegrWVR] face_size_min: " << this->subsamplingMinHeight << std::endl;
+	}
 	//Anzahl der Skalierungen
 	if (!configReader->getInt("FD.maxscales",&this->numSubsamplingLevels))
 		std::cout << "[RegrWVR] WARNING: Key in Config nicht gefunden, key:'FD.maxscales', nehme Default: " << this->numSubsamplingLevels << std::endl;
-	std::cout << "[RegrWVR] maxscales: " << this->numSubsamplingLevels << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[RegrWVR] maxscales: " << this->numSubsamplingLevels << std::endl;
+	}
 	//Scalierungsfaktor 
 	if (!configReader->getKey("FD.scalefactor",buff))
 		std::cout << "[RegrWVR] WARNING: Key in Config nicht gefunden, key:'FD.scalefactor', nehme Default: " << this->subsamplingFactor << std::endl;
 	else
 		this->subsamplingFactor=(float)atof(buff);
-	std::cout << "[RegrWVR] scalefactor: " << this->subsamplingFactor << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[RegrWVR] scalefactor: " << this->subsamplingFactor << std::endl;
+	}
 
 	//Number filters to use
 	if (!configReader->getKey("FD.numUsedFilter",buff))
@@ -359,8 +373,9 @@ int RegressorWVR::load(const std::string filename)
 
 	delete configReader;
 
-	
-	std::cout << "[RegrWVR] Loading " << fn_classifier << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[RegrWVR] Loading " << fn_classifier << std::endl;
+	}
 	MATFile *pmatfile;
 	mxArray *pmxarray; // =mat
 	double *matdata;
@@ -378,7 +393,9 @@ int RegressorWVR::load(const std::string filename)
 	matdata = mxGetPr(pmxarray);
 	int nfilter = (int)matdata[0];
 	mxDestroyArray(pmxarray);
-	std::cout << "[RegrWVR] Found " << nfilter << " WVM filters" << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[RegrWVR] Found " << nfilter << " WVM filters" << std::endl;
+	}
 
 	pmxarray = matGetVariable(pmatfile, "wrvm");
 	if (pmxarray != 0) { // read area
@@ -479,7 +496,9 @@ int RegressorWVR::load(const std::string filename)
 
 
 	} else {	// read seq.
-		std::cout << "[RegrWVR] Unable to find structur 'wrvm', reading the " << nfilter << " non linear filters support_hk* and weight_hk* sequentially (slower)" << std::endl;
+		if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+			std::cout << "[RegrWVR] Unable to find structur 'wrvm', reading the " << nfilter << " non linear filters support_hk* and weight_hk* sequentially (slower)" << std::endl;
+		}
 		char str[100];
 		sprintf(str, "support_hk%d", 1);
 		pmxarray = matGetVariable(pmatfile, str);
@@ -545,8 +564,10 @@ int RegressorWVR::load(const std::string filename)
 				}
 				mxDestroyArray(pmxarray);
 			}
-		}	// end for over numHKs	
-		std::cout << "[RegrWVR] Done" << std::endl;
+		}	// end for over numHKs
+		if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+			std::cout << "[RegrWVR] Done" << std::endl;
+		}
 	}// end else read vecs/weights sequentially
 	
 	pmxarray = matGetVariable(pmatfile, "param_nonlin1_rvm");
@@ -600,7 +621,9 @@ int RegressorWVR::load(const std::string filename)
 
   
 	//read recangles in area
-	std::cout << "[RegrWVR] Reading rectangles in area..." << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+		std::cout << "[RegrWVR] Reading rectangles in area..." << std::endl;
+	}
 	pmxarray = matGetVariable(pmatfile, "area");
 	if (pmxarray != 0 && mxIsStruct(pmxarray)) {
 		int r,v,hrsv,w,h;
@@ -711,8 +734,9 @@ int RegressorWVR::load(const std::string filename)
 	if (matClose(pmatfile) != 0) {
 		std::cout << "[RegrWVR] Error closing file" << std::endl;
 	}
-
-	std::cout << "[RegrWVR] Done reading WVR!" << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=1) {
+		std::cout << "[RegrWVR] Done reading WVR!" << std::endl;
+	}
 
 
 	
@@ -776,7 +800,9 @@ int RegressorWVR::load(const std::string filename)
 	//for (i = 0; i < this->nLinFilters; ++i) printf("b%d=%g ",i+1,this->lin_hierar_thresh[i]);
 	//printf("\n");
 
-	std::cout << "[RegrWVR] Done reading WVR! (we don't use/have a threshold file yet)" << std::endl;
+	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=1) {
+		std::cout << "[RegrWVR] Done reading WVR! (we don't use/have a threshold file yet)" << std::endl;
+	}
 
 	this->stretch_fac = 255.0f/(float)(filter_size_x*filter_size_y);	// HistEq64 initialization
 
@@ -784,7 +810,6 @@ int RegressorWVR::load(const std::string filename)
  	u_kernel_eval = new float[this->nLinFilters];
 
 	return 1;
-
 }
 
 int RegressorWVR::init_for_image(FdImage* img)
