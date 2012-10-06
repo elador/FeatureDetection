@@ -1,6 +1,9 @@
-// ffpDetectApp.cpp : Defines the entry point for the console application.
-//
-
+/*
+ * ffpDetectApp.cpp
+ *
+ *  Created on: 24.06.2012
+ *      Author: Patrik Huber
+ */
 #include "stdafx.h"
 
 //#include "DetectorSVM.h"

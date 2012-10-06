@@ -63,12 +63,12 @@ int OverlapElimination::load(const std::string filename)
 	//min. und max. erwartete Anzahl Gesichter im Bild (vorerst null bis eins);											  
 	sprintf(pos,"FD.expected_number_faces.#%d",0);																		  
 	if (!configReader->getKey(pos,buff))																						  
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", pos,this->expected_num_faces[0]);
+		std::cout << "[OverlapElimination] WARNING: Key in Config nicht gefunden, key:'" << pos << "', nehme Default: " << this->expected_num_faces[0] << std::endl;
 	else
 		this->expected_num_faces[0]=atoi(buff);
 	sprintf(pos,"FD.expected_number_faces.#%d",1);
 	if (!configReader->getKey(pos,buff))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", pos,this->expected_num_faces[1]);
+		std::cout << "[OverlapElimination] WARNING: Key in Config nicht gefunden, key:'" << pos << "', nehme Default: " << this->expected_num_faces[1] << std::endl;
 	else
 		this->expected_num_faces[1]=atoi(buff);
 
@@ -79,18 +79,15 @@ int OverlapElimination::load(const std::string filename)
 
 	//Does overlap elimination 
 	if (!configReader->getKey("FD.doesPPOverlapElimination",buff))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n",
-		"FD.doesPPOverlapElimination",this->doOE);
+		std::cout << "[OverlapElimination] WARNING: Key in Config nicht gefunden, key:'FD.doesPPOverlapElimination', nehme Default: " << this->doOE << std::endl;
 	else this->doOE=atoi(buff);
 
 	//Dist overlap elimination 
 	if (!configReader->getKey("FD.distOverlapElimination.#0",buff))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %g\n",
-		"FD.distOverlapElimination.#0",this->dist);
+		std::cout << "[OverlapElimination] WARNING: Key in Config nicht gefunden, key:'FD.distOverlapElimination.#0', nehme Default: " << this->dist << std::endl;
 	else this->dist=(float)atof(buff);
 	if (!configReader->getKey("FD.distOverlapElimination.#1",buff))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %g\n",
-		"FD.distOverlapElimination.#1",this->ratio);
+		std::cout << "[OverlapElimination] WARNING: Key in Config nicht gefunden, key:'FD.distOverlapElimination.#1', nehme Default: " << this->ratio << std::endl;
 	else this->ratio=(float)atof(buff);
 
 	delete configReader;

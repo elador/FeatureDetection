@@ -95,23 +95,23 @@ int RegressorSVR::load(const std::string filename)
 	char buff[255], key[255], pos[255];
 
 	if(!configReader->getKey("FD.ffp", buff))	// which feature point does this detector detect?
-		std::cout << "Warning: Key in Config nicht gefunden, key:'" << "FD.ffp" << "'" << std::endl;
+		std::cout << "[RegrSVR] Warning: Key in Config nicht gefunden, key:'" << "FD.ffp" << "'" << std::endl;
 	else
 		std::cout << "[RegrSVR] ffp: " << atoi(buff) << std::endl;
 
 	if (!configReader->getKey("ALLGINFO.outputdir", this->outputPath)) // Output folder of this detector
-		std::cout << "Warning: Key in Config nicht gefunden, key:'" << "ALLGINFO.outputdir" << "'" << std::endl;
+		std::cout << "[RegrSVR] Warning: Key in Config nicht gefunden, key:'" << "ALLGINFO.outputdir" << "'" << std::endl;
 	std::cout << "[RegrSVR] outputdir: " << this->outputPath << std::endl;
 
 	//min. und max. erwartete Anzahl Gesichter im Bild (vorerst null bis eins);											  
 	sprintf(pos,"FD.expected_number_faces.#%d",0);																		  
 	if (!configReader->getKey(pos,buff))																						  
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", pos,this->expected_num_faces[0]);
+		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'" << pos << "', nehme Default: " << this->expected_num_faces[0] << std::endl;
 	else
 		this->expected_num_faces[0]=atoi(buff);
 	sprintf(pos,"FD.expected_number_faces.#%d",1);
 	if (!configReader->getKey(pos,buff))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", pos,this->expected_num_faces[1]);
+		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'" << pos << "', nehme Default: " << this->expected_num_faces[1] << std::endl;
 	else
 		this->expected_num_faces[1]=atoi(buff);
 
@@ -126,26 +126,26 @@ int RegressorSVR::load(const std::string filename)
 	//ROI: left, top, right, bottom
     // 0 0 0 0 (ganze Bild), -1 -1 -1 -1 (bzw. ganze FD-ROI) 
 	int v=1;
-	if (!configReader->getInt("FD.roi.#0",&v))		printf("WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n","FD.roi.#0",this->roi.left);
+	if (!configReader->getInt("FD.roi.#0",&v))		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'FD.roi.#0', nehme Default: " << this->roi.left << std::endl;
 	else										this->roi.left=v;
-	if (!configReader->getInt("FD.roi.#1",&v))		printf("WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n","FD.roi.#1",this->roi.top);
+	if (!configReader->getInt("FD.roi.#1",&v))		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'FD.roi.#1', nehme Default: " << this->roi.top << std::endl;
 	else										this->roi.top=v;
-	if (!configReader->getInt("FD.roi.#2",&v))		printf("WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n","FD.roi.#2",this->roi.right);
+	if (!configReader->getInt("FD.roi.#2",&v))		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'FD.roi.#2', nehme Default: " << this->roi.right << std::endl;
 	else										this->roi.right=v;
-	if (!configReader->getInt("FD.roi.#3",&v))		printf("WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n","FD.roi.#3",this->roi.bottom);
+	if (!configReader->getInt("FD.roi.#3",&v))		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'FD.roi.#3', nehme Default: " << this->roi.bottom << std::endl;
 	else										this->roi.bottom=v;
 	
 	//Minimale Gesichtsoehe in Pixel 
 	if (!configReader->getInt("FD.face_size_min",&this->subsamplingMinHeight))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", "FD.face_size_min",this->subsamplingMinHeight);
+		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'FD.face_size_min', nehme Default: " << this->subsamplingMinHeight << std::endl;
 	std::cout << "[RegrSVR] face_size_min: " << this->subsamplingMinHeight << std::endl;
 	//Anzahl der Skalierungen
 	if (!configReader->getInt("FD.maxscales",&this->numSubsamplingLevels))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", "FD.maxscales",this->numSubsamplingLevels);
+		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'FD.maxscales', nehme Default: " << this->numSubsamplingLevels << std::endl;
 	std::cout << "[RegrSVR] maxscales: " << this->numSubsamplingLevels << std::endl;
 	//Scalierungsfaktor 
 	if (!configReader->getKey("FD.scalefactor",buff))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %g\n", "FD.scalefactor",this->subsamplingFactor);
+		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'FD.scalefactor', nehme Default: " << this->subsamplingFactor << std::endl;
 	else
 		this->subsamplingFactor=(float)atof(buff);
 	std::cout << "[RegrSVR] scalefactor: " << this->subsamplingFactor << std::endl;
@@ -153,8 +153,7 @@ int RegressorSVR::load(const std::string filename)
 	//Kassifikator
 	char fn_classifier[500];
 	if (!configReader->getKey("FD.classificator", fn_classifier))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: '%s'\n",
-		"FD.classificator", fn_classifier);
+		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'FD.classificator', nehme Default: " << fn_classifier << std::endl;
 
 	//Schwellwerte
 	/*char fn_threshold[500];
@@ -170,13 +169,13 @@ int RegressorSVR::load(const std::string filename)
 	double *matdata;
 	pmatfile = matOpen(fn_classifier, "r");
 	if (pmatfile == NULL) {
-		std::cout << "Error: Opening file" << std::endl;
+		std::cout << "[RegrSVR] Error: Opening file" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 
 	pmxarray = matGetVariable(pmatfile, "param_nonlin1");
 	if (pmxarray == 0) {
-		std::cout << "Error: There is a no param_nonlin1 in the file." << std::endl;
+		std::cout << "[RegrSVR] Error: There is a no param_nonlin1 in the file." << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	std::cout << "[RegrSVR] Reading param_nonlin1" << std::endl;
@@ -190,11 +189,11 @@ int RegressorSVR::load(const std::string filename)
 		
 	pmxarray = matGetVariable(pmatfile, "support_nonlin1");
 	if (pmxarray == 0) {
-		std::cout << "Error: There is a nonlinear SVM in the file, but the matrix support_nonlin1 is lacking!" << std::endl;
+		std::cout << "[RegrSVR] Error: There is a nonlinear SVM in the file, but the matrix support_nonlin1 is lacking!" << std::endl;
 		exit(EXIT_FAILURE);
 	} 
 	if (mxGetNumberOfDimensions(pmxarray) != 3) {
-		std::cout << "Error: The matrix support_nonlin1 in the file should have 3 dimensions." << std::endl;
+		std::cout << "[RegrSVR] Error: The matrix support_nonlin1 in the file should have 3 dimensions." << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	const mwSize *dim = mxGetDimensions(pmxarray);
@@ -221,7 +220,7 @@ int RegressorSVR::load(const std::string filename)
 
 	pmxarray = matGetVariable(pmatfile, "weight_nonlin1");
 	if (pmxarray == 0) {
-		std::cout << "Error: There is a nonlinear SVM in the file but the matrix threshold_nonlin is lacking." << std::endl;
+		std::cout << "[RegrSVR] Error: There is a nonlinear SVM in the file but the matrix threshold_nonlin is lacking." << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	matdata = mxGetPr(pmxarray);
@@ -230,7 +229,7 @@ int RegressorSVR::load(const std::string filename)
 	mxDestroyArray(pmxarray);
 
 	if (matClose(pmatfile) != 0) {
-		std::cout << "Error closing file" << std::endl;
+		std::cout << "[RegrSVR] Error closing file" << std::endl;
 	}
 
 	
