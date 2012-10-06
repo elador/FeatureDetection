@@ -9,6 +9,10 @@
 #define DIRECTORYIMAGESOURCE_H_
 
 #include "ImageSource.h"
+#ifdef WIN32
+	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
+	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
+#endif
 #include "boost/filesystem.hpp"
 #include <vector>
 
