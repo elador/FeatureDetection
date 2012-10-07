@@ -1,5 +1,11 @@
-// condensationTrackerApp.cpp : Defines the entry point for the console application.
-//
+/*
+ * trackerApp.cpp
+ *
+ *  Created on: 24.06.2012
+ *      Author: Patrik Huber
+ *
+ *	Description: 
+ */
 
 #include "stdafx.h"
 
@@ -14,15 +20,21 @@ int _tmain(int argc, _TCHAR* argv[])
 	string video;
 	bool cam = true;
 	bool realtime;
+
 	int frameHeight;
 	int frameWidth;
+
 	bool running;
 
+	//uchar* buffer;
 	frameWidth = 640;
 	frameHeight = 480;
 
+	//buffer = new uchar[1];
+
 	namedWindow(videoWindowName, CV_WINDOW_AUTOSIZE);
 	cvMoveWindow(videoWindowName.c_str(), 600, 50);
+
 
 	running = true;
 

@@ -11,6 +11,7 @@
 #include <tchar.h>
 
 
+
 // TODO: reference additional headers your program requires here
 
 #include "wingettimeofday.h"
@@ -47,3 +48,4 @@
 
 #include "CascadeERT.h"
 #include "FdImage.h"
+#include "FdPatch.h"
