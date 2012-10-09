@@ -145,7 +145,7 @@ FdPatch* VDetectorVectorMachine::extractPatchToPyramid(FdImage *image, int x, in
 	int patchEndX = patchBeginX + filter_size_x; // exclusive
 	int patchEndY = patchBeginY + filter_size_y; // exclusive
 	if (patchBeginX < 0 || patchEndX > pyramid->w
-				|| patchEndY < 0 || patchEndY > pyramid->h)
+				|| patchBeginY < 0 || patchEndY > pyramid->h)
 		return NULL;
 	return insertPatchIntoPyramid(pyramid, x, y, scaledX, scaledY, scale);
 }
