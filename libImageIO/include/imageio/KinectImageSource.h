@@ -1,16 +1,20 @@
 /*
  * KinectImageSource.h
  *
- *  Created on: 20.08.2012
- *      Author: poschmann
+ *  Created on: 07.10.2012
+ *      Author: Patrik Huber
  */
 
-#ifndef VIDEOIMAGESOURCE_H_
-#define VIDEOIMAGESOURCE_H_
+#ifndef KINECTIMAGESOURCE_H_
+#define KINECTIMAGESOURCE_H_
 
 #include "ImageSource.h"
 #include "opencv2/highgui/highgui.hpp"
-#include <NuiApi.h>
+#ifdef WIN32
+	#include <NuiApi.h>
+#endif
+
+namespace imageio {
 
 /**
  * Image source that takes images from a camera device or video file.
@@ -34,11 +38,15 @@ private:
 	cv::VideoCapture capture; ///< The video capture.
 	cv::Mat frame;            ///< The current frame.
 
+#ifdef WIN32
 	INuiSensor * m_pNuiSensor;	///< The kinect capture device.
 	NUI_IMAGE_FRAME imageFrame; ///< The current frame.!
 
 	HANDLE                  m_pColorStreamHandle; ///< The handle to the Kinect color stream we're grabbing from
+#endif
 
 };
 
-#endif /* VIDEOIMAGESOURCE_H_ */
+} /* namespace imageio */
+
+#endif /* KINECTIMAGESOURCE_H_ */
