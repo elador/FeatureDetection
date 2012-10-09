@@ -5,7 +5,7 @@ SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # find dependencies
-FIND_PACKAGE(Boost REQUIRED filesystem)
+FIND_PACKAGE(Boost COMPONENTS filesystem REQUIRED)
 FIND_PACKAGE(OpenCV REQUIRED core)
 IF(WIN32)
 	# In Windows only: Include Microsoft Kinect SDK

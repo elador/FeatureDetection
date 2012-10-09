@@ -31,7 +31,9 @@
 #include "DetectorSVM.h"
 #include "tracking/ChangableDetectorSvm.h"
 #include "FdImage.h"
-#include "boost/optional.hpp"
+#include "SLogger.h"
+#include <boost/optional.hpp>
+#include <boost/program_options.hpp>
 #include <vector>
 #include <iostream>
 #ifdef WIN32
@@ -39,6 +41,8 @@
 #else
 	#include <sys/time.h>
 #endif
+
+namespace po = boost::program_options;
 
 //const std::string FaceTracking::svmConfigFile = "/home/poschmann/projects/ffd/config/fdetection/fd_config_fft_fd.mat";
 const std::string FaceTracking::svmConfigFile = "C:\\Users\\Patrik\\Documents\\GitHub\\config\\fdetection\\fd_config_ffd_fd.mat";
@@ -100,7 +104,7 @@ void FaceTracking::initGui() {
 	cv::createTrackbar("Grid/Resampling", controlWindowName, NULL, 1, samplerChanged, this);
 	cv::setTrackbarPos("Grid/Resampling", controlWindowName, tracker->getSampler() == gridSampler ? 0 : 1);
 
-	cv::createTrackbar("Sample Count", controlWindowName, NULL, 1000, sampleCountChanged, this);
+	cv::createTrackbar("Sample Count", controlWindowName, NULL, 2000, sampleCountChanged, this);
 	cv::setTrackbarPos("Sample Count", controlWindowName, resamplingSampler->getCount());
 
 	cv::createTrackbar("Random Rate", controlWindowName, NULL, 100, randomRateChanged, this);
@@ -230,30 +234,82 @@ void FaceTracking::stop() {
 }
 
 int main(int argc, char *argv[]) {
-	if (argc < 3) {
-		std::cout << "Usage: -c device OR -v filename OR -i directory" << std::endl;
+
+	int verboseLevelText;
+	int verboseLevelImages;
+	int deviceId, kinectId;
+	std::string filename, directory;
+	bool useCamera = false, useKinect = false, useFile = false, useDirectory = false;
+
+	try {
+		po::options_description desc("Allowed options");
+		desc.add_options()
+			("help,h", "Produce help message")
+			("verbose-text,v", po::value<int>(&verboseLevelText)->implicit_value(2)->default_value(0,"minimal text output"), "Enable text-verbosity (optionally specify level)")
+			("verbose-images,w", po::value<int>(&verboseLevelImages)->implicit_value(2)->default_value(0,"minimal image output"), "Enable image-verbosity (optionally specify level)")
+			("filename,f", po::value< std::string >(&filename), "A filename of a video to run the tracking")
+			("directory,i", po::value< std::string >(&directory), "Use a directory as input")
+			("device,c", po::value<int>(&deviceId)->implicit_value(0), "A camera device ID for use with the OpenCV camera driver")
+			("kinect,k", po::value<int>(&kinectId)->implicit_value(0), "Windows only: Use a Kinect as camera. Optionally specify a device ID.")
+			;
+
+		po::variables_map vm;
+		po::store(po::parse_command_line(argc, argv, desc), vm);
+		po::notify(vm);
+
+		if (vm.count("help")) {
+			std::cout << "Usage: faceTrackingApp [options]\n";
+			std::cout << desc;
+			return 0;
+		}
+		if (vm.count("filename"))
+		{
+			useFile = true;
+		}
+		if (vm.count("directory"))
+		{
+			useDirectory = true;
+		}
+		if (vm.count("device"))
+		{
+			useCamera = true;
+		}
+		if (vm.count("kinect"))
+		{
+			useKinect = true;
+		}
+	}
+	catch(std::exception& e) {
+		std::cout << e.what() << std::endl;
 		return -1;
 	}
+	if(useCamera==false && useKinect==false && useDirectory==false && useFile==false) {
+		std::cout << "Usage: Please specify a camera, Kinect, file or directory to run the program. Use -h for help." << std::endl;
+		return -1;
+	}
+
+	Logger->setVerboseLevelText(verboseLevelText);
+	Logger->setVerboseLevelImages(verboseLevelImages);
+
 	auto_ptr<FaceTracking> tracker;
-	if (strcmp("-c", argv[1]) == 0) {
-		std::istringstream iss(argv[2]);
-		int device;
-		iss >> device;
-		auto_ptr<imageio::ImageSource> imageSource;
-		if(device!=99) {
-			imageSource = auto_ptr<imageio::ImageSource>(new imageio::VideoImageSource(device));
-		} else {
-			imageSource = auto_ptr<imageio::ImageSource>(new imageio::KinectImageSource(device));
-		}
-		
-		tracker.reset(new FaceTracking(imageSource));
-	} else if (strcmp("-v", argv[1]) == 0) {
-		auto_ptr<imageio::ImageSource> imageSource(new imageio::VideoImageSource(argv[2]));
-		tracker.reset(new FaceTracking(imageSource));
-	} else if (strcmp("-i", argv[1]) == 0) {
-		auto_ptr<imageio::ImageSource> imageSource(new imageio::DirectoryImageSource(argv[2]));
+	if(useCamera) {
+		auto_ptr<imageio::ImageSource> imageSource(new imageio::VideoImageSource(deviceId));
 		tracker.reset(new FaceTracking(imageSource));
 	}
+	if(useKinect) {
+		auto_ptr<imageio::ImageSource> imageSource(new imageio::KinectImageSource(kinectId));
+		tracker.reset(new FaceTracking(imageSource));
+	}
+	if(useFile) {
+		auto_ptr<imageio::ImageSource> imageSource(new imageio::VideoImageSource(filename));
+		tracker.reset(new FaceTracking(imageSource));
+
+	}
+	if(useDirectory) {
+		auto_ptr<imageio::ImageSource> imageSource(new imageio::DirectoryImageSource(directory));
+		tracker.reset(new FaceTracking(imageSource));
+	}
+
 	tracker->run();
 	return 0;
 }

@@ -72,7 +72,7 @@ KinectImageSource::KinectImageSource(int device) {
 		std::cout << "No ready Kinect found!" << std::endl;
 	}
 
-	std::cout << "hr: " << hr << std::endl;
+	//std::cout << "hr: " << hr << std::endl;
 
 #else
 	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
