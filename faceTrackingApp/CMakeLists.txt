@@ -6,7 +6,6 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # find dependencies
 FIND_PACKAGE(Boost REQUIRED random system filesystem)
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 FIND_PACKAGE(OpenCV REQUIRED core imgproc highgui)
 # Matlab
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
@@ -21,6 +20,7 @@ SET(SOURCE
 )
 
 # add dependencies
+include_directories( ${Boost_INCLUDE_DIRS} )
 include_directories( ${ImageIO_SOURCE_DIR}/include )
 include_directories( ${Tracking_SOURCE_DIR}/include )
 include_directories( ${libFeatureDetection_SOURCE_DIR} )
