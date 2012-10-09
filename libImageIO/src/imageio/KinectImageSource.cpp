@@ -10,9 +10,10 @@
 
 namespace imageio {
 
-KinectImageSource::KinectImageSource(int device) : m_pColorStreamHandle(INVALID_HANDLE_VALUE) {
+KinectImageSource::KinectImageSource(int device) {
 
 #ifdef WIN32
+	m_pColorStreamHandle = INVALID_HANDLE_VALUE;
 	/// Create the first connected Kinect found
 	INuiSensor * pNuiSensor;
 	HRESULT hr;
@@ -74,7 +75,7 @@ KinectImageSource::KinectImageSource(int device) : m_pColorStreamHandle(INVALID_
 	std::cout << "hr: " << hr << std::endl;
 
 #else
-	std::cout << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << hr << std::endl;
+	std::cout << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
 #endif
 
 }
@@ -138,7 +139,7 @@ const cv::Mat KinectImageSource::get() {
 
 	return frame;
 #else
-	std::cout << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << hr << std::endl;
+	std::cout << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
 	return frame;
 #endif
 }
