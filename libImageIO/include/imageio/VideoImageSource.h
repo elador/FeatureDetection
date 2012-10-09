@@ -11,6 +11,8 @@
 #include "ImageSource.h"
 #include "opencv2/highgui/highgui.hpp"
 
+namespace imageio {
+
 /**
  * Image source that takes images from a camera device or video file.
  */
@@ -40,4 +42,5 @@ private:
 	cv::Mat frame;            ///< The current frame.
 };
 
+} /* namespace imageio */
 #endif /* VIDEOIMAGESOURCE_H_ */

@@ -18,7 +18,9 @@ namespace tracking {
 class ChangableDetectorSvm;
 
 /**
- * Computation of the two parameters of the sigmoid function for probabilistic SVM output.
+ * Computation of the two parameters of the sigmoid function for probabilistic SVM output. The
+ * equation of the sigmoid function f is f(x) = 1 / (1 + exp(A * x + B)), where A and B are the
+ * parameters that will be computed by objects of this type.
  */
 class SigmoidParameterComputation {
 public:
@@ -38,7 +40,8 @@ public:
 	 * @param negativeCount The amount of negative samples.
 	 * @return A pair containing the parameters A and B.
 	 */
-	virtual std::pair<double, double> computeSigmoidParameters(const ChangableDetectorSvm& svm, const struct svm_model *model,
+	virtual std::pair<double, double> computeSigmoidParameters(
+			const ChangableDetectorSvm& svm, const struct svm_model *model,
 			struct svm_node **positiveSamples, unsigned int positiveCount,
 			struct svm_node **negativeSamples, unsigned int negativeCount) = 0;
 

@@ -8,13 +8,13 @@
 #ifndef SELFLEARNINGWVMSVMMODEL_H_
 #define SELFLEARNINGWVMSVMMODEL_H_
 
-#include "tracking/MeasurementModel.h"
+#include "tracking/PatchDuplicateFilter.h"
+#include "tracking/LearningMeasurementModel.h"
 #include "boost/shared_ptr.hpp"
 #include <string>
 
 class VDetectorVectorMachine;
 class OverlapElimination;
-class FdPatch;
 
 using boost::shared_ptr;
 
@@ -32,7 +32,7 @@ class ChangableDetectorSvm;
  * they will be regarded as being independent (although they are not). The certainties for the SVM of
  * samples that are not evaluated by it will be chosen to be 0.5 (unknown).
  */
-class SelfLearningWvmSvmModel : public MeasurementModel {
+class SelfLearningWvmSvmModel : public LearningMeasurementModel, public PatchDuplicateFilter {
 public:
 
 	/**
@@ -65,70 +65,25 @@ public:
 
 	void evaluate(FdImage* image, std::vector<Sample>& samples);
 
-	/**
-	 * @return True if the dynamic SVM was used for the last evaluation, false otherwise.
-	 */
-	inline bool isUsingDynamicSvm() {
-		return selfLearningActive && usingDynamicSvm;
-	}
+	void reset();
 
-	/**
-	 * @return True if self-learning is active, false otherwise.
-	 */
-	inline bool isSelfLearningActive() {
-		return selfLearningActive;
-	}
+	void update();
 
-	/**
-	 * @param[in] active Flag that indicates whether self-learning should be active.
-	 */
-	inline void setSelfLearningActive(bool active) {
-		selfLearningActive = active;
+	void update(FdImage* image, std::vector<Sample>& positiveSamples, std::vector<Sample>& negativeSamples);
+
+	inline bool isUsingDynamicModel() {
+		return usingDynamicSvm;
 	}
 
 private:
 
 	/**
-	 * Eliminates all but the ten best patches.
+	 * Creates patches of samples and adds them to an existing list of patches.
 	 *
-	 * @param[in] patches The patches.
-	 * @param[in] detectorId The identifier of the detector used for computing the certainties.
-	 * @return A new vector containing the remaining patches.
+	 * @param[in] patches The existing patches.
+	 * @param[in] samples The samples to create new patches from.
 	 */
-	std::vector<FdPatch*> eliminate(std::vector<FdPatch*> patches, std::string detectorId);
-
-	/**
-	 * Takes the best distinct patches according to their certainty. The patches will be checked
-	 * for equality by comparing the pointers.
-	 *
-	 * @param[in] patches The patches.
-	 * @param[in] count The amount of distinct patches that should be taken.
-	 * @param[in] detectorId The identifier of the detector used for computing the certainties.
-	 * @return A new vector containing at most count different patches that have a higher certainty than the
-	 *         ones that were not taken.
-	 */
-	std::vector<FdPatch*> takeDistinctBest(std::vector<FdPatch*> patches, unsigned int count, std::string detectorId);
-
-	/**
-	 * Takes the worst distinct patches according to their certainty. The patches will be checked
-	 * for equality by comparing the pointers.
-	 *
-	 * @param[in] patches The patches.
-	 * @param[in] count The amount of distinct patches that should be taken.
-	 * @param[in] detectorId The identifier of the detector used for computing the certainties.
-	 * @return A new vector containing at most count different patches that have a lower certainty than the
-	 *         ones that were not taken.
-	 */
-	std::vector<FdPatch*> takeDistinctWorst(std::vector<FdPatch*> patches, unsigned int count, std::string detectorId);
-
-	/**
-	 * Takes the first n distinct patches. The patches will be checked for equality by comparing the pointers.
-	 *
-	 * @param[in] patches The patches.
-	 * @param[in] count The amount of distinct patches that should be taken.
-	 * @return A new vector containing at most count different patches.
-	 */
-	std::vector<FdPatch*> takeDistinct(const std::vector<FdPatch*>& patches, unsigned int count);
+	void addSamples(FdImage* image, std::vector<FdPatch*>& patches, std::vector<Sample>& samples);
 
 	shared_ptr<VDetectorVectorMachine> wvm;       ///< The fast WVM.
 	shared_ptr<VDetectorVectorMachine> staticSvm; ///< The slower static SVM.
@@ -138,7 +93,8 @@ private:
 	bool usingDynamicSvm;     ///< Flag that indicates whether the dynamic SVM is used.
 	double positiveThreshold; ///< The threshold for patches to be used as positive samples (must be exceeded).
 	double negativeThreshold; ///< The threshold for patches to be used as negative samples (must fall below).
-	bool selfLearningActive;  ///< Flag that indicates whether self-learning is active.
+	std::vector<FdPatch*> positiveTrainingPatches; ///< The positive training patches for the next update.
+	std::vector<FdPatch*> negativeTrainingPatches; ///< The negative training patches for the next update.
 };
 
 } /* namespace tracking */

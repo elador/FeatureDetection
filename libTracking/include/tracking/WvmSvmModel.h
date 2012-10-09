@@ -9,12 +9,12 @@
 #define WVMSVMMODEL_H_
 
 #include "tracking/MeasurementModel.h"
+#include "tracking/PatchDuplicateFilter.h"
 #include "boost/shared_ptr.hpp"
 #include <string>
 
 class VDetectorVectorMachine;
 class OverlapElimination;
-class FdPatch;
 
 using boost::shared_ptr;
 
@@ -26,7 +26,7 @@ namespace tracking {
  * the two detectors, they will be regarded as being independent (although they are not). The certainties
  * for the SVM of samples that are not evaluated by it will be chosen to be 0.5 (unknown).
  */
-class WvmSvmModel : public MeasurementModel {
+class WvmSvmModel : public MeasurementModel, public PatchDuplicateFilter {
 public:
 
 	/**
@@ -44,15 +44,6 @@ public:
 	void evaluate(FdImage* image, std::vector<Sample>& samples);
 
 private:
-
-	/**
-	 * Eliminates all but the ten best patches.
-	 *
-	 * @param[in] patches The patches.
-	 * @param[in] detectorId The identifier of the detector used for computing the certainties.
-	 * @return A new vector containing the remaining patches.
-	 */
-	std::vector<FdPatch*> eliminate(std::vector<FdPatch*> patches, std::string detectorId);
 
 	shared_ptr<VDetectorVectorMachine> wvm; ///< The fast WVM.
 	shared_ptr<VDetectorVectorMachine> svm; ///< The slower SVM.

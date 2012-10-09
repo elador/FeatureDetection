@@ -6,21 +6,24 @@
  */
 
 #include "tracking/FrameBasedSvmTraining.h"
-#include "tracking/ChangableDetectorSvm.h"
 #include "FdPatch.h"
 #include <iostream>
-#include <fstream>
-#include <sstream>
 #include <cmath>
 #include <cstdlib>
 
 namespace tracking {
 
+FrameBasedSvmTraining::FrameBasedSvmTraining(int frameLength, float minAvgSamples,
+		shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation) :
+				LibSvmTraining(sigmoidParameterComputation), frameLength(frameLength),
+				minAvgSamples(minAvgSamples), positiveSamples(frameLength),
+				negativeSamples(frameLength), oldestEntry(0) {}
+
 FrameBasedSvmTraining::FrameBasedSvmTraining(int frameLength, float minAvgSamples, std::string negativesFilename,
-		int negatives, shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation) : frameLength(frameLength),
-				minAvgSamples(minAvgSamples), staticNegativeSamples(), positiveSamples(frameLength),
-				negativeSamples(frameLength), oldestEntry(0), sigmoidParameterComputation(sigmoidParameterComputation) {
-	staticNegativeSamples.reserve(negatives);
+		int negatives, shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation) :
+				LibSvmTraining(sigmoidParameterComputation), frameLength(frameLength),
+				minAvgSamples(minAvgSamples), positiveSamples(frameLength),
+				negativeSamples(frameLength), oldestEntry(0) {
 	readStaticNegatives(negativesFilename, negatives);
 }
 
@@ -30,38 +33,6 @@ FrameBasedSvmTraining::~FrameBasedSvmTraining() {
 		freeSamples(*sit);
 	for (sit = negativeSamples.begin(); sit < negativeSamples.end(); ++sit)
 		freeSamples(*sit);
-	freeSamples(staticNegativeSamples);
-}
-
-void FrameBasedSvmTraining::readStaticNegatives(const std::string negativesFilename, int maxNegatives) {
-	int negatives = 0;
-	std::vector<int> values;
-	int value;
-	char separator;
-	std::string line;
-	std::ifstream file(negativesFilename.c_str());
-	if (file.is_open()) {
-		while (file.good() && negatives < maxNegatives) {
-			if (!std::getline(file, line))
-				break;
-			negatives++;
-			// read values from line
-			values.clear();
-			std::istringstream lineStream(line);
-			while (lineStream.good() && !lineStream.fail()) {
-				lineStream >> value >> separator;
-				values.push_back(value);
-			}
-			// create nodes
-			struct svm_node* data = new struct svm_node[values.size() + 1];
-			for (unsigned int i = 0; i < values.size(); ++i) {
-				data[i].index = i;
-				data[i].value = values[i] / 255.0;
-			}
-			data[values.size()].index = -1;
-			staticNegativeSamples.push_back(data);
-		}
-	}
 }
 
 int FrameBasedSvmTraining::getRequiredPositiveSampleCount() const {
@@ -80,18 +51,20 @@ bool FrameBasedSvmTraining::isTrainingReasonable() const {
 	return getPositiveSampleCount() >= getRequiredPositiveSampleCount();
 }
 
+void FrameBasedSvmTraining::reset(ChangableDetectorSvm& svm) {
+	std::vector<std::vector<struct svm_node *> >::iterator sit;
+	for (sit = positiveSamples.begin(); sit < positiveSamples.end(); ++sit)
+		freeSamples(*sit);
+	for (sit = negativeSamples.begin(); sit < negativeSamples.end(); ++sit)
+		freeSamples(*sit);
+}
+
 bool FrameBasedSvmTraining::retrain(ChangableDetectorSvm& svm, const std::vector<FdPatch*>& positivePatches,
 		const std::vector<FdPatch*>& negativePatches) {
 	addSamples(positivePatches, negativePatches);
 	if (isTrainingReasonable())
 		return train(svm);
 	return false;
-}
-
-void FrameBasedSvmTraining::freeSamples(std::vector<struct svm_node *>& samples) {
-	for (std::vector<struct svm_node *>::iterator sit = samples.begin(); sit < samples.end(); ++sit)
-		delete[] (*sit);
-	samples.clear();
 }
 
 void FrameBasedSvmTraining::addSamples(const std::vector<FdPatch*>& positivePatches,
@@ -206,31 +179,6 @@ struct svm_problem *FrameBasedSvmTraining::createProblem(unsigned int count) {
 		i++;
 	}
 	return problem;
-}
-
-void FrameBasedSvmTraining::changeSvmParameters(ChangableDetectorSvm& svm, struct svm_model *model,
-		struct svm_problem *problem, unsigned int positiveCount, unsigned int negativeCount) {
-	int dimensions = svm.getDimensions();
-	unsigned char** supportVectors = new unsigned char*[model->l];
-	float* alphas = new float[model->l];
-	for (int i = 0; i < model->l; ++i) {
-		supportVectors[i] = new unsigned char[dimensions];
-		const struct svm_node *svit = model->SV[i];
-		for (int j = 0; j < dimensions; ++j) {
-			if (j == svit->index) {
-				supportVectors[i][j] = 255 * svit->value; // because the SVM operates on gray-scale values between 0 and 255
-				++svit;
-			} else {
-				supportVectors[i][j] = 0;
-			}
-		}
-		alphas[i] = model->sv_coef[0][i];
-	}
-	double rho = model->rho[0];
-	double gamma = model->param.gamma / (255 * 255); // because the support vectors were multiplied by 255
-	std::pair<double, double> sigmoidParams = sigmoidParameterComputation->computeSigmoidParameters(svm, model,
-			problem->x, positiveCount, problem->x + positiveCount, negativeCount);
-	svm.changeRbfParameters(model->l, supportVectors, alphas, rho, gamma, sigmoidParams.first, sigmoidParams.second);
 }
 
 } /* namespace tracking */

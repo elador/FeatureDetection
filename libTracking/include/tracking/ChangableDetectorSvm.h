@@ -19,7 +19,7 @@ class ChangableDetectorSvm : public DetectorSVM {
 public:
 
 	/**
-	 * Constructs a new changable detector SVM.
+	 * Constructs a new changable SVM detector.
 	 */
 	explicit ChangableDetectorSvm();
 
@@ -30,6 +30,13 @@ public:
 	 */
 	inline unsigned int getDimensions() const {
 		return filter_size_x * filter_size_y;
+	}
+
+	/**
+	 * @return The threshold for the SVM output for adjusting the operating point.
+	 */
+	inline float getThreshold() const {
+		return limit_reliability;
 	}
 
 	/**
@@ -53,12 +60,13 @@ public:
 	 * @param[in] supportVectors The support vectors.
 	 * @param[in] alphas The weights of the support vectors.
 	 * @param[in] rho The bias of the separating hyperplane.
+	 * @param[in] threshold Threshold for the SVM output for adjusting the operating point.
 	 * @param[in] gamma Parameter of the RBF kernel.
 	 * @param[in] probParamA Parameter A of the probabilistic output equation (sigmoid function).
 	 * @param[in] probParamB Parameter B of the probabilistic output equation (sigmoid function).
 	 */
-	void changeRbfParameters(int numSv, unsigned char** supportVectors, float* alphas, float rho, float gamma,
-			float probParamA, float probParamB);
+	void changeRbfParameters(int numSv, unsigned char** supportVectors, float* alphas, float rho, float threshold,
+			float gamma, float probParamA, float probParamB);
 };
 
 } /* namespace tracking */

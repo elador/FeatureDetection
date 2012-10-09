@@ -22,6 +22,7 @@ class ChangableDetectorSvm;
  */
 class SvmTraining {
 public:
+
 	virtual ~SvmTraining() {}
 
 	/**
@@ -34,6 +35,14 @@ public:
 	 */
 	virtual bool retrain(ChangableDetectorSvm& svm,
 			const std::vector<FdPatch*>& positivePatches, const std::vector<FdPatch*>& negativePatches) = 0;
+
+	/**
+	 * Resets the training and the SVM. May not change the SVM at all, but it should not be used
+	 * afterwards until it is re-trained.
+	 *
+	 * @param[in] svm The SVM to reset.
+	 */
+	virtual void reset(ChangableDetectorSvm& svm) = 0;
 };
 
 } /* namespace tracking */

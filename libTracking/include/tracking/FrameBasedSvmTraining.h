@@ -8,9 +8,9 @@
 #ifndef FRAMEBASEDSVMTRAINING_H_
 #define FRAMEBASEDSVMTRAINING_H_
 
-#include "tracking/SvmTraining.h"
+#include "tracking/LibSvmTraining.h"
 #include "tracking/SigmoidParameterComputation.h"
-#include "tracking/ApproximateSigmoidParameterComputation.h"
+#include "tracking/FastApproximateSigmoidParameterComputation.h"
 #include "svm.h"
 #include "boost/shared_ptr.hpp"
 #include "boost/make_shared.hpp"
@@ -19,8 +19,6 @@
 #include <utility>
 
 class FdPatch;
-struct svm_node;
-struct svm_model;
 
 using boost::shared_ptr;
 using boost::make_shared;
@@ -30,11 +28,22 @@ namespace tracking {
 /**
  * SVM training that uses the patches of the last frames for training.
  */
-class FrameBasedSvmTraining : public SvmTraining {
+class FrameBasedSvmTraining : public LibSvmTraining {
 public:
 
 	/**
 	 * Constructs a new frame based SVM training.
+	 *
+	 * @param[in] frameLength The length of the memory in frames.
+	 * @param[in] minAvgSamples The minimum average positive samples per frame for the training to be reasonable.
+	 * @param[in] sigmoidParameterComputation The computation of the sigmoid parameters.
+	 */
+	explicit FrameBasedSvmTraining(int frameLength, float minAvgSamples,
+			shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation
+					= make_shared<FastApproximateSigmoidParameterComputation>());
+
+	/**
+	 * Constructs a new frame based SVM training with some static negative samples.
 	 *
 	 * @param[in] frameLength The length of the memory in frames.
 	 * @param[in] minAvgSamples The minimum average positive samples per frame for the training to be reasonable.
@@ -44,12 +53,14 @@ public:
 	 */
 	explicit FrameBasedSvmTraining(int frameLength, float minAvgSamples, std::string negativesFilename, int negatives,
 			shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation
-					= make_shared<ApproximateSigmoidParameterComputation>());
+					= make_shared<FastApproximateSigmoidParameterComputation>());
 
 	~FrameBasedSvmTraining();
 
 	bool retrain(ChangableDetectorSvm& svm, const std::vector<FdPatch*>& positivePatches,
 			const std::vector<FdPatch*>& negativePatches);
+
+	void reset(ChangableDetectorSvm& svm);
 
 	/**
 	 * @return The required amount of positive samples for the training to be reasonable.
@@ -72,21 +83,6 @@ private:
 	 * @return True if the training is reasonable, false otherwise.
 	 */
 	bool isTrainingReasonable() const;
-
-	/**
-	 * Reads the static negative samples from a file.
-	 *
-	 * @param[in] negativesFilename The name of the file containing the static negative samples.
-	 * @param[in] maxNegatives The amount of static negative samples to use.
-	 */
-	void readStaticNegatives(const std::string negativesFilename, int maxNegatives);
-
-	/**
-	 * Deletes the sample data and clears the vector.
-	 *
-	 * @param[in] samples The samples that should be deleted.
-	 */
-	void freeSamples(std::vector<struct svm_node *>& samples);
 
 	/**
 	 * Adds new samples based on image patches with positive or negative label.
@@ -137,25 +133,11 @@ private:
 	 */
 	struct svm_problem *createProblem(unsigned int count);
 
-	/**
-	 * Changes the parameters of an SVM given a libSVM model.
-	 *
-	 * @param[in] The SVM whose parameters should be changed.
-	 * @param[in] model The libSVM model.
-	 * @param[in] problem The libSVM problem.
-	 * @param[in] positiveCount The amount of positive samples used for the training of the SVM.
-	 * @param[in] negativeCount The amount of negative samples used for the training of the SVM.
-	 */
-	void changeSvmParameters(ChangableDetectorSvm& svm, struct svm_model *model,
-			struct svm_problem *problem, unsigned int positiveCount, unsigned int negativeCount);
-
 	int frameLength;     ///< The length of the memory in frames.
 	float minAvgSamples; ///< The minimum average positive samples per frame for the training to be reasonable.
-	std::vector<struct svm_node *> staticNegativeSamples;         ///< The static negative samples.
 	std::vector<std::vector<struct svm_node *> > positiveSamples; ///< The positive samples of the last frames.
 	std::vector<std::vector<struct svm_node *> > negativeSamples; ///< The negative samples of the last frames.
 	int oldestEntry;                                              ///< The index of the oldest sample entry.
-	shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation; ///< The computation of the sigmoid parameters.
 };
 
 } /* namespace tracking */

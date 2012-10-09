@@ -1,6 +1,7 @@
 SET( PROJECT_NAME FeatureDetection )
 PROJECT( ${PROJECT_NAME} )
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+add_subdirectory(libImageIO)
 add_subdirectory(libFeatureDetection)
 add_subdirectory(libKinectInterface)
 add_subdirectory(libTracking)

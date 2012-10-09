@@ -5,12 +5,14 @@
  *      Author: poschmann
  */
 
-#include "DirectoryImageSource.h"
+#include "imageio/DirectoryImageSource.h"
 #include <iostream>
 
 using boost::filesystem::exists;
 using boost::filesystem::is_directory;
 using boost::filesystem::directory_iterator;
+
+namespace imageio {
 
 DirectoryImageSource::DirectoryImageSource(std::string directory) : files(), index(0) {
 	path path(directory);
@@ -27,3 +29,5 @@ DirectoryImageSource::~DirectoryImageSource() {}
 const cv::Mat DirectoryImageSource::get() {
 	return cv::imread(files[index++].string(), 1);
 }
+
+} /* namespace imageio */

@@ -26,7 +26,7 @@ void WvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
 	wvm->initPyramids(image);
 	wvm->initROI(image);
 	std::vector<FdPatch*> remainingPatches;
-	std::map<FdPatch*, Sample*> patch2sample;
+	std::map<FdPatch*, std::vector<Sample*> > patch2samples;
 	for (std::vector<Sample>::iterator sit = samples.begin(); sit < samples.end(); ++sit) {
 		Sample& sample = *sit;
 		sample.setObject(false);
@@ -36,35 +36,35 @@ void WvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
 		} else {
 			if (wvm->detect_on_patch(patch)) {
 				remainingPatches.push_back(patch);
-				patch2sample[patch] = &sample;
+				patch2samples[patch].push_back(&sample);
 			}
 			sample.setWeight(0.5 * patch->certainty[wvm->getIdentifier()]);
 		}
 	}
 	if (!remainingPatches.empty()) {
 		//remainingPatches = oe->eliminate(remainingPatches, wvm->getIdentifier());
-		remainingPatches = eliminate(remainingPatches, wvm->getIdentifier());
+		remainingPatches = takeDistinctBest(remainingPatches, 10, wvm->getIdentifier());
 		svm->initPyramids(image);
 		svm->initROI(image);
 		std::vector<FdPatch*> objectPatches = svm->detect_on_patchvec(remainingPatches);
+		for (std::vector<FdPatch*>::iterator pit = objectPatches.begin(); pit < objectPatches.end(); ++pit) {
+			std::vector<Sample*>& patchSamples = patch2samples[(*pit)];
+			for (std::vector<Sample*>::iterator sit = patchSamples.begin(); sit < patchSamples.end(); ++sit) {
+				Sample* sample = (*sit);
+				sample->setObject(true);
+			}
+		}
 		for (std::vector<FdPatch*>::iterator pit = remainingPatches.begin(); pit < remainingPatches.end(); ++pit) {
 			FdPatch* patch = (*pit);
-			Sample* sample = patch2sample[patch];
-			sample->setWeight(2 * sample->getWeight() * patch->certainty[svm->getIdentifier()]);
-		}
-		for (std::vector<FdPatch*>::iterator pit = objectPatches.begin(); pit < objectPatches.end(); ++pit) {
-			Sample* sample = patch2sample[(*pit)];
-			sample->setObject(true);
+			double certainty = patch->certainty[svm->getIdentifier()];
+			std::vector<Sample*>& patchSamples = patch2samples[patch];
+			for (std::vector<Sample*>::iterator sit = patchSamples.begin(); sit < patchSamples.end(); ++sit) {
+				Sample* sample = (*sit);
+				sample->setWeight(2 * sample->getWeight() * certainty);
+			}
+			patchSamples.clear();
 		}
 	}
-}
-
-std::vector<FdPatch*> WvmSvmModel::eliminate(std::vector<FdPatch*> patches, std::string detectorId) {
-	if (patches.size() > 10) {
-		std::sort(patches.begin(), patches.end(), FdPatch::SortByCertainty(detectorId));
-		patches.resize(10);
-	}
-	return patches;
 }
 
 } /* namespace tracking */

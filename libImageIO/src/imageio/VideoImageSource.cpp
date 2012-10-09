@@ -5,8 +5,10 @@
  *      Author: poschmann
  */
 
-#include "VideoImageSource.h"
+#include "imageio/VideoImageSource.h"
 #include <iostream>
+
+namespace imageio {
 
 VideoImageSource::VideoImageSource(int device) : capture(device), frame() {
 	if (!capture.isOpened())
@@ -26,3 +28,5 @@ const cv::Mat VideoImageSource::get() {
 	capture >> frame;
 	return frame;
 }
+
+} /* namespace imageio */

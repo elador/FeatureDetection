@@ -10,6 +10,8 @@
 
 #include "opencv2/highgui/highgui.hpp"
 
+namespace imageio {
+
 /**
  * Source of subsequent images.
  */
@@ -26,4 +28,5 @@ public:
 	virtual const cv::Mat get() = 0;
 };
 
+} /* namespace imageio */
 #endif /* IMAGESOURCE_H_ */

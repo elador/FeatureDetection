@@ -14,7 +14,7 @@ ChangableDetectorSvm::ChangableDetectorSvm() {}
 ChangableDetectorSvm::~ChangableDetectorSvm() {}
 
 void ChangableDetectorSvm::changeRbfParameters(int numSv, unsigned char** supportVectors, float* alphas, float rho,
-		float gamma, float probParamA, float probParamB) {
+		float threshold, float gamma, float probParamA, float probParamB) {
 	for (int i = 0; i < this->numSV; ++i)
 		delete[] this->support[i];
 	delete[] this->support;
@@ -24,6 +24,7 @@ void ChangableDetectorSvm::changeRbfParameters(int numSv, unsigned char** suppor
 	this->support = supportVectors;
 	this->alpha = alphas;
 	this->nonlin_threshold = rho;
+	this->limit_reliability = threshold;
 	this->nonLinType = 2;
 	this->basisParam = gamma;
 	this->posterior_svm[0] = probParamA;

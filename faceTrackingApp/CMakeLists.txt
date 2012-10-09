@@ -13,21 +13,17 @@ FIND_PACKAGE(MATLAB REQUIRED)
 
 # source and header files
 SET(HEADERS
-	DirectoryImageSource.h
 	FaceTracking.h
-	ImageSource.h
-	VideoImageSource.h
 )
 SET(SOURCE
-	DirectoryImageSource.cpp
 	FaceTracking.cpp
-	VideoImageSource.cpp
 )
 
 # add dependencies
+include_directories( ${ImageIO_SOURCE_DIR}/include )
 include_directories( ${Tracking_SOURCE_DIR}/include )
 include_directories( ${libFeatureDetection_SOURCE_DIR} )
 
 # make executable
 ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Tracking libFeatureDetection ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} ImageIO Tracking libFeatureDetection ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )

@@ -13,24 +13,32 @@
 namespace tracking {
 
 /**
- * Computes the approximate parameters of the sigmoid function, so that the function
- * approximately crosses two certain points. The first point is the mean SVM output of
- * the positive samples with a value of 0.99, the second point is in between the mean
- * SVM outputs of the positive and negative samples with a value of 0.01.
+ * Approximates the two parameters of a sigmoid function for probabilistic SVM output.
+ * Two probabilities are given that are associated to the mean outputs of positive and
+ * negative samples. With these two points, a sigmoid function can be computed.
  */
 class ApproximateSigmoidParameterComputation : public SigmoidParameterComputation {
 public:
 
 	/**
 	 * Constructs a new approximate sigmoid parameter computation.
+	 *
+	 * @param[in] highProb The probability of the mean output of positive samples.
+	 * @param[in] lowProb The probability of the mean output of negative samples.
 	 */
-	explicit ApproximateSigmoidParameterComputation();
+	explicit ApproximateSigmoidParameterComputation(double highProb = 0.99, double lowProb = 0.01);
 
-	~ApproximateSigmoidParameterComputation();
+	virtual ~ApproximateSigmoidParameterComputation();
 
-	std::pair<double, double> computeSigmoidParameters(const ChangableDetectorSvm& svm, const struct svm_model *model,
+	virtual std::pair<double, double> computeSigmoidParameters(
+			const ChangableDetectorSvm& svm, const struct svm_model *model,
 			struct svm_node **positiveSamples, unsigned int positiveCount,
 			struct svm_node **negativeSamples, unsigned int negativeCount);
+
+protected:
+
+	double highProb; ///< The probability of the mean output of positive samples.
+	double lowProb;  ///< The probability of the mean output of negative samples.
 };
 
 } /* namespace tracking */

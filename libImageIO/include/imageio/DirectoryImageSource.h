@@ -14,6 +14,8 @@
 
 using boost::filesystem::path;
 
+namespace imageio {
+
 /**
  * Image source that takes the images of a directory.
  */
@@ -37,4 +39,5 @@ private:
 	int index;               ///< The index of the next file.
 };
 
+} /* namespace imageio */
 #endif /* DIRECTORYIMAGESOURCE_H_ */
