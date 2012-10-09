@@ -62,4 +62,10 @@ boost::optional<Rectangle> LearningCondensationTracker::process(FdImage* image) 
 	return boost::optional<Rectangle>();
 }
 
+void LearningCondensationTracker::setLearningActive(bool active) {
+	learningActive = active;
+	if (!active)
+		measurementModel->reset();
+}
+
 } /* namespace tracking */

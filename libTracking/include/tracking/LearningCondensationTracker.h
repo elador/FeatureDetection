@@ -84,11 +84,7 @@ public:
 	/**
 	 * @param[in] active Flag that indicates whether learning should be active.
 	 */
-	inline void setLearningActive(bool active) {
-		learningActive = active;
-		if (!active)
-			measurementModel.reset();
-	}
+	void setLearningActive(bool active);
 
 private:
 
