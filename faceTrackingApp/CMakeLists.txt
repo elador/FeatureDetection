@@ -11,12 +11,24 @@ FIND_PACKAGE(OpenCV REQUIRED core imgproc highgui)
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 FIND_PACKAGE(MATLAB REQUIRED)
 
+IF(WIN32)
+	# In Windows only: Include Microsoft Kinect SDK
+	SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
+	FIND_PACKAGE(KinectSDK REQUIRED)
+	INCLUDE_DIRECTORIES(${KinectSDK_INCLUDE_DIR})
+	SET(KINECT_LIBNAME ${KinectSDK_LIBRARIES})
+ELSE()
+	SET(KINECT_LIBNAME "")
+ENDIF()
+
 # source and header files
 SET(HEADERS
 	FaceTracking.h
+	wingettimeofday.h
 )
 SET(SOURCE
 	FaceTracking.cpp
+	wingettimeofday.cpp
 )
 
 # add dependencies
@@ -27,4 +39,4 @@ include_directories( ${libFeatureDetection_SOURCE_DIR} )
 
 # make executable
 ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} ImageIO Tracking libFeatureDetection ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} ImageIO ${KINECT_LIBNAME} Tracking libFeatureDetection ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )

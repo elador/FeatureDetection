@@ -1,15 +1,18 @@
 /*
  * KinectImageSource.cpp
  *
- *  Created on: 20.08.2012
- *      Author: poschmann
+ *  Created on: 07.10.2012
+ *      Author: Patrik Huber
  */
 
-#include "KinectImageSource.h"
+#include "imageio/KinectImageSource.h"
 #include <iostream>
+
+namespace imageio {
 
 KinectImageSource::KinectImageSource(int device) : m_pColorStreamHandle(INVALID_HANDLE_VALUE) {
 
+#ifdef WIN32
 	/// Create the first connected Kinect found
 	INuiSensor * pNuiSensor;
 	HRESULT hr;
@@ -70,10 +73,15 @@ KinectImageSource::KinectImageSource(int device) : m_pColorStreamHandle(INVALID_
 
 	std::cout << "hr: " << hr << std::endl;
 
+#else
+	std::cout << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << hr << std::endl;
+#endif
+
 }
 
 
 KinectImageSource::~KinectImageSource() {
+#ifdef WIN32
 	if (m_pNuiSensor)
 	{
 		m_pNuiSensor->NuiShutdown();
@@ -83,12 +91,12 @@ KinectImageSource::~KinectImageSource() {
 		m_pNuiSensor->Release();
 		m_pNuiSensor = NULL;
 	}
+#endif
 }
 
 const cv::Mat KinectImageSource::get() {
-	/*capture >> frame;
-	return frame;*/
-	
+
+#ifdef WIN32
 	// Attempt to get the color frame
 	HRESULT hr;
 	hr = m_pNuiSensor->NuiImageStreamGetNextFrame(m_pColorStreamHandle, 0, &imageFrame);
@@ -129,4 +137,10 @@ const cv::Mat KinectImageSource::get() {
 	m_pNuiSensor->NuiImageStreamReleaseFrame(m_pColorStreamHandle, &imageFrame);
 
 	return frame;
+#else
+	std::cout << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << hr << std::endl;
+	return frame;
+#endif
 }
+
+} /* namespace imageio */

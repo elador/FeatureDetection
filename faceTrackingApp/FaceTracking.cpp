@@ -7,6 +7,7 @@
 
 #include "FaceTracking.h"
 #include "imageio/VideoImageSource.h"
+#include "imageio/KinectImageSource.h"
 #include "imageio/DirectoryImageSource.h"
 #include "tracking/ResamplingSampler.h"
 #include "tracking/GridSampler.h"
@@ -39,8 +40,10 @@
 	#include <sys/time.h>
 #endif
 
-const std::string FaceTracking::svmConfigFile = "/home/poschmann/projects/ffd/config/fdetection/fd_config_fft_fd.mat";
-const std::string FaceTracking::negativesFile = "/home/poschmann/projects/ffd/config/nonfaces_1000";
+//const std::string FaceTracking::svmConfigFile = "/home/poschmann/projects/ffd/config/fdetection/fd_config_fft_fd.mat";
+const std::string FaceTracking::svmConfigFile = "C:\\Users\\Patrik\\Documents\\GitHub\\config\\fdetection\\fd_config_ffd_fd.mat";
+//const std::string FaceTracking::negativesFile = "/home/poschmann/projects/ffd/config/nonfaces_1000";
+const std::string FaceTracking::negativesFile = "C:\\Users\\Patrik\\Documents\\GitHub\\nonfaces_1000";
 const std::string FaceTracking::videoWindowName = "Image";
 const std::string FaceTracking::controlWindowName = "Controls";
 
@@ -190,7 +193,7 @@ void FaceTracking::run() {
 			FdImage* myImage = new FdImage();
 			myImage->load(&frame);
 			gettimeofday(&detStart, 0);
-			boost::optional<Rectangle> face = tracker->process(myImage);
+			boost::optional<tracking::Rectangle> face = tracker->process(myImage);
 			gettimeofday(&detEnd, 0);
 			delete myImage;
 			image = frame;
@@ -236,7 +239,13 @@ int main(int argc, char *argv[]) {
 		std::istringstream iss(argv[2]);
 		int device;
 		iss >> device;
-		auto_ptr<imageio::ImageSource> imageSource(new imageio::VideoImageSource(device));
+		auto_ptr<imageio::ImageSource> imageSource;
+		if(device!=99) {
+			imageSource = auto_ptr<imageio::ImageSource>(new imageio::VideoImageSource(device));
+		} else {
+			imageSource = auto_ptr<imageio::ImageSource>(new imageio::KinectImageSource(device));
+		}
+		
 		tracker.reset(new FaceTracking(imageSource));
 	} else if (strcmp("-v", argv[1]) == 0) {
 		auto_ptr<imageio::ImageSource> imageSource(new imageio::VideoImageSource(argv[2]));
