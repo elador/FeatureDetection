@@ -109,28 +109,28 @@ int DetectorSVM::load(const std::string filename)
 	char buff[255], key[255], pos[255];
 
 	if(!configReader->getKey("FD.ffp", buff)) {	// which feature point does this detector detect?
-		std::cout << "Warning: Key in Config nicht gefunden, key:'" << "FD.ffp" << "'" << std::endl;
+		std::cout << "[DetSVM] Warning: Key in Config nicht gefunden, key:'" << "FD.ffp" << "'" << std::endl;
 	} else {
 		if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
 			std::cout << "[DetSVM] ffp: " << atoi(buff) << std::endl;
 		}
 	}
 
-	if (!configReader->getKey("ALLGINFO.outputdir", this->outputPath)) // Output folder of this detector
-		std::cout << "Warning: Key in Config nicht gefunden, key:'" << "ALLGINFO.outputdir" << "'" << std::endl;
-	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
-		std::cout << "[DetSVM] outputdir: " << this->outputPath << std::endl;
-	}
+//	if (!configReader->getKey("ALLGINFO.outputdir", this->outputPath)) // Output folder of this detector
+//		std::cout << "[DetSVM] Warning: Key in Config nicht gefunden, key:'" << "ALLGINFO.outputdir" << "'" << std::endl;
+//	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+//		std::cout << "[DetSVM] outputdir: " << this->outputPath << std::endl;
+//	}
 
 	//min. und max. erwartete Anzahl Gesichter im Bild (vorerst null bis eins);											  
 	sprintf(pos,"FD.expected_number_faces.#%d",0);																		  
 	if (!configReader->getKey(pos,buff))																						  
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", pos,this->expected_num_faces[0]);
+		std::cout << "[DetSVM] WARNING: Key in Config nicht gefunden, key:" << pos << ", nehme Default: "<< this->expected_num_faces[0] << std::endl;
 	else
 		this->expected_num_faces[0]=atoi(buff);
 	sprintf(pos,"FD.expected_number_faces.#%d",1);
 	if (!configReader->getKey(pos,buff))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", pos,this->expected_num_faces[1]);
+		std::cout << "[DetSVM] WARNING: Key in Config nicht gefunden, key:" << pos << ", nehme Default: " << this->expected_num_faces[1] << std::endl;
 	else
 		this->expected_num_faces[1]=atoi(buff);
 
@@ -140,37 +140,36 @@ int DetectorSVM::load(const std::string filename)
 
 	//Grenze der Zuverlaesigkeit ab der Gesichter aufgenommen werden (Diffwert fr SVM-Schwelle)
 	if (!configReader->getKey("FD.limit_reliability",buff))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %g\n",
-		"FD.limit_reliability",this->limit_reliability);
+		std::cout << "[DetSVM] WARNING: Key in Config nicht gefunden, key:'FD.limit_reliability', nehme Default: " << this->limit_reliability << std::endl;
 	else this->limit_reliability=(float)atof(buff);
 
 	//ROI: left, top, right, bottom
     // 0 0 0 0 (ganze Bild), -1 -1 -1 -1 (bzw. ganze FD-ROI) 
 	int v=1;
-	if (!configReader->getInt("FD.roi.#0",&v))		printf("WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n","FD.roi.#0",this->roi.left);
+	if (!configReader->getInt("FD.roi.#0",&v))		std::cout << "[DetSVM] WARNING: Key in Config nicht gefunden, key:'FD.roi.#0', nehme Default: " << this->roi.left << std::endl;
 	else										this->roi.left=v;
-	if (!configReader->getInt("FD.roi.#1",&v))		printf("WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n","FD.roi.#1",this->roi.top);
+	if (!configReader->getInt("FD.roi.#1",&v))		std::cout << "[DetSVM] WARNING: Key in Config nicht gefunden, key:'FD.roi.#1', nehme Default: " << this->roi.top << std::endl;
 	else										this->roi.top=v;
-	if (!configReader->getInt("FD.roi.#2",&v))		printf("WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n","FD.roi.#2",this->roi.right);
+	if (!configReader->getInt("FD.roi.#2",&v))		std::cout << "[DetSVM] WARNING: Key in Config nicht gefunden, key:'FD.roi.#2', nehme Default: " << this->roi.right << std::endl;
 	else										this->roi.right=v;
-	if (!configReader->getInt("FD.roi.#3",&v))		printf("WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n","FD.roi.#3",this->roi.bottom);
+	if (!configReader->getInt("FD.roi.#3",&v))		std::cout << "[DetSVM] WARNING: Key in Config nicht gefunden, key:'FD.roi.#3', nehme Default: " << this->roi.bottom << std::endl;
 	else										this->roi.bottom=v;
 	
 	//Minimale Gesichtsoehe in Pixel 
 	if (!configReader->getInt("FD.face_size_min",&this->subsamplingMinHeight))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", "FD.face_size_min",this->subsamplingMinHeight);
+		std::cout << "[DetSVM] WARNING: Key in Config nicht gefunden, key:'FD.face_size_min', nehme Default: " << this->subsamplingMinHeight << std::endl;
 	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
 		std::cout << "[DetSVM] face_size_min: " << this->subsamplingMinHeight << std::endl;
 	}
 	//Anzahl der Skalierungen
 	if (!configReader->getInt("FD.maxscales",&this->numSubsamplingLevels))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", "FD.maxscales",this->numSubsamplingLevels);
+		std::cout << "[DetSVM] WARNING: Key in Config nicht gefunden, key:'FD.maxscales', nehme Default: " << this->numSubsamplingLevels << std::endl;
 	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
 		std::cout << "[DetSVM] maxscales: " << this->numSubsamplingLevels << std::endl;
 	}
 	//Scalierungsfaktor 
 	if (!configReader->getKey("FD.scalefactor",buff))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %g\n", "FD.scalefactor",this->subsamplingFactor);
+		std::cout << "[DetSVM] WARNING: Key in Config nicht gefunden, key:'FD.scalefactor', nehme Default: " << this->subsamplingFactor << std::endl;
 	else
 		this->subsamplingFactor=(float)atof(buff);
 	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
@@ -180,14 +179,12 @@ int DetectorSVM::load(const std::string filename)
 	//Kassifikator
 	char fn_classifier[500];
 	if (!configReader->getKey("FD.classificator", fn_classifier))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: '%s'\n",
-		"FD.classificator", fn_classifier);
+		std::cout << "[DetSVM] WARNING: Key in Config nicht gefunden, key:'FD.classificator', nehme Default: " << fn_classifier << std::endl;
 
 	//Schwellwerte
 	char fn_threshold[500];
 	if (!configReader->getKey("FD.threshold", fn_threshold))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: '%s'\n",
-		"FD.threshold", fn_threshold);
+		std::cout << "[DetSVM] WARNING: Key in Config nicht gefunden, key:'FD.threshold', nehme Default: " << fn_threshold << std::endl;
 
 	delete configReader;
 
@@ -221,11 +218,11 @@ int DetectorSVM::load(const std::string filename)
 		
 	pmxarray = matGetVariable(pmatfile, "support_nonlin1");
 	if (pmxarray == 0) {
-		std::cout << "Error: There is a nonlinear SVM in the file, but the matrix support_nonlin1 is lacking!" << std::endl;
+		std::cout << "[DetSVM] Error: There is a nonlinear SVM in the file, but the matrix support_nonlin1 is lacking!" << std::endl;
 		exit(EXIT_FAILURE);
 	} 
 	if (mxGetNumberOfDimensions(pmxarray) != 3) {
-		std::cout << "Error: The matrix support_nonlin1 in the file should have 3 dimensions." << std::endl;
+		std::cout << "[DetSVM] Error: The matrix support_nonlin1 in the file should have 3 dimensions." << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	const mwSize *dim = mxGetDimensions(pmxarray);
@@ -267,7 +264,7 @@ int DetectorSVM::load(const std::string filename)
 	
 	pmatfile = matOpen(fn_threshold, "r");
 	if (pmatfile == 0) {
-		printf("fd_ReadDetector(): Unable to open the file (wrong format?):\n'%s' \n", fn_threshold);
+		std::cout << "[DetSVM] Unable to open the file (wrong format?):" << std::endl <<  fn_threshold << std::endl;
 		return 1;
 	} else {
 		//printf("fd_ReadDetector(): read posterior_svm parameter for probabilistic SVM output\n");
@@ -275,13 +272,13 @@ int DetectorSVM::load(const std::string filename)
 		//TODO is there a case (when svm+wvm from same trainingdata) when there exists only a posterior_svm, and I should use this here?
 		pmxarray = matGetVariable(pmatfile, "posterior_svm");
 		if (pmxarray == 0) {
-			fprintf(stderr, "WARNING: Unable to find the vector posterior_svm, disable prob. SVM output;\n");
+			std::cout << "[DetSVM] WARNING: Unable to find the vector posterior_svm, disable prob. SVM output;" << std::endl;
 			this->posterior_svm[0]=this->posterior_svm[1]=0.0f;
 		} else {
 			double* matdata = mxGetPr(pmxarray);
 			const mwSize *dim = mxGetDimensions(pmxarray);
 			if (dim[1] != 2) {
-				fprintf(stderr, "WARNING: Size of vector posterior_svm !=2, disable prob. SVM output;\n");
+				std::cout << "[DetSVM] WARNING: Size of vector posterior_svm !=2, disable prob. SVM output;" << std::endl;
 				this->posterior_svm[0]=this->posterior_svm[1]=0.0f;
 			} else {
 				this->posterior_svm[0]=(float)matdata[0]; this->posterior_svm[1]=(float)matdata[1];

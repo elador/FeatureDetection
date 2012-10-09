@@ -10,7 +10,7 @@ VDetector::VDetector(void)
 {
 	canOutputProbabilistic = false;
 	expected_num_faces[0]=0; expected_num_faces[1]=1;
-	strcpy(outputPath, "");
+	//strcpy(outputPath, "");
 	identifier = "Detector";
 }
 

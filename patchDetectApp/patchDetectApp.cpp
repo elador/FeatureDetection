@@ -1,6 +1,11 @@
-// patchDetectApp.cpp : Defines the entry point for the console application.
-//
-
+/*
+ * patchDetectApp.cpp
+ *
+ *  Created on: 24.06.2012
+ *      Author: Patrik Huber
+ *
+ *	Deprecated. Has to be adapted to the current libFeatureDetection code.
+ */
 #include "stdafx.h"
 
 

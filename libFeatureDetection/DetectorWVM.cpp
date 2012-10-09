@@ -286,28 +286,28 @@ int DetectorWVM::load(const std::string filename)
 	char buff[255], key[255], pos[255];
 
 	if(!configReader->getKey("FD.ffp", buff)) {	// which feature point does this detector detect?
-		std::cout << "Warning: Key in Config nicht gefunden, key:'" << "FD.ffp" << "'" << std::endl;
+		std::cout << "[DetWVM] Warning: Key in Config nicht gefunden, key:'" << "FD.ffp" << "'" << std::endl;
 	} else {
 		if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
 			std::cout << "[DetWVM] ffp: " << atoi(buff) << std::endl;
 		}
 	}
 
-	if (!configReader->getKey("ALLGINFO.outputdir", this->outputPath)) // Output folder of this detector
-		std::cout << "Warning: Key in Config nicht gefunden, key:'" << "ALLGINFO.outputdir" << "'" << std::endl;
-	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
-		std::cout << "[DetWVM] outputdir: " << this->outputPath << std::endl;
-	}
+//	if (!configReader->getKey("ALLGINFO.outputdir", this->outputPath)) // Output folder of this detector
+//		std::cout << "[DetWVM] Warning: Key in Config nicht gefunden, key:'" << "ALLGINFO.outputdir" << "'" << std::endl;
+//	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
+//		std::cout << "[DetWVM] outputdir: " << this->outputPath << std::endl;
+//	}
 
 	//min. und max. erwartete Anzahl Gesichter im Bild (vorerst null bis eins);											  
 	sprintf(pos,"FD.expected_number_faces.#%d",0);																		  
 	if (!configReader->getKey(pos,buff))																						  
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", pos,this->expected_num_faces[0]);
+		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'pos', nehme Default: " << this->expected_num_faces[0] << std::endl;
 	else
 		this->expected_num_faces[0]=atoi(buff);
 	sprintf(pos,"FD.expected_number_faces.#%d",1);
 	if (!configReader->getKey(pos,buff))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", pos,this->expected_num_faces[1]);
+		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'pos', nehme Default: " << this->expected_num_faces[1] << std::endl;
 	else
 		this->expected_num_faces[1]=atoi(buff);
 	
@@ -324,30 +324,30 @@ int DetectorWVM::load(const std::string filename)
 	//ROI: left, top, right, bottom
     // 0 0 0 0 (ganze Bild), -1 -1 -1 -1 (bzw. ganze FD-ROI) 
 	int v=1;
-	if (!configReader->getInt("FD.roi.#0",&v))		printf("WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n","FD.roi.#0",this->roi.left);
+	if (!configReader->getInt("FD.roi.#0",&v))		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.roi.#0', nehme Default: " << this->roi.left << std::endl;
 	else										this->roi.left=v;
-	if (!configReader->getInt("FD.roi.#1",&v))		printf("WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n","FD.roi.#1",this->roi.top);
+	if (!configReader->getInt("FD.roi.#1",&v))		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.roi.#1', nehme Default: " << this->roi.top << std::endl;
 	else										this->roi.top=v;
-	if (!configReader->getInt("FD.roi.#2",&v))		printf("WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n","FD.roi.#2",this->roi.right);
+	if (!configReader->getInt("FD.roi.#2",&v))		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.roi.#2', nehme Default: " << this->roi.right << std::endl;
 	else										this->roi.right=v;
-	if (!configReader->getInt("FD.roi.#3",&v))		printf("WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n","FD.roi.#3",this->roi.bottom);
+	if (!configReader->getInt("FD.roi.#3",&v))		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.roi.#3', nehme Default: " << this->roi.bottom << std::endl;
 	else										this->roi.bottom=v;
 	
 	//Minimale Gesichtsoehe in Pixel 
 	if (!configReader->getInt("FD.face_size_min",&this->subsamplingMinHeight))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", "FD.face_size_min",this->subsamplingMinHeight);
+		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.face_size_min', nehme Default: " << this->subsamplingMinHeight << std::endl;
 	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
 		std::cout << "[DetWVM] face_size_min: " << this->subsamplingMinHeight << std::endl;
 	}
 	//Anzahl der Skalierungen
 	if (!configReader->getInt("FD.maxscales",&this->numSubsamplingLevels))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n", "FD.maxscales",this->numSubsamplingLevels);
+		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.maxscales', nehme Default: " << this->numSubsamplingLevels << std::endl;
 	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
 		std::cout << "[DetWVM] maxscales: " << this->numSubsamplingLevels << std::endl;
 	}
 	//Scalierungsfaktor 
 	if (!configReader->getKey("FD.scalefactor",buff))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %g\n", "FD.scalefactor",this->subsamplingFactor);
+		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.scalefactor', nehme Default: " << this->subsamplingFactor << std::endl;
 	else
 		this->subsamplingFactor=(float)atof(buff);
 	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
@@ -356,29 +356,25 @@ int DetectorWVM::load(const std::string filename)
 
 	//Number filters to use
 	if (!configReader->getKey("FD.numUsedFilter",buff))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %d\n",
-		"FD.numUsedFilter",this->numUsedFilter);
+		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.numUsedFilter', nehme Default: " << this->numUsedFilter << std::endl;
 	else this->numUsedFilter=std::max(0,atoi(buff));
 
 	//Grenze der Zuverlaesigkeit ab der Gesichter aufgenommen werden (Diffwert fr W-RSV's-Schwellen)
 	// zB. +0.1 => weniger patches drüber(mehr rejected, langsamer),    dh. mehr fn(FRR), weniger fp(FAR)  und
 	// zB. -0.1 => mehr patches drüber(mehr nicht rejected, schneller), dh. weniger fn(FRR), mehr fp(FAR)
 	if (!configReader->getKey("FD.limit_reliability_filter",buff))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: %g\n",
-		"FD.limit_reliability_filter",this->limit_reliability_filter);
+		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.limit_reliability_filter', nehme Default: " << this->limit_reliability_filter << std::endl;
 	else this->limit_reliability_filter=(float)atof(buff);
 
 	//Kassifikator
 	char fn_classifier[500];
 	if (!configReader->getKey("FD.classificator", fn_classifier))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: '%s'\n",
-		"FD.classificator", fn_classifier);
+		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.classificator', nehme Default: " << fn_classifier << std::endl;
 
 	//Schwellwerte
 	char fn_threshold[500];
 	if (!configReader->getKey("FD.threshold", fn_threshold))
-		fprintf(stderr,"WARNING: Key in Config nicht gefunden, key:'%s', nehme Default: '%s'\n",
-		"FD.threshold", fn_threshold);
+		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.threshold', nehme Default: " << fn_threshold << std::endl;
 
 	delete configReader;
 
@@ -529,11 +525,11 @@ int DetectorWVM::load(const std::string filename)
 			hk_weights[i] = new float[nLinFilters];
 
 		if (pmxarray == 0) {
-			printf("[DetWVM]  Unable to find the matrix \'support_hk%d\'\n", 1);
+			std::cout << "[DetWVM]  Unable to find the matrix \'support_hk1\'" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 		if (mxGetNumberOfDimensions(pmxarray) != 2) {
-			fprintf(stderr, "\nThe matrix \'filter%d\' in the file should have 2 dimensions\7\n", 1);
+			std::cout << "[DetWVM] The matrix \'filter1\' in the file should have 2 dimensions" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 		mxDestroyArray(pmxarray);
@@ -543,11 +539,11 @@ int DetectorWVM::load(const std::string filename)
 			sprintf(str, "support_hk%d", i+1);
 			pmxarray = matGetVariable(pmatfile, str);
 			if (pmxarray == 0) {
-				printf("\nfd_ReadDetector(): Unable to find the matrix \'support_hk%d\'\n", i+1);
+				std::cout << "[DetWVM] Unable to find the matrix \'support_hk" << i+1 << "\'" << std::endl;
 				exit(EXIT_FAILURE);
 			}
 			if (mxGetNumberOfDimensions(pmxarray) != 2) {
-				fprintf(stderr, "\nThe matrix \'filter%d\' in the file should have 2 dimensions\7\n", i+1);
+				std::cout << "[DetWVM] The matrix \'filter" << i+1 << "\' in the file should have 2 dimensions" << std::endl;
 				exit(EXIT_FAILURE);
 			}
 
@@ -564,7 +560,7 @@ int DetectorWVM::load(const std::string filename)
 			if (pmxarray != 0) {
 				const mwSize *dim = mxGetDimensions(pmxarray);
 				if ((dim[1] != i+1) && (dim[0] != i+1)) {
-					fprintf(stderr, "\nThe matrix %s in the file should have a dimensions 1x%d or %dx1\7\n", str, i+1, i+1);
+					std::cout << "[DetWVM] The matrix " << str << " in the file should have a dimensions 1x" << i+1 << " or " << i+1 << "x1" << std::endl;
 					exit(EXIT_FAILURE);
 				}
 				matdata = mxGetPr(pmxarray);
@@ -575,7 +571,7 @@ int DetectorWVM::load(const std::string filename)
 			}
 		}	// end for over numHKs
 		if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
-			printf("[DetWVM] Done\n");
+			std::cout << "[DetWVM] Done" << std::endl;
 		}
 	}// end else read vecs/weights sequentially
 	
@@ -613,7 +609,7 @@ int DetectorWVM::load(const std::string filename)
 		this->nLinFilters_wvm = (int)matdata[0]; 
 		mxDestroyArray(pmxarray);
 	} else {
-		printf("fd_ReadDetector(): 'num_hk_wvm' not found in:\n");
+		std::cout << "[DetWVM] : 'num_hk_wvm' not found in:" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	// number of levels with filters (eg 20)
@@ -624,14 +620,14 @@ int DetectorWVM::load(const std::string filename)
 		this->nLevels_wvm = (int)matdata[0]; 
 		mxDestroyArray(pmxarray);
 	} else {
-		printf("fd_ReadDetector(): 'num_lev_wvm' not found in:\n \n");
+		std::cout << "[DetWVM] : 'num_lev_wvm' not found in:" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 
   
 	//read recangles in area
 	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
-		printf("[DetWVM] Reading rectangles in area...\n");
+		std::cout << "[DetWVM] Reading rectangles in area..." << std::endl;
 	}
 	pmxarray = matGetVariable(pmatfile, "area");
 	if (pmxarray != 0 && mxIsStruct(pmxarray)) {
@@ -648,11 +644,11 @@ int DetectorWVM::load(const std::string filename)
 		const mwSize *dim=mxGetDimensions(pmxarray);
 		int nHK=(int)dim[1];
 		if (this->nLinFilters!=nHK){
-			fprintf(stderr, "\nfd_ReadDetector(): 'area' not right dim:%d (==%d)\n",nHK,this->nLinFilters);
+			std::cout << "[DetWVM] : 'area' not right dim:" << nHK << "(==" << this->nLinFilters << ")" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 		if ((this->nLinFilters_wvm*this->nLevels_wvm)!=nHK){
-			fprintf(stderr, "\nfd_ReadDetector(): 'area' not right dim:%d (==%d)\n",nHK,this->nLinFilters);
+			std::cout << "[DetWVM] : 'area' not right dim:" << nHK <<  "(==" << this->nLinFilters << ")" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 
@@ -663,7 +659,7 @@ int DetectorWVM::load(const std::string filename)
 
 			mxArray* mval=mxGetField(pmxarray,hrsv,valstr);
  			if (mval == NULL ) {
-				printf("\nfd_ReadDetector(): '%s' not found (WVM: 'val_u', else: 'val', right *.mat/kernel?)\n",valstr);
+				std::cout << "[DetWVM] : '" << valstr << "' not found (WVM: 'val_u', else: 'val', right *.mat/kernel?)" << std::endl;
 				exit(EXIT_FAILURE);
 			}
 			dim=mxGetDimensions(mval);
@@ -715,7 +711,7 @@ int DetectorWVM::load(const std::string filename)
 		mxDestroyArray(pmxarray);
 
 	} else {
-		printf("\nfd_ReadDetector(): 'area' not found (right *.mat/kernel?) \n");
+		std::cout << "[DetWVM] : 'area' not found (right *.mat/kernel?)" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	//printf("[DetWVM] Done\n");
@@ -728,7 +724,7 @@ int DetectorWVM::load(const std::string filename)
 		const mwSize *dim = mxGetDimensions(pmxarray);
 		int nHK=(int)dim[1];
 		if (this->nLinFilters!=nHK){
-			fprintf(stderr, "fd_ReadDetector(): 'app_rsv_convol' not right dim:%d (==%d)\n",nHK,this->nLinFilters);
+			std::cout << "[DetWVM] : 'app_rsv_convol' not right dim:" << nHK << " (==" << this->nLinFilters << ")" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 		this->app_rsv_convol = new double[nHK];
@@ -736,12 +732,12 @@ int DetectorWVM::load(const std::string filename)
 			this->app_rsv_convol[hrsv]=matdata[hrsv]*65025.0; // because the training images grey level values were divided by 255;
 		mxDestroyArray(pmxarray);
 	} else {
-		printf("fd_ReadDetector(): 'app_rsv_convol' not found\n");
+		std::cout << "[DetWVM] : 'app_rsv_convol' not found" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 
 	if (matClose(pmatfile) != 0) {
-		std::cout << "Error closing file" << std::endl;
+		std::cout << "[DetWVM] Error closing file" << std::endl;
 	}
 	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=1) {
 		std::cout << "[DetWVM] Done reading WVM!" << std::endl;
@@ -754,12 +750,12 @@ int DetectorWVM::load(const std::string filename)
 	//MATFile *mxtFile = matOpen(args->threshold, "r");
 	pmatfile = matOpen(fn_threshold, "r");
 	if (pmatfile == 0) {
-		printf("fd_ReadDetector(): Unable to open the file (wrong format?):\n'%s' \n", fn_threshold);
+		std::cout << "[DetWVM] : Unable to open the file (wrong format?):" << std::endl << fn_threshold << std::endl;
 		exit(EXIT_FAILURE);
 	} else {
 		pmxarray = matGetVariable(pmatfile, "hierar_thresh");
 		if (pmxarray == 0) {
-			fprintf(stderr, "fd_ReadDetector(): Unable to find the matrix hierar_thresh in the file %s\n\7", fn_threshold);
+			std::cout << "[DetWVM] : Unable to find the matrix hierar_thresh in the file " << fn_threshold << std::endl;
 		} else {
 			double* matdata = mxGetPr(pmxarray);
 			const mwSize *dim = mxGetDimensions(pmxarray);
@@ -776,13 +772,13 @@ int DetectorWVM::load(const std::string filename)
 		//TODO is there a case (when svm+wvm from same trainingdata) when there exists only a posterior_svm, and I should use this here?
 		pmxarray = matGetVariable(pmatfile, "posterior_wrvm");
 		if (pmxarray == 0) {
-			fprintf(stderr, "WARNING: Unable to find the vector posterior_wrvm, disable prob. SVM output;\n");
+			std::cout << "[DetWVM] WARNING: Unable to find the vector posterior_wrvm, disable prob. SVM output;" << std::endl;
 			this->posterior_wrvm[0]=this->posterior_wrvm[1]=0.0f;
 		} else {
 			double* matdata = mxGetPr(pmxarray);
 			const mwSize *dim = mxGetDimensions(pmxarray);
 			if (dim[1] != 2) {
-				fprintf(stderr, "WARNING: Size of vector posterior_wrvm !=2, disable prob. WRVM output;\n");
+				std::cout << "[DetWVM] WARNING: Size of vector posterior_wrvm !=2, disable prob. WRVM output;" << std::endl;
 				this->posterior_wrvm[0]=this->posterior_wrvm[1]=0.0f;
 			} else {
 				this->posterior_wrvm[0]=(float)matdata[0]; this->posterior_wrvm[1]=(float)matdata[1];
@@ -818,7 +814,6 @@ int DetectorWVM::load(const std::string filename)
  	u_kernel_eval = new float[this->nLinFilters];
 
 	return 1;
-
 }
 
 int DetectorWVM::init_for_image(FdImage* img)
@@ -870,16 +865,17 @@ DetectorWVM::Area::~Area(void)
 void DetectorWVM::Area::dump(char *name="") {
 	int r,v;  
 
-	printf("\narea%s: cntval:%d, cntallrec:%d, val:",name,cntval,cntallrec);
-	for (v=0;v<cntval;v++) printf(" %1.4f",val[v]);
-	printf("\n");
+	std::cout << std::endl << "area" << name << ": cntval:" << cntval << ", cntallrec:" << cntallrec << ", val:";
+	for (v=0;v<cntval;v++) std::cout << " " << val[v];	//printf(" %1.4f",val[v]);
+	std::cout << std::endl;
 
 	for (v=0;v<cntval;v++) {
 		for (r=0;r<cntrec[v];r++) { 
-			printf("r[%d][%d]:(%d,%d,%d,%d) ",v,r,rec[v][r].x1,rec[v][r].y1,rec[v][r].x2,rec[v][r].y2);
+			//printf("r[%d][%d]:(%d,%d,%d,%d) ",v,r,rec[v][r].x1,rec[v][r].y1,rec[v][r].x2,rec[v][r].y2);
+			std::cout << "r[" << v << "][" << r << "]:(" << rec[v][r].x1 << "," << rec[v][r].y1 << "," << rec[v][r].x2 << "," << rec[v][r].y2 << ") ";
 			if ((r%5)==4) 
-				printf("\n");
+				std::cout << std::endl;
 		}
-		printf("\n");
+		std::cout << std::endl;
 	}
 }

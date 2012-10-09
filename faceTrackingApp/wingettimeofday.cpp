@@ -1,4 +1,5 @@
-#include "stdafx.h"
+#ifdef WIN32
+
 #include "wingettimeofday.h"
 
 //using namespace System;
@@ -17,7 +18,11 @@ using namespace std;
 //};
  
 // Definition of a gettimeofday function
- 
+ int gettimeofday(struct timeval *tv, int var)
+ {
+	 gettimeofday(tv);
+	 return 0;
+ }
 int gettimeofday(struct timeval *tv)
 {
 // Define a structure to receive the current Windows filetime
@@ -53,3 +58,5 @@ int gettimeofday(struct timeval *tv)
   
   return 0;
 }
+
+#endif

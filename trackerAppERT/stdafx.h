@@ -48,3 +48,4 @@
 
 #include "CascadeERT.h"
 #include "FdImage.h"
+#include "FdPatch.h"

@@ -73,18 +73,19 @@ int VDetectorVectorMachine::initPyramids( FdImage *img )
  		subsamplingLevelEnd = std::min(subsamplingLevelEnd, subsamplingLevelStart+numSubsamplingLevels-1);
  
  	if(subsamplingLevelEnd<=0) {
-		fprintf(stderr,"\n\nERROR: subsamplingLevels(%d)<=0 => Image to small (h,w:%d,%d)\n",subsamplingLevelEnd,img->h,img->w);
+		std::cout << "[VDetVecMach] ERROR: subsamplingLevels(" << subsamplingLevelEnd << ")<=0 => Image to small (h,w:" << img->h << "," << img->w << ")" << std::endl;
  		return(-1);
  	}
 
 	if(Logger->getVerboseLevelText()>=3) {
-		printf("[VDetVecMach] subsamplingLevels:%g^%d->%g^%d (img(h,w:)%d,%d) => imgh min:%d, max:%d; => face_h min:%d, max:%d; maxpossiblelev(w,h):%g,%g, arg.maxlev:%d\n",
+		/*printf("[VDetVecMach] subsamplingLevels:%g^%d->%g^%d (img(h,w:)%d,%d) => imgh min:%d, max:%d; => face_h min:%d, max:%d; maxpossiblelev(w,h):%g,%g, arg.maxlev:%d\n",
  			subsamplingFactor,subsamplingLevelStart,subsamplingFactor,subsamplingLevelEnd,img->h,img->w,
  			(int)(img->h*(float)pow(subsamplingFactor,subsamplingLevelEnd)), (int)(img->h*(float)pow(subsamplingFactor,subsamplingLevelStart)),
  			(int)(filter_size_y/(float)pow(subsamplingFactor,subsamplingLevelStart)), (int)(filter_size_y/(float)pow(subsamplingFactor,subsamplingLevelEnd)),
  			floor(log(filter_size_x/(float)img->w)/log(subsamplingFactor)),
  			floor(log(filter_size_y/(float)img->h)/log(subsamplingFactor)), numSubsamplingLevels
- 			);
+ 			);*/
+		std::cout << "[VDetVecMach] subsamplingLevels:" << subsamplingFactor << "^" << subsamplingLevelStart << "->" << subsamplingFactor << "^" << subsamplingLevelEnd << " (img(h,w:)" << img->h << "," << img->w << ") => imgh min:" << (int)(img->h*(float)pow(subsamplingFactor,subsamplingLevelEnd)) << ", max:" << (int)(img->h*(float)pow(subsamplingFactor,subsamplingLevelStart)) << "; => face_h min:" << (int)(filter_size_y/(float)pow(subsamplingFactor,subsamplingLevelStart)) << ", max:" << (int)(filter_size_y/(float)pow(subsamplingFactor,subsamplingLevelEnd)) << "; maxpossiblelev(w,h):" << floor(log(filter_size_x/(float)img->w)/log(subsamplingFactor)) << "," << floor(log(filter_size_y/(float)img->h)/log(subsamplingFactor)) << ", arg.maxlev:" << numSubsamplingLevels << std::endl;
 	}
 	/*if(subsampfac!=NULL) {
 		delete[] subsampfac;
@@ -169,7 +170,8 @@ int VDetectorVectorMachine::extractToPyramids(FdImage *img)
 		int ss=std::max(1, int(coef * stepsize_from_config + 0.5f)); // stepsize, from config
 		//int ss = 1;
 		if(Logger->getVerboseLevelText()>=3) {
-			printf("[VDetVecMach] Scale: %d: faceh:%d, coef:%1.4f, step:%d (%1.4f)\n",current_scale,(int)(filter_size_y/coef),coef,ss,coef * stepsize_from_config);
+			//printf("[VDetVecMach] Scale: %d: faceh:%d, coef:%1.4f, step:%d (%1.4f)\n",current_scale,(int)(filter_size_y/coef),coef,ss,coef * stepsize_from_config);
+			std::cout << "[VDetVecMach] Scale: " << current_scale << ": faceh:" << (int)(filter_size_y/coef) << ", coef:" << coef << ", step:" << ss << " (" << coef * stepsize_from_config << ")" << std::endl;
 		}
 		int h_prim = std::min(pyrh-filter_size_y/2,roi.bottom);
 		int w_prim = std::min(pyrw-filter_size_x/2,roi.right);
