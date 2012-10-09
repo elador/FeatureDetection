@@ -25,12 +25,12 @@ CascadeFacialFeaturePointsSimple::~CascadeFacialFeaturePointsSimple(void)
 
 int CascadeFacialFeaturePointsSimple::initForImage(FdImage* myimg)
 {
-	reye->init_for_image(myimg);
+	reye->initForImage(myimg);
 	return 1;
 }
 
 int CascadeFacialFeaturePointsSimple::detectOnImage(FdImage* myimg)
 {
-	reye->detect_on_image(myimg);
+	reye->detectOnImage(myimg);
 	return 1;
 }

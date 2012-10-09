@@ -8,7 +8,7 @@ public:
 	~RegressorSVR(void);
 
 	int load(const std::string);
-	int init_for_image(FdImage*);
+	int initForImage(FdImage*);
 	bool classify(FdPatch*);
 
 protected:

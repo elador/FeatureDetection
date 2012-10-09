@@ -288,7 +288,7 @@ int RegressorSVR::load(const std::string filename)
 
 }
 
-int RegressorSVR::init_for_image(FdImage* img)
+int RegressorSVR::initForImage(FdImage* img)
 {
 	initPyramids(img);
 	initROI(img);

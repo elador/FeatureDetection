@@ -235,10 +235,10 @@ std::vector<FdPatch*> OverlapElimination::eliminate(std::vector<FdPatch*> &patch
 
 
 
-std::vector<FdPatch*> OverlapElimination::exp_num_fp_elimination(std::vector<FdPatch*> &patchvec, std::string detectorIdForSorting)
+std::vector<FdPatch*> OverlapElimination::expNumFpElimination(std::vector<FdPatch*> &patchvec, std::string detectorIdForSorting)
 {
 	if(Logger->getVerboseLevelText()>=2) {
-		std::cout << "[OverlapElimination] Running exp_num_fp_elimination, eliminating to the " << this->expected_num_faces[1] << " patches with highest probability." << std::endl;
+		std::cout << "[OverlapElimination] Running expNumFpElimination, eliminating to the " << this->expected_num_faces[1] << " patches with highest probability." << std::endl;
 	}
 	if(patchvec.size() > this->expected_num_faces[1])
 	{

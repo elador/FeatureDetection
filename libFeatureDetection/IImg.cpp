@@ -23,7 +23,7 @@ IImg::~IImg(void)
 }
 
 
-void IImg::CalIImgPatch(const unsigned char* in_img, bool sqr=false)
+void IImg::calIImgPatch(const unsigned char* in_img, bool sqr=false)
 {
 			
 	int c,r;

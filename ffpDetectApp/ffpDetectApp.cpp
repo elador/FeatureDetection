@@ -160,8 +160,8 @@ int main(int argc, char *argv[])		// Peter
 	for(unsigned int i=0; i< filenames.size(); i++) {
 		myimg = new FdImage();
 		myimg->load(filenames[i]);
-		casc->init_for_image(myimg);
-		casc->detect_on_image(myimg);
+		casc->initForImage(myimg);
+		casc->detectOnImage(myimg);
 		Logger->LogImgDetectorFinal(myimg, casc->candidates, casc->svm->getIdentifier(), "Final");
 		TOT++;
 		if(casc->candidates.size()<1) {
@@ -273,8 +273,8 @@ int main(int argc, char *argv[])		// Peter
 */
 
 /*
-*setIdentifier() has to be done before init_for_image, else the detector doesnt get registered in the pyramid. Also doesnt draw scales then.
-Problematic if I skip init_for_image for a detector?
+*setIdentifier() has to be done before initForImage, else the detector doesnt get registered in the pyramid. Also doesnt draw scales then.
+Problematic if I skip initForImage for a detector?
 
 */
 

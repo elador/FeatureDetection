@@ -18,8 +18,8 @@ public:
 	virtual bool classify(FdPatch*) = 0;
 
 	int initPyramids(FdImage*);	// img -> pyrs (save in img)
-	std::vector<FdPatch*> detect_on_image(FdImage*);
-	std::vector<FdPatch*> detect_on_patchvec(std::vector<FdPatch*>&);
+	std::vector<FdPatch*> detectOnImage(FdImage*);
+	std::vector<FdPatch*> detectOnPatchvec(std::vector<FdPatch*>&);
 
 	/**
 	 * Classifies a single patch.
@@ -27,7 +27,7 @@ public:
 	 * @param[in] patch The patch that should be classified.
 	 * @return True if the patch is considered to contain the object in question, false otherwise.
 	 */
-	bool detect_on_patch(FdPatch* patch);
+	bool detectOnPatch(FdPatch* patch);
 
 	int extractToPyramids(FdImage*);	// all pyrs -> patches (save in img)
 	std::vector<FdPatch*> getPatchesROI(FdImage*, int, int, int, int, int, int, std::string);

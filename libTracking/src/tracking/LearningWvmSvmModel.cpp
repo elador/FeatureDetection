@@ -58,7 +58,7 @@ void LearningWvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples)
 //			if (patch == 0) {
 //				sample.setWeight(0);
 //			} else {
-//				if (dynamicSvm->detect_on_patch(patch))
+//				if (dynamicSvm->detectOnPatch(patch))
 //					sample.setObject(true);
 //				sample.setWeight(patch->certainty[dynamicSvm->getIdentifier()]);
 //			}
@@ -75,7 +75,7 @@ void LearningWvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples)
 		if (patch == 0) {
 			sample.setWeight(0);
 		} else {
-			if (wvm->detect_on_patch(patch)) {
+			if (wvm->detectOnPatch(patch)) {
 				remainingPatches.push_back(patch);
 				patch2samples[patch].push_back(&sample);
 			}
@@ -89,7 +89,7 @@ void LearningWvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples)
 		VDetectorVectorMachine& svm = usingDynamicSvm ? *dynamicSvm : *staticSvm;
 		svm.initPyramids(image);
 		svm.initROI(image);
-		std::vector<FdPatch*> objectPatches = svm.detect_on_patchvec(remainingPatches);
+		std::vector<FdPatch*> objectPatches = svm.detectOnPatchvec(remainingPatches);
 		for (std::vector<FdPatch*>::iterator pit = objectPatches.begin(); pit < objectPatches.end(); ++pit) {
 			std::vector<Sample*>& patchSamples = patch2samples[(*pit)];
 			for (std::vector<Sample*>::iterator sit = patchSamples.begin(); sit < patchSamples.end(); ++sit) {

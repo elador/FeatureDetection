@@ -31,17 +31,17 @@ CascadeWvmOeSvmOe::CascadeWvmOeSvmOe(std::string mat_fn)
 	oe->load(mat_fn);
 }
 
-int CascadeWvmOeSvmOe::init_for_image(FdImage* myimg)
+int CascadeWvmOeSvmOe::initForImage(FdImage* myimg)
 {
-	wvm->init_for_image(myimg);
-	svm->init_for_image(myimg);
+	wvm->initForImage(myimg);
+	svm->initForImage(myimg);
 	return 1;
 }
 
-int CascadeWvmOeSvmOe::detect_on_image(FdImage* myimg)
+int CascadeWvmOeSvmOe::detectOnImage(FdImage* myimg)
 {
 	wvm->extractToPyramids(myimg);
-	this->candidates = wvm->detect_on_image(myimg);
+	this->candidates = wvm->detectOnImage(myimg);
 	Logger->LogImgDetectorCandidates(myimg, candidates, wvm->getIdentifier(), "1RVM");
 	
 	std::vector<FdPatch*> afterFirstOE;
@@ -59,7 +59,7 @@ int CascadeWvmOeSvmOe::detect_on_image(FdImage* myimg)
 	Logger->LogImgDetectorCandidates(myimg, afterFirstOE, wvm->getIdentifier(), "2RVMoe"); // 4th argument optional: colorBy=string getID
 
 	std::vector<FdPatch*> tmp;
-	tmp = svm->detect_on_patchvec(afterFirstOE);
+	tmp = svm->detectOnPatchvec(afterFirstOE);
 	Logger->LogImgDetectorCandidates(myimg, tmp, svm->getIdentifier(), "3SVM");
 
 	this->candidates.clear();
@@ -70,7 +70,7 @@ int CascadeWvmOeSvmOe::detect_on_image(FdImage* myimg)
 	Logger->LogImgDetectorCandidates(myimg, candidates, svm->getIdentifier(), "4SVMoe");
 	
 	tmp.clear();
-	tmp = oe->exp_num_fp_elimination(this->candidates, svm->getIdentifier());
+	tmp = oe->expNumFpElimination(this->candidates, svm->getIdentifier());
 	Logger->LogImgDetectorCandidates(myimg, tmp, svm->getIdentifier(), "5ExpNum");
 
 	this->candidates = tmp;

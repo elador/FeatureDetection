@@ -12,11 +12,11 @@ public:
 	bool classify(FdPatch*);
 
 	int load(const std::string);
-	int init_for_image(FdImage*);
+	int initForImage(FdImage*);
 
 protected:
 
-	float lin_eval_wvm_histeq64(int, int, int, int, float*, float*, const IImg*, const IImg*) const;
+	float linEvalWvmHisteq64(int, int, int, int, float*, float*, const IImg*, const IImg*) const;
 
 	int numUsedFilter;
 	//float limit_reliability_filter;	//We don't need this for Regression

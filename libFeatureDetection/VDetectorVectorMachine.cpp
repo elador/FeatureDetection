@@ -350,7 +350,7 @@ Classifies all patches in the PatchList of the pyramids. (maybe too many... fix 
 Updates the patches in the PatchList.
 Additionally, returns a vec with pointer to candidates (which are PatchList) which can be used.
 */
-std::vector<FdPatch*> VDetectorVectorMachine::detect_on_image(FdImage *img)
+std::vector<FdPatch*> VDetectorVectorMachine::detectOnImage(FdImage *img)
 {
 	if(Logger->getVerboseLevelText()>=2) {
 		std::cout << "[VDetVecMach] Detecting on image..." << std::endl;
@@ -381,7 +381,7 @@ std::vector<FdPatch*> VDetectorVectorMachine::detect_on_image(FdImage *img)
 // Returns:
 //		-WVM: All that passed last filter
 //		-SVM: All >0 (respectively limit_reliability)
-std::vector<FdPatch*> VDetectorVectorMachine::detect_on_patchvec(std::vector<FdPatch*> &patchvec)
+std::vector<FdPatch*> VDetectorVectorMachine::detectOnPatchvec(std::vector<FdPatch*> &patchvec)
 {
 	if(Logger->getVerboseLevelText()>=2) {
 		std::cout << "[VDetVecMach] Detecting on list of patches..." << std::endl;
@@ -409,7 +409,7 @@ std::vector<FdPatch*> VDetectorVectorMachine::detect_on_patchvec(std::vector<FdP
 	return candidates;
 }
 
-bool VDetectorVectorMachine::detect_on_patch(FdPatch* patch) {
+bool VDetectorVectorMachine::detectOnPatch(FdPatch* patch) {
 	if (patch->w != this->filter_size_x || patch->h != this->filter_size_y)
 		return false;
 	return classify(patch);

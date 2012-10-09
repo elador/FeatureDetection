@@ -27,20 +27,20 @@ CascadeWvmSvm::CascadeWvmSvm(const std::string mat_fn)
 	
 }
 
-int CascadeWvmSvm::init_for_image(FdImage* myimg)
+int CascadeWvmSvm::initForImage(FdImage* myimg)
 {
-	wvm->init_for_image(myimg);
-	svm->init_for_image(myimg);
+	wvm->initForImage(myimg);
+	svm->initForImage(myimg);
 	return 1;
 }
 
-int CascadeWvmSvm::detect_on_image(FdImage* myimg)
+int CascadeWvmSvm::detectOnImage(FdImage* myimg)
 {
 
 	wvm->extractToPyramids(myimg);
-	this->candidates = wvm->detect_on_image(myimg);
+	this->candidates = wvm->detectOnImage(myimg);
 	std::vector<FdPatch*> tmp;
-	tmp = svm->detect_on_patchvec(this->candidates);
+	tmp = svm->detectOnPatchvec(this->candidates);
 	this->candidates.clear();
 	this->candidates = tmp;
 	return 1;

@@ -15,7 +15,7 @@ public:
 	IImg(int, int, int);
 	~IImg();
 
-	void CalIImgPatch(const unsigned char*, bool); // Calculate the integral image of a patch (needed for WVM histogram equalization)
+	void calIImgPatch(const unsigned char*, bool); // Calculate the integral image of a patch (needed for WVM histogram equalization)
 
 };
 

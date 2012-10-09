@@ -12,8 +12,8 @@ public:
 
 	CascadeWvmOeSvmOe(const std::string matfile);
 
-	int init_for_image(FdImage*);
-	int detect_on_image(FdImage*);
+	int initForImage(FdImage*);
+	int detectOnImage(FdImage*);
 
 	DetectorSVM *svm;
 	DetectorWVM *wvm;
@@ -21,4 +21,3 @@ public:
 
 	std::vector<FdPatch*> candidates;
 };
-

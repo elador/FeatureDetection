@@ -29,10 +29,10 @@ void DualSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
 		sample.setWeight(0);
 		sample.setObject(false);
 		FdPatch* patch = preStage->extractPatchToPyramid(image, sample.getX(), sample.getY(), sample.getSize());
-		if (patch != 0 && preStage->detect_on_patch(patch)) {
+		if (patch != 0 && preStage->detectOnPatch(patch)) {
 			patch = mainStage->extractPatchToPyramid(image, sample.getX(), sample.getY(), sample.getSize());
 			if (patch != 0) {
-				if (mainStage->detect_on_patch(patch))
+				if (mainStage->detectOnPatch(patch))
 					sample.setObject(true);
 				sample.setWeight(patch->certainty[mainStage->getIdentifier()]);
 			}

@@ -12,7 +12,7 @@ public:
 	~OverlapElimination(void);
 
 	std::vector<FdPatch*> eliminate(std::vector<FdPatch*>&, std::string);
-	std::vector<FdPatch*> exp_num_fp_elimination(std::vector<FdPatch*>&, std::string);
+	std::vector<FdPatch*> expNumFpElimination(std::vector<FdPatch*>&, std::string);
 
 	int load(const std::string);
 

@@ -300,7 +300,7 @@ int DetectorSVM::load(const std::string filename)
 
 }
 
-int DetectorSVM::init_for_image(FdImage* img)
+int DetectorSVM::initForImage(FdImage* img)
 {
 	initPyramids(img);
 	initROI(img);

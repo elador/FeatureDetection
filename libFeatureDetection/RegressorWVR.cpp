@@ -74,11 +74,11 @@ bool RegressorWVR::classify(FdPatch* fp)
 	// patch II of fp already calc'ed?
 	if(fp->iimg_x == NULL) {
 		fp->iimg_x = new IImg(this->filter_size_x, this->filter_size_y, 8);
-		fp->iimg_x->CalIImgPatch(fp->data, false);
+		fp->iimg_x->calIImgPatch(fp->data, false);
 	}
 	if(fp->iimg_xx == NULL) {
 		fp->iimg_xx = new IImg(this->filter_size_x, this->filter_size_y, 8);
-		fp->iimg_xx->CalIImgPatch(fp->data, true);
+		fp->iimg_xx->calIImgPatch(fp->data, true);
 	}
 
 	for (int n=0;n<this->nLinFilters_wvm;n++) {
@@ -88,7 +88,7 @@ bool RegressorWVR::classify(FdPatch* fp)
 	float fout = 0.0;
 	do {
 		filter_level++;
-		fout = this->lin_eval_wvm_histeq64(filter_level, (filter_level%this->nLinFilters_wvm), fp->c.x_py, fp->c.y_py, filter_output, u_kernel_eval, fp->iimg_x, fp->iimg_xx);
+		fout = this->linEvalWvmHisteq64(filter_level, (filter_level%this->nLinFilters_wvm), fp->c.x_py, fp->c.y_py, filter_output, u_kernel_eval, fp->iimg_x, fp->iimg_xx);
 	} while (/*fout >= this->lin_hierar_thresh[filter_level] &&*/ filter_level+1 < this->nLinFilters); //280
 	
 	//fp->fout = fout;
@@ -109,7 +109,7 @@ bool RegressorWVR::classify(FdPatch* fp)
 /*
  * WVM evaluation with a histogram equalized patch (64 bins) and patch integral image 
 */
-float RegressorWVR::lin_eval_wvm_histeq64(
+float RegressorWVR::linEvalWvmHisteq64(
 												int level, int n, int x, int y, //n: n-th WSV at this apprlevel
 												float* hk_kernel_eval,
 												float* u_kernel_eval,
@@ -812,7 +812,7 @@ int RegressorWVR::load(const std::string filename)
 	return 1;
 }
 
-int RegressorWVR::init_for_image(FdImage* img)
+int RegressorWVR::initForImage(FdImage* img)
 {
 	initPyramids(img);
 	// For non-hq64: construct II pyramids here

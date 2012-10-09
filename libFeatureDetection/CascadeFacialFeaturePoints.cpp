@@ -36,17 +36,17 @@ CascadeFacialFeaturePoints::~CascadeFacialFeaturePoints(void)
 }
 
 
-int CascadeFacialFeaturePoints::init_for_image(FdImage* myimg)
+int CascadeFacialFeaturePoints::initForImage(FdImage* myimg)
 {
-	//face_frontal->init_for_image(myimg);
-	wvm_frontal->init_for_image(myimg);
+	//face_frontal->initForImage(myimg);
+	wvm_frontal->initForImage(myimg);
 	return 1;
 }
 
-int CascadeFacialFeaturePoints::detect_on_image(FdImage* myimg)
+int CascadeFacialFeaturePoints::detectOnImage(FdImage* myimg)
 {
 	wvm_frontal->extractToPyramids(myimg);
-	this->candidates = wvm_frontal->detect_on_image(myimg);
+	this->candidates = wvm_frontal->detectOnImage(myimg);
 	// LOST std::vector<cv::Mat> probabilityMapsWVM = wvm_frontal->getProbabilityMaps(myimg);
 	Logger->LogImgDetectorCandidates(myimg, candidates, wvm_frontal->getIdentifier(), "1WVM");
 	

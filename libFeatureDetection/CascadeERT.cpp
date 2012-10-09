@@ -40,7 +40,7 @@ CascadeERT::~CascadeERT(void)
 }
 
 
-int CascadeERT::init_for_image(FdImage* myimg)
+int CascadeERT::initForImage(FdImage* myimg)
 {
 
 	wvm->setIdentifier("1_WVM_Center");
@@ -57,27 +57,27 @@ int CascadeERT::init_for_image(FdImage* myimg)
 
 	this->candidates.clear();
 
-	wvr->init_for_image(myimg);
-	wvm->init_for_image(myimg);	// Theoretically, only the first would need to create the pyramid. 
-	svm->init_for_image(myimg);	// Because in this case, all other detectors work on a patchlist.
-	svr->init_for_image(myimg);	// Well, NO, because each detector has to register himself into the pyramids! But this doesnt cost time.
+	wvr->initForImage(myimg);
+	wvm->initForImage(myimg);	// Theoretically, only the first would need to create the pyramid. 
+	svm->initForImage(myimg);	// Because in this case, all other detectors work on a patchlist.
+	svr->initForImage(myimg);	// Well, NO, because each detector has to register himself into the pyramids! But this doesnt cost time.
 	
-	wvmr->init_for_image(myimg);
-	svmr->init_for_image(myimg);
-	wvml->init_for_image(myimg);
-	svml->init_for_image(myimg);
+	wvmr->initForImage(myimg);
+	svmr->initForImage(myimg);
+	wvml->initForImage(myimg);
+	svml->initForImage(myimg);
 	return 1;
 }
 
-int CascadeERT::detect_on_image(FdImage* myimg)
+int CascadeERT::detectOnImage(FdImage* myimg)
 {
 
 	//wvm->extract(myimg);
-	//candidates = svr->detect_on_image(myimg);
+	//candidates = svr->detectOnImage(myimg);
 	//Logger->LogImgRegressorPyramids(myimg, candidates, svr->getIdentifier());
 	//Logger->LogImgRegressor(myimg, candidates, wvr->getIdentifier());
 
-	//svr->detect_on_patchvec(candidates);
+	//svr->detectOnPatchvec(candidates);
 	//Logger->LogImgRegressorPyramids(myimg, candidates, svr->getIdentifier());
 
 	std::vector<FdPatch*> candidates_c;
@@ -87,9 +87,9 @@ int CascadeERT::detect_on_image(FdImage* myimg)
 	wvm->extractToPyramids(myimg);
 	
 	/* Step 1: All 3 WVMs */
-	candidates_c = wvm->detect_on_image(myimg);
-	candidates_r = wvmr->detect_on_image(myimg);
-	candidates_l = wvml->detect_on_image(myimg);
+	candidates_c = wvm->detectOnImage(myimg);
+	candidates_r = wvmr->detectOnImage(myimg);
+	candidates_l = wvml->detectOnImage(myimg);
 
 	/* Step 2: OE */
 	candidates_c = oe->eliminate(candidates_c, wvm->getIdentifier());
@@ -110,7 +110,7 @@ int CascadeERT::detect_on_image(FdImage* myimg)
 		theOneCandidateInCenter.push_back(*itc);
 		std::vector<FdPatch*> cand_roi_c = wvr->getPatchesROI(myimg, (*itc)->c.x_py, (*itc)->c.y_py, (*itc)->c.s, 1, 1, 0, wvr->getIdentifier());
 		Logger->LogImgRegressor(myimg, theOneCandidateInCenter, wvr->getIdentifier(), "MIDDLE");
-		wvr->detect_on_patchvec(cand_roi_c);
+		wvr->detectOnPatchvec(cand_roi_c);
 		std::ostringstream clusterName;
 		clusterName << "c_cluster" << clusterCounter;
 		Logger->LogImgRegressor(myimg, cand_roi_c, wvr->getIdentifier(), clusterName.str());
@@ -125,20 +125,20 @@ int CascadeERT::detect_on_image(FdImage* myimg)
 		// run respective SVM
 		if(avg_angle_cand_roi_c < -35) {
 			//-90 = LOOKING RIGHT
-			theOneCandidateInCenter = svmr->detect_on_patchvec(theOneCandidateInCenter);
+			theOneCandidateInCenter = svmr->detectOnPatchvec(theOneCandidateInCenter);
 		} else if(avg_angle_cand_roi_c > 35) {
 			//+90 = LOOKING LEFT
-			theOneCandidateInCenter = svml->detect_on_patchvec(theOneCandidateInCenter);
+			theOneCandidateInCenter = svml->detectOnPatchvec(theOneCandidateInCenter);
 		} else {
 			//middle
-			theOneCandidateInCenter = svm->detect_on_patchvec(theOneCandidateInCenter);
+			theOneCandidateInCenter = svm->detectOnPatchvec(theOneCandidateInCenter);
 		}// MR: Alle SVM laufen lassen
 		// ExpNumFP (not necessary)
 		// Is it a face? If yes
 		if(theOneCandidateInCenter.size()>0) {
 			// SVR around ROI
 			cand_roi_c = svr->getPatchesROI(myimg, theOneCandidateInCenter[0]->c.x_py, theOneCandidateInCenter[0]->c.y_py, theOneCandidateInCenter[0]->c.s, 1, 1, 1, svr->getIdentifier());
-			//svr->detect_on_patchvec(cand_roi_c);
+			//svr->detectOnPatchvec(cand_roi_c);
 			std::ostringstream roiName;
 			roiName << "c_roi" << clusterCounter;
 			Logger->LogImgRegressor(myimg, cand_roi_c, svr->getIdentifier(), roiName.str());
@@ -167,7 +167,7 @@ int CascadeERT::detect_on_image(FdImage* myimg)
 		std::vector<FdPatch*> theOneCandidateInCenter;
 		theOneCandidateInCenter.push_back(*itc);
 		std::vector<FdPatch*> cand_roi_l = wvr->getPatchesROI(myimg, (*itc)->c.x_py, (*itc)->c.y_py, (*itc)->c.s, 1, 1, 0, wvr->getIdentifier());
-		wvr->detect_on_patchvec(cand_roi_l);
+		wvr->detectOnPatchvec(cand_roi_l);
 		std::ostringstream clusterName;
 		clusterName << "l_cluster" << clusterCounter;
 		Logger->LogImgRegressor(myimg, cand_roi_l, wvr->getIdentifier(), clusterName.str());
@@ -182,20 +182,20 @@ int CascadeERT::detect_on_image(FdImage* myimg)
 		// run respective SVM
 		if(avg_angle_cand_roi_l < -35) {
 			//-90 = LOOKING RIGHT
-			theOneCandidateInCenter = svmr->detect_on_patchvec(theOneCandidateInCenter);
+			theOneCandidateInCenter = svmr->detectOnPatchvec(theOneCandidateInCenter);
 		} else if(avg_angle_cand_roi_l > 35) {
 			//+90 = LOOKING LEFT
-			theOneCandidateInCenter = svml->detect_on_patchvec(theOneCandidateInCenter);
+			theOneCandidateInCenter = svml->detectOnPatchvec(theOneCandidateInCenter);
 		} else {
 			//middle
-			theOneCandidateInCenter = svm->detect_on_patchvec(theOneCandidateInCenter);
+			theOneCandidateInCenter = svm->detectOnPatchvec(theOneCandidateInCenter);
 		}
 		// ExpNumFP (not necessary)
 		// Is it a face? If yes
 		if(theOneCandidateInCenter.size()>0) {
 			// SVR around ROI
 			cand_roi_l = svr->getPatchesROI(myimg, theOneCandidateInCenter[0]->c.x_py, theOneCandidateInCenter[0]->c.y_py, theOneCandidateInCenter[0]->c.s, 1, 1, 1, svr->getIdentifier());
-			//svr->detect_on_patchvec(cand_roi_l);
+			//svr->detectOnPatchvec(cand_roi_l);
 			std::ostringstream roiName;
 			roiName << "l_roi" << clusterCounter;
 			Logger->LogImgRegressor(myimg, cand_roi_l, svr->getIdentifier(), roiName.str());
@@ -226,7 +226,7 @@ int CascadeERT::detect_on_image(FdImage* myimg)
 		std::vector<FdPatch*> theOneCandidateInCenter;
 		theOneCandidateInCenter.push_back(*itc);
 		std::vector<FdPatch*> cand_roi_r = wvr->getPatchesROI(myimg, (*itc)->c.x_py, (*itc)->c.y_py, (*itc)->c.s, 1, 1, 0, wvr->getIdentifier());
-		wvr->detect_on_patchvec(cand_roi_r);
+		wvr->detectOnPatchvec(cand_roi_r);
 		std::ostringstream clusterName;
 		clusterName << "r_cluster" << clusterCounter;
 		Logger->LogImgRegressor(myimg, cand_roi_r, wvr->getIdentifier(), clusterName.str());
@@ -241,20 +241,20 @@ int CascadeERT::detect_on_image(FdImage* myimg)
 		// run respective SVM
 		if(avg_angle_cand_roi_r < -35) {
 			//-90 = LOOKING RIGHT
-			theOneCandidateInCenter = svmr->detect_on_patchvec(theOneCandidateInCenter);
+			theOneCandidateInCenter = svmr->detectOnPatchvec(theOneCandidateInCenter);
 		} else if(avg_angle_cand_roi_r > 35) {
 			//+90 = LOOKING LEFT
-			theOneCandidateInCenter = svml->detect_on_patchvec(theOneCandidateInCenter);
+			theOneCandidateInCenter = svml->detectOnPatchvec(theOneCandidateInCenter);
 		} else {
 			//middle
-			theOneCandidateInCenter = svm->detect_on_patchvec(theOneCandidateInCenter);
+			theOneCandidateInCenter = svm->detectOnPatchvec(theOneCandidateInCenter);
 		}
 		// ExpNumFP (not necessary)
 		// Is it a face? If yes
 		if(theOneCandidateInCenter.size()>0) {
 			// SVR around ROI
 			cand_roi_r = svr->getPatchesROI(myimg, theOneCandidateInCenter[0]->c.x_py, theOneCandidateInCenter[0]->c.y_py, theOneCandidateInCenter[0]->c.s, 1, 1, 1, svr->getIdentifier());
-			//svr->detect_on_patchvec(cand_roi_r);
+			//svr->detectOnPatchvec(cand_roi_r);
 			std::ostringstream roiName;
 			roiName << "r_roi" << clusterCounter;
 			Logger->LogImgRegressor(myimg, cand_roi_r, svr->getIdentifier(), roiName.str());
@@ -294,9 +294,9 @@ int CascadeERT::detect_on_image(FdImage* myimg)
 	Logger->LogImgDetectorCandidates(myimg, candidates_r, wvmr->getIdentifier(), oer->getIdentifier());
 	Logger->LogImgDetectorCandidates(myimg, candidates_l, wvml->getIdentifier(), oel->getIdentifier());
 
-	candidates_c = svm->detect_on_patchvec(candidates_c);
-	candidates_r = svmr->detect_on_patchvec(candidates_r);
-	candidates_l = svml->detect_on_patchvec(candidates_l);
+	candidates_c = svm->detectOnPatchvec(candidates_c);
+	candidates_r = svmr->detectOnPatchvec(candidates_r);
+	candidates_l = svml->detectOnPatchvec(candidates_l);
 	Logger->LogImgDetectorCandidates(myimg, candidates_c, svm->getIdentifier());
 	Logger->LogImgDetectorCandidates(myimg, candidates_r, svmr->getIdentifier());
 	Logger->LogImgDetectorCandidates(myimg, candidates_l, svml->getIdentifier());
@@ -314,7 +314,7 @@ int CascadeERT::detect_on_image(FdImage* myimg)
 	/*wvr->extract(myimg);
 	std::vector<FdPatch*> candidates_wvr;
 	std::cout << "[CascadeERT] Running WVR on whole image" << std::endl;
-	candidates_wvr = wvr->detect_on_image(myimg);
+	candidates_wvr = wvr->detectOnImage(myimg);
 	*/
 
 
@@ -343,13 +343,13 @@ int CascadeERT::detect_on_image(FdImage* myimg)
 
 	std::vector<FdPatch*> candidates_wvm_center;
 	std::cout << "[CascadeERT] Running Center-WVM on center-patches" << std::endl;
-	candidates_wvm_center = wvm->detect_on_patchvec(candidates_wvr_center);
+	candidates_wvm_center = wvm->detectOnPatchvec(candidates_wvr_center);
 
 	std::vector<FdPatch*> candidates_svr_center;
-	candidates_svr_center = svr->detect_on_patchvec(candidates_wvm_center);
+	candidates_svr_center = svr->detectOnPatchvec(candidates_wvm_center);
 	
 	std::vector<FdPatch*> candidates_svm_center;
-	candidates_svm_center = svm->detect_on_patchvec(candidates_svr_center);
+	candidates_svm_center = svm->detectOnPatchvec(candidates_svr_center);
 
 	this->candidates = candidates_svm_center;
 	//tmp.clear();
@@ -443,12 +443,12 @@ void CascadeERT::scaleUp(std::vector<FdPatch*> patches_to_scale_up, std::vector<
 }
 */
 /* Scale up/down ghetto... I think some pointers wrong...
-int CascadeERT::detect_on_image(FdImage* myimg)
+int CascadeERT::detectOnImage(FdImage* myimg)
 {
 	//wvm->extract(myimg);
 	wvr->extract(myimg);
 	std::vector<FdPatch*> candidates_wvr32;
-	candidates_wvr32 = wvr->detect_on_image(myimg);
+	candidates_wvr32 = wvr->detectOnImage(myimg);
 
 	std::vector<FdPatch*> candidates_wvr_center32;
 
@@ -472,15 +472,15 @@ int CascadeERT::detect_on_image(FdImage* myimg)
 	scaleDown(candidates_wvr_center32); // now 20
 
 	std::vector<FdPatch*> candidates_wvm_center20;
-	candidates_wvm_center20 = wvm->detect_on_patchvec(candidates_wvr_center32); //20
+	candidates_wvm_center20 = wvm->detectOnPatchvec(candidates_wvr_center32); //20
 
 	std::vector<FdPatch*> candidates_svr_center32;
 	scaleUp(candidates_wvm_center20, candidates_wvr32);	// 32
-	candidates_svr_center32 = svr->detect_on_patchvec(candidates_wvm_center20);	//32
+	candidates_svr_center32 = svr->detectOnPatchvec(candidates_wvm_center20);	//32
 	
 	scaleDown(candidates_svr_center32);	// 20
 	std::vector<FdPatch*> candidates_svm_center20;
-	candidates_svm_center20 = svm->detect_on_patchvec(candidates_svr_center32);	//20
+	candidates_svm_center20 = svm->detectOnPatchvec(candidates_svr_center32);	//20
 
 	this->candidates = candidates_svm_center20;
 	//tmp.clear();
