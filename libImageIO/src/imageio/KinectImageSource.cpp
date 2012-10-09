@@ -75,7 +75,7 @@ KinectImageSource::KinectImageSource(int device) {
 	std::cout << "hr: " << hr << std::endl;
 
 #else
-	std::cout << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
+	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
 #endif
 
 }
@@ -139,7 +139,7 @@ const cv::Mat KinectImageSource::get() {
 
 	return frame;
 #else
-	std::cout << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
+	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
 	return frame;
 #endif
 }
