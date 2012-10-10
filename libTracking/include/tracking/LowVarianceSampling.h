@@ -33,12 +33,12 @@ public:
 private:
 
 	/**
-	 * Computes the average weight of the samples.
+	 * Computes the sum of the sample weights.
 	 *
 	 * @param[in] samples The samples.
-	 * @return The average weight of the samples.
+	 * @return The sum of the sample weights.
 	 */
-	double computeAverageWeight(const std::vector<Sample>& samples);
+	double computeWeightSum(const std::vector<Sample>& samples);
 
 	boost::mt19937 generator;         ///< Random number generator.
 	boost::uniform_01<> distribution; ///< Uniform real distribution.

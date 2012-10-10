@@ -44,10 +44,10 @@
 
 namespace po = boost::program_options;
 
-//const std::string FaceTracking::svmConfigFile = "/home/poschmann/projects/ffd/config/fdetection/fd_config_fft_fd.mat";
-const std::string FaceTracking::svmConfigFile = "C:\\Users\\Patrik\\Documents\\GitHub\\config\\fdetection\\fd_config_ffd_fd.mat";
-//const std::string FaceTracking::negativesFile = "/home/poschmann/projects/ffd/config/nonfaces_1000";
-const std::string FaceTracking::negativesFile = "C:\\Users\\Patrik\\Documents\\GitHub\\nonfaces_1000";
+const std::string FaceTracking::svmConfigFile = "/home/poschmann/projects/ffd/config/fdetection/fd_config_fft_fd.mat";
+//const std::string FaceTracking::svmConfigFile = "C:\\Users\\Patrik\\Documents\\GitHub\\config\\fdetection\\fd_config_ffd_fd.mat";
+const std::string FaceTracking::negativesFile = "/home/poschmann/projects/ffd/config/nonfaces_1000";
+//const std::string FaceTracking::negativesFile = "C:\\Users\\Patrik\\Documents\\GitHub\\nonfaces_1000";
 const std::string FaceTracking::videoWindowName = "Image";
 const std::string FaceTracking::controlWindowName = "Controls";
 
@@ -187,8 +187,9 @@ void FaceTracking::run() {
 		frame = imageSource->get();
 
 		if (frame.empty()) {
-			std::cerr << "Could not capture frame" << std::endl;
+			std::cerr << "Could not capture frame - press 'q' to quit program" << std::endl;
 			stop();
+			while ('q' != (char)cv::waitKey(10));
 		} else {
 			if (first) {
 				first = false;
