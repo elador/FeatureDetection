@@ -28,7 +28,8 @@ using namespace tracking;
 
 class FaceTracking {
 public:
-	explicit FaceTracking(auto_ptr<imageio::ImageSource> imageSource);
+	explicit FaceTracking(auto_ptr<imageio::ImageSource> imageSource,
+			std::string svmConfigFile, std::string negativesFile);
 	virtual ~FaceTracking();
 
 	void run();
@@ -47,10 +48,11 @@ private:
 	void initGui();
 	void drawDebug(cv::Mat& image);
 
-	static const std::string svmConfigFile;
-	static const std::string negativesFile;
 	static const std::string videoWindowName;
 	static const std::string controlWindowName;
+
+	const std::string svmConfigFile;
+	const std::string negativesFile;
 
 	auto_ptr<imageio::ImageSource> imageSource;
 

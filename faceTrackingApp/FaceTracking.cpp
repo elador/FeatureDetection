@@ -44,14 +44,12 @@
 
 namespace po = boost::program_options;
 
-const std::string FaceTracking::svmConfigFile = "/home/poschmann/projects/ffd/config/fdetection/fd_config_fft_fd.mat";
-//const std::string FaceTracking::svmConfigFile = "C:\\Users\\Patrik\\Documents\\GitHub\\config\\fdetection\\fd_config_ffd_fd.mat";
-const std::string FaceTracking::negativesFile = "/home/poschmann/projects/ffd/config/nonfaces_1000";
-//const std::string FaceTracking::negativesFile = "C:\\Users\\Patrik\\Documents\\GitHub\\nonfaces_1000";
 const std::string FaceTracking::videoWindowName = "Image";
 const std::string FaceTracking::controlWindowName = "Controls";
 
-FaceTracking::FaceTracking(auto_ptr<imageio::ImageSource> imageSource) : imageSource(imageSource) {
+FaceTracking::FaceTracking(auto_ptr<imageio::ImageSource> imageSource,
+		std::string svmConfigFile, std::string negativesFile) :
+				svmConfigFile(svmConfigFile), negativesFile(negativesFile), imageSource(imageSource) {
 	initTracking();
 	initGui();
 }
@@ -241,6 +239,7 @@ int main(int argc, char *argv[]) {
 	int deviceId, kinectId;
 	std::string filename, directory;
 	bool useCamera = false, useKinect = false, useFile = false, useDirectory = false;
+	std::string svmConfigFile, negativeRtlPatches;
 
 	try {
 		po::options_description desc("Allowed options");
@@ -250,8 +249,10 @@ int main(int argc, char *argv[]) {
 			("verbose-images,w", po::value<int>(&verboseLevelImages)->implicit_value(2)->default_value(0,"minimal image output"), "Enable image-verbosity (optionally specify level)")
 			("filename,f", po::value< std::string >(&filename), "A filename of a video to run the tracking")
 			("directory,i", po::value< std::string >(&directory), "Use a directory as input")
-			("device,c", po::value<int>(&deviceId)->implicit_value(0), "A camera device ID for use with the OpenCV camera driver")
+			("device,d", po::value<int>(&deviceId)->implicit_value(0), "A camera device ID for use with the OpenCV camera driver")
 			("kinect,k", po::value<int>(&kinectId)->implicit_value(0), "Windows only: Use a Kinect as camera. Optionally specify a device ID.")
+			("config,c", po::value< std::string >(&svmConfigFile)->default_value("fd_config_fft_fd.mat","fd_config_fft_fd.mat"), "The filename to the config file that contains the SVM and WVM classifiers.")
+			("nonfaces,n", po::value< std::string >(&negativeRtlPatches)->default_value("nonfaces_1000","nonfaces_1000"), "Filename to a file containing the static negative training examples for the real-time learning SVM.")
 			;
 
 		po::variables_map vm;
@@ -259,33 +260,35 @@ int main(int argc, char *argv[]) {
 		po::notify(vm);
 
 		if (vm.count("help")) {
-			std::cout << "Usage: faceTrackingApp [options]\n";
+			std::cout << "Usage: faceTrackingApp [options]" << std::endl;
 			std::cout << desc;
 			return 0;
 		}
 		if (vm.count("filename"))
-		{
 			useFile = true;
-		}
 		if (vm.count("directory"))
-		{
 			useDirectory = true;
-		}
 		if (vm.count("device"))
-		{
 			useCamera = true;
-		}
 		if (vm.count("kinect"))
-		{
 			useKinect = true;
-		}
 	}
-	catch(std::exception& e) {
+	catch (std::exception& e) {
 		std::cout << e.what() << std::endl;
 		return -1;
 	}
-	if(useCamera==false && useKinect==false && useDirectory==false && useFile==false) {
-		std::cout << "Usage: Please specify a camera, Kinect, file or directory to run the program. Use -h for help." << std::endl;
+
+	int inputsSpecified = 0;
+	if (useCamera)
+		inputsSpecified++;
+	if (useKinect)
+		inputsSpecified++;
+	if (useFile)
+			inputsSpecified++;
+	if (useDirectory)
+			inputsSpecified++;
+	if (inputsSpecified != 1) {
+		std::cout << "Usage: Please specify a camera, Kinect, file or directory (and only one of them) to run the program. Use -h for help." << std::endl;
 		return -1;
 	}
 
@@ -293,22 +296,18 @@ int main(int argc, char *argv[]) {
 	Logger->setVerboseLevelImages(verboseLevelImages);
 
 	auto_ptr<FaceTracking> tracker;
-	if(useCamera) {
+	if (useCamera) {
 		auto_ptr<imageio::ImageSource> imageSource(new imageio::VideoImageSource(deviceId));
-		tracker.reset(new FaceTracking(imageSource));
-	}
-	if(useKinect) {
+		tracker.reset(new FaceTracking(imageSource, svmConfigFile, negativeRtlPatches));
+	} else if (useKinect) {
 		auto_ptr<imageio::ImageSource> imageSource(new imageio::KinectImageSource(kinectId));
-		tracker.reset(new FaceTracking(imageSource));
-	}
-	if(useFile) {
+		tracker.reset(new FaceTracking(imageSource, svmConfigFile, negativeRtlPatches));
+	} else if (useFile) {
 		auto_ptr<imageio::ImageSource> imageSource(new imageio::VideoImageSource(filename));
-		tracker.reset(new FaceTracking(imageSource));
-
-	}
-	if(useDirectory) {
+		tracker.reset(new FaceTracking(imageSource, svmConfigFile, negativeRtlPatches));
+	} else if (useDirectory) {
 		auto_ptr<imageio::ImageSource> imageSource(new imageio::DirectoryImageSource(directory));
-		tracker.reset(new FaceTracking(imageSource));
+		tracker.reset(new FaceTracking(imageSource, svmConfigFile, negativeRtlPatches));
 	}
 
 	tracker->run();
