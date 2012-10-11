@@ -36,7 +36,7 @@ FrameBasedSvmTraining::~FrameBasedSvmTraining() {
 }
 
 int FrameBasedSvmTraining::getRequiredPositiveSampleCount() const {
-	return (int)ceil(minAvgSamples * frameLength);
+	return (int)ceil((double)minAvgSamples * (double)frameLength);
 }
 
 int FrameBasedSvmTraining::getPositiveSampleCount() const {

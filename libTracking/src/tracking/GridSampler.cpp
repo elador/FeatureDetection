@@ -24,8 +24,8 @@ GridSampler::~GridSampler() {}
 void GridSampler::sample(const std::vector<Sample>& samples, const std::vector<double>& offset,
 			const FdImage* image, std::vector<Sample>& newSamples) {
 	newSamples.clear();
-	int minSize = this->minSize * std::min(image->w, image->h);
-	int maxSize = this->maxSize * std::min(image->w, image->h);
+	int minSize = (int)(this->minSize * std::min(image->w, image->h));
+	int maxSize = (int)(this->maxSize * std::min(image->w, image->h));
 	Sample newSample;
 	for (int size = minSize; size <= maxSize; size *= sizeScale) {
 		newSample.setSize(size);

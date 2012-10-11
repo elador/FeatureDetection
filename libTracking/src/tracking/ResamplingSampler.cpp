@@ -33,7 +33,7 @@ ResamplingSampler::~ResamplingSampler() {}
 void ResamplingSampler::sample(const std::vector<Sample>& samples, const std::vector<double>& offset,
 			const FdImage* image, std::vector<Sample>& newSamples) {
 	unsigned int count = this->count;
-	resamplingAlgorithm->resample(samples, (1 - randomRate) * count, newSamples);
+	resamplingAlgorithm->resample(samples, (int)((1 - randomRate) * count), newSamples);
 	// predict the samples
 	for (std::vector<Sample>::iterator sit = newSamples.begin(); sit < newSamples.end(); ++sit) {
 		Sample& sample = *sit;
@@ -50,8 +50,8 @@ void ResamplingSampler::sample(const std::vector<Sample>& samples, const std::ve
 }
 
 bool ResamplingSampler::isValid(const Sample& sample, const FdImage* image) {
-	int minSize = this->minSize * std::min(image->w, image->h);
-	int maxSize = this->maxSize * std::min(image->w, image->h);
+	int minSize = (int)(this->minSize * std::min(image->w, image->h));
+	int maxSize = (int)(this->maxSize * std::min(image->w, image->h));
 	int halfSize = sample.getSize() / 2;
 	int x = sample.getX() - halfSize;
 	int y = sample.getY() - halfSize;
@@ -61,8 +61,8 @@ bool ResamplingSampler::isValid(const Sample& sample, const FdImage* image) {
 }
 
 void ResamplingSampler::sampleValid(Sample& sample, const FdImage* image) {
-	int minSize = this->minSize * std::min(image->w, image->h);
-	int maxSize = this->maxSize * std::min(image->w, image->h);
+	int minSize = (int)(this->minSize * std::min(image->w, image->h));
+	int maxSize = (int)(this->maxSize * std::min(image->w, image->h));
 	int size = distribution(generator, maxSize - minSize) + minSize;
 	int halfSize = size / 2;
 	sample.setSize(size);

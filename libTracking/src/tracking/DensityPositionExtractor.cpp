@@ -28,7 +28,7 @@ boost::optional<Sample> DensityPositionExtractor::extract(const std::vector<Samp
 		y += sit->getY();
 		s += sit->getSize();
 	}
-	Sample point(x / samples.size() + 0.5, y / samples.size() + 0.5, s / samples.size() + 0.5);
+	Sample point((int)(x / samples.size() + 0.5), (int)(y / samples.size() + 0.5), (int)(s / samples.size() + 0.5));
 	Sample oldPoint;
 	// iteratively compute densest point
 	x = 0, y = 0, s = 0;
@@ -43,12 +43,12 @@ boost::optional<Sample> DensityPositionExtractor::extract(const std::vector<Samp
 			s += weight * sit->getSize();
 			weightSum += weight;
 		}
-		point.setX(x / weightSum + 0.5);
-		point.setY(y / weightSum + 0.5);
-		point.setSize(s / weightSum + 0.5);
+		point.setX((int)(x / weightSum + 0.5));
+		point.setY((int)(y / weightSum + 0.5));
+		point.setSize((int)(s / weightSum + 0.5));
 		++i;
 	} while (i < 100 && point.getX() != oldPoint.getX() && point.getY() != oldPoint.getY() && point.getSize() != oldPoint.getSize());
-	// TODO wenn sample double/float bekommt, dann hier anders...
+	// TODO wenn sample auf double/float umgestellt würde, dann hier anders...
 	if (i >= 100)
 		std::cout << "too many iterations: (" << point.getX() << ", " << point.getY() << ", " << point.getSize() << ") <> ("
 				<< oldPoint.getX() << ", " << oldPoint.getY() << ", " << oldPoint.getSize() << ")" << std::endl;

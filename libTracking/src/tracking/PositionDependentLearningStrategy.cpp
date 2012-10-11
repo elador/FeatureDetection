@@ -33,13 +33,13 @@ void PositionDependentLearningStrategy::update(LearningMeasurementModel& model, 
 
 	std::vector<Sample> negativeSamples;
 	double deviationFactor = 0.5;
-	int boundOffset = deviationFactor * position.getSize();
+	int boundOffset = (int)(deviationFactor * position.getSize());
 	int xLowBound = position.getX() - boundOffset;
 	int xHighBound = position.getX() + boundOffset;
 	int yLowBound = position.getY() - boundOffset;
 	int yHighBound = position.getY() + boundOffset;
-	int sizeLowBound = (1 - deviationFactor) * position.getSize();
-	int sizeHighBound = (1 + 2 * deviationFactor) * position.getSize();
+	int sizeLowBound = (int)((1 - deviationFactor) * position.getSize());
+	int sizeHighBound = (int)((1 + 2 * deviationFactor) * position.getSize());
 
 	negativeSamples.push_back(Sample(xLowBound, position.getY(), position.getSize()));
 	negativeSamples.push_back(Sample(xHighBound, position.getY(), position.getSize()));

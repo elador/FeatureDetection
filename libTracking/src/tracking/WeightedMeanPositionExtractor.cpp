@@ -30,7 +30,8 @@ boost::optional<Sample> WeightedMeanPositionExtractor::extract(const std::vector
 	double weightedMeanX = weightedSumX / weightSum;
 	double weightedMeanY = weightedSumY / weightSum;
 	double weightedMeanSize = weightedSumSize / weightSum;
-	return boost::optional<Sample>(Sample(weightedMeanX + 0.5, weightedMeanY + 0.5, weightedMeanSize + 0.5));
+	return boost::optional<Sample>(
+			Sample((int)(weightedMeanX + 0.5), (int)(weightedMeanY + 0.5), (int)(weightedMeanSize + 0.5)));
 }
 
 } /* namespace tracking */

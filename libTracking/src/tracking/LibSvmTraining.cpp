@@ -35,20 +35,20 @@ void LibSvmTraining::changeSvmParameters(ChangableDetectorSvm& svm, struct svm_m
 		const struct svm_node *svit = model->SV[i];
 		for (int j = 0; j < dimensions; ++j) {
 			if (j == svit->index) {
-				supportVectors[i][j] = 255 * svit->value; // because the SVM operates on gray-scale values between 0 and 255
+				supportVectors[i][j] = (unsigned char)(255 * svit->value); // because the SVM operates on gray-scale values between 0 and 255
 				++svit;
 			} else {
 				supportVectors[i][j] = 0;
 			}
 		}
-		alphas[i] = model->sv_coef[0][i];
+		alphas[i] = (float)model->sv_coef[0][i];
 	}
 	double rho = model->rho[0];
 	double gamma = model->param.gamma / (255 * 255); // because the support vectors were multiplied by 255
 	std::pair<double, double> sigmoidParams = sigmoidParameterComputation->computeSigmoidParameters(svm, model,
 			problem->x, positiveCount, problem->x + positiveCount, negativeCount);
 	svm.changeRbfParameters(model->l, supportVectors, alphas, rho, svm.getThreshold(), gamma,
-			sigmoidParams.first, sigmoidParams.second);
+			(float)sigmoidParams.first, (float)sigmoidParams.second);
 }
 
 void LibSvmTraining::readStaticNegatives(const std::string negativesFilename, int maxNegatives) {
