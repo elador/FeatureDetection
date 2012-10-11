@@ -40,7 +40,7 @@ public:
 private:
 
 	std::vector<path> files; ///< The files of the given directory, ordered by name.
-	int index;               ///< The index of the next file.
+	unsigned int index;      ///< The index of the next file.
 };
 
 } /* namespace imageio */

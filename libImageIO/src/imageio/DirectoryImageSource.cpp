@@ -27,6 +27,8 @@ DirectoryImageSource::DirectoryImageSource(std::string directory) : files(), ind
 DirectoryImageSource::~DirectoryImageSource() {}
 
 const cv::Mat DirectoryImageSource::get() {
+	if (index >= files.size())
+		return cv::Mat();
 	return cv::imread(files[index++].string(), 1);
 }
 
