@@ -24,16 +24,10 @@ private:
 public:
 	static SLogger* Instance(void);
 
-	typedef struct textparams {		// Overwrites the default loglevels if set
-		bool outputFullStartup;		// Output all starting messages
-		bool outputPyramidCreation;	// todo
-	};
 
 private:
-	/* struct
-		-for each detector: output each individual patch
-	*/
-	typedef struct imgparams {
+
+	struct imgparams {					// Overwrites the default log levels if set
 		bool writeImgInputGray;
 		bool writeImgInputRGB;
 		bool writeImgPyramids;
@@ -44,8 +38,13 @@ private:
 		bool drawScales;				// Draw the scale (box-width) into output images
 	};
 
+	struct textparams {				// Overwrites the default log levels if set
+		bool outputFullStartup;		// Output all starting messages
+		bool outputPyramidCreation;	// todo
+	};
 
-	typedef struct params {
+
+	struct params {
 		textparams text;
 		imgparams img;
 	};
