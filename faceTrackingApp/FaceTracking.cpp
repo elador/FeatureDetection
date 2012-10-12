@@ -284,9 +284,9 @@ int main(int argc, char *argv[]) {
 	if (useKinect)
 		inputsSpecified++;
 	if (useFile)
-			inputsSpecified++;
+		inputsSpecified++;
 	if (useDirectory)
-			inputsSpecified++;
+		inputsSpecified++;
 	if (inputsSpecified != 1) {
 		std::cout << "Usage: Please specify a camera, Kinect, file or directory (and only one of them) to run the program. Use -h for help." << std::endl;
 		return -1;

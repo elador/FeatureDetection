@@ -364,7 +364,9 @@ std::vector<FdPatch*> VDetectorVectorMachine::detectOnImage(FdImage *img)
 		float coef = this->subsampfac[this->pyramid_widths[current_scale]];
 
 		FdPatchSet::iterator pit = it->second->patches.begin();
-
+		
+		//std::cout << "NumPatches in this pyramid: " << it->second->patches.size() << std::endl;
+		
 		bool passed = false;
 		for(; pit != it->second->patches.end(); pit++) {
 			passed = classify((*pit));	// We could do the whole classification in a separate loop over the pyramids now. But this is ok for now. (maybe even faster)

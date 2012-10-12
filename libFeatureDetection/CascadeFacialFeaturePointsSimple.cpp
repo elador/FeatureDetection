@@ -5,7 +5,7 @@
 CascadeFacialFeaturePointsSimple::CascadeFacialFeaturePointsSimple(void)
 {
 	//leye = new CascadeWvmOeSvmOe("D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_lx.mat");
-	reye = new CascadeWvmOeSvmOe("D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_rx.mat");
+	reye = new CascadeWvmOeSvmOe("C:\\Users\\Patrik\\Documents\\GitHub\\config\\cfg\\faceDetectApp\\fd_config_ffd_le.mat");
 	reye->setIdentifier("reye");
 	/*nosetip = new CascadeWvmOeSvmOe("D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_nt.mat");
 	lmouth = new CascadeWvmOeSvmOe("D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_lm.mat");

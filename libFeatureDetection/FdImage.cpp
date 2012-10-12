@@ -189,6 +189,13 @@ int FdImage::rescale(StdImage& in, StdImage& out, float factor) // better: make 
 		return 0;
 	}
 	if (factor == 1.0) {
+		if (out.data==NULL)	{
+			out.w = in.w;
+			out.h = in.h;
+			out.data = new unsigned char[out.w*out.h];
+		} else {
+			std::cout << "You want to rescale the image to another image with factor==1, and the out image already has the data allocated. Something might have gone wrong?" << std::endl;
+		}
   		memcpy(out.data, in.data, in.w*in.h); // TODO: unbenennen in data
   		return 1;
   	}

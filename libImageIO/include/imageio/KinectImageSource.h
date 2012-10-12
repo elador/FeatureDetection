@@ -11,6 +11,7 @@
 #include "ImageSource.h"
 #include "opencv2/highgui/highgui.hpp"
 #ifdef WIN32
+	#include <windows.h>
 	#include <NuiApi.h>
 #endif
 
@@ -35,7 +36,6 @@ public:
 	const cv::Mat get();
 
 private:
-	cv::VideoCapture capture; ///< The video capture.
 	cv::Mat frame;            ///< The current frame.
 
 #ifdef WIN32

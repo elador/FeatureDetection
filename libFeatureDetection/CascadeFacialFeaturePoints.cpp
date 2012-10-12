@@ -7,13 +7,13 @@
 CascadeFacialFeaturePoints::CascadeFacialFeaturePoints(void)
 {
 	//face_frontal = new CascadeWvmOeSvmOe("D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat");
-	//eye_left = new CascadeWvmOeSvmOe("D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat");
+	//eye_left = new CascadeWvmOeSvmOe("C:\\Users\\Patrik\\Documents\\GitHub\\config\\fdetection\\fd_config_ffd_le.mat");
 
 	wvm_frontal = new DetectorWVM();
-	wvm_frontal->load("D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat");
+	wvm_frontal->load("C:\\Users\\Patrik\\Documents\\GitHub\\config\\cfg\\faceDetectApp\\fd_config_ffd_fd.mat");
 
 	oe = new OverlapElimination();
-	oe->load("D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat");
+	oe->load("C:\\Users\\Patrik\\Documents\\GitHub\\config\\cfg\\faceDetectApp\\fd_config_ffd_fd.mat");
 
 	circleDet = new CircleDetector();
 	skinDet = new SkinDetector();

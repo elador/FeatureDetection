@@ -91,6 +91,66 @@ void SLogger::LogImgDetectorCandidates(const FdImage* img, std::vector<FdPatch*>
 		outimg = img->data_matbgr.clone();	// leave input image intact
 		this->drawBoxesWithCertainty(outimg, candidates, detectorIdForCertaintyColor);
 
+		if(this->global.img.drawScales==true) {
+			if(candidates.size()>0) {	// TODO this could be improved. I somehow need to reach the Detector.filtersize here... e.g. each Det attaches himself to the logger?
+				this->drawAllScaleBoxes(outimg, &img->pyramids, detectorIdForCertaintyColor, candidates[0]->w, candidates[0]->h);
+			} else {
+				std::cout << "[Logger] Warning: Can't draw the scales because the candidates-list is empty." << std::endl;
+			}
+		}
+
+		cv::imwrite(fn.str(), outimg);
+	}
+}
+
+void SLogger::LogImgCircleDetectorCandidates( const FdImage* img, cv::vector<cv::Vec3f> circles, std::string detectorId)
+{
+	if((this->global.img.writeDetectorCandidates==true) || this->verboseLevelImages>=2) {
+		/*if(filenameAppend=="") {
+			filenameAppend = detectorIdForCertaintyColor;
+		} else {
+			filenameAppend = detectorIdForCertaintyColor + "_" + filenameAppend;
+		}*/
+		std::string filenameAppend = detectorId;
+		size_t idx;
+		idx = img->filename.find_last_of("/\\");
+		std::ostringstream fn;
+		fn << this->imgLogBasepath << img->filename.substr(idx+1) << "_" << filenameAppend << ".png" << std::ends;
+
+		cv::Mat outimg;
+		outimg = img->data_matbgr.clone();	// leave input image intact
+		
+		for(size_t i = 0; i < circles.size(); i++) {
+			cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+			int radius = cvRound(circles[i][2]);
+			// draw the circle center
+			cv::circle( outimg, center, 2, cv::Scalar(0,255,0), -1, 8, 0 );
+			// draw the circle outline
+			cv::circle( outimg, center, radius, cv::Scalar(0,0,255), 2, 8, 0 );
+		}
+		cv::imwrite(fn.str(), outimg);
+	}
+}
+
+void SLogger::LogImgDetectorProbabilityMap(const cv::Mat* probMap, std::string filename, std::string detectorId, std::string filenameAppend)
+{
+	if((this->global.img.writeDetectorProbabilityMaps==true) || this->verboseLevelImages>=2) {
+		if(filenameAppend=="") {
+			filenameAppend = detectorId;
+		} else {
+			filenameAppend = detectorId + "_" + filenameAppend;
+		}
+		size_t idx;
+		idx = filename.find_last_of("/\\");
+		std::ostringstream fn;
+		fn << this->imgLogBasepath << filename.substr(idx+1) << "_" << filenameAppend << "_ProbabilityMap.png" << std::ends;
+
+		cv::Mat outimg;
+		outimg = probMap->clone();	// leave input image intact
+
+		outimg *= 255.0;
+		outimg.convertTo(outimg, CV_8U);
+		
 		cv::imwrite(fn.str(), outimg);
 	}
 }
@@ -297,8 +357,6 @@ void SLogger::drawScaleBox(cv::Mat rgbimg, int w, int h)
 	cv::Scalar color = cv::Scalar(175, 175, 175);	//cv::Scalar(b, g, r);
 	cv::rectangle(rgbimg, cv::Point(0, 0), cv::Point(w-1, h-1), color);
 }
-
-
 
 
 
