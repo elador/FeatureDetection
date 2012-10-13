@@ -134,7 +134,7 @@ int FdImage::load(const cv::Mat* mat)
 
 
 //int FdImage::createPyramid(float factorFromOrig, float subsampFacForOneDown)
-int FdImage::createPyramid(int pyrIdx, int* pyrWidthList, std::string detectorId)
+int FdImage::createPyramid(int pyrIdx, std::vector<int> pyrWidthList, std::string detectorId)
 {
 	if(Logger->getVerboseLevelText()>=3) {
 		std::cout << "[FdImage] Creating pyramid (w=" << pyrWidthList[pyrIdx] << ")";

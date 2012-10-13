@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <map>
+#include "opencv2/core/core.hpp"
 
 class FdPatch;
 class FdImage;
@@ -44,6 +45,14 @@ public:
 	 */
 	FdPatch* extractPatchToPyramid(FdImage *image, int x, int y, int width);
 
+	/**
+	 * Returns a vector of probability maps, one for each pyramid of the detector.
+	 *
+	 * @param[in] The original image containing the image pyramid.
+	 * @return A vector of probability maps, one for each pyramid of the detector.
+	 */
+	std::vector<cv::Mat> getProbabilityMaps(FdImage*);
+
 protected:
 	int extractAndHistEq64(const Pyramid*, FdPatch*);	// private (one patch out of pyr)
 
@@ -64,7 +73,8 @@ protected:
 	//float *subsampfac;
 	std::map<int, float> subsampfac;
 
-	int *pyramid_widths;
+	//int *pyramid_widths;
+	std::vector<int> pyramid_widths;
 
 	unsigned char* LUT_bin; // lookup table for the histogram equalization
 	float stretch_fac; // stretch factor for histogram equalizaiton

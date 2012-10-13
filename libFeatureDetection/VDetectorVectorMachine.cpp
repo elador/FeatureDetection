@@ -29,7 +29,7 @@ VDetectorVectorMachine::VDetectorVectorMachine(void)
 	subsamplingLevelStart = 0;
 	subsamplingLevelEnd = 0;
 
-	pyramid_widths = NULL;
+	//pyramid_widths = NULL;
 	
 	// initialization for the histogram equalization:
 	LUT_bin = new unsigned char[256];
@@ -48,7 +48,7 @@ VDetectorVectorMachine::VDetectorVectorMachine(void)
 VDetectorVectorMachine::~VDetectorVectorMachine(void)
 {
 	//delete[] subsampfac;
-	delete[] pyramid_widths;
+	//delete[] pyramid_widths;
 	delete[] LUT_bin; LUT_bin=NULL;
 }
 
@@ -94,14 +94,17 @@ int VDetectorVectorMachine::initPyramids( FdImage *img )
 	if(subsampfac.size()>0)	// If I come here and its not empty, then I need to delete it, because I'm working on a completely new image!
 		subsampfac.clear();	// The "if" here might be unnecessary?
 
-	if(pyramid_widths!=NULL) {
+	/*if(pyramid_widths!=NULL) {
 		delete[] pyramid_widths;
 		pyramid_widths = NULL;
+	}*/
+	if (!pyramid_widths.empty()) {
+		pyramid_widths.clear();
 	}
 	//subsampfac = new float[numSubsamplingLevels];	// we only need 9!
 	//subsampfac[0] = (float)pow(subsamplingFactor,subsamplingLevelStart);
 
-	pyramid_widths = new int[numSubsamplingLevels];
+	//pyramid_widths = new int[numSubsamplingLevels];
 
 	//int direct = (int)(img->w*(float)pow(subsamplingFactor,subsamplingLevelStart)+0.5);
 	int curr_width=img->w;
@@ -110,9 +113,11 @@ int VDetectorVectorMachine::initPyramids( FdImage *img )
 	}
 	subsampfac.insert(std::map<int, float>::value_type(curr_width, (float)curr_width/(float)img->w));
 	//subsampfac[0] = (float)curr_width/(float)img->w;
-	pyramid_widths[0] = curr_width;
+	//pyramid_widths[0] = curr_width;
+	pyramid_widths.push_back(curr_width);
 	for(int i=1; i<numSubsamplingLevels; i++) {
-		pyramid_widths[i] = (int)(pyramid_widths[i-1]*subsamplingFactor+0.5);
+		//pyramid_widths[i] = (int)(pyramid_widths[i-1]*subsamplingFactor+0.5);
+		pyramid_widths.push_back((int)(pyramid_widths[i-1]*subsamplingFactor+0.5));
 		//curr_width = (int)(curr_width*subsamplingFactor+0.5);
 		//subsampfac[i] = (float)pyramid_widths[i]/(float)img->w;
 		subsampfac.insert(std::map<int, float>::value_type(pyramid_widths[i], (float)pyramid_widths[i]/(float)img->w));
@@ -452,6 +457,14 @@ FdPatch* VDetectorVectorMachine::insertPatchIntoPyramid(Pyramid* pyramid,
 	}
 	return patch;
 }
+
+
+std::vector<cv::Mat> VDetectorVectorMachine::getProbabilityMaps( FdImage* )
+{
+	std::vector<cv::Mat> test;
+	return test;
+}
+
 
 int VDetectorVectorMachine::extractAndHistEq64(const Pyramid* pyr, FdPatch* fp)
 {
