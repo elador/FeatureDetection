@@ -169,7 +169,7 @@ int VDetectorVectorMachine::extractToPyramids(FdImage *img)
 		int pyrw = it->second->w;
 		int pyrh = it->second->h;
 
-		Rect roi((int)(this->roi_inImg.left*coef), (int)(this->roi_inImg.top*coef), (int)(this->roi_inImg.right*coef), (int)(this->roi_inImg.bottom*coef));
+		Rect roi((int)(this->roiInImg.left*coef), (int)(this->roiInImg.top*coef), (int)(this->roiInImg.right*coef), (int)(this->roiInImg.bottom*coef));
 
 		int stepsize_from_config = 1;
 		int ss=std::max(1, int(coef * stepsize_from_config + 0.5f)); // stepsize, from config

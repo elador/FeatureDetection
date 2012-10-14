@@ -20,4 +20,7 @@ public:
 	OverlapElimination *oe;
 
 	std::vector<FdPatch*> candidates;
+
+	void setIdentifier(std::string identifier);
+
 };

@@ -12,7 +12,7 @@
 
 OverlapElimination::OverlapElimination(void)
 {
-	strcpy(outputPath, "");
+	//strcpy(outputPath, "");
 	identifier = "OverlapElimination";
 	expected_num_faces[0]=0; expected_num_faces[1]=1;
 
@@ -54,11 +54,11 @@ int OverlapElimination::load(const std::string filename)
 		}
 	}
 
-	if (!configReader->getKey("ALLGINFO.outputdir", this->outputPath)) // Output folder of this detector
+/*	if (!configReader->getKey("ALLGINFO.outputdir", this->outputPath)) // Output folder of this detector
 		std::cout << "Warning: Key in Config nicht gefunden, key:'" << "ALLGINFO.outputdir" << "'" << std::endl;
 	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
 		std::cout << "[OverlapElimination] outputdir: " << this->outputPath << std::endl;
-	}
+	}*/
 
 	//min. und max. erwartete Anzahl Gesichter im Bild (vorerst null bis eins);											  
 	sprintf(pos,"FD.expected_number_faces.#%d",0);																		  

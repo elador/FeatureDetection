@@ -128,6 +128,7 @@ int main(int argc, char *argv[])		// Peter
 	Logger->global.img.writeImgPyramids = true;
 
 	CascadeFacialFeaturePoints* casc = new CascadeFacialFeaturePoints();
+	casc->setIdentifier("smartFaceDetect");
 
 	for(unsigned int i=0; i< filenames.size(); i++) {
 		myimg = new FdImage();
