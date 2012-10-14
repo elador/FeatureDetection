@@ -459,10 +459,33 @@ FdPatch* VDetectorVectorMachine::insertPatchIntoPyramid(Pyramid* pyramid,
 }
 
 
-std::vector<cv::Mat> VDetectorVectorMachine::getProbabilityMaps( FdImage* )
+std::vector<cv::Mat> VDetectorVectorMachine::getProbabilityMaps( FdImage* img )
 {
-	std::vector<cv::Mat> test;
-	return test;
+	std::vector<cv::Mat> probabilityMaps;	// TODO: Make this a member variable. Then, if empty, calculate. If not empty, directly return it.
+
+	//for(int current_scale = 0; current_scale < this->numSubsamplingLevels; current_scale++) {// TODO: Careful: numSubsamplingLevels is not necessarily the actual number of available pyramids. if the image is too small, it may be less...
+	for(int current_scale = this->numSubsamplingLevels-1; current_scale >=0 ; current_scale--) { // For each pyramid, go through the patchlist and classify
+
+		PyramidMap::iterator it = img->pyramids.find(this->pyramid_widths[current_scale]);
+		float coef = this->subsampfac[this->pyramid_widths[current_scale]];
+
+		cv::Mat currentProbabilityMap(it->second->h, it->second->w, CV_32FC1);
+
+		FdPatchSet::iterator pit = it->second->patches.begin();
+
+		for(; pit != it->second->patches.end(); pit++) {
+			if ((*pit)->certainty.count(this->getIdentifier())!=0) {
+				currentProbabilityMap.at<float>((*pit)->c.y_py, (*pit)->c.x_py) = (*pit)->certainty[this->getIdentifier()];
+			}
+		}
+		probabilityMaps.push_back(currentProbabilityMap);
+
+		std::ostringstream ss;
+		ss << "w" << currentProbabilityMap.cols;
+		Logger->LogImgDetectorProbabilityMap(&currentProbabilityMap, img->filename, this->getIdentifier(), ss.str());
+	}
+
+	return probabilityMaps;
 }
 
 

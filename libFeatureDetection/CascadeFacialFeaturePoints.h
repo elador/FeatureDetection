@@ -2,9 +2,10 @@
 #include "VDetector.h"
 
 #include "CascadeWvmOeSvmOe.h"
-#include "CircleDetector.h"
-#include "SkinDetector.h"
-#include "CascadeFacialFeaturePointsSimple.h"
+
+class CircleDetector;
+class SkinDetector;
+class CascadeFacialFeaturePointsSimple;
 
 class CascadeFacialFeaturePoints : public VDetector
 {

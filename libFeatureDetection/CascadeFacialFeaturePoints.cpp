@@ -1,8 +1,12 @@
 #include "stdafx.h"
 #include "CascadeFacialFeaturePoints.h"
+#include "CascadeFacialFeaturePointsSimple.h"
+#include "CircleDetector.h"
+#include "SkinDetector.h"
 
 #include "SLogger.h"
 #include "FdPatch.h"
+#include "FdImage.h"
 
 CascadeFacialFeaturePoints::CascadeFacialFeaturePoints(void)
 {
@@ -47,9 +51,9 @@ int CascadeFacialFeaturePoints::detectOnImage(FdImage* myimg)
 {
 	wvm_frontal->extractToPyramids(myimg);
 	this->candidates = wvm_frontal->detectOnImage(myimg);
-	std::vector<cv::Mat> probabilityMapsWVM = wvm_frontal->getProbabilityMaps(myimg);
 	Logger->LogImgDetectorCandidates(myimg, candidates, wvm_frontal->getIdentifier(), "1WVM");
-	
+	std::vector<cv::Mat> probabilityMapsWVM = wvm_frontal->getProbabilityMaps(myimg);
+
 	std::vector<FdPatch*> afterFirstOE;
 	//0: only after SVM, 1: only before SVM, n: Reduce each cluster to n before SVM and to 1 after; Default: 1
 	if(oe->doOE!=0) {		// do overlapeliminiation after RVM before SVM

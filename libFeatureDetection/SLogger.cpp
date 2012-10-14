@@ -132,7 +132,7 @@ void SLogger::LogImgCircleDetectorCandidates( const FdImage* img, cv::vector<cv:
 	}
 }
 
-void SLogger::LogImgDetectorProbabilityMap(const cv::Mat* probMap, std::string filename, std::string detectorId, std::string filenameAppend)
+void SLogger::LogImgDetectorProbabilityMap(const cv::Mat* probMap, const std::string filename, const std::string detectorId, std::string filenameAppend)
 {
 	if((this->global.img.writeDetectorProbabilityMaps==true) || this->verboseLevelImages>=2) {
 		if(filenameAppend=="") {

@@ -81,7 +81,7 @@ public:
 	void LogImgInputRGB(const cv::Mat*, std::string);	// only if writeInputRGB
 	void LogImgPyramid(const Pyramid*, std::string, int); // only if writeImgPyramids
 	void LogImgDetectorCandidates(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");	// if writeDetectorCandidates || verboseLevelImages>=2
-	void LogImgDetectorProbabilityMap(const cv::Mat*, const std::string, const std::string, const std::string="");			// if writeDetectorProbabilityMaps || verboseLevelImages>=2
+	void LogImgDetectorProbabilityMap(const cv::Mat*, const std::string, const std::string, std::string="");			// if writeDetectorProbabilityMaps || verboseLevelImages>=2
 	void LogImgDetectorFinal(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");		// if writeDetectorCandidates || verboseLevelImages>=1
 	void LogImgRegressor(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");			// if writeRegressor || verboseLevelImages>=1 (or maybe 2)
 	void LogImgRegressorPyramids(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");	// if writeRegressorPyramids || verboseLevelImages>=2
