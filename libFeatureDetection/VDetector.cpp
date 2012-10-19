@@ -24,7 +24,7 @@ int VDetector::initROI(FdImage* img)
 {
 	//Set ROI for fd
 	// 0 0 0 0 (fullimg), -1 -1 -1 -1 (full_fd_roi), else rel. to fd_box_ul 
-	if ( (this->roiDistFromBorder==Rect(0, 0, 0, 0)) || (this->roiDistFromBorder==Rect(-1, -1, -1, -1))) {
+	if ( (this->roiDistFromBorder==Rect(0, 0, 0, 0)) || (this->roiDistFromBorder==Rect(-1, -1, -1, -1)) ) {
 		this->roiInImg=Rect(0, 0, 0, 0);
 		this->roiInImg.bottom=img->h;
 		this->roiInImg.right=img->w; 

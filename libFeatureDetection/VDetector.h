@@ -21,10 +21,11 @@ public:
 	Rect roiDistFromBorder;
 	Rect roiInImg;
 
+	int initROI(FdImage*);	// Convert roiDistFromBorder to roiInImg, given the FdImage.
+
 private:
 	bool canOutputProbabilistic;
 
 protected:
 	std::string identifier;
-	int initROI(FdImage*);	// read the ROI from the Matlab config (roiDistFromBorder) and convert to roiInImg
 };
