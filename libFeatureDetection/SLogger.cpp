@@ -249,7 +249,7 @@ void SLogger::drawBoxesWithCertainty(cv::Mat rgbimg, std::vector<FdPatch*> patch
 {
 	std::vector<FdPatch*>::iterator pit = patches.begin();
 	for(; pit != patches.end(); pit++) {
-			cv::rectangle(rgbimg, cv::Point((*pit)->c.x-(*pit)->w_inFullImg/2, (*pit)->c.y-(*pit)->h_inFullImg/2), cv::Point((*pit)->c.x+(*pit)->w_inFullImg/2, (*pit)->c.y+(*pit)->h_inFullImg/2), cv::Scalar(0, 0, (float)255*(*pit)->certainty[identifierForColor]));
+		cv::rectangle(rgbimg, cv::Point((*pit)->c.x-(*pit)->w_inFullImg/2, (*pit)->c.y-(*pit)->h_inFullImg/2), cv::Point((*pit)->c.x+(*pit)->w_inFullImg/2, (*pit)->c.y+(*pit)->h_inFullImg/2), cv::Scalar(0, 0, (float)255*(*pit)->certainty[identifierForColor]));
 	}
 }
 

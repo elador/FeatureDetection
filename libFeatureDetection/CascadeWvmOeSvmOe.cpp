@@ -82,10 +82,16 @@ int CascadeWvmOeSvmOe::detectOnImage(FdImage* myimg)
 	return 1;
 }
 
-void CascadeWvmOeSvmOe::setIdentifier( std::string identifier )
+void CascadeWvmOeSvmOe::setIdentifier(std::string identifier)
 {
 	VDetector::setIdentifier(identifier);
-	svm->setIdentifier(identifier + std::string("DetectorSVM_"));
-	wvm->setIdentifier(identifier + std::string("DetectorWVM_"));
-	oe->setIdentifier(identifier + std::string("OverlapElimination_"));
+	svm->setIdentifier(identifier + std::string("DetectorSVM"));
+	wvm->setIdentifier(identifier + std::string("DetectorWVM"));
+	oe->setIdentifier(identifier + std::string("OverlapElimination"));
+}
+
+void CascadeWvmOeSvmOe::setRoiInImage(Rect roi)
+{
+	wvm->setRoiInImage(roi);
+	svm->setRoiInImage(roi);
 }

@@ -38,7 +38,7 @@ int VDetector::initROI(FdImage* img)
 
 }
 
-std::string VDetector::getIdentifier()
+std::string VDetector::getIdentifier(void)
 {
 	return this->identifier;
 }
@@ -46,4 +46,12 @@ std::string VDetector::getIdentifier()
 void VDetector::setIdentifier(std::string identifier)
 {
 	this->identifier = identifier;
+}
+
+void VDetector::setRoiInImage(Rect roi)
+{
+	this->roiInImg.left=roi.left; 
+	this->roiInImg.right=roi.right; 
+	this->roiInImg.top=roi.top; 
+	this->roiInImg.bottom=roi.bottom;
 }

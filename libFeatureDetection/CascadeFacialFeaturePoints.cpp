@@ -10,9 +10,6 @@
 
 CascadeFacialFeaturePoints::CascadeFacialFeaturePoints(void)
 {
-	//face_frontal = new CascadeWvmOeSvmOe("D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat");
-	//eye_left = new CascadeWvmOeSvmOe("C:\\Users\\Patrik\\Documents\\GitHub\\config\\fdetection\\fd_config_ffd_le.mat");
-
 	wvm_frontal = new DetectorWVM();
 	wvm_frontal->load("C:\\Users\\Patrik\\Documents\\GitHub\\config\\cfg\\faceDetectApp\\fd_config_ffd_fd.mat");
 
@@ -29,8 +26,6 @@ CascadeFacialFeaturePoints::CascadeFacialFeaturePoints(void)
 
 CascadeFacialFeaturePoints::~CascadeFacialFeaturePoints(void)
 {
-	//delete face_frontal;
-	//delete eye_left;
 	delete wvm_frontal;
 	delete oe;
 
@@ -79,7 +74,7 @@ int CascadeFacialFeaturePoints::detectOnImage(FdImage* myimg)
 	//cv::Mat final = 0.5*probabilityMapsWVM[1] + 0.3*binarySkinMap + 0.2*circleProbMap;
 	//Logger->LogImgDetectorProbabilityMap(&final, myimg->filename, "FINAL");
 	
-	ffpCasc->initForImage(myimg);	// really init on whole image?
+	ffpCasc->initForImage(myimg);	// create the pyramids (and set ROI to default)
 
 	std::sort(afterFirstOE.begin(), afterFirstOE.end(), FdPatch::SortByCertainty(wvm_frontal->getIdentifier()));	// only necessary if we didnt run an OE?
 
@@ -90,12 +85,20 @@ int CascadeFacialFeaturePoints::detectOnImage(FdImage* myimg)
 		int roiRight = (*itr)->c.x+(*itr)->w_inFullImg/2;
 		int roiTop = (*itr)->c.y-(*itr)->h_inFullImg/2;
 		int roiBottom = (*itr)->c.y+(*itr)->h_inFullImg/2;
-		ffpCasc->reye->wvm->roiInImg = Rect(roiLeft, roiTop, roiRight, roiBottom);
-		ffpCasc->reye->svm->roiInImg = Rect(roiLeft, roiTop, roiRight, roiBottom);
+		Rect roi(roiLeft, roiTop, roiRight, roiBottom);
+		
+		cv::Mat test = myimg->data_matbgr.clone();
+		cv::rectangle(test, cv::Point(roi.left, roi.top), cv::Point(roi.right, roi.bottom), cv::Scalar(0, 0, 255));
+		imwrite("out\\asfd2.png", test);/*
 		cv::Mat temp = myimg->data_matbgr(cv::Rect(roiLeft, roiTop, (*itr)->w_inFullImg, (*itr)->h_inFullImg));
-		imwrite("out\\asdf.png", temp);
-		//ffpCasc->setRoiInImg	// rename roi_inImg (camelcase). Make a function in lowest parent... then in cascade, as with setID.
+		imwrite("out\\asdf.png", temp);*/
+		ffpCasc->setRoiInImage(roi);
 		ffpCasc->detectOnImage(myimg);
+		std::vector<cv::Mat> probabilityMapsWVMre = ffpCasc->reye->wvm->getProbabilityMaps(myimg);
+		std::vector<cv::Mat> probabilityMapsWVMle = ffpCasc->leye->wvm->getProbabilityMaps(myimg);
+		std::vector<cv::Mat> probabilityMapsWVMnt = ffpCasc->nosetip->wvm->getProbabilityMaps(myimg);
+		std::vector<cv::Mat> probabilityMapsWVMrm = ffpCasc->rmouth->wvm->getProbabilityMaps(myimg);
+		std::vector<cv::Mat> probabilityMapsWVMlm= ffpCasc->lmouth->wvm->getProbabilityMaps(myimg);
 		
 	}
 

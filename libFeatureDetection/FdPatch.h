@@ -51,7 +51,7 @@ public:
 
 };
 
-struct FdPatch_comp		// TRUE if a > b, FALSE if a <= b
+struct FdPatch_comp		// TRUE if a > b, FALSE if a <= b	(TODO hm my sort is the other way round?)
 {
     bool operator () (const FdPatch* a, const FdPatch* b) const
     {
@@ -87,6 +87,7 @@ struct FdPatch_comp		// TRUE if a > b, FALSE if a <= b
 		}
 
 		// I SHOULD NEVER REACH HERE BECAUSE THE ELEMENTS (PATCHES) SHOULD BE UNIQUE
+		// (sure I land here when I try to insert a new patch that is already in the patchset)
 		return false;
 
 	}

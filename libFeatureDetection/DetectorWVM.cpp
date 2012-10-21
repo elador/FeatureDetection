@@ -99,17 +99,24 @@ bool DetectorWVM::classify(FdPatch* fp)
 			std::cout << "[DetectorWVM] An element 'fout' already exists for this detector, you classified the same patch twice. We can't circumvent this for now." << std::endl;
 		}
 	}
-	std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]))));
-	if(certainty_insert.second == false) {
-		if(Logger->getVerboseLevelText()>=4) {
-			std::cout << "[DetectorWVM] An element 'certainty' already exists for this detector, you classified the same patch twice. We can't circumvent this for now." << std::endl;
-		}
-	}
+
 	//fp->certainty = 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]));
 	// TODO: filter statistics, nDropedOutAsNonFace[filter_level]++;
 	if(filter_level+1 == this->nLinFilters && fout >= this->lin_hierar_thresh[filter_level]) {
 	//	fp->writePNG("pos.png");
+		std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]))));
+		if(certainty_insert.second == false) {
+			if(Logger->getVerboseLevelText()>=4) {
+				std::cout << "[DetectorWVM] An element 'certainty' already exists for this detector, you classified the same patch twice. We can't circumvent this for now." << std::endl;
+			}
+		}
 		return true;
+	}
+	std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 0.0f));
+	if(certainty_insert.second == false) {
+		if(Logger->getVerboseLevelText()>=4) {
+			std::cout << "[DetectorWVM] An element 'certainty' already exists for this detector, you classified the same patch twice. We can't circumvent this for now." << std::endl;
+		}
 	}
 	return false;
 }

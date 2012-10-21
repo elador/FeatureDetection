@@ -12,7 +12,7 @@ public:
 	VDetector(void);
 	virtual ~VDetector(void);
 
-	std::string getIdentifier();
+	std::string getIdentifier(void);
 	void setIdentifier(std::string);
 
 	//char outputPath[255];	// TODO: Delete this / use std::string
@@ -21,7 +21,9 @@ public:
 	Rect roiDistFromBorder;
 	Rect roiInImg;
 
-	int initROI(FdImage*);	// Convert roiDistFromBorder to roiInImg, given the FdImage.
+	int initROI(FdImage*);	// Convert roiDistFromBorder to roiInImg, given the FdImage. The roiDistFromBorder values come from the config file.
+
+	void setRoiInImage(Rect);	// Set the in-image ROI, and overwrite the values set by reading the config file.
 
 private:
 	bool canOutputProbabilistic;
