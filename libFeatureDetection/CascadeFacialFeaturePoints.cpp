@@ -98,7 +98,7 @@ int CascadeFacialFeaturePoints::detectOnImage(FdImage* myimg)
 		std::vector<cv::Mat> probabilityMapsWVMle = ffpCasc->leye->wvm->getProbabilityMaps(myimg);
 		std::vector<cv::Mat> probabilityMapsWVMnt = ffpCasc->nosetip->wvm->getProbabilityMaps(myimg);
 		std::vector<cv::Mat> probabilityMapsWVMrm = ffpCasc->rmouth->wvm->getProbabilityMaps(myimg);
-		std::vector<cv::Mat> probabilityMapsWVMlm= ffpCasc->lmouth->wvm->getProbabilityMaps(myimg);
+		std::vector<cv::Mat> probabilityMapsWVMlm = ffpCasc->lmouth->wvm->getProbabilityMaps(myimg);
 		
 	}
 

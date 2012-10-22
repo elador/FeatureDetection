@@ -45,6 +45,7 @@ SET(SOURCE
 	StdImage.cpp
 	VDetector.cpp
 	VDetectorVectorMachine.cpp
+	FeaturePointsRANSAC.cpp
 )
 
 SET(HEADERS
@@ -73,6 +74,7 @@ SET(HEADERS
 	targetver.h
 	VDetector.h
 	VDetectorVectorMachine.h
+	FeaturePointsRANSAC.h
 )
 
 #Make the library
