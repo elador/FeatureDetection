@@ -31,15 +31,16 @@ private:
 		bool writeImgInputGray;
 		bool writeImgInputRGB;
 		bool writeImgPyramids;
-		bool writeDetectorCandidates;	// Writes each detector's candidates (face-box) into a separate image
-		bool writeRegressor;			// Writes an image (face-box with angle color) of the regression output
-		bool writeRegressorPyramids;	// Writes an image for each pyramid, drawing the angle as colored centerpoints
+		bool writeDetectorCandidates;	// Writes each detector's candidates (face-box) into a separate image.
+		bool writeDetectorProbabilityMaps;	// Writes each detector's probability map, if one was generated.
+		bool writeRegressor;			// Writes an image (face-box with angle color) of the regression output.
+		bool writeRegressorPyramids;	// Writes an image for each pyramid, drawing the angle as colored center-points.
 		bool drawRegressorFoutAsText;	// Requires writeRegressor to be true (of course). Additionally draws the fout-value as text.
-		bool drawScales;				// Draw the scale (box-width) into output images
+		bool drawScales;				// Draw the scale (box-width) into output images.
 	};
 
 	struct textparams {				// Overwrites the default log levels if set
-		bool outputFullStartup;		// Output all starting messages
+		bool outputFullStartup;		// Output all starting messages.
 		bool outputPyramidCreation;	// todo
 	};
 
@@ -80,10 +81,12 @@ public:
 	void LogImgInputRGB(const cv::Mat*, std::string);	// only if writeInputRGB
 	void LogImgPyramid(const Pyramid*, std::string, int); // only if writeImgPyramids
 	void LogImgDetectorCandidates(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");	// if writeDetectorCandidates || verboseLevelImages>=2
-	void LogImgDetectorFinal(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");	// if writeDetectorCandidates || verboseLevelImages>=1
-	void LogImgRegressor(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");	// if writeRegressor || verboseLevelImages>=1 (or maybe 2)
+	void LogImgDetectorProbabilityMap(const cv::Mat*, const std::string, const std::string, std::string="");			// if writeDetectorProbabilityMaps || verboseLevelImages>=2
+	void LogImgDetectorFinal(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");		// if writeDetectorCandidates || verboseLevelImages>=1
+	void LogImgRegressor(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");			// if writeRegressor || verboseLevelImages>=1 (or maybe 2)
 	void LogImgRegressorPyramids(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");	// if writeRegressorPyramids || verboseLevelImages>=2
 																										// outputs an image of the regressor for each scale
+	void LogImgCircleDetectorCandidates(const FdImage*, cv::vector<cv::Vec3f>, std::string);			// if writeDetectorCandidates || verboseLevelImages>=2
 
 	params global;	// global settings
 

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "SkinDetector.h"
 
+#include "SLogger.h"
 #include "FdImage.h"
 
 #include "opencv2/core/core.hpp"
@@ -47,7 +48,7 @@ cv::Mat SkinDetector::detectOnImage(FdImage* img)
 		}
 	}
 	
-	//LOST Logger->LogImgSkinDetector(&binarySkinMap, img->filename, this->getIdentifier());
+	Logger->LogImgDetectorProbabilityMap(&binarySkinMap, img->filename, this->getIdentifier());
 
 	return binarySkinMap;
 }

@@ -316,14 +316,14 @@ int RegressorWVR::load(const std::string filename)
 	//ROI: left, top, right, bottom
     // 0 0 0 0 (ganze Bild), -1 -1 -1 -1 (bzw. ganze FD-ROI) 
 	int v=1;
-	if (!configReader->getInt("FD.roi.#0",&v))		std::cout << "[RegrWVR] WARNING: Key in Config nicht gefunden, key:'FD.roi.#0', nehme Default: " << this->roi.left << std::endl;
-	else										this->roi.left=v;
-	if (!configReader->getInt("FD.roi.#1",&v))		std::cout << "[RegrWVR] WARNING: Key in Config nicht gefunden, key:'FD.roi.#1', nehme Default: " << this->roi.top << std::endl;
-	else										this->roi.top=v;
-	if (!configReader->getInt("FD.roi.#2",&v))		std::cout << "[RegrWVR] WARNING: Key in Config nicht gefunden, key:'FD.roi.#2', nehme Default: " << this->roi.right << std::endl;
-	else										this->roi.right=v;
-	if (!configReader->getInt("FD.roi.#3",&v))		std::cout << "[RegrWVR] WARNING: Key in Config nicht gefunden, key:'FD.roi.#3', nehme Default: " << this->roi.bottom << std::endl;
-	else										this->roi.bottom=v;
+	if (!configReader->getInt("FD.roi.#0",&v))		std::cout << "[RegrWVR] WARNING: Key in Config nicht gefunden, key:'FD.roi.#0', nehme Default: " << this->roiDistFromBorder.left << std::endl;
+	else										this->roiDistFromBorder.left=v;
+	if (!configReader->getInt("FD.roi.#1",&v))		std::cout << "[RegrWVR] WARNING: Key in Config nicht gefunden, key:'FD.roi.#1', nehme Default: " << this->roiDistFromBorder.top << std::endl;
+	else										this->roiDistFromBorder.top=v;
+	if (!configReader->getInt("FD.roi.#2",&v))		std::cout << "[RegrWVR] WARNING: Key in Config nicht gefunden, key:'FD.roi.#2', nehme Default: " << this->roiDistFromBorder.right << std::endl;
+	else										this->roiDistFromBorder.right=v;
+	if (!configReader->getInt("FD.roi.#3",&v))		std::cout << "[RegrWVR] WARNING: Key in Config nicht gefunden, key:'FD.roi.#3', nehme Default: " << this->roiDistFromBorder.bottom << std::endl;
+	else										this->roiDistFromBorder.bottom=v;
 	
 	//Minimale Gesichtsoehe in Pixel 
 	if (!configReader->getInt("FD.face_size_min",&this->subsamplingMinHeight))

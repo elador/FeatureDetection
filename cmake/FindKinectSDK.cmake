@@ -2,6 +2,9 @@
 SET(KinectSDK_ROOT_DIR $ENV{KINECTSDK10_DIR})
 message(${KinectSDK_ROOT_DIR})
 SET(KinectSDK_LIB_DIR "${KinectSDK_ROOT_DIR}lib/x86")
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)	# 64bit build
+	SET(KinectSDK_LIB_DIR "${KinectSDK_ROOT_DIR}lib/amd64")
+endif()
 SET(KinectSDK_INCLUDE_DIR "${KinectSDK_ROOT_DIR}inc")
 SET(KinectSDK_DLLS 
 	"$ENV{SystemRoot}System32/Kinect10.dll"

@@ -24,21 +24,21 @@ int VDetector::initROI(FdImage* img)
 {
 	//Set ROI for fd
 	// 0 0 0 0 (fullimg), -1 -1 -1 -1 (full_fd_roi), else rel. to fd_box_ul 
-	if ( (this->roi==Rect(0, 0, 0, 0)) || (this->roi==Rect(-1, -1, -1, -1))) {
-		this->roi_inImg=Rect(0, 0, 0, 0);
-		this->roi_inImg.bottom=img->h;
-		this->roi_inImg.right=img->w; 
+	if ( (this->roiDistFromBorder==Rect(0, 0, 0, 0)) || (this->roiDistFromBorder==Rect(-1, -1, -1, -1)) ) {
+		this->roiInImg=Rect(0, 0, 0, 0);
+		this->roiInImg.bottom=img->h;
+		this->roiInImg.right=img->w; 
 	} else {
-		this->roi_inImg.left=this->roi.left; 
-		this->roi_inImg.right=img->w - this->roi.right; 
-		this->roi_inImg.top=this->roi.top; 
-		this->roi_inImg.bottom=img->h - this->roi.bottom;
+		this->roiInImg.left=this->roiDistFromBorder.left; 
+		this->roiInImg.right=img->w - this->roiDistFromBorder.right; 
+		this->roiInImg.top=this->roiDistFromBorder.top; 
+		this->roiInImg.bottom=img->h - this->roiDistFromBorder.bottom;
 	}
 	return 1;
 
 }
 
-std::string VDetector::getIdentifier()
+std::string VDetector::getIdentifier(void)
 {
 	return this->identifier;
 }
@@ -46,4 +46,12 @@ std::string VDetector::getIdentifier()
 void VDetector::setIdentifier(std::string identifier)
 {
 	this->identifier = identifier;
+}
+
+void VDetector::setRoiInImage(Rect roi)
+{
+	this->roiInImg.left=roi.left; 
+	this->roiInImg.right=roi.right; 
+	this->roiInImg.top=roi.top; 
+	this->roiInImg.bottom=roi.bottom;
 }

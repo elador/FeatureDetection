@@ -1,31 +1,31 @@
 #include "stdafx.h"
 #include "CascadeFacialFeaturePoints.h"
+#include "CascadeFacialFeaturePointsSimple.h"
+#include "CircleDetector.h"
+#include "SkinDetector.h"
 
 #include "SLogger.h"
 #include "FdPatch.h"
+#include "FdImage.h"
 
 CascadeFacialFeaturePoints::CascadeFacialFeaturePoints(void)
 {
-	//face_frontal = new CascadeWvmOeSvmOe("D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat");
-	//eye_left = new CascadeWvmOeSvmOe("D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat");
-
 	wvm_frontal = new DetectorWVM();
-	wvm_frontal->load("D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat");
+	wvm_frontal->load("C:\\Users\\Patrik\\Documents\\GitHub\\config\\cfg\\faceDetectApp\\fd_config_ffd_fd.mat");
 
 	oe = new OverlapElimination();
-	oe->load("D:\\CloudStation\\libFD_patrik2011\\config\\fdetection\\fd_config_ffd_fd.mat");
+	oe->load("C:\\Users\\Patrik\\Documents\\GitHub\\config\\cfg\\faceDetectApp\\fd_config_ffd_fd.mat");
 
 	circleDet = new CircleDetector();
 	skinDet = new SkinDetector();
 
 	ffpCasc = new CascadeFacialFeaturePointsSimple();
+	ffpCasc->setIdentifier("5ffpCascade");
 }
 
 
 CascadeFacialFeaturePoints::~CascadeFacialFeaturePoints(void)
 {
-	//delete face_frontal;
-	//delete eye_left;
 	delete wvm_frontal;
 	delete oe;
 
@@ -47,9 +47,9 @@ int CascadeFacialFeaturePoints::detectOnImage(FdImage* myimg)
 {
 	wvm_frontal->extractToPyramids(myimg);
 	this->candidates = wvm_frontal->detectOnImage(myimg);
-	// LOST std::vector<cv::Mat> probabilityMapsWVM = wvm_frontal->getProbabilityMaps(myimg);
 	Logger->LogImgDetectorCandidates(myimg, candidates, wvm_frontal->getIdentifier(), "1WVM");
-	
+	std::vector<cv::Mat> probabilityMapsWVM = wvm_frontal->getProbabilityMaps(myimg);
+
 	std::vector<FdPatch*> afterFirstOE;
 	//0: only after SVM, 1: only before SVM, n: Reduce each cluster to n before SVM and to 1 after; Default: 1
 	if(oe->doOE!=0) {		// do overlapeliminiation after RVM before SVM
@@ -74,7 +74,9 @@ int CascadeFacialFeaturePoints::detectOnImage(FdImage* myimg)
 	//cv::Mat final = 0.5*probabilityMapsWVM[1] + 0.3*binarySkinMap + 0.2*circleProbMap;
 	//Logger->LogImgDetectorProbabilityMap(&final, myimg->filename, "FINAL");
 	
-	ffpCasc->initForImage(myimg);
+	ffpCasc->initForImage(myimg);	// create the pyramids (and set ROI to default)
+
+	std::sort(afterFirstOE.begin(), afterFirstOE.end(), FdPatch::SortByCertainty(wvm_frontal->getIdentifier()));	// only necessary if we didnt run an OE?
 
 	std::vector<FdPatch*>::iterator itr;
 	for (itr = afterFirstOE.begin(); itr != afterFirstOE.end(); ++itr ) {
@@ -83,9 +85,20 @@ int CascadeFacialFeaturePoints::detectOnImage(FdImage* myimg)
 		int roiRight = (*itr)->c.x+(*itr)->w_inFullImg/2;
 		int roiTop = (*itr)->c.y-(*itr)->h_inFullImg/2;
 		int roiBottom = (*itr)->c.y+(*itr)->h_inFullImg/2;
-		ffpCasc->reye->wvm->roi_inImg = Rect(roiLeft, roiTop, roiRight, roiBottom);
-		ffpCasc->reye->svm->roi_inImg = Rect(roiLeft, roiTop, roiRight, roiBottom);
+		Rect roi(roiLeft, roiTop, roiRight, roiBottom);
+		
+		cv::Mat test = myimg->data_matbgr.clone();
+		cv::rectangle(test, cv::Point(roi.left, roi.top), cv::Point(roi.right, roi.bottom), cv::Scalar(0, 0, 255));
+		imwrite("out\\asfd2.png", test);/*
+		cv::Mat temp = myimg->data_matbgr(cv::Rect(roiLeft, roiTop, (*itr)->w_inFullImg, (*itr)->h_inFullImg));
+		imwrite("out\\asdf.png", temp);*/
+		ffpCasc->setRoiInImage(roi);
 		ffpCasc->detectOnImage(myimg);
+		std::vector<cv::Mat> probabilityMapsWVMre = ffpCasc->reye->wvm->getProbabilityMaps(myimg);
+		std::vector<cv::Mat> probabilityMapsWVMle = ffpCasc->leye->wvm->getProbabilityMaps(myimg);
+		std::vector<cv::Mat> probabilityMapsWVMnt = ffpCasc->nosetip->wvm->getProbabilityMaps(myimg);
+		std::vector<cv::Mat> probabilityMapsWVMrm = ffpCasc->rmouth->wvm->getProbabilityMaps(myimg);
+		std::vector<cv::Mat> probabilityMapsWVMlm = ffpCasc->lmouth->wvm->getProbabilityMaps(myimg);
 		
 	}
 

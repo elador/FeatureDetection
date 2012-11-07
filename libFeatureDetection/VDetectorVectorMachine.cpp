@@ -29,7 +29,7 @@ VDetectorVectorMachine::VDetectorVectorMachine(void)
 	subsamplingLevelStart = 0;
 	subsamplingLevelEnd = 0;
 
-	pyramid_widths = NULL;
+	//pyramid_widths = NULL;
 	
 	// initialization for the histogram equalization:
 	LUT_bin = new unsigned char[256];
@@ -48,7 +48,7 @@ VDetectorVectorMachine::VDetectorVectorMachine(void)
 VDetectorVectorMachine::~VDetectorVectorMachine(void)
 {
 	//delete[] subsampfac;
-	delete[] pyramid_widths;
+	//delete[] pyramid_widths;
 	delete[] LUT_bin; LUT_bin=NULL;
 }
 
@@ -94,14 +94,17 @@ int VDetectorVectorMachine::initPyramids( FdImage *img )
 	if(subsampfac.size()>0)	// If I come here and its not empty, then I need to delete it, because I'm working on a completely new image!
 		subsampfac.clear();	// The "if" here might be unnecessary?
 
-	if(pyramid_widths!=NULL) {
+	/*if(pyramid_widths!=NULL) {
 		delete[] pyramid_widths;
 		pyramid_widths = NULL;
+	}*/
+	if (!pyramid_widths.empty()) {
+		pyramid_widths.clear();
 	}
 	//subsampfac = new float[numSubsamplingLevels];	// we only need 9!
 	//subsampfac[0] = (float)pow(subsamplingFactor,subsamplingLevelStart);
 
-	pyramid_widths = new int[numSubsamplingLevels];
+	//pyramid_widths = new int[numSubsamplingLevels];
 
 	//int direct = (int)(img->w*(float)pow(subsamplingFactor,subsamplingLevelStart)+0.5);
 	int curr_width=img->w;
@@ -110,9 +113,11 @@ int VDetectorVectorMachine::initPyramids( FdImage *img )
 	}
 	subsampfac.insert(std::map<int, float>::value_type(curr_width, (float)curr_width/(float)img->w));
 	//subsampfac[0] = (float)curr_width/(float)img->w;
-	pyramid_widths[0] = curr_width;
+	//pyramid_widths[0] = curr_width;
+	pyramid_widths.push_back(curr_width);
 	for(int i=1; i<numSubsamplingLevels; i++) {
-		pyramid_widths[i] = (int)(pyramid_widths[i-1]*subsamplingFactor+0.5);
+		//pyramid_widths[i] = (int)(pyramid_widths[i-1]*subsamplingFactor+0.5);
+		pyramid_widths.push_back((int)(pyramid_widths[i-1]*subsamplingFactor+0.5));
 		//curr_width = (int)(curr_width*subsamplingFactor+0.5);
 		//subsampfac[i] = (float)pyramid_widths[i]/(float)img->w;
 		subsampfac.insert(std::map<int, float>::value_type(pyramid_widths[i], (float)pyramid_widths[i]/(float)img->w));
@@ -164,7 +169,7 @@ int VDetectorVectorMachine::extractToPyramids(FdImage *img)
 		int pyrw = it->second->w;
 		int pyrh = it->second->h;
 
-		Rect roi((int)(this->roi_inImg.left*coef), (int)(this->roi_inImg.top*coef), (int)(this->roi_inImg.right*coef), (int)(this->roi_inImg.bottom*coef));
+		Rect roi((int)(this->roiInImg.left*coef), (int)(this->roiInImg.top*coef), (int)(this->roiInImg.right*coef), (int)(this->roiInImg.bottom*coef));
 
 		int stepsize_from_config = 1;
 		int ss=std::max(1, int(coef * stepsize_from_config + 0.5f)); // stepsize, from config
@@ -175,6 +180,13 @@ int VDetectorVectorMachine::extractToPyramids(FdImage *img)
 		}
 		int h_prim = std::min(pyrh-filter_size_y/2,roi.bottom);
 		int w_prim = std::min(pyrw-filter_size_x/2,roi.right);
+
+		/*cv::Mat thispyr(it->second->h, it->second->w, CV_8UC1, it->second->data);
+		imwrite("out\\eye_thispyr.png", thispyr);
+		cv::Rect ocvr = cv::Rect(roi.left, roi.top, roi.right-roi.left, roi.bottom-roi.top);
+		cv::Mat temp = thispyr(ocvr);
+		//CV::Rect: x, y, w, h
+		imwrite("out\\eye_thispyr_roi.png", temp); */
 		
 		for (int y = std::max(roi.top,filter_size_y/2); y < h_prim; y+=ss) {
 			for (int x = std::max(filter_size_x/2,roi.left); x < w_prim; x+=ss) {
@@ -363,14 +375,56 @@ std::vector<FdPatch*> VDetectorVectorMachine::detectOnImage(FdImage *img)
 		PyramidMap::iterator it = img->pyramids.find(this->pyramid_widths[current_scale]);
 		float coef = this->subsampfac[this->pyramid_widths[current_scale]];
 
-		FdPatchSet::iterator pit = it->second->patches.begin();
+		//std::cout << "NumPatches in this pyramid: " << it->second->patches.size() << std::endl;
+
+		// TODO: This goes through ALL the patches in the selected pyramid, no matter if they are inside the ROI or not!
+		// The ROI is only used to extract the patches to the pyramid. But now, if another detector comes and adds patches to
+		// the pyramid (e.g. it detects in another ROI), then any detector who calls this function to only work on a ROI
+		// will detect on ALL patches in the pyramid.
+		// Possible solutions:
+		//		- Read the ROI here and only loop through ROI
+		//			* Ok, but then we need to do a find for each patch in the ROI in the pyramid
+		//			* Better: One below:
+		//	>>>	- Loop through all patches in the pyramid and check if they are inside the ROI.	<<< This is implemented at the moment!
+		//		- Make a function detectOnRoi(FdImage* img)
+		//		- give an identifier to each patch, which detector it belongs to
+		//		- The function name detectOnImage is quite misleading, as soon as the above-mentioned happens. 
+		//			* Rename this function (and make a new one detectOnRoi?)
+		//			* Hm no: A function like this that loops through all patches in the pyramid doesn't really make sense. When would this be used?
+		//				 --> Read the ROI here and only loop through ROI
 
 		bool passed = false;
+		FdPatchSet::iterator pit = it->second->patches.begin();
 		for(; pit != it->second->patches.end(); pit++) {
-			passed = classify((*pit));	// We could do the whole classification in a separate loop over the pyramids now. But this is ok for now. (maybe even faster)
-			if(passed) {
-				candidates.push_back((*pit)); // SVM&WVM only added if feature, SVR/WVR always added
-			}
+			// Check if the current patch 'belongs' to this detector, i.e. it has the same width/height as the detector.
+			// When using multiple detectors on the same scale, we can have patches in the same pyramid at the same location
+			// but with different w/h.
+			// The better solution would be to assign each patch a detector ID when it is extracted, and then use that here. (?)
+			// Because 2 detectors could have the same w/h, but work on different ROIs.
+			// Ok no that's actually not necessary because I check for the ROI here. So this solution is completely fine. (But the ID-one would maybe make it more readable/understandable)
+			if ((*pit)->w != this->filter_size_x || (*pit)->h != this->filter_size_y)
+				continue;
+
+			// Check if the current patch is in the current ROI of this detector
+			int pyrw = it->second->w;
+			int pyrh = it->second->h;
+			Rect roi((int)(this->roiInImg.left*coef), (int)(this->roiInImg.top*coef), (int)(this->roiInImg.right*coef), (int)(this->roiInImg.bottom*coef));
+			int h_prim = std::min(pyrh-filter_size_y/2,roi.bottom);
+			int w_prim = std::min(pyrw-filter_size_x/2,roi.right);
+			bool isInRoi = false;
+			if ((*pit)->c.y_py >= std::max(roi.top,filter_size_y/2) && (*pit)->c.y_py < h_prim)
+				if ((*pit)->c.x_py >= std::max(filter_size_x/2,roi.left) && (*pit)->c.x_py < w_prim)
+					isInRoi = true;
+			//
+			if(isInRoi) {
+				passed = classify((*pit));	// We could do the whole classification in a separate loop over the pyramids now. But this is ok for now. (maybe even faster)
+				if(passed) {
+					candidates.push_back((*pit)); // SVM&WVM only added if feature, SVR/WVR always added
+				}
+			}/* else {
+			// Patch is not in the current ROI of this detector, go on
+				std::cout << "Just to check - if this occurs in the future, doublecheck the code here :-)" << std::endl;
+			}*/
 		}
 
 	}
@@ -395,7 +449,7 @@ std::vector<FdPatch*> VDetectorVectorMachine::detectOnPatchvec(std::vector<FdPat
 		if((*itr)->w != this->filter_size_x || (*itr)->h != this->filter_size_y) {
 			if(!warningPrinted) {
 				std::cout << "[VDetVecMach] Warning: This detector has another filter_size (w=" << this->filter_size_x << ", h=" << this->filter_size_y << ") than the input patches (w=" << (*itr)->w << ", h=" << (*itr)->w << "). I will resize the patches to match the detector size. Although this works, it is slower, and there might be a decrease in result quality." << std::endl;
-				std::cout << "[VDetVecMach] Not yet implemented!" << std::endl;
+				std::cout << "[VDetVecMach] Not yet implemented - stop now!" << std::endl;
 				warningPrinted = true;
 			}
 			//resize
@@ -450,6 +504,41 @@ FdPatch* VDetectorVectorMachine::insertPatchIntoPyramid(Pyramid* pyramid,
 	}
 	return patch;
 }
+
+
+std::vector<cv::Mat> VDetectorVectorMachine::getProbabilityMaps( FdImage* img )
+{
+	std::vector<cv::Mat> probabilityMaps;	// TODO: Make this a member variable. Then, if empty, calculate. If not empty, directly return it.
+
+	// TODO: Do I want to return the probability map of the current ROI, or of all patches the detector has calculated?
+	//			Depends... Usually probably all. But when using a model for the FFPs for only the current face-box, then be careful to only use the ROI!
+
+	//for(int current_scale = 0; current_scale < this->numSubsamplingLevels; current_scale++) {// TODO: Careful: numSubsamplingLevels is not necessarily the actual number of available pyramids. if the image is too small, it may be less...
+	for(int current_scale = this->numSubsamplingLevels-1; current_scale >=0 ; current_scale--) { // For each pyramid, go through the patchlist and classify
+
+		PyramidMap::iterator it = img->pyramids.find(this->pyramid_widths[current_scale]);
+		float coef = this->subsampfac[this->pyramid_widths[current_scale]];
+
+		cv::Mat currentProbabilityMap(it->second->h, it->second->w, CV_32FC1, cv::Scalar::all(0.0f));
+
+		FdPatchSet::iterator pit = it->second->patches.begin();
+		//unsigned int count=0;
+		for(; pit != it->second->patches.end(); pit++) {
+			if ((*pit)->certainty.count(this->getIdentifier())!=0) {
+				currentProbabilityMap.at<float>((*pit)->c.y_py, (*pit)->c.x_py) = (*pit)->certainty[this->getIdentifier()];
+				//++count;
+			}
+		}
+		probabilityMaps.push_back(currentProbabilityMap);
+
+		std::ostringstream ss;
+		ss << "w" << currentProbabilityMap.cols;
+		Logger->LogImgDetectorProbabilityMap(&currentProbabilityMap, img->filename, this->getIdentifier(), ss.str());
+	}
+
+	return probabilityMaps;
+}
+
 
 int VDetectorVectorMachine::extractAndHistEq64(const Pyramid* pyr, FdPatch* fp)
 {

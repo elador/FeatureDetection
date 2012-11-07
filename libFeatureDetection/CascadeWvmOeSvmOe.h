@@ -14,10 +14,14 @@ public:
 
 	int initForImage(FdImage*);
 	int detectOnImage(FdImage*);
+	void setRoiInImage(Rect);	// Set the in-image ROI for all cascade stages, and overwrite the values set by reading the config file.
 
 	DetectorSVM *svm;
 	DetectorWVM *wvm;
 	OverlapElimination *oe;
 
 	std::vector<FdPatch*> candidates;
+
+	void setIdentifier(std::string identifier);
+
 };

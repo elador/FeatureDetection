@@ -30,7 +30,8 @@ cv::vector<cv::Vec3f> CircleDetector::detectOnImage(FdImage* img)
 				/*	 in    out_vec  method             res minDistBetwCenters upperCanny howManyVotesToBeCircle minradius     maxradius	*/
 	
 	this->circles = circles;
-	// LOST Logger->LogImgCircleDetectorCandidates(img, circles, this->identifier);
+	Logger->LogImgCircleDetectorCandidates(img, circles, this->identifier);
+	
 	return circles;
 }
 
@@ -96,20 +97,18 @@ cv::Mat CircleDetector::getProbabilityMap(FdImage* img)
 			ikx++;
 		}
 
-		/* Debug output: Each individual probability map.
-		cv::Mat out2;
+		/* Debug output: Each individual probability map. */
+		/*cv::Mat out2;
 		cv::Mat tmp2 = probMap.clone();
 		tmp2 *= 255.0;
 		tmp2.convertTo(out2, CV_8U);
-		std::ostringstream oss;
-		oss << "out\\probMap" << i << "b.png";
-		cv::imwrite(oss.str(), out2);
-		oss.str("");
-		*/
+		std::ostringstream oss2;
+		oss2 << "out\\probMap" << i << "b.png";
+		cv::imwrite(oss2.str(), out2);
+		oss2.str("");*/
 
 	}
-	Logger->setVerboseLevelImages(2);
-	// LOST Logger->LogImgCircleDetectorProbabilityMap(&probMap, img->filename, this->getIdentifier());
+	Logger->LogImgDetectorProbabilityMap(&probMap, img->filename, this->getIdentifier());
 	return probMap;
 
 }

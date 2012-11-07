@@ -1,9 +1,9 @@
 #pragma once
 #include "StdImage.h"
 
-#include "opencv2/core/core.hpp"
-
+#include <vector>
 #include <map>
+#include "opencv2/core/core.hpp"
 
 class Pyramid;
 
@@ -18,7 +18,7 @@ public:
 	int load(const std::string);
 	int load(const cv::Mat*);
 
-	int createPyramid(int, int*, std::string);
+	int createPyramid(int, std::vector<int>, std::string);
 
 	cv::Mat data_matbgr;
 	cv::Mat data_matgray;

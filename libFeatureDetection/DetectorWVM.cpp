@@ -99,17 +99,24 @@ bool DetectorWVM::classify(FdPatch* fp)
 			std::cout << "[DetectorWVM] An element 'fout' already exists for this detector, you classified the same patch twice. We can't circumvent this for now." << std::endl;
 		}
 	}
-	std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]))));
-	if(certainty_insert.second == false) {
-		if(Logger->getVerboseLevelText()>=4) {
-			std::cout << "[DetectorWVM] An element 'certainty' already exists for this detector, you classified the same patch twice. We can't circumvent this for now." << std::endl;
-		}
-	}
+
 	//fp->certainty = 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]));
 	// TODO: filter statistics, nDropedOutAsNonFace[filter_level]++;
 	if(filter_level+1 == this->nLinFilters && fout >= this->lin_hierar_thresh[filter_level]) {
 	//	fp->writePNG("pos.png");
+		std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]))));
+		if(certainty_insert.second == false) {
+			if(Logger->getVerboseLevelText()>=4) {
+				std::cout << "[DetectorWVM] An element 'certainty' already exists for this detector, you classified the same patch twice. We can't circumvent this for now." << std::endl;
+			}
+		}
 		return true;
+	}
+	std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 0.0f));
+	if(certainty_insert.second == false) {
+		if(Logger->getVerboseLevelText()>=4) {
+			std::cout << "[DetectorWVM] An element 'certainty' already exists for this detector, you classified the same patch twice. We can't circumvent this for now." << std::endl;
+		}
 	}
 	return false;
 }
@@ -324,14 +331,14 @@ int DetectorWVM::load(const std::string filename)
 	//ROI: left, top, right, bottom
     // 0 0 0 0 (ganze Bild), -1 -1 -1 -1 (bzw. ganze FD-ROI) 
 	int v=1;
-	if (!configReader->getInt("FD.roi.#0",&v))		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.roi.#0', nehme Default: " << this->roi.left << std::endl;
-	else										this->roi.left=v;
-	if (!configReader->getInt("FD.roi.#1",&v))		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.roi.#1', nehme Default: " << this->roi.top << std::endl;
-	else										this->roi.top=v;
-	if (!configReader->getInt("FD.roi.#2",&v))		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.roi.#2', nehme Default: " << this->roi.right << std::endl;
-	else										this->roi.right=v;
-	if (!configReader->getInt("FD.roi.#3",&v))		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.roi.#3', nehme Default: " << this->roi.bottom << std::endl;
-	else										this->roi.bottom=v;
+	if (!configReader->getInt("FD.roi.#0",&v))		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.roi.#0', nehme Default: " << this->roiDistFromBorder.left << std::endl;
+	else										this->roiDistFromBorder.left=v;
+	if (!configReader->getInt("FD.roi.#1",&v))		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.roi.#1', nehme Default: " << this->roiDistFromBorder.top << std::endl;
+	else										this->roiDistFromBorder.top=v;
+	if (!configReader->getInt("FD.roi.#2",&v))		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.roi.#2', nehme Default: " << this->roiDistFromBorder.right << std::endl;
+	else										this->roiDistFromBorder.right=v;
+	if (!configReader->getInt("FD.roi.#3",&v))		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.roi.#3', nehme Default: " << this->roiDistFromBorder.bottom << std::endl;
+	else										this->roiDistFromBorder.bottom=v;
 	
 	//Minimale Gesichtsoehe in Pixel 
 	if (!configReader->getInt("FD.face_size_min",&this->subsamplingMinHeight))

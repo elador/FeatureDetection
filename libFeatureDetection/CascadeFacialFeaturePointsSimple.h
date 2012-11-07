@@ -10,9 +10,10 @@ public:
 
 	int initForImage(FdImage*);
 	int detectOnImage(FdImage*);
+	void setRoiInImage(Rect);	// Set the in-image ROI for all feature classifiers, and overwrite the values set by reading the config file.
 
-	CascadeWvmOeSvmOe *leye;
 	CascadeWvmOeSvmOe *reye;
+	CascadeWvmOeSvmOe *leye;
 	CascadeWvmOeSvmOe *nosetip;
 	CascadeWvmOeSvmOe *lmouth;
 	CascadeWvmOeSvmOe *rmouth;
