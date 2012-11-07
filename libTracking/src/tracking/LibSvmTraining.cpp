@@ -12,8 +12,9 @@
 
 namespace tracking {
 
-LibSvmTraining::LibSvmTraining(shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation) :
-		staticNegativeSamples(), sigmoidParameterComputation(sigmoidParameterComputation) {}
+LibSvmTraining::LibSvmTraining(shared_ptr<LibSvmParameterBuilder> parameterBuilder,
+		shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation) : staticNegativeSamples(),
+				parameterBuilder(parameterBuilder), sigmoidParameterComputation(sigmoidParameterComputation) {}
 
 LibSvmTraining::~LibSvmTraining() {
 	freeSamples(staticNegativeSamples);
@@ -23,6 +24,10 @@ void LibSvmTraining::freeSamples(std::vector<struct svm_node *>& samples) {
 	for (std::vector<struct svm_node *>::iterator sit = samples.begin(); sit < samples.end(); ++sit)
 		delete[] (*sit);
 	samples.clear();
+}
+
+struct svm_parameter *LibSvmTraining::createParameters(unsigned int positiveCount, unsigned int negativeCount) {
+	return parameterBuilder->createParameters(positiveCount, negativeCount);
 }
 
 void LibSvmTraining::changeSvmParameters(ChangableDetectorSvm& svm, struct svm_model *model,
@@ -47,8 +52,14 @@ void LibSvmTraining::changeSvmParameters(ChangableDetectorSvm& svm, struct svm_m
 	double gamma = model->param.gamma / (255 * 255); // because the support vectors were multiplied by 255
 	std::pair<double, double> sigmoidParams = sigmoidParameterComputation->computeSigmoidParameters(svm, model,
 			problem->x, positiveCount, problem->x + positiveCount, negativeCount);
-	svm.changeRbfParameters(model->l, supportVectors, alphas, rho, svm.getThreshold(), gamma,
-			(float)sigmoidParams.first, (float)sigmoidParams.second);
+	if (model->param.kernel_type == RBF)
+		svm.changeRbfParameters(model->l, supportVectors, alphas, rho, svm.getThreshold(), gamma,
+				(float)sigmoidParams.first, (float)sigmoidParams.second);
+	else if (model->param.kernel_type == POLY)
+		svm.changePolyParameters(model->l, supportVectors, alphas, rho, svm.getThreshold(), model->param.degree,
+				model->param.coef0 / gamma, 1 / gamma, (float)sigmoidParams.first, (float)sigmoidParams.second);
+	else
+		throw "Kernel type not supported by LibSvmTraining (has to be RBF or POLY)";
 }
 
 void LibSvmTraining::readStaticNegatives(const std::string negativesFilename, int maxNegatives) {

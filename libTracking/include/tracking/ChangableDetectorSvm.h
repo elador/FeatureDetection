@@ -67,6 +67,24 @@ public:
 	 */
 	void changeRbfParameters(int numSv, unsigned char** supportVectors, float* alphas, float rho, float threshold,
 			float gamma, float probParamA, float probParamB);
+
+	/**
+	 * Changes the parameters of this SVM for classification with the polynomial kernel
+	 * k(x, x') = ((x * x' + coef) / divisor)^degree.
+	 *
+	 * @param[in] numSv The number of support vectors.
+	 * @param[in] supportVectors The support vectors.
+	 * @param[in] alphas The weights of the support vectors.
+	 * @param[in] rho The bias of the separating hyperplane.
+	 * @param[in] threshold Threshold for the SVM output for adjusting the operating point.
+	 * @param[in] degree The degree of the polynomial.
+	 * @param[in] coef The addition term.
+	 * @param[in] divisor The divisor.
+	 * @param[in] probParamA Parameter A of the probabilistic output equation (sigmoid function).
+	 * @param[in] probParamB Parameter B of the probabilistic output equation (sigmoid function).
+	 */
+	void changePolyParameters(int numSv, unsigned char** supportVectors, float* alphas, float rho, float threshold,
+			int degree, float coef, float divisor, float probParamA, float probParamB);
 };
 
 } /* namespace tracking */

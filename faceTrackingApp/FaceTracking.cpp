@@ -19,6 +19,10 @@
 #include "tracking/PositionDependentLearningStrategy.h"
 #include "tracking/SelfLearningWvmSvmModel.h"
 #include "tracking/LearningWvmSvmModel.h"
+#include "tracking/LibSvmParameterBuilder.h"
+#include "tracking/RbfLibSvmParameterBuilder.h"
+#include "tracking/PolyLibSvmParameterBuilder.h"
+#include "tracking/SigmoidParameterComputation.h"
 #include "tracking/ApproximateSigmoidParameterComputation.h"
 #include "tracking/FixedApproximateSigmoidParameterComputation.h"
 #include "OverlapElimination.h"
@@ -58,8 +62,15 @@ FaceTracking::~FaceTracking() {}
 
 void FaceTracking::initTracking() {
 	// create SVM training
-//	svmTraining = make_shared<FastSvmTraining>(10, 10, 80, make_shared<FixedApproximateSigmoidParameterComputation>());
-	svmTraining = make_shared<FrameBasedSvmTraining>(5, 4, make_shared<FixedApproximateSigmoidParameterComputation>());
+	shared_ptr<LibSvmParameterBuilder> svmParameterBuilder = make_shared<RbfLibSvmParameterBuilder>(0.05);
+//	shared_ptr<LibSvmParameterBuilder> svmParameterBuilder = make_shared<PolyLibSvmParameterBuilder>(2, 1, 1);
+
+	shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation = make_shared<FixedApproximateSigmoidParameterComputation>();
+//	shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation = make_shared<FastApproximateSigmoidParameterComputation>();
+//	shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation = make_shared<ApproximateSigmoidParameterComputation>();
+
+//	svmTraining = make_shared<FastSvmTraining>(7, 14, 50, svmParameterBuilder, sigmoidParameterComputation);
+	svmTraining = make_shared<FrameBasedSvmTraining>(5, 4, svmParameterBuilder, sigmoidParameterComputation);
 //	svmTraining->readStaticNegatives(negativesFile, 200);
 
 	// create measurement model
@@ -159,7 +170,7 @@ void FaceTracking::drawDebug(cv::Mat& image) {
 			cv::circle(image, cv::Point(sit->getX(), sit->getY()), 3, color);
 		}
 	}
-	cv::Scalar& svmIndicatorColor = measurementModel->isUsingDynamicModel() ? green : red;
+	cv::Scalar& svmIndicatorColor = measurementModel->wasUsingDynamicModel() ? green : red;
 	cv::circle(image, cv::Point(10, 10), 5, svmIndicatorColor, -1);
 }
 
@@ -201,7 +212,7 @@ void FaceTracking::run() {
 			delete myImage;
 			image = frame;
 			drawDebug(image);
-			cv::Scalar& color = measurementModel->isUsingDynamicModel() ? green : red;
+			cv::Scalar& color = measurementModel->wasUsingDynamicModel() ? green : red;
 			if (face)
 				cv::rectangle(image, cv::Point(face->getX(), face->getY()),
 						cv::Point(face->getX() + face->getWidth(), face->getY() + face->getHeight()), color);

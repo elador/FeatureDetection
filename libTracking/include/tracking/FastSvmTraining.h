@@ -9,6 +9,8 @@
 #define FASTSVMTRAINING_H_
 
 #include "tracking/LibSvmTraining.h"
+#include "tracking/LibSvmParameterBuilder.h"
+#include "tracking/RbfLibSvmParameterBuilder.h"
 #include "tracking/SigmoidParameterComputation.h"
 #include "tracking/FastApproximateSigmoidParameterComputation.h"
 #include "svm.h"
@@ -41,9 +43,11 @@ public:
 	 * @param[in] minPosCount The minimum amount of positive training samples necessary for training (default ist 10).
 	 * @param[in] minNegCount The minimum amount of negative training samples necessary for training (default ist 10).
 	 * @param[in] maxCount The maximum amount of support vectors used for training (default is 50).
+	 * @param[in] parameterBuilder The libSVM parameter builder.
 	 * @param[in] sigmoidParameterComputation The computation of the sigmoid parameters.
 	 */
 	explicit FastSvmTraining(unsigned int minPosCount = 10, unsigned int minNegCount = 10, unsigned int maxCount = 50,
+			shared_ptr<LibSvmParameterBuilder> parameterBuilder = make_shared<RbfLibSvmParameterBuilder>(),
 			shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation
 					= make_shared<FastApproximateSigmoidParameterComputation>());
 	~FastSvmTraining();
@@ -83,13 +87,6 @@ private:
 	 * @return True if the training was successful, false otherwise.
 	 */
 	bool train(ChangableDetectorSvm& svm);
-
-	/**
-	 * Creates the libSVM parameters.
-	 *
-	 * @return The libSVM parameters.
-	 */
-	struct svm_parameter *createParameters();
 
 	/**
 	 * Creates the libSVM problem.
@@ -136,6 +133,15 @@ private:
 	bool areVectorsEqual(struct svm_node *v1, struct svm_node *v2);
 
 	/**
+	 * Determines the coefficients (alphas) to the given support vectors.
+	 *
+	 * @param[in] supportVectors The support vectors.
+	 * @param[in] model The libSVM model.
+	 * @return The coefficients of the support vectors.
+	 */
+	std::vector<double> getCoefficients(std::vector<struct svm_node *>& supportVectors, struct svm_model *model);
+
+	/**
 	 * Computes the distance to the separating hyperplane of each sample.
 	 *
 	 * @param[in] samples The samples.
@@ -145,7 +151,15 @@ private:
 	std::vector<double> computeHyperplaneDistances(std::vector<struct svm_node *>& samples, struct svm_model *model);
 
 	/**
-	 * Determines the maximum element.
+	 * Determines the smallest element.
+	 *
+	 * @param[in] values The values.
+	 * @return A pair containing the index and value of the min element.
+	 */
+	std::pair<unsigned int, double> getMin(std::vector<double> values);
+
+	/**
+	 * Determines the biggest element.
 	 *
 	 * @param[in] values The values.
 	 * @return A pair containing the index and value of the max element.

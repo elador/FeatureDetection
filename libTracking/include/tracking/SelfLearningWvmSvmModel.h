@@ -71,8 +71,12 @@ public:
 
 	void update(FdImage* image, std::vector<Sample>& positiveSamples, std::vector<Sample>& negativeSamples);
 
+	inline bool wasUsingDynamicModel() {
+		return wasUsingDynamicSvm;
+	}
+
 	inline bool isUsingDynamicModel() {
-		return usingDynamicSvm;
+		return useDynamicSvm;
 	}
 
 private:
@@ -90,7 +94,8 @@ private:
 	shared_ptr<ChangableDetectorSvm> dynamicSvm;  ///< The dynamic SVM that will be re-trained.
 	shared_ptr<OverlapElimination> oe;            ///< The overlap elimination algorithm.
 	shared_ptr<SvmTraining> svmTraining;          ///< The SVM training algorithm.
-	bool usingDynamicSvm;     ///< Flag that indicates whether the dynamic SVM is used.
+	bool useDynamicSvm;      ///< Flag that indicates whether the dynamic SVM should be used in the next evaluation.
+	bool wasUsingDynamicSvm; ///< Flag that indicates whether the dynamic SVM was used for the previous evaluation.
 	double positiveThreshold; ///< The threshold for patches to be used as positive samples (must be exceeded).
 	double negativeThreshold; ///< The threshold for patches to be used as negative samples (must fall below).
 	std::vector<FdPatch*> positiveTrainingPatches; ///< The positive training patches for the next update.

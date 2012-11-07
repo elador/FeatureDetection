@@ -23,10 +23,18 @@ public:
 	virtual void evaluate(FdImage* image, std::vector<Sample>& samples) = 0;
 
 	/**
-	 * Determines whether the updated dynamic model is used for evaluation (as opposed to the
-	 * initial default model it may fall back to).
+	 * Determines whether the updated dynamic model was used for the previous evaluation
+	 * (as opposed to the initial default model it may fall back to).
 	 *
-	 * @return True if the updated dynamic model is used for evaluation, false otherwise.
+	 * @return True if the updated dynamic model was used for evaluation, false otherwise.
+	 */
+	virtual bool wasUsingDynamicModel() = 0;
+
+	/**
+	 * Determines whether the updated dynamic model will be used for the next evaluation
+	 * (as opposed to the initial default model it may fall back to).
+	 *
+	 * @return True if the updated dynamic model will be used for evaluation, false otherwise.
 	 */
 	virtual bool isUsingDynamicModel() = 0;
 

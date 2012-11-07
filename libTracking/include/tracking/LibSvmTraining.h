@@ -9,12 +9,16 @@
 #define LIBSVMTRAINING_H_
 
 #include "tracking/SvmTraining.h"
+#include "tracking/LibSvmParameterBuilder.h"
+#include "tracking/RbfLibSvmParameterBuilder.h"
 #include "tracking/SigmoidParameterComputation.h"
 #include "tracking/FastApproximateSigmoidParameterComputation.h"
 #include "svm.h"
 #include "boost/shared_ptr.hpp"
 #include "boost/make_shared.hpp"
 #include <vector>
+
+struct svm_parameter;
 
 using boost::shared_ptr;
 using boost::make_shared;
@@ -30,10 +34,11 @@ public:
 	/**
 	 * Constructs a new libSVM based SVM training.
 	 *
+	 * @param[in] parameterBuilder The libSVM parameter builder.
 	 * @param[in] sigmoidParameterComputation The computation of the sigmoid parameters.
 	 */
-	explicit LibSvmTraining(shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation
-			= make_shared<FastApproximateSigmoidParameterComputation>());
+	explicit LibSvmTraining(shared_ptr<LibSvmParameterBuilder> parameterBuilder = make_shared<RbfLibSvmParameterBuilder>(),
+			shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation = make_shared<FastApproximateSigmoidParameterComputation>());
 
 	virtual ~LibSvmTraining();
 
@@ -60,6 +65,15 @@ protected:
 	void freeSamples(std::vector<struct svm_node *>& samples);
 
 	/**
+	 * Creates the libSVM parameters. In order to free their memory, svm_destroy_param has to be called.
+	 *
+	 * @param[in] positiveCount The amount of positive samples.
+	 * @param[in] negativeCount The amount of negative samples.
+	 * @return The libSVM parameters.
+	 */
+	struct svm_parameter *createParameters(unsigned int positiveCount, unsigned int negativeCount);
+
+	/**
 	 * Changes the parameters of an SVM given a libSVM model.
 	 *
 	 * @param[in] The SVM whose parameters should be changed.
@@ -75,6 +89,7 @@ protected:
 
 private:
 
+	shared_ptr<LibSvmParameterBuilder> parameterBuilder;                 ///< The libSVM parameter builder.
 	shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation; ///< The computation of the sigmoid parameters.
 };
 

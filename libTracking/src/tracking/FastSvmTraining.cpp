@@ -9,12 +9,15 @@
 #include "FdPatch.h"
 #include <iostream>
 #include <cmath>
+#include <limits>
 
 namespace tracking {
 
 FastSvmTraining::FastSvmTraining(unsigned int minPosCount, unsigned int minNegCount, unsigned int maxCount,
-		shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation) : LibSvmTraining(sigmoidParameterComputation),
-				minPosCount(minPosCount), minNegCount(minNegCount), maxCount(maxCount), positiveSamples(), negativeSamples() {}
+		shared_ptr<LibSvmParameterBuilder> parameterBuilder,
+		shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation) :
+				LibSvmTraining(parameterBuilder, sigmoidParameterComputation), minPosCount(minPosCount),
+				minNegCount(minNegCount), maxCount(maxCount), positiveSamples(), negativeSamples() {}
 
 FastSvmTraining::~FastSvmTraining() {
 	freeSamples(positiveSamples);
@@ -28,6 +31,10 @@ void FastSvmTraining::reset(ChangableDetectorSvm& svm) {
 
 bool FastSvmTraining::retrain(ChangableDetectorSvm& svm, const std::vector<FdPatch*>& positivePatches,
 		const std::vector<FdPatch*>& negativePatches) {
+	if (positivePatches.empty() && negativePatches.empty()) {
+		reset(svm);
+		return false;
+	}
 	addSamples(positivePatches, negativePatches);
 	if (isTrainingReasonable())
 		return train(svm);
@@ -60,7 +67,8 @@ bool FastSvmTraining::isTrainingReasonable() const {
 }
 
 bool FastSvmTraining::train(ChangableDetectorSvm& svm) {
-	struct svm_parameter *param = createParameters();
+	struct svm_parameter *param = createParameters(
+			positiveSamples.size(), negativeSamples.size() + staticNegativeSamples.size());
 	struct svm_problem *problem = createProblem();
 	const char* message = svm_check_parameter(problem, param);
 	if (message != 0) {
@@ -84,27 +92,6 @@ bool FastSvmTraining::train(ChangableDetectorSvm& svm) {
 	delete[] problem->y;
 	delete problem;
 	return true;
-}
-
-struct svm_parameter *FastSvmTraining::createParameters() {
-	struct svm_parameter *param = new struct svm_parameter;
-	param->svm_type = C_SVC;
-	param->kernel_type = RBF;
-	param->degree = 0;
-	param->gamma = 0.05;
-	param->cache_size = 100;
-	param->eps = 1e-3;
-	param->C = 1;
-	param->nr_weight = 2;
-	param->weight_label = (int*)malloc(2 * sizeof(int));
-	param->weight_label[0] = +1;
-	param->weight_label[1] = -1;
-	param->weight = (double*)malloc(2 * sizeof(double));
-	param->weight[0] = positiveSamples.size();
-	param->weight[1] = negativeSamples.size() + staticNegativeSamples.size();
-	param->shrinking = 0;
-	param->probability = 0;
-	return param;
 }
 
 struct svm_problem *FastSvmTraining::createProblem() {
@@ -134,32 +121,60 @@ struct svm_problem *FastSvmTraining::createProblem() {
 }
 
 std::vector<struct svm_node *> FastSvmTraining::retainSupportVectors(struct svm_model *model) {
-	positiveSamples = extractSupportVectors(positiveSamples, model, model->nSV[0]);
-	negativeSamples = extractSupportVectors(negativeSamples, model, model->nSV[1]);
 	std::vector<struct svm_node *> removedSupportVectors;
 	unsigned int count = positiveSamples.size() + negativeSamples.size();
-	if (count > maxCount) {
-		std::vector<double> positiveDistances = computeHyperplaneDistances(positiveSamples, model);
-		std::vector<double> negativeDistances = computeHyperplaneDistances(negativeSamples, model);
-		std::pair<unsigned int, double> maxPositive = getMax(positiveDistances);
-		std::pair<unsigned int, double> maxNegative = getMax(negativeDistances);
-		do {
-			if (maxPositive.second > maxNegative.second) {
-				std::vector<struct svm_node *>::iterator sit = positiveSamples.begin() + maxPositive.first;
-				removedSupportVectors.push_back(*sit);
-				positiveSamples.erase(sit);
-				positiveDistances.erase(positiveDistances.begin() + maxPositive.first);
-				maxPositive = getMax(positiveDistances);
-			} else {
-				std::vector<struct svm_node *>::iterator sit = negativeSamples.begin() + maxNegative.first;
-				removedSupportVectors.push_back(*sit);
-				negativeSamples.erase(sit);
-				negativeDistances.erase(negativeDistances.begin() + maxNegative.first);
-				maxNegative = getMax(negativeDistances);
-			}
-			--count;
-		} while (count > maxCount);
-	}
+	if (count <= maxCount)
+		return removedSupportVectors;
+	positiveSamples = extractSupportVectors(positiveSamples, model, model->nSV[0]);
+	negativeSamples = extractSupportVectors(negativeSamples, model, model->nSV[1]);
+	count = positiveSamples.size() + negativeSamples.size();
+	if (count <= maxCount)
+		return removedSupportVectors;
+	// TODO test for using alphas instead of hyperplane distances for explusion
+//	std::vector<double> positiveAlphas = getCoefficients(positiveSamples, model);
+//	std::vector<double> negativeAlphas = getCoefficients(negativeSamples, model);
+//	std::pair<unsigned int, double> minPositive = getMin(positiveAlphas);
+//	std::pair<unsigned int, double> minNegative = getMin(negativeAlphas);
+//	do {
+//		// TODO parameters for values 3 and 5
+//		bool insufficientNegativeSamples = 3 * positiveSamples.size() > negativeSamples.size();
+//		bool insufficientPositiveSamples = 5 * positiveSamples.size() < negativeSamples.size();
+//		if (insufficientNegativeSamples || (!insufficientPositiveSamples && minPositive.second < minNegative.second)) {
+////		if (minPositive.second < minNegative.second) {
+//			std::vector<struct svm_node *>::iterator sit = positiveSamples.begin() + minPositive.first;
+//			removedSupportVectors.push_back(*sit);
+//			positiveSamples.erase(sit);
+//			positiveAlphas.erase(positiveAlphas.begin() + minPositive.first);
+//			minPositive = getMin(positiveAlphas);
+//		} else {
+//			std::vector<struct svm_node *>::iterator sit = negativeSamples.begin() + minNegative.first;
+//			removedSupportVectors.push_back(*sit);
+//			negativeSamples.erase(sit);
+//			negativeAlphas.erase(negativeAlphas.begin() + minNegative.first);
+//			minNegative = getMin(negativeAlphas);
+//		}
+//		--count;
+//	} while (count > maxCount);
+	std::vector<double> positiveDistances = computeHyperplaneDistances(positiveSamples, model);
+	std::vector<double> negativeDistances = computeHyperplaneDistances(negativeSamples, model);
+	std::pair<unsigned int, double> maxPositive = getMax(positiveDistances);
+	std::pair<unsigned int, double> maxNegative = getMax(negativeDistances);
+	do {
+		if (maxPositive.second > maxNegative.second) {
+			std::vector<struct svm_node *>::iterator sit = positiveSamples.begin() + maxPositive.first;
+			removedSupportVectors.push_back(*sit);
+			positiveSamples.erase(sit);
+			positiveDistances.erase(positiveDistances.begin() + maxPositive.first);
+			maxPositive = getMax(positiveDistances);
+		} else {
+			std::vector<struct svm_node *>::iterator sit = negativeSamples.begin() + maxNegative.first;
+			removedSupportVectors.push_back(*sit);
+			negativeSamples.erase(sit);
+			negativeDistances.erase(negativeDistances.begin() + maxNegative.first);
+			maxNegative = getMax(negativeDistances);
+		}
+		--count;
+	} while (count > maxCount);
 	return removedSupportVectors;
 }
 
@@ -185,6 +200,22 @@ bool FastSvmTraining::isSupportVector(struct svm_node *vector, struct svm_model 
 	return false;
 }
 
+// TODO only used for alphas
+std::vector<double> FastSvmTraining::getCoefficients(std::vector<struct svm_node *>& supportVectors, struct svm_model *model) {
+	std::vector<double> coefficients;
+	coefficients.reserve(supportVectors.size());
+	for (std::vector<struct svm_node *>::iterator sit = supportVectors.begin(); sit < supportVectors.end(); ++sit) {
+		for (int i = 0; i < model->l; ++i) {
+			if (model->SV[i] == *sit) {
+				coefficients.push_back(fabs(model->sv_coef[0][i]));
+				break;
+			}
+		}
+	}
+	return coefficients;
+}
+
+// TODO only used for hyperplane distances
 std::vector<double> FastSvmTraining::computeHyperplaneDistances(
 		std::vector<struct svm_node *>& samples, struct svm_model *model) {
 	std::vector<double> distances;
@@ -198,6 +229,20 @@ std::vector<double> FastSvmTraining::computeHyperplaneDistances(
 	return distances;
 }
 
+// TODO only used for alphas
+std::pair<unsigned int, double> FastSvmTraining::getMin(std::vector<double> values) {
+	unsigned int minIndex = -1;
+	double minValue = std::numeric_limits<double>::max();
+	for (unsigned int i = 0; i < values.size(); ++i) {
+		if (values[i] < minValue) {
+			minIndex = i;
+			minValue = values[i];
+		}
+	}
+	return std::make_pair(minIndex, minValue);
+}
+
+// TODO only used for hyperplane distances
 std::pair<unsigned int, double> FastSvmTraining::getMax(std::vector<double> values) {
 	unsigned int maxIndex = -1;
 	double maxValue = 0;

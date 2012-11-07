@@ -31,4 +31,24 @@ void ChangableDetectorSvm::changeRbfParameters(int numSv, unsigned char** suppor
 	this->posterior_svm[1] = probParamB;
 }
 
+void ChangableDetectorSvm::changePolyParameters(int numSv, unsigned char** supportVectors, float* alphas, float rho,
+		float threshold, int degree, float coef, float divisor, float probParamA, float probParamB) {
+	for (int i = 0; i < this->numSV; ++i)
+		delete[] this->support[i];
+	delete[] this->support;
+	delete[] this->alpha;
+
+	this->numSV = numSv;
+	this->support = supportVectors;
+	this->alpha = alphas;
+	this->nonlin_threshold = rho;
+	this->limit_reliability = threshold;
+	this->nonLinType = 1;
+	this->polyPower = degree;
+	this->basisParam = coef;
+	this->divisor = divisor;
+	this->posterior_svm[0] = probParamA;
+	this->posterior_svm[1] = probParamB;
+}
+
 } /* namespace tracking */

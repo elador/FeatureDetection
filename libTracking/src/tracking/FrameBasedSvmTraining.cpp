@@ -14,14 +14,16 @@
 namespace tracking {
 
 FrameBasedSvmTraining::FrameBasedSvmTraining(int frameLength, float minAvgSamples,
+		shared_ptr<LibSvmParameterBuilder> parameterBuilder,
 		shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation) :
-				LibSvmTraining(sigmoidParameterComputation), frameLength(frameLength),
+				LibSvmTraining(parameterBuilder, sigmoidParameterComputation), frameLength(frameLength),
 				minAvgSamples(minAvgSamples), positiveSamples(frameLength),
 				negativeSamples(frameLength), oldestEntry(0) {}
 
 FrameBasedSvmTraining::FrameBasedSvmTraining(int frameLength, float minAvgSamples, std::string negativesFilename,
-		int negatives, shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation) :
-				LibSvmTraining(sigmoidParameterComputation), frameLength(frameLength),
+		int negatives, shared_ptr<LibSvmParameterBuilder> parameterBuilder,
+		shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation) :
+				LibSvmTraining(parameterBuilder, sigmoidParameterComputation), frameLength(frameLength),
 				minAvgSamples(minAvgSamples), positiveSamples(frameLength),
 				negativeSamples(frameLength), oldestEntry(0) {
 	readStaticNegatives(negativesFilename, negatives);
@@ -126,27 +128,6 @@ bool FrameBasedSvmTraining::train(ChangableDetectorSvm& svm) {
 	delete[] problem->y;
 	delete problem;
 	return true;
-}
-
-struct svm_parameter *FrameBasedSvmTraining::createParameters(unsigned int positiveCount, unsigned int negativeCount) {
-	struct svm_parameter *param = new struct svm_parameter;
-	param->svm_type = C_SVC;
-	param->kernel_type = RBF;
-	param->degree = 0;
-	param->gamma = 0.05;
-	param->cache_size = 100;
-	param->eps = 1e-3;
-	param->C = 1;
-	param->nr_weight = 2;
-	param->weight_label = (int*)malloc(2 * sizeof(int));
-	param->weight_label[0] = +1;
-	param->weight_label[1] = -1;
-	param->weight = (double*)malloc(2 * sizeof(double));
-	param->weight[0] = positiveCount;
-	param->weight[1] = negativeCount;
-	param->shrinking = 0;
-	param->probability = 0;
-	return param;
 }
 
 struct svm_problem *FrameBasedSvmTraining::createProblem(unsigned int count) {

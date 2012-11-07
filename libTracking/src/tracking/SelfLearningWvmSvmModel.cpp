@@ -31,7 +31,8 @@ SelfLearningWvmSvmModel::SelfLearningWvmSvmModel(shared_ptr<VDetectorVectorMachi
 				dynamicSvm(dynamicSvm),
 				oe(oe),
 				svmTraining(svmTraining),
-				usingDynamicSvm(false),
+				useDynamicSvm(false),
+				wasUsingDynamicSvm(false),
 				positiveThreshold(positiveThreshold),
 				negativeThreshold(negativeThreshold),
 				positiveTrainingPatches(),
@@ -43,7 +44,8 @@ SelfLearningWvmSvmModel::SelfLearningWvmSvmModel(std::string configFilename, std
 		dynamicSvm(make_shared<ChangableDetectorSvm>()),
 		oe(make_shared<OverlapElimination>()),
 		svmTraining(boost::make_shared<FrameBasedSvmTraining>(5, 4, negativesFilename, 200)),
-		usingDynamicSvm(false),
+		useDynamicSvm(false),
+		wasUsingDynamicSvm(false),
 		positiveThreshold(0.85),
 		negativeThreshold(0.4) {
 	wvm->load(configFilename);
@@ -101,10 +103,10 @@ void SelfLearningWvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samp
 	positiveTrainingPatches.clear();
 	negativeTrainingPatches.clear();
 	if (!remainingPatches.empty()) {
-		if (!usingDynamicSvm)
+		if (!useDynamicSvm)
 			//remainingPatches = oe->eliminate(remainingPatches, wvm->getIdentifier());
 			remainingPatches = takeDistinctBest(remainingPatches, 10, wvm->getIdentifier());
-		VDetectorVectorMachine& svm = usingDynamicSvm ? *dynamicSvm : *staticSvm;
+		VDetectorVectorMachine& svm = useDynamicSvm ? *dynamicSvm : *staticSvm;
 		svm.initPyramids(image);
 		svm.initROI(image);
 		std::vector<FdPatch*> objectPatches = svm.detectOnPatchvec(remainingPatches);
@@ -132,17 +134,18 @@ void SelfLearningWvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samp
 		positiveTrainingPatches = takeDistinctBest(positiveTrainingPatches, 10, svm.getIdentifier());
 		negativeTrainingPatches = takeDistinctWorst(negativeTrainingPatches, 10, svm.getIdentifier());
 	}//}
+	wasUsingDynamicSvm = useDynamicSvm;
 }
 
 void SelfLearningWvmSvmModel::reset() {
 	svmTraining->reset(*dynamicSvm);
-	usingDynamicSvm = false;
+	useDynamicSvm = false;
 	positiveTrainingPatches.clear();
 	negativeTrainingPatches.clear();
 }
 
 void SelfLearningWvmSvmModel::update() {
-	usingDynamicSvm = svmTraining->retrain(*dynamicSvm, positiveTrainingPatches, negativeTrainingPatches);
+	useDynamicSvm = svmTraining->retrain(*dynamicSvm, positiveTrainingPatches, negativeTrainingPatches);
 	positiveTrainingPatches.clear();
 	negativeTrainingPatches.clear();
 }

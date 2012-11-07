@@ -30,7 +30,8 @@ LearningWvmSvmModel::LearningWvmSvmModel(shared_ptr<VDetectorVectorMachine> wvm,
 				dynamicSvm(dynamicSvm),
 				oe(oe),
 				svmTraining(svmTraining),
-				usingDynamicSvm(false) {}
+				useDynamicSvm(false),
+				wasUsingDynamicSvm(false) {}
 
 LearningWvmSvmModel::LearningWvmSvmModel(std::string configFilename, std::string negativesFilename) :
 		wvm(make_shared<DetectorWVM>()),
@@ -38,7 +39,8 @@ LearningWvmSvmModel::LearningWvmSvmModel(std::string configFilename, std::string
 		dynamicSvm(make_shared<ChangableDetectorSvm>()),
 		oe(make_shared<OverlapElimination>()),
 		svmTraining(boost::make_shared<FrameBasedSvmTraining>(5, 4, negativesFilename, 200)),
-		usingDynamicSvm(false) {
+		useDynamicSvm(false),
+		wasUsingDynamicSvm(false) {
 	wvm->load(configFilename);
 	staticSvm->load(configFilename);
 	dynamicSvm->load(configFilename);
@@ -83,10 +85,10 @@ void LearningWvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples)
 		}
 	}
 	if (!remainingPatches.empty()) {
-		if (!usingDynamicSvm)
+		if (!useDynamicSvm)
 			//remainingPatches = oe->eliminate(remainingPatches, wvm->getIdentifier());
 			remainingPatches = takeDistinctBest(remainingPatches, 10, wvm->getIdentifier());
-		VDetectorVectorMachine& svm = usingDynamicSvm ? *dynamicSvm : *staticSvm;
+		VDetectorVectorMachine& svm = useDynamicSvm ? *dynamicSvm : *staticSvm;
 		svm.initPyramids(image);
 		svm.initROI(image);
 		std::vector<FdPatch*> objectPatches = svm.detectOnPatchvec(remainingPatches);
@@ -108,21 +110,22 @@ void LearningWvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples)
 			patchSamples.clear();
 		}
 	}//}
+	wasUsingDynamicSvm = useDynamicSvm;
 }
 
 void LearningWvmSvmModel::reset() {
 	svmTraining->reset(*dynamicSvm);
-	usingDynamicSvm = false;
+	useDynamicSvm = false;
 }
 
 void LearningWvmSvmModel::update() {
 	const std::vector<FdPatch*> empty;
-	usingDynamicSvm = svmTraining->retrain(*dynamicSvm, empty, empty);
+	useDynamicSvm = svmTraining->retrain(*dynamicSvm, empty, empty);
 }
 
 void LearningWvmSvmModel::update(FdImage* image, std::vector<Sample>& positiveSamples,
 		std::vector<Sample>& negativeSamples) {
-	usingDynamicSvm = svmTraining->retrain(*dynamicSvm,
+	useDynamicSvm = svmTraining->retrain(*dynamicSvm,
 			getPatches(image, positiveSamples), getPatches(image, negativeSamples));
 }
 

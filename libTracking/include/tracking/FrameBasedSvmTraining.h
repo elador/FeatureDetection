@@ -9,6 +9,8 @@
 #define FRAMEBASEDSVMTRAINING_H_
 
 #include "tracking/LibSvmTraining.h"
+#include "tracking/LibSvmParameterBuilder.h"
+#include "tracking/RbfLibSvmParameterBuilder.h"
 #include "tracking/SigmoidParameterComputation.h"
 #include "tracking/FastApproximateSigmoidParameterComputation.h"
 #include "svm.h"
@@ -36,9 +38,11 @@ public:
 	 *
 	 * @param[in] frameLength The length of the memory in frames.
 	 * @param[in] minAvgSamples The minimum average positive samples per frame for the training to be reasonable.
+	 * @param[in] parameterBuilder The libSVM parameter builder.
 	 * @param[in] sigmoidParameterComputation The computation of the sigmoid parameters.
 	 */
 	explicit FrameBasedSvmTraining(int frameLength, float minAvgSamples,
+			shared_ptr<LibSvmParameterBuilder> parameterBuilder = make_shared<RbfLibSvmParameterBuilder>(),
 			shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation
 					= make_shared<FastApproximateSigmoidParameterComputation>());
 
@@ -49,9 +53,11 @@ public:
 	 * @param[in] minAvgSamples The minimum average positive samples per frame for the training to be reasonable.
 	 * @param[in] negativesFilename The name of the file containing the static negative samples.
 	 * @param[in] negatives The amount of static negative samples to use.
+	 * @param[in] parameterBuilder The libSVM parameter builder.
 	 * @param[in] sigmoidParameterComputation The computation of the sigmoid parameters.
 	 */
 	explicit FrameBasedSvmTraining(int frameLength, float minAvgSamples, std::string negativesFilename, int negatives,
+			shared_ptr<LibSvmParameterBuilder> parameterBuilder = make_shared<RbfLibSvmParameterBuilder>(),
 			shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation
 					= make_shared<FastApproximateSigmoidParameterComputation>());
 
@@ -115,15 +121,6 @@ private:
 	 * @return True if the training was successful, false otherwise.
 	 */
 	bool train(ChangableDetectorSvm& svm);
-
-	/**
-	 * Creates the libSVM parameters.
-	 *
-	 * @param[in] positiveCount The amount of positive samples.
-	 * @param[in] negativeCount The amount of negative samples.
-	 * @return The libSVM parameters.
-	 */
-	struct svm_parameter *createParameters(unsigned int positiveCount, unsigned int negativeCount);
 
 	/**
 	 * Creates the libSVM problem.
