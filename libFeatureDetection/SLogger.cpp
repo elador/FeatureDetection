@@ -12,6 +12,131 @@
 SLogger::SLogger(void)
 {
 	this->imgLogBasepath = "out\\";
+
+	// TODO: Make the color change with the certainty. c=... See old lib fd_patch.h drawCircle(...)
+	// int c=max(0,(min(255,(int)(255* (certainty-max_col[0])/(-max_col[0]+max_col[1])))));
+	// c = 0..255
+	// const float MAX_COL[2]={-1.0f,2.0f};			//Color range (value of which color is 0 and 255)
+	// const float MAX_COL_PROB[2]={0.0f,1.0f};		//Color range for probabilities (value of which color is 0 and 255)
+
+	landmarkData currLm;
+	std::string currLmName = "reye_c";
+	currLm.bgrColor = cv::Scalar(0.0f, 0.0f, 1.0f);		// red (0, 0, c)
+	std::array<bool, 9> tmp		= {	false, true, false,
+									false, true, true,
+									false, false, false };
+	currLm.symbol = tmp;
+	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
+	this->landmarksData.insert(std::make_pair(currLmName, currLm));
+	
+	currLmName = "leye_c";
+	currLm.bgrColor = cv::Scalar(1.0f, 0.0f, 0.0f);		// blue (c, 0, 0)
+	std::array<bool, 9> tmp2	= {	false, true, false,
+									true, true, false,
+									false, false, false };
+	currLm.symbol = tmp2;
+	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
+	this->landmarksData.insert(std::make_pair(currLmName, currLm));
+
+	currLmName = "nose_tip";
+	currLm.bgrColor = cv::Scalar(0.0f, 1.0f, 0.0f);		// green (0, c, 0)
+	std::array<bool, 9> tmp3	= {	false, false, false,
+									false, true, false,
+									true, false, true };
+	currLm.symbol = tmp3;
+	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
+	this->landmarksData.insert(std::make_pair(currLmName, currLm));
+
+	currLmName = "mouth_rc";
+	currLm.bgrColor = cv::Scalar(0.0f, 1.0f, 1.0f);		// yellow (0, c, c)
+	std::array<bool, 9> tmp4	= {	false, false, true,
+									false, true, false,
+									false, false, true };
+	currLm.symbol = tmp4;
+	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = -1.0f/6.0f;
+	this->landmarksData.insert(std::make_pair(currLmName, currLm));
+
+	currLmName = "mouth_lc";
+	currLm.bgrColor = cv::Scalar(1.0f, 0.0f, 1.0f);		// magenta (violet) (c, 0, c)
+	std::array<bool, 9> tmp5	= {	true, false, false,
+									false, true, false,
+									true, false, false };
+	currLm.symbol = tmp5;
+	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 1.0f/6.0f;
+	this->landmarksData.insert(std::make_pair(currLmName, currLm));
+
+	currLmName = "reye_oc";
+	currLm.bgrColor = cv::Scalar(0.0f, 0.0f, 0.48f);		// orange (0, (int)((float)c/255.0f*122.0f), c)
+	std::array<bool, 9> tmp6	= {	false, true, false,
+									false, true, true,
+									false, true, false };
+	currLm.symbol = tmp6;
+	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
+	this->landmarksData.insert(std::make_pair(currLmName, currLm));
+
+	currLmName = "leye_oc";
+	currLm.bgrColor = cv::Scalar(1.0f, 1.0f, 0.0f);		// cyan (tuerkis) (c, c, 0)
+	std::array<bool, 9> tmp7	= {	false, true, false,
+									true, true, false,
+									false, true, false };
+	currLm.symbol = tmp7;
+	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
+	this->landmarksData.insert(std::make_pair(currLmName, currLm));
+
+	currLmName = "mouth_ulb";
+	currLm.bgrColor = cv::Scalar(0.63f, 0.75f, 0.9f);		// pink (MR PhD says: beige)
+	std::array<bool, 9> tmp8	= {	false, false, false,	// //color_r=(int)((float)c/255.0f*145.0f);;  color_b=(int)((float)c/255.0f*200.0f);	color_g=(int)((float)c/255.0f*180.0f); break; //stahlgrau
+															//color_r=(int)((float)c/255.0f*230.0f);;  color_b=(int)((float)c/255.0f*160.0f);	color_g=(int)((float)c/255.0f*190.0f); break; //pink
+									true, true, true,
+									false, true, false };
+	currLm.symbol = tmp8;
+	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
+	this->landmarksData.insert(std::make_pair(currLmName, currLm));
+
+	currLmName = "nosetrill_r";
+	currLm.bgrColor = cv::Scalar(0.27f, 0.27f, 0.67f);		// brown
+	std::array<bool, 9> tmp9	= {	true, false, false,	//color_r=(int)((float)c/255.0f*170.0f);  color_b=(int)((float)c/255.0f*70.0f);	color_g=(int)((float)c/255.0f*70.0f); break; //brown
+									true, true, true,
+									false, false, false };
+	currLm.symbol = tmp9;
+	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
+	this->landmarksData.insert(std::make_pair(currLmName, currLm));
+
+	currLmName = "nosetrill_l";
+	currLm.bgrColor = cv::Scalar(0.04f, 0.78f, 0.69f);		// lemon
+	std::array<bool, 9> tmp10	= {	false, false, true,	//color_r=(int)((float)c/255.0f*177.0f);  color_b=(int)((float)c/255.0f*10.0f);	color_g=(int)((float)c/255.0f*200.0f); break; //mint
+									true, true, true,
+									false, false, false };
+	currLm.symbol = tmp10;
+	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
+	this->landmarksData.insert(std::make_pair(currLmName, currLm));
+
+	currLmName = "rear_DONTKNOW";
+	currLm.bgrColor = cv::Scalar(1.0f, 0.0f, 0.52f);		// blue-violet
+	std::array<bool, 9> tmp11	= {	false, true, true,	//color_r=(int)((float)c/255.0f*132.0f);  color_b=(int)((float)c/255.0f*255.0f);	color_g=(int)((float)c/255.0f*0.0f); break; //blue-violet
+									false, true, false,
+									false, true, true };
+	currLm.symbol = tmp11;
+	currLm.displacementFactorH = 3.0f/10.0f; currLm.displacementFactorW = -1.0f/6.0f;
+	this->landmarksData.insert(std::make_pair(currLmName, currLm));
+
+	currLmName = "lear_DONTKNOW";
+	currLm.bgrColor = cv::Scalar(0.0f, 0.6f, 0.0f);		// pale green
+	std::array<bool, 9> tmp12	= {	true, true, false,	//color_r=(int)((float)c/255.0f*0.0f);  color_b=(int)((float)c/255.0f*153.0f);	color_g=(int)((float)c/255.0f*255.0f); break; //blasses gruen
+									false, true, false,
+									true, true, false };
+	currLm.symbol = tmp12;
+	currLm.displacementFactorH = 3.0f/10.0f; currLm.displacementFactorW = 1.0f/6.0f;
+	this->landmarksData.insert(std::make_pair(currLmName, currLm));
+	
+	currLmName = "UNKNOWN";
+	currLm.bgrColor = cv::Scalar(0.35f, 0.35f, 0.35f);		// gray
+	std::array<bool, 9> tmp13	= {	true, false, true,
+									false, true, false,
+									true, false, true };
+	currLm.symbol = tmp13;
+	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
+	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 }
 
 
@@ -171,6 +296,29 @@ void SLogger::LogImgDetectorFinal(const FdImage* img, std::vector<FdPatch*> cand
 		cv::Mat outimg;
 		outimg = img->data_matbgr.clone();	// leave input image intact
 		this->drawBoxesWithCertainty(outimg, candidates, detectorIdForCertaintyColor);
+
+		cv::imwrite(fn.str(), outimg);
+	}
+}
+
+void SLogger::LogImgDetectorFinal(const FdImage* img, std::vector<std::pair<std::string, std::vector<FdPatch*> > > candidates, std::string detectorIdForCertaintyColor, std::string filenameAppend)
+{
+	if((this->global.img.writeDetectorCandidates==true) || this->verboseLevelImages>=1) {
+		if(filenameAppend=="") {
+			filenameAppend = detectorIdForCertaintyColor;
+		} else {
+			filenameAppend = detectorIdForCertaintyColor + "_" + filenameAppend;
+		}
+		size_t idx;
+		idx = img->filename.find_last_of("/\\");
+		std::ostringstream fn;
+		fn << this->imgLogBasepath << img->filename.substr(idx+1) << "_" << filenameAppend << ".png" << std::ends;
+
+		cv::Mat outimg;
+		outimg = img->data_matbgr.clone();	// leave input image intact
+		for(unsigned int i=0; i<candidates.size(); ++i) {
+			this->drawFfpSymbols(outimg, candidates[i]);
+		}
 
 		cv::imwrite(fn.str(), outimg);
 	}
@@ -358,7 +506,42 @@ void SLogger::drawScaleBox(cv::Mat rgbimg, int w, int h)
 	cv::rectangle(rgbimg, cv::Point(0, 0), cv::Point(w-1, h-1), color);
 }
 
+void SLogger::drawFfpSymbols( cv::Mat image, std::pair<std::string, std::vector<FdPatch*> > candidates )
+{
+	for(unsigned int i=0; i<candidates.second.size(); ++i) {
+		drawFfpSymbol(image, candidates.first, candidates.second[i]);
+	}
+}
 
+void SLogger::drawFfpSymbol( cv::Mat image, std::string ffpName, FdPatch* patch )
+{
+	landmarkData thisLm = landmarksData.find(ffpName)->second;
+	cv::Point2i realFfpCenter(patch->c.x+patch->w_inFullImg*thisLm.displacementFactorW, patch->c.y+patch->h_inFullImg*thisLm.displacementFactorH);
+	unsigned int position = 0;
+	for (int currRow = realFfpCenter.y-1; currRow<=realFfpCenter.y+1; ++currRow) {
+		for (int currCol = realFfpCenter.x-1; currCol<=realFfpCenter.x+1; ++currCol) {
+			if(thisLm.symbol[position]==true) {
+				image.at<cv::Vec3b>(currRow,currCol)[0] = (uchar)cvRound(255.0f * thisLm.bgrColor.val[0]);
+				image.at<cv::Vec3b>(currRow,currCol)[1] = (uchar)cvRound(255.0f * thisLm.bgrColor.val[1]);
+				image.at<cv::Vec3b>(currRow,currCol)[2] = (uchar)cvRound(255.0f * thisLm.bgrColor.val[2]);
+			}
+			++position;
+		}
+	}
+
+}
+
+void SLogger::drawFfpsSmallSquare( cv::Mat img, std::vector<std::pair<std::string, cv::Point2f> > points )
+{
+	for (unsigned int i=0; i<points.size(); ++i) {
+		drawFfpSmallSquare(img, points[i]);
+	}
+}
+
+void SLogger::drawFfpSmallSquare( cv::Mat img, std::pair<std::string, cv::Point2f> point )
+{
+	cv::rectangle(img, cv::Point(cvRound(point.second.x-2.0f), cvRound(point.second.y-2.0f)), cv::Point(cvRound(point.second.x+2.0f), cvRound(point.second.y+2.0f)), cv::Scalar(255, 0, 0));
+}
 
 /* Used once for patches, may be useful some time.
 void SLogger::drawSinglePatchYawAngleColor(cv::Mat rgbimg, FdPatch patch)

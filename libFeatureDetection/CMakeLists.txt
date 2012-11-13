@@ -19,6 +19,20 @@ ELSE(MATLAB_FOUND)
 ENDIF(MATLAB_FOUND)
 INCLUDE_DIRECTORIES(${MATLAB_INCLUDE_DIR})
 
+#Boost:
+FIND_PACKAGE(Boost COMPONENTS random REQUIRED) # others (e.g.): system filesystem
+if(Boost_FOUND)
+  MESSAGE(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
+ELSE(Boost_FOUND)
+  MESSAGE(FATAL_ERROR "Boost not found")
+ENDIF()
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+
+#HDF5: (needed for reading the Model)
+FIND_PACKAGE( HDF5 REQUIRED COMPONENTS C CXX )
+INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
+MESSAGE(STATUS "HDF5 include dir: ${HDF5_INCLUDE_DIRS}")
+
 #Source and header files:
 SET(SOURCE
 	CascadeERT.cpp
@@ -45,7 +59,7 @@ SET(SOURCE
 	StdImage.cpp
 	VDetector.cpp
 	VDetectorVectorMachine.cpp
-	FeaturePointsRANSAC.cpp
+	FeaturePointsModelRANSAC.cpp
 )
 
 SET(HEADERS
@@ -74,7 +88,7 @@ SET(HEADERS
 	targetver.h
 	VDetector.h
 	VDetectorVectorMachine.h
-	FeaturePointsRANSAC.h
+	FeaturePointsModelRANSAC.h
 )
 
 #Make the library

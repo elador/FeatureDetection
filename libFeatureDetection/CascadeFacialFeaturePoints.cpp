@@ -19,6 +19,9 @@ CascadeFacialFeaturePoints::CascadeFacialFeaturePoints(void)
 	circleDet = new CircleDetector();
 	skinDet = new SkinDetector();
 
+	ffpRansac = new FeaturePointsRANSAC();
+	ffpRansac->init();
+
 	ffpCasc = new CascadeFacialFeaturePointsSimple();
 	ffpCasc->setIdentifier("5ffpCascade");
 }
@@ -78,6 +81,8 @@ int CascadeFacialFeaturePoints::detectOnImage(FdImage* myimg)
 
 	std::sort(afterFirstOE.begin(), afterFirstOE.end(), FdPatch::SortByCertainty(wvm_frontal->getIdentifier()));	// only necessary if we didnt run an OE?
 
+	//ffpRansac->renderModel(myimg);
+
 	std::vector<FdPatch*>::iterator itr;
 	for (itr = afterFirstOE.begin(); itr != afterFirstOE.end(); ++itr ) {
 		/* The region of the FD patch. For FFP-Det: */
@@ -93,13 +98,16 @@ int CascadeFacialFeaturePoints::detectOnImage(FdImage* myimg)
 		cv::Mat temp = myimg->data_matbgr(cv::Rect(roiLeft, roiTop, (*itr)->w_inFullImg, (*itr)->h_inFullImg));
 		imwrite("out\\asdf.png", temp);*/
 		ffpCasc->setRoiInImage(roi);
-		ffpCasc->detectOnImage(myimg);
+		std::vector<std::pair<std::string, std::vector<FdPatch*> > > landmarkCandidates = ffpCasc->detectOnImage(myimg);
+
 		std::vector<cv::Mat> probabilityMapsWVMre = ffpCasc->reye->wvm->getProbabilityMaps(myimg);
 		std::vector<cv::Mat> probabilityMapsWVMle = ffpCasc->leye->wvm->getProbabilityMaps(myimg);
 		std::vector<cv::Mat> probabilityMapsWVMnt = ffpCasc->nosetip->wvm->getProbabilityMaps(myimg);
 		std::vector<cv::Mat> probabilityMapsWVMrm = ffpCasc->rmouth->wvm->getProbabilityMaps(myimg);
 		std::vector<cv::Mat> probabilityMapsWVMlm = ffpCasc->lmouth->wvm->getProbabilityMaps(myimg);
-		
+
+		ffpRansac->runRANSAC(myimg, landmarkCandidates, 1.0, 5, 4, 3);
+		break;
 	}
 
 	return 1;

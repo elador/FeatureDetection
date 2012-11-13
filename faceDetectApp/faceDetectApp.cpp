@@ -4,11 +4,9 @@
 #include "stdafx.h"
 
 #include "CascadeFacialFeaturePoints.h"
-#include "CascadeWvmOeSvmOe.h"
 
 #include "SLogger.h"
 #include "FdImage.h"
-#include "FdPatch.h"
 
 namespace po = boost::program_options;
 using namespace std;
@@ -127,6 +125,10 @@ int main(int argc, char *argv[])		// Peter
 	Logger->global.img.drawScales = true;
 	Logger->global.img.writeImgPyramids = true;
 
+	/* Testing ground */
+
+	/* END */
+	
 	CascadeFacialFeaturePoints* casc = new CascadeFacialFeaturePoints();
 	casc->setIdentifier("smartFaceDetect");
 

@@ -2,6 +2,8 @@
 
 #include <vector>
 #include <string>
+#include <array>
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -82,7 +84,8 @@ public:
 	void LogImgPyramid(const Pyramid*, std::string, int); // only if writeImgPyramids
 	void LogImgDetectorCandidates(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");	// if writeDetectorCandidates || verboseLevelImages>=2
 	void LogImgDetectorProbabilityMap(const cv::Mat*, const std::string, const std::string, std::string="");			// if writeDetectorProbabilityMaps || verboseLevelImages>=2
-	void LogImgDetectorFinal(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");		// if writeDetectorCandidates || verboseLevelImages>=1
+	void LogImgDetectorFinal(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");		// if writeDetectorCandidates || verboseLevelImages>=1. Draws boxes with certainty color.
+	void LogImgDetectorFinal(const FdImage*, std::vector<std::pair<std::string, std::vector<FdPatch*> > >, std::string, std::string="");	// if writeDetectorCandidates || verboseLevelImages>=1. Draws symbols for all Ffps.
 	void LogImgRegressor(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");			// if writeRegressor || verboseLevelImages>=1 (or maybe 2)
 	void LogImgRegressorPyramids(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");	// if writeRegressorPyramids || verboseLevelImages>=2
 																										// outputs an image of the regressor for each scale
@@ -94,13 +97,17 @@ public:
 
 	/* Helper routines to draw stuff into images */
 	/* They probably should be "private", but sometimes its nice to have them directly available... (or put them in a Utils-lib?) */
-	void drawBoxesWithCertainty(cv::Mat, std::vector<FdPatch*>, std::string);	// Draw FD-boxes with certainty in color.
-	void drawBoxesWithAngleColor(cv::Mat, std::vector<FdPatch*>, std::string);	// A nice color gradient for fout-values from -90 to +90.
+	void drawBoxesWithCertainty(cv::Mat, std::vector<FdPatch*>, std::string);		// Draw FD-boxes with certainty in color.
+	void drawBoxesWithAngleColor(cv::Mat, std::vector<FdPatch*>, std::string);		// A nice color gradient for fout-values from -90 to +90.
 	void drawCenterpointsWithAngleColor(cv::Mat, std::vector<FdPatch*>, std::string, int);	// Draw the centerpoints of the patches from ONE scale in a nice color gradient for fout-values from -90 to +90. 
-	void drawFoutAsText(cv::Mat, std::vector<FdPatch*>, std::string);	// Draws the fout-values as a small text besides the FD-box.
-	void drawScaleBox(cv::Mat, int, int);	// Draws a box with (w, h) into the original image, to display the size of the detector scales
-	void drawAllScaleBoxes(cv::Mat, const PyramidMap*, std::string, int, int); // Loops through all pyramids and draws a box with (w, h) into the original image, for each pyramid that is used by the given DetectorId.
-	
+	void drawFoutAsText(cv::Mat, std::vector<FdPatch*>, std::string);				// Draws the fout-values as a small text besides the FD-box.
+	void drawScaleBox(cv::Mat, int, int);											// Draws a box with (w, h) into the original image, to display the size of the detector scales
+	void drawAllScaleBoxes(cv::Mat, const PyramidMap*, std::string, int, int);		// Loops through all pyramids and draws a box with (w, h) into the original image, for each pyramid that is used by the given DetectorId.
+	void drawFfpSymbols(cv::Mat, std::pair<std::string, std::vector<FdPatch*> >);	// Loops through all patches of one Ffp (specified by the string) and draws their symbol.
+	void drawFfpSymbol(cv::Mat, std::string, FdPatch*);								// Draws the Ffp with its respective symbol into the image.
+
+	void drawFfpsSmallSquare(cv::Mat, std::vector<std::pair<std::string, cv::Point2f> >);	// Loops through all given Ffps and draws a box around them
+	void drawFfpSmallSquare(cv::Mat, std::pair<std::string, cv::Point2f>);					// Draws a bot around one Ffp
 
 	/* Verbose-level Text:
 		0: Don't even print a single line of text!
@@ -114,6 +121,13 @@ public:
 		// Todo: structure more logically, like per img?
 	*/
 
+	struct landmarkData {	// Todo: The optimal place for this would be in the config-file of each detector!
+		cv::Scalar bgrColor;
+		std::array<bool, 9> symbol;
+		float displacementFactorH;
+		float displacementFactorW;
+	};
+	std::map<std::string, landmarkData> landmarksData;	// All infos regarding all landmarks: name, color and symbol.
 
 	
 	/* Old stuff below! */
