@@ -10,7 +10,11 @@
 #include "SLogger.h"
 #include "FdImage.h"
 
-#include "cpp/H5Cpp.h"
+#ifdef WIN32	// This is a shitty hack...  find out what the proper way to do this is. Probably include the hdf5.tar.gz in our cmake project. Bzw... without cpp is maybe correct, and my windows-installation is wrong?
+	#include "cpp/H5Cpp.h"
+#else
+	#include "H5Cpp.h"
+#endif
 //#include "hdf5.h"
 
 #include <iostream>
@@ -111,7 +115,7 @@ void FeaturePointsRANSAC::runRANSAC(FdImage* img, std::vector<std::pair<std::str
 
 	// some LMs wrong? nose_tip? No
 
-	std::vector<std::vector<std::pair<std::string, cv::Point2f> >> bestConsensusSets;
+	std::vector<std::vector<std::pair<std::string, cv::Point2f> > > bestConsensusSets;
 
 	while (iterations < numIter) {
 		++iterations;
