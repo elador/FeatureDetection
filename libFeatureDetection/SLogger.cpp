@@ -22,119 +22,148 @@ SLogger::SLogger(void)
 	landmarkData currLm;
 	std::string currLmName = "reye_c";
 	currLm.bgrColor = cv::Scalar(0.0f, 0.0f, 1.0f);		// red (0, 0, c)
-	std::array<bool, 9> tmp		= {	false, true, false,
+	/*std::array<bool, 9> tmp		= {	false, true, false,
+										false, true, true,
+										false, false, false };*/	// TODO: Change this back to std::array later!!!
+	bool tmp[]					= {	false, true, false,
 									false, true, true,
 									false, false, false };
-	currLm.symbol = tmp;
+	const int TotalItems = sizeof(tmp)/sizeof(tmp[0]);
+	std::vector<bool> vtmp(tmp, tmp+TotalItems);
+	currLm.symbol = vtmp;
 	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 	
 	currLmName = "leye_c";
 	currLm.bgrColor = cv::Scalar(1.0f, 0.0f, 0.0f);		// blue (c, 0, 0)
-	std::array<bool, 9> tmp2	= {	false, true, false,
+	bool tmp2[]	= {	false, true, false,
 									true, true, false,
 									false, false, false };
-	currLm.symbol = tmp2;
+	const int TotalItems2 = sizeof(tmp2)/sizeof(tmp2[0]);
+	std::vector<bool> vtmp2(tmp2, tmp2+TotalItems2);
+	currLm.symbol = vtmp2;
 	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 
 	currLmName = "nose_tip";
 	currLm.bgrColor = cv::Scalar(0.0f, 1.0f, 0.0f);		// green (0, c, 0)
-	std::array<bool, 9> tmp3	= {	false, false, false,
+	bool tmp3[]	= {	false, false, false,
 									false, true, false,
 									true, false, true };
-	currLm.symbol = tmp3;
+	const int TotalItems3 = sizeof(tmp3)/sizeof(tmp3[0]);
+	std::vector<bool> vtmp3(tmp3, tmp3+TotalItems3);
+	currLm.symbol = vtmp3;
 	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 
 	currLmName = "mouth_rc";
 	currLm.bgrColor = cv::Scalar(0.0f, 1.0f, 1.0f);		// yellow (0, c, c)
-	std::array<bool, 9> tmp4	= {	false, false, true,
+	bool tmp4[]	= {	false, false, true,
 									false, true, false,
 									false, false, true };
-	currLm.symbol = tmp4;
+	const int TotalItems4 = sizeof(tmp4)/sizeof(tmp4[0]);
+	std::vector<bool> vtmp4(tmp4, tmp4+TotalItems4);
+	currLm.symbol = vtmp4;
 	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = -1.0f/6.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 
 	currLmName = "mouth_lc";
 	currLm.bgrColor = cv::Scalar(1.0f, 0.0f, 1.0f);		// magenta (violet) (c, 0, c)
-	std::array<bool, 9> tmp5	= {	true, false, false,
+	bool tmp5[]	= {	true, false, false,
 									false, true, false,
 									true, false, false };
-	currLm.symbol = tmp5;
+	const int TotalItems5 = sizeof(tmp5)/sizeof(tmp5[0]);
+	std::vector<bool> vtmp5(tmp5, tmp5+TotalItems5);
+	currLm.symbol = vtmp5;
 	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 1.0f/6.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 
 	currLmName = "reye_oc";
 	currLm.bgrColor = cv::Scalar(0.0f, 0.0f, 0.48f);		// orange (0, (int)((float)c/255.0f*122.0f), c)
-	std::array<bool, 9> tmp6	= {	false, true, false,
+	bool tmp6[]	= {	false, true, false,
 									false, true, true,
 									false, true, false };
-	currLm.symbol = tmp6;
+	const int TotalItems6 = sizeof(tmp6)/sizeof(tmp6[0]);
+	std::vector<bool> vtmp6(tmp6, tmp6+TotalItems6);
+	currLm.symbol = vtmp6;
 	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 
 	currLmName = "leye_oc";
 	currLm.bgrColor = cv::Scalar(1.0f, 1.0f, 0.0f);		// cyan (tuerkis) (c, c, 0)
-	std::array<bool, 9> tmp7	= {	false, true, false,
+	bool tmp7[]	= {	false, true, false,
 									true, true, false,
 									false, true, false };
-	currLm.symbol = tmp7;
+	const int TotalItems7 = sizeof(tmp7)/sizeof(tmp7[0]);
+	std::vector<bool> vtmp7(tmp7, tmp7+TotalItems7);
+	currLm.symbol = vtmp7;
 	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 
 	currLmName = "mouth_ulb";
 	currLm.bgrColor = cv::Scalar(0.63f, 0.75f, 0.9f);		// pink (MR PhD says: beige)
-	std::array<bool, 9> tmp8	= {	false, false, false,	// //color_r=(int)((float)c/255.0f*145.0f);;  color_b=(int)((float)c/255.0f*200.0f);	color_g=(int)((float)c/255.0f*180.0f); break; //stahlgrau
+	bool tmp8[]	= {	false, false, false,	// //color_r=(int)((float)c/255.0f*145.0f);;  color_b=(int)((float)c/255.0f*200.0f);	color_g=(int)((float)c/255.0f*180.0f); break; //stahlgrau
 															//color_r=(int)((float)c/255.0f*230.0f);;  color_b=(int)((float)c/255.0f*160.0f);	color_g=(int)((float)c/255.0f*190.0f); break; //pink
 									true, true, true,
 									false, true, false };
-	currLm.symbol = tmp8;
+	const int TotalItems8 = sizeof(tmp8)/sizeof(tmp8[0]);
+	std::vector<bool> vtmp8(tmp8, tmp8+TotalItems8);
+	currLm.symbol = vtmp8;
 	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 
 	currLmName = "nosetrill_r";
 	currLm.bgrColor = cv::Scalar(0.27f, 0.27f, 0.67f);		// brown
-	std::array<bool, 9> tmp9	= {	true, false, false,	//color_r=(int)((float)c/255.0f*170.0f);  color_b=(int)((float)c/255.0f*70.0f);	color_g=(int)((float)c/255.0f*70.0f); break; //brown
+	bool tmp9[]	= {	true, false, false,	//color_r=(int)((float)c/255.0f*170.0f);  color_b=(int)((float)c/255.0f*70.0f);	color_g=(int)((float)c/255.0f*70.0f); break; //brown
 									true, true, true,
 									false, false, false };
-	currLm.symbol = tmp9;
+	const int TotalItems9 = sizeof(tmp9)/sizeof(tmp9[0]);
+	std::vector<bool> vtmp9(tmp9, tmp9+TotalItems9);
+	currLm.symbol = vtmp9;
 	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 
 	currLmName = "nosetrill_l";
 	currLm.bgrColor = cv::Scalar(0.04f, 0.78f, 0.69f);		// lemon
-	std::array<bool, 9> tmp10	= {	false, false, true,	//color_r=(int)((float)c/255.0f*177.0f);  color_b=(int)((float)c/255.0f*10.0f);	color_g=(int)((float)c/255.0f*200.0f); break; //mint
+	bool tmp10[]	= {	false, false, true,	//color_r=(int)((float)c/255.0f*177.0f);  color_b=(int)((float)c/255.0f*10.0f);	color_g=(int)((float)c/255.0f*200.0f); break; //mint
 									true, true, true,
 									false, false, false };
-	currLm.symbol = tmp10;
+	const int TotalItems10 = sizeof(tmp10)/sizeof(tmp10[0]);
+	std::vector<bool> vtmp10(tmp10, tmp10+TotalItems10);
+	currLm.symbol = vtmp10;
 	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 
 	currLmName = "rear_DONTKNOW";
 	currLm.bgrColor = cv::Scalar(1.0f, 0.0f, 0.52f);		// blue-violet
-	std::array<bool, 9> tmp11	= {	false, true, true,	//color_r=(int)((float)c/255.0f*132.0f);  color_b=(int)((float)c/255.0f*255.0f);	color_g=(int)((float)c/255.0f*0.0f); break; //blue-violet
+	bool tmp11[]	= {	false, true, true,	//color_r=(int)((float)c/255.0f*132.0f);  color_b=(int)((float)c/255.0f*255.0f);	color_g=(int)((float)c/255.0f*0.0f); break; //blue-violet
 									false, true, false,
 									false, true, true };
-	currLm.symbol = tmp11;
+	const int TotalItems11 = sizeof(tmp11)/sizeof(tmp11[0]);
+	std::vector<bool> vtmp11(tmp11, tmp11+TotalItems11);
+	currLm.symbol = vtmp11;
 	currLm.displacementFactorH = 3.0f/10.0f; currLm.displacementFactorW = -1.0f/6.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 
 	currLmName = "lear_DONTKNOW";
 	currLm.bgrColor = cv::Scalar(0.0f, 0.6f, 0.0f);		// pale green
-	std::array<bool, 9> tmp12	= {	true, true, false,	//color_r=(int)((float)c/255.0f*0.0f);  color_b=(int)((float)c/255.0f*153.0f);	color_g=(int)((float)c/255.0f*255.0f); break; //blasses gruen
+	bool tmp12[]	= {	true, true, false,	//color_r=(int)((float)c/255.0f*0.0f);  color_b=(int)((float)c/255.0f*153.0f);	color_g=(int)((float)c/255.0f*255.0f); break; //blasses gruen
 									false, true, false,
 									true, true, false };
-	currLm.symbol = tmp12;
+	const int TotalItems12 = sizeof(tmp12)/sizeof(tmp12[0]);
+	std::vector<bool> vtmp12(tmp12, tmp12+TotalItems12);
+	currLm.symbol = vtmp12;
 	currLm.displacementFactorH = 3.0f/10.0f; currLm.displacementFactorW = 1.0f/6.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 	
 	currLmName = "UNKNOWN";
 	currLm.bgrColor = cv::Scalar(0.35f, 0.35f, 0.35f);		// gray
-	std::array<bool, 9> tmp13	= {	true, false, true,
+	bool tmp13[]	= {	true, false, true,
 									false, true, false,
 									true, false, true };
-	currLm.symbol = tmp13;
+	const int TotalItems13 = sizeof(tmp13)/sizeof(tmp13[0]);
+	std::vector<bool> vtmp13(tmp13, tmp13+TotalItems13);
+	currLm.symbol = vtmp13;
 	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 }

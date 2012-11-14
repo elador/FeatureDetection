@@ -123,7 +123,8 @@ public:
 
 	struct landmarkData {	// Todo: The optimal place for this would be in the config-file of each detector!
 		cv::Scalar bgrColor;
-		std::array<bool, 9> symbol;
+		//std::array<bool, 9> symbol;	// This is C++11. Make this an array again in Dec/Jan. !!!
+		std::vector<bool> symbol;
 		float displacementFactorH;
 		float displacementFactorW;
 	};
