@@ -1,11 +1,11 @@
 /*
- * FaceTracking.cpp
+ * HeadTracking.cpp
  *
- *  Created on: 19.07.2012
+ *  Created on: 13.11.2012
  *      Author: poschmann
  */
 
-#include "FaceTracking.h"
+#include "HeadTracking.h"
 #include "imageio/VideoImageSource.h"
 #include "imageio/KinectImageSource.h"
 #include "imageio/DirectoryImageSource.h"
@@ -19,6 +19,7 @@
 #include "tracking/PositionDependentLearningStrategy.h"
 #include "tracking/SelfLearningWvmSvmModel.h"
 #include "tracking/LearningWvmSvmModel.h"
+#include "HeadLearningWvmSvmModel.h"
 #include "tracking/LibSvmParameterBuilder.h"
 #include "tracking/RbfLibSvmParameterBuilder.h"
 #include "tracking/PolyLibSvmParameterBuilder.h"
@@ -48,19 +49,19 @@
 
 namespace po = boost::program_options;
 
-const std::string FaceTracking::videoWindowName = "Image";
-const std::string FaceTracking::controlWindowName = "Controls";
+const std::string HeadTracking::videoWindowName = "Image";
+const std::string HeadTracking::controlWindowName = "Controls";
 
-FaceTracking::FaceTracking(auto_ptr<imageio::ImageSource> imageSource,
+HeadTracking::HeadTracking(auto_ptr<imageio::ImageSource> imageSource,
 		std::string svmConfigFile, std::string negativesFile) :
 				svmConfigFile(svmConfigFile), negativesFile(negativesFile), imageSource(imageSource) {
 	initTracking();
 	initGui();
 }
 
-FaceTracking::~FaceTracking() {}
+HeadTracking::~HeadTracking() {}
 
-void FaceTracking::initTracking() {
+void HeadTracking::initTracking() {
 	// create SVM training
 	shared_ptr<LibSvmParameterBuilder> svmParameterBuilder = make_shared<RbfLibSvmParameterBuilder>(0.05);
 //	shared_ptr<LibSvmParameterBuilder> svmParameterBuilder = make_shared<PolyLibSvmParameterBuilder>(2, 1, 1);
@@ -70,7 +71,7 @@ void FaceTracking::initTracking() {
 //	shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation = make_shared<ApproximateSigmoidParameterComputation>();
 
 //	svmTraining = make_shared<FastSvmTraining>(7, 14, 50, svmParameterBuilder, sigmoidParameterComputation);
-	svmTraining = make_shared<FrameBasedSvmTraining>(5, 4, svmParameterBuilder, sigmoidParameterComputation);
+	svmTraining = make_shared<FrameBasedSvmTraining>(50, 4, svmParameterBuilder, sigmoidParameterComputation);
 //	svmTraining->readStaticNegatives(negativesFile, 200);
 
 	// create measurement model
@@ -86,7 +87,7 @@ void FaceTracking::initTracking() {
 //	measurementModel = make_shared<SelfLearningWvmSvmModel>(wvm, svm, dynamicSvm, oe, svmTraining, 0.85, 0.05);
 //	learningStrategy = make_shared<SelfLearningStrategy>();
 
-	measurementModel = make_shared<LearningWvmSvmModel>(wvm, svm, dynamicSvm, oe, svmTraining);
+	measurementModel = make_shared<HeadLearningWvmSvmModel>(wvm, svm, dynamicSvm, oe, svmTraining);
 	learningStrategy = make_shared<PositionDependentLearningStrategy>();
 
 	// create tracker
@@ -101,7 +102,7 @@ void FaceTracking::initTracking() {
 //	tracker->setLearningActive(false);
 }
 
-void FaceTracking::initGui() {
+void HeadTracking::initGui() {
 	drawSamples = true;
 
 	cvNamedWindow(controlWindowName.c_str(), CV_WINDOW_AUTOSIZE);
@@ -126,40 +127,40 @@ void FaceTracking::initGui() {
 	cv::setTrackbarPos("Draw samples", controlWindowName, drawSamples ? 1 : 0);
 }
 
-void FaceTracking::learningChanged(int state, void* userdata) {
-	FaceTracking *tracking = (FaceTracking*)userdata;
+void HeadTracking::learningChanged(int state, void* userdata) {
+	HeadTracking *tracking = (HeadTracking*)userdata;
 	tracking->tracker->setLearningActive(state == 1);
 }
 
-void FaceTracking::samplerChanged(int state, void* userdata) {
-	FaceTracking *tracking = (FaceTracking*)userdata;
+void HeadTracking::samplerChanged(int state, void* userdata) {
+	HeadTracking *tracking = (HeadTracking*)userdata;
 	if (state == 0)
 		tracking->tracker->setSampler(tracking->gridSampler);
 	else
 		tracking->tracker->setSampler(tracking->resamplingSampler);
 }
 
-void FaceTracking::sampleCountChanged(int state, void* userdata) {
-	FaceTracking *tracking = (FaceTracking*)userdata;
+void HeadTracking::sampleCountChanged(int state, void* userdata) {
+	HeadTracking *tracking = (HeadTracking*)userdata;
 	tracking->resamplingSampler->setCount(state);
 }
 
-void FaceTracking::randomRateChanged(int state, void* userdata) {
-	FaceTracking *tracking = (FaceTracking*)userdata;
+void HeadTracking::randomRateChanged(int state, void* userdata) {
+	HeadTracking *tracking = (HeadTracking*)userdata;
 	tracking->resamplingSampler->setRandomRate(0.01 * state);
 }
 
-void FaceTracking::scatterChanged(int state, void* userdata) {
-	FaceTracking *tracking = (FaceTracking*)userdata;
+void HeadTracking::scatterChanged(int state, void* userdata) {
+	HeadTracking *tracking = (HeadTracking*)userdata;
 	tracking->transitionModel->setScatter(0.01 * state);
 }
 
-void FaceTracking::drawSamplesChanged(int state, void* userdata) {
-	FaceTracking *tracking = (FaceTracking*)userdata;
+void HeadTracking::drawSamplesChanged(int state, void* userdata) {
+	HeadTracking *tracking = (HeadTracking*)userdata;
 	tracking->drawSamples = (state == 1);
 }
 
-void FaceTracking::drawDebug(cv::Mat& image) {
+void HeadTracking::drawDebug(cv::Mat& image) {
 	cv::Scalar black(0, 0, 0); // blue, green, red
 	cv::Scalar red(0, 0, 255); // blue, green, red
 	cv::Scalar green(0, 255, 0); // blue, green, red
@@ -174,7 +175,7 @@ void FaceTracking::drawDebug(cv::Mat& image) {
 	cv::circle(image, cv::Point(10, 10), 5, svmIndicatorColor, -1);
 }
 
-void FaceTracking::run() {
+void HeadTracking::run() {
 	running = true;
 	paused = false;
 
@@ -207,15 +208,15 @@ void FaceTracking::run() {
 			FdImage* myImage = new FdImage();
 			myImage->load(&frame);
 			gettimeofday(&detStart, 0);
-			boost::optional<tracking::Rectangle> face = tracker->process(myImage);
+			boost::optional<tracking::Rectangle> head = tracker->process(myImage);
 			gettimeofday(&detEnd, 0);
 			delete myImage;
 			image = frame;
 			drawDebug(image);
 			cv::Scalar& color = measurementModel->wasUsingDynamicModel() ? green : red;
-			if (face)
-				cv::rectangle(image, cv::Point(face->getX(), face->getY()),
-						cv::Point(face->getX() + face->getWidth(), face->getY() + face->getHeight()), color);
+			if (head)
+				cv::rectangle(image, cv::Point(head->getX(), head->getY()),
+						cv::Point(head->getX() + head->getWidth(), head->getY() + head->getHeight()), color);
 			imshow(videoWindowName, image);
 			gettimeofday(&frameEnd, 0);
 
@@ -239,7 +240,7 @@ void FaceTracking::run() {
 	}
 }
 
-void FaceTracking::stop() {
+void HeadTracking::stop() {
 	running = false;
 }
 
@@ -271,7 +272,7 @@ int main(int argc, char *argv[]) {
 		po::notify(vm);
 
 		if (vm.count("help")) {
-			std::cout << "Usage: faceTrackingApp [options]" << std::endl;
+			std::cout << "Usage: HeadTrackingApp [options]" << std::endl;
 			std::cout << desc;
 			return 0;
 		}
@@ -316,7 +317,7 @@ int main(int argc, char *argv[]) {
 	else if (useDirectory)
 		imageSource.reset(new imageio::DirectoryImageSource(directory));
 
-	auto_ptr<FaceTracking> tracker(new FaceTracking(imageSource, svmConfigFile, negativeRtlPatches));
+	auto_ptr<HeadTracking> tracker(new HeadTracking(imageSource, svmConfigFile, negativeRtlPatches));
 	tracker->run();
 	return 0;
 }
