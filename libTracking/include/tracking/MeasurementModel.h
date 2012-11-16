@@ -8,9 +8,8 @@
 #ifndef MEASUREMENTMODEL_H_
 #define MEASUREMENTMODEL_H_
 
+#include "opencv2/highgui/highgui.hpp"
 #include <vector>
-
-class FdImage;
 
 namespace tracking {
 
@@ -29,7 +28,7 @@ public:
 	 * @param[in] image The image.
 	 * @param[in] samples The samples whose weight will be changed according to the likelihoods.
 	 */
-	virtual void evaluate(FdImage* image, std::vector<Sample>& samples) = 0;
+	virtual void evaluate(cv::Mat& image, std::vector<Sample>& samples) = 0;
 };
 
 } /* namespace tracking */

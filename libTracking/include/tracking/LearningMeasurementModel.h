@@ -20,7 +20,7 @@ public:
 
 	virtual ~LearningMeasurementModel() {}
 
-	virtual void evaluate(FdImage* image, std::vector<Sample>& samples) = 0;
+	virtual void evaluate(cv::Mat& image, std::vector<Sample>& samples) = 0;
 
 	/**
 	 * Determines whether the updated dynamic model was used for the previous evaluation
@@ -55,7 +55,7 @@ public:
 	 * @param[in] positiveSamples The new positive samples.
 	 * @param[in] negativeSamples The new negative samples.
 	 */
-	virtual void update(FdImage* image, std::vector<Sample>& positiveSamples, std::vector<Sample>& negativeSamples) = 0;
+	virtual void update(cv::Mat& image, std::vector<Sample>& positiveSamples, std::vector<Sample>& negativeSamples) = 0;
 };
 
 } /* namespace tracking */

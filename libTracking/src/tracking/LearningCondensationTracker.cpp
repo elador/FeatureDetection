@@ -10,7 +10,6 @@
 #include "tracking/LearningMeasurementModel.h"
 #include "tracking/PositionExtractor.h"
 #include "tracking/LearningStrategy.h"
-#include "FdImage.h"
 
 namespace tracking {
 
@@ -33,7 +32,7 @@ LearningCondensationTracker::LearningCondensationTracker(shared_ptr<Sampler> sam
 
 LearningCondensationTracker::~LearningCondensationTracker() {}
 
-boost::optional<Rectangle> LearningCondensationTracker::process(FdImage* image) {
+boost::optional<Rectangle> LearningCondensationTracker::process(cv::Mat& image) {
 	oldSamples = samples;
 	sampler->sample(oldSamples, offset, image, samples);
 	// evaluate samples and extract position

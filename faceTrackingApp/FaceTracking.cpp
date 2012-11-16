@@ -34,7 +34,6 @@
 #include "DetectorWVM.h"
 #include "DetectorSVM.h"
 #include "tracking/ChangableDetectorSvm.h"
-#include "FdImage.h"
 #include "SLogger.h"
 #include <boost/optional.hpp>
 #include <boost/program_options.hpp>
@@ -204,12 +203,9 @@ void FaceTracking::run() {
 				first = false;
 				image.create(frame.rows, frame.cols, frame.type());
 			}
-			FdImage* myImage = new FdImage();
-			myImage->load(&frame);
 			gettimeofday(&detStart, 0);
-			boost::optional<tracking::Rectangle> face = tracker->process(myImage);
+			boost::optional<tracking::Rectangle> face = tracker->process(frame);
 			gettimeofday(&detEnd, 0);
-			delete myImage;
 			image = frame;
 			drawDebug(image);
 			cv::Scalar& color = measurementModel->wasUsingDynamicModel() ? green : red;

@@ -9,7 +9,6 @@
 #include "tracking/Sampler.h"
 #include "tracking/MeasurementModel.h"
 #include "tracking/PositionExtractor.h"
-#include "FdImage.h"
 
 namespace tracking {
 
@@ -29,7 +28,7 @@ CondensationTracker::CondensationTracker(shared_ptr<Sampler> sampler,
 
 CondensationTracker::~CondensationTracker() {}
 
-boost::optional<Rectangle> CondensationTracker::process(FdImage* image) {
+boost::optional<Rectangle> CondensationTracker::process(cv::Mat& image) {
 	oldSamples = samples;
 	sampler->sample(oldSamples, offset, image, samples);
 	// evaluate samples and extract position

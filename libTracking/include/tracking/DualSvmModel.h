@@ -36,7 +36,7 @@ public:
 
 	~DualSvmModel();
 
-	void evaluate(FdImage* image, std::vector<Sample>& samples);
+	void evaluate(cv::Mat& image, std::vector<Sample>& samples);
 
 private:
 	shared_ptr<VDetectorVectorMachine> preStage;  ///< The (fast) pre-stage SVM.

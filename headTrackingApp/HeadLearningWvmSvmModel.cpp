@@ -30,7 +30,8 @@ HeadLearningWvmSvmModel::HeadLearningWvmSvmModel(shared_ptr<VDetectorVectorMachi
 				oe(oe),
 				svmTraining(svmTraining),
 				useDynamicSvm(false),
-				wasUsingDynamicSvm(false) {}
+				wasUsingDynamicSvm(false),
+				fdImage(new FdImage()) {}
 
 HeadLearningWvmSvmModel::HeadLearningWvmSvmModel(std::string configFilename, std::string negativesFilename) :
 		wvm(make_shared<DetectorWVM>()),
@@ -39,23 +40,29 @@ HeadLearningWvmSvmModel::HeadLearningWvmSvmModel(std::string configFilename, std
 		oe(make_shared<OverlapElimination>()),
 		svmTraining(boost::make_shared<FrameBasedSvmTraining>(5, 4, negativesFilename, 200)),
 		useDynamicSvm(false),
-		wasUsingDynamicSvm(false) {
+		wasUsingDynamicSvm(false),
+		fdImage(new FdImage()) {
 	wvm->load(configFilename);
 	staticSvm->load(configFilename);
 	dynamicSvm->load(configFilename);
 	oe->load(configFilename);
 }
 
-HeadLearningWvmSvmModel::~HeadLearningWvmSvmModel() {}
+HeadLearningWvmSvmModel::~HeadLearningWvmSvmModel() {
+	delete fdImage;
+}
 
-void HeadLearningWvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
+void HeadLearningWvmSvmModel::evaluate(cv::Mat& image, std::vector<Sample>& samples) {
+	delete fdImage;
+	fdImage = new FdImage();
+	fdImage->load(&image);
 	if (useDynamicSvm) {
-		dynamicSvm->initPyramids(image);
-		dynamicSvm->initROI(image);
+		dynamicSvm->initPyramids(fdImage);
+		dynamicSvm->initROI(fdImage);
 		for (std::vector<Sample>::iterator sit = samples.begin(); sit < samples.end(); ++sit) {
 			Sample& sample = *sit;
 			sample.setObject(false);
-			FdPatch* patch = dynamicSvm->extractPatchToPyramid(image, sample.getX(), sample.getY(), sample.getSize());
+			FdPatch* patch = dynamicSvm->extractPatchToPyramid(fdImage, sample.getX(), sample.getY(), sample.getSize());
 			if (patch == 0) {
 				sample.setWeight(0);
 			} else {
@@ -65,8 +72,8 @@ void HeadLearningWvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samp
 			}
 		}
 	} else {
-		wvm->initPyramids(image);
-		wvm->initROI(image);
+		wvm->initPyramids(fdImage);
+		wvm->initROI(fdImage);
 		std::vector<FdPatch*> remainingPatches;
 		std::map<FdPatch*, std::vector<Sample*> > patch2samples;
 		for (std::vector<Sample>::iterator sit = samples.begin(); sit < samples.end(); ++sit) {
@@ -75,7 +82,7 @@ void HeadLearningWvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samp
 			int faceX = sample.getX();
 			int faceY = sample.getY() + (int)(0.1 * sample.getSize());
 			int faceSize = (int)(0.6 * sample.getSize());
-			FdPatch* patch = wvm->extractPatchToPyramid(image, faceX, faceY, faceSize);
+			FdPatch* patch = wvm->extractPatchToPyramid(fdImage, faceX, faceY, faceSize);
 			if (patch == 0) {
 				sample.setWeight(0);
 			} else {
@@ -91,8 +98,8 @@ void HeadLearningWvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samp
 				//remainingPatches = oe->eliminate(remainingPatches, wvm->getIdentifier());
 				remainingPatches = takeDistinctBest(remainingPatches, 10, wvm->getIdentifier());
 			VDetectorVectorMachine& svm = useDynamicSvm ? *dynamicSvm : *staticSvm;
-			svm.initPyramids(image);
-			svm.initROI(image);
+			svm.initPyramids(fdImage);
+			svm.initROI(fdImage);
 			std::vector<FdPatch*> objectPatches = svm.detectOnPatchvec(remainingPatches);
 			for (std::vector<FdPatch*>::iterator pit = objectPatches.begin(); pit < objectPatches.end(); ++pit) {
 				std::vector<Sample*>& patchSamples = patch2samples[(*pit)];
@@ -126,10 +133,10 @@ void HeadLearningWvmSvmModel::update() {
 	useDynamicSvm = svmTraining->retrain(*dynamicSvm, empty, empty);
 }
 
-void HeadLearningWvmSvmModel::update(FdImage* image, std::vector<Sample>& positiveSamples,
+void HeadLearningWvmSvmModel::update(cv::Mat& image, std::vector<Sample>& positiveSamples,
 		std::vector<Sample>& negativeSamples) {
 	useDynamicSvm = svmTraining->retrain(*dynamicSvm,
-			getPatches(image, positiveSamples), getPatches(image, negativeSamples));
+			getPatches(fdImage, positiveSamples), getPatches(fdImage, negativeSamples));
 }
 
 std::vector<FdPatch*> HeadLearningWvmSvmModel::getPatches(FdImage* image, std::vector<Sample>& samples) {

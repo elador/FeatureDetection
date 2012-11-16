@@ -8,10 +8,9 @@
 #ifndef LEARNINGSTRATEGY_H_
 #define LEARNINGSTRATEGY_H_
 
-#include <vector>
+#include "opencv2/core/core.hpp"
 #include "tracking/Sample.h"
-
-class FdImage;
+#include <vector>
 
 namespace tracking {
 
@@ -32,7 +31,7 @@ public:
 	 * @param[in] image The image.
 	 * @param[in] samples The current weighted samples of the condensation tracking.
 	 */
-	virtual void update(LearningMeasurementModel& model, FdImage* image, const std::vector<Sample>& samples) = 0;
+	virtual void update(LearningMeasurementModel& model, cv::Mat& image, const std::vector<Sample>& samples) = 0;
 
 	/**
 	 * Updates the measurement model given the position of the tracked object.
@@ -42,7 +41,7 @@ public:
 	 * @param[in] samples The current weighted samples of the condensation tracking.
 	 * @param[in] position The position of the tracked object.
 	 */
-	virtual void update(LearningMeasurementModel& model, FdImage* image,
+	virtual void update(LearningMeasurementModel& model, cv::Mat& image,
 			const std::vector<Sample>& samples, const Sample& position) = 0;
 };
 

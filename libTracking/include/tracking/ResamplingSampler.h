@@ -44,7 +44,7 @@ public:
 	~ResamplingSampler();
 
 	void sample(const std::vector<Sample>& samples, const std::vector<double>& offset,
-				const FdImage* image, std::vector<Sample>& newSamples);
+				const cv::Mat& image, std::vector<Sample>& newSamples);
 
 	/**
 	 * @return The number of samples.
@@ -83,7 +83,7 @@ private:
 	 * @param[in] image The image.
 	 * @return True if the sample is valid, false otherwise.
 	 */
-	bool isValid(const Sample& sample, const FdImage* image);
+	bool isValid(const Sample& sample, const cv::Mat& image);
 
 	/**
 	 * Randomly samples new valid values for a sample.
@@ -91,7 +91,7 @@ private:
 	 * @param[in,out] sample The sample.
 	 * @param[in] image The image.
 	 */
-	void sampleValid(Sample& sample, const FdImage* image);
+	void sampleValid(Sample& sample, const cv::Mat& image);
 
 	unsigned int count; ///< The number of samples.
 	double randomRate;  ///< The percentage of samples that should be equally distributed.

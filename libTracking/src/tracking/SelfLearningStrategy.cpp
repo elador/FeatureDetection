@@ -14,11 +14,11 @@ SelfLearningStrategy::SelfLearningStrategy() {}
 
 SelfLearningStrategy::~SelfLearningStrategy() {}
 
-void SelfLearningStrategy::update(LearningMeasurementModel& model, FdImage* image, const std::vector<Sample>& samples) {
+void SelfLearningStrategy::update(LearningMeasurementModel& model, cv::Mat& image, const std::vector<Sample>& samples) {
 	model.update();
 }
 
-void SelfLearningStrategy::update(LearningMeasurementModel& model, FdImage* image,
+void SelfLearningStrategy::update(LearningMeasurementModel& model, cv::Mat& image,
 		const std::vector<Sample>& samples, const Sample& position) {
 	model.update();
 }

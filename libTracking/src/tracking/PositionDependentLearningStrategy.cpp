@@ -7,7 +7,6 @@
 
 #include "tracking/PositionDependentLearningStrategy.h"
 #include "tracking/LearningMeasurementModel.h"
-#include "FdImage.h"
 
 namespace tracking {
 
@@ -15,12 +14,12 @@ PositionDependentLearningStrategy::PositionDependentLearningStrategy() {}
 
 PositionDependentLearningStrategy::~PositionDependentLearningStrategy() {}
 
-void PositionDependentLearningStrategy::update(LearningMeasurementModel& model, FdImage* image,
+void PositionDependentLearningStrategy::update(LearningMeasurementModel& model, cv::Mat& image,
 		const std::vector<Sample>& samples) {
 	model.update();
 }
 
-void PositionDependentLearningStrategy::update(LearningMeasurementModel& model, FdImage* image,
+void PositionDependentLearningStrategy::update(LearningMeasurementModel& model, cv::Mat& image,
 		const std::vector<Sample>& samples, const Sample& position) {
 
 	std::vector<Sample> positiveSamples;

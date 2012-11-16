@@ -10,11 +10,10 @@
 
 #include "tracking/Rectangle.h"
 #include "tracking/Sample.h"
+#include "opencv2/core/core.hpp"
 #include "boost/shared_ptr.hpp"
 #include "boost/optional.hpp"
 #include <vector>
-
-class FdImage;
 
 using boost::shared_ptr;
 
@@ -48,7 +47,7 @@ public:
 	 * @param[in] image The next image.
 	 * @return The bounding box around the most probable object position if there is an object.
 	 */
-	boost::optional<Rectangle> process(FdImage* image);
+	boost::optional<Rectangle> process(cv::Mat& image);
 
 	/**
 	 * @return The current samples.

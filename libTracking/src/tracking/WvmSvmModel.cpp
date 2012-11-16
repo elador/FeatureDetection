@@ -22,15 +22,17 @@ WvmSvmModel::WvmSvmModel(shared_ptr<VDetectorVectorMachine> wvm, shared_ptr<VDet
 
 WvmSvmModel::~WvmSvmModel() {}
 
-void WvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
-	wvm->initPyramids(image);
-	wvm->initROI(image);
+void WvmSvmModel::evaluate(cv::Mat& image, std::vector<Sample>& samples) {
+	FdImage* fdImage = new FdImage;
+	fdImage->load(&image);
+	wvm->initPyramids(fdImage);
+	wvm->initROI(fdImage);
 	std::vector<FdPatch*> remainingPatches;
 	std::map<FdPatch*, std::vector<Sample*> > patch2samples;
 	for (std::vector<Sample>::iterator sit = samples.begin(); sit < samples.end(); ++sit) {
 		Sample& sample = *sit;
 		sample.setObject(false);
-		FdPatch* patch = wvm->extractPatchToPyramid(image, sample.getX(), sample.getY(), sample.getSize());
+		FdPatch* patch = wvm->extractPatchToPyramid(fdImage, sample.getX(), sample.getY(), sample.getSize());
 		if (patch == 0) {
 			sample.setWeight(0);
 		} else {
@@ -44,8 +46,8 @@ void WvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
 	if (!remainingPatches.empty()) {
 		//remainingPatches = oe->eliminate(remainingPatches, wvm->getIdentifier());
 		remainingPatches = takeDistinctBest(remainingPatches, 10, wvm->getIdentifier());
-		svm->initPyramids(image);
-		svm->initROI(image);
+		svm->initPyramids(fdImage);
+		svm->initROI(fdImage);
 		std::vector<FdPatch*> objectPatches = svm->detectOnPatchvec(remainingPatches);
 		for (std::vector<FdPatch*>::iterator pit = objectPatches.begin(); pit < objectPatches.end(); ++pit) {
 			std::vector<Sample*>& patchSamples = patch2samples[(*pit)];
@@ -65,6 +67,7 @@ void WvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
 			patchSamples.clear();
 		}
 	}
+	delete fdImage;
 }
 
 } /* namespace tracking */

@@ -36,7 +36,8 @@ SelfLearningWvmSvmModel::SelfLearningWvmSvmModel(shared_ptr<VDetectorVectorMachi
 				positiveThreshold(positiveThreshold),
 				negativeThreshold(negativeThreshold),
 				positiveTrainingPatches(),
-				negativeTrainingPatches() {}
+				negativeTrainingPatches(),
+				fdImage(new FdImage()) {}
 
 SelfLearningWvmSvmModel::SelfLearningWvmSvmModel(std::string configFilename, std::string negativesFilename) :
 		wvm(make_shared<DetectorWVM>()),
@@ -47,16 +48,22 @@ SelfLearningWvmSvmModel::SelfLearningWvmSvmModel(std::string configFilename, std
 		useDynamicSvm(false),
 		wasUsingDynamicSvm(false),
 		positiveThreshold(0.85),
-		negativeThreshold(0.4) {
+		negativeThreshold(0.4),
+		fdImage(new FdImage()) {
 	wvm->load(configFilename);
 	staticSvm->load(configFilename);
 	dynamicSvm->load(configFilename);
 	oe->load(configFilename);
 }
 
-SelfLearningWvmSvmModel::~SelfLearningWvmSvmModel() {}
+SelfLearningWvmSvmModel::~SelfLearningWvmSvmModel() {
+	delete fdImage;
+}
 
-void SelfLearningWvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samples) {
+void SelfLearningWvmSvmModel::evaluate(cv::Mat& image, std::vector<Sample>& samples) {
+	delete fdImage;
+	fdImage = new FdImage();
+	fdImage->load(&image);
 //	if (usingDynamicSvm) { // TODO test of drift by not using wvm
 //		positiveTrainingPatches.clear();
 //		negativeTrainingPatches.clear();
@@ -82,14 +89,14 @@ void SelfLearningWvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samp
 //		positiveTrainingPatches = takeDistinctBest(positiveTrainingPatches, 10, dynamicSvm->getIdentifier());
 //		negativeTrainingPatches = takeDistinctWorst(negativeTrainingPatches, 10, dynamicSvm->getIdentifier());
 //	} else {
-	wvm->initPyramids(image);
-	wvm->initROI(image);
+	wvm->initPyramids(fdImage);
+	wvm->initROI(fdImage);
 	std::vector<FdPatch*> remainingPatches;
 	std::map<FdPatch*, std::vector<Sample*> > patch2samples;
 	for (std::vector<Sample>::iterator sit = samples.begin(); sit < samples.end(); ++sit) {
 		Sample& sample = *sit;
 		sample.setObject(false);
-		FdPatch* patch = wvm->extractPatchToPyramid(image, sample.getX(), sample.getY(), sample.getSize());
+		FdPatch* patch = wvm->extractPatchToPyramid(fdImage, sample.getX(), sample.getY(), sample.getSize());
 		if (patch == 0) {
 			sample.setWeight(0);
 		} else {
@@ -107,8 +114,8 @@ void SelfLearningWvmSvmModel::evaluate(FdImage* image, std::vector<Sample>& samp
 			//remainingPatches = oe->eliminate(remainingPatches, wvm->getIdentifier());
 			remainingPatches = takeDistinctBest(remainingPatches, 10, wvm->getIdentifier());
 		VDetectorVectorMachine& svm = useDynamicSvm ? *dynamicSvm : *staticSvm;
-		svm.initPyramids(image);
-		svm.initROI(image);
+		svm.initPyramids(fdImage);
+		svm.initROI(fdImage);
 		std::vector<FdPatch*> objectPatches = svm.detectOnPatchvec(remainingPatches);
 		for (std::vector<FdPatch*>::iterator pit = objectPatches.begin(); pit < objectPatches.end(); ++pit) {
 			std::vector<Sample*>& patchSamples = patch2samples[(*pit)];
@@ -150,10 +157,10 @@ void SelfLearningWvmSvmModel::update() {
 	negativeTrainingPatches.clear();
 }
 
-void SelfLearningWvmSvmModel::update(FdImage* image, std::vector<Sample>& positiveSamples,
+void SelfLearningWvmSvmModel::update(cv::Mat& image, std::vector<Sample>& positiveSamples,
 		std::vector<Sample>& negativeSamples) {
-	addSamples(image, positiveTrainingPatches, positiveSamples);
-	addSamples(image, negativeTrainingPatches, negativeSamples);
+	addSamples(fdImage, positiveTrainingPatches, positiveSamples);
+	addSamples(fdImage, negativeTrainingPatches, negativeSamples);
 	update();
 }
 

@@ -25,9 +25,9 @@ public:
 
 	~SelfLearningStrategy();
 
-	void update(LearningMeasurementModel& model, FdImage* image, const std::vector<Sample>& samples);
+	void update(LearningMeasurementModel& model, cv::Mat& image, const std::vector<Sample>& samples);
 
-	void update(LearningMeasurementModel& model, FdImage* image,
+	void update(LearningMeasurementModel& model, cv::Mat& image,
 			const std::vector<Sample>& samples, const Sample& position);
 };
 

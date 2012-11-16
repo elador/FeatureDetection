@@ -13,6 +13,7 @@
 #include "boost/shared_ptr.hpp"
 #include <string>
 
+class FdImage;
 class VDetectorVectorMachine;
 class OverlapElimination;
 
@@ -63,13 +64,13 @@ public:
 
 	~SelfLearningWvmSvmModel();
 
-	void evaluate(FdImage* image, std::vector<Sample>& samples);
+	void evaluate(cv::Mat& image, std::vector<Sample>& samples);
 
 	void reset();
 
 	void update();
 
-	void update(FdImage* image, std::vector<Sample>& positiveSamples, std::vector<Sample>& negativeSamples);
+	void update(cv::Mat& image, std::vector<Sample>& positiveSamples, std::vector<Sample>& negativeSamples);
 
 	inline bool wasUsingDynamicModel() {
 		return wasUsingDynamicSvm;
@@ -100,6 +101,7 @@ private:
 	double negativeThreshold; ///< The threshold for patches to be used as negative samples (must fall below).
 	std::vector<FdPatch*> positiveTrainingPatches; ///< The positive training patches for the next update.
 	std::vector<FdPatch*> negativeTrainingPatches; ///< The negative training patches for the next update.
+	FdImage* fdImage; ///< The image that was used for the previous evaluation.
 };
 
 } /* namespace tracking */
