@@ -15,6 +15,8 @@ public:
 	int load(const std::string);
 	int initForImage(FdImage*);
 
+	void setCalculateProbabilityOfAllPatches(bool);
+
 protected:
 
 	float**  lin_filters;      // points to the filter array (this is support_hk%d in the .mat-file). These are the actual vectors.
@@ -65,5 +67,8 @@ protected:
 
 	float *filter_output;		// temporary output of each filter level
 	float *u_kernel_eval;		// temporary cache, size=nLinFilters_wvm (or nLevels_wvm?)
+
+	bool calculateProbabilityOfAllPatches; // Default = false. Calculate the probability of patches that don't live until the last wvm vector. If false, set the prob. to zero.
+											// Warning: The probabilities are not really correct for all stages not equal to the last stage. 
 };
 

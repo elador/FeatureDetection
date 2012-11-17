@@ -29,6 +29,8 @@ DetectorWVM::DetectorWVM(void)
 
 	limit_reliability_filter = 0.0f;
 
+	calculateProbabilityOfAllPatches = false;
+
 }
 
 
@@ -55,6 +57,11 @@ DetectorWVM::~DetectorWVM(void)
 
 	if (filter_output!=NULL) delete [] filter_output;
 	if (u_kernel_eval!=NULL) delete [] u_kernel_eval;
+}
+
+void DetectorWVM::setCalculateProbabilityOfAllPatches(bool var)
+{
+	this->calculateProbabilityOfAllPatches = var;
 }
 
 /*
@@ -102,6 +109,7 @@ bool DetectorWVM::classify(FdPatch* fp)
 
 	//fp->certainty = 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]));
 	// TODO: filter statistics, nDropedOutAsNonFace[filter_level]++;
+	// We ran till the end, save the certainty
 	if(filter_level+1 == this->nLinFilters && fout >= this->lin_hierar_thresh[filter_level]) {
 	//	fp->writePNG("pos.png");
 		std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]))));
@@ -112,13 +120,25 @@ bool DetectorWVM::classify(FdPatch* fp)
 		}
 		return true;
 	}
-	std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 0.0f));
-	if(certainty_insert.second == false) {
-		if(Logger->getVerboseLevelText()>=4) {
-			std::cout << "[DetectorWVM] An element 'certainty' already exists for this detector, you classified the same patch twice. We can't circumvent this for now." << std::endl;
+
+	// We didn't run up to the last filter.
+	if(this->calculateProbabilityOfAllPatches==true) {
+		std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]))));
+		if(certainty_insert.second == false) {
+			if(Logger->getVerboseLevelText()>=4) {
+				std::cout << "[DetectorWVM] An element 'certainty' already exists for this detector, you classified the same patch twice. We can't circumvent this for now." << std::endl;
+			}
 		}
+		return false;
+	} else {
+		std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 0.0f));
+		if(certainty_insert.second == false) {
+			if(Logger->getVerboseLevelText()>=4) {
+				std::cout << "[DetectorWVM] An element 'certainty' already exists for this detector, you classified the same patch twice. We can't circumvent this for now." << std::endl;
+			}
+		}
+		return false;
 	}
-	return false;
 }
 
 /*
