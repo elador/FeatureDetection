@@ -156,6 +156,9 @@ int main(int argc, char *argv[])		// Peter
 	Logger->global.img.writeDetectorCandidates = true;	// Write images of all 5 stages
 
 	CascadeWvmOeSvmOe* casc = new CascadeWvmOeSvmOe(fn_detFrontal);
+	casc->wvm->setCalculateProbabilityOfAllPatches(false);	// only to demonstrate.
+	casc->wvm->setLimitReliabilityFilter(0.0f);
+	casc->wvm->setNumUsedFilters(280);
 
 	for(unsigned int i=0; i< filenames.size(); i++) {
 		myimg = new FdImage();

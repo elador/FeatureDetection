@@ -14,8 +14,8 @@ DetectorWVM::DetectorWVM(void)
 	identifier = "DetectorWVM";
 	linFilters			= NULL;
 	lin_thresholds		= NULL;
-	numLinFilters			= 0;
-	lin_hierar_thresh	= 0;
+	numLinFilters		= 0;
+	numUsedFilters		= 0;
 	hkWeights			= NULL;
 
 	area = NULL;
@@ -27,7 +27,7 @@ DetectorWVM::DetectorWVM(void)
 	posterior_wrvm[0] = 0.0f;
 	posterior_wrvm[1] = 0.0f;
 
-	limit_reliability_filter = 0.0f;
+	limitReliabilityFilter = 0.0f;
 
 	calculateProbabilityOfAllPatches = false;
 
@@ -45,7 +45,7 @@ DetectorWVM::~DetectorWVM(void)
 		for (int i = 0; i < numLinFilters; ++i) delete [] hkWeights[i];
 	delete [] hkWeights;
 	delete [] lin_thresholds;
-	delete [] lin_hierar_thresh;
+	//delete [] hierarchicalThresholds;
 
 	if (area!=NULL)	 {
 		for (int i=0;i<numLinFilters;i++)
@@ -62,6 +62,40 @@ DetectorWVM::~DetectorWVM(void)
 void DetectorWVM::setCalculateProbabilityOfAllPatches(bool var)
 {
 	this->calculateProbabilityOfAllPatches = var;
+}
+
+void DetectorWVM::setNumUsedFilters(int var)
+{
+	if(var>this->numLinFilters || var==0) {
+		this->numUsedFilters = this->numLinFilters;
+	} else {
+		this->numUsedFilters = var;
+	}
+}
+
+int DetectorWVM::getNumUsedFilters(void)
+{
+	return this->numUsedFilters;
+}
+
+void DetectorWVM::setLimitReliabilityFilter(float var)
+{
+	this->limitReliabilityFilter = var;
+	if(var != 0.0f) {
+		this->hierarchicalThresholds.clear();	// Maybe we could not use clear here and just assign the new value. But then we'd have a problem the first time we call this function.
+												// But we could pre-allocate the right size.
+		for (unsigned int i=0; i<this->hierarchicalThresholdsFromFile.size(); ++i) {
+			this->hierarchicalThresholds.push_back(this->hierarchicalThresholdsFromFile[i] + limitReliabilityFilter);
+		}
+	} else {
+		this->hierarchicalThresholds = this->hierarchicalThresholdsFromFile;
+	}
+
+}
+
+float DetectorWVM::getLimitReliabilityFilter(void)
+{
+	return this->limitReliabilityFilter;
 }
 
 /*
@@ -97,7 +131,8 @@ bool DetectorWVM::classify(FdPatch* fp)
 	do {
 		filter_level++;
 		fout = this->linEvalWvmHisteq64(filter_level, (filter_level%this->numFiltersPerLevel), fp->c.x_py, fp->c.y_py, filter_output, u_kernel_eval, fp->iimg_x, fp->iimg_xx);
-	} while (fout >= this->lin_hierar_thresh[filter_level] && filter_level+1 < this->numLinFilters); //280
+	//} while (fout >= this->hierarchicalThresholds[filter_level] && filter_level+1 < this->numLinFilters); //280
+	} while (fout >= this->hierarchicalThresholds[filter_level] && filter_level+1 < this->numUsedFilters); //280
 	
 	//fp->fout = fout;
 	std::pair<FoutMap::iterator, bool> fout_insert = fp->fout.insert(FoutMap::value_type(this->identifier, fout));
@@ -109,8 +144,8 @@ bool DetectorWVM::classify(FdPatch* fp)
 
 	//fp->certainty = 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]));
 	// TODO: filter statistics, nDropedOutAsNonFace[filter_level]++;
-	// We ran till the end, save the certainty
-	if(filter_level+1 == this->numLinFilters && fout >= this->lin_hierar_thresh[filter_level]) {
+	// We ran till the REAL LAST filter (not just the numUsedFilters one), save the certainty
+	if(filter_level+1 == this->numLinFilters && fout >= this->hierarchicalThresholds[filter_level]) {
 	//	fp->writePNG("pos.png");
 		std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]))));
 		if(certainty_insert.second == false) {
@@ -121,7 +156,7 @@ bool DetectorWVM::classify(FdPatch* fp)
 		return true;
 	}
 
-	// We didn't run up to the last filter.
+	// We didn't run up to the last filter (or only up to the numUsedFilters one)
 	if(this->calculateProbabilityOfAllPatches==true) {
 		std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]))));
 		if(certainty_insert.second == false) {
@@ -383,15 +418,15 @@ int DetectorWVM::load(const std::string filename)
 
 	//Number filters to use
 	if (!configReader->getKey("FD.numUsedFilter",buff))
-		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.numUsedFilter', nehme Default: " << this->numUsedFilter << std::endl;
-	else this->numUsedFilter=std::max(0,atoi(buff));
+		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.numUsedFilter', nehme Default: " << this->numUsedFilters << std::endl;
+	else this->numUsedFilters=std::max(0,atoi(buff));
 
 	//Grenze der Zuverlaesigkeit ab der Gesichter aufgenommen werden (Diffwert fr W-RSV's-Schwellen)
 	// zB. +0.1 => weniger patches drüber(mehr rejected, langsamer),    dh. mehr fn(FRR), weniger fp(FAR)  und
 	// zB. -0.1 => mehr patches drüber(mehr nicht rejected, schneller), dh. weniger fn(FRR), mehr fp(FAR)
 	if (!configReader->getKey("FD.limit_reliability_filter",buff))
-		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.limit_reliability_filter', nehme Default: " << this->limit_reliability_filter << std::endl;
-	else this->limit_reliability_filter=(float)atof(buff);
+		std::cout << "[DetWVM] WARNING: Key in Config nicht gefunden, key:'FD.limit_reliability_filter', nehme Default: " << this->limitReliabilityFilter << std::endl;
+	else this->limitReliabilityFilter=(float)atof(buff);
 
 	//Kassifikator
 	char fn_classifier[500];
@@ -458,7 +493,7 @@ int DetectorWVM::load(const std::string filename)
 				for (i = 0; i < numLinFilters; ++i) 
 					linFilters[i] = new float[nDim];
 				lin_thresholds = new float [numLinFilters];
-				lin_hierar_thresh = new float [numLinFilters];
+				hierarchicalThresholds = new float [numLinFilters];
 				hkWeights = new float* [numLinFilters];
 				for (i = 0; i < numLinFilters; ++i) 
 					hkWeights[i] = new float[numLinFilters];
@@ -546,7 +581,7 @@ int DetectorWVM::load(const std::string filename)
 		for (int i = 0; i < numLinFilters; ++i) 
 			linFilters[i] = new float[w*h];
 		
-		lin_hierar_thresh = new float [numLinFilters];
+		//hierarchicalThresholds = new float [numLinFilters];
 		hkWeights = new float* [numLinFilters];
 		for (int i = 0; i < numLinFilters; ++i) 
 			hkWeights[i] = new float[numLinFilters];
@@ -788,8 +823,9 @@ int DetectorWVM::load(const std::string filename)
 			const mwSize *dim = mxGetDimensions(pmxarray);
 			for (int o=0; o<(int)dim[1]; ++o) {
 				//TPairIf p(o+1, (float)matdata[o]);
-				std::pair<int, float> p(o+1, (float)matdata[o]); // = std::make_pair<int, float>
-				this->hierarchical_thresholds.push_back(p);
+				//std::pair<int, float> p(o+1, (float)matdata[o]); // = std::make_pair<int, float>
+				//this->hierarchicalThresholdsFromFile.push_back(p);
+				this->hierarchicalThresholdsFromFile.push_back((float)matdata[o]);
 			}
 			mxDestroyArray(pmxarray);
 		}
@@ -815,21 +851,25 @@ int DetectorWVM::load(const std::string filename)
 		matClose(pmatfile);
 	}
 
-	int i;
+	/*int i;
 	for (i = 0; i < this->numLinFilters; ++i) {
-		this->lin_hierar_thresh[i] = 0;
+		this->hierarchicalThresholds[i] = 0;
 	}
-	for (i = 0; i < this->hierarchical_thresholds.size(); ++i) {
-		if (this->hierarchical_thresholds[i].first <= this->numLinFilters)
-			this->lin_hierar_thresh[this->hierarchical_thresholds[i].first-1] = this->hierarchical_thresholds[i].second;
+	for (i = 0; i < this->hierarchicalThresholdsFromFile.size(); ++i) {
+		if (this->hierarchicalThresholdsFromFile[i].first <= this->numLinFilters)
+			this->hierarchicalThresholds[this->hierarchicalThresholdsFromFile[i].first-1] = this->hierarchicalThresholdsFromFile[i].second;
 	}
-	
 	//Diffwert fuer W-RSV's-Schwellen 
-	if (this->limit_reliability_filter!=0.0)
-		for (i = 0; i < this->numLinFilters; ++i) this->lin_hierar_thresh[i]+=this->limit_reliability_filter;
+	if (this->limitReliabilityFilter!=0.0)
+		for (i = 0; i < this->numLinFilters; ++i) this->hierarchicalThresholds[i]+=this->limitReliabilityFilter;
+	*/
+	if(this->hierarchicalThresholdsFromFile.size() != this->numLinFilters) {
+		std::cout << "[DetWVM] Something seems to be wrong, hierarchicalThresholdsFromFile.size() != numLinFilters; " << this->hierarchicalThresholdsFromFile.size() << "!=" << this->numLinFilters << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	this->setLimitReliabilityFilter(this->limitReliabilityFilter);	// This initializes the vector hierarchicalThresholds
 
-
-	//for (i = 0; i < this->numLinFilters; ++i) printf("b%d=%g ",i+1,this->lin_hierar_thresh[i]);
+	//for (i = 0; i < this->numLinFilters; ++i) printf("b%d=%g ",i+1,this->hierarchicalThresholds[i]);
 	//printf("\n");
 	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=1) {
 		std::cout << "[DetWVM] Done reading WVM-threshold file " << fn_threshold << std::endl;
@@ -839,6 +879,8 @@ int DetectorWVM::load(const std::string filename)
 	
 	filter_output = new float[this->numLinFilters];
  	u_kernel_eval = new float[this->numLinFilters];
+
+	this->setNumUsedFilters(this->numUsedFilters);	// Makes sure that we don't use more filters than the loaded WVM has, and if zero, set to numLinFilters.
 
 	return 1;
 }

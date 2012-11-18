@@ -16,6 +16,10 @@ public:
 	int initForImage(FdImage*);
 
 	void setCalculateProbabilityOfAllPatches(bool);
+	int getNumUsedFilters(void);
+	void setNumUsedFilters(int);			// Change the number of currently used wavelet-vectors
+	float getLimitReliabilityFilter(void);
+	void setLimitReliabilityFilter(float);	// Rewrites the hierarchicalThresholds vector with the new thresholds
 
 protected:
 
@@ -23,22 +27,22 @@ protected:
 	float**  hkWeights;       // weights[i] contains the weights of the kernels of the i hierarchical kernel.
 
 
-	int numUsedFilter;			// Read from the matlab config. 0=use all, >0 && <numLinFilters ==> don't use all, only numUsedFilter.
+	int numUsedFilters;			// Read from the matlab config. 0=use all, >0 && <numLinFilters ==> don't use all, only numUsedFilters.
 	int numLinFilters;			// Read from detector .mat. Used in the WVM loop (run over all vectors). (e.g. 280)
 	
 	int	numFiltersPerLevel;		// number of filters per level (e.g. 14)
 	int	numLevels;			// number of levels with filters (e.g. 20)
 	
 
-	float*   lin_thresholds;   // arrays of the thresholds (the SVM's b). All values of this array (e.g. 280) are set to nonlin_threshold read from the detector .mat on load().
-								// This is then used inside WvmEvalHistEq64()
+	float* lin_thresholds;	// arrays of the thresholds (the SVM's b). All values of this array (e.g. 280) are set to nonlin_threshold read from the detector .mat on load().
+							// This is then used inside WvmEvalHistEq64(). The same for all vectors. This could be just a float. Actually it can only be a float because it comes from param_nonlin1 in the .mat.
 
-	float*   lin_hierar_thresh;// a pixel whose correlation with filter i is > lin_hierar_thresh[i] 
-	                           // is retained for further investigation, if it is lower, it is classified as being not a face 
-	std::vector< std::pair<int, float> > hierarchical_thresholds;	// This is the same as lin_hierar_thresh. Checked on 17.11.12 - this is really not needed.
-																	// hierarchical_thresholds is only used for reading from the config, then not used anymore.
+	std::vector<float> hierarchicalThresholds;	// a pixel whose correlation with filter i is > hierarchicalThresholds[i] 
+										// is retained for further investigation, if it is lower, it is classified as being not a face 
+	std::vector<float> hierarchicalThresholdsFromFile;	// This is the same as hierarchicalThresholds. Checked on 17.11.12 - this is really not needed.
+																	// hierarchicalThresholdsFromFile is only used for reading from the config, then not used anymore.
 	
-	float limit_reliability_filter;	// This is added to lin_hierar_thresh on startup (read from the config, FD.limit_reliability_filter), then not used anymore.
+	float limitReliabilityFilter;	// This is added to hierarchicalThresholds on startup (read from the config, FD.limitReliabilityFilter), then not used anymore.
 
 
 	typedef struct _rec {

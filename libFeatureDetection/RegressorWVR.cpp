@@ -15,7 +15,7 @@ RegressorWVR::RegressorWVR(void)
 	identifier = "RegressorWVR";
 
 	lin_filters			= 0;
-	lin_thresholds		= 0;
+	lin_thresholds		= NULL;
 	nLinFilters			= 0;
 	lin_hierar_thresh	= 0;
 	hk_weights			= 0;
