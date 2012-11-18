@@ -12,11 +12,11 @@
 DetectorWVM::DetectorWVM(void)
 {
 	identifier = "DetectorWVM";
-	lin_filters			= 0;
-	lin_thresholds		= 0;
-	nLinFilters			= 0;
+	linFilters			= NULL;
+	lin_thresholds		= NULL;
+	numLinFilters			= 0;
 	lin_hierar_thresh	= 0;
-	hk_weights			= 0;
+	hkWeights			= NULL;
 
 	area = NULL;
 	app_rsv_convol = NULL;
@@ -36,19 +36,19 @@ DetectorWVM::DetectorWVM(void)
 
 DetectorWVM::~DetectorWVM(void)
 {
-	if (lin_filters != 0) {
-		for (int i = 0; i < nLinFilters; ++i)
-			delete [] lin_filters[i];
+	if (linFilters != NULL) {
+		for (int i = 0; i < numLinFilters; ++i)
+			delete [] linFilters[i];
 	}
-	delete [] lin_filters;
-	if (hk_weights != 0)
-		for (int i = 0; i < nLinFilters; ++i) delete [] hk_weights[i];
-	delete [] hk_weights;
+	delete [] linFilters;
+	if (hkWeights != NULL)
+		for (int i = 0; i < numLinFilters; ++i) delete [] hkWeights[i];
+	delete [] hkWeights;
 	delete [] lin_thresholds;
 	delete [] lin_hierar_thresh;
 
 	if (area!=NULL)	 {
-		for (int i=0;i<nLinFilters;i++)
+		for (int i=0;i<numLinFilters;i++)
 			if (area[i]!=NULL) 
 				delete area[i];
 		delete[] area;
@@ -89,15 +89,15 @@ bool DetectorWVM::classify(FdPatch* fp)
 		fp->iimg_xx->calIImgPatch(fp->data, true);
 	}
 
-	for (int n=0;n<this->nLinFilters_wvm;n++) {
+	for (int n=0;n<this->numFiltersPerLevel;n++) {
 		u_kernel_eval[n]=0.0f;
 	}
 	int filter_level=-1;
 	float fout = 0.0;
 	do {
 		filter_level++;
-		fout = this->linEvalWvmHisteq64(filter_level, (filter_level%this->nLinFilters_wvm), fp->c.x_py, fp->c.y_py, filter_output, u_kernel_eval, fp->iimg_x, fp->iimg_xx);
-	} while (fout >= this->lin_hierar_thresh[filter_level] && filter_level+1 < this->nLinFilters); //280
+		fout = this->linEvalWvmHisteq64(filter_level, (filter_level%this->numFiltersPerLevel), fp->c.x_py, fp->c.y_py, filter_output, u_kernel_eval, fp->iimg_x, fp->iimg_xx);
+	} while (fout >= this->lin_hierar_thresh[filter_level] && filter_level+1 < this->numLinFilters); //280
 	
 	//fp->fout = fout;
 	std::pair<FoutMap::iterator, bool> fout_insert = fp->fout.insert(FoutMap::value_type(this->identifier, fout));
@@ -110,7 +110,7 @@ bool DetectorWVM::classify(FdPatch* fp)
 	//fp->certainty = 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]));
 	// TODO: filter statistics, nDropedOutAsNonFace[filter_level]++;
 	// We ran till the end, save the certainty
-	if(filter_level+1 == this->nLinFilters && fout >= this->lin_hierar_thresh[filter_level]) {
+	if(filter_level+1 == this->numLinFilters && fout >= this->lin_hierar_thresh[filter_level]) {
 	//	fp->writePNG("pos.png");
 		std::pair<CertaintyMap::iterator, bool> certainty_insert = fp->certainty.insert(CertaintyMap::value_type(this->identifier, 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]))));
 		if(certainty_insert.second == false) {
@@ -153,7 +153,7 @@ float DetectorWVM::linEvalWvmHisteq64(
 {
 	/* iimg_x and iimg_xx are now patch-integral images! */
 
-	float *this_weight = hk_weights[level];
+	float *this_weight = hkWeights[level];
 	float res = -lin_thresholds[level];
 	double norm = 0.0F;
 	int p;
@@ -166,14 +166,14 @@ float DetectorWVM::linEvalWvmHisteq64(
 		
 	//###########################################
 	// compute evaluation and return it to fout.Pixel(x,y)
-	// eval = sum_{i=1,...,level} [ hk_weights[level][i] * exp(-basisParam*(lin_filters[i]-img.data)^2) ]
-	//      = sum_{i=1,...,level} [ hk_weights[level][i] * exp(-basisParam*norm[i]) ]
-	//      = sum_{i=1,...,level} [ hk_weights[level][i] * hk_kernel_eval[i] ]
+	// eval = sum_{i=1,...,level} [ hkWeights[level][i] * exp(-basisParam*(linFilters[i]-img.data)^2) ]
+	//      = sum_{i=1,...,level} [ hkWeights[level][i] * exp(-basisParam*norm[i]) ]
+	//      = sum_{i=1,...,level} [ hkWeights[level][i] * hk_kernel_eval[i] ]
 
 	//===========================================
 	// first, compute this kernel and save it in hk_kernel_eval[level], 
 	// because the hk_kernel_eval[0,...,level-1] are the same for each new level
-	// hk_kernel_eval[level] = exp( -basisParam * (lin_filters[level]-img.data)^2 )
+	// hk_kernel_eval[level] = exp( -basisParam * (linFilters[level]-img.data)^2 )
 	//                       = exp( -basisParam * norm[level] )
 
 	//rvm_kernel_begin = clock();
@@ -183,9 +183,9 @@ float DetectorWVM::linEvalWvmHisteq64(
 	/* adjust wvm calculation to patch-II */
 
 	//.........................................
-	// calculate the norm for that kernel (hk_kernel_eval[level] = exp(-basisParam*(lin_filters[level]-img.data)^2))
-	//  norm[level] = ||x-z||^2 = (lin_filters[level]-img.data)^2   approximated by     
-	//  norm[level] = ||x-p||^2 = x*x - 2*x*p + p*p   with  (x: cur. patch img.data, p: appr. RSV lin_filters[level])
+	// calculate the norm for that kernel (hk_kernel_eval[level] = exp(-basisParam*(linFilters[level]-img.data)^2))
+	//  norm[level] = ||x-z||^2 = (linFilters[level]-img.data)^2   approximated by     
+	//  norm[level] = ||x-p||^2 = x*x - 2*x*p + p*p   with  (x: cur. patch img.data, p: appr. RSV linFilters[level])
 
 	double	norm_new = 0.0F,sum_xp = 0.0F,sum_xx = 0.0F,sum_pp = 0.0F;
 	float	sumv = 0.0f,sumv0 = 0.0f;
@@ -284,14 +284,14 @@ float DetectorWVM::linEvalWvmHisteq64(
 
 	//.........................................
 	// calculate  now this kernel and save it in hk_kernel_eval[level], 
-	// hk_kernel_eval[level] = exp(-basisParam*(lin_filters[level]-img.data)^2) ]
+	// hk_kernel_eval[level] = exp(-basisParam*(linFilters[level]-img.data)^2) ]
 
 	hk_kernel_eval[level] = (float)(exp(-basisParam*norm)); //save it, because they 0...level-1 the same for each new level 
 
 	//===========================================
 	// second, sum over all the kernels to get the output
-	// eval = sum_{i=1,...,level} [ hk_weights[level][i] * exp(-basisParam*(lin_filters[i]-img.data)^2) ]
-	//      = sum_{i=1,...,level} [ hk_weights[level][i] * hk_kernel_eval[i] ]
+	// eval = sum_{i=1,...,level} [ hkWeights[level][i] * exp(-basisParam*(linFilters[i]-img.data)^2) ]
+	//      = sum_{i=1,...,level} [ hkWeights[level][i] * hk_kernel_eval[i] ]
 
 	for (p = 0; p <= level; ++p) //sum k=0...level = b_level,k * Kernel_k
 		res += this_weight[p] * hk_kernel_eval[p];
@@ -453,15 +453,15 @@ int DetectorWVM::load(const std::string filename)
 				this->numSV = nfilter;
 
 
-				nLinFilters = nfilter;
-				lin_filters = new float* [nLinFilters];
-				for (i = 0; i < nLinFilters; ++i) 
-					lin_filters[i] = new float[nDim];
-				lin_thresholds = new float [nLinFilters];
-				lin_hierar_thresh = new float [nLinFilters];
-				hk_weights = new float* [nLinFilters];
-				for (i = 0; i < nLinFilters; ++i) 
-					hk_weights[i] = new float[nLinFilters];
+				numLinFilters = nfilter;
+				linFilters = new float* [numLinFilters];
+				for (i = 0; i < numLinFilters; ++i) 
+					linFilters[i] = new float[nDim];
+				lin_thresholds = new float [numLinFilters];
+				lin_hierar_thresh = new float [numLinFilters];
+				hkWeights = new float* [numLinFilters];
+				for (i = 0; i < numLinFilters; ++i) 
+					hkWeights[i] = new float[numLinFilters];
 
 
 				//read matrix support_hk's w*h x nfilter
@@ -488,7 +488,7 @@ int DetectorWVM::load(const std::string filename)
 				matdata = mxGetPr(msup);
 				for (int i = 0, j=0; i < nfilter; ++i) {
 					for (k = 0; k < size; ++k)
-						detector->lin_filters[i][k] = 255.0f*(float)matdata[j++];	// because the training images grey level values were divided by 255;
+						detector->linFilters[i][k] = 255.0f*(float)matdata[j++];	// because the training images grey level values were divided by 255;
 				}
 				
 				//read matrix weight_hk (1,...,i,...,nfilter) x nfilter
@@ -515,10 +515,10 @@ int DetectorWVM::load(const std::string filename)
 				matdata = mxGetPr(msup);
 				for (int i = 0, r=0; i < nfilter; ++i, r+=nfilter) {
 					for (k = 0; k <= i; ++k)
-						detector->hk_weights[i][k] = (float)matdata[r + k];	
+						detector->hkWeights[i][k] = (float)matdata[r + k];	
 				}
 
-				//for (k = 0; k < 5; ++k)	fprintf(stdout, "%1.2f ",detector->hk_weights[4][k]);	
+				//for (k = 0; k < 5; ++k)	fprintf(stdout, "%1.2f ",detector->hkWeights[4][k]);	
 				//fprintf(stdout, "\n");	
 	
 				mxDestroyArray(pmxarray);
@@ -541,15 +541,15 @@ int DetectorWVM::load(const std::string filename)
 		this->filter_size_x = w;	// TODO check if this is right with eg 24x16
 		this->filter_size_y = h;
 					
-		nLinFilters = nfilter;
-		lin_filters = new float* [nLinFilters];
-		for (int i = 0; i < nLinFilters; ++i) 
-			lin_filters[i] = new float[w*h];
+		numLinFilters = nfilter;
+		linFilters = new float* [numLinFilters];
+		for (int i = 0; i < numLinFilters; ++i) 
+			linFilters[i] = new float[w*h];
 		
-		lin_hierar_thresh = new float [nLinFilters];
-		hk_weights = new float* [nLinFilters];
-		for (int i = 0; i < nLinFilters; ++i) 
-			hk_weights[i] = new float[nLinFilters];
+		lin_hierar_thresh = new float [numLinFilters];
+		hkWeights = new float* [numLinFilters];
+		for (int i = 0; i < numLinFilters; ++i) 
+			hkWeights[i] = new float[numLinFilters];
 
 		if (pmxarray == 0) {
 			std::cout << "[DetWVM]  Unable to find the matrix \'support_hk1\'" << std::endl;
@@ -561,7 +561,7 @@ int DetectorWVM::load(const std::string filename)
 		}
 		mxDestroyArray(pmxarray);
 
-		for (int i = 0; i < this->nLinFilters; i++) {
+		for (int i = 0; i < this->numLinFilters; i++) {
 
 			sprintf(str, "support_hk%d", i+1);
 			pmxarray = matGetVariable(pmatfile, str);
@@ -579,7 +579,7 @@ int DetectorWVM::load(const std::string filename)
 			int k = 0;
 			for (int x = 0; x < this->filter_size_x; ++x)
 				for (int y = 0; y < this->filter_size_y; ++y)
-					this->lin_filters[i][y*this->filter_size_x+x] = 255.0f*(float)matdata[k++];	// because the training images grey level values were divided by 255;
+					this->linFilters[i][y*this->filter_size_x+x] = 255.0f*(float)matdata[k++];	// because the training images grey level values were divided by 255;
 			mxDestroyArray(pmxarray);
 
 			sprintf(str, "weight_hk%d", i+1);
@@ -592,7 +592,7 @@ int DetectorWVM::load(const std::string filename)
 				}
 				matdata = mxGetPr(pmxarray);
 				for (int j = 0; j <= i; ++j) {
-					this->hk_weights[i][j] = (float)matdata[j];
+					this->hkWeights[i][j] = (float)matdata[j];
 				}
 				mxDestroyArray(pmxarray);
 			}
@@ -623,8 +623,8 @@ int DetectorWVM::load(const std::string filename)
 			mxDestroyArray(pmxarray);
 		}
 	}
-	lin_thresholds = new float [nLinFilters];
-	for (int i = 0; i < nLinFilters; ++i) {			//wrvm_out=treshSVM+sum(beta*kernel) 
+	lin_thresholds = new float [numLinFilters];
+	for (int i = 0; i < numLinFilters; ++i) {			//wrvm_out=treshSVM+sum(beta*kernel) 
 		lin_thresholds[i] = (float)nonlin_threshold;
 	}
 
@@ -633,7 +633,7 @@ int DetectorWVM::load(const std::string filename)
 	if (pmxarray != 0) {
 		matdata = mxGetPr(pmxarray);
 		assert(matdata != 0);	// TODO REMOVE
-		this->nLinFilters_wvm = (int)matdata[0]; 
+		this->numFiltersPerLevel = (int)matdata[0]; 
 		mxDestroyArray(pmxarray);
 	} else {
 		std::cout << "[DetWVM] : 'num_hk_wvm' not found in:" << std::endl;
@@ -644,7 +644,7 @@ int DetectorWVM::load(const std::string filename)
 	if (pmxarray != 0) {
 		matdata = mxGetPr(pmxarray);
 		assert(matdata != 0);
-		this->nLevels_wvm = (int)matdata[0]; 
+		this->numLevels = (int)matdata[0]; 
 		mxDestroyArray(pmxarray);
 	} else {
 		std::cout << "[DetWVM] : 'num_lev_wvm' not found in:" << std::endl;
@@ -670,12 +670,12 @@ int DetectorWVM::load(const std::string filename)
 
 		const mwSize *dim=mxGetDimensions(pmxarray);
 		int nHK=(int)dim[1];
-		if (this->nLinFilters!=nHK){
-			std::cout << "[DetWVM] : 'area' not right dim:" << nHK << "(==" << this->nLinFilters << ")" << std::endl;
+		if (this->numLinFilters!=nHK){
+			std::cout << "[DetWVM] : 'area' not right dim:" << nHK << "(==" << this->numLinFilters << ")" << std::endl;
 			exit(EXIT_FAILURE);
 		}
-		if ((this->nLinFilters_wvm*this->nLevels_wvm)!=nHK){
-			std::cout << "[DetWVM] : 'area' not right dim:" << nHK <<  "(==" << this->nLinFilters << ")" << std::endl;
+		if ((this->numFiltersPerLevel*this->numLevels)!=nHK){
+			std::cout << "[DetWVM] : 'area' not right dim:" << nHK <<  "(==" << this->numLinFilters << ")" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 
@@ -750,8 +750,8 @@ int DetectorWVM::load(const std::string filename)
 		matdata = mxGetPr(pmxarray);
 		const mwSize *dim = mxGetDimensions(pmxarray);
 		int nHK=(int)dim[1];
-		if (this->nLinFilters!=nHK){
-			std::cout << "[DetWVM] : 'app_rsv_convol' not right dim:" << nHK << " (==" << this->nLinFilters << ")" << std::endl;
+		if (this->numLinFilters!=nHK){
+			std::cout << "[DetWVM] : 'app_rsv_convol' not right dim:" << nHK << " (==" << this->numLinFilters << ")" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 		this->app_rsv_convol = new double[nHK];
@@ -816,20 +816,20 @@ int DetectorWVM::load(const std::string filename)
 	}
 
 	int i;
-	for (i = 0; i < this->nLinFilters; ++i) {
+	for (i = 0; i < this->numLinFilters; ++i) {
 		this->lin_hierar_thresh[i] = 0;
 	}
 	for (i = 0; i < this->hierarchical_thresholds.size(); ++i) {
-		if (this->hierarchical_thresholds[i].first <= this->nLinFilters)
+		if (this->hierarchical_thresholds[i].first <= this->numLinFilters)
 			this->lin_hierar_thresh[this->hierarchical_thresholds[i].first-1] = this->hierarchical_thresholds[i].second;
 	}
 	
 	//Diffwert fuer W-RSV's-Schwellen 
 	if (this->limit_reliability_filter!=0.0)
-		for (i = 0; i < this->nLinFilters; ++i) this->lin_hierar_thresh[i]+=this->limit_reliability_filter;
+		for (i = 0; i < this->numLinFilters; ++i) this->lin_hierar_thresh[i]+=this->limit_reliability_filter;
 
 
-	//for (i = 0; i < this->nLinFilters; ++i) printf("b%d=%g ",i+1,this->lin_hierar_thresh[i]);
+	//for (i = 0; i < this->numLinFilters; ++i) printf("b%d=%g ",i+1,this->lin_hierar_thresh[i]);
 	//printf("\n");
 	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=1) {
 		std::cout << "[DetWVM] Done reading WVM-threshold file " << fn_threshold << std::endl;
@@ -837,8 +837,8 @@ int DetectorWVM::load(const std::string filename)
 
 	this->stretch_fac = 255.0f/(float)(filter_size_x*filter_size_y);	// HistEq64 initialization
 	
-	filter_output = new float[this->nLinFilters];
- 	u_kernel_eval = new float[this->nLinFilters];
+	filter_output = new float[this->numLinFilters];
+ 	u_kernel_eval = new float[this->numLinFilters];
 
 	return 1;
 }
