@@ -112,7 +112,7 @@ SLogger::SLogger(void)
 	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 
-	currLmName = "nosetrill_r";
+	currLmName = "nose_rc";		// nosetrill_r TODO: nose_rc IS PROBABLY NOT THE RIGHT EAR LANDMARK IN THE 3DMM! CHECK! Might be nosetrill_r or any other!
 	currLm.bgrColor = cv::Scalar(0.27f, 0.27f, 0.67f);		// brown
 	bool tmp9[]	= {	true, false, false,	//color_r=(int)((float)c/255.0f*170.0f);  color_b=(int)((float)c/255.0f*70.0f);	color_g=(int)((float)c/255.0f*70.0f); break; //brown
 									true, true, true,
@@ -123,7 +123,7 @@ SLogger::SLogger(void)
 	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 
-	currLmName = "nosetrill_l";
+	currLmName = "nose_lc";		// nosetrill_l TODO: nose_lc IS PROBABLY NOT THE RIGHT EAR LANDMARK IN THE 3DMM! CHECK! Might be nosetrill_l or any other!
 	currLm.bgrColor = cv::Scalar(0.04f, 0.78f, 0.69f);		// lemon
 	bool tmp10[]	= {	false, false, true,	//color_r=(int)((float)c/255.0f*177.0f);  color_b=(int)((float)c/255.0f*10.0f);	color_g=(int)((float)c/255.0f*200.0f); break; //mint
 									true, true, true,
@@ -134,7 +134,7 @@ SLogger::SLogger(void)
 	currLm.displacementFactorH = 0.0f; currLm.displacementFactorW = 0.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 
-	currLmName = "rear_DONTKNOW";
+	currLmName = "rear_c";	// TODO THIS IS PROBABLY NOT THE RIGHT EAR LANDMARK IN THE 3DMM! CHECK!
 	currLm.bgrColor = cv::Scalar(1.0f, 0.0f, 0.52f);		// blue-violet
 	bool tmp11[]	= {	false, true, true,	//color_r=(int)((float)c/255.0f*132.0f);  color_b=(int)((float)c/255.0f*255.0f);	color_g=(int)((float)c/255.0f*0.0f); break; //blue-violet
 									false, true, false,
@@ -145,7 +145,7 @@ SLogger::SLogger(void)
 	currLm.displacementFactorH = 3.0f/10.0f; currLm.displacementFactorW = -1.0f/6.0f;
 	this->landmarksData.insert(std::make_pair(currLmName, currLm));
 
-	currLmName = "lear_DONTKNOW";
+	currLmName = "lear_c";	// TODO THIS IS PROBABLY NOT THE RIGHT EAR LANDMARK IN THE 3DMM! CHECK!
 	currLm.bgrColor = cv::Scalar(0.0f, 0.6f, 0.0f);		// pale green
 	bool tmp12[]	= {	true, true, false,	//color_r=(int)((float)c/255.0f*0.0f);  color_b=(int)((float)c/255.0f*153.0f);	color_g=(int)((float)c/255.0f*255.0f); break; //blasses gruen
 									false, true, false,

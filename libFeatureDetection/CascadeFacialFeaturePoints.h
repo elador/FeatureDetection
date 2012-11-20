@@ -14,9 +14,6 @@ public:
 	CascadeFacialFeaturePoints(void);
 	~CascadeFacialFeaturePoints(void);
 
-	//CascadeWvmOeSvmOe *face_frontal;
-	//CascadeWvmOeSvmOe *eye_left;
-
 	DetectorWVM *wvm_frontal;
 	OverlapElimination *oe;
 

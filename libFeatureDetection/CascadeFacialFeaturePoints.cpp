@@ -35,13 +35,14 @@ CascadeFacialFeaturePoints::~CascadeFacialFeaturePoints(void)
 	delete circleDet;
 	delete skinDet;
 
+	delete ffpRansac;
+
 	delete ffpCasc; 
 }
 
 
 int CascadeFacialFeaturePoints::initForImage(FdImage* myimg)
 {
-	//face_frontal->initForImage(myimg);
 	wvm_frontal->initForImage(myimg);
 	return 1;
 }
@@ -100,11 +101,11 @@ int CascadeFacialFeaturePoints::detectOnImage(FdImage* myimg)
 		ffpCasc->setRoiInImage(roi);
 		std::vector<std::pair<std::string, std::vector<FdPatch*> > > landmarkCandidates = ffpCasc->detectOnImage(myimg);
 
-		std::vector<cv::Mat> probabilityMapsWVMre = ffpCasc->reye->wvm->getProbabilityMaps(myimg);
+		/*std::vector<cv::Mat> probabilityMapsWVMre = ffpCasc->reye->wvm->getProbabilityMaps(myimg);
 		std::vector<cv::Mat> probabilityMapsWVMle = ffpCasc->leye->wvm->getProbabilityMaps(myimg);
 		std::vector<cv::Mat> probabilityMapsWVMnt = ffpCasc->nosetip->wvm->getProbabilityMaps(myimg);
 		std::vector<cv::Mat> probabilityMapsWVMrm = ffpCasc->rmouth->wvm->getProbabilityMaps(myimg);
-		std::vector<cv::Mat> probabilityMapsWVMlm = ffpCasc->lmouth->wvm->getProbabilityMaps(myimg);
+		std::vector<cv::Mat> probabilityMapsWVMlm = ffpCasc->lmouth->wvm->getProbabilityMaps(myimg);*/ // have to use ffpCasc->detectors now
 
 		ffpRansac->runRANSAC(myimg, landmarkCandidates, 1.0, 5, 4, 3);
 		break;

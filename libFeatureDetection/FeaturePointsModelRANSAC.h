@@ -29,6 +29,7 @@ public:
 
 	void renderModel(FdImage* img);
 
+
 private:
 	std::vector<float> modelMeanShp;	// the 3DMM mean shape loaded into memory. Data is XYZXYZXYZ...
 	std::vector<float> modelMeanTex;
@@ -38,8 +39,8 @@ private:
 	void loadFeaturePoints(std::string);
 
 
-	void fitModelToPoints(void* landmarks);	// project the points into the model (=the same as fitting the model to the points?)
-								// return: The fitting/projection error
+	//void fitModelToPoints(void* landmarks);	// project the points into the model (=the same as fitting the model to the points?)
+	// return: The fitting/projection error
 
 	cv::Point2f calculateCenterpoint(std::vector<std::pair<std::string, cv::Point2f> >);
 	cv::Point3f calculateCenterpoint(std::vector<std::pair<std::string, cv::Point3f> >);
@@ -68,5 +69,4 @@ private:
 	};
 
 	LandmarksVerticesPair getCorrespondingLandmarkpointsAtOriginFrom3DMM(std::vector<std::pair<std::string, cv::Point2f> >);
-
 };

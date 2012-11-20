@@ -53,13 +53,13 @@ void FeaturePointsRANSAC::runRANSAC(FdImage* img, std::vector<std::pair<std::str
 	if(numIter==0) {
 		// Calculate/estimate how many iterations we should run (see Wikipedia)
 		numIter = 2500;
-	}numIter = 2500;
+	}numIter = 1000;
 	minPointsToFitModel = 3;
 	bool useSVD = false;
 	thresholdForDatapointFitsModel = 30.0f;
 
 	// Note: Doesn't seem to make sense to use more than 3 points for the initial projection. With 4 (and SVD instead of inv()), the projection of the other model-LMs is quite wrong already.
-	// So: minPointsToFitModel == 3 unchangeble! (hm, really...?)
+	// So: minPointsToFitModel == 3 unchangeable! (hm, really...?)
 
 	// RANSAC general TODO: Bei Nase beruecksichtigen, dass das Gesicht nicht auf dem Kopf stehen darf? (da sonst das feature nicht gefunden wuerde, nicht symmetrisch top/bottom)
 
@@ -98,7 +98,8 @@ void FeaturePointsRANSAC::runRANSAC(FdImage* img, std::vector<std::pair<std::str
 
 	unsigned int iterations = 0;
 
-	boost::random::mt19937 rndGen(std::time(0));
+	//boost::random::mt19937 rndGen(std::time(0));	// Pseudo-random number generators should not be constructed (initialized) frequently during program execution, for two reasons... see boost doc. But this is not a problem as long as we don't call runRANSAC too often (e.g. every frame).
+	boost::random::mt19937 rndGen(1);
 
 	// Todo: Probably faster if I convert all LMs to cv::Point2i beforehands, so I only do it once.
 	// Maybe I want the patch certainty later, then I need to make a std::pair<Point2i, float> or so. But the rest of the Patch I won't need for certain.
@@ -257,6 +258,7 @@ void FeaturePointsRANSAC::runRANSAC(FdImage* img, std::vector<std::pair<std::str
 
 	}
 
+	// Hmm, the bestConsensusSets is not unique? Doubled sets? (print them?) Write a comparator for two landmarks (make a landmark class?), then for two LM-sets, etc.
 	for (unsigned int i=0; i<bestConsensusSets.size(); ++i) {
 		cv::Mat output = img->data_matbgr.clone();
 		drawAndPrintLandmarksInImage(output, bestConsensusSets[i]);
@@ -266,6 +268,12 @@ void FeaturePointsRANSAC::runRANSAC(FdImage* img, std::vector<std::pair<std::str
 		sstm << "out\\a_ransac_ConsensusSet_" << i << ".png";
 		std::string fn = sstm.str();
 		cv::imwrite(fn, output);
+	}
+	for (unsigned int i=0; i<bestConsensusSets.size(); ++i) {
+		for (unsigned int j=0; j<bestConsensusSets[i].size(); ++j) {
+			std::cout << "[" << bestConsensusSets[i][j].first << " " << bestConsensusSets[i][j].second  << "], ";
+		}
+		std::cout << std::endl;
 	}
 
 }
@@ -287,17 +295,21 @@ void FeaturePointsRANSAC::loadModel(std::string modelPath)
 	H5::Group modelReconstructive = h5Model.openGroup("/shape/ReconstructiveModel/model");
 	H5::DataSet dsMean = modelReconstructive.openDataSet("./mean");
 	hsize_t dims[1];
-	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
+	dsMean.getSpace().getSimpleExtentDims(dims, NULL);	// dsMean.getSpace() leaks memory... maybe a hdf5 bug, maybe vlenReclaim(...) could be a fix. No idea.
+	//H5::DataSpace dsp = dsMean.getSpace();
+	//dsp.close();
+
 	std::cout << "Dims: " << dims[0] << std::endl;		// TODO: I guess this whole part could be done A LOT better!
 	float* testData = new float[dims[0]];
 	dsMean.read(testData, H5::PredType::NATIVE_FLOAT);
 	this->modelMeanShp.reserve(dims[0]);
-	
+
 	for (unsigned int i=0; i < dims[0]; ++i)	{
 		modelMeanShp.push_back(testData[i]);
 	}
 	delete[] testData;
 	testData = NULL;
+	dsMean.close();
 
 	// // Load the Texture
 	H5::Group modelReconstructiveTex = h5Model.openGroup("/color/ReconstructiveModel/model");
@@ -314,8 +326,14 @@ void FeaturePointsRANSAC::loadModel(std::string modelPath)
 	}
 	delete[] testDataTex;
 	testDataTex = NULL;
+	dsMeanTex.close();
 
+	h5Model.close();
 }
+
+
+
+
 
 void FeaturePointsRANSAC::loadFeaturePoints(std::string featurePointsFile)
 {

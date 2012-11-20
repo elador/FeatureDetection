@@ -3,6 +3,8 @@
 
 #include "stdafx.h"
 
+//#include <vld.h>
+
 #include "CascadeFacialFeaturePoints.h"
 
 #include "SLogger.h"
@@ -23,7 +25,7 @@ int main(int argc, char *argv[])		// Peter
 {
 	#ifdef WIN32
 	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF ); // dump leaks at return
-	//_CrtSetBreakAlloc(287);
+	//_CrtSetBreakAlloc(3759128);
 	#endif
 	
 	int verbose_level_text;
