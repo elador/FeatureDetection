@@ -17,14 +17,13 @@ LowVarianceSampling::LowVarianceSampling() : generator(boost::mt19937(time(0))),
 
 LowVarianceSampling::~LowVarianceSampling() {}
 
-void LowVarianceSampling::resample(const std::vector<Sample>& samples,
-		unsigned int count, std::vector<Sample>& newSamples) {
+void LowVarianceSampling::resample(const vector<Sample>& samples, unsigned int count, vector<Sample>& newSamples) {
 	newSamples.clear();
 	if (samples.size() > 0) {
 		double step = computeWeightSum(samples) / count;
 		if (step > 0) {
 			double start = step * distribution(generator);
-			std::vector<Sample>::const_iterator sit = samples.begin();
+			vector<Sample>::const_iterator sit = samples.begin();
 			double weightSum = sit->getWeight();
 			for (unsigned int i = 0; i < count; ++i) {
 				double weightPointer = start + i * step;
@@ -38,11 +37,9 @@ void LowVarianceSampling::resample(const std::vector<Sample>& samples,
 	}
 }
 
-double LowVarianceSampling::computeWeightSum(const std::vector<Sample>& samples) {
+double LowVarianceSampling::computeWeightSum(const vector<Sample>& samples) {
 	double weightSum = 0;
-	std::vector<Sample>::const_iterator it = samples.begin();
-	std::vector<Sample>::const_iterator end = samples.end();
-	for (; it != end; ++it)
+	for (vector<Sample>::const_iterator it = samples.begin(); it != samples.end(); ++it)
 		weightSum += it->getWeight();
 	return weightSum;
 }

@@ -10,7 +10,7 @@
 
 struct svm_parameter;
 
-namespace tracking {
+namespace classification {
 
 /**
  * Builder of parameters for libSVM training.

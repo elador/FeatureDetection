@@ -23,10 +23,12 @@ ENDIF()
 
 # source and header files
 SET(HEADERS
+	HeadLearningWvmSvmModel.h
 	HeadTracking.h
 	wingettimeofday.h
 )
 SET(SOURCE
+	HeadLearningWvmSvmModel.cpp
 	HeadTracking.cpp
 	wingettimeofday.cpp
 )

@@ -9,10 +9,10 @@
 #define FACETRACKING_H_
 
 #include "imageio/ImageSource.h"
+#include "classification/LibSvmTraining.h"
 #include "tracking/LearningCondensationTracker.h"
 #include "tracking/LearningStrategy.h"
 #include "tracking/LearningMeasurementModel.h"
-#include "tracking/LibSvmTraining.h"
 #include "tracking/SimpleTransitionModel.h"
 #include "tracking/ResamplingSampler.h"
 #include "tracking/GridSampler.h"
@@ -25,6 +25,7 @@ using std::auto_ptr;
 using boost::shared_ptr;
 using boost::make_shared;
 using namespace tracking;
+using namespace classification;
 
 class FaceTracking {
 public:

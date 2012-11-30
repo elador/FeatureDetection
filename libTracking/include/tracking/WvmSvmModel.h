@@ -41,7 +41,7 @@ public:
 
 	~WvmSvmModel();
 
-	void evaluate(cv::Mat& image, std::vector<Sample>& samples);
+	void evaluate(Mat& image, vector<Sample>& samples);
 
 private:
 

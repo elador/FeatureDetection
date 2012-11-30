@@ -10,6 +10,9 @@
 
 #include "tracking/MeasurementModel.h"
 
+using cv::Mat;
+using std::vector;
+
 namespace tracking {
 
 /**
@@ -20,7 +23,7 @@ public:
 
 	virtual ~LearningMeasurementModel() {}
 
-	virtual void evaluate(cv::Mat& image, std::vector<Sample>& samples) = 0;
+	virtual void evaluate(Mat& image, vector<Sample>& samples) = 0;
 
 	/**
 	 * Determines whether the updated dynamic model was used for the previous evaluation
@@ -51,11 +54,10 @@ public:
 	/**
 	 * Updates the measurement model with new samples.
 	 *
-	 * @param[in] image The image.
 	 * @param[in] positiveSamples The new positive samples.
 	 * @param[in] negativeSamples The new negative samples.
 	 */
-	virtual void update(cv::Mat& image, std::vector<Sample>& positiveSamples, std::vector<Sample>& negativeSamples) = 0;
+	virtual void update(vector<Sample>& positiveSamples, vector<Sample>& negativeSamples) = 0;
 };
 
 } /* namespace tracking */

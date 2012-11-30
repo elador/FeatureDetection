@@ -16,14 +16,14 @@ DensityPositionExtractor::DensityPositionExtractor(int bandwidth) : invertedBand
 
 DensityPositionExtractor::~DensityPositionExtractor() {}
 
-boost::optional<Sample> DensityPositionExtractor::extract(const std::vector<Sample>& samples) {
+boost::optional<Sample> DensityPositionExtractor::extract(const vector<Sample>& samples) {
 	if (samples.size() == 0)
 		return boost::optional<Sample>();
 	// compute start value (mean)
 	double x = 0;
 	double y = 0;
 	double s = 0;
-	for (std::vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
+	for (vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
 		x += sit->getX();
 		y += sit->getY();
 		s += sit->getSize();
@@ -36,7 +36,7 @@ boost::optional<Sample> DensityPositionExtractor::extract(const std::vector<Samp
 	double weightSum = 0;
 	do {
 		oldPoint = point;
-		for (std::vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
+		for (vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
 			double weight = sit->getWeight() * getScaledKernelValue(*sit, point);
 			x += weight * sit->getX();
 			y += weight * sit->getY();
@@ -48,18 +48,17 @@ boost::optional<Sample> DensityPositionExtractor::extract(const std::vector<Samp
 		point.setSize((int)(s / weightSum + 0.5));
 		++i;
 	} while (i < 100 && point.getX() != oldPoint.getX() && point.getY() != oldPoint.getY() && point.getSize() != oldPoint.getSize());
-	// TODO wenn sample auf double/float umgestellt würde, dann hier anders...
 	if (i >= 100)
-		std::cout << "too many iterations: (" << point.getX() << ", " << point.getY() << ", " << point.getSize() << ") <> ("
+		std::cerr << "too many iterations: (" << point.getX() << ", " << point.getY() << ", " << point.getSize() << ") <> ("
 				<< oldPoint.getX() << ", " << oldPoint.getY() << ", " << oldPoint.getSize() << ")" << std::endl;
 	point.setWeight(computeDensity(samples, point));
-	return boost::optional<Sample>(point);
+	return optional<Sample>(point);
 }
 
-double DensityPositionExtractor::computeDensity(const std::vector<Sample>& samples, const Sample& position) {
+double DensityPositionExtractor::computeDensity(const vector<Sample>& samples, const Sample& position) {
 	double kernelValueSum = 0;
 	double weightSum = 0;
-	for (std::vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
+	for (vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
 		kernelValueSum += sit->getWeight() * getScaledKernelValue(*sit, position);
 		weightSum += sit->getWeight();
 	}

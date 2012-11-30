@@ -8,23 +8,22 @@
 #ifndef FASTSVMTRAINING_H_
 #define FASTSVMTRAINING_H_
 
-#include "tracking/LibSvmTraining.h"
-#include "tracking/LibSvmParameterBuilder.h"
-#include "tracking/RbfLibSvmParameterBuilder.h"
-#include "tracking/SigmoidParameterComputation.h"
-#include "tracking/FastApproximateSigmoidParameterComputation.h"
+#include "classification/LibSvmTraining.h"
+#include "classification/LibSvmParameterBuilder.h"
+#include "classification/RbfLibSvmParameterBuilder.h"
+#include "classification/SigmoidParameterComputation.h"
+#include "classification/FixedApproximateSigmoidParameterComputation.h"
 #include "svm.h"
 #include "boost/shared_ptr.hpp"
 #include "boost/make_shared.hpp"
 #include <vector>
 #include <utility>
 
-class FdPatch;
-
 using boost::shared_ptr;
 using boost::make_shared;
+using std::vector;
 
-namespace tracking {
+namespace classification {
 
 /**
  * SVM training that limits the amount of training data to ensure a fast training. It will use the support
@@ -49,13 +48,13 @@ public:
 	explicit FastSvmTraining(unsigned int minPosCount = 10, unsigned int minNegCount = 10, unsigned int maxCount = 50,
 			shared_ptr<LibSvmParameterBuilder> parameterBuilder = make_shared<RbfLibSvmParameterBuilder>(),
 			shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation
-					= make_shared<FastApproximateSigmoidParameterComputation>());
+					= make_shared<FixedApproximateSigmoidParameterComputation>());
 	~FastSvmTraining();
 
-	bool retrain(ChangableDetectorSvm& svm, const std::vector<FdPatch*>& positivePatches,
-			const std::vector<FdPatch*>& negativePatches);
+	bool retrain(LibSvmClassifier& svm, const vector<shared_ptr<FeatureVector> >& positiveSamples,
+			const vector<shared_ptr<FeatureVector> >& negativeSamples);
 
-	void reset(ChangableDetectorSvm& svm);
+	void reset(LibSvmClassifier& svm);
 
 private:
 
@@ -65,28 +64,29 @@ private:
 	bool isTrainingReasonable() const;
 
 	/**
-	 * Adds new samples based on image patches with positive or negative label.
+	 * Adds new training samples.
 	 *
-	 * @param[in] positivePatches The new positive patches.
-	 * @param[in] negativePatches The new negative patches.
+	 * @param[in] positiveSamples The new positive samples.
+	 * @param[in] negativeSamples The new negative samples.
 	 */
-	void addSamples(const std::vector<FdPatch*>& positivePatches, const std::vector<FdPatch*>& negativePatches);
+	void addSamples(const vector<shared_ptr<FeatureVector> >& positiveSamples,
+			const vector<shared_ptr<FeatureVector> >& negativeSamples);
 
 	/**
-	 * Adds new samples based on image patches.
+	 * Adds new training samples to the existing ones.
 	 *
-	 * @param[in] samples The samples.
-	 * @param[in] patches The new patches.
+	 * @param[in] trainingSamples The existing training samples.
+	 * @param[in] samples The new samples.
 	 */
-	void addSamples(std::vector<struct svm_node *>& samples, const std::vector<FdPatch*>& patches);
+	void addSamples(vector<struct svm_node *>& trainingSamples, const vector<shared_ptr<FeatureVector> >& samples);
 
 	/**
-	 * Trains a support vector machine with the positive and negative samples.
+	 * Trains a libSVM classifier with the positive and negative samples.
 	 *
-	 * @param[in] svm The SVM that should be trained.
+	 * @param[in] svm The libSVM classifier that should be trained.
 	 * @return True if the training was successful, false otherwise.
 	 */
-	bool train(ChangableDetectorSvm& svm);
+	bool train(LibSvmClassifier& svm);
 
 	/**
 	 * Creates the libSVM problem.
@@ -96,23 +96,24 @@ private:
 	struct svm_problem *createProblem();
 
 	/**
-	 * Removes all samples that are not contained within the SVM model as support vectors.
+	 * Removes all training samples that are not contained within the SVM model as support vectors.
 	 *
 	 * @param[in] model The libSVM model.
 	 * @return The support vectors that should be deleted when the model is destroyed.
 	 */
-	std::vector<struct svm_node *> retainSupportVectors(struct svm_model *model);
+	vector<struct svm_node *> retainSupportVectors(struct svm_model *model);
 
 	/**
-	 * Creates a list of samples that are contained within the SVM model as support vectors and destroys the other ones.
+	 * Creates a list of trainingsamples that are contained within the SVM model as support vectors
+	 * and destroys the other ones.
 	 *
-	 * @param[in] samples The samples.
+	 * @param[in] samples The training samples.
 	 * @param[in] model The libSVM model.
 	 * @param[in] count The estimated amount of support vectors (used to initialize the list).
-	 * @return The samples that are support vectors.
+	 * @return The training samples that are support vectors.
 	 */
-	std::vector<struct svm_node *> extractSupportVectors(
-			std::vector<struct svm_node *>& samples, struct svm_model *model, unsigned int count = 1);
+	vector<struct svm_node *> extractSupportVectors(
+			vector<struct svm_node *>& samples, struct svm_model *model, unsigned int count = 1);
 
 	/**
 	 * Determines whether a vector is a support vector.
@@ -139,7 +140,7 @@ private:
 	 * @param[in] model The libSVM model.
 	 * @return The coefficients of the support vectors.
 	 */
-	std::vector<double> getCoefficients(std::vector<struct svm_node *>& supportVectors, struct svm_model *model);
+	vector<double> getCoefficients(vector<struct svm_node *>& supportVectors, struct svm_model *model);
 
 	/**
 	 * Computes the distance to the separating hyperplane of each sample.
@@ -148,7 +149,7 @@ private:
 	 * @param[in] model The libSVM model.
 	 * @return The distances.
 	 */
-	std::vector<double> computeHyperplaneDistances(std::vector<struct svm_node *>& samples, struct svm_model *model);
+	vector<double> computeHyperplaneDistances(vector<struct svm_node *>& samples, struct svm_model *model);
 
 	/**
 	 * Determines the smallest element.
@@ -156,7 +157,7 @@ private:
 	 * @param[in] values The values.
 	 * @return A pair containing the index and value of the min element.
 	 */
-	std::pair<unsigned int, double> getMin(std::vector<double> values);
+	std::pair<unsigned int, double> getMin(vector<double> values);
 
 	/**
 	 * Determines the biggest element.
@@ -164,13 +165,14 @@ private:
 	 * @param[in] values The values.
 	 * @return A pair containing the index and value of the max element.
 	 */
-	std::pair<unsigned int, double> getMax(std::vector<double> values);
+	std::pair<unsigned int, double> getMax(vector<double> values);
 
 	unsigned int minPosCount; ///< The minimum amount of positive training samples necessary for training.
 	unsigned int minNegCount; ///< The minimum amount of negative training samples necessary for training.
 	unsigned int maxCount;    ///< The maximum amount of support vectors used for training.
-	std::vector<struct svm_node *> positiveSamples; ///< The positive samples.
-	std::vector<struct svm_node *> negativeSamples; ///< The negative samples.
+	unsigned int dimensions;  ///< The amount of dimensions of the feature vectors.
+	vector<struct svm_node *> positiveTrainingSamples; ///< The positive training samples.
+	vector<struct svm_node *> negativeTrainingSamples; ///< The negative training samples.
 	shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation; ///< The computation of the sigmoid parameters.
 };
 

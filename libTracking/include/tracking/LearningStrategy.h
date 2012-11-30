@@ -9,12 +9,14 @@
 #define LEARNINGSTRATEGY_H_
 
 #include "opencv2/core/core.hpp"
-#include "tracking/Sample.h"
 #include <vector>
+
+using std::vector;
 
 namespace tracking {
 
 class LearningMeasurementModel;
+class Sample;
 
 /**
  * Strategy for updating learning measurement models given the data of a condensation tracker.
@@ -31,7 +33,7 @@ public:
 	 * @param[in] image The image.
 	 * @param[in] samples The current weighted samples of the condensation tracking.
 	 */
-	virtual void update(LearningMeasurementModel& model, cv::Mat& image, const std::vector<Sample>& samples) = 0;
+	virtual void update(LearningMeasurementModel& model, const vector<Sample>& samples) = 0;
 
 	/**
 	 * Updates the measurement model given the position of the tracked object.
@@ -41,8 +43,7 @@ public:
 	 * @param[in] samples The current weighted samples of the condensation tracking.
 	 * @param[in] position The position of the tracked object.
 	 */
-	virtual void update(LearningMeasurementModel& model, cv::Mat& image,
-			const std::vector<Sample>& samples, const Sample& position) = 0;
+	virtual void update(LearningMeasurementModel& model, const vector<Sample>& samples, const Sample& position) = 0;
 };
 
 } /* namespace tracking */

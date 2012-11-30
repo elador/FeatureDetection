@@ -25,10 +25,9 @@ public:
 
 	~SelfLearningStrategy();
 
-	void update(LearningMeasurementModel& model, cv::Mat& image, const std::vector<Sample>& samples);
+	void update(LearningMeasurementModel& model, const vector<Sample>& samples);
 
-	void update(LearningMeasurementModel& model, cv::Mat& image,
-			const std::vector<Sample>& samples, const Sample& position);
+	void update(LearningMeasurementModel& model, const vector<Sample>& samples, const Sample& position);
 };
 
 } /* namespace tracking */

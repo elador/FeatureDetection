@@ -5,35 +5,35 @@
  *      Author: poschmann
  */
 
-#include "tracking/FrameBasedSvmTraining.h"
-#include "FdPatch.h"
+#include "classification/FrameBasedSvmTraining.h"
+#include "classification/FeatureVector.h"
 #include <iostream>
 #include <cmath>
 #include <cstdlib>
 
-namespace tracking {
+namespace classification {
 
 FrameBasedSvmTraining::FrameBasedSvmTraining(int frameLength, float minAvgSamples,
 		shared_ptr<LibSvmParameterBuilder> parameterBuilder,
 		shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation) :
 				LibSvmTraining(parameterBuilder, sigmoidParameterComputation), frameLength(frameLength),
-				minAvgSamples(minAvgSamples), positiveSamples(frameLength),
-				negativeSamples(frameLength), oldestEntry(0) {}
+				minAvgSamples(minAvgSamples), dimensions(0), positiveTrainingSamples(frameLength),
+				negativeTrainingSamples(frameLength), oldestEntry(0) {}
 
 FrameBasedSvmTraining::FrameBasedSvmTraining(int frameLength, float minAvgSamples, std::string negativesFilename,
 		int negatives, shared_ptr<LibSvmParameterBuilder> parameterBuilder,
 		shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation) :
 				LibSvmTraining(parameterBuilder, sigmoidParameterComputation), frameLength(frameLength),
-				minAvgSamples(minAvgSamples), positiveSamples(frameLength),
-				negativeSamples(frameLength), oldestEntry(0) {
+				minAvgSamples(minAvgSamples), dimensions(0), positiveTrainingSamples(frameLength),
+				negativeTrainingSamples(frameLength), oldestEntry(0) {
 	readStaticNegatives(negativesFilename, negatives);
 }
 
 FrameBasedSvmTraining::~FrameBasedSvmTraining() {
-	std::vector<std::vector<struct svm_node *> >::iterator sit;
-	for (sit = positiveSamples.begin(); sit < positiveSamples.end(); ++sit)
+	vector<vector<struct svm_node *> >::iterator sit;
+	for (sit = positiveTrainingSamples.begin(); sit < positiveTrainingSamples.end(); ++sit)
 		freeSamples(*sit);
-	for (sit = negativeSamples.begin(); sit < negativeSamples.end(); ++sit)
+	for (sit = negativeTrainingSamples.begin(); sit < negativeTrainingSamples.end(); ++sit)
 		freeSamples(*sit);
 }
 
@@ -42,67 +42,68 @@ int FrameBasedSvmTraining::getRequiredPositiveSampleCount() const {
 }
 
 int FrameBasedSvmTraining::getPositiveSampleCount() const {
-	return getSampleCount(positiveSamples);
+	return getSampleCount(positiveTrainingSamples);
 }
 
 int FrameBasedSvmTraining::getNegativeSampleCount() const {
-	return getSampleCount(negativeSamples) + staticNegativeSamples.size();
+	return getSampleCount(negativeTrainingSamples) + staticNegativeTrainingSamples.size();
 }
 
 bool FrameBasedSvmTraining::isTrainingReasonable() const {
 	return getPositiveSampleCount() >= getRequiredPositiveSampleCount();
 }
 
-void FrameBasedSvmTraining::reset(ChangableDetectorSvm& svm) {
-	std::vector<std::vector<struct svm_node *> >::iterator sit;
-	for (sit = positiveSamples.begin(); sit < positiveSamples.end(); ++sit)
+void FrameBasedSvmTraining::reset(LibSvmClassifier& svm) {
+	vector<vector<struct svm_node *> >::iterator sit;
+	for (sit = positiveTrainingSamples.begin(); sit < positiveTrainingSamples.end(); ++sit)
 		freeSamples(*sit);
-	for (sit = negativeSamples.begin(); sit < negativeSamples.end(); ++sit)
+	for (sit = negativeTrainingSamples.begin(); sit < negativeTrainingSamples.end(); ++sit)
 		freeSamples(*sit);
 }
 
-bool FrameBasedSvmTraining::retrain(ChangableDetectorSvm& svm, const std::vector<FdPatch*>& positivePatches,
-		const std::vector<FdPatch*>& negativePatches) {
-	addSamples(positivePatches, negativePatches);
+bool FrameBasedSvmTraining::retrain(LibSvmClassifier& svm, const vector<shared_ptr<FeatureVector> >& positiveSamples,
+		const vector<shared_ptr<FeatureVector> >& negativeSamples) {
+	addSamples(positiveSamples, negativeSamples);
 	if (isTrainingReasonable())
 		return train(svm);
 	return false;
 }
 
-void FrameBasedSvmTraining::addSamples(const std::vector<FdPatch*>& positivePatches,
-		const std::vector<FdPatch*>& negativePatches) {
-	replaceSamples(positiveSamples[oldestEntry], positivePatches);
-	replaceSamples(negativeSamples[oldestEntry], negativePatches);
+void FrameBasedSvmTraining::addSamples(const vector<shared_ptr<FeatureVector> >& positiveSamples,
+		const vector<shared_ptr<FeatureVector> >& negativeSamples) {
+	replaceSamples(positiveTrainingSamples[oldestEntry], positiveSamples);
+	replaceSamples(negativeTrainingSamples[oldestEntry], negativeSamples);
 	++oldestEntry;
 	if (oldestEntry >= frameLength)
 		oldestEntry = 0;
 }
 
-void FrameBasedSvmTraining::replaceSamples(std::vector<struct svm_node *>& samples,
-		const std::vector<FdPatch*>& patches) {
-	freeSamples(samples);
-	for (std::vector<FdPatch*>::const_iterator pit = patches.begin(); pit < patches.end(); ++pit) {
-		FdPatch* patch = *pit;
-		unsigned int dataLength = patch->w * patch->h;
-		struct svm_node* data = new struct svm_node[dataLength + 1];
-		for (unsigned int i = 0; i < dataLength; ++i) {
+void FrameBasedSvmTraining::replaceSamples(vector<struct svm_node *>& trainingSamples,
+		const vector<shared_ptr<FeatureVector> >& samples) {
+	freeSamples(trainingSamples);
+	for (vector<shared_ptr<FeatureVector> >::const_iterator fvit = samples.begin(); fvit != samples.end(); ++fvit) {
+		shared_ptr<FeatureVector> featureVector = *fvit;
+		dimensions = featureVector->getSize();
+		const float* values = featureVector->getValues();
+		struct svm_node* data = new struct svm_node[dimensions + 1];
+		for (unsigned int i = 0; i < dimensions; ++i) {
 			data[i].index = i;
-			data[i].value = patch->data[i] / 255.0;
+			data[i].value = values[i];
 		}
-		data[dataLength].index = -1;
-		samples.push_back(data);
+		data[featureVector->getSize()].index = -1;
+		trainingSamples.push_back(data);
 	}
 }
 
-int FrameBasedSvmTraining::getSampleCount(const std::vector<std::vector<struct svm_node *> >& samples) const {
+int FrameBasedSvmTraining::getSampleCount(const vector<vector<struct svm_node *> >& samples) const {
 	int count = 0;
-	std::vector<std::vector<struct svm_node *> >::const_iterator it;
+	vector<vector<struct svm_node *> >::const_iterator it;
 	for (it = samples.begin(); it < samples.end(); ++it)
 		count += it->size();
 	return count;
 }
 
-bool FrameBasedSvmTraining::train(ChangableDetectorSvm& svm) {
+bool FrameBasedSvmTraining::train(LibSvmClassifier& svm) {
 	unsigned int positiveCount = getPositiveSampleCount();
 	unsigned int negativeCount = getNegativeSampleCount();
 	unsigned int count = positiveCount + negativeCount;
@@ -120,8 +121,7 @@ bool FrameBasedSvmTraining::train(ChangableDetectorSvm& svm) {
 		return false;
 	}
 	struct svm_model *model = svm_train(problem, param);
-	changeSvmParameters(svm, model, problem, positiveCount, negativeCount);
-	svm_free_and_destroy_model(&model);
+	changeSvmParameters(svm, dimensions, model, problem, positiveCount, negativeCount);
 	svm_destroy_param(param);
 	delete param;
 	delete[] problem->x;
@@ -136,8 +136,8 @@ struct svm_problem *FrameBasedSvmTraining::createProblem(unsigned int count) {
 	problem->y = new double[count];
 	problem->x = new struct svm_node *[count];
 	int i = 0;
-	std::vector<std::vector<struct svm_node *> >::iterator sit;
-	for (sit = positiveSamples.begin(); sit < positiveSamples.end(); ++sit) {
+	vector<vector<struct svm_node *> >::iterator sit;
+	for (sit = positiveTrainingSamples.begin(); sit < positiveTrainingSamples.end(); ++sit) {
 		std::vector<struct svm_node *>::iterator dit;
 		for (dit = sit->begin(); dit < sit->end(); ++dit) {
 			problem->y[i] = 1;
@@ -145,7 +145,7 @@ struct svm_problem *FrameBasedSvmTraining::createProblem(unsigned int count) {
 			i++;
 		}
 	}
-	for (sit = negativeSamples.begin(); sit < negativeSamples.end(); ++sit) {
+	for (sit = negativeTrainingSamples.begin(); sit < negativeTrainingSamples.end(); ++sit) {
 		std::vector<struct svm_node *>::iterator dit;
 		for (dit = sit->begin(); dit < sit->end(); ++dit) {
 			problem->y[i] = -1;
@@ -154,7 +154,7 @@ struct svm_problem *FrameBasedSvmTraining::createProblem(unsigned int count) {
 		}
 	}
 	std::vector<struct svm_node *>::iterator dit;
-	for (dit = staticNegativeSamples.begin(); dit < staticNegativeSamples.end(); ++dit) {
+	for (dit = staticNegativeTrainingSamples.begin(); dit < staticNegativeTrainingSamples.end(); ++dit) {
 		problem->y[i] = -1;
 		problem->x[i] = *dit;
 		i++;

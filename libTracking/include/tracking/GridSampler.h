@@ -30,8 +30,8 @@ public:
 
 	~GridSampler();
 
-	void sample(const std::vector<Sample>& samples, const std::vector<double>& offset,
-				const cv::Mat& image, std::vector<Sample>& newSamples);
+	void sample(const vector<Sample>& samples, const vector<double>& offset, const Mat& image,
+			vector<Sample>& newSamples);
 
 private:
 

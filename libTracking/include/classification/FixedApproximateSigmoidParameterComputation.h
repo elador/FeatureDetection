@@ -8,9 +8,9 @@
 #ifndef FIXEDAPPROXIMATESIGMOIDPARAMETERCOMPUTATION_H_
 #define FIXEDAPPROXIMATESIGMOIDPARAMETERCOMPUTATION_H_
 
-#include "tracking/ApproximateSigmoidParameterComputation.h"
+#include "classification/ApproximateSigmoidParameterComputation.h"
 
-namespace tracking {
+namespace classification {
 
 /**
  * Approximate sigmoid parameter computation that determines the parameter only once
@@ -33,8 +33,7 @@ public:
 
 	~FixedApproximateSigmoidParameterComputation();
 
-	std::pair<double, double> computeSigmoidParameters(
-				const ChangableDetectorSvm& svm, const struct svm_model *model,
+	std::pair<double, double> computeSigmoidParameters(const struct svm_model *model,
 				struct svm_node **positiveSamples, unsigned int positiveCount,
 				struct svm_node **negativeSamples, unsigned int negativeCount);
 

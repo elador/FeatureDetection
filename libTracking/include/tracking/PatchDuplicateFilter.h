@@ -13,6 +13,9 @@
 
 class FdPatch;
 
+using std::vector;
+using std::string;
+
 namespace tracking {
 
 /**
@@ -35,7 +38,7 @@ protected:
 	 * @return A new vector containing at most count different patches that have a higher certainty than the
 	 *         ones that were not taken.
 	 */
-	std::vector<FdPatch*> takeDistinctBest(std::vector<FdPatch*> patches, unsigned int count, std::string detectorId);
+	vector<FdPatch*> takeDistinctBest(vector<FdPatch*> patches, unsigned int count, string detectorId);
 
 	/**
 	 * Takes the worst distinct patches according to their certainty. The patches will be checked
@@ -47,7 +50,7 @@ protected:
 	 * @return A new vector containing at most count different patches that have a lower certainty than the
 	 *         ones that were not taken.
 	 */
-	std::vector<FdPatch*> takeDistinctWorst(std::vector<FdPatch*> patches, unsigned int count, std::string detectorId);
+	vector<FdPatch*> takeDistinctWorst(vector<FdPatch*> patches, unsigned int count, string detectorId);
 
 	/**
 	 * Takes the first n distinct patches. The patches will be checked for equality by comparing the pointers.
@@ -56,7 +59,7 @@ protected:
 	 * @param[in] count The amount of distinct patches that should be taken.
 	 * @return A new vector containing at most count different patches.
 	 */
-	std::vector<FdPatch*> takeDistinct(const std::vector<FdPatch*>& patches, unsigned int count);
+	vector<FdPatch*> takeDistinct(const vector<FdPatch*>& patches, unsigned int count);
 };
 
 } /* namespace tracking */

@@ -5,10 +5,10 @@
  *      Author: poschmann
  */
 
-#include "tracking/SigmoidParameterComputation.h"
+#include "classification/SigmoidParameterComputation.h"
 #include "svm.h"
 
-namespace tracking {
+namespace classification {
 
 double SigmoidParameterComputation::computeMeanSvmOutput(const struct svm_model *model,
 		struct svm_node **xs, unsigned int count) {

@@ -7,7 +7,6 @@
 
 #include "tracking/SimpleTransitionModel.h"
 #include "tracking/Sample.h"
-
 #include <ctime>
 #include <cmath>
 
@@ -18,7 +17,7 @@ SimpleTransitionModel::SimpleTransitionModel(double scatter) : scatter(scatter),
 
 SimpleTransitionModel::~SimpleTransitionModel() {}
 
-void SimpleTransitionModel::predict(Sample& sample, const std::vector<double>& offset) {
+void SimpleTransitionModel::predict(Sample& sample, const vector<double>& offset) {
 	double scatter = this->scatter;
 	// drift using offset
 	double x = sample.getX() + offset[0];

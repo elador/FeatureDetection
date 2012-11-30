@@ -8,17 +8,20 @@
 #ifndef CONDENSATIONTRACKER_H_
 #define CONDENSATIONTRACKER_H_
 
-#include "tracking/Rectangle.h"
 #include "tracking/Sample.h"
 #include "opencv2/core/core.hpp"
 #include "boost/shared_ptr.hpp"
 #include "boost/optional.hpp"
 #include <vector>
 
+using cv::Mat;
 using boost::shared_ptr;
+using boost::optional;
+using std::vector;
 
 namespace tracking {
 
+class Rectangle;
 class Sampler;
 class MeasurementModel;
 class PositionExtractor;
@@ -47,7 +50,7 @@ public:
 	 * @param[in] image The next image.
 	 * @return The bounding box around the most probable object position if there is an object.
 	 */
-	boost::optional<Rectangle> process(cv::Mat& image);
+	optional<Rectangle> process(Mat& image);
 
 	/**
 	 * @return The current samples.
@@ -72,11 +75,11 @@ public:
 
 private:
 
-	std::vector<Sample> samples;    ///< The current samples.
-	std::vector<Sample> oldSamples; ///< The previous samples.
+	vector<Sample> samples;    ///< The current samples.
+	vector<Sample> oldSamples; ///< The previous samples.
 
-	boost::optional<Sample> oldPosition; ///< The previous position.
-	std::vector<double> offset;          ///< The movement of the tracked object's center of the previous time step.
+	optional<Sample> oldPosition; ///< The previous position.
+	vector<double> offset;        ///< The movement of the tracked object's center of the previous time step.
 
 	shared_ptr<Sampler> sampler;                   ///< The sampler.
 	shared_ptr<MeasurementModel> measurementModel; ///< The measurement model.

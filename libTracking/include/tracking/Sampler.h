@@ -8,11 +8,15 @@
 #ifndef SAMPLER_H_
 #define SAMPLER_H_
 
-#include "tracking/Sample.h"
 #include "opencv2/core/core.hpp"
 #include <vector>
 
+using cv::Mat;
+using std::vector;
+
 namespace tracking {
+
+class Sample;
 
 /**
  * Creates new samples.
@@ -30,8 +34,8 @@ public:
 	 * @param[in] image The new image.
 	 * @param[in,out] newSamples The vector to insert the new samples into.
 	 */
-	virtual void sample(const std::vector<Sample>& samples, const std::vector<double>& offset,
-			const cv::Mat& image, std::vector<Sample>& newSamples) = 0;
+	virtual void sample(const vector<Sample>& samples, const vector<double>& offset, const Mat& image,
+			vector<Sample>& newSamples) = 0;
 };
 
 } /* namespace tracking */

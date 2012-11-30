@@ -6,14 +6,16 @@
  */
 
 #include "tracking/WvmSvmModel.h"
+#include "tracking/Sample.h"
 #include "DetectorWVM.h"
 #include "DetectorSVM.h"
 #include "OverlapElimination.h"
 #include "VDetectorVectorMachine.h"
 #include "FdImage.h"
 #include "FdPatch.h"
-#include "tracking/Sample.h"
 #include <map>
+
+using std::map;
 
 namespace tracking {
 
@@ -22,14 +24,14 @@ WvmSvmModel::WvmSvmModel(shared_ptr<VDetectorVectorMachine> wvm, shared_ptr<VDet
 
 WvmSvmModel::~WvmSvmModel() {}
 
-void WvmSvmModel::evaluate(cv::Mat& image, std::vector<Sample>& samples) {
+void WvmSvmModel::evaluate(Mat& image, vector<Sample>& samples) {
 	FdImage* fdImage = new FdImage;
 	fdImage->load(&image);
 	wvm->initPyramids(fdImage);
 	wvm->initROI(fdImage);
-	std::vector<FdPatch*> remainingPatches;
-	std::map<FdPatch*, std::vector<Sample*> > patch2samples;
-	for (std::vector<Sample>::iterator sit = samples.begin(); sit < samples.end(); ++sit) {
+	vector<FdPatch*> remainingPatches;
+	map<FdPatch*, vector<Sample*> > patch2samples;
+	for (vector<Sample>::iterator sit = samples.begin(); sit < samples.end(); ++sit) {
 		Sample& sample = *sit;
 		sample.setObject(false);
 		FdPatch* patch = wvm->extractPatchToPyramid(fdImage, sample.getX(), sample.getY(), sample.getSize());
@@ -48,19 +50,19 @@ void WvmSvmModel::evaluate(cv::Mat& image, std::vector<Sample>& samples) {
 		remainingPatches = takeDistinctBest(remainingPatches, 10, wvm->getIdentifier());
 		svm->initPyramids(fdImage);
 		svm->initROI(fdImage);
-		std::vector<FdPatch*> objectPatches = svm->detectOnPatchvec(remainingPatches);
-		for (std::vector<FdPatch*>::iterator pit = objectPatches.begin(); pit < objectPatches.end(); ++pit) {
-			std::vector<Sample*>& patchSamples = patch2samples[(*pit)];
-			for (std::vector<Sample*>::iterator sit = patchSamples.begin(); sit < patchSamples.end(); ++sit) {
+		vector<FdPatch*> objectPatches = svm->detectOnPatchvec(remainingPatches);
+		for (vector<FdPatch*>::iterator pit = objectPatches.begin(); pit < objectPatches.end(); ++pit) {
+			vector<Sample*>& patchSamples = patch2samples[(*pit)];
+			for (vector<Sample*>::iterator sit = patchSamples.begin(); sit < patchSamples.end(); ++sit) {
 				Sample* sample = (*sit);
 				sample->setObject(true);
 			}
 		}
-		for (std::vector<FdPatch*>::iterator pit = remainingPatches.begin(); pit < remainingPatches.end(); ++pit) {
+		for (vector<FdPatch*>::iterator pit = remainingPatches.begin(); pit < remainingPatches.end(); ++pit) {
 			FdPatch* patch = (*pit);
 			double certainty = patch->certainty[svm->getIdentifier()];
-			std::vector<Sample*>& patchSamples = patch2samples[patch];
-			for (std::vector<Sample*>::iterator sit = patchSamples.begin(); sit < patchSamples.end(); ++sit) {
+			vector<Sample*>& patchSamples = patch2samples[patch];
+			for (vector<Sample*>::iterator sit = patchSamples.begin(); sit < patchSamples.end(); ++sit) {
 				Sample* sample = (*sit);
 				sample->setWeight(2 * sample->getWeight() * certainty);
 			}

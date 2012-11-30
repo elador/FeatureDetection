@@ -10,6 +10,8 @@
 
 #include <vector>
 
+using std::vector;
+
 namespace tracking {
 
 class Sample;
@@ -28,7 +30,7 @@ public:
 	 * @param[in] count The amount of resulting samples.
 	 * @param[in,out] newSamples The vector to insert the new samples into.
 	 */
-	virtual void resample(const std::vector<Sample>& samples, unsigned int count, std::vector<Sample>& newSamples) = 0;
+	virtual void resample(const vector<Sample>& samples, unsigned int count, vector<Sample>& newSamples) = 0;
 };
 
 } /* namespace tracking */

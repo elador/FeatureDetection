@@ -5,11 +5,10 @@
  *      Author: poschmann
  */
 
-#include "tracking/ApproximateSigmoidParameterComputation.h"
-#include "tracking/ChangableDetectorSvm.h"
+#include "classification/ApproximateSigmoidParameterComputation.h"
 #include <cmath>
 
-namespace tracking {
+namespace classification {
 
 ApproximateSigmoidParameterComputation::ApproximateSigmoidParameterComputation(double highProb, double lowProb) :
 		highProb(highProb), lowProb(lowProb) {}
@@ -17,8 +16,8 @@ ApproximateSigmoidParameterComputation::ApproximateSigmoidParameterComputation(d
 ApproximateSigmoidParameterComputation::~ApproximateSigmoidParameterComputation() {}
 
 std::pair<double, double> ApproximateSigmoidParameterComputation::computeSigmoidParameters(
-		const ChangableDetectorSvm& svm, const struct svm_model *model, struct svm_node **positiveSamples,
-		unsigned int positiveCount, struct svm_node **negativeSamples, unsigned int negativeCount) {
+		const struct svm_model *model, struct svm_node **positiveSamples, unsigned int positiveCount,
+		struct svm_node **negativeSamples, unsigned int negativeCount) {
 	double meanPosOutput = computeMeanSvmOutput(model, positiveSamples, positiveCount);
 	double meanNegOutput = computeMeanSvmOutput(model, negativeSamples, negativeCount);
 	double paramA = (log((1 - lowProb) / lowProb) - log((1 - highProb) / highProb)) / (meanNegOutput - meanPosOutput);

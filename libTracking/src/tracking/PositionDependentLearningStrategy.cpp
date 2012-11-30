@@ -7,6 +7,7 @@
 
 #include "tracking/PositionDependentLearningStrategy.h"
 #include "tracking/LearningMeasurementModel.h"
+#include "tracking/Sample.h"
 
 namespace tracking {
 
@@ -14,15 +15,14 @@ PositionDependentLearningStrategy::PositionDependentLearningStrategy() {}
 
 PositionDependentLearningStrategy::~PositionDependentLearningStrategy() {}
 
-void PositionDependentLearningStrategy::update(LearningMeasurementModel& model, cv::Mat& image,
-		const std::vector<Sample>& samples) {
+void PositionDependentLearningStrategy::update(LearningMeasurementModel& model, const vector<Sample>& samples) {
 	model.update();
 }
 
-void PositionDependentLearningStrategy::update(LearningMeasurementModel& model, cv::Mat& image,
-		const std::vector<Sample>& samples, const Sample& position) {
+void PositionDependentLearningStrategy::update(LearningMeasurementModel& model, const vector<Sample>& samples,
+		const Sample& position) {
 
-	std::vector<Sample> positiveSamples;
+	vector<Sample> positiveSamples;
 	int offset = std::max(1, position.getSize() / 20);
 	positiveSamples.push_back(position);
 	positiveSamples.push_back(Sample(position.getX() - offset, position.getY(), position.getSize()));
@@ -30,7 +30,7 @@ void PositionDependentLearningStrategy::update(LearningMeasurementModel& model, 
 	positiveSamples.push_back(Sample(position.getX(), position.getY() - offset, position.getSize()));
 	positiveSamples.push_back(Sample(position.getX(), position.getY() + offset, position.getSize()));
 
-	std::vector<Sample> negativeSamples;
+	vector<Sample> negativeSamples;
 	double deviationFactor = 0.5;
 	int boundOffset = (int)(deviationFactor * position.getSize());
 	int xLowBound = position.getX() - boundOffset;
@@ -69,7 +69,7 @@ void PositionDependentLearningStrategy::update(LearningMeasurementModel& model, 
 //		negativeSamples.push_back(Sample(xHighBound, yLowBound, sizeHighBound));
 //		negativeSamples.push_back(Sample(xHighBound, yHighBound, sizeHighBound));
 
-	for (std::vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
+	for (vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
 		if (sit->isObject()
 				&& (sit->getX() <= xLowBound || sit->getX() >= xHighBound
 				|| sit->getY() <= yLowBound || sit->getY() >= yHighBound
@@ -78,7 +78,7 @@ void PositionDependentLearningStrategy::update(LearningMeasurementModel& model, 
 		}
 	}
 
-	model.update(image, positiveSamples, negativeSamples);
+	model.update(positiveSamples, negativeSamples);
 }
 
 } /* namespace tracking */

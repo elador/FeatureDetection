@@ -8,9 +8,9 @@
 #ifndef APPROXIMATESIGMOIDPARAMETERCOMPUTATION_H_
 #define APPROXIMATESIGMOIDPARAMETERCOMPUTATION_H_
 
-#include "tracking/SigmoidParameterComputation.h"
+#include "classification/SigmoidParameterComputation.h"
 
-namespace tracking {
+namespace classification {
 
 /**
  * Approximates the two parameters of a sigmoid function for probabilistic SVM output.
@@ -30,8 +30,7 @@ public:
 
 	virtual ~ApproximateSigmoidParameterComputation();
 
-	virtual std::pair<double, double> computeSigmoidParameters(
-			const ChangableDetectorSvm& svm, const struct svm_model *model,
+	virtual std::pair<double, double> computeSigmoidParameters(const struct svm_model *model,
 			struct svm_node **positiveSamples, unsigned int positiveCount,
 			struct svm_node **negativeSamples, unsigned int negativeCount);
 

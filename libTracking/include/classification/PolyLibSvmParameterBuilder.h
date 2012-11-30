@@ -8,9 +8,9 @@
 #ifndef POLYLIBSVMPARAMETERBUILDER_H_
 #define POLYLIBSVMPARAMETERBUILDER_H_
 
-#include "tracking/LibSvmParameterBuilder.h"
+#include "classification/LibSvmParameterBuilder.h"
 
-namespace tracking {
+namespace classification {
 
 /**
  * Builder of parameters for libSVM training with a polynomial kernel.

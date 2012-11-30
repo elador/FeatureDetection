@@ -11,6 +11,9 @@
 #include "opencv2/highgui/highgui.hpp"
 #include <vector>
 
+using cv::Mat;
+using std::vector;
+
 namespace tracking {
 
 class Sample;
@@ -28,7 +31,7 @@ public:
 	 * @param[in] image The image.
 	 * @param[in] samples The samples whose weight will be changed according to the likelihoods.
 	 */
-	virtual void evaluate(cv::Mat& image, std::vector<Sample>& samples) = 0;
+	virtual void evaluate(Mat& image, vector<Sample>& samples) = 0;
 };
 
 } /* namespace tracking */

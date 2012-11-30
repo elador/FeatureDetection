@@ -5,10 +5,10 @@
  *      Author: poschmann
  */
 
-#include "tracking/FixedApproximateSigmoidParameterComputation.h"
+#include "classification/FixedApproximateSigmoidParameterComputation.h"
 #include <cmath>
 
-namespace tracking {
+namespace classification {
 
 FixedApproximateSigmoidParameterComputation::FixedApproximateSigmoidParameterComputation(
 		double highProb, double lowProb, double meanPosOutput, double meanNegOutput) :
@@ -20,8 +20,7 @@ FixedApproximateSigmoidParameterComputation::FixedApproximateSigmoidParameterCom
 FixedApproximateSigmoidParameterComputation::~FixedApproximateSigmoidParameterComputation() {}
 
 std::pair<double, double> FixedApproximateSigmoidParameterComputation::computeSigmoidParameters(
-			const ChangableDetectorSvm& svm, const struct svm_model *model,
-			struct svm_node **positiveSamples, unsigned int positiveCount,
+			const struct svm_model *model, struct svm_node **positiveSamples, unsigned int positiveCount,
 			struct svm_node **negativeSamples, unsigned int negativeCount) {
 	return std::make_pair(paramA, paramB);
 }

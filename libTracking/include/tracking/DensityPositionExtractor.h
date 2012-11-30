@@ -30,7 +30,7 @@ public:
 
 	~DensityPositionExtractor();
 
-	boost::optional<Sample> extract(const std::vector<Sample>& samples);
+	optional<Sample> extract(const vector<Sample>& samples);
 
 protected:
 
@@ -41,7 +41,7 @@ protected:
 	 * @param[in] position The position.
 	 * @return The density of the weighted samples at the given position.
 	 */
-	double computeDensity(const std::vector<Sample>& samples, const Sample& position);
+	double computeDensity(const vector<Sample>& samples, const Sample& position);
 
 	/**
 	 * Computes the value of the three-dimensional kernel function of the difference between two samples.

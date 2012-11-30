@@ -6,11 +6,10 @@
  */
 
 #include "tracking/DualSvmModel.h"
-
+#include "tracking/Sample.h"
 #include "VDetectorVectorMachine.h"
 #include "FdImage.h"
 #include "FdPatch.h"
-#include "tracking/Sample.h"
 
 namespace tracking {
 
@@ -19,14 +18,14 @@ DualSvmModel::DualSvmModel(shared_ptr<VDetectorVectorMachine> preStage, shared_p
 
 DualSvmModel::~DualSvmModel() {}
 
-void DualSvmModel::evaluate(cv::Mat& image, std::vector<Sample>& samples) {
+void DualSvmModel::evaluate(Mat& image, vector<Sample>& samples) {
 	FdImage* fdImage = new FdImage();
 	fdImage->load(&image);
 	preStage->initPyramids(fdImage);
 	preStage->initROI(fdImage);
 	mainStage->initPyramids(fdImage);
 	mainStage->initROI(fdImage);
-	for (std::vector<Sample>::iterator sit = samples.begin(); sit < samples.end(); ++sit) {
+	for (vector<Sample>::iterator sit = samples.begin(); sit < samples.end(); ++sit) {
 		Sample& sample = *sit;
 		sample.setWeight(0);
 		sample.setObject(false);

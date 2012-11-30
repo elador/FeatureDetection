@@ -6,6 +6,7 @@
  */
 
 #include "tracking/ResamplingSampler.h"
+#include "tracking/Sample.h"
 #include "tracking/ResamplingAlgorithm.h"
 #include "tracking/TransitionModel.h"
 #include <algorithm>
@@ -29,12 +30,12 @@ ResamplingSampler::ResamplingSampler(unsigned int count, double randomRate,
 
 ResamplingSampler::~ResamplingSampler() {}
 
-void ResamplingSampler::sample(const std::vector<Sample>& samples, const std::vector<double>& offset,
-			const cv::Mat& image, std::vector<Sample>& newSamples) {
+void ResamplingSampler::sample(const vector<Sample>& samples, const vector<double>& offset, const Mat& image,
+		vector<Sample>& newSamples) {
 	unsigned int count = this->count;
 	resamplingAlgorithm->resample(samples, (int)((1 - randomRate) * count), newSamples);
 	// predict the samples
-	for (std::vector<Sample>::iterator sit = newSamples.begin(); sit < newSamples.end(); ++sit) {
+	for (vector<Sample>::iterator sit = newSamples.begin(); sit < newSamples.end(); ++sit) {
 		Sample& sample = *sit;
 		transitionModel->predict(sample, offset);
 		if (!isValid(sample, image))
@@ -48,7 +49,7 @@ void ResamplingSampler::sample(const std::vector<Sample>& samples, const std::ve
 	}
 }
 
-bool ResamplingSampler::isValid(const Sample& sample, const cv::Mat& image) {
+bool ResamplingSampler::isValid(const Sample& sample, const Mat& image) {
 	int minSize = (int)(this->minSize * std::min(image.cols, image.rows));
 	int maxSize = (int)(this->maxSize * std::min(image.cols, image.rows));
 	int halfSize = sample.getSize() / 2;
@@ -59,7 +60,7 @@ bool ResamplingSampler::isValid(const Sample& sample, const cv::Mat& image) {
 			&& y >= 0 && y + sample.getSize() <= image.rows;
 }
 
-void ResamplingSampler::sampleValid(Sample& sample, const cv::Mat& image) {
+void ResamplingSampler::sampleValid(Sample& sample, const Mat& image) {
 	int minSize = (int)(this->minSize * std::min(image.cols, image.rows));
 	int maxSize = (int)(this->maxSize * std::min(image.cols, image.rows));
 	int size = distribution(generator, maxSize - minSize) + minSize;

@@ -8,11 +8,11 @@
 #ifndef FRAMEBASEDSVMTRAINING_H_
 #define FRAMEBASEDSVMTRAINING_H_
 
-#include "tracking/LibSvmTraining.h"
-#include "tracking/LibSvmParameterBuilder.h"
-#include "tracking/RbfLibSvmParameterBuilder.h"
-#include "tracking/SigmoidParameterComputation.h"
-#include "tracking/FastApproximateSigmoidParameterComputation.h"
+#include "classification/LibSvmTraining.h"
+#include "classification/LibSvmParameterBuilder.h"
+#include "classification/RbfLibSvmParameterBuilder.h"
+#include "classification/SigmoidParameterComputation.h"
+#include "classification/FixedApproximateSigmoidParameterComputation.h"
 #include "svm.h"
 #include "boost/shared_ptr.hpp"
 #include "boost/make_shared.hpp"
@@ -20,15 +20,14 @@
 #include <vector>
 #include <utility>
 
-class FdPatch;
-
 using boost::shared_ptr;
 using boost::make_shared;
+using std::vector;
 
-namespace tracking {
+namespace classification {
 
 /**
- * SVM training that uses the patches of the last frames for training.
+ * SVM training that uses the samples of the last frames for training.
  */
 class FrameBasedSvmTraining : public LibSvmTraining {
 public:
@@ -44,7 +43,7 @@ public:
 	explicit FrameBasedSvmTraining(int frameLength, float minAvgSamples,
 			shared_ptr<LibSvmParameterBuilder> parameterBuilder = make_shared<RbfLibSvmParameterBuilder>(),
 			shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation
-					= make_shared<FastApproximateSigmoidParameterComputation>());
+					= make_shared<FixedApproximateSigmoidParameterComputation>());
 
 	/**
 	 * Constructs a new frame based SVM training with some static negative samples.
@@ -59,14 +58,14 @@ public:
 	explicit FrameBasedSvmTraining(int frameLength, float minAvgSamples, std::string negativesFilename, int negatives,
 			shared_ptr<LibSvmParameterBuilder> parameterBuilder = make_shared<RbfLibSvmParameterBuilder>(),
 			shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation
-					= make_shared<FastApproximateSigmoidParameterComputation>());
+					= make_shared<FixedApproximateSigmoidParameterComputation>());
 
 	~FrameBasedSvmTraining();
 
-	bool retrain(ChangableDetectorSvm& svm, const std::vector<FdPatch*>& positivePatches,
-			const std::vector<FdPatch*>& negativePatches);
+	bool retrain(LibSvmClassifier& svm, const vector<shared_ptr<FeatureVector> >& positivePatches,
+			const vector<shared_ptr<FeatureVector> >& negativePatches);
 
-	void reset(ChangableDetectorSvm& svm);
+	void reset(LibSvmClassifier& svm);
 
 	/**
 	 * @return The required amount of positive samples for the training to be reasonable.
@@ -91,20 +90,21 @@ private:
 	bool isTrainingReasonable() const;
 
 	/**
-	 * Adds new samples based on image patches with positive or negative label.
+	 * Adds new training samples.
 	 *
-	 * @param[in] positivePatches The new positive patches.
-	 * @param[in] negativePatches The new negative patches.
+	 * @param[in] positiveSamples The new positive samples.
+	 * @param[in] negativeSamples The new negative samples.
 	 */
-	void addSamples(const std::vector<FdPatch*>& positivePatches, const std::vector<FdPatch*>& negativePatches);
+	void addSamples(const vector<shared_ptr<FeatureVector> >& positiveSamples,
+			const vector<shared_ptr<FeatureVector> >& negativeSamples);
 
 	/**
-	 * Replaces samples by new ones obtained from patches.
+	 * Replaces training samples by new ones.
 	 *
-	 * @param[in] samples The vector of samples whose content should be replaced with new samples.
-	 * @param[in] patches The patches that should be transformed into the new samples.
+	 * @param[in] trainingSamples The vector of training samples whose content should be replaced with new ones.
+	 * @param[in] samples The samples that should be transformed into the new training samples.
 	 */
-	void replaceSamples(std::vector<struct svm_node *>& samples, const std::vector<FdPatch*>& patches);
+	void replaceSamples(vector<struct svm_node *>& trainingSamples, const vector<shared_ptr<FeatureVector> >& samples);
 
 	/**
 	 * Counts the samples.
@@ -112,15 +112,15 @@ private:
 	 * @param[in] samples The samples.
 	 * @return The number of samples.
 	 */
-	int getSampleCount(const std::vector<std::vector<struct svm_node *> >& samples) const;
+	int getSampleCount(const vector<vector<struct svm_node *> >& samples) const;
 
 	/**
-	 * Trains a support vector machine with the positive and negative samples.
+	 * Trains a libSVM classifier with the positive and negative samples.
 	 *
-	 * @param[in] svm The SVM that should be trained.
+	 * @param[in] svm The libSVM classifier that should be trained.
 	 * @return True if the training was successful, false otherwise.
 	 */
-	bool train(ChangableDetectorSvm& svm);
+	bool train(LibSvmClassifier& svm);
 
 	/**
 	 * Creates the libSVM problem.
@@ -132,9 +132,10 @@ private:
 
 	int frameLength;     ///< The length of the memory in frames.
 	float minAvgSamples; ///< The minimum average positive samples per frame for the training to be reasonable.
-	std::vector<std::vector<struct svm_node *> > positiveSamples; ///< The positive samples of the last frames.
-	std::vector<std::vector<struct svm_node *> > negativeSamples; ///< The negative samples of the last frames.
-	int oldestEntry;                                              ///< The index of the oldest sample entry.
+	unsigned int dimensions; ///< The amount of dimensions of the feature vectors.
+	vector<vector<struct svm_node *> > positiveTrainingSamples; ///< The positive training samples of the last frames.
+	vector<vector<struct svm_node *> > negativeTrainingSamples; ///< The negative training samples of the last frames.
+	int oldestEntry;                                            ///< The index of the oldest sample entry.
 };
 
 } /* namespace tracking */

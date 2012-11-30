@@ -5,10 +5,10 @@
  *      Author: poschmann
  */
 
-#include "tracking/RbfLibSvmParameterBuilder.h"
+#include "classification/RbfLibSvmParameterBuilder.h"
 #include "svm.h"
 
-namespace tracking {
+namespace classification {
 
 RbfLibSvmParameterBuilder::RbfLibSvmParameterBuilder(double gamma, double C) : LibSvmParameterBuilder(C), gamma(gamma) {}
 

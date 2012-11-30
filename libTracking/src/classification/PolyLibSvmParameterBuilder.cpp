@@ -5,10 +5,10 @@
  *      Author: poschmann
  */
 
-#include "tracking/PolyLibSvmParameterBuilder.h"
+#include "classification/PolyLibSvmParameterBuilder.h"
 #include "svm.h"
 
-namespace tracking {
+namespace classification {
 
 PolyLibSvmParameterBuilder::PolyLibSvmParameterBuilder(int degree, double coef, double gamma, double C) :
 		LibSvmParameterBuilder(C), degree(degree), coef(coef), gamma(gamma) {}

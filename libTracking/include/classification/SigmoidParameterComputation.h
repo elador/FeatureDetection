@@ -13,9 +13,7 @@
 struct svm_node;
 struct svm_model;
 
-namespace tracking {
-
-class ChangableDetectorSvm;
+namespace classification {
 
 /**
  * Computation of the two parameters of the sigmoid function for probabilistic SVM output. The
@@ -32,16 +30,14 @@ public:
 	 * The equation of the sigmoid function f is f(x) = 1 / (1 + exp(A * x + B)) and A
 	 * and B are the parameters.
 	 *
-	 * @param[in] svm The SVM that should be trained.
-	 * @param model The libSVM model of a dual-class RBF kernel SVM.
+	 * @param model The libSVM model of a dual-class SVM.
 	 * @param positiveSamples The positive samples used for the training of the SVM.
 	 * @param positiveCount The amount of positive samples.
 	 * @param negativeSamples The negative samples used for the training of the SVM.
 	 * @param negativeCount The amount of negative samples.
 	 * @return A pair containing the parameters A and B.
 	 */
-	virtual std::pair<double, double> computeSigmoidParameters(
-			const ChangableDetectorSvm& svm, const struct svm_model *model,
+	virtual std::pair<double, double> computeSigmoidParameters(const struct svm_model *model,
 			struct svm_node **positiveSamples, unsigned int positiveCount,
 			struct svm_node **negativeSamples, unsigned int negativeCount) = 0;
 

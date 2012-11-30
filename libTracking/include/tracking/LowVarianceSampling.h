@@ -11,14 +11,13 @@
 #include "tracking/ResamplingAlgorithm.h"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_01.hpp"
-#include <vector>
 
 namespace tracking {
 
 /**
  * Low variance sampling algorithm.
  */
-class LowVarianceSampling : public tracking::ResamplingAlgorithm {
+class LowVarianceSampling : public ResamplingAlgorithm {
 public:
 
 	/**
@@ -28,7 +27,7 @@ public:
 
 	~LowVarianceSampling();
 
-	void resample(const std::vector<Sample>& samples, unsigned int count, std::vector<Sample>& newSamples);
+	void resample(const vector<Sample>& samples, unsigned int count, vector<Sample>& newSamples);
 
 private:
 
@@ -38,7 +37,7 @@ private:
 	 * @param[in] samples The samples.
 	 * @return The sum of the sample weights.
 	 */
-	double computeWeightSum(const std::vector<Sample>& samples);
+	double computeWeightSum(const vector<Sample>& samples);
 
 	boost::mt19937 generator;         ///< Random number generator.
 	boost::uniform_01<> distribution; ///< Uniform real distribution.

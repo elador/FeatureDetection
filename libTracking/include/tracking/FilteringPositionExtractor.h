@@ -31,7 +31,7 @@ public:
 
 	~FilteringPositionExtractor();
 
-	boost::optional<Sample> extract(const std::vector<Sample>& samples);
+	optional<Sample> extract(const vector<Sample>& samples);
 
 private:
 	shared_ptr<PositionExtractor> extractor; ///< The wrapped position extractor.

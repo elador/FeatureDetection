@@ -11,26 +11,25 @@
 
 namespace tracking {
 
-std::vector<FdPatch*> PatchDuplicateFilter::takeDistinctBest(std::vector<FdPatch*> patches,
-		unsigned int count, std::string detectorId) {
+vector<FdPatch*> PatchDuplicateFilter::takeDistinctBest(vector<FdPatch*> patches, unsigned int count,
+		string detectorId) {
 	std::sort(patches.begin(), patches.end(), FdPatch::SortByCertainty(detectorId));
 	return takeDistinct(patches, count);
 }
 
-std::vector<FdPatch*> PatchDuplicateFilter::takeDistinctWorst(std::vector<FdPatch*> patches,
-		unsigned int count, std::string detectorId) {
+std::vector<FdPatch*> PatchDuplicateFilter::takeDistinctWorst(vector<FdPatch*> patches, unsigned int count,
+		string detectorId) {
 	std::sort(patches.begin(), patches.end(), FdPatch::SortByCertainty(detectorId));
 	std::reverse(patches.begin(), patches.end());
 	return takeDistinct(patches, count);
 }
 
-std::vector<FdPatch*> PatchDuplicateFilter::takeDistinct(const std::vector<FdPatch*>& patches,
-		unsigned int count) {
+std::vector<FdPatch*> PatchDuplicateFilter::takeDistinct(const vector<FdPatch*>& patches, unsigned int count) {
 	if (patches.empty())
 		return patches;
-	std::vector<FdPatch*> remainingPatches;
+	vector<FdPatch*> remainingPatches;
 	remainingPatches.reserve(count);
-	std::vector<FdPatch*>::const_iterator pit = patches.begin();
+	vector<FdPatch*>::const_iterator pit = patches.begin();
 	remainingPatches.push_back(*pit);
 	++pit;
 	for (; remainingPatches.size() < count && pit < patches.end(); ++pit) {

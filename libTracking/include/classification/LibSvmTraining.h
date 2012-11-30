@@ -8,11 +8,12 @@
 #ifndef LIBSVMTRAINING_H_
 #define LIBSVMTRAINING_H_
 
-#include "tracking/SvmTraining.h"
-#include "tracking/LibSvmParameterBuilder.h"
-#include "tracking/RbfLibSvmParameterBuilder.h"
-#include "tracking/SigmoidParameterComputation.h"
-#include "tracking/FastApproximateSigmoidParameterComputation.h"
+#include "classification/Training.h"
+#include "classification/LibSvmClassifier.h"
+#include "classification/LibSvmParameterBuilder.h"
+#include "classification/RbfLibSvmParameterBuilder.h"
+#include "classification/SigmoidParameterComputation.h"
+#include "classification/FixedApproximateSigmoidParameterComputation.h"
 #include "svm.h"
 #include "boost/shared_ptr.hpp"
 #include "boost/make_shared.hpp"
@@ -23,29 +24,29 @@ struct svm_parameter;
 using boost::shared_ptr;
 using boost::make_shared;
 
-namespace tracking {
+namespace classification {
 
 /**
- * SVM training that is based on libSVM.
+ * Algorithm for training LibSvmClassifier.
  */
-class LibSvmTraining : public SvmTraining {
+class LibSvmTraining : public Training<LibSvmClassifier> {
 public:
 
 	/**
-	 * Constructs a new libSVM based SVM training.
+	 * Constructs a new libSVM training.
 	 *
 	 * @param[in] parameterBuilder The libSVM parameter builder.
 	 * @param[in] sigmoidParameterComputation The computation of the sigmoid parameters.
 	 */
 	explicit LibSvmTraining(shared_ptr<LibSvmParameterBuilder> parameterBuilder = make_shared<RbfLibSvmParameterBuilder>(),
-			shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation = make_shared<FastApproximateSigmoidParameterComputation>());
+			shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation = make_shared<FixedApproximateSigmoidParameterComputation>());
 
 	virtual ~LibSvmTraining();
 
-	virtual bool retrain(ChangableDetectorSvm& svm,
-			const std::vector<FdPatch*>& positivePatches, const std::vector<FdPatch*>& negativePatches) = 0;
+	virtual bool retrain(LibSvmClassifier& svm, const std::vector<shared_ptr<FeatureVector> >& positiveSamples,
+			const std::vector<shared_ptr<FeatureVector> >& negativeSamples) = 0;
 
-	virtual void reset(ChangableDetectorSvm& svm) = 0;
+	virtual void reset(LibSvmClassifier& svm) = 0;
 
 	/**
 	 * Reads the static negative samples from a file.
@@ -76,16 +77,17 @@ protected:
 	/**
 	 * Changes the parameters of an SVM given a libSVM model.
 	 *
-	 * @param[in] The SVM whose parameters should be changed.
+	 * @param[in] svm The SVM whose parameters should be changed.
+	 * @param[in] dimensions The amount of dimensions of the feature space.
 	 * @param[in] model The libSVM model.
 	 * @param[in] problem The libSVM problem.
 	 * @param[in] positiveCount The amount of positive samples used for the training of the SVM.
 	 * @param[in] negativeCount The amount of negative samples used for the training of the SVM.
 	 */
-	void changeSvmParameters(ChangableDetectorSvm& svm, struct svm_model *model,
+	void changeSvmParameters(LibSvmClassifier& svm, int dimensions, struct svm_model *model,
 			struct svm_problem *problem, unsigned int positiveCount, unsigned int negativeCount);
 
-	std::vector<struct svm_node *> staticNegativeSamples; ///< The static negative samples.
+	std::vector<struct svm_node *> staticNegativeTrainingSamples; ///< The static negative training samples.
 
 private:
 

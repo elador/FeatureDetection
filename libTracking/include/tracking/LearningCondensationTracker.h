@@ -8,7 +8,6 @@
 #ifndef LEARNINGCONDENSATIONTRACKER_H_
 #define LEARNINGCONDENSATIONTRACKER_H_
 
-#include "tracking/Rectangle.h"
 #include "tracking/Sample.h"
 #include "opencv2/core/core.hpp"
 #include "boost/shared_ptr.hpp"
@@ -16,9 +15,13 @@
 #include <vector>
 
 using boost::shared_ptr;
+using boost::optional;
+using cv::Mat;
+using std::vector;
 
 namespace tracking {
 
+class Rectangle;
 class Sampler;
 class LearningMeasurementModel;
 class PositionExtractor;
@@ -50,12 +53,12 @@ public:
 	 * @param[in] image The next image.
 	 * @return The bounding box around the most probable object position if there is an object.
 	 */
-	boost::optional<Rectangle> process(cv::Mat& image);
+	optional<Rectangle> process(Mat& image);
 
 	/**
 	 * @return The current samples.
 	 */
-	inline const std::vector<Sample>& getSamples() const {
+	inline const vector<Sample>& getSamples() const {
 		return samples;
 	}
 
@@ -87,12 +90,12 @@ public:
 
 private:
 
-	std::vector<Sample> samples;    ///< The current samples.
-	std::vector<Sample> oldSamples; ///< The previous samples.
+	vector<Sample> samples;    ///< The current samples.
+	vector<Sample> oldSamples; ///< The previous samples.
 
-	boost::optional<Sample> oldPosition; ///< The previous position.
-	std::vector<double> offset;          ///< The movement of the tracked object's center of the previous time step.
-	bool learningActive;                 ///< Flag that indicates whether learning is active.
+	optional<Sample> oldPosition; ///< The previous position.
+	vector<double> offset;        ///< The movement of the tracked object's center of the previous time step.
+	bool learningActive;          ///< Flag that indicates whether learning is active.
 
 	shared_ptr<Sampler> sampler;                           ///< The sampler.
 	shared_ptr<LearningMeasurementModel> measurementModel; ///< The measurement model.

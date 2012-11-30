@@ -25,7 +25,7 @@ public:
 
 	~MaxWeightPositionExtractor();
 
-	boost::optional<Sample> extract(const std::vector<Sample>& samples);
+	optional<Sample> extract(const vector<Sample>& samples);
 };
 
 } /* namespace tracking */

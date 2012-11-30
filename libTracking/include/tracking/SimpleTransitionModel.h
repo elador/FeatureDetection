@@ -18,7 +18,7 @@ namespace tracking {
 /**
  * Transition model that linearly moves the samples and diffuses them.
  */
-class SimpleTransitionModel : public tracking::TransitionModel {
+class SimpleTransitionModel : public TransitionModel {
 public:
 
 	/**
@@ -30,7 +30,7 @@ public:
 
 	~SimpleTransitionModel();
 
-	void predict(Sample& sample, const std::vector<double>& offset);
+	void predict(Sample& sample, const vector<double>& offset);
 
 	/**
 	 * @return The scatter that controls the diffusion.

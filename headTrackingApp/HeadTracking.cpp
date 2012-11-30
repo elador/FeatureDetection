@@ -6,35 +6,34 @@
  */
 
 #include "HeadTracking.h"
+#include "HeadLearningWvmSvmModel.h"
 #include "imageio/VideoImageSource.h"
 #include "imageio/KinectImageSource.h"
 #include "imageio/DirectoryImageSource.h"
+#include "classification/FrameBasedSvmTraining.h"
+#include "classification/FastSvmTraining.h"
+#include "classification/LibSvmParameterBuilder.h"
+#include "classification/RbfLibSvmParameterBuilder.h"
+#include "classification/PolyLibSvmParameterBuilder.h"
+#include "classification/SigmoidParameterComputation.h"
+#include "classification/ApproximateSigmoidParameterComputation.h"
+#include "classification/FixedApproximateSigmoidParameterComputation.h"
+#include "classification/LibSvmClassifier.h"
+#include "classification/HistEqFeatureExtractor.h"
 #include "tracking/ResamplingSampler.h"
 #include "tracking/GridSampler.h"
 #include "tracking/LowVarianceSampling.h"
 #include "tracking/SimpleTransitionModel.h"
-#include "tracking/FrameBasedSvmTraining.h"
-#include "tracking/FastSvmTraining.h"
 #include "tracking/SelfLearningStrategy.h"
 #include "tracking/PositionDependentLearningStrategy.h"
-#include "tracking/SelfLearningWvmSvmModel.h"
-#include "tracking/LearningWvmSvmModel.h"
-#include "HeadLearningWvmSvmModel.h"
-#include "tracking/LibSvmParameterBuilder.h"
-#include "tracking/RbfLibSvmParameterBuilder.h"
-#include "tracking/PolyLibSvmParameterBuilder.h"
-#include "tracking/SigmoidParameterComputation.h"
-#include "tracking/ApproximateSigmoidParameterComputation.h"
-#include "tracking/FixedApproximateSigmoidParameterComputation.h"
-#include "OverlapElimination.h"
 #include "tracking/FilteringPositionExtractor.h"
 #include "tracking/WeightedMeanPositionExtractor.h"
 #include "tracking/Rectangle.h"
 #include "tracking/Sample.h"
+#include "OverlapElimination.h"
 #include "VDetectorVectorMachine.h"
 #include "DetectorWVM.h"
 #include "DetectorSVM.h"
-#include "tracking/ChangableDetectorSvm.h"
 #include "SLogger.h"
 #include <boost/optional.hpp>
 #include <boost/program_options.hpp>
@@ -70,7 +69,7 @@ void HeadTracking::initTracking() {
 //	shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation = make_shared<ApproximateSigmoidParameterComputation>();
 
 //	svmTraining = make_shared<FastSvmTraining>(7, 14, 50, svmParameterBuilder, sigmoidParameterComputation);
-	svmTraining = make_shared<FrameBasedSvmTraining>(50, 4, svmParameterBuilder, sigmoidParameterComputation);
+	svmTraining = make_shared<FrameBasedSvmTraining>(5, 4, svmParameterBuilder, sigmoidParameterComputation);
 //	svmTraining->readStaticNegatives(negativesFile, 200);
 
 	// create measurement model
@@ -78,15 +77,16 @@ void HeadTracking::initTracking() {
 	wvm->load(svmConfigFile);
 	shared_ptr<VDetectorVectorMachine> svm = make_shared<DetectorSVM>();
 	svm->load(svmConfigFile);
-	shared_ptr<ChangableDetectorSvm> dynamicSvm = make_shared<ChangableDetectorSvm>();
-	dynamicSvm->load(svmConfigFile);
+	shared_ptr<LibSvmClassifier> dynamicSvm = make_shared<LibSvmClassifier>();
 	shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>();
 	oe->load(svmConfigFile);
 
-//	measurementModel = make_shared<SelfLearningWvmSvmModel>(wvm, svm, dynamicSvm, oe, svmTraining, 0.85, 0.05);
+	shared_ptr<HistEqFeatureExtractor> featureExtractor = make_shared<HistEqFeatureExtractor>(cv::Size(20, 20), 0.85, 0.1666, 1.0);
+
+//	measurementModel = make_shared<SelfLearningWvmSvmModel>(featureExtractor, wvm, svm, dynamicSvm, oe, svmTraining, 0.85, 0.05);
 //	learningStrategy = make_shared<SelfLearningStrategy>();
 
-	measurementModel = make_shared<HeadLearningWvmSvmModel>(wvm, svm, dynamicSvm, oe, svmTraining);
+	measurementModel = make_shared<HeadLearningWvmSvmModel>(featureExtractor, wvm, svm, dynamicSvm, oe, svmTraining);
 	learningStrategy = make_shared<PositionDependentLearningStrategy>();
 
 	// create tracker
@@ -94,8 +94,8 @@ void HeadTracking::initTracking() {
 	double randomRate = 0.35;
 	transitionModel = make_shared<SimpleTransitionModel>(0.2);
 	resamplingSampler = make_shared<ResamplingSampler>(count, randomRate, make_shared<LowVarianceSampling>(),
-			transitionModel);
-	gridSampler = make_shared<GridSampler>(0.2, 0.8, 1.2, 0.1);
+			transitionModel, 0.1666, 1.0);
+	gridSampler = make_shared<GridSampler>(0.1666, 0.8, 1 / 0.85, 0.1);
 	tracker = auto_ptr<LearningCondensationTracker>(new LearningCondensationTracker(resamplingSampler, measurementModel,
 			make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>()), learningStrategy));
 //	tracker->setLearningActive(false);
@@ -268,7 +268,7 @@ int main(int argc, char *argv[]) {
 		po::notify(vm);
 
 		if (vm.count("help")) {
-			std::cout << "Usage: HeadTrackingApp [options]" << std::endl;
+			std::cout << "Usage: faceTrackingApp [options]" << std::endl;
 			std::cout << desc;
 			return 0;
 		}

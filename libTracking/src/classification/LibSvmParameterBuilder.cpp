@@ -5,11 +5,11 @@
  *      Author: poschmann
  */
 
-#include "tracking/LibSvmParameterBuilder.h"
+#include "classification/LibSvmParameterBuilder.h"
 #include "svm.h"
 #include <cstdlib>
 
-namespace tracking {
+namespace classification {
 
 LibSvmParameterBuilder::LibSvmParameterBuilder(double C) : C(C) {}
 

@@ -6,25 +6,29 @@
  */
 
 #include "tracking/GridSampler.h"
+#include "tracking/Sample.h"
 #include <algorithm>
+
+using std::min;
+using std::max;
 
 namespace tracking {
 
 GridSampler::GridSampler(float minSize, float maxSize, float sizeScale, float stepSize) :
 		minSize(minSize), maxSize(maxSize), sizeScale(sizeScale), stepSize(stepSize) {
-	minSize = std::min(1.0f, std::max(0.0f, minSize));
-	maxSize = std::min(1.0f, std::max(0.0f, maxSize));
-	sizeScale = std::max(1.05f, sizeScale);
-	stepSize = std::max(0.0f, stepSize);
+	minSize = min(1.0f, max(0.0f, minSize));
+	maxSize = min(1.0f, max(0.0f, maxSize));
+	sizeScale = max(1.05f, sizeScale);
+	stepSize = max(0.0f, stepSize);
 }
 
 GridSampler::~GridSampler() {}
 
-void GridSampler::sample(const std::vector<Sample>& samples, const std::vector<double>& offset,
-			const cv::Mat& image, std::vector<Sample>& newSamples) {
+void GridSampler::sample(const vector<Sample>& samples, const vector<double>& offset,
+			const Mat& image, vector<Sample>& newSamples) {
 	newSamples.clear();
-	int minSize = (int)(this->minSize * std::min(image.cols, image.rows));
-	int maxSize = (int)(this->maxSize * std::min(image.cols, image.rows));
+	int minSize = (int)(this->minSize * min(image.cols, image.rows));
+	int maxSize = (int)(this->maxSize * min(image.cols, image.rows));
 	Sample newSample;
 	for (int size = minSize; size <= maxSize; size *= sizeScale) {
 		newSample.setSize(size);

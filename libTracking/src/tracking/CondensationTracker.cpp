@@ -5,6 +5,8 @@
  *      Author: poschmann
  */
 
+#include "tracking/Rectangle.h"
+#include "tracking/Sample.h"
 #include "tracking/CondensationTracker.h"
 #include "tracking/Sampler.h"
 #include "tracking/MeasurementModel.h"
@@ -28,12 +30,12 @@ CondensationTracker::CondensationTracker(shared_ptr<Sampler> sampler,
 
 CondensationTracker::~CondensationTracker() {}
 
-boost::optional<Rectangle> CondensationTracker::process(cv::Mat& image) {
+optional<Rectangle> CondensationTracker::process(Mat& image) {
 	oldSamples = samples;
 	sampler->sample(oldSamples, offset, image, samples);
 	// evaluate samples and extract position
 	measurementModel->evaluate(image, samples);
-	boost::optional<Sample> position = extractor->extract(samples);
+	optional<Sample> position = extractor->extract(samples);
 	// update offset
 	if (oldPosition && position) {
 		offset[0] = position->getX() - oldPosition->getX();
@@ -47,8 +49,8 @@ boost::optional<Rectangle> CondensationTracker::process(cv::Mat& image) {
 	oldPosition = position;
 	// return position
 	if (position)
-		return boost::optional<Rectangle>(position->getBounds());
-	return boost::optional<Rectangle>();
+		return optional<Rectangle>(position->getBounds());
+	return optional<Rectangle>();
 }
 
 } /* namespace tracking */

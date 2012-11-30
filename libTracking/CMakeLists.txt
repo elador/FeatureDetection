@@ -11,22 +11,32 @@ FIND_PACKAGE(OpenCV REQUIRED core)
 # source and header files
 SET(HEADERS
 	include/svm.h
-	include/tracking/ApproximateSigmoidParameterComputation.h
-	include/tracking/ChangableDetectorSvm.h
+	include/classification/ApproximateSigmoidParameterComputation.h
+	include/classification/Classifier.h
+	include/classification/EagerFeatureVector.h
+	include/classification/FastSvmTraining.h
+	include/classification/FeatureExtractor.h
+	include/classification/FeatureVector.h
+	include/classification/FixedApproximateSigmoidParameterComputation.h
+	include/classification/FrameBasedSvmTraining.h
+	include/classification/HistEqFeatureExtractor.h
+	include/classification/ImagePyramidFeatureExtractor.h
+	include/classification/LibSvmClassifier.h
+	include/classification/LibSvmParameterBuilder.h
+	include/classification/LibSvmTraining.h
+	include/classification/PolyLibSvmParameterBuilder.h
+	include/classification/RbfLibSvmParameterBuilder.h
+	include/classification/SigmoidParameterComputation.h
+	include/classification/Training.h
 	include/tracking/CondensationTracker.h
 	include/tracking/DensityPositionExtractor.h
 	include/tracking/DualSvmModel.h
-	include/tracking/FastApproximateSigmoidParameterComputation.h
-	include/tracking/FastSvmTraining.h
 	include/tracking/FilteringPositionExtractor.h
-	include/tracking/FixedApproximateSigmoidParameterComputation.h
-	include/tracking/FrameBasedSvmTraining.h
 	include/tracking/GridSampler.h
 	include/tracking/LearningCondensationTracker.h
 	include/tracking/LearningMeasurementModel.h
 	include/tracking/LearningStrategy.h
 	include/tracking/LearningWvmSvmModel.h
-	include/tracking/LibSvmTraining.h
 	include/tracking/LowVarianceSampling.h
 	include/tracking/MaxWeightPositionExtractor.h
 	include/tracking/MeasurementModel.h
@@ -40,30 +50,33 @@ SET(HEADERS
 	include/tracking/Sampler.h
 	include/tracking/SelfLearningStrategy.h
 	include/tracking/SelfLearningWvmSvmModel.h
-	include/tracking/SigmoidParameterComputation.h
 	include/tracking/SimpleTransitionModel.h
-	include/tracking/SvmTraining.h
 	include/tracking/TransitionModel.h
-	include/tracking/UnchangingSigmoidParameterComputation.h
 	include/tracking/WeightedMeanPositionExtractor.h
 	include/tracking/WvmSvmModel.h
 )
 SET(SOURCE
 	src/svm.cpp
-	src/tracking/ApproximateSigmoidParameterComputation.cpp
-	src/tracking/ChangableDetectorSvm.cpp
+	src/classification/ApproximateSigmoidParameterComputation.cpp
+	src/classification/EagerFeatureVector.cpp
+	src/classification/FastSvmTraining.cpp
+	src/classification/FixedApproximateSigmoidParameterComputation.cpp
+	src/classification/FrameBasedSvmTraining.cpp
+	src/classification/HistEqFeatureExtractor.cpp
+	src/classification/ImagePyramidFeatureExtractor.cpp
+	src/classification/LibSvmClassifier.cpp
+	src/classification/LibSvmParameterBuilder.cpp
+	src/classification/LibSvmTraining.cpp
+	src/classification/PolyLibSvmParameterBuilder.cpp
+	src/classification/RbfLibSvmParameterBuilder.cpp
+	src/classification/SigmoidParameterComputation.cpp
 	src/tracking/CondensationTracker.cpp
 	src/tracking/DensityPositionExtractor.cpp
 	src/tracking/DualSvmModel.cpp
-	src/tracking/FastApproximateSigmoidParameterComputation.cpp
-	src/tracking/FastSvmTraining.cpp
 	src/tracking/FilteringPositionExtractor.cpp
-	src/tracking/FixedApproximateSigmoidParameterComputation.cpp
-	src/tracking/FrameBasedSvmTraining.cpp
 	src/tracking/GridSampler.cpp
 	src/tracking/LearningCondensationTracker.cpp
 	src/tracking/LearningWvmSvmModel.cpp
-	src/tracking/LibSvmTraining.cpp
 	src/tracking/LowVarianceSampling.cpp
 	src/tracking/MaxWeightPositionExtractor.cpp
 	src/tracking/PatchDuplicateFilter.cpp
@@ -73,9 +86,7 @@ SET(SOURCE
 	src/tracking/Sample.cpp
 	src/tracking/SelfLearningStrategy.cpp
 	src/tracking/SelfLearningWvmSvmModel.cpp
-	src/tracking/SigmoidParameterComputation.cpp
 	src/tracking/SimpleTransitionModel.cpp
-	src/tracking/UnchangingSigmoidParameterComputation.cpp
 	src/tracking/WeightedMeanPositionExtractor.cpp
 	src/tracking/WvmSvmModel.cpp
 )

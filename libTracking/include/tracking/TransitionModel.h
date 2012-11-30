@@ -10,6 +10,8 @@
 
 #include <vector>
 
+using std::vector;
+
 namespace tracking {
 
 class Sample;
@@ -28,7 +30,7 @@ public:
 	 * @param[in,out] sample The sample.
 	 * @param[in] offset The movement of the tracked object's center of the previous time step.
 	 */
-	virtual void predict(Sample& sample, const std::vector<double>& offset) = 0;
+	virtual void predict(Sample& sample, const vector<double>& offset) = 0;
 };
 
 } /* namespace tracking */

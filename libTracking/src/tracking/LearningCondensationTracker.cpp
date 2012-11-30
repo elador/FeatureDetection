@@ -5,6 +5,8 @@
  *      Author: poschmann
  */
 
+#include "tracking/Rectangle.h"
+#include "tracking/Sample.h"
 #include "tracking/LearningCondensationTracker.h"
 #include "tracking/Sampler.h"
 #include "tracking/LearningMeasurementModel.h"
@@ -32,12 +34,12 @@ LearningCondensationTracker::LearningCondensationTracker(shared_ptr<Sampler> sam
 
 LearningCondensationTracker::~LearningCondensationTracker() {}
 
-boost::optional<Rectangle> LearningCondensationTracker::process(cv::Mat& image) {
+optional<Rectangle> LearningCondensationTracker::process(Mat& image) {
 	oldSamples = samples;
 	sampler->sample(oldSamples, offset, image, samples);
 	// evaluate samples and extract position
 	measurementModel->evaluate(image, samples);
-	boost::optional<Sample> position = extractor->extract(samples);
+	optional<Sample> position = extractor->extract(samples);
 	// update offset
 	if (oldPosition && position) {
 		offset[0] = position->getX() - oldPosition->getX();
@@ -49,16 +51,17 @@ boost::optional<Rectangle> LearningCondensationTracker::process(cv::Mat& image) 
 		offset[2] = 0;
 	}
 	oldPosition = position;
-	// return position
+	// update model
 	if (learningActive) {
 		if (position)
-			learningStrategy->update(*measurementModel, image, samples, position.get());
+			learningStrategy->update(*measurementModel, samples, position.get());
 		else
-			learningStrategy->update(*measurementModel, image, samples);
+			learningStrategy->update(*measurementModel, samples);
 	}
+	// return position
 	if (position)
-		return boost::optional<Rectangle>(position->getBounds());
-	return boost::optional<Rectangle>();
+		return optional<Rectangle>(position->getBounds());
+	return optional<Rectangle>();
 }
 
 void LearningCondensationTracker::setLearningActive(bool active) {
