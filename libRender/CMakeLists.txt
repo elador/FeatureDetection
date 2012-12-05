@@ -28,12 +28,14 @@ SET(SOURCE
 	src/render/SRenderer.cpp
 	src/render/Vertex.cpp
 	src/render/Triangle.cpp
+	src/render/Camera.cpp
 )
 
 SET(HEADERS
 	include/render/SRenderer.hpp
 	include/render/Vertex.hpp
 	include/render/Triangle.hpp
+	include/render/Camera.hpp
 )
 
 include_directories( "include" )
