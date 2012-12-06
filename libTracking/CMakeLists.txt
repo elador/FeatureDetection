@@ -28,28 +28,25 @@ SET(HEADERS
 	include/classification/RbfLibSvmParameterBuilder.h
 	include/classification/SigmoidParameterComputation.h
 	include/classification/Training.h
+	include/tracking/AdaptiveCondensationTracker.h
+	include/tracking/AdaptiveMeasurementModel.h
 	include/tracking/CondensationTracker.h
 	include/tracking/DensityPositionExtractor.h
 	include/tracking/DualSvmModel.h
 	include/tracking/FilteringPositionExtractor.h
 	include/tracking/GridSampler.h
-	include/tracking/LearningCondensationTracker.h
-	include/tracking/LearningMeasurementModel.h
-	include/tracking/LearningStrategy.h
-	include/tracking/LearningWvmSvmModel.h
 	include/tracking/LowVarianceSampling.h
 	include/tracking/MaxWeightPositionExtractor.h
 	include/tracking/MeasurementModel.h
 	include/tracking/PatchDuplicateFilter.h
-	include/tracking/PositionDependentLearningStrategy.h
+	include/tracking/PositionDependentMeasurementModel.h
 	include/tracking/PositionExtractor.h
 	include/tracking/Rectangle.h
 	include/tracking/ResamplingAlgorithm.h
 	include/tracking/ResamplingSampler.h
 	include/tracking/Sample.h
 	include/tracking/Sampler.h
-	include/tracking/SelfLearningStrategy.h
-	include/tracking/SelfLearningWvmSvmModel.h
+	include/tracking/SelfLearningMeasurementModel.h
 	include/tracking/SimpleTransitionModel.h
 	include/tracking/TransitionModel.h
 	include/tracking/WeightedMeanPositionExtractor.h
@@ -70,22 +67,20 @@ SET(SOURCE
 	src/classification/PolyLibSvmParameterBuilder.cpp
 	src/classification/RbfLibSvmParameterBuilder.cpp
 	src/classification/SigmoidParameterComputation.cpp
+	src/tracking/AdaptiveCondensationTracker.cpp
 	src/tracking/CondensationTracker.cpp
 	src/tracking/DensityPositionExtractor.cpp
 	src/tracking/DualSvmModel.cpp
 	src/tracking/FilteringPositionExtractor.cpp
 	src/tracking/GridSampler.cpp
-	src/tracking/LearningCondensationTracker.cpp
-	src/tracking/LearningWvmSvmModel.cpp
 	src/tracking/LowVarianceSampling.cpp
 	src/tracking/MaxWeightPositionExtractor.cpp
 	src/tracking/PatchDuplicateFilter.cpp
-	src/tracking/PositionDependentLearningStrategy.cpp
+	src/tracking/PositionDependentMeasurementModel.cpp
 	src/tracking/Rectangle.cpp
 	src/tracking/ResamplingSampler.cpp
 	src/tracking/Sample.cpp
-	src/tracking/SelfLearningStrategy.cpp
-	src/tracking/SelfLearningWvmSvmModel.cpp
+	src/tracking/SelfLearningMeasurementModel.cpp
 	src/tracking/SimpleTransitionModel.cpp
 	src/tracking/WeightedMeanPositionExtractor.cpp
 	src/tracking/WvmSvmModel.cpp

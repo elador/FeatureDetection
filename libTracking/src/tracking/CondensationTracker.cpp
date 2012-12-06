@@ -30,7 +30,7 @@ CondensationTracker::CondensationTracker(shared_ptr<Sampler> sampler,
 
 CondensationTracker::~CondensationTracker() {}
 
-optional<Rectangle> CondensationTracker::process(Mat& image) {
+optional<Rectangle> CondensationTracker::process(const Mat& image) {
 	oldSamples = samples;
 	sampler->sample(oldSamples, offset, image, samples);
 	// evaluate samples and extract position

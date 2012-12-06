@@ -1,12 +1,12 @@
 /*
- * WvmSvmModel.h
+ * HeadWvmSvmModel.h
  *
- *  Created on: 25.07.2012
+ *  Created on: 13.11.2012
  *      Author: poschmann
  */
 
-#ifndef WVMSVMMODEL_H_
-#define WVMSVMMODEL_H_
+#ifndef HEADWVMSVMMODEL_H_
+#define HEADWVMSVMMODEL_H_
 
 #include "tracking/MeasurementModel.h"
 #include "tracking/PatchDuplicateFilter.h"
@@ -16,9 +16,10 @@
 class VDetectorVectorMachine;
 class OverlapElimination;
 
+using tracking::MeasurementModel;
+using tracking::PatchDuplicateFilter;
+using tracking::Sample;
 using boost::shared_ptr;
-
-namespace tracking {
 
 /**
  * Measurement model that uses a WVM for quick elimination and evaluates the samples that remain after an
@@ -26,7 +27,7 @@ namespace tracking {
  * the two detectors, they will be regarded as being independent (although they are not). The certainties
  * for the SVM of samples that are not evaluated by it will be chosen to be 0.5 (unknown).
  */
-class WvmSvmModel : public MeasurementModel, public PatchDuplicateFilter {
+class HeadWvmSvmModel : public MeasurementModel, public PatchDuplicateFilter {
 public:
 
 	/**
@@ -36,10 +37,10 @@ public:
 	 * @param[in] svm The slower SVM.
 	 * @param[in] oe The overlap elimination algorithm.
 	 */
-	explicit WvmSvmModel(shared_ptr<VDetectorVectorMachine> wvm, shared_ptr<VDetectorVectorMachine> svm,
+	explicit HeadWvmSvmModel(shared_ptr<VDetectorVectorMachine> wvm, shared_ptr<VDetectorVectorMachine> svm,
 			shared_ptr<OverlapElimination> oe);
 
-	~WvmSvmModel();
+	~HeadWvmSvmModel();
 
 	void evaluate(const Mat& image, vector<Sample>& samples);
 
@@ -50,5 +51,4 @@ private:
 	shared_ptr<OverlapElimination> oe;      ///< The overlap elimination algorithm.
 };
 
-} /* namespace tracking */
-#endif /* WVMSVMMODEL_H_ */
+#endif /* HEADWVMSVMMODEL_H_ */

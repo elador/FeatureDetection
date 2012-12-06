@@ -31,7 +31,7 @@ public:
 	 * @param[in] image The image.
 	 * @param[in] samples The samples whose weight will be changed according to the likelihoods.
 	 */
-	virtual void evaluate(Mat& image, vector<Sample>& samples) = 0;
+	virtual void evaluate(const Mat& image, vector<Sample>& samples) = 0;
 };
 
 } /* namespace tracking */

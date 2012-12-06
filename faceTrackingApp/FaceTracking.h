@@ -10,9 +10,8 @@
 
 #include "imageio/ImageSource.h"
 #include "classification/LibSvmTraining.h"
-#include "tracking/LearningCondensationTracker.h"
-#include "tracking/LearningStrategy.h"
-#include "tracking/LearningMeasurementModel.h"
+#include "tracking/AdaptiveCondensationTracker.h"
+#include "tracking/AdaptiveMeasurementModel.h"
 #include "tracking/SimpleTransitionModel.h"
 #include "tracking/ResamplingSampler.h"
 #include "tracking/GridSampler.h"
@@ -38,7 +37,7 @@ public:
 
 private:
 
-	static void learningChanged(int state, void* userdata);
+	static void adaptiveChanged(int state, void* userdata);
 	static void samplerChanged(int state, void* userdata);
 	static void sampleCountChanged(int state, void* userdata);
 	static void randomRateChanged(int state, void* userdata);
@@ -61,9 +60,9 @@ private:
 	bool paused;
 	bool drawSamples;
 
-	auto_ptr<LearningCondensationTracker> tracker;
-	shared_ptr<LearningStrategy> learningStrategy;
-	shared_ptr<LearningMeasurementModel> measurementModel;
+	auto_ptr<AdaptiveCondensationTracker> tracker;
+	shared_ptr<MeasurementModel> staticMeasurementModel;
+	shared_ptr<AdaptiveMeasurementModel> adaptiveMeasurementModel;
 	shared_ptr<LibSvmTraining> svmTraining;
 	shared_ptr<SimpleTransitionModel> transitionModel;
 	shared_ptr<ResamplingSampler> resamplingSampler;

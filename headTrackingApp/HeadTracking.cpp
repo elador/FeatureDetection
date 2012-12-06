@@ -6,7 +6,7 @@
  */
 
 #include "HeadTracking.h"
-#include "HeadLearningWvmSvmModel.h"
+#include "HeadWvmSvmModel.h"
 #include "imageio/VideoImageSource.h"
 #include "imageio/KinectImageSource.h"
 #include "imageio/DirectoryImageSource.h"
@@ -24,8 +24,8 @@
 #include "tracking/GridSampler.h"
 #include "tracking/LowVarianceSampling.h"
 #include "tracking/SimpleTransitionModel.h"
-#include "tracking/SelfLearningStrategy.h"
-#include "tracking/PositionDependentLearningStrategy.h"
+#include "tracking/SelfLearningMeasurementModel.h"
+#include "tracking/PositionDependentMeasurementModel.h"
 #include "tracking/FilteringPositionExtractor.h"
 #include "tracking/WeightedMeanPositionExtractor.h"
 #include "tracking/Rectangle.h"
@@ -83,11 +83,9 @@ void HeadTracking::initTracking() {
 
 	shared_ptr<HistEqFeatureExtractor> featureExtractor = make_shared<HistEqFeatureExtractor>(cv::Size(20, 20), 0.85, 0.1666, 1.0);
 
-//	measurementModel = make_shared<SelfLearningWvmSvmModel>(featureExtractor, wvm, svm, dynamicSvm, oe, svmTraining, 0.85, 0.05);
-//	learningStrategy = make_shared<SelfLearningStrategy>();
-
-	measurementModel = make_shared<HeadLearningWvmSvmModel>(featureExtractor, wvm, svm, dynamicSvm, oe, svmTraining);
-	learningStrategy = make_shared<PositionDependentLearningStrategy>();
+	staticMeasurementModel = make_shared<HeadWvmSvmModel>(wvm, svm, oe);
+//	adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(featureExtractor, dynamicSvm, svmTraining, 0.85, 0.05);
+	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor, dynamicSvm, svmTraining);
 
 	// create tracker
 	unsigned int count = 800;
@@ -96,8 +94,9 @@ void HeadTracking::initTracking() {
 	resamplingSampler = make_shared<ResamplingSampler>(count, randomRate, make_shared<LowVarianceSampling>(),
 			transitionModel, 0.1666, 1.0);
 	gridSampler = make_shared<GridSampler>(0.1666, 0.8, 1 / 0.85, 0.1);
-	tracker = auto_ptr<LearningCondensationTracker>(new LearningCondensationTracker(resamplingSampler, measurementModel,
-			make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>()), learningStrategy));
+	tracker = auto_ptr<AdaptiveCondensationTracker>(new AdaptiveCondensationTracker(
+			resamplingSampler, staticMeasurementModel, adaptiveMeasurementModel,
+			make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>())));
 //	tracker->setLearningActive(false);
 }
 
@@ -107,8 +106,8 @@ void HeadTracking::initGui() {
 	cvNamedWindow(controlWindowName.c_str(), CV_WINDOW_AUTOSIZE);
 	cvMoveWindow(controlWindowName.c_str(), 750, 50);
 
-	cv::createTrackbar("Learning active", controlWindowName, NULL, 1, learningChanged, this);
-	cv::setTrackbarPos("Learning active", controlWindowName, tracker->isLearningActive() ? 1 : 0);
+	cv::createTrackbar("Adaptive", controlWindowName, NULL, 1, adaptiveChanged, this);
+	cv::setTrackbarPos("Adaptive", controlWindowName, tracker->isUsingAdaptiveModel() ? 1 : 0);
 
 	cv::createTrackbar("Grid/Resampling", controlWindowName, NULL, 1, samplerChanged, this);
 	cv::setTrackbarPos("Grid/Resampling", controlWindowName, tracker->getSampler() == gridSampler ? 0 : 1);
@@ -126,9 +125,9 @@ void HeadTracking::initGui() {
 	cv::setTrackbarPos("Draw samples", controlWindowName, drawSamples ? 1 : 0);
 }
 
-void HeadTracking::learningChanged(int state, void* userdata) {
+void HeadTracking::adaptiveChanged(int state, void* userdata) {
 	HeadTracking *tracking = (HeadTracking*)userdata;
-	tracking->tracker->setLearningActive(state == 1);
+	tracking->tracker->setUseAdaptiveModel(state == 1);
 }
 
 void HeadTracking::samplerChanged(int state, void* userdata) {
@@ -170,7 +169,7 @@ void HeadTracking::drawDebug(cv::Mat& image) {
 			cv::circle(image, cv::Point(sit->getX(), sit->getY()), 3, color);
 		}
 	}
-	cv::Scalar& svmIndicatorColor = measurementModel->wasUsingDynamicModel() ? green : red;
+	cv::Scalar& svmIndicatorColor = tracker->wasUsingAdaptiveModel() ? green : red;
 	cv::circle(image, cv::Point(10, 10), 5, svmIndicatorColor, -1);
 }
 
@@ -209,7 +208,7 @@ void HeadTracking::run() {
 			gettimeofday(&detEnd, 0);
 			image = frame;
 			drawDebug(image);
-			cv::Scalar& color = measurementModel->wasUsingDynamicModel() ? green : red;
+			cv::Scalar& color = tracker->wasUsingAdaptiveModel() ? green : red;
 			if (head)
 				cv::rectangle(image, cv::Point(head->getX(), head->getY()),
 						cv::Point(head->getX() + head->getWidth(), head->getY() + head->getHeight()), color);

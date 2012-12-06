@@ -1,11 +1,11 @@
 /*
- * WvmSvmModel.cpp
+ * HeadWvmSvmModel.cpp
  *
- *  Created on: 25.07.2012
+ *  Created on: 13.11.2012
  *      Author: poschmann
  */
 
-#include "tracking/WvmSvmModel.h"
+#include "HeadWvmSvmModel.h"
 #include "tracking/Sample.h"
 #include "DetectorWVM.h"
 #include "DetectorSVM.h"
@@ -17,14 +17,12 @@
 
 using boost::unordered_map;
 
-namespace tracking {
-
-WvmSvmModel::WvmSvmModel(shared_ptr<VDetectorVectorMachine> wvm, shared_ptr<VDetectorVectorMachine> svm,
+HeadWvmSvmModel::HeadWvmSvmModel(shared_ptr<VDetectorVectorMachine> wvm, shared_ptr<VDetectorVectorMachine> svm,
 		shared_ptr<OverlapElimination> oe) : wvm(wvm), svm(svm), oe(oe) {}
 
-WvmSvmModel::~WvmSvmModel() {}
+HeadWvmSvmModel::~HeadWvmSvmModel() {}
 
-void WvmSvmModel::evaluate(const Mat& image, vector<Sample>& samples) {
+void HeadWvmSvmModel::evaluate(const Mat& image, vector<Sample>& samples) {
 	FdImage* fdImage = new FdImage;
 	fdImage->load(&image);
 	wvm->initPyramids(fdImage);
@@ -34,7 +32,10 @@ void WvmSvmModel::evaluate(const Mat& image, vector<Sample>& samples) {
 	for (vector<Sample>::iterator sit = samples.begin(); sit < samples.end(); ++sit) {
 		Sample& sample = *sit;
 		sample.setObject(false);
-		FdPatch* patch = wvm->extractPatchToPyramid(fdImage, sample.getX(), sample.getY(), sample.getSize());
+		int faceX = sample.getX();
+		int faceY = sample.getY() + (int)(0.08 * sample.getSize());
+		int faceSize = (int)(0.6 * sample.getSize());
+		FdPatch* patch = wvm->extractPatchToPyramid(fdImage, faceX, faceY, faceSize);
 		if (patch == 0) {
 			sample.setWeight(0);
 		} else {
@@ -71,5 +72,3 @@ void WvmSvmModel::evaluate(const Mat& image, vector<Sample>& samples) {
 	}
 	delete fdImage;
 }
-
-} /* namespace tracking */

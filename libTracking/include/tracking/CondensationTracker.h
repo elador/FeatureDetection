@@ -50,7 +50,7 @@ public:
 	 * @param[in] image The next image.
 	 * @return The bounding box around the most probable object position if there is an object.
 	 */
-	optional<Rectangle> process(Mat& image);
+	optional<Rectangle> process(const Mat& image);
 
 	/**
 	 * @return The current samples.

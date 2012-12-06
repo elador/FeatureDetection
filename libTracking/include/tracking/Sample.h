@@ -122,6 +122,16 @@ public:
 		this->object = object;
 	}
 
+	/**
+	 * Comparison function that compares samples by their weight in ascending order.
+	 */
+	class WeightComparison {
+	public:
+		bool operator ()(const Sample& lhs, const Sample& rhs) {
+			return lhs.weight < rhs.weight;
+		}
+	};
+
 private:
 	int x;         ///< The x coordinate.
 	int y;         ///< The y coordinate.

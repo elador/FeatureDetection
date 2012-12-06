@@ -18,7 +18,7 @@ DualSvmModel::DualSvmModel(shared_ptr<VDetectorVectorMachine> preStage, shared_p
 
 DualSvmModel::~DualSvmModel() {}
 
-void DualSvmModel::evaluate(Mat& image, vector<Sample>& samples) {
+void DualSvmModel::evaluate(const Mat& image, vector<Sample>& samples) {
 	FdImage* fdImage = new FdImage();
 	fdImage->load(&image);
 	preStage->initPyramids(fdImage);
