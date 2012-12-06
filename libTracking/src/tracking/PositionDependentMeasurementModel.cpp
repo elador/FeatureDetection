@@ -9,8 +9,7 @@
 #include "tracking/Sample.h"
 #include "classification/FeatureVector.h"
 #include "classification/FeatureExtractor.h"
-#include "classification/LibSvmClassifier.h"
-#include "classification/LibSvmTraining.h"
+#include "classification/TrainableClassifier.h"
 #include "boost/make_shared.hpp"
 #include "boost/unordered_map.hpp"
 #include <utility>
@@ -22,10 +21,9 @@ using std::pair;
 namespace tracking {
 
 PositionDependentMeasurementModel::PositionDependentMeasurementModel(shared_ptr<FeatureExtractor> featureExtractor,
-		shared_ptr<LibSvmClassifier> classifier, shared_ptr<LibSvmTraining> training) :
+		shared_ptr<TrainableClassifier> classifier) :
 				featureExtractor(featureExtractor),
 				classifier(classifier),
-				training(training),
 				usable(false) {}
 
 PositionDependentMeasurementModel::~PositionDependentMeasurementModel() {}
@@ -113,18 +111,17 @@ void PositionDependentMeasurementModel::adapt(const Mat& image, const vector<Sam
 
 	if (!isUsable()) // feature extractor has to be initialized on the image when this model was not used for evaluation
 		featureExtractor->init(image);
-	usable = training->retrain(*classifier,
-			getFeatureVectors(positiveSamples), getFeatureVectors(negativeSamples));
+	usable = classifier->retrain(getFeatureVectors(positiveSamples), getFeatureVectors(negativeSamples));
 }
 
 void PositionDependentMeasurementModel::reset() {
-	training->reset(*classifier);
+	classifier->reset();
 	usable = false;
 }
 
 void PositionDependentMeasurementModel::adapt(const Mat& image, const vector<Sample>& samples) {
 	const vector<shared_ptr<FeatureVector> > empty;
-	usable = training->retrain(*classifier, empty, empty);
+	usable = classifier->retrain(empty, empty);
 }
 
 vector<shared_ptr<FeatureVector> > PositionDependentMeasurementModel::getFeatureVectors(vector<Sample>& samples) {

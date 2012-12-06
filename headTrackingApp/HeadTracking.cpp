@@ -18,6 +18,7 @@
 #include "classification/SigmoidParameterComputation.h"
 #include "classification/ApproximateSigmoidParameterComputation.h"
 #include "classification/FixedApproximateSigmoidParameterComputation.h"
+#include "classification/TrainableClassifier.h"
 #include "classification/LibSvmClassifier.h"
 #include "classification/HistEqFeatureExtractor.h"
 #include "tracking/ResamplingSampler.h"
@@ -60,7 +61,15 @@ HeadTracking::HeadTracking(auto_ptr<imageio::ImageSource> imageSource,
 HeadTracking::~HeadTracking() {}
 
 void HeadTracking::initTracking() {
-	// create SVM training
+	// create static measurement model
+	shared_ptr<VDetectorVectorMachine> wvm = make_shared<DetectorWVM>();
+	wvm->load(svmConfigFile);
+	shared_ptr<VDetectorVectorMachine> svm = make_shared<DetectorSVM>();
+	svm->load(svmConfigFile);
+	shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>();
+	oe->load(svmConfigFile);
+
+	// create adaptive measurement model
 	shared_ptr<LibSvmParameterBuilder> svmParameterBuilder = make_shared<RbfLibSvmParameterBuilder>(0.05);
 //	shared_ptr<LibSvmParameterBuilder> svmParameterBuilder = make_shared<PolyLibSvmParameterBuilder>(2, 1, 1);
 
@@ -68,24 +77,16 @@ void HeadTracking::initTracking() {
 //	shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation = make_shared<FastApproximateSigmoidParameterComputation>();
 //	shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation = make_shared<ApproximateSigmoidParameterComputation>();
 
-//	svmTraining = make_shared<FastSvmTraining>(7, 14, 50, svmParameterBuilder, sigmoidParameterComputation);
-	svmTraining = make_shared<FrameBasedSvmTraining>(5, 4, svmParameterBuilder, sigmoidParameterComputation);
-//	svmTraining->readStaticNegatives(negativesFile, 200);
-
-	// create measurement model
-	shared_ptr<VDetectorVectorMachine> wvm = make_shared<DetectorWVM>();
-	wvm->load(svmConfigFile);
-	shared_ptr<VDetectorVectorMachine> svm = make_shared<DetectorSVM>();
-	svm->load(svmConfigFile);
-	shared_ptr<LibSvmClassifier> dynamicSvm = make_shared<LibSvmClassifier>();
-	shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>();
-	oe->load(svmConfigFile);
+//	shared_ptr<LibSvmTraining> training = make_shared<FastSvmTraining>(7, 14, 50, svmParameterBuilder, sigmoidParameterComputation);
+	shared_ptr<LibSvmTraining> training = make_shared<FrameBasedSvmTraining>(5, 4, svmParameterBuilder, sigmoidParameterComputation);
+//	training->readStaticNegatives(negativesFile, 200);
+	shared_ptr<TrainableClassifier> classifier = make_shared<LibSvmClassifier>(training);
 
 	shared_ptr<HistEqFeatureExtractor> featureExtractor = make_shared<HistEqFeatureExtractor>(cv::Size(20, 20), 0.85, 0.1666, 1.0);
 
 	staticMeasurementModel = make_shared<HeadWvmSvmModel>(wvm, svm, oe);
-//	adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(featureExtractor, dynamicSvm, svmTraining, 0.85, 0.05);
-	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor, dynamicSvm, svmTraining);
+//	adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(featureExtractor, dynamicSvm, 0.85, 0.05);
+	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor, classifier);
 
 	// create tracker
 	unsigned int count = 800;

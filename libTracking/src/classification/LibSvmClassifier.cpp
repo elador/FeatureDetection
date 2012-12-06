@@ -7,18 +7,15 @@
 
 #include "classification/LibSvmClassifier.h"
 #include "classification/FeatureVector.h"
-#include "classification/EagerFeatureVector.h"
 #include <cmath>
 #include <iostream>
 
 namespace classification {
 
 static double dot(const FeatureVector& x, const FeatureVector& y) {
-	const float* xv = x.getValues();
-	const float* yv = y.getValues();
 	float sum = 0;
 	for (int i = 0, n = (int)x.getSize(); i < n; ++i)
-		sum += xv[i] * yv[i];
+		sum += x[i] * y[i];
 	return sum;
 }
 
@@ -32,7 +29,8 @@ static inline double powi(double base, int times) {
 	return ret;
 }
 
-LibSvmClassifier::LibSvmClassifier() : model(0), supportVectors(), probParamA(0), probParamB(0) {}
+LibSvmClassifier::LibSvmClassifier(shared_ptr<Training<LibSvmClassifier> > training) :
+		training(training), model(0), supportVectors(), probParamA(0), probParamB(0) {}
 
 LibSvmClassifier::~LibSvmClassifier() {
 	deleteModel();
@@ -55,16 +53,23 @@ double LibSvmClassifier::kernel(const FeatureVector& x, const FeatureVector& y, 
 	if (param.kernel_type == POLY)
 		return powi(param.gamma * dot(x, y) + param.coef0, param.degree);
 	if (param.kernel_type == RBF) {
-		const float* xv = x.getValues();
-		const float* yv = y.getValues();
 		float sum = 0;
 		for (int i = 0, n = (int)x.getSize(); i < n; ++i) {
-			float d = xv[i] - yv[i];
+			float d = x[i] - y[i];
 			sum += d * d;
 		}
 		return exp(-param.gamma * sum);
 	}
 	return 0;
+}
+
+bool LibSvmClassifier::retrain(const vector<shared_ptr<FeatureVector> >& positiveSamples,
+			const vector<shared_ptr<FeatureVector> >& negativeSamples) {
+	return training->retrain(*this, positiveSamples, negativeSamples);
+}
+
+void LibSvmClassifier::reset() {
+	training->reset(*this);
 }
 
 void LibSvmClassifier::setModel(int dimensions, svm_model *model, double probParamA, double probParamB) {
@@ -79,14 +84,14 @@ void LibSvmClassifier::setModel(int dimensions, svm_model *model, double probPar
 	supportVectors.clear();
 	supportVectors.reserve(model->l);
 	for (int i = 0; i < model->l; ++i) {
-		EagerFeatureVector supportVector(dimensions);
+		FeatureVector supportVector(dimensions);
 		const svm_node *sv = model->SV[i];
 		for (int j = 0; j < (int)supportVector.getSize(); ++j) {
 			if (sv->index == j) {
-				supportVector.set(j, sv->value);
+				supportVector[j] = sv->value;
 				++sv;
 			} else {
-				supportVector.set(j, 0);
+				supportVector[j] = 0;
 			}
 		}
 		supportVectors.push_back(supportVector);

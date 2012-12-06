@@ -8,31 +8,39 @@
 #ifndef LIBSVMCLASSIFIER_H_
 #define LIBSVMCLASSIFIER_H_
 
-#include "classification/Classifier.h"
+#include "classification/TrainableClassifier.h"
+#include "classification/Training.h"
 #include "svm.h"
+#include "boost/shared_ptr.hpp"
 #include <vector>
 
+using boost::shared_ptr;
 using std::pair;
 using std::vector;
 
 namespace classification {
 
-class EagerFeatureVector;
-
 /**
  * Classifier that is based on a support vector machine implemented in libSVM.
  */
-class LibSvmClassifier : public Classifier {
+class LibSvmClassifier : public TrainableClassifier {
 public:
 
 	/**
 	 * Constructs a new libSVM based classifier.
+	 *
+	 * @param[in] training The training algorithm for this classifier.
 	 */
-	explicit LibSvmClassifier();
+	explicit LibSvmClassifier(shared_ptr<Training<LibSvmClassifier> > training);
 
 	virtual ~LibSvmClassifier();
 
 	pair<bool, double> classify(const FeatureVector& featureVector) const;
+
+	bool retrain(const vector<shared_ptr<FeatureVector> >& positiveSamples,
+			const vector<shared_ptr<FeatureVector> >& negativeSamples);
+
+	void reset();
 
 	/**
 	 * Changes the libSVM model and the parameters of the probabilistic output function.
@@ -53,17 +61,18 @@ private:
 	void deleteModel();
 
 	/**
-	 * Computes the kernel value.
+	 * Computes the kernel value of two vectors.
 	 *
-	 * @param[in] x The input vector.
-	 * @param[in] sv The support vector.
+	 * @param[in] x A vector.
+	 * @param[in] y Another vector.
 	 * @param[in] param The SVM parameters.
 	 * @return The kernel value.
 	 */
-	double kernel(const FeatureVector& x, const FeatureVector& sv, const svm_parameter& param) const;
+	double kernel(const FeatureVector& x, const FeatureVector& y, const svm_parameter& param) const;
 
-	svm_model *model; ///< The libSVM model.
-	vector<EagerFeatureVector> supportVectors; ///< The support vectors.
+	shared_ptr<Training<LibSvmClassifier> > training; ///< The training algorithm for this classifier.
+	svm_model *model;                                 ///< The libSVM model.
+	vector<FeatureVector> supportVectors;             ///< The support vectors.
 	double probParamA; ///< Parameter A of the probabilistic output equation p(x) = 1 / (1 + exp(A * x + B)).
 	double probParamB; ///< Parameter B of the probabilistic output equation p(x) = 1 / (1 + exp(A * x + B)).
 };

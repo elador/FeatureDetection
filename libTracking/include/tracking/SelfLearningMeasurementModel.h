@@ -20,8 +20,7 @@ namespace classification {
 
 class FeatureVector;
 class FeatureExtractor;
-class LibSvmClassifier;
-class LibSvmTraining;
+class TrainableClassifier;
 }
 using namespace classification;
 
@@ -35,18 +34,15 @@ class SelfLearningMeasurementModel : public AdaptiveMeasurementModel {
 public:
 
 	/**
-	 * Constructs a new self-learning WVM SVM measurement model. The machines and algorithm
-	 * must have been initialized.
+	 * Constructs a new self-learning measurement model.
 	 *
-	 * @param[in] The feature extractor used with the dynamic SVM.
+	 * @param[in] featureExtractor The feature extractor used with the dynamic SVM.
 	 * @param[in] classifier The classifier that will be re-trained.
-	 * @param[in] training The classifier training algorithm.
 	 * @param[in] positiveThreshold The certainty threshold for patches to be used as positive samples (must be exceeded).
 	 * @param[in] negativeThreshold The certainty threshold for patches to be used as negative samples (must fall below).
 	 */
 	explicit SelfLearningMeasurementModel(shared_ptr<FeatureExtractor> featureExtractor,
-			shared_ptr<LibSvmClassifier> classifier, shared_ptr<LibSvmTraining> training,
-			double positiveThreshold = 0.85, double negativeThreshold = 0.05);
+			shared_ptr<TrainableClassifier> classifier, double positiveThreshold = 0.85, double negativeThreshold = 0.05);
 
 	~SelfLearningMeasurementModel();
 
@@ -79,8 +75,7 @@ private:
 	vector<shared_ptr<FeatureVector> > getFeatureVectors(vector<Sample>& samples);
 
 	shared_ptr<FeatureExtractor> featureExtractor; ///< The feature extractor used with the dynamic SVM.
-	shared_ptr<LibSvmClassifier> classifier;       ///< The classifier that will be re-trained.
-	shared_ptr<LibSvmTraining> training;           ///< The classifier training algorithm.
+	shared_ptr<TrainableClassifier> classifier;    ///< The classifier that will be re-trained.
 	bool usable; ///< Flag that indicates whether this model may be used for evaluation.
 	double positiveThreshold; ///< The threshold for samples to be used as positive training samples (must be exceeded).
 	double negativeThreshold; ///< The threshold for samples to be used as negative training samples (must fall below).

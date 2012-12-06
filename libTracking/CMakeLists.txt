@@ -13,7 +13,6 @@ SET(HEADERS
 	include/svm.h
 	include/classification/ApproximateSigmoidParameterComputation.h
 	include/classification/Classifier.h
-	include/classification/EagerFeatureVector.h
 	include/classification/FastSvmTraining.h
 	include/classification/FeatureExtractor.h
 	include/classification/FeatureVector.h
@@ -27,6 +26,7 @@ SET(HEADERS
 	include/classification/PolyLibSvmParameterBuilder.h
 	include/classification/RbfLibSvmParameterBuilder.h
 	include/classification/SigmoidParameterComputation.h
+	include/classification/TrainableClassifier.h
 	include/classification/Training.h
 	include/tracking/AdaptiveCondensationTracker.h
 	include/tracking/AdaptiveMeasurementModel.h
@@ -55,8 +55,8 @@ SET(HEADERS
 SET(SOURCE
 	src/svm.cpp
 	src/classification/ApproximateSigmoidParameterComputation.cpp
-	src/classification/EagerFeatureVector.cpp
 	src/classification/FastSvmTraining.cpp
+	src/classification/FeatureVector.cpp
 	src/classification/FixedApproximateSigmoidParameterComputation.cpp
 	src/classification/FrameBasedSvmTraining.cpp
 	src/classification/HistEqFeatureExtractor.cpp

@@ -6,7 +6,7 @@
  */
 
 #include "classification/HistEqFeatureExtractor.h"
-#include "classification/EagerFeatureVector.h"
+#include "classification/FeatureVector.h"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "boost/shared_ptr.hpp"
 #include "boost/make_shared.hpp"
@@ -32,7 +32,7 @@ shared_ptr<FeatureVector> HistEqFeatureExtractor::extract(const Mat& patch) {
 		cols *= rows;
 		rows = 1;
 	}
-	shared_ptr<EagerFeatureVector> featureVector = make_shared<EagerFeatureVector>(rows * cols);
+	shared_ptr<FeatureVector> featureVector = make_shared<FeatureVector>(rows * cols);
 	int index = 0;
 	for (int r = 0; r < rows; r++) {
 		const unsigned char* Mrow = histEqPatch.ptr<unsigned char>(r);

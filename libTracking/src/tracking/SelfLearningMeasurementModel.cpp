@@ -9,8 +9,7 @@
 #include "tracking/Sample.h"
 #include "classification/FeatureVector.h"
 #include "classification/FeatureExtractor.h"
-#include "classification/LibSvmClassifier.h"
-#include "classification/LibSvmTraining.h"
+#include "classification/TrainableClassifier.h"
 #include "boost/unordered_map.hpp"
 #include <algorithm>
 
@@ -27,11 +26,9 @@ static bool compareFeatureProbabilityPairs(pair<shared_ptr<FeatureVector>, doubl
 }
 
 SelfLearningMeasurementModel::SelfLearningMeasurementModel(shared_ptr<FeatureExtractor> featureExtractor,
-		shared_ptr<LibSvmClassifier> classifier, shared_ptr<LibSvmTraining> training,
-		double positiveThreshold, double negativeThreshold) :
+		shared_ptr<TrainableClassifier> classifier, double positiveThreshold, double negativeThreshold) :
 				featureExtractor(featureExtractor),
 				classifier(classifier),
-				training(training),
 				usable(false),
 				positiveThreshold(positiveThreshold),
 				negativeThreshold(negativeThreshold),
@@ -81,7 +78,7 @@ void SelfLearningMeasurementModel::evaluate(const Mat& image, vector<Sample>& sa
 }
 
 void SelfLearningMeasurementModel::reset() {
-	training->reset(*classifier);
+	classifier->reset();
 	usable = false;
 }
 
@@ -91,8 +88,7 @@ void SelfLearningMeasurementModel::adapt(const Mat& image, const vector<Sample>&
 
 void SelfLearningMeasurementModel::adapt(const Mat& image, const vector<Sample>& samples) {
 	if (isUsable()) {
-		usable = training->retrain(*classifier,
-					getFeatureVectors(positiveTrainingSamples), getFeatureVectors(negativeTrainingSamples));
+		usable = classifier->retrain(getFeatureVectors(positiveTrainingSamples), getFeatureVectors(negativeTrainingSamples));
 		positiveTrainingSamples.clear();
 		negativeTrainingSamples.clear();
 	} else {
@@ -114,7 +110,7 @@ void SelfLearningMeasurementModel::adapt(const Mat& image, const vector<Sample>&
 			badSamples.resize(10);
 		}
 		featureExtractor->init(image);
-		usable = training->retrain(*classifier, getFeatureVectors(goodSamples), getFeatureVectors(badSamples));
+		usable = classifier->retrain(getFeatureVectors(goodSamples), getFeatureVectors(badSamples));
 	}
 }
 

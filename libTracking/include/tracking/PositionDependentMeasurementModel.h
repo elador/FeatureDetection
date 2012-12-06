@@ -18,8 +18,7 @@ namespace classification {
 
 class FeatureVector;
 class FeatureExtractor;
-class LibSvmClassifier;
-class LibSvmTraining;
+class TrainableClassifier;
 }
 using namespace classification;
 
@@ -34,15 +33,13 @@ class PositionDependentMeasurementModel : public AdaptiveMeasurementModel {
 public:
 
 	/**
-	 * Constructs a new learning WVM SVM measurement model. The machines and algorithm
-	 * must have been initialized.
+	 * Constructs a new position dependent measurement model.
 	 *
-	 * @param[in] The feature extractor used with the dynamic SVM.
-	 * @param[in] dynamicSvm The classifier that will be re-trained.
-	 * @param[in] svmTraining The classifier training algorithm.
+	 * @param[in] featureExtractor The feature extractor used with the dynamic SVM.
+	 * @param[in] classifier The classifier that will be re-trained.
 	 */
 	explicit PositionDependentMeasurementModel(shared_ptr<FeatureExtractor> featureExtractor,
-			shared_ptr<LibSvmClassifier> classifier, shared_ptr<LibSvmTraining> training);
+			shared_ptr<TrainableClassifier> classifier);
 
 	~PositionDependentMeasurementModel();
 
@@ -68,8 +65,7 @@ private:
 	vector<shared_ptr<FeatureVector> > getFeatureVectors(vector<Sample>& samples);
 
 	shared_ptr<FeatureExtractor> featureExtractor; ///< The feature extractor used with the dynamic SVM.
-	shared_ptr<LibSvmClassifier> classifier;       ///< The classifier that will be re-trained.
-	shared_ptr<LibSvmTraining> training;           ///< The classifier training algorithm.
+	shared_ptr<TrainableClassifier> classifier;    ///< The classifier that will be re-trained.
 	bool usable; ///< Flag that indicates whether this model may be used for evaluation.
 };
 

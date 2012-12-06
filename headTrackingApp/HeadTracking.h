@@ -63,7 +63,6 @@ private:
 	auto_ptr<AdaptiveCondensationTracker> tracker;
 	shared_ptr<MeasurementModel> staticMeasurementModel;
 	shared_ptr<AdaptiveMeasurementModel> adaptiveMeasurementModel;
-	shared_ptr<LibSvmTraining> svmTraining;
 	shared_ptr<SimpleTransitionModel> transitionModel;
 	shared_ptr<ResamplingSampler> resamplingSampler;
 	shared_ptr<GridSampler> gridSampler;

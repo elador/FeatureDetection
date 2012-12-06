@@ -53,11 +53,10 @@ void FastSvmTraining::addSamples(vector<struct svm_node *>& trainingSamples,
 	for (vector<shared_ptr<FeatureVector> >::const_iterator fvit = samples.begin(); fvit != samples.end(); ++fvit) {
 		shared_ptr<FeatureVector> featureVector = *fvit;
 		dimensions = featureVector->getSize();
-		const float* values = featureVector->getValues();
 		struct svm_node* data = new struct svm_node[dimensions + 1];
 		for (unsigned int i = 0; i < dimensions; ++i) {
 			data[i].index = i;
-			data[i].value = values[i];
+			data[i].value = featureVector->get(i);
 		}
 		data[featureVector->getSize()].index = -1;
 		trainingSamples.push_back(data);
