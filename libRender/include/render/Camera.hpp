@@ -1,5 +1,5 @@
 /*!
- * \file Camera.cpp
+ * \file Camera.hpp
  *
  * \author Patrik Huber
  * \date December 5, 2012
@@ -9,6 +9,8 @@
 #pragma once
 
 #include <opencv2/core/core.hpp>
+
+namespace render {
 
 class Camera
 {
@@ -36,3 +38,4 @@ private:
 	cv::Vec3f forwardVector, rightVector, upVector;
 };
 
+}

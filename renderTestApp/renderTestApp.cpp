@@ -43,7 +43,7 @@ ostream& operator<<(ostream& os, const vector<T>& v)
     return os;
 }
 
-void initCamera(Camera camera)
+void initCamera(render::Camera camera)
 {
 	camera.verticalAngle = -boost::math::constants::pi<float>()/4.0f;
 	camera.updateFixed(cv::Vec3f(0.0f, 3.0f, 3.0f), cv::Vec3f());
@@ -58,7 +58,7 @@ std::vector< std::vector<render::Triangle> > init(void)
 	for (int i = 0; i < 24; i++)
 		cubeVertices[i].color = cv::Vec3f(1.0f, 1.0f, 1.0f);
 
-	cubeVertices[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f);  // set w (4th comp.) = 1.0f !!!
+	cubeVertices[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f);  // set w (4th comp.) = 1.0f !!! (1 or 0?)
 	cubeVertices[0].texCoord = cv::Vec2f(0.0f, 0.0f);
 	cubeVertices[1].position = cv::Vec4f(-0.5f, -0.5f, 0.5f);
 	cubeVertices[1].texCoord = cv::Vec2f(0.0f, 1.0f);
@@ -164,7 +164,7 @@ std::vector< std::vector<render::Triangle> > init(void)
 	return objectsList;
 }
 
-void updateCamera(Camera camera, int deltaTime)
+void updateCamera(render::Camera camera, int deltaTime)
 {
 	cv::Vec3f eye;
 
@@ -177,49 +177,6 @@ void updateCamera(Camera camera, int deltaTime)
 	eye += speed * deltaTime * camera.getRightVector();	// 'd' key
 
 	camera.updateFree(eye);
-}
-
-void run(Camera camera)
-{
-	updateCamera(camera, 1);
-
-	const float& aspect = 640.0f/480.0f; // ScreenAspectRatio - this might be incorrect (comes from SDL)
-
-	float frustumLeft = -0.25f * aspect;
-	float frustumRight = 0.25f * aspect;
-	float frustumBottom = -0.25f;
-	float frustumTop = 0.25f;
-	float frustumNear = 0.5f;
-	float frustumFar = 500.0f;
-	// I AM HERE!
-	cv::Mat viewProjTransform =
-		constructViewTransform(camera.getEye(), camera.getRightVector(), camera.getUpVector(), -camera.getForwardVector()) *
-		constructProjTransform(frustumLeft, frustumRight, frustumBottom, frustumTop, frustumNear, frustumFar);
-
-
-	render::Renderer->begin();
-
-	render::Renderer->setTrianglesBuffer(cubeTrianglesBuffer);
-	render::Renderer->setTexture(texture1);
-	for (int i = 0; i < 15; i++)
-	{
-		for (int j = 0; j < 15; j++)
-		{
-			cv::Mat worldTransform = ::translate(3.0f*(i - 7), 0.5f, 3.0f*(j - 7));
-			render::Renderer->setTransform(worldTransform * viewProjTransform);
-			render::Renderer->draw();
-		}
-	}
-
-	render::Renderer->setTrianglesBuffer(planeTrianglesBuffer);
-	render::Renderer->setTransform(mtx::scale(15.0f, 1.0f, 15.0f) * viewProjTransform);
-	render::Renderer->setTexture(texture2);
-	render::Renderer->draw();
-
-	render::Renderer->end();
-
-	// measure the time here, and loop
-
 }
 
 
@@ -259,11 +216,48 @@ int main(int argc, char *argv[])
         cout << e.what() << "\n";
         return 1;
     }
-	Camera camera;
+	render::Camera camera;
 	render::Renderer->create();
 	initCamera(camera);
 	std::vector< std::vector<render::Triangle> > objectsList = init();
-	run(camera);
+	
+	const float& aspect = 640.0f/480.0f; // ScreenAspectRatio - this might be incorrect (comes from SDL)
+
+	float frustumLeft = -0.25f * aspect;
+	float frustumRight = 0.25f * aspect;
+	float frustumBottom = -0.25f;
+	float frustumTop = 0.25f;
+	float frustumNear = 0.5f;
+	float frustumFar = 500.0f;
+
+	// loop start
+	updateCamera(camera, 1);
+
+	cv::Mat vt = render::Renderer->constructViewTransform(camera.getEye(), camera.getRightVector(), camera.getUpVector(), -camera.getForwardVector());
+	cv::Mat pt = render::Renderer->constructProjTransform(frustumLeft, frustumRight, frustumBottom, frustumTop, frustumNear, frustumFar);
+	cv::Mat viewProjTransform = vt * pt;
+
+	std::cout << viewProjTransform;
+
+	render::Renderer->setTrianglesBuffer(objectsList[0]);	// The cube is the first object
+	//render::Renderer->setTexture(texture1);
+	for (int i = 0; i < 15; i++)	// draw 15 cubes in each direction on the plane
+	{
+		for (int j = 0; j < 15; j++)
+		{
+			cv::Mat worldTransform;// = ::translate(3.0f*(i - 7), 0.5f, 3.0f*(j - 7));
+			render::Renderer->setTransform(worldTransform * viewProjTransform);
+			render::Renderer->draw();
+		}
+	}
+
+	render::Renderer->setTrianglesBuffer(objectsList[1]);	// The plane is the second object
+	render::Renderer->setTransform(/*mtx::scale(15.0f, 1.0f, 15.0f) * */viewProjTransform);
+	//render::Renderer->setTexture(texture2);
+	render::Renderer->draw();
+
+	render::Renderer->end();
+	// loop end - measure the time here
 
 
 	return 0;
