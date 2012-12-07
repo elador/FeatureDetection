@@ -13,11 +13,12 @@ SET(HEADERS
 	include/svm.h
 	include/classification/ApproximateSigmoidParameterComputation.h
 	include/classification/Classifier.h
-	include/classification/FastSvmTraining.h
+	include/classification/FastLibSvmTraining.h
 	include/classification/FeatureExtractor.h
 	include/classification/FeatureVector.h
 	include/classification/FixedApproximateSigmoidParameterComputation.h
-	include/classification/FrameBasedSvmTraining.h
+	include/classification/FixedSizeLibSvmTraining.h
+	include/classification/FrameBasedLibSvmTraining.h
 	include/classification/HistEqFeatureExtractor.h
 	include/classification/ImagePyramidFeatureExtractor.h
 	include/classification/LibSvmClassifier.h
@@ -55,10 +56,11 @@ SET(HEADERS
 SET(SOURCE
 	src/svm.cpp
 	src/classification/ApproximateSigmoidParameterComputation.cpp
-	src/classification/FastSvmTraining.cpp
+	src/classification/FastLibSvmTraining.cpp
 	src/classification/FeatureVector.cpp
 	src/classification/FixedApproximateSigmoidParameterComputation.cpp
-	src/classification/FrameBasedSvmTraining.cpp
+	src/classification/FixedSizeLibSvmTraining.cpp
+	src/classification/FrameBasedLibSvmTraining.cpp
 	src/classification/HistEqFeatureExtractor.cpp
 	src/classification/ImagePyramidFeatureExtractor.cpp
 	src/classification/LibSvmClassifier.cpp

@@ -30,4 +30,4 @@ FeatureVector& FeatureVector::operator=(const FeatureVector& other) {
 	return *this;
 }
 
-} /* namespace tracking */
+} /* namespace classification */

@@ -102,5 +102,5 @@ private:
 	float* values; ///< The values of the features.
 };
 
-} /* namespace tracking */
+} /* namespace classification */
 #endif /* FEATUREVECTOR_H_ */

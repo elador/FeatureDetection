@@ -46,7 +46,7 @@ protected:
 	/**
 	 * Computes the mean output of a SVM given some vectors.
 	 *
-	 * @param[in] model The libSVM model of a dual-class RBF kernel SVM.
+	 * @param[in] model The libSVM model of a dual-class SVM.
 	 * @param[in] xs The input vectors.
 	 * @param[in] count The amount of vectors.
 	 * @return The mean SVM output value.
@@ -56,12 +56,12 @@ protected:
 	/**
 	 * Computes the output of a SVM given an input vector.
 	 *
-	 * @param[in] model The libSVM model of a dual-class RBF kernel SVM.
+	 * @param[in] model The libSVM model of a dual-class SVM.
 	 * @param[in] x The input vector.
 	 * @return The SVM output value.
 	 */
 	double computeSvmOutput(const struct svm_model *model, const struct svm_node *x);
 };
 
-} /* namespace tracking */
+} /* namespace classification */
 #endif /* SIGMOIDPARAMETERCOMPUTATION_H_ */

@@ -52,5 +52,5 @@ private:
 	double C; ///< The cost parameter of the SVM.
 };
 
-} /* namespace tracking */
+} /* namespace classification */
 #endif /* LIBSVMPARAMETERBUILDER_H_ */

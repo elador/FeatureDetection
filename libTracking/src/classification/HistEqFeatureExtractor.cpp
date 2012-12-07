@@ -42,4 +42,4 @@ shared_ptr<FeatureVector> HistEqFeatureExtractor::extract(const Mat& patch) {
 	return featureVector;
 }
 
-} /* namespace tracking */
+} /* namespace classification */

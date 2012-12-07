@@ -48,5 +48,5 @@ public:
 	virtual void reset() = 0;
 };
 
-} /* namespace tracking */
+} /* namespace classification */
 #endif /* TRAINABLECLASSIFIER_H_ */

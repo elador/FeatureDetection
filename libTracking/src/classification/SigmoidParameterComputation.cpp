@@ -21,7 +21,9 @@ double SigmoidParameterComputation::computeMeanSvmOutput(const struct svm_model 
 double SigmoidParameterComputation::computeSvmOutput(const struct svm_model *model, const struct svm_node *x) {
 	double* dec_values = new double[1];
 	svm_predict_values(model, x, dec_values);
-	return dec_values[0];
+	double svmOutput = dec_values[0];
+	delete[] dec_values;
+	return svmOutput;
 }
 
-} /* namespace tracking */
+} /* namespace classification */

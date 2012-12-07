@@ -41,5 +41,5 @@ private:
 	double gamma; ///< The scale factor of the dot product of the polynomial function (gamma*u'*v + coef)^degree.
 };
 
-} /* namespace tracking */
+} /* namespace classification */
 #endif /* POLYLIBSVMPARAMETERBUILDER_H_ */

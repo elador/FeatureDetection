@@ -53,6 +53,13 @@ public:
 	 */
 	void setModel(int dimensions, svm_model *model, double probParamA, double probParamB);
 
+	/**
+	 * @return The libSVM model.
+	 */
+	svm_model *getModel() {
+		return model;
+	}
+
 private:
 
 	/**
@@ -77,5 +84,5 @@ private:
 	double probParamB; ///< Parameter B of the probabilistic output equation p(x) = 1 / (1 + exp(A * x + B)).
 };
 
-} /* namespace tracking */
+} /* namespace classification */
 #endif /* LIBSVMCLASSIFIER_H_ */

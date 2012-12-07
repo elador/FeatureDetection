@@ -43,5 +43,5 @@ public:
 	virtual shared_ptr<FeatureVector> extract(int x, int y, int size) = 0;
 };
 
-} /* namespace tracking */
+} /* namespace classification */
 #endif /* FEATUREEXTRACTOR_H_ */

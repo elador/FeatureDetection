@@ -37,5 +37,5 @@ private:
 	double gamma; ///< Parameter of the radial basis function exp(-gamma*|u-v|^2).
 };
 
-} /* namespace tracking */
+} /* namespace classification */
 #endif /* RBFLIBSVMPARAMETERBUILDER_H_ */

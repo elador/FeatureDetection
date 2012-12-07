@@ -168,4 +168,4 @@ PyramidLevel* ImagePyramidFeatureExtractor::getLevel(int size) {
 	return levels[index];
 }
 
-} /* namespace tracking */
+} /* namespace classification */

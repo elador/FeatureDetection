@@ -45,5 +45,5 @@ private:
 	Mat histEqPatch; ///< Temporary memory for the histogram equalized patch data.
 };
 
-} /* namespace tracking */
+} /* namespace classification */
 #endif /* HISTEQFEATUREEXTRACTOR_H_ */

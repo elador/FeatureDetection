@@ -25,4 +25,4 @@ std::pair<double, double> FixedApproximateSigmoidParameterComputation::computeSi
 	return std::make_pair(paramA, paramB);
 }
 
-} /* namespace tracking */
+} /* namespace classification */

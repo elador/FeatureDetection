@@ -24,4 +24,4 @@ struct svm_parameter *PolyLibSvmParameterBuilder::createBaseParameters() {
 	return param;
 }
 
-} /* namespace tracking */
+} /* namespace classification */

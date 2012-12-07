@@ -28,15 +28,15 @@ public:
 	virtual ~Training() {}
 
 	/**
-	 * Re-trains a classifier. May not change the classifier if there are not enough samples.
+	 * Re-trains a classifier. May not change the classifier if there are not enough training examples.
 	 *
 	 * @param[in] classifier The classifier to re-train.
-	 * @param[in] positiveSamples The new positive training samples.
-	 * @param[in] negativeSamples The new negative training samples.
+	 * @param[in] newPositiveExamples The new positive training examples.
+	 * @param[in] newNegativeExamples The new negative training examples.
 	 * @return True if the classifier was trained successfully, false otherwise.
 	 */
-	virtual bool retrain(T& classifier, const vector<shared_ptr<FeatureVector> >& positiveSamples,
-			const vector<shared_ptr<FeatureVector> >& negativeSamples) = 0;
+	virtual bool retrain(T& classifier, const vector<shared_ptr<FeatureVector> >& newPositiveExamples,
+			const vector<shared_ptr<FeatureVector> >& newNegativeExamples) = 0;
 
 	/**
 	 * Resets the training and the classifier. May not change the classifier at all, but it should not be used
@@ -47,5 +47,5 @@ public:
 	virtual void reset(T& classifier) = 0;
 };
 
-} /* namespace tracking */
+} /* namespace classification */
 #endif /* TRAINING_H_ */

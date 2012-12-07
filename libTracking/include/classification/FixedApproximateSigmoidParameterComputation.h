@@ -43,5 +43,5 @@ private:
 	double paramB; ///< Parameter B of the sigmoid function.
 };
 
-} /* namespace tracking */
+} /* namespace classification */
 #endif /* FIXEDAPPROXIMATESIGMOIDPARAMETERCOMPUTATION_H_ */

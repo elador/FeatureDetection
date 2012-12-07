@@ -22,4 +22,4 @@ struct svm_parameter *RbfLibSvmParameterBuilder::createBaseParameters() {
 	return param;
 }
 
-} /* namespace tracking */
+} /* namespace classification */

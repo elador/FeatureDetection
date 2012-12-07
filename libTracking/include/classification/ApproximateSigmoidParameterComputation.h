@@ -40,5 +40,5 @@ protected:
 	double lowProb;  ///< The probability of the mean output of negative samples.
 };
 
-} /* namespace tracking */
+} /* namespace classification */
 #endif /* APPROXIMATESIGMOIDPARAMETERCOMPUTATION_H_ */

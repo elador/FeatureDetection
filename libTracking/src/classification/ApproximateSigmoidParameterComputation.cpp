@@ -25,4 +25,4 @@ std::pair<double, double> ApproximateSigmoidParameterComputation::computeSigmoid
 	return std::make_pair(paramA, paramB);
 }
 
-} /* namespace tracking */
+} /* namespace classification */

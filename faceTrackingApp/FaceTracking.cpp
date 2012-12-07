@@ -9,8 +9,9 @@
 #include "imageio/VideoImageSource.h"
 #include "imageio/KinectImageSource.h"
 #include "imageio/DirectoryImageSource.h"
-#include "classification/FrameBasedSvmTraining.h"
-#include "classification/FastSvmTraining.h"
+#include "classification/FrameBasedLibSvmTraining.h"
+#include "classification/FastLibSvmTraining.h"
+#include "classification/FixedSizeLibSvmTraining.h"
 #include "classification/LibSvmParameterBuilder.h"
 #include "classification/RbfLibSvmParameterBuilder.h"
 #include "classification/PolyLibSvmParameterBuilder.h"
@@ -78,15 +79,17 @@ void FaceTracking::initTracking() {
 //	shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation = make_shared<FastApproximateSigmoidParameterComputation>();
 //	shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation = make_shared<ApproximateSigmoidParameterComputation>();
 
-//	shared_ptr<LibSvmTraining> training = make_shared<FastSvmTraining>(7, 14, 50, svmParameterBuilder, sigmoidParameterComputation);
-	shared_ptr<LibSvmTraining> training = make_shared<FrameBasedSvmTraining>(5, 4, svmParameterBuilder, sigmoidParameterComputation);
+//	shared_ptr<LibSvmTraining> training = make_shared<FastLibSvmTraining>(7, 14, 50, svmParameterBuilder, sigmoidParameterComputation);
+//	shared_ptr<LibSvmTraining> training = make_shared<FrameBasedLibSvmTraining>(5, 4, svmParameterBuilder, sigmoidParameterComputation);
+	shared_ptr<LibSvmTraining> training = make_shared<FixedSizeLibSvmTraining>(8, 80, 3);
 //	training->readStaticNegatives(negativesFile, 200);
 	shared_ptr<TrainableClassifier> classifier = make_shared<LibSvmClassifier>(training);
 
 	shared_ptr<HistEqFeatureExtractor> featureExtractor = make_shared<HistEqFeatureExtractor>(cv::Size(20, 20), 0.85, 0.1666, 1.0);
 
 //	adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(featureExtractor, dynamicSvm, 0.85, 0.05);
-	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor, classifier);
+//	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor, classifier, 0.05, 0.5, true, true, 0);
+	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor, classifier, 3, 20, 0.0, 0.5, false, false, 8);
 
 	// create tracker
 	unsigned int count = 800;

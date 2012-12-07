@@ -31,5 +31,5 @@ public:
 	virtual std::pair<bool, double> classify(const FeatureVector& featureVector) const = 0;
 };
 
-} /* namespace tracking */
+} /* namespace classification */
 #endif /* CLASSIFIER_H_ */

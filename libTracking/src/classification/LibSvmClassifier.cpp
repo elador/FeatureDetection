@@ -107,4 +107,4 @@ void LibSvmClassifier::deleteModel() {
 	}
 }
 
-} /* namespace tracking */
+} /* namespace classification */

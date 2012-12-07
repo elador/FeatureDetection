@@ -195,5 +195,5 @@ private:
 	vector<PyramidLevel*> levels; ///< The levels of the image pyramid.
 };
 
-} /* namespace tracking */
+} /* namespace classification */
 #endif /* IMAGEPYRAMIDFEATUREEXTRACTOR_H_ */

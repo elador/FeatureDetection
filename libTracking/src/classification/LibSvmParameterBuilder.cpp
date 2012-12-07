@@ -31,4 +31,4 @@ struct svm_parameter *LibSvmParameterBuilder::createParameters(unsigned int posi
 	return param;
 }
 
-} /* namespace tracking */
+} /* namespace classification */
