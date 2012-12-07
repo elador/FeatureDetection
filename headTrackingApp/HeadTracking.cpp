@@ -80,7 +80,7 @@ void HeadTracking::initTracking() {
 
 //	shared_ptr<LibSvmTraining> training = make_shared<FastLibSvmTraining>(7, 14, 50, svmParameterBuilder, sigmoidParameterComputation);
 //	shared_ptr<LibSvmTraining> training = make_shared<FrameBasedLibSvmTraining>(5, 4, svmParameterBuilder, sigmoidParameterComputation);
-	shared_ptr<LibSvmTraining> training = make_shared<FixedSizeLibSvmTraining>(8, 80, 3);
+	shared_ptr<LibSvmTraining> training = make_shared<FixedSizeLibSvmTraining>(10, 50, 3);
 //	training->readStaticNegatives(negativesFile, 200);
 	shared_ptr<TrainableClassifier> classifier = make_shared<LibSvmClassifier>(training);
 
@@ -89,7 +89,7 @@ void HeadTracking::initTracking() {
 	staticMeasurementModel = make_shared<HeadWvmSvmModel>(wvm, svm, oe);
 //	adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(featureExtractor, dynamicSvm, 0.85, 0.05);
 //	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor, classifier, 0.05, 0.5, true, true, 0);
-	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor, classifier, 3, 20, 0.0, 0.5, false, false, 8);
+	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor, classifier, 3, 20, 0.0, 0.5, false, false, 10);
 
 	// create tracker
 	unsigned int count = 800;
