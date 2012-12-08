@@ -75,8 +75,7 @@ void Texture::createFromFile(const std::string& fileName, uchar mipmapsNum)
 			exit(EXIT_FAILURE);
 		}
 	}
-
-	image.convertTo(image, CV_8UC4);	// ... check this
+	image.convertTo(image, CV_8UC4);	// seems to work!
 	cv::cvtColor(image, image, CV_BGR2BGRA);
 
 	int currWidth = image.cols;
@@ -99,6 +98,8 @@ void Texture::createFromFile(const std::string& fileName, uchar mipmapsNum)
 			currHeight >>= 1;
 	}
 	this->fileName = fileName;
+	this->widthLog = (uchar)(std::logf(mipmaps[0].cols)/std::logf(2.0f) + 0.0001f); // _log2(mm.w) // epsilon
+	this->heightLog = (uchar)(std::logf(mipmaps[0].rows)/std::logf(2.0f) + 0.0001f); // log2(mm.h) // epsilon. Use CV_LOG2?
 }
 
 }

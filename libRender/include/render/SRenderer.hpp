@@ -38,6 +38,7 @@ public:
 	cv::Mat constructViewTransform(const cv::Vec3f& position, const cv::Vec3f& rightVector, const cv::Vec3f& upVector, const cv::Vec3f& forwardVector);
 	cv::Mat constructProjTransform(float left, float right, float bottom, float top, float zNear, float zFar);
 
+	void setTexture(const Texture& texture);
 	void setTrianglesBuffer(const std::vector<Triangle> trianglesBuffer);
 	void setTransform(const cv::Mat transform);
 	void draw(ushort trianglesNum = 0);
@@ -52,11 +53,15 @@ private:
 		const Texture* texture;
 	};
 
-	std::vector<unsigned char> colorBuffer;	// typedef unsigned char byte; Points to getSDLSurface()->pixels (void*)
-	std::vector<float> depthBuffer;
+	//std::vector<unsigned char> colorBuffer;	// typedef unsigned char byte; Points to getSDLSurface()->pixels (void*)
+	cv::Mat colorBuffer;
+	//std::vector<float> depthBuffer;
+	cv::Mat depthBuffer;
 
 	unsigned int screenWidth;
 	unsigned int screenHeight;
+	int screenWidth_tiles;
+	int screenHeight_tiles;
 
 	cv::Mat windowTransform;	// 4x4 float
 
@@ -66,6 +71,7 @@ private:
 	std::vector<DrawCall> drawCalls;
 	std::vector<TriangleToRasterize> trianglesToRasterize; // holds copies of all triangles from called triangles buffers that are to be rendered so the pipeline can work on them instead of on the original triangles
 
+	const Texture* currentTexture;
 
 	void runVertexProcessor();
 	Vertex runVertexShader(const cv::Mat& transform, const Vertex& input);
@@ -74,6 +80,19 @@ private:
 
 	bool areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2);	// should better go to a RenderUtils class?
 	float implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2);	// ->utils ?
+
+
+	/* Pixel processing: */
+	void runPixelProcessor();
+
+	float dudx, dudy, dvdx, dvdy; // partial derivatives of U/V coordinates with respect to X/Y pixel's screen coordinates
+	
+	cv::Vec3f runPixelShader(const Texture* texture, const cv::Vec3f& color, const cv::Vec2f& texCoord);
+	cv::Vec3f tex2D(const Texture* texture, const cv::Vec2f& texCoord);
+	cv::Vec3f tex2D_linear_mipmap_linear(const Texture* texture, const cv::Vec2f& texCoord);
+	cv::Vec3f tex2D_linear(const Texture* texture, const cv::Vec2f& imageTexCoord, unsigned char mipmapIndex);
+	cv::Vec2f texCoord_wrap(const cv::Vec2f& texCoord);
+	float clamp(float x, float a, float b);
 };
 
 }

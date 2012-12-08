@@ -10,6 +10,8 @@
 #include "render/Camera.hpp"
 #include "render/MatrixUtils.hpp"
 
+#include <iostream> // todo: entfernen
+
 namespace render {
 	
 Camera::Camera(void) : horizontalAngle(0.0f), verticalAngle(0.0f), distanceFromEyeToAt(1.0f)
@@ -19,6 +21,28 @@ Camera::Camera(void) : horizontalAngle(0.0f), verticalAngle(0.0f), distanceFromE
 
 Camera::~Camera(void)
 {
+}
+
+void Camera::init()
+{
+	//this->verticalAngle = -boost::math::constants::pi<float>()/4.0f;
+	this->verticalAngle = -CV_PI/4.0f;
+	this->updateFixed(cv::Vec3f(0.0f, 3.0f, 3.0f), cv::Vec3f());
+}
+
+void Camera::update(int deltaTime)	// Hmm this doesn't really belong here, it's application dependent. But ok for now.
+{
+	cv::Vec3f eye;
+
+	float speed = 0.02f;
+
+	eye = this->getEye();
+	/*eye += speed * deltaTime * this->getForwardVector();	// 'w' key
+	eye -= speed * deltaTime * this->getForwardVector();	// 's' key
+	eye -= speed * deltaTime * this->getRightVector();	// 'a' key
+	eye += speed * deltaTime * this->getRightVector();	// 'd' key
+	*/
+	this->updateFree(eye);
 }
 
 void Camera::updateFixed(const cv::Vec3f& eye, const cv::Vec3f& at, const cv::Vec3f& up)
@@ -32,11 +56,10 @@ void Camera::updateFixed(const cv::Vec3f& eye, const cv::Vec3f& at, const cv::Ve
 }
 
 
-
 void Camera::updateFree(const cv::Vec3f& eye, const cv::Vec3f& up)
 {
 	cv::Mat transformMatrix = render::utils::MatrixUtils::createRotationMatrixX(verticalAngle) * render::utils::MatrixUtils::createRotationMatrixY(horizontalAngle);
-	
+	std::cout << transformMatrix;
 	cv::Mat tmp = (cv::Mat_<float>(1, 4) << 0.0f, 0.0f, -1.0f, 0.0f);
 	cv::Mat tmpRes = tmp * transformMatrix;
 	forwardVector[0] = tmpRes.at<float>(0, 0);

@@ -18,6 +18,8 @@ public:
 	Camera(void);
 	~Camera(void);
 
+	void init();
+
 	float horizontalAngle, verticalAngle;
 	float distanceFromEyeToAt;
 
@@ -28,6 +30,8 @@ public:
 	const cv::Vec3f& getForwardVector() const { return forwardVector; }
 	const cv::Vec3f& getRightVector() const { return rightVector; }
 	const cv::Vec3f& getUpVector() const { return upVector; }
+
+	void update(int deltaTime);
 
 	void updateFixed(const cv::Vec3f& eye, const cv::Vec3f& at, const cv::Vec3f& up = cv::Vec3f(0.0f, 1.0f, 0.0f));
 	void updateFree(const cv::Vec3f& eye, const cv::Vec3f& up = cv::Vec3f(0.0f, 1.0f, 0.0f));

@@ -74,7 +74,7 @@ namespace render {
 			static unsigned char getMaxPossibleMipmapsNum(ushort width, ushort height)	// TODO: This belongs more in a ImageUtils, TextureUtils, or whatever...
 			{
 				unsigned char mipmapsNum = 1;
-				ushort size = MAX(width, height);
+				ushort size = std::max(width, height);
 
 				if (size == 1)
 					return 1;

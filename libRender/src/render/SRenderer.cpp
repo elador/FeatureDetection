@@ -11,6 +11,12 @@
 #include "render/MatrixUtils.hpp"
 #include "render/Texture.hpp"
 
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
+#include <cmath>
+#include <iostream>
+
 namespace render {
 
 SRenderer::SRenderer(void)
@@ -33,11 +39,11 @@ void SRenderer::create()
 {
 	setViewport(640, 480);
 
-	//screenWidth_tiles = (screenWidth + 15) / 16;
-	//screenHeight_tiles = (screenHeight + 15) / 16;
+	screenWidth_tiles = (screenWidth + 15) / 16;
+	screenHeight_tiles = (screenHeight + 15) / 16;
 
-	colorBuffer.resize(screenWidth * screenHeight);	// or .reserve?
-	depthBuffer.resize(screenWidth * screenHeight);	// or .reserve?
+	//colorBuffer.resize(screenWidth * screenHeight);	// TODO init the Mat here
+	//depthBuffer.resize(screenWidth * screenHeight);	// 
 
 }
 
@@ -106,7 +112,7 @@ void SRenderer::draw(ushort trianglesNum)
 	drawCall.trianglesBuffer = currentTrianglesBuffer;
 	drawCall.trianglesNum = (trianglesNum == 0 ? currentTrianglesBuffer.size() : trianglesNum);
 	drawCall.transform = currentTransform;
-	//drawCall.texture = currentTexture;
+	drawCall.texture = currentTexture;
 
 	drawCalls.push_back(drawCall);
 }
@@ -114,16 +120,25 @@ void SRenderer::draw(ushort trianglesNum)
 void SRenderer::end()
 {
 	runVertexProcessor();
-	//runPixelProcessor();
+	runPixelProcessor();
 	
 	drawCalls.clear();
 	trianglesToRasterize.clear();
 
+	cv::Mat res;
+	cv::cvtColor(this->colorBuffer, res, CV_BGRA2BGR);
+	cv::imwrite("colorBuffer.png", res);
+	cv::Mat res2;
 
-	//screenSurface;	// draw on screen, flip buffer (with double-buffering) or just draw the image
-	// probably write the colorBuffer to a .png.
+	cv::Mat db = depthBuffer * 255.0f;
+	db.convertTo(db, CV_8UC1);
+	cv::imwrite("depthBuffer.png", db);
 	
-	
+}
+
+void SRenderer::setTexture(const Texture& texture)
+{
+	currentTexture = &texture;
 }
 
 void SRenderer::runVertexProcessor()
@@ -211,7 +226,7 @@ Vertex SRenderer::runVertexShader(const cv::Mat& transform, const Vertex& input)
 {
 	Vertex output;
 
-	cv::Mat tmp = cv::Mat(input.position) * transform;	// places the vec as a row in the matrix
+	cv::Mat tmp = cv::Mat(input.position.t()) * transform;	// places the vec as a row in the matrix
 	output.position[0] = tmp.at<float>(0, 0);
 	output.position[1] = tmp.at<float>(0, 1);
 	output.position[2] = tmp.at<float>(0, 2);
@@ -238,21 +253,21 @@ void SRenderer::processProspectiveTriangleToRasterize(const Vertex& _v0, const V
 
 	// project from 4D to 2D window position with depth value in z coordinate
 	t.v0.position = t.v0.position / t.v0.position[3];	// divide by w
-	cv::Mat tmp = cv::Mat(t.v0.position) * windowTransform;	// places the vec as a row in the matrix
+	cv::Mat tmp = cv::Mat(t.v0.position.t()) * windowTransform;	// places the vec as a row in the matrix
 	t.v0.position[0] = tmp.at<float>(0, 0);
 	t.v0.position[1] = tmp.at<float>(0, 1);
 	t.v0.position[2] = tmp.at<float>(0, 2);
 	t.v0.position[3] = tmp.at<float>(0, 3);
 	
 	t.v1.position = t.v1.position / t.v1.position[3];
-	tmp = cv::Mat(t.v1.position) * windowTransform;	// places the vec as a row in the matrix
+	tmp = cv::Mat(t.v1.position.t()) * windowTransform;	// places the vec as a row in the matrix
 	t.v1.position[0] = tmp.at<float>(0, 0);
 	t.v1.position[1] = tmp.at<float>(0, 1);
 	t.v1.position[2] = tmp.at<float>(0, 2);
 	t.v1.position[3] = tmp.at<float>(0, 3);
 
 	t.v2.position = t.v2.position / t.v2.position[3];
-	tmp = cv::Mat(t.v2.position) * windowTransform;	// places the vec as a row in the matrix
+	tmp = cv::Mat(t.v2.position.t()) * windowTransform;	// places the vec as a row in the matrix
 	t.v2.position[0] = tmp.at<float>(0, 0);
 	t.v2.position[1] = tmp.at<float>(0, 1);
 	t.v2.position[2] = tmp.at<float>(0, 2);
@@ -356,6 +371,191 @@ bool SRenderer::areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, 
 float SRenderer::implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2)
 {
 	return (v1[1] - v2[1])*x + (v2[0] - v1[0])*y + v1[0]*v2[1] - v2[0]*v1[1];
+}
+
+
+void SRenderer::runPixelProcessor()
+{
+	// clear buffers
+	// memset(colorBuffer, 0, 4*sizeof(byte)*screenWidth*screenHeight);
+	// memset((void*)depthBuffer, 1000000, sizeof(float)*screenWidth*screenHeight);
+	cv::Mat colorBuffer = cv::Mat::zeros(screenHeight, screenWidth, CV_8UC4);
+	cv::Mat depthBuffer = cv::Mat::ones(screenHeight, screenWidth, CV_32FC1)*1000000;
+
+	for (unsigned int i = 0; i < trianglesToRasterize.size(); i++)
+	{
+		TriangleToRasterize& t = trianglesToRasterize[i];
+
+		for (int yi = t.minY; yi <= t.maxY; yi++)
+		{
+			for (int xi = t.minX; xi <= t.maxX; xi++)
+			{
+				// we want centers of pixels to be used in computations
+				float x = (float)xi + 0.5f;
+				float y = (float)yi + 0.5f;
+
+				// affine barycentric weights
+				float alpha = implicitLine(x, y, t.v1.position, t.v2.position) * t.one_over_v0ToLine12;
+				float beta = implicitLine(x, y, t.v2.position, t.v0.position) * t.one_over_v1ToLine20;
+				float gamma = implicitLine(x, y, t.v0.position, t.v1.position) * t.one_over_v2ToLine01;
+
+				// if pixel (x, y) is inside the triangle or on one of its edges
+				if (alpha >= 0 && beta >= 0 && gamma >= 0)
+				{
+					//int pixelIndex = (screenHeight - 1 - yi)*screenWidth + xi;
+					int pixelIndexRow = (screenHeight - 1 - yi);
+					int pixelIndexCol = xi;
+					
+					float z_affine = alpha*t.v0.position[2] + beta*t.v1.position[2] + gamma*t.v2.position[2];	// z
+
+					if (z_affine < depthBuffer.at<float>(pixelIndexRow, pixelIndexCol) && z_affine <= 1.0f)
+					{
+						// perspective-correct barycentric weights
+						float d = alpha*t.one_over_z0 + beta*t.one_over_z1 + gamma*t.one_over_z2;
+						d = 1.0f / d;
+						alpha *= d*t.one_over_z0;
+						beta *= d*t.one_over_z1;
+						gamma *= d*t.one_over_z2;
+
+						// attributes interpolation
+						cv::Vec3f color_persp = alpha*t.v0.color + beta*t.v1.color + gamma*t.v2.color;
+						cv::Vec2f texCoord_persp = alpha*t.v0.texCoord + beta*t.v1.texCoord + gamma*t.v2.texCoord;
+
+						// partial derivatives (for mip-mapping)
+
+						float u_over_z = -(t.alphaPlane.a*x + t.alphaPlane.b*y + t.alphaPlane.d) * t.one_over_alpha_c;
+						float v_over_z = -(t.betaPlane.a*x + t.betaPlane.b*y + t.betaPlane.d) * t.one_over_beta_c;
+						float one_over_z = -(t.gammaPlane.a*x + t.gammaPlane.b*y + t.gammaPlane.d) * t.one_over_gamma_c;
+						float one_over_squared_one_over_z = 1.0f / pow(one_over_z, 2);
+
+						dudx = one_over_squared_one_over_z * (t.alpha_ffx * one_over_z - u_over_z * t.gamma_ffx);
+						dudy = one_over_squared_one_over_z * (t.beta_ffx * one_over_z - v_over_z * t.gamma_ffx);
+						dvdx = one_over_squared_one_over_z * (t.alpha_ffy * one_over_z - u_over_z * t.gamma_ffy);
+						dvdy = one_over_squared_one_over_z * (t.beta_ffy * one_over_z - v_over_z * t.gamma_ffy);
+
+						dudx *= t.texture->mipmaps[0].cols;
+						dudy *= t.texture->mipmaps[0].cols;
+						dvdx *= t.texture->mipmaps[0].rows;
+						dvdy *= t.texture->mipmaps[0].rows;
+
+						// run pixel shader
+						cv::Vec3f pixelColor = runPixelShader(t.texture, color_persp, texCoord_persp);
+
+						// clamp bytes to 255
+						unsigned char red = (unsigned char)(255.0f * std::min(pixelColor[0], 1.0f));
+						unsigned char green = (unsigned char)(255.0f * std::min(pixelColor[1], 1.0f));
+						unsigned char blue = (unsigned char)(255.0f * std::min(pixelColor[2], 1.0f));
+
+						// update buffers
+						//colorBuffer[4*pixelIndex + 0] = blue;
+						colorBuffer.at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[0] = blue;
+						//colorBuffer[4*pixelIndex + 1] = green;
+						colorBuffer.at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[1] = green;
+						//colorBuffer[4*pixelIndex + 2] = red;
+						colorBuffer.at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[2] = red;
+						//depthBuffer[pixelIndex] = z_affine;
+						depthBuffer.at<float>(pixelIndexRow, pixelIndexCol) = z_affine;
+					}
+				}
+			}
+		}
+	}
+	this->colorBuffer = colorBuffer;
+	this->depthBuffer = depthBuffer;
+}
+
+cv::Vec3f SRenderer::runPixelShader(const Texture* texture, const cv::Vec3f& color, const cv::Vec2f& texCoord)
+{
+	return color.mul(tex2D(texture, texCoord));	// element-wise multiplication
+}
+
+cv::Vec3f SRenderer::tex2D(const Texture* texture, const cv::Vec2f& texCoord)
+{
+	return (1.0f / 255.0f) * tex2D_linear_mipmap_linear(texture, texCoord);
+}
+
+cv::Vec3f SRenderer::tex2D_linear_mipmap_linear(const Texture* texture, const cv::Vec2f& texCoord)
+{
+	float px = std::sqrt(std::pow(dudx, 2) + std::pow(dvdx, 2));
+	float py = std::sqrt(std::pow(dudy, 2) + std::pow(dvdy, 2));
+	float lambda = std::log(std::max(px, py))/log(2.0f);	// use CV_LOG2 or something
+	unsigned char mipmapIndex1 = clamp((int)lambda, 0.0f, std::max(texture->widthLog, texture->heightLog) - 1);	// widthLog might be undefined!
+	unsigned char mipmapIndex2 = mipmapIndex1 + 1;
+
+	cv::Vec2f imageTexCoord = texCoord_wrap(texCoord);
+	cv::Vec2f imageTexCoord1 = imageTexCoord;
+	imageTexCoord1[0] *= texture->mipmaps[mipmapIndex1].cols;
+	imageTexCoord1[1] *= texture->mipmaps[mipmapIndex1].rows;
+	cv::Vec2f imageTexCoord2 = imageTexCoord;
+	imageTexCoord2[0] *= texture->mipmaps[mipmapIndex2].cols;
+	imageTexCoord2[1] *= texture->mipmaps[mipmapIndex2].rows;
+
+	cv::Vec3f color, color1, color2;
+	color1 = tex2D_linear(texture, imageTexCoord1, mipmapIndex1);
+	color2 = tex2D_linear(texture, imageTexCoord2, mipmapIndex2);
+	float lambdaFrac = std::max(lambda, 0.0f);
+	lambdaFrac = lambdaFrac - (int)lambdaFrac;
+	color = (1.0f - lambdaFrac)*color1 + lambdaFrac*color2;
+
+	return color;
+}
+
+cv::Vec2f SRenderer::texCoord_wrap(const cv::Vec2f& texCoord)
+{
+	return cv::Vec2f(texCoord[0]-(int)texCoord[0], texCoord[1]-(int)texCoord[1]);
+}
+
+cv::Vec3f SRenderer::tex2D_linear(const Texture* texture, const cv::Vec2f& imageTexCoord, unsigned char mipmapIndex)
+{
+	int x = (int)imageTexCoord[0];
+	int y = (int)imageTexCoord[1];
+	float alpha = imageTexCoord[0] - x;
+	float beta = imageTexCoord[1] - y;
+	float oneMinusAlpha = 1.0f - alpha;
+	float oneMinusBeta = 1.0f - beta;
+	float a = oneMinusAlpha * oneMinusBeta;
+	float b = alpha * oneMinusBeta;
+	float c = oneMinusAlpha * beta;
+	float d = alpha * beta;
+	cv::Vec3f color;
+
+	//int pixelIndex;
+	//pixelIndex = getPixelIndex_wrap(x, y, texture->mipmaps[mipmapIndex].cols, texture->mipmaps[mipmapIndex].rows);
+	int pixelIndexCol = x; if(pixelIndexCol==texture->mipmaps[mipmapIndex].cols) { pixelIndexCol = 0; }
+	int pixelIndexRow = y; if(pixelIndexRow==texture->mipmaps[mipmapIndex].rows) { pixelIndexRow = 0; }
+	//std::cout << texture->mipmaps[mipmapIndex].cols << " " << texture->mipmaps[mipmapIndex].rows << " " << texture->mipmaps[mipmapIndex].channels() << std::endl;
+	//cv::imwrite("mm.png", texture->mipmaps[mipmapIndex]);
+	color[0] = a * texture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[0];
+	color[1] = a * texture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[1];
+	color[2] = a * texture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[2];
+
+	//pixelIndex = getPixelIndex_wrap(x + 1, y, texture->mipmaps[mipmapIndex].cols, texture->mipmaps[mipmapIndex].rows);
+	pixelIndexCol = x+1; if(pixelIndexCol==texture->mipmaps[mipmapIndex].cols) { pixelIndexCol = 0; }
+	pixelIndexRow = y; if(pixelIndexRow==texture->mipmaps[mipmapIndex].rows) { pixelIndexRow = 0; }
+	color[0] += b * texture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[0];
+	color[1] += b * texture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[1];
+	color[2] += b * texture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[2];
+
+	//pixelIndex = getPixelIndex_wrap(x, y + 1, texture->mipmaps[mipmapIndex].cols, texture->mipmaps[mipmapIndex].rows);
+	pixelIndexCol = x; if(pixelIndexCol==texture->mipmaps[mipmapIndex].cols) { pixelIndexCol = 0; }
+	pixelIndexRow = y+1; if(pixelIndexRow==texture->mipmaps[mipmapIndex].rows) { pixelIndexRow = 0; }
+	color[0] += c * texture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[0];
+	color[1] += c * texture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[1];
+	color[2] += c * texture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[2];
+
+	//pixelIndex = getPixelIndex_wrap(x + 1, y + 1, texture->mipmaps[mipmapIndex].cols, texture->mipmaps[mipmapIndex].rows);
+	pixelIndexCol = x+1; if(pixelIndexCol==texture->mipmaps[mipmapIndex].cols) { pixelIndexCol = 0; }
+	pixelIndexRow = y+1; if(pixelIndexRow==texture->mipmaps[mipmapIndex].rows) { pixelIndexRow = 0; }
+	color[0] += d * texture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[0];
+	color[1] += d * texture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[1];
+	color[2] += d * texture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[2];
+
+	return color;
+}
+
+float SRenderer::clamp(float x, float a, float b)
+{
+	return std::max(std::min(x, b), a);
 }
 
 }
