@@ -61,7 +61,6 @@ void SRenderer::setViewport(unsigned int screenWidth, unsigned int screenHeight)
 						  0.0f,							 (float)screenHeight/2.0f,	0.0f,	0.0f,
 						  0.0f,							 0.0f,						1.0f,	0.0f,
 						  (float)screenWidth/2.0f,		 (float)screenHeight/2.0f,	0.0f,	1.0f);
-	// order: M(row, col);
 
 }
 

@@ -26,32 +26,8 @@ Texture::~Texture(void)
 {
 }
 
-void Texture::create(ushort width, ushort height, uchar mipmapsNum)
-{
-	this->mipmapsNum = (mipmapsNum == 0 ? render::utils::MatrixUtils::getMaxPossibleMipmapsNum(width, height) : mipmapsNum);
-	//this->mipmaps = new Mipmap<uchar>[this->mipmapsNum];
-
-	for (int i = 0; i < this->mipmapsNum; i++)
-	{
-		/*mipmaps[i].width = width;
-		mipmaps[i].height = height;
-		mipmaps[i].data = new uchar[4*width*height]; */	// 4, because of the 4 color channels
-		cv::Mat currMipMap(height, width, CV_8UC4);
-		mipmaps.push_back(currMipMap);
-
-		if (width > 1)
-			width >>= 1;
-		if (height > 1)
-			height >>= 1;
-	}
-
-	this->widthLog = (uchar)(std::logf(mipmaps[0].cols)/std::logf(2.0f) + 0.0001f); // _log2(mm.w) // epsilon
-	this->heightLog = (uchar)(std::logf(mipmaps[0].rows)/std::logf(2.0f) + 0.0001f); // log2(mm.h) // epsilon. Use CV_LOG2?
-}
-
 void Texture::createFromFile(const std::string& fileName, uchar mipmapsNum)
 {
-	//CImageByte image;	// convert to byte
 	cv::Mat image;
 	try {
 		image = cv::imread(fileName);
@@ -75,7 +51,7 @@ void Texture::createFromFile(const std::string& fileName, uchar mipmapsNum)
 			exit(EXIT_FAILURE);
 		}
 	}
-	image.convertTo(image, CV_8UC4);	// seems to work!
+	image.convertTo(image, CV_8UC4);	// Most often, the input img is CV_8UC3. Img is BGR. Add an alpha channel
 	cv::cvtColor(image, image, CV_BGR2BGRA);
 
 	int currWidth = image.cols;
@@ -86,8 +62,6 @@ void Texture::createFromFile(const std::string& fileName, uchar mipmapsNum)
 			mipmaps.push_back(image);
 		} else {
 			cv::Mat currMipMap(currHeight, currWidth, CV_8UC4);
-			// image.swapChannels(0, 2);	// we already have BGR. Ok?
-			// scale the texture here & pushback
 			cv::resize(mipmaps[i-1], currMipMap, currMipMap.size());
 			mipmaps.push_back(currMipMap);
 		}
@@ -98,8 +72,8 @@ void Texture::createFromFile(const std::string& fileName, uchar mipmapsNum)
 			currHeight >>= 1;
 	}
 	this->fileName = fileName;
-	this->widthLog = (uchar)(std::logf(mipmaps[0].cols)/std::logf(2.0f) + 0.0001f); // _log2(mm.w) // epsilon
-	this->heightLog = (uchar)(std::logf(mipmaps[0].rows)/std::logf(2.0f) + 0.0001f); // log2(mm.h) // epsilon. Use CV_LOG2?
+	this->widthLog = (uchar)(std::logf(mipmaps[0].cols)/CV_LOG2 + 0.0001f); // std::epsilon or something? or why 0.0001f here?
+	this->heightLog = (uchar)(std::logf(mipmaps[0].rows)/CV_LOG2 + 0.0001f);
 }
 
 }

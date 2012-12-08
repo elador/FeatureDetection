@@ -127,7 +127,7 @@ std::vector< std::vector<render::Triangle> > init(void)
 
 	render::Vertex planeVertices[4];
 
-	planeVertices[0].position = cv::Vec4f(-0.5f, 0.0f, -0.5f, 1.0f); // set w (4th comp.) = 1.0f !!!
+	planeVertices[0].position = cv::Vec4f(-0.5f, 0.0f, -0.5f, 1.0f);
 	planeVertices[1].position = cv::Vec4f(-0.5f, 0.0f, 0.5f, 1.0f);
 	planeVertices[2].position = cv::Vec4f(0.5f, 0.0f, 0.5f, 1.0f);
 	planeVertices[3].position = cv::Vec4f(0.5f, 0.0f, -0.5f, 1.0f);
@@ -199,9 +199,11 @@ int main(int argc, char *argv[])
 	camera.init();
 	std::vector< std::vector<render::Triangle> > objectsList = init();
 	render::Texture texture1;
-	texture1.createFromFile("data/pwr.png");
+	//texture1.createFromFile("data/pwr.png");
+	texture1.createFromFile("data/red.png");
 	render::Texture texture2;
-	texture2.createFromFile("data/rocks.png");
+	//texture2.createFromFile("data/rocks.png");
+	texture2.createFromFile("data/red.png");
 	
 	const float& aspect = 640.0f/480.0f; // ScreenAspectRatio - this might be incorrect (comes from SDL)
 
@@ -218,12 +220,6 @@ int main(int argc, char *argv[])
 	cv::Mat vt = render::Renderer->constructViewTransform(camera.getEye(), camera.getRightVector(), camera.getUpVector(), -camera.getForwardVector());
 	cv::Mat pt = render::Renderer->constructProjTransform(frustumLeft, frustumRight, frustumBottom, frustumTop, frustumNear, frustumFar);
 	cv::Mat viewProjTransform = vt * pt;
-	std::cout << std::endl;
-	std::cout << vt << std::endl;
-	std::cout << std::endl;
-	std::cout << pt << std::endl;
-	std::cout << std::endl;
-	std::cout << viewProjTransform << std::endl;
 
 	render::Renderer->setTrianglesBuffer(objectsList[0]);	// The cube is the first object
 	render::Renderer->setTexture(texture1);
@@ -232,7 +228,6 @@ int main(int argc, char *argv[])
 		for (int j = 0; j < 15; j++)
 		{
 			cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(3.0f*(i - 7), 0.5f, 3.0f*(j - 7));
-			std::cout << worldTransform << std::endl;
 			render::Renderer->setTransform(worldTransform * viewProjTransform);
 			render::Renderer->draw();
 		}
