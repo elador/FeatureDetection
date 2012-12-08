@@ -49,7 +49,7 @@ private:
 		std::vector<Triangle> trianglesBuffer;
 		unsigned int trianglesNum;
 		cv::Mat transform;
-		//const CTexture* texture;
+		const Texture* texture;
 	};
 
 	std::vector<unsigned char> colorBuffer;	// typedef unsigned char byte; Points to getSDLSurface()->pixels (void*)
@@ -66,6 +66,14 @@ private:
 	std::vector<DrawCall> drawCalls;
 	std::vector<TriangleToRasterize> trianglesToRasterize; // holds copies of all triangles from called triangles buffers that are to be rendered so the pipeline can work on them instead of on the original triangles
 
+
+	void runVertexProcessor();
+	Vertex runVertexShader(const cv::Mat& transform, const Vertex& input);
+	void processProspectiveTriangleToRasterize(const Vertex& _v0, const Vertex& _v1, const Vertex& _v2, const Texture* _texture);
+	std::vector<Vertex> clipPolygonToPlaneIn4D(const std::vector<Vertex>& vertices, const cv::Vec4f& planeNormal);
+
+	bool areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2);	// should better go to a RenderUtils class?
+	float implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2);	// ->utils ?
 };
 
 }

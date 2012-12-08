@@ -30,6 +30,7 @@ SET(SOURCE
 	src/render/Triangle.cpp
 	src/render/Camera.cpp
 	#src/render/MatrixUtils.cpp
+	src/render/Texture.cpp
 )
 
 SET(HEADERS
@@ -38,6 +39,7 @@ SET(HEADERS
 	include/render/Triangle.hpp
 	include/render/Camera.hpp
 	include/render/MatrixUtils.hpp
+	include/render/Texture.hpp
 )
 
 include_directories( "include" )

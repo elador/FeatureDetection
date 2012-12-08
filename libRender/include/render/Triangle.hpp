@@ -11,6 +11,7 @@
 #include <array>
 
 #include "render/Vertex.hpp"
+#include "render/Texture.hpp"
 
 namespace render {
 
@@ -92,12 +93,12 @@ public:
 	float d;
 };
 
-class TriangleToRasterize
+struct TriangleToRasterize
 {
 	Vertex v0;
 	Vertex v1;
 	Vertex v2;
-	//const CTexture* texture;
+	const Texture* texture;
 	float one_over_z0;
 	float one_over_z1;
 	float one_over_z2;

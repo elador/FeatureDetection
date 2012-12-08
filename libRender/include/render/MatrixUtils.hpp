@@ -12,7 +12,7 @@
 
 #include <opencv2/core/core.hpp>
 
-// Todo: Maybe make this a class with static methods? I don't know which method is better.
+// Todo: Class with static methods? Or just functions? I don't know which method is better.
 
 namespace render {
 
@@ -70,6 +70,23 @@ namespace render {
 						tx,					ty,					tz,					1.0f);
 				return translation;
 			}
+
+			static unsigned char getMaxPossibleMipmapsNum(ushort width, ushort height)	// TODO: This belongs more in a ImageUtils, TextureUtils, or whatever...
+			{
+				unsigned char mipmapsNum = 1;
+				ushort size = MAX(width, height);
+
+				if (size == 1)
+					return 1;
+
+				do {
+					size >>= 1;
+					mipmapsNum++;
+				} while (size != 1);
+
+				return mipmapsNum;
+			}
+
 		};
 
 	}

@@ -17,6 +17,7 @@
 #include "render/Vertex.hpp"
 #include "render/Triangle.hpp"
 #include "render/Camera.hpp"
+#include "render/MatrixUtils.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -232,7 +233,7 @@ int main(int argc, char *argv[])
 
 	// loop start
 	updateCamera(camera, 1);
-
+	
 	cv::Mat vt = render::Renderer->constructViewTransform(camera.getEye(), camera.getRightVector(), camera.getUpVector(), -camera.getForwardVector());
 	cv::Mat pt = render::Renderer->constructProjTransform(frustumLeft, frustumRight, frustumBottom, frustumTop, frustumNear, frustumFar);
 	cv::Mat viewProjTransform = vt * pt;
@@ -245,14 +246,14 @@ int main(int argc, char *argv[])
 	{
 		for (int j = 0; j < 15; j++)
 		{
-			cv::Mat worldTransform;// = ::translate(3.0f*(i - 7), 0.5f, 3.0f*(j - 7));
+			cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(3.0f*(i - 7), 0.5f, 3.0f*(j - 7));
 			render::Renderer->setTransform(worldTransform * viewProjTransform);
 			render::Renderer->draw();
 		}
 	}
 
 	render::Renderer->setTrianglesBuffer(objectsList[1]);	// The plane is the second object
-	render::Renderer->setTransform(/*mtx::scale(15.0f, 1.0f, 15.0f) * */viewProjTransform);
+	render::Renderer->setTransform(render::utils::MatrixUtils::createScalingMatrix(15.0f, 1.0f, 15.0f) * viewProjTransform);
 	//render::Renderer->setTexture(texture2);
 	render::Renderer->draw();
 
@@ -263,3 +264,4 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+// TODO: All those vec3 * mat4 cases... Do I have to add the homogeneous coordinate and make it vec4 * mat4, instead of how I'm doing it now? Difference?
