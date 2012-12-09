@@ -127,7 +127,6 @@ void SRenderer::end()
 	cv::Mat res;
 	cv::cvtColor(this->colorBuffer, res, CV_BGRA2BGR);
 	cv::imwrite("colorBuffer.png", res);
-	cv::Mat res2;
 
 	cv::Mat db = depthBuffer * 255.0f;
 	db.convertTo(db, CV_8UC1);
@@ -376,8 +375,6 @@ float SRenderer::implicitLine(float x, float y, const cv::Vec4f& v1, const cv::V
 void SRenderer::runPixelProcessor()
 {
 	// clear buffers
-	// memset(colorBuffer, 0, 4*sizeof(byte)*screenWidth*screenHeight);
-	// memset((void*)depthBuffer, 1000000, sizeof(float)*screenWidth*screenHeight);
 	cv::Mat colorBuffer = cv::Mat::zeros(screenHeight, screenWidth, CV_8UC4);
 	cv::Mat depthBuffer = cv::Mat::ones(screenHeight, screenWidth, CV_32FC1)*1000000;
 
@@ -441,9 +438,9 @@ void SRenderer::runPixelProcessor()
 						cv::Vec3f pixelColor = runPixelShader(t.texture, color_persp, texCoord_persp);
 
 						// clamp bytes to 255
-						unsigned char red = (unsigned char)(255.0f * std::min(pixelColor[0], 1.0f));
+						unsigned char blue = (unsigned char)(255.0f * std::min(pixelColor[0], 1.0f));
 						unsigned char green = (unsigned char)(255.0f * std::min(pixelColor[1], 1.0f));
-						unsigned char blue = (unsigned char)(255.0f * std::min(pixelColor[2], 1.0f));
+						unsigned char red = (unsigned char)(255.0f * std::min(pixelColor[2], 1.0f));
 
 						// update buffers
 						//colorBuffer[4*pixelIndex + 0] = blue;
@@ -477,8 +474,8 @@ cv::Vec3f SRenderer::tex2D_linear_mipmap_linear(const Texture* texture, const cv
 {
 	float px = std::sqrt(std::pow(dudx, 2) + std::pow(dvdx, 2));
 	float py = std::sqrt(std::pow(dudy, 2) + std::pow(dvdy, 2));
-	float lambda = std::log(std::max(px, py))/log(2.0f);	// use CV_LOG2 or something
-	unsigned char mipmapIndex1 = clamp((int)lambda, 0.0f, std::max(texture->widthLog, texture->heightLog) - 1);	// widthLog might be undefined!
+	float lambda = std::log(std::max(px, py))/CV_LOG2;
+	unsigned char mipmapIndex1 = clamp((int)lambda, 0.0f, std::max(texture->widthLog, texture->heightLog) - 1);
 	unsigned char mipmapIndex2 = mipmapIndex1 + 1;
 
 	cv::Vec2f imageTexCoord = texCoord_wrap(texCoord);

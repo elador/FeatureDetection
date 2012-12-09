@@ -199,11 +199,11 @@ int main(int argc, char *argv[])
 	camera.init();
 	std::vector< std::vector<render::Triangle> > objectsList = init();
 	render::Texture texture1;
-	//texture1.createFromFile("data/pwr.png");
-	texture1.createFromFile("data/red.png");
+	texture1.createFromFile("data/pwr.png");
+	//texture1.createFromFile("data/red.png");
 	render::Texture texture2;
-	//texture2.createFromFile("data/rocks.png");
-	texture2.createFromFile("data/red.png");
+	texture2.createFromFile("data/rocks.png");
+	//texture2.createFromFile("data/red.png");
 	
 	const float& aspect = 640.0f/480.0f; // ScreenAspectRatio - this might be incorrect (comes from SDL)
 
