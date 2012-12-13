@@ -16,8 +16,8 @@ cv::Mat MatrixUtils::createRotationMatrixX(float angle)
 {
 	cv::Mat rotX = (cv::Mat_<float>(4,4) << 
 		1.0f,				0.0f,				0.0f,				0.0f,
-		0.0f,				std::cosf(angle),	std::sin(angle),	0.0f,
-		0.0f,				-std::sin(angle),	std::cos(angle),	0.0f,
+		0.0f,				std::cos(angle),	-std::sin(angle),	0.0f,
+		0.0f,				std::sin(angle),	std::cos(angle),	0.0f,
 		0.0f,				0.0f,				0.0f,				1.0f);
 	return rotX;
 }
@@ -25,9 +25,9 @@ cv::Mat MatrixUtils::createRotationMatrixX(float angle)
 cv::Mat MatrixUtils::createRotationMatrixY(float angle)
 {
 	cv::Mat rotY = (cv::Mat_<float>(4,4) << 
-		std::cos(angle),	0.0f,				-std::sin(angle),	0.0f,
+		std::cos(angle),	0.0f,				std::sin(angle),	0.0f,
 		0.0f,				1.0f,				0.0f,				0.0f,
-		std::sin(angle),	0.0f,				std::cos(angle),	0.0f,
+		-std::sin(angle),	0.0f,				std::cos(angle),	0.0f,
 		0.0f,				0.0f,				0.0f,				1.0f);
 	return rotY;
 }
@@ -35,8 +35,8 @@ cv::Mat MatrixUtils::createRotationMatrixY(float angle)
 cv::Mat MatrixUtils::createRotationMatrixZ(float angle)
 {
 	cv::Mat rotZ = (cv::Mat_<float>(4,4) << 
-		std::cos(angle),	std::sin(angle),	0.0f,				0.0f,
-		-std::sin(angle),	std::cos(angle),	0.0f,				0.0f,
+		std::cos(angle),	-std::sin(angle),	0.0f,				0.0f,
+		std::sin(angle),	std::cos(angle),	0.0f,				0.0f,
 		0.0f,				0.0f,				1.0f,				0.0f,
 		0.0f,				0.0f,				0.0f,				1.0f);
 	return rotZ;
@@ -55,10 +55,10 @@ cv::Mat MatrixUtils::createScalingMatrix(float sx, float sy, float sz)
 cv::Mat MatrixUtils::createTranslationMatrix(float tx, float ty, float tz)
 {
 	cv::Mat translation = (cv::Mat_<float>(4,4) << 
-		1.0f,				0.0f,				0.0f,				0.0f,
-		0.0f,				1.0f,				0.0f,				0.0f,
-		0.0f,				0.0f,				1.0f,				0.0f,
-		tx,					ty,					tz,					1.0f);
+		1.0f,				0.0f,				0.0f,				tx,
+		0.0f,				1.0f,				0.0f,				ty,
+		0.0f,				0.0f,				1.0f,				tz,
+		0.0f,				0.0f,				0.0f,				1.0f);
 	return translation;
 }
 

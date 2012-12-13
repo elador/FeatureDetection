@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 	
 	cv::Mat vt = render::Renderer->constructViewTransform(camera.getEye(), camera.getRightVector(), camera.getUpVector(), -camera.getForwardVector());
 	cv::Mat pt = render::Renderer->constructProjTransform(frustumLeft, frustumRight, frustumBottom, frustumTop, frustumNear, frustumFar);
-	cv::Mat viewProjTransform = vt * pt;
+	cv::Mat viewProjTransform = pt * vt;
 
 	render::Renderer->setTrianglesBuffer(objectsList[0]);	// The cube is the first object
 	render::Renderer->setTexture(cube.texture);
@@ -117,13 +117,13 @@ int main(int argc, char *argv[])
 		for (int j = 0; j < 15; j++)
 		{
 			cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(3.0f*(i - 7), 0.5f, 3.0f*(j - 7));
-			render::Renderer->setTransform(worldTransform * viewProjTransform);
+			render::Renderer->setTransform(viewProjTransform * worldTransform);
 			render::Renderer->draw();
 		}
 	}
 
 	render::Renderer->setTrianglesBuffer(objectsList[1]);	// The plane is the second object
-	render::Renderer->setTransform(render::utils::MatrixUtils::createScalingMatrix(15.0f, 1.0f, 15.0f) * viewProjTransform);
+	render::Renderer->setTransform(viewProjTransform * render::utils::MatrixUtils::createScalingMatrix(15.0f, 1.0f, 15.0f));
 	render::Renderer->setTexture(plane.texture);
 	render::Renderer->draw();
 

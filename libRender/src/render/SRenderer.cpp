@@ -56,11 +56,16 @@ void SRenderer::setViewport(unsigned int screenWidth, unsigned int screenHeight)
 	this->screenWidth = screenWidth;
 	this->screenHeight = screenHeight;
 
-	this->windowTransform = (cv::Mat_<float>(4,4) << 
+	/*this->windowTransform = (cv::Mat_<float>(4,4) << 
 						  (float)screenWidth/2.0f,		 0.0f,						0.0f,	0.0f,
 						  0.0f,							 (float)screenHeight/2.0f,	0.0f,	0.0f,
 						  0.0f,							 0.0f,						1.0f,	0.0f,
-						  (float)screenWidth/2.0f,		 (float)screenHeight/2.0f,	0.0f,	1.0f);
+						  (float)screenWidth/2.0f,		 (float)screenHeight/2.0f,	0.0f,	1.0f);*/	//<-- original
+	this->windowTransform = (cv::Mat_<float>(4,4) << 
+		(float)screenWidth/2.0f,		0.0f,						0.0f,	(float)screenWidth/2.0f,
+		0.0f,							(float)screenHeight/2.0f,	0.0f,	(float)screenHeight/2.0f,
+		0.0f,							0.0f,						1.0f,	0.0f,
+		0.0f,							0.0f,						0.0f,	1.0f);
 
 }
 
@@ -74,7 +79,8 @@ cv::Mat SRenderer::constructViewTransform(const cv::Vec3f& position, const cv::V
 			       rightVector[2],	upVector[2],		forwardVector[2],	0.0f,
 			       0.0f,			0.0f,				0.0f,				1.0f);
 
-	return translate * rotate;
+	//return translate * rotate;	// <-- original
+	return rotate * translate;
 }
 
 cv::Mat SRenderer::constructProjTransform(float left, float right, float bottom, float top, float zNear, float zFar)
@@ -82,16 +88,23 @@ cv::Mat SRenderer::constructProjTransform(float left, float right, float bottom,
 	cv::Mat perspective = (cv::Mat_<float>(4,4) << 
 						zNear,	0.0f,	0.0f,			0.0f,
 						0.0f,	zNear,	0.0f,			0.0f,
-						0.0f,	0.0f,	zNear + zFar,	-1.0f,
-						0.0f,	0.0f,	zNear * zFar,	0.0f);
+						0.0f,	0.0f,	zNear + zFar,	zNear * zFar, // <-- im original verdreht
+						0.0f,	0.0f,	-1.0f,			0.0f);
 
-	cv::Mat orthogonal = (cv::Mat_<float>(4,4) << 
+	/*cv::Mat orthogonal = (cv::Mat_<float>(4,4) << 
 					   2.0f / (right - left),				0.0f,								0.0f,								0.0f,
 					   0.0f,								2.0f / (top - bottom),				0.0f,								0.0f,
 					   0.0f,								0.0f,								-2.0f / (zFar - zNear),				0.0f,
-					   -(right + left) / (right - left),	-(top + bottom) / (top - bottom),	-(zNear + zFar) / (zFar - zNear),	1.0f);
+					   -(right + left) / (right - left),	-(top + bottom) / (top - bottom),	-(zNear + zFar) / (zFar - zNear),	1.0f);*/	// <-- original
+
+	cv::Mat orthogonal = (cv::Mat_<float>(4,4) << 
+		2.0f / (right - left),				0.0f,								0.0f,								-(right + left) / (right - left),
+		0.0f,								2.0f / (top - bottom),				0.0f,								-(top + bottom) / (top - bottom),
+		0.0f,								0.0f,								-2.0f / (zFar - zNear),				-(zNear + zFar) / (zFar - zNear),
+		0.0f,								0.0f,								0.0f,								1.0f);
 	
-	return perspective * orthogonal;
+	return orthogonal * perspective;
+	//return perspective * orthogonal;	// <-- original
 }
 
 void SRenderer::setTrianglesBuffer(const std::vector<Triangle> trianglesBuffer)
@@ -224,11 +237,11 @@ Vertex SRenderer::runVertexShader(const cv::Mat& transform, const Vertex& input)
 {
 	Vertex output;
 
-	cv::Mat tmp = cv::Mat(input.position.t()) * transform;	// places the vec as a row in the matrix. This is worldTransform * viewProjTransform
+	cv::Mat tmp =  transform * cv::Mat(input.position);	// places the vec as a row in the matrix. This is viewProjTransform * worldTransform
 	output.position[0] = tmp.at<float>(0, 0);
-	output.position[1] = tmp.at<float>(0, 1);
-	output.position[2] = tmp.at<float>(0, 2);
-	output.position[3] = tmp.at<float>(0, 3);
+	output.position[1] = tmp.at<float>(1, 0);
+	output.position[2] = tmp.at<float>(2, 0);
+	output.position[3] = tmp.at<float>(3, 0);
 
 	output.color = input.color;
 	output.texCoord = input.texCoord;
@@ -251,25 +264,25 @@ void SRenderer::processProspectiveTriangleToRasterize(const Vertex& _v0, const V
 
 	// project from 4D to 2D window position with depth value in z coordinate
 	t.v0.position = t.v0.position / t.v0.position[3];	// divide by w
-	cv::Mat tmp = cv::Mat(t.v0.position.t()) * windowTransform;	// places the vec as a row in the matrix
+	cv::Mat tmp = windowTransform * cv::Mat(t.v0.position);	// places the vec as a row in the matrix
 	t.v0.position[0] = tmp.at<float>(0, 0);
-	t.v0.position[1] = tmp.at<float>(0, 1);
-	t.v0.position[2] = tmp.at<float>(0, 2);
-	t.v0.position[3] = tmp.at<float>(0, 3);
+	t.v0.position[1] = tmp.at<float>(1, 0);
+	t.v0.position[2] = tmp.at<float>(2, 0);
+	t.v0.position[3] = tmp.at<float>(3, 0);
 	
 	t.v1.position = t.v1.position / t.v1.position[3];
-	tmp = cv::Mat(t.v1.position.t()) * windowTransform;	// places the vec as a row in the matrix
+	tmp = windowTransform * cv::Mat(t.v1.position);	// places the vec as a row in the matrix
 	t.v1.position[0] = tmp.at<float>(0, 0);
-	t.v1.position[1] = tmp.at<float>(0, 1);
-	t.v1.position[2] = tmp.at<float>(0, 2);
-	t.v1.position[3] = tmp.at<float>(0, 3);
+	t.v1.position[1] = tmp.at<float>(1, 0);
+	t.v1.position[2] = tmp.at<float>(2, 0);
+	t.v1.position[3] = tmp.at<float>(3, 0);
 
 	t.v2.position = t.v2.position / t.v2.position[3];
-	tmp = cv::Mat(t.v2.position.t()) * windowTransform;	// places the vec as a row in the matrix
+	tmp = windowTransform * cv::Mat(t.v2.position);	// places the vec as a row in the matrix
 	t.v2.position[0] = tmp.at<float>(0, 0);
-	t.v2.position[1] = tmp.at<float>(0, 1);
-	t.v2.position[2] = tmp.at<float>(0, 2);
-	t.v2.position[3] = tmp.at<float>(0, 3);
+	t.v2.position[1] = tmp.at<float>(1, 0);
+	t.v2.position[2] = tmp.at<float>(2, 0);
+	t.v2.position[3] = tmp.at<float>(3, 0);
 
 	if (!areVerticesCCWInScreenSpace(t.v0, t.v1, t.v2))
 		return;
