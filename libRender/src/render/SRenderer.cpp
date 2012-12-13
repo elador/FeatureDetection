@@ -147,7 +147,7 @@ void SRenderer::runVertexProcessor()
 		{
 			Triangle triangle;
 
-			for (unsigned char k = 0; k < 3; k++)
+			for (unsigned char k = 0; k < 3; k++)	// I should transform all at once. Vertices = columns ( [V1; V2; V3; ...] * ViewProj... )
 				triangle.vertices[k] = runVertexShader(drawCalls[i].transform, drawCalls[i].trianglesBuffer[j].vertices[k]);
 
 			// classify vertices visibility with respect to the planes of the view frustum
@@ -197,7 +197,7 @@ void SRenderer::runVertexProcessor()
 			vertices.push_back(triangle.vertices[1]);
 			vertices.push_back(triangle.vertices[2]);
 
-			vertices = clipPolygonToPlaneIn4D(vertices, cv::Vec4f(0.0f, 0.0f, -1.0f, -1.0f));
+			vertices = clipPolygonToPlaneIn4D(vertices, cv::Vec4f(0.0f, 0.0f, -1.0f, -1.0f));	// This is the near-plane, right? Because we only have to check against that. For tlbr planes of the frustum, we can just draw, and then clamp it because it's outside the screen
 			//	vertices = clipPolygonToPlaneIn4D(vertices, vec4(0.0f, 0.0f, 1.0f, -1.0f));
 			//	vertices = clipPolygonToPlaneIn4D(vertices, vec4(-1.0f, 0.0f, 0.0f, -1.0f));
 			//	vertices = clipPolygonToPlaneIn4D(vertices, vec4(1.0f, 0.0f, 0.0f, -1.0f));
@@ -224,7 +224,7 @@ Vertex SRenderer::runVertexShader(const cv::Mat& transform, const Vertex& input)
 {
 	Vertex output;
 
-	cv::Mat tmp = cv::Mat(input.position.t()) * transform;	// places the vec as a row in the matrix
+	cv::Mat tmp = cv::Mat(input.position.t()) * transform;	// places the vec as a row in the matrix. This is worldTransform * viewProjTransform
 	output.position[0] = tmp.at<float>(0, 0);
 	output.position[1] = tmp.at<float>(0, 1);
 	output.position[2] = tmp.at<float>(0, 2);
@@ -319,6 +319,10 @@ void SRenderer::processProspectiveTriangleToRasterize(const Vertex& _v0, const V
 std::vector<Vertex> SRenderer::clipPolygonToPlaneIn4D(const std::vector<Vertex>& vertices, const cv::Vec4f& planeNormal)
 {
 	std::vector<Vertex> clippedVertices;
+
+	// We can have 2 cases:
+	//	* 1 vertex visible: we make 1 new triangle out of the visible vertex plus the 2 intersection points with the near-plane
+	//  * 2 vertices visible: we have a quad, so we have to make 2 new triangles out of it.
 
 	for (unsigned int i = 0; i < vertices.size(); i++)
 	{
