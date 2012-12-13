@@ -1,5 +1,5 @@
 /*!
- * \file SRenderer.h
+ * \file SRenderer.hpp
  *
  * \author Patrik Huber
  * \date December 4, 2012

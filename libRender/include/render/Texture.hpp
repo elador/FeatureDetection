@@ -1,5 +1,5 @@
 /*!
- * \file Texture.h
+ * \file Texture.hpp
  *
  * \author Patrik Huber
  * \date December 7, 2012

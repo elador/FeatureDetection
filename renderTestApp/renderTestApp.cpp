@@ -18,7 +18,9 @@
 #include "render/Triangle.hpp"
 #include "render/Camera.hpp"
 #include "render/MatrixUtils.hpp"
+#include "render/MeshUtils.hpp"
 #include "render/Texture.hpp"
+#include "render/Mesh.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -43,118 +45,6 @@ ostream& operator<<(ostream& os, const vector<T>& v)
 {
     copy(v.begin(), v.end(), ostream_iterator<T>(cout, " ")); 
     return os;
-}
-
-std::vector< std::vector<render::Triangle> > init(void)
-{
-	std::vector< std::vector<render::Triangle> > objectsList;
-
-	render::Vertex cubeVertices[24];
-
-	for (int i = 0; i < 24; i++)
-		cubeVertices[i].color = cv::Vec3f(1.0f, 1.0f, 1.0f);
-
-	cubeVertices[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);  // set w (4th comp.) = 1.0f !!! (1 or 0?)
-	cubeVertices[0].texCoord = cv::Vec2f(0.0f, 0.0f);
-	cubeVertices[1].position = cv::Vec4f(-0.5f, -0.5f, 0.5f, 1.0f);
-	cubeVertices[1].texCoord = cv::Vec2f(0.0f, 1.0f);
-	cubeVertices[2].position = cv::Vec4f(0.5f, -0.5f, 0.5f, 1.0f);
-	cubeVertices[2].texCoord = cv::Vec2f(1.0f, 1.0f);
-	cubeVertices[3].position = cv::Vec4f(0.5f, 0.5f, 0.5f, 1.0f);
-	cubeVertices[3].texCoord = cv::Vec2f(1.0f, 0.0f);
-
-	cubeVertices[4].position = cv::Vec4f(0.5f, 0.5f, 0.5f, 1.0f);
-	cubeVertices[4].texCoord = cv::Vec2f(0.0f, 0.0f);
-	cubeVertices[5].position = cv::Vec4f(0.5f, -0.5f, 0.5f, 1.0f);
-	cubeVertices[5].texCoord = cv::Vec2f(0.0f, 1.0f);
-	cubeVertices[6].position = cv::Vec4f(0.5f, -0.5f, -0.5f, 1.0f);
-	cubeVertices[6].texCoord = cv::Vec2f(1.0f, 1.0f);
-	cubeVertices[7].position = cv::Vec4f(0.5f, 0.5f, -0.5f, 1.0f);
-	cubeVertices[7].texCoord = cv::Vec2f(1.0f, 0.0f);
-
-	cubeVertices[8].position = cv::Vec4f(0.5f, 0.5f, -0.5f, 1.0f);
-	cubeVertices[8].texCoord = cv::Vec2f(0.0f, 0.0f);
-	cubeVertices[9].position = cv::Vec4f(0.5f, -0.5f, -0.5f, 1.0f);
-	cubeVertices[9].texCoord = cv::Vec2f(0.0f, 1.0f);
-	cubeVertices[10].position = cv::Vec4f(-0.5f, -0.5f, -0.5f, 1.0f);
-	cubeVertices[10].texCoord = cv::Vec2f(1.0f, 1.0f);
-	cubeVertices[11].position = cv::Vec4f(-0.5f, 0.5f, -0.5f, 1.0f);
-	cubeVertices[11].texCoord = cv::Vec2f(1.0f, 0.0f);
-
-	cubeVertices[12].position = cv::Vec4f(-0.5f, 0.5f, -0.5f, 1.0f);
-	cubeVertices[12].texCoord = cv::Vec2f(0.0f, 0.0f);
-	cubeVertices[13].position = cv::Vec4f(-0.5f, -0.5f, -0.5f, 1.0f);
-	cubeVertices[13].texCoord = cv::Vec2f(0.0f, 1.0f);
-	cubeVertices[14].position = cv::Vec4f(-0.5f, -0.5f, 0.5f, 1.0f);
-	cubeVertices[14].texCoord = cv::Vec2f(1.0f, 1.0f);
-	cubeVertices[15].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
-	cubeVertices[15].texCoord = cv::Vec2f(1.0f, 0.0f);
-
-	cubeVertices[16].position = cv::Vec4f(-0.5f, 0.5f, -0.5f, 1.0f);
-	cubeVertices[16].texCoord = cv::Vec2f(0.0f, 0.0f);
-	cubeVertices[17].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
-	cubeVertices[17].texCoord = cv::Vec2f(0.0f, 1.0f);
-	cubeVertices[18].position = cv::Vec4f(0.5f, 0.5f, 0.5f, 1.0f);
-	cubeVertices[18].texCoord = cv::Vec2f(1.0f, 1.0f);
-	cubeVertices[19].position = cv::Vec4f(0.5f, 0.5f, -0.5f, 1.0f);
-	cubeVertices[19].texCoord = cv::Vec2f(1.0f, 0.0f);
-
-	cubeVertices[20].position = cv::Vec4f(-0.5f, -0.5f, 0.5f, 1.0f);
-	cubeVertices[20].texCoord = cv::Vec2f(0.0f, 0.0f);
-	cubeVertices[21].position = cv::Vec4f(-0.5f, -0.5f, -0.5f, 1.0f);
-	cubeVertices[21].texCoord = cv::Vec2f(0.0f, 1.0f);
-	cubeVertices[22].position = cv::Vec4f(0.5f, -0.5f, -0.5f, 1.0f);
-	cubeVertices[22].texCoord = cv::Vec2f(1.0f, 1.0f);
-	cubeVertices[23].position = cv::Vec4f(0.5f, -0.5f, 0.5f, 1.0f);
-	cubeVertices[23].texCoord = cv::Vec2f(1.0f, 0.0f);
-
-	std::vector<render::Triangle> cubeTriangles;
-	// the efficiency of this might be improvable
-	cubeTriangles.push_back(render::Triangle(cubeVertices[0], cubeVertices[1], cubeVertices[2]));
-	cubeTriangles.push_back(render::Triangle(cubeVertices[0], cubeVertices[2], cubeVertices[3]));
-	cubeTriangles.push_back(render::Triangle(cubeVertices[4], cubeVertices[5], cubeVertices[6]));
-	cubeTriangles.push_back(render::Triangle(cubeVertices[4], cubeVertices[6], cubeVertices[7]));
-	cubeTriangles.push_back(render::Triangle(cubeVertices[8], cubeVertices[9], cubeVertices[10]));
-	cubeTriangles.push_back(render::Triangle(cubeVertices[8], cubeVertices[10], cubeVertices[11]));
-	cubeTriangles.push_back(render::Triangle(cubeVertices[12], cubeVertices[13], cubeVertices[14]));
-	cubeTriangles.push_back(render::Triangle(cubeVertices[12], cubeVertices[14], cubeVertices[15]));
-	cubeTriangles.push_back(render::Triangle(cubeVertices[16], cubeVertices[17], cubeVertices[18]));
-	cubeTriangles.push_back(render::Triangle(cubeVertices[16], cubeVertices[18], cubeVertices[19]));
-	cubeTriangles.push_back(render::Triangle(cubeVertices[20], cubeVertices[21], cubeVertices[22]));
-	cubeTriangles.push_back(render::Triangle(cubeVertices[20], cubeVertices[22], cubeVertices[23]));
-
-	objectsList.push_back(cubeTriangles);
-
-	render::Vertex planeVertices[4];
-
-	planeVertices[0].position = cv::Vec4f(-0.5f, 0.0f, -0.5f, 1.0f);
-	planeVertices[1].position = cv::Vec4f(-0.5f, 0.0f, 0.5f, 1.0f);
-	planeVertices[2].position = cv::Vec4f(0.5f, 0.0f, 0.5f, 1.0f);
-	planeVertices[3].position = cv::Vec4f(0.5f, 0.0f, -0.5f, 1.0f);
-/*
-	planeVertices[0].position = cv::Vec4f(-1.0f, 1.0f, 0.0f);
-	planeVertices[1].position = cv::Vec4f(-1.0f, -1.0f, 0.0f);
-	planeVertices[2].position = cv::Vec4f(1.0f, -1.0f, 0.0f);
-	planeVertices[3].position = cv::Vec4f(1.0f, 1.0f, 0.0f);
-*/
-	planeVertices[0].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
-	planeVertices[1].color = cv::Vec3f(0.0f, 1.0f, 0.0f);
-	planeVertices[2].color = cv::Vec3f(0.0f, 0.0f, 1.0f);
-	planeVertices[3].color = cv::Vec3f(1.0f, 1.0f, 1.0f);
-
-	planeVertices[0].texCoord = cv::Vec2f(0.0f, 0.0f);
-	planeVertices[1].texCoord = cv::Vec2f(0.0f, 4.0f);
-	planeVertices[2].texCoord = cv::Vec2f(4.0f, 4.0f);
-	planeVertices[3].texCoord = cv::Vec2f(4.0f, 0.0f);
-
-	std::vector<render::Triangle> planeTriangles;
-
-	planeTriangles.push_back(render::Triangle(planeVertices[0], planeVertices[1], planeVertices[2]));
-	planeTriangles.push_back(render::Triangle(planeVertices[0], planeVertices[2], planeVertices[3]));
-
-	objectsList.push_back(planeTriangles);
-
-	return objectsList;
 }
 
 
@@ -197,15 +87,14 @@ int main(int argc, char *argv[])
 	render::Camera camera;
 	render::Renderer->create();
 	camera.init();
-	std::vector< std::vector<render::Triangle> > objectsList = init();
-	render::Texture texture1;
-	texture1.createFromFile("data/pwr.png");
-	//texture1.createFromFile("data/red.png");
-	render::Texture texture2;
-	texture2.createFromFile("data/rocks.png");
-	//texture2.createFromFile("data/red.png");
-	
-	const float& aspect = 640.0f/480.0f; // ScreenAspectRatio - this might be incorrect (comes from SDL)
+
+	std::vector< std::vector<render::Triangle> > objectsList;
+	render::Mesh cube = render::utils::MeshUtils::createCube();
+	objectsList.push_back(cube.triangleList);
+	render::Mesh plane = render::utils::MeshUtils::createPlane();
+	objectsList.push_back(plane.triangleList);
+
+	const float& aspect = 640.0f/480.0f;
 
 	float frustumLeft = -0.25f * aspect;
 	float frustumRight = 0.25f * aspect;
@@ -222,7 +111,7 @@ int main(int argc, char *argv[])
 	cv::Mat viewProjTransform = vt * pt;
 
 	render::Renderer->setTrianglesBuffer(objectsList[0]);	// The cube is the first object
-	render::Renderer->setTexture(texture1);
+	render::Renderer->setTexture(cube.texture);
 	for (int i = 0; i < 15; i++)	// draw 15 cubes in each direction on the plane
 	{
 		for (int j = 0; j < 15; j++)
@@ -235,7 +124,7 @@ int main(int argc, char *argv[])
 
 	render::Renderer->setTrianglesBuffer(objectsList[1]);	// The plane is the second object
 	render::Renderer->setTransform(render::utils::MatrixUtils::createScalingMatrix(15.0f, 1.0f, 15.0f) * viewProjTransform);
-	render::Renderer->setTexture(texture2);
+	render::Renderer->setTexture(plane.texture);
 	render::Renderer->draw();
 
 	render::Renderer->end();

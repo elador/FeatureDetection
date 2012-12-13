@@ -1,5 +1,5 @@
 /*!
- * \file Triangle.h
+ * \file Triangle.hpp
  *
  * \author Patrik Huber
  * \date December 4, 2012

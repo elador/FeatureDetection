@@ -19,9 +19,9 @@ ENDIF()
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 
 #HDF5: (needed for reading the Model)
-#FIND_PACKAGE( HDF5 REQUIRED COMPONENTS C CXX )
-#INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
-#MESSAGE(STATUS "HDF5 include dir: ${HDF5_INCLUDE_DIRS}")
+FIND_PACKAGE( HDF5 REQUIRED COMPONENTS C CXX )
+INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
+MESSAGE(STATUS "HDF5 include dir: ${HDF5_INCLUDE_DIRS}")
 
 #Source and header files:
 SET(SOURCE
@@ -29,8 +29,11 @@ SET(SOURCE
 	src/render/Vertex.cpp
 	src/render/Triangle.cpp
 	src/render/Camera.cpp
-	#src/render/MatrixUtils.cpp
 	src/render/Texture.cpp
+	src/render/Mesh.cpp
+	src/render/MatrixUtils.cpp
+	src/render/MeshUtils.cpp
+	src/render/Hdf5Utils.cpp
 )
 
 SET(HEADERS
@@ -38,8 +41,11 @@ SET(HEADERS
 	include/render/Vertex.hpp
 	include/render/Triangle.hpp
 	include/render/Camera.hpp
-	include/render/MatrixUtils.hpp
 	include/render/Texture.hpp
+	include/render/Mesh.hpp
+	include/render/MatrixUtils.hpp
+	include/render/MeshUtils.hpp
+	include/render/Hdf5Utils.hpp
 )
 
 include_directories( "include" )
