@@ -100,13 +100,14 @@ int main(int argc, char *argv[])
 	float frustumFar = 500.0f;
 
 	// loop start
-	while(true) {
+	bool running = true;
+	while(running) {
 		camera.update(1);
 	
 		cv::Mat vt = render::Renderer->constructViewTransform(camera.getEye(), camera.getRightVector(), camera.getUpVector(), -camera.getForwardVector());
 		cv::Mat pt = render::Renderer->constructProjTransform(frustumLeft, frustumRight, frustumBottom, frustumTop, frustumNear, frustumFar);
 		cv::Mat viewProjTransform = pt * vt;
-
+/*
 		render::Renderer->setMesh(&cube);	// The cube is the first object
 		render::Renderer->setTexture(cube.texture);	// not necessary anymore
 		for (int i = 0; i < 15; i++)	// draw 15 cubes in each direction on the plane
@@ -118,21 +119,52 @@ int main(int argc, char *argv[])
 				render::Renderer->draw();
 			}
 		}
-
+*/
 		render::Renderer->setMesh(&plane);	// The plane is the second object
 		render::Renderer->setTransform(viewProjTransform * render::utils::MatrixUtils::createScalingMatrix(15.0f, 1.0f, 15.0f));
 		render::Renderer->setTexture(plane.texture);
 		render::Renderer->draw();
-
+		
 		render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("H:\\projects\\Software Renderer\\statismo_l4_head.h5");
 		render::Renderer->setMesh(&mmHeadL4);
 		cv::Mat headWorld = render::utils::MatrixUtils::createScalingMatrix(1.0f/120.0f, 1.0f/120.0f, 1.0f/120.0f);
 		render::Renderer->setTransform(viewProjTransform * headWorld);
 		render::Renderer->draw();
-
+		
 		render::Renderer->end();
 
+		cv::namedWindow("renderOutput");
+		cv::imshow("renderOutput", render::Renderer->getRendererImage());
 
+		float speed = 0.4f;
+		float mouseSpeed = 0.2f;
+		cv::Vec3f eye = camera.getEye();
+		float deltaTime = 1.0f;
+
+		char c = (char)cv::waitKey(0);
+		if (c == 'q')
+			running = false;
+		else if (c == 't')
+			std::cout << "a" << std::endl;
+		else if (c == 'w')
+			eye += speed * deltaTime * camera.getForwardVector();	// 'w' key
+		else if (c == 's')
+			eye -= speed * deltaTime * camera.getForwardVector();	// 's' key
+		else if (c == 'a')
+			eye -= speed * deltaTime * camera.getRightVector();	// 'a' key
+		else if (c == 'd')
+			eye += speed * deltaTime * camera.getRightVector();	// 'd' key
+		else if (c == 'i')
+			camera.verticalAngle += mouseSpeed;		// mouse up
+		else if (c == 'k')
+			camera.verticalAngle -= mouseSpeed;		// mouse down
+		else if (c == 'j')
+			camera.horizontalAngle += mouseSpeed;	// mouse left
+		else if (c == 'l')
+			camera.horizontalAngle -= mouseSpeed;	// mouse right
+		std::cout << "next frame" << std::endl;
+
+		camera.updateFree(eye);
 	}
 	// loop end - measure the time here
 

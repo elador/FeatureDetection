@@ -53,7 +53,7 @@ void Camera::updateFixed(const cv::Vec3f& eye, const cv::Vec3f& at, const cv::Ve
 
 void Camera::updateFree(const cv::Vec3f& eye, const cv::Vec3f& up)
 {
-	cv::Mat transformMatrix = render::utils::MatrixUtils::createRotationMatrixX(verticalAngle) * render::utils::MatrixUtils::createRotationMatrixY(horizontalAngle);
+	cv::Mat transformMatrix = render::utils::MatrixUtils::createRotationMatrixY(horizontalAngle) * render::utils::MatrixUtils::createRotationMatrixX(verticalAngle);
 	cv::Mat tmp = (cv::Mat_<float>(1, 4) << 0.0f, 0.0f, -1.0f, 0.0f);
 	cv::Mat tmpRes = tmp * transformMatrix;
 	forwardVector[0] = tmpRes.at<float>(0, 0);	// TODO hmm multiply this on paper, 3x3 mult / 4x4 mult - I only use 3 components.
@@ -78,7 +78,7 @@ void Camera::updateFree(const cv::Vec3f& eye, const cv::Vec3f& up)
 
 void Camera::updateFocused(const cv::Vec3f& at, const cv::Vec3f& up)
 {
-	cv::Mat transformMatrix = render::utils::MatrixUtils::createRotationMatrixX(verticalAngle) * render::utils::MatrixUtils::createRotationMatrixY(horizontalAngle);
+	cv::Mat transformMatrix = render::utils::MatrixUtils::createRotationMatrixY(horizontalAngle) * render::utils::MatrixUtils::createRotationMatrixX(verticalAngle);
 
 	cv::Mat tmp = (cv::Mat_<float>(1, 4) << 0.0f, 0.0f, -1.0f, 0.0f);
 	cv::Mat tmpRes = tmp * transformMatrix;
