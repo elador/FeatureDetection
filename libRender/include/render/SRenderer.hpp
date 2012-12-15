@@ -12,6 +12,7 @@
 #include <opencv2/core/core.hpp>
 
 #include "render/Triangle.hpp"
+#include "render/Mesh.hpp"
 
 namespace render {
 
@@ -39,7 +40,7 @@ public:
 	cv::Mat constructProjTransform(float left, float right, float bottom, float top, float zNear, float zFar);
 
 	void setTexture(const Texture& texture);
-	void setTrianglesBuffer(const std::vector<Triangle> trianglesBuffer);
+	void setMesh(const Mesh* mesh);
 	void setTransform(const cv::Mat transform);
 	void draw(ushort trianglesNum = 0);
 	void end();
@@ -47,7 +48,7 @@ public:
 private:
 
 	struct DrawCall	{
-		std::vector<Triangle> trianglesBuffer;
+		const Mesh* mesh; //std::vector<std::tuple<int, int, int>> triangleIndicesBuffer;
 		unsigned int trianglesNum;
 		cv::Mat transform;
 		const Texture* texture;
@@ -65,7 +66,7 @@ private:
 
 	cv::Mat windowTransform;	// 4x4 float
 
-	std::vector<Triangle> currentTrianglesBuffer;
+	const Mesh* currentMesh;	// we are not allowed to change the mesh
 	cv::Mat currentTransform;
 
 	std::vector<DrawCall> drawCalls;
@@ -74,7 +75,7 @@ private:
 	const Texture* currentTexture;
 
 	void runVertexProcessor();
-	Vertex runVertexShader(const cv::Mat& transform, const Vertex& input);
+	Vertex runVertexShader(const Mesh* mesh, const cv::Mat& transform, const int vertexNum);
 	void processProspectiveTriangleToRasterize(const Vertex& _v0, const Vertex& _v1, const Vertex& _v2, const Texture* _texture);
 	std::vector<Vertex> clipPolygonToPlaneIn4D(const std::vector<Vertex>& vertices, const cv::Vec4f& planeNormal);
 

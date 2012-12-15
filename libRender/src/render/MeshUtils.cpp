@@ -9,6 +9,9 @@
 
 #include "render/MeshUtils.hpp"
 
+#include <array>
+#include <tuple>
+
 namespace render {
 	namespace utils {
 
@@ -74,8 +77,33 @@ Mesh MeshUtils::createCube(void)
 	cube.vertices[23].position = cv::Vec4f(0.5f, -0.5f, 0.5f, 1.0f);
 	cube.vertices[23].texCoord = cv::Vec2f(1.0f, 0.0f);
 
-	// the efficiency of this might be improvable
-	cube.triangleList.push_back(render::Triangle(cube.vertices[0], cube.vertices[1], cube.vertices[2]));
+	// the efficiency of this might be improvable...
+	std::array<int, 3> vi;
+	vi[0] = 0; vi[1] = 1; vi[2] = 2;
+	cube.tvi.push_back(vi);
+	vi[0] = 0; vi[1] = 2; vi[2] = 3;
+	cube.tvi.push_back(vi);
+	vi[0] = 4; vi[1] = 5; vi[2] = 6;
+	cube.tvi.push_back(vi);
+	vi[0] = 4; vi[1] = 6; vi[2] = 7;
+	cube.tvi.push_back(vi);
+	vi[0] = 8; vi[1] = 9; vi[2] = 10;
+	cube.tvi.push_back(vi);
+	vi[0] = 8; vi[1] = 10; vi[2] = 11;
+	cube.tvi.push_back(vi);
+	vi[0] = 12; vi[1] = 13; vi[2] = 14;
+	cube.tvi.push_back(vi);
+	vi[0] = 12; vi[1] = 14; vi[2] = 15;
+	cube.tvi.push_back(vi);
+	vi[0] = 16; vi[1] = 17; vi[2] = 18;
+	cube.tvi.push_back(vi);
+	vi[0] = 16; vi[1] = 18; vi[2] = 19;
+	cube.tvi.push_back(vi);
+	vi[0] = 20; vi[1] = 21; vi[2] = 22;
+	cube.tvi.push_back(vi);
+	vi[0] = 20; vi[1] = 22; vi[2] = 23;
+	cube.tvi.push_back(vi);
+	/*cube.triangleList.push_back(render::Triangle(cube.vertices[0], cube.vertices[1], cube.vertices[2]));
 	cube.triangleList.push_back(render::Triangle(cube.vertices[0], cube.vertices[2], cube.vertices[3]));
 	cube.triangleList.push_back(render::Triangle(cube.vertices[4], cube.vertices[5], cube.vertices[6]));
 	cube.triangleList.push_back(render::Triangle(cube.vertices[4], cube.vertices[6], cube.vertices[7]));
@@ -86,7 +114,7 @@ Mesh MeshUtils::createCube(void)
 	cube.triangleList.push_back(render::Triangle(cube.vertices[16], cube.vertices[17], cube.vertices[18]));
 	cube.triangleList.push_back(render::Triangle(cube.vertices[16], cube.vertices[18], cube.vertices[19]));
 	cube.triangleList.push_back(render::Triangle(cube.vertices[20], cube.vertices[21], cube.vertices[22]));
-	cube.triangleList.push_back(render::Triangle(cube.vertices[20], cube.vertices[22], cube.vertices[23]));
+	cube.triangleList.push_back(render::Triangle(cube.vertices[20], cube.vertices[22], cube.vertices[23]));*/
 
 	cube.texture.createFromFile("data/pwr.png");
 
@@ -117,8 +145,14 @@ Mesh MeshUtils::createPlane(void)
 	plane.vertices[2].texCoord = cv::Vec2f(4.0f, 4.0f);
 	plane.vertices[3].texCoord = cv::Vec2f(4.0f, 0.0f);
 
-	plane.triangleList.push_back(render::Triangle(plane.vertices[0], plane.vertices[1], plane.vertices[2]));
-	plane.triangleList.push_back(render::Triangle(plane.vertices[0], plane.vertices[2], plane.vertices[3]));
+	std::array<int, 3> vi;
+	vi[0] = 0; vi[1] = 1; vi[2] = 2;
+	plane.tvi.push_back(vi);
+	vi[0] = 0; vi[1] = 2; vi[2] = 3;
+	plane.tvi.push_back(vi);
+
+	//plane.triangleList.push_back(render::Triangle(plane.vertices[0], plane.vertices[1], plane.vertices[2]));
+	//plane.triangleList.push_back(render::Triangle(plane.vertices[0], plane.vertices[2], plane.vertices[3]));
 
 	plane.texture.createFromFile("data/rocks.png");
 

@@ -13,7 +13,7 @@
 #include "render/Texture.hpp"
 
 #include <vector>
-#include <tuple>
+#include <array>
 #include <string>
 
 namespace render {
@@ -30,10 +30,10 @@ public:
 	std::vector<cv::Vec4f> color;	// RGBA
 	//material
 
-	std::vector< std::tuple<int, int, int> > tvi;
-	std::vector< std::tuple<int, int, int> > tni;
-	std::vector< std::tuple<int, int, int> > tti;	// triangle texcrd indices
-	std::vector< std::tuple<int, int, int> > tci;
+	std::vector< std::array<int, 3> > tvi;	// std::tuple<int, int, int> doesn't work. Use std::array<int, 3> or cv::Vec3i.
+	std::vector< std::array<int, 3> > tni;
+	std::vector< std::array<int, 3> > tti;	// triangle texcrd indices
+	std::vector< std::array<int, 3> > tci;
 	//tmi
 	
 	//bool hasVertexColor;
@@ -41,8 +41,7 @@ public:
 	std::string textureName;
 
 	std::vector<render::Vertex> vertices;
-	int triangleIndices;
-	std::vector<render::Triangle> triangleList; // --> make the renderer work with indices. How does gravis do it?
+	//std::vector<render::Triangle> triangleList; // --> make the renderer work with indices. How does gravis do it?
 
 	render::Texture texture; // optimally, we'd use a TextureManager, or maybe a smart pointer, to not load/store a texture twice if two models use the same texture.
 

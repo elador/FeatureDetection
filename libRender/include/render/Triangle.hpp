@@ -22,7 +22,7 @@ public:
 	Triangle(Vertex v0, Vertex v1, Vertex v2);
 	~Triangle(void);
 
-	std::array<Vertex, 3> vertices;
+	std::array<Vertex, 3> vertex;
 };
 
 class plane
@@ -69,7 +69,7 @@ public:
 
 	void normalize()
 	{
-		float length = sqrtf(a*a + b*b + c*c);
+		float length = sqrt(a*a + b*b + c*c);
 
 		a /= length;
 		b /= length;

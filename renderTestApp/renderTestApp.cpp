@@ -88,11 +88,8 @@ int main(int argc, char *argv[])
 	render::Renderer->create();
 	camera.init();
 
-	std::vector< std::vector<render::Triangle> > objectsList;
 	render::Mesh cube = render::utils::MeshUtils::createCube();
-	objectsList.push_back(cube.triangleList);
 	render::Mesh plane = render::utils::MeshUtils::createPlane();
-	objectsList.push_back(plane.triangleList);
 
 	const float& aspect = 640.0f/480.0f;
 
@@ -110,8 +107,8 @@ int main(int argc, char *argv[])
 	cv::Mat pt = render::Renderer->constructProjTransform(frustumLeft, frustumRight, frustumBottom, frustumTop, frustumNear, frustumFar);
 	cv::Mat viewProjTransform = pt * vt;
 
-	render::Renderer->setTrianglesBuffer(objectsList[0]);	// The cube is the first object
-	render::Renderer->setTexture(cube.texture);
+	render::Renderer->setMesh(&cube);	// The cube is the first object
+	render::Renderer->setTexture(cube.texture);	// not necessary anymore
 	for (int i = 0; i < 15; i++)	// draw 15 cubes in each direction on the plane
 	{
 		for (int j = 0; j < 15; j++)
@@ -122,7 +119,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	render::Renderer->setTrianglesBuffer(objectsList[1]);	// The plane is the second object
+	render::Renderer->setMesh(&plane);	// The plane is the second object
 	render::Renderer->setTransform(viewProjTransform * render::utils::MatrixUtils::createScalingMatrix(15.0f, 1.0f, 15.0f));
 	render::Renderer->setTexture(plane.texture);
 	render::Renderer->draw();

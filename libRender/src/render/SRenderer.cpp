@@ -16,6 +16,8 @@
 
 #include <cmath>
 #include <iostream>
+#include <array>
+#include <tuple>
 
 namespace render {
 
@@ -107,9 +109,9 @@ cv::Mat SRenderer::constructProjTransform(float left, float right, float bottom,
 	//return perspective * orthogonal;	// <-- original
 }
 
-void SRenderer::setTrianglesBuffer(const std::vector<Triangle> trianglesBuffer)
+void SRenderer::setMesh(const Mesh* mesh) // make an optional argument, an index-list of vertices or so to render, if we don't want to render the full mesh.
 {
-	currentTrianglesBuffer = trianglesBuffer;	// maybe "&trianglesBuffer" for better speed? how does std::vector behave?
+	currentMesh = mesh;
 }
 
 void SRenderer::setTransform(const cv::Mat transform)
@@ -121,8 +123,8 @@ void SRenderer::draw(ushort trianglesNum)
 {
 	DrawCall drawCall;
 
-	drawCall.trianglesBuffer = currentTrianglesBuffer;
-	drawCall.trianglesNum = (trianglesNum == 0 ? currentTrianglesBuffer.size() : trianglesNum);
+	drawCall.mesh = currentMesh;
+	drawCall.trianglesNum = (trianglesNum == 0 ? currentMesh->tvi.size() : trianglesNum);	// not needed? only if I don't draw the whole mesh?
 	drawCall.transform = currentTransform;
 	drawCall.texture = currentTexture;
 
@@ -156,12 +158,19 @@ void SRenderer::runVertexProcessor()
 {
 	for (unsigned int i = 0; i < drawCalls.size(); i++)
 	{
-		for (unsigned int j = 0; j < drawCalls[i].trianglesNum; j++)
+		for (unsigned int j = 0; j < drawCalls[i].trianglesNum; j++)	// loops through mesh.tvi
 		{
-			Triangle triangle;
+			Triangle triangle;	// this is going to be the triangle in clip coordinates (after MVP-transform)
 
-			for (unsigned char k = 0; k < 3; k++)	// I should transform all at once. Vertices = columns ( [V1; V2; V3; ...] * ViewProj... )
-				triangle.vertices[k] = runVertexShader(drawCalls[i].transform, drawCalls[i].trianglesBuffer[j].vertices[k]);
+			for (unsigned char k = 0; k < 3; k++) {	// I should transform all at once. Vertices = columns ( [V1; V2; V3; ...] * ViewProj... )
+				triangle.vertex[k] = runVertexShader( drawCalls[i].mesh, drawCalls[i].transform, drawCalls[i].mesh->tvi[j][k] );
+				// vertex data gets copied here. (created also in the function). Could avoid this by using pointer, ref... whatever...
+				//triangle.vertex[k] = runVertexShader(drawCalls[i].transform, drawCalls[i].trianglesBuffer[j].vertices[k]);
+			}
+
+			// Hmm I transform many vertices twice or even more, because they are used in more than one triangle.
+			// Maybe make that better, eg a loop over mesh.vertices instead of tvi, or maybe make a new list with all transformed triangles, in same order, then use this plus mesh.tvi
+			// this way I can also transform them all at once!
 
 			// classify vertices visibility with respect to the planes of the view frustum
 
@@ -171,17 +180,17 @@ void SRenderer::runVertexProcessor()
 			{
 				visibilityBits[k] = 0;
 
-				if (triangle.vertices[k].position[0] < -triangle.vertices[k].position[3])
+				if (triangle.vertex[k].position[0] < -triangle.vertex[k].position[3])
 					visibilityBits[k] |= 1;
-				if (triangle.vertices[k].position[0] > triangle.vertices[k].position[3])
+				if (triangle.vertex[k].position[0] > triangle.vertex[k].position[3])
 					visibilityBits[k] |= 2;
-				if (triangle.vertices[k].position[1] < -triangle.vertices[k].position[3])
+				if (triangle.vertex[k].position[1] < -triangle.vertex[k].position[3])
 					visibilityBits[k] |= 4;
-				if (triangle.vertices[k].position[1] > triangle.vertices[k].position[3])
+				if (triangle.vertex[k].position[1] > triangle.vertex[k].position[3])
 					visibilityBits[k] |= 8;
-				if (triangle.vertices[k].position[2] < -triangle.vertices[k].position[3])
+				if (triangle.vertex[k].position[2] < -triangle.vertex[k].position[3])
 					visibilityBits[k] |= 16;
-				if (triangle.vertices[k].position[2] > triangle.vertices[k].position[3])
+				if (triangle.vertex[k].position[2] > triangle.vertex[k].position[3])
 					visibilityBits[k] |= 32;
 			}
 
@@ -195,9 +204,9 @@ void SRenderer::runVertexProcessor()
 			if ( (visibilityBits[0] | visibilityBits[1] | visibilityBits[2]) == 0 )
 			{
 				processProspectiveTriangleToRasterize(
-					triangle.vertices[0],
-					triangle.vertices[1],
-					triangle.vertices[2],
+					triangle.vertex[0],
+					triangle.vertex[1],
+					triangle.vertex[2],
 					drawCalls[i].texture);
 
 				continue;
@@ -206,9 +215,9 @@ void SRenderer::runVertexProcessor()
 			// at this moment the triangle is known to be intersecting one of the view frustum's planes
 
 			std::vector<Vertex> vertices;
-			vertices.push_back(triangle.vertices[0]);
-			vertices.push_back(triangle.vertices[1]);
-			vertices.push_back(triangle.vertices[2]);
+			vertices.push_back(triangle.vertex[0]);
+			vertices.push_back(triangle.vertex[1]);
+			vertices.push_back(triangle.vertex[2]);
 
 			vertices = clipPolygonToPlaneIn4D(vertices, cv::Vec4f(0.0f, 0.0f, -1.0f, -1.0f));	// This is the near-plane, right? Because we only have to check against that. For tlbr planes of the frustum, we can just draw, and then clamp it because it's outside the screen
 			//	vertices = clipPolygonToPlaneIn4D(vertices, vec4(0.0f, 0.0f, 1.0f, -1.0f));
@@ -233,18 +242,18 @@ void SRenderer::runVertexProcessor()
 	}
 }
 
-Vertex SRenderer::runVertexShader(const cv::Mat& transform, const Vertex& input)
+Vertex SRenderer::runVertexShader(const Mesh* mesh, const cv::Mat& transform, const int vertexNum)
 {
 	Vertex output;
-
-	cv::Mat tmp =  transform * cv::Mat(input.position);	// places the vec as a row in the matrix. This is viewProjTransform * worldTransform
+	
+	cv::Mat tmp =  transform * cv::Mat(mesh->vertices[vertexNum].position);	// places the vec as a row in the matrix. This is viewProjTransform * worldTransform
 	output.position[0] = tmp.at<float>(0, 0);
 	output.position[1] = tmp.at<float>(1, 0);
 	output.position[2] = tmp.at<float>(2, 0);
 	output.position[3] = tmp.at<float>(3, 0);
 
-	output.color = input.color;
-	output.texCoord = input.texCoord;
+	output.color = mesh->vertices[vertexNum].color;
+	output.texCoord = mesh->vertices[vertexNum].texCoord;
 
 	return output;
 }
@@ -253,7 +262,7 @@ void SRenderer::processProspectiveTriangleToRasterize(const Vertex& _v0, const V
 {
 	TriangleToRasterize t;
 
-	t.v0 = _v0;
+	t.v0 = _v0;	// no memcopy I think. the transformed vertices don't get copied and exist only once. They are a local variable in runVertexProcessor(), the ref is passed here, and if we need to rasterize it, it gets push_back'ed (=copied?) to trianglesToRasterize. Perfect I think.
 	t.v1 = _v1;
 	t.v2 = _v2;
 	t.texture = _texture;
@@ -264,21 +273,22 @@ void SRenderer::processProspectiveTriangleToRasterize(const Vertex& _v0, const V
 
 	// project from 4D to 2D window position with depth value in z coordinate
 	t.v0.position = t.v0.position / t.v0.position[3];	// divide by w
-	cv::Mat tmp = windowTransform * cv::Mat(t.v0.position);	// places the vec as a row in the matrix
+	cv::Mat omg(t.v0.position);
+	cv::Mat tmp = windowTransform * cv::Mat(t.v0.position);	// places the vec as a column in the matrix
 	t.v0.position[0] = tmp.at<float>(0, 0);
 	t.v0.position[1] = tmp.at<float>(1, 0);
 	t.v0.position[2] = tmp.at<float>(2, 0);
 	t.v0.position[3] = tmp.at<float>(3, 0);
 	
 	t.v1.position = t.v1.position / t.v1.position[3];
-	tmp = windowTransform * cv::Mat(t.v1.position);	// places the vec as a row in the matrix
+	tmp = windowTransform * cv::Mat(t.v1.position);	// places the vec as a column in the matrix
 	t.v1.position[0] = tmp.at<float>(0, 0);
 	t.v1.position[1] = tmp.at<float>(1, 0);
 	t.v1.position[2] = tmp.at<float>(2, 0);
 	t.v1.position[3] = tmp.at<float>(3, 0);
 
 	t.v2.position = t.v2.position / t.v2.position[3];
-	tmp = windowTransform * cv::Mat(t.v2.position);	// places the vec as a row in the matrix
+	tmp = windowTransform * cv::Mat(t.v2.position);	// places the vec as a column in the matrix
 	t.v2.position[0] = tmp.at<float>(0, 0);
 	t.v2.position[1] = tmp.at<float>(1, 0);
 	t.v2.position[2] = tmp.at<float>(2, 0);
