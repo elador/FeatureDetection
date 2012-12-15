@@ -124,9 +124,18 @@ int main(int argc, char *argv[])
 	render::Renderer->setTexture(plane.texture);
 	render::Renderer->draw();
 
+	render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("H:\\projects\\Software Renderer\\statismo_l4_head.h5");
+	render::Renderer->setMesh(&mmHeadL4);
+	cv::Mat headWorld = render::utils::MatrixUtils::createScalingMatrix(1.0f/120.0f, 1.0f/120.0f, 1.0f/120.0f);
+	render::Renderer->setTransform(viewProjTransform * headWorld);
+	render::Renderer->draw();
+
+
 	render::Renderer->end();
 	// loop end - measure the time here
 
+	cv::imwrite("colorBuffer.png", render::Renderer->getRendererImage());
+	cv::imwrite("depthBuffer.png", render::Renderer->getRendererDepthBuffer());
 
 	return 0;
 }

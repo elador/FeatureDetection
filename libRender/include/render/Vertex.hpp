@@ -21,7 +21,7 @@ public:
 
 	cv::Vec4f position;	// f3Vec
 	cv::Vec3f color;	// should be fRGBA, so f4Vec
-	cv::Vec2f texCoord;	// f3Vec?
+	cv::Vec2f texcrd;	// f3Vec?
 
 };
 

@@ -13,6 +13,7 @@ namespace render {
 
 Mesh::Mesh(void)
 {
+	hasTexture = false;
 }
 
 

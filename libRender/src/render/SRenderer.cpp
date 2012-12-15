@@ -44,8 +44,8 @@ void SRenderer::create()
 	screenWidth_tiles = (screenWidth + 15) / 16;
 	screenHeight_tiles = (screenHeight + 15) / 16;
 
-	//colorBuffer.resize(screenWidth * screenHeight);	// TODO init the Mat here
-	//depthBuffer.resize(screenWidth * screenHeight);	// 
+	this->colorBuffer = cv::Mat::zeros(screenHeight, screenWidth, CV_8UC4);
+	this->depthBuffer = cv::Mat::ones(screenHeight, screenWidth, CV_32FC1)*1000000;
 
 }
 
@@ -138,15 +138,6 @@ void SRenderer::end()
 	
 	drawCalls.clear();
 	trianglesToRasterize.clear();
-
-	cv::Mat res;
-	cv::cvtColor(this->colorBuffer, res, CV_BGRA2BGR);
-	cv::imwrite("colorBuffer.png", res);
-
-	cv::Mat db = depthBuffer * 255.0f;
-	db.convertTo(db, CV_8UC1);
-	cv::imwrite("depthBuffer.png", db);
-	
 }
 
 void SRenderer::setTexture(const Texture& texture)
@@ -246,14 +237,14 @@ Vertex SRenderer::runVertexShader(const Mesh* mesh, const cv::Mat& transform, co
 {
 	Vertex output;
 	
-	cv::Mat tmp =  transform * cv::Mat(mesh->vertices[vertexNum].position);	// places the vec as a row in the matrix. This is viewProjTransform * worldTransform
+	cv::Mat tmp =  transform * cv::Mat(mesh->vertex[vertexNum].position);	// places the vec as a row in the matrix. This is viewProjTransform * worldTransform
 	output.position[0] = tmp.at<float>(0, 0);
 	output.position[1] = tmp.at<float>(1, 0);
 	output.position[2] = tmp.at<float>(2, 0);
 	output.position[3] = tmp.at<float>(3, 0);
 
-	output.color = mesh->vertices[vertexNum].color;
-	output.texCoord = mesh->vertices[vertexNum].texCoord;
+	output.color = mesh->vertex[vertexNum].color;
+	output.texcrd = mesh->vertex[vertexNum].texcrd;
 
 	return output;
 }
@@ -273,7 +264,6 @@ void SRenderer::processProspectiveTriangleToRasterize(const Vertex& _v0, const V
 
 	// project from 4D to 2D window position with depth value in z coordinate
 	t.v0.position = t.v0.position / t.v0.position[3];	// divide by w
-	cv::Mat omg(t.v0.position);
 	cv::Mat tmp = windowTransform * cv::Mat(t.v0.position);	// places the vec as a column in the matrix
 	t.v0.position[0] = tmp.at<float>(0, 0);
 	t.v0.position[1] = tmp.at<float>(1, 0);
@@ -312,12 +302,12 @@ void SRenderer::processProspectiveTriangleToRasterize(const Vertex& _v0, const V
 	t.one_over_v2ToLine01 = 1.0f / implicitLine(t.v2.position[0], t.v2.position[1], t.v0.position, t.v1.position);
 
 	// for partial derivatives computation
-	t.alphaPlane = plane(cv::Vec3f(t.v0.position[0], t.v0.position[1], t.v0.texCoord[0]*t.one_over_z0),
-						 cv::Vec3f(t.v1.position[0], t.v1.position[1], t.v1.texCoord[0]*t.one_over_z1),
-						 cv::Vec3f(t.v2.position[0], t.v2.position[1], t.v2.texCoord[0]*t.one_over_z2));
-	t.betaPlane = plane(cv::Vec3f(t.v0.position[0], t.v0.position[1], t.v0.texCoord[1]*t.one_over_z0),
-						cv::Vec3f(t.v1.position[0], t.v1.position[1], t.v1.texCoord[1]*t.one_over_z1),
-						cv::Vec3f(t.v2.position[0], t.v2.position[1], t.v2.texCoord[1]*t.one_over_z2));
+	t.alphaPlane = plane(cv::Vec3f(t.v0.position[0], t.v0.position[1], t.v0.texcrd[0]*t.one_over_z0),
+						 cv::Vec3f(t.v1.position[0], t.v1.position[1], t.v1.texcrd[0]*t.one_over_z1),
+						 cv::Vec3f(t.v2.position[0], t.v2.position[1], t.v2.texcrd[0]*t.one_over_z2));
+	t.betaPlane = plane(cv::Vec3f(t.v0.position[0], t.v0.position[1], t.v0.texcrd[1]*t.one_over_z0),
+						cv::Vec3f(t.v1.position[0], t.v1.position[1], t.v1.texcrd[1]*t.one_over_z1),
+						cv::Vec3f(t.v2.position[0], t.v2.position[1], t.v2.texcrd[1]*t.one_over_z2));
 	t.gammaPlane = plane(cv::Vec3f(t.v0.position[0], t.v0.position[1], t.one_over_z0),
 						 cv::Vec3f(t.v1.position[0], t.v1.position[1], t.one_over_z1),
 						 cv::Vec3f(t.v2.position[0], t.v2.position[1], t.one_over_z2));
@@ -362,7 +352,7 @@ std::vector<Vertex> SRenderer::clipPolygonToPlaneIn4D(const std::vector<Vertex>&
 
 			cv::Vec4f position = vertices[a].position + t*direction;
 			cv::Vec3f color = vertices[a].color + t*(vertices[b].color - vertices[a].color);
-			cv::Vec2f texCoord = vertices[a].texCoord + t*(vertices[b].texCoord - vertices[a].texCoord);
+			cv::Vec2f texCoord = vertices[a].texcrd + t*(vertices[b].texcrd - vertices[a].texcrd);
 
 			if (fa < 0)
 			{
@@ -402,8 +392,8 @@ float SRenderer::implicitLine(float x, float y, const cv::Vec4f& v1, const cv::V
 void SRenderer::runPixelProcessor()
 {
 	// clear buffers
-	cv::Mat colorBuffer = cv::Mat::zeros(screenHeight, screenWidth, CV_8UC4);
-	cv::Mat depthBuffer = cv::Mat::ones(screenHeight, screenWidth, CV_32FC1)*1000000;
+	this->colorBuffer = cv::Mat::zeros(screenHeight, screenWidth, CV_8UC4);
+	this->depthBuffer = cv::Mat::ones(screenHeight, screenWidth, CV_32FC1)*1000000;
 
 	for (unsigned int i = 0; i < trianglesToRasterize.size(); i++)
 	{
@@ -442,7 +432,7 @@ void SRenderer::runPixelProcessor()
 
 						// attributes interpolation
 						cv::Vec3f color_persp = alpha*t.v0.color + beta*t.v1.color + gamma*t.v2.color;
-						cv::Vec2f texCoord_persp = alpha*t.v0.texCoord + beta*t.v1.texCoord + gamma*t.v2.texCoord;
+						cv::Vec2f texCoord_persp = alpha*t.v0.texcrd + beta*t.v1.texcrd + gamma*t.v2.texcrd;
 
 						// partial derivatives (for mip-mapping)
 
@@ -483,13 +473,13 @@ void SRenderer::runPixelProcessor()
 			}
 		}
 	}
-	this->colorBuffer = colorBuffer;
-	this->depthBuffer = depthBuffer;
+
 }
 
 cv::Vec3f SRenderer::runPixelShader(const Texture* texture, const cv::Vec3f& color, const cv::Vec2f& texCoord)
 {
-	return color.mul(tex2D(texture, texCoord));	// element-wise multiplication
+	//return color.mul(tex2D(texture, texCoord));	// element-wise multiplication
+	return color;
 }
 
 cv::Vec3f SRenderer::tex2D(const Texture* texture, const cv::Vec2f& texCoord)
@@ -579,6 +569,20 @@ cv::Vec3f SRenderer::tex2D_linear(const Texture* texture, const cv::Vec2f& image
 float SRenderer::clamp(float x, float a, float b)
 {
 	return std::max(std::min(x, b), a);
+}
+
+cv::Mat SRenderer::getRendererImage()
+{
+	cv::Mat res;
+	cv::cvtColor(this->colorBuffer, res, CV_BGRA2BGR);	// good? does imwrite really don't write alpha-chan images? But maybe the alpha-chan isn't implemented very good anyway
+	return res;
+}
+
+cv::Mat SRenderer::getRendererDepthBuffer()
+{
+	cv::Mat db = this->depthBuffer * 255.0f;
+	db.convertTo(db, CV_8UC1);
+	return db;
 }
 
 }

@@ -45,6 +45,9 @@ public:
 	void draw(ushort trianglesNum = 0);
 	void end();
 
+	cv::Mat getRendererImage();
+	cv::Mat getRendererDepthBuffer();
+
 private:
 
 	struct DrawCall	{
@@ -54,9 +57,7 @@ private:
 		const Texture* texture;
 	};
 
-	//std::vector<unsigned char> colorBuffer;	// typedef unsigned char byte; Points to getSDLSurface()->pixels (void*)
 	cv::Mat colorBuffer;
-	//std::vector<float> depthBuffer;
 	cv::Mat depthBuffer;
 
 	unsigned int screenWidth;

@@ -20,7 +20,7 @@ Vertex::Vertex(const cv::Vec4f& position, const cv::Vec3f& color, const cv::Vec2
 {
 	this->position = position;
 	this->color = color;
-	this->texCoord = texCoord;
+	this->texcrd = texCoord;
 }
 
 Vertex::~Vertex(void)
