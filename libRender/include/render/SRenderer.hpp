@@ -89,7 +89,7 @@ private:
 
 	float dudx, dudy, dvdx, dvdy; // partial derivatives of U/V coordinates with respect to X/Y pixel's screen coordinates
 	
-	cv::Vec3f runPixelShader(const Texture* texture, const cv::Vec3f& color, const cv::Vec2f& texCoord);
+	cv::Vec3f runPixelShader(const Texture* texture, const cv::Vec3f& color, const cv::Vec2f& texCoord, bool useTexturing=true);
 	cv::Vec3f tex2D(const Texture* texture, const cv::Vec2f& texCoord);
 	cv::Vec3f tex2D_linear_mipmap_linear(const Texture* texture, const cv::Vec2f& texCoord);
 	cv::Vec3f tex2D_linear(const Texture* texture, const cv::Vec2f& imageTexCoord, unsigned char mipmapIndex);

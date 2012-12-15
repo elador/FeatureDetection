@@ -126,7 +126,11 @@ void SRenderer::draw(ushort trianglesNum)
 	drawCall.mesh = currentMesh;
 	drawCall.trianglesNum = (trianglesNum == 0 ? currentMesh->tvi.size() : trianglesNum);	// not needed? only if I don't draw the whole mesh?
 	drawCall.transform = currentTransform;
-	drawCall.texture = currentTexture;
+	if(currentMesh->hasTexture==false) {
+		drawCall.texture = NULL;
+	} else {
+		drawCall.texture = currentTexture;
+	}
 
 	drawCalls.push_back(drawCall);
 }
@@ -154,7 +158,7 @@ void SRenderer::runVertexProcessor()
 			Triangle triangle;	// this is going to be the triangle in clip coordinates (after MVP-transform)
 
 			for (unsigned char k = 0; k < 3; k++) {	// I should transform all at once. Vertices = columns ( [V1; V2; V3; ...] * ViewProj... )
-				triangle.vertex[k] = runVertexShader( drawCalls[i].mesh, drawCalls[i].transform, drawCalls[i].mesh->tvi[j][k] );
+				triangle.vertex[k] = runVertexShader( drawCalls[i].mesh, drawCalls[i].transform, drawCalls[i].mesh->tvi[j][k] );	// if tvi != tci then of course the vertex-coloring is wrong!
 				// vertex data gets copied here. (created also in the function). Could avoid this by using pointer, ref... whatever...
 				//triangle.vertex[k] = runVertexShader(drawCalls[i].transform, drawCalls[i].trianglesBuffer[j].vertices[k]);
 			}
@@ -194,7 +198,7 @@ void SRenderer::runVertexProcessor()
 			// all vertices are visible - pass the whole triangle to the rasterizer
 			if ( (visibilityBits[0] | visibilityBits[1] | visibilityBits[2]) == 0 )
 			{
-				processProspectiveTriangleToRasterize(
+				processProspectiveTriangleToRasterize(	// does nothing with the texture, only copy either NULL or the texcoords
 					triangle.vertex[0],
 					triangle.vertex[1],
 					triangle.vertex[2],
@@ -244,7 +248,8 @@ Vertex SRenderer::runVertexShader(const Mesh* mesh, const cv::Mat& transform, co
 	output.position[3] = tmp.at<float>(3, 0);
 
 	output.color = mesh->vertex[vertexNum].color;
-	output.texcrd = mesh->vertex[vertexNum].texcrd;
+	if(mesh->hasTexture)	// not the 100% fastest/most correct approach. What if the model has a texture but we want it to render with vertex color, etc.
+		output.texcrd = mesh->vertex[vertexNum].texcrd;
 
 	return output;
 }
@@ -352,7 +357,7 @@ std::vector<Vertex> SRenderer::clipPolygonToPlaneIn4D(const std::vector<Vertex>&
 
 			cv::Vec4f position = vertices[a].position + t*direction;
 			cv::Vec3f color = vertices[a].color + t*(vertices[b].color - vertices[a].color);
-			cv::Vec2f texCoord = vertices[a].texcrd + t*(vertices[b].texcrd - vertices[a].texcrd);
+			cv::Vec2f texCoord = vertices[a].texcrd + t*(vertices[b].texcrd - vertices[a].texcrd);	// We could omit that if we don't render with texture.
 
 			if (fa < 0)
 			{
@@ -434,25 +439,29 @@ void SRenderer::runPixelProcessor()
 						cv::Vec3f color_persp = alpha*t.v0.color + beta*t.v1.color + gamma*t.v2.color;
 						cv::Vec2f texCoord_persp = alpha*t.v0.texcrd + beta*t.v1.texcrd + gamma*t.v2.texcrd;
 
+						cv::Vec3f pixelColor;
 						// partial derivatives (for mip-mapping)
+						if(t.texture!=NULL) {	// We use texturing
+							float u_over_z = -(t.alphaPlane.a*x + t.alphaPlane.b*y + t.alphaPlane.d) * t.one_over_alpha_c;
+							float v_over_z = -(t.betaPlane.a*x + t.betaPlane.b*y + t.betaPlane.d) * t.one_over_beta_c;
+							float one_over_z = -(t.gammaPlane.a*x + t.gammaPlane.b*y + t.gammaPlane.d) * t.one_over_gamma_c;
+							float one_over_squared_one_over_z = 1.0f / pow(one_over_z, 2);
 
-						float u_over_z = -(t.alphaPlane.a*x + t.alphaPlane.b*y + t.alphaPlane.d) * t.one_over_alpha_c;
-						float v_over_z = -(t.betaPlane.a*x + t.betaPlane.b*y + t.betaPlane.d) * t.one_over_beta_c;
-						float one_over_z = -(t.gammaPlane.a*x + t.gammaPlane.b*y + t.gammaPlane.d) * t.one_over_gamma_c;
-						float one_over_squared_one_over_z = 1.0f / pow(one_over_z, 2);
+							dudx = one_over_squared_one_over_z * (t.alpha_ffx * one_over_z - u_over_z * t.gamma_ffx);
+							dudy = one_over_squared_one_over_z * (t.beta_ffx * one_over_z - v_over_z * t.gamma_ffx);
+							dvdx = one_over_squared_one_over_z * (t.alpha_ffy * one_over_z - u_over_z * t.gamma_ffy);
+							dvdy = one_over_squared_one_over_z * (t.beta_ffy * one_over_z - v_over_z * t.gamma_ffy);
 
-						dudx = one_over_squared_one_over_z * (t.alpha_ffx * one_over_z - u_over_z * t.gamma_ffx);
-						dudy = one_over_squared_one_over_z * (t.beta_ffx * one_over_z - v_over_z * t.gamma_ffx);
-						dvdx = one_over_squared_one_over_z * (t.alpha_ffy * one_over_z - u_over_z * t.gamma_ffy);
-						dvdy = one_over_squared_one_over_z * (t.beta_ffy * one_over_z - v_over_z * t.gamma_ffy);
+							dudx *= t.texture->mipmaps[0].cols;
+							dudy *= t.texture->mipmaps[0].cols;
+							dvdx *= t.texture->mipmaps[0].rows;
+							dvdy *= t.texture->mipmaps[0].rows;
 
-						dudx *= t.texture->mipmaps[0].cols;
-						dudy *= t.texture->mipmaps[0].cols;
-						dvdx *= t.texture->mipmaps[0].rows;
-						dvdy *= t.texture->mipmaps[0].rows;
-
-						// run pixel shader
-						cv::Vec3f pixelColor = runPixelShader(t.texture, color_persp, texCoord_persp);
+							// run pixel shader
+							pixelColor = runPixelShader(t.texture, color_persp, texCoord_persp);
+						} else {	// We use vertex-coloring
+							pixelColor = runPixelShader(t.texture, color_persp, texCoord_persp, false);
+						}
 
 						// clamp bytes to 255
 						unsigned char blue = (unsigned char)(255.0f * std::min(pixelColor[0], 1.0f));
@@ -476,10 +485,13 @@ void SRenderer::runPixelProcessor()
 
 }
 
-cv::Vec3f SRenderer::runPixelShader(const Texture* texture, const cv::Vec3f& color, const cv::Vec2f& texCoord)
+cv::Vec3f SRenderer::runPixelShader(const Texture* texture, const cv::Vec3f& color, const cv::Vec2f& texCoord, bool useTexturing)
 {
-	//return color.mul(tex2D(texture, texCoord));	// element-wise multiplication
-	return color;
+	if(useTexturing) {
+		return color.mul(tex2D(texture, texCoord));	// element-wise multiplication
+	} else {
+		return color;
+	}
 }
 
 cv::Vec3f SRenderer::tex2D(const Texture* texture, const cv::Vec2f& texCoord)

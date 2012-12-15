@@ -25,10 +25,9 @@
 #include <iostream>
 #include <fstream>
 
-#include <boost/math/constants/constants.hpp>
-#include "opencv2/core/core.hpp" // for FdImage.h
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/highgui/highgui.hpp"
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
@@ -101,37 +100,40 @@ int main(int argc, char *argv[])
 	float frustumFar = 500.0f;
 
 	// loop start
-	camera.update(1);
+	while(true) {
+		camera.update(1);
 	
-	cv::Mat vt = render::Renderer->constructViewTransform(camera.getEye(), camera.getRightVector(), camera.getUpVector(), -camera.getForwardVector());
-	cv::Mat pt = render::Renderer->constructProjTransform(frustumLeft, frustumRight, frustumBottom, frustumTop, frustumNear, frustumFar);
-	cv::Mat viewProjTransform = pt * vt;
+		cv::Mat vt = render::Renderer->constructViewTransform(camera.getEye(), camera.getRightVector(), camera.getUpVector(), -camera.getForwardVector());
+		cv::Mat pt = render::Renderer->constructProjTransform(frustumLeft, frustumRight, frustumBottom, frustumTop, frustumNear, frustumFar);
+		cv::Mat viewProjTransform = pt * vt;
 
-	render::Renderer->setMesh(&cube);	// The cube is the first object
-	render::Renderer->setTexture(cube.texture);	// not necessary anymore
-	for (int i = 0; i < 15; i++)	// draw 15 cubes in each direction on the plane
-	{
-		for (int j = 0; j < 15; j++)
+		render::Renderer->setMesh(&cube);	// The cube is the first object
+		render::Renderer->setTexture(cube.texture);	// not necessary anymore
+		for (int i = 0; i < 15; i++)	// draw 15 cubes in each direction on the plane
 		{
-			cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(3.0f*(i - 7), 0.5f, 3.0f*(j - 7));
-			render::Renderer->setTransform(viewProjTransform * worldTransform);
-			render::Renderer->draw();
+			for (int j = 0; j < 15; j++)
+			{
+				cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(3.0f*(i - 7), 0.5f, 3.0f*(j - 7));
+				render::Renderer->setTransform(viewProjTransform * worldTransform);
+				render::Renderer->draw();
+			}
 		}
+
+		render::Renderer->setMesh(&plane);	// The plane is the second object
+		render::Renderer->setTransform(viewProjTransform * render::utils::MatrixUtils::createScalingMatrix(15.0f, 1.0f, 15.0f));
+		render::Renderer->setTexture(plane.texture);
+		render::Renderer->draw();
+
+		render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("H:\\projects\\Software Renderer\\statismo_l4_head.h5");
+		render::Renderer->setMesh(&mmHeadL4);
+		cv::Mat headWorld = render::utils::MatrixUtils::createScalingMatrix(1.0f/120.0f, 1.0f/120.0f, 1.0f/120.0f);
+		render::Renderer->setTransform(viewProjTransform * headWorld);
+		render::Renderer->draw();
+
+		render::Renderer->end();
+
+
 	}
-
-	render::Renderer->setMesh(&plane);	// The plane is the second object
-	render::Renderer->setTransform(viewProjTransform * render::utils::MatrixUtils::createScalingMatrix(15.0f, 1.0f, 15.0f));
-	render::Renderer->setTexture(plane.texture);
-	render::Renderer->draw();
-
-	render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("H:\\projects\\Software Renderer\\statismo_l4_head.h5");
-	render::Renderer->setMesh(&mmHeadL4);
-	cv::Mat headWorld = render::utils::MatrixUtils::createScalingMatrix(1.0f/120.0f, 1.0f/120.0f, 1.0f/120.0f);
-	render::Renderer->setTransform(viewProjTransform * headWorld);
-	render::Renderer->draw();
-
-
-	render::Renderer->end();
 	// loop end - measure the time here
 
 	cv::imwrite("colorBuffer.png", render::Renderer->getRendererImage());

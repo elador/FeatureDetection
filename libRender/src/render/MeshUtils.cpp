@@ -120,6 +120,7 @@ Mesh MeshUtils::createCube(void)
 	cube.triangleList.push_back(render::Triangle(cube.vertex[20], cube.vertex[22], cube.vertex[23]));*/
 
 	cube.texture.createFromFile("data/pwr.png");
+	cube.hasTexture = true;
 
 	return cube;
 }
@@ -158,6 +159,7 @@ Mesh MeshUtils::createPlane(void)
 	//plane.triangleList.push_back(render::Triangle(plane.vertex[0], plane.vertex[2], plane.vertex[3]));
 
 	plane.texture.createFromFile("data/rocks.png");
+	plane.hasTexture = true;
 
 	return plane;
 }
@@ -223,7 +225,7 @@ Mesh MeshUtils::readFromHdf5(std::string filename)
 		//pReference->color.resize( matColor.rows );
 		for ( size_t i = 0; i < matColor.rows; ++i )
 		{
-			mesh.vertex[i].color = cv::Vec3f(matColor.at<float>(i, 0), matColor.at<float>(i, 1), matColor.at<float>(i, 2));	// order in hdf5: R, G, B
+			mesh.vertex[i].color = cv::Vec3f(matColor.at<float>(i, 2), matColor.at<float>(i, 1), matColor.at<float>(i, 0));	// order in hdf5: RGB. Order in OCV/vertex.color: BGR
 		}
 
 		// triangle list
@@ -251,6 +253,7 @@ Mesh MeshUtils::readFromHdf5(std::string filename)
 
 	h5Model.close();
 
+	mesh.hasTexture = false;
 
 	return mesh; // pReference
 }
