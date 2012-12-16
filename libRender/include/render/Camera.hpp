@@ -37,9 +37,23 @@ public:
 	void updateFree(const cv::Vec3f& eye, const cv::Vec3f& up = cv::Vec3f(0.0f, 1.0f, 0.0f));
 	void updateFocused(const cv::Vec3f& at, const cv::Vec3f& up = cv::Vec3f(0.0f, 1.0f, 0.0f));
 
+	void setFrustum(float l, float r, float t, float b, float n, float f);
+
 private:
 	cv::Vec3f eye, at, up;
 	cv::Vec3f forwardVector, rightVector, upVector;
+
+	struct Frustum {
+		float l;
+		float r;
+		float t;
+		float b;
+		float n;
+		float f;
+	};
+
+public:
+	Frustum frustum;	// TODO make private
 };
 
 }

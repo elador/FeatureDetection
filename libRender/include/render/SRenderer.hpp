@@ -8,11 +8,13 @@
  */
 #pragma once
 
-#include <vector>
-#include <opencv2/core/core.hpp>
-
 #include "render/Triangle.hpp"
 #include "render/Mesh.hpp"
+#include "render/Camera.hpp"
+
+#include <opencv2/core/core.hpp>
+
+#include <vector>
 
 namespace render {
 
@@ -36,8 +38,8 @@ public:
 
 	void setViewport(unsigned int screenWidth, unsigned int screenHeight);
 
-	cv::Mat constructViewTransform(const cv::Vec3f& position, const cv::Vec3f& rightVector, const cv::Vec3f& upVector, const cv::Vec3f& forwardVector);
-	cv::Mat constructProjTransform(float left, float right, float bottom, float top, float zNear, float zFar);
+	cv::Mat constructViewTransform();
+	cv::Mat constructProjTransform();
 
 	void setTexture(const Texture& texture);
 	void setMesh(const Mesh* mesh);
@@ -47,6 +49,8 @@ public:
 
 	cv::Mat getRendererImage();
 	cv::Mat getRendererDepthBuffer();
+
+	Camera camera;	// TODO make private
 
 private:
 
@@ -79,7 +83,7 @@ private:
 	std::vector<Vertex> clipPolygonToPlaneIn4D(const std::vector<Vertex>& vertices, const cv::Vec4f& planeNormal);
 
 	bool areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2);	// should better go to a RenderUtils class?
-	float implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2);	// ->utils ?
+	double implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2);	// ->utils ?
 
 	/* Pixel processing: */
 	void runPixelProcessor();

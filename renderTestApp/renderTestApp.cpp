@@ -83,29 +83,23 @@ int main(int argc, char *argv[])
         cout << e.what() << "\n";
         return 1;
     }
-	render::Camera camera;
-	render::Renderer->create();
-	camera.init();
 
+	render::Renderer->create();
+	
 	render::Mesh cube = render::utils::MeshUtils::createCube();
 	render::Mesh plane = render::utils::MeshUtils::createPlane();
 
 	const float& aspect = 640.0f/480.0f;
 
-	float frustumLeft = -0.25f * aspect;
-	float frustumRight = 0.25f * aspect;
-	float frustumBottom = -0.25f;
-	float frustumTop = 0.25f;
-	float frustumNear = 0.5f;
-	float frustumFar = 500.0f;
+	render::Renderer->camera.setFrustum(-0.25f*aspect, 0.25f*aspect, 0.25f, -0.25f, 0.5f, 500.0f);
 
 	// loop start
 	bool running = true;
 	while(running) {
-		camera.update(1);
+		render::Renderer->camera.update(1);
 	
-		cv::Mat vt = render::Renderer->constructViewTransform(camera.getEye(), camera.getRightVector(), camera.getUpVector(), -camera.getForwardVector());
-		cv::Mat pt = render::Renderer->constructProjTransform(frustumLeft, frustumRight, frustumBottom, frustumTop, frustumNear, frustumFar);
+		cv::Mat vt = render::Renderer->constructViewTransform();
+		cv::Mat pt = render::Renderer->constructProjTransform();
 		cv::Mat viewProjTransform = pt * vt;
 		std::cout << "vt " << std::endl << vt << std::endl;
 		std::cout << "pt " << std::endl  << pt << std::endl;
@@ -139,7 +133,7 @@ int main(int argc, char *argv[])
 		//render::Renderer->setTexture(plane.texture);
 		render::Renderer->draw();
 		
-		render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("H:\\projects\\Software Renderer\\statismo_l5_head.h5");
+		render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("H:\\projects\\Software Renderer\\statismo_l4_head.h5");
 		render::Renderer->setMesh(&mmHeadL4);
 		cv::Mat headWorld = render::utils::MatrixUtils::createScalingMatrix(1.0f/70.0f, 1.0f/70.0f, 1.0f/70.0f);
 		render::Renderer->setTransform(viewProjTransform * headWorld);
@@ -152,19 +146,19 @@ int main(int argc, char *argv[])
 
 		float speed = 0.4f;
 		float mouseSpeed = 0.2f;
-		cv::Vec3f eye = camera.getEye();
+		cv::Vec3f eye = render::Renderer->camera.getEye();
 		float deltaTime = 1.0f;
 
-		std::cout << "getEye: " << cv::Mat(camera.getEye()) << std::endl;
-		std::cout << "getAt: " << cv::Mat(camera.getAt()) << std::endl;
-		std::cout << "getUp: " << cv::Mat(camera.getUp()) << std::endl;
+		std::cout << "getEye: " << cv::Mat(render::Renderer->camera.getEye()) << std::endl;
+		std::cout << "getAt: " << cv::Mat(render::Renderer->camera.getAt()) << std::endl;
+		std::cout << "getUp: " << cv::Mat(render::Renderer->camera.getUp()) << std::endl;
 
-		std::cout << "getForwardVector: " << cv::Mat(camera.getForwardVector()) << std::endl;
-		std::cout << "getRightVector: " << cv::Mat(camera.getRightVector()) << std::endl;
-		std::cout << "getUpVector: " << cv::Mat(camera.getUpVector()) << std::endl;
+		std::cout << "getForwardVector: " << cv::Mat(render::Renderer->camera.getForwardVector()) << std::endl;
+		std::cout << "getRightVector: " << cv::Mat(render::Renderer->camera.getRightVector()) << std::endl;
+		std::cout << "getUpVector: " << cv::Mat(render::Renderer->camera.getUpVector()) << std::endl;
 
-		std::cout << "verticalAngle: " << camera.verticalAngle << std::endl;
-		std::cout << "horizontalAngle: " << camera.horizontalAngle << std::endl;
+		std::cout << "verticalAngle: " << render::Renderer->camera.verticalAngle << std::endl;
+		std::cout << "horizontalAngle: " << render::Renderer->camera.horizontalAngle << std::endl;
 
 		char c = (char)cv::waitKey(0);
 		if (c == 'b')
@@ -172,26 +166,26 @@ int main(int argc, char *argv[])
 		else if (c == 't')
 			std::cout << "a" << std::endl;
 		else if (c == 'w')
-			eye += speed * deltaTime * camera.getForwardVector();	// 'w' key
+			eye += speed * deltaTime * render::Renderer->camera.getForwardVector();	// 'w' key
 		else if (c == 's')
-			eye -= speed * deltaTime * camera.getForwardVector();	// 's' key
+			eye -= speed * deltaTime * render::Renderer->camera.getForwardVector();	// 's' key
 		else if (c == 'a')
-			eye -= speed * deltaTime * camera.getRightVector();	// 'a' key
+			eye -= speed * deltaTime * render::Renderer->camera.getRightVector();	// 'a' key
 		else if (c == 'd')
-			eye += speed * deltaTime * camera.getRightVector();	// 'd' key
+			eye += speed * deltaTime * render::Renderer->camera.getRightVector();	// 'd' key
 		else if (c == 'i')
-			camera.verticalAngle += mouseSpeed;		// mouse up
+			render::Renderer->camera.verticalAngle += mouseSpeed;		// mouse up
 		else if (c == 'k')
-			camera.verticalAngle -= mouseSpeed;		// mouse down
+			render::Renderer->camera.verticalAngle -= mouseSpeed;		// mouse down
 		else if (c == 'j')
-			camera.horizontalAngle += mouseSpeed;	// mouse left
+			render::Renderer->camera.horizontalAngle += mouseSpeed;	// mouse left
 		else if (c == 'l')
-			camera.horizontalAngle -= mouseSpeed;	// mouse right
+			render::Renderer->camera.horizontalAngle -= mouseSpeed;	// mouse right
 		else if (c == 'x')
-			eye -= 2.0f * deltaTime * camera.getForwardVector();	// 's' key
+			eye -= 2.0f * deltaTime * render::Renderer->camera.getForwardVector();	// 's' key
 		std::cout << "next frame" << std::endl;
 
-		camera.updateFree(eye);
+		render::Renderer->camera.updateFree(eye);
 	}
 	// loop end - measure the time here
 

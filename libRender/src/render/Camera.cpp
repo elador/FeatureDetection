@@ -102,4 +102,14 @@ void Camera::updateFocused(const cv::Vec3f& at, const cv::Vec3f& up)
 	this->up = up;
 }
 
+void Camera::setFrustum( float l, float r, float t, float b, float n, float f )
+{
+	frustum.l = l;
+	frustum.r = r;
+	frustum.t = t;
+	frustum.b = b;
+	frustum.n = n;
+	frustum.f = f;
+}
+
 }

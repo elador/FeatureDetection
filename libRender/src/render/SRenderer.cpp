@@ -40,9 +40,10 @@ SRenderer* SRenderer::Instance(void)
 void SRenderer::create()
 {
 	setViewport(640, 480);
+	camera.init();
 
 	this->colorBuffer = cv::Mat::zeros(screenHeight, screenWidth, CV_8UC4);
-	this->depthBuffer = cv::Mat::ones(screenHeight, screenWidth, CV_32FC1)*1000000;
+	this->depthBuffer = cv::Mat::ones(screenHeight, screenWidth, CV_64FC1)*1000000;
 
 }
 
@@ -68,42 +69,34 @@ void SRenderer::setViewport(unsigned int screenWidth, unsigned int screenHeight)
 
 }
 
-cv::Mat SRenderer::constructViewTransform(const cv::Vec3f& position, const cv::Vec3f& rightVector, const cv::Vec3f& upVector, const cv::Vec3f& forwardVector)
+cv::Mat SRenderer::constructViewTransform()
 {
-	cv::Mat translate = render::utils::MatrixUtils::createTranslationMatrix(-position[0], -position[1], -position[2]);
+	cv::Mat translate = render::utils::MatrixUtils::createTranslationMatrix(-camera.getEye()[0], -camera.getEye()[1], -camera.getEye()[2]);
 
 	cv::Mat rotate = (cv::Mat_<float>(4,4) << 
-				   rightVector[0],		rightVector[1],		rightVector[2],		0.0f,
-			       upVector[0],			upVector[1],		upVector[2],		0.0f,
-			       forwardVector[0],	forwardVector[1],	forwardVector[2],	0.0f,
+				   camera.getRightVector()[0],		camera.getRightVector()[1],		camera.getRightVector()[2],		0.0f,
+			       camera.getUpVector()[0],			camera.getUpVector()[1],		camera.getUpVector()[2],		0.0f,
+			       -camera.getForwardVector()[0],	-camera.getForwardVector()[1],	-camera.getForwardVector()[2],	0.0f,
 			       0.0f,				0.0f,				0.0f,				1.0f);
 
-	//return translate * rotate;	// <-- original
 	return rotate * translate;
 }
 
-cv::Mat SRenderer::constructProjTransform(float left, float right, float bottom, float top, float zNear, float zFar)
+cv::Mat SRenderer::constructProjTransform()
 {
 	cv::Mat perspective = (cv::Mat_<float>(4,4) << 
-						zNear,	0.0f,	0.0f,			0.0f,
-						0.0f,	zNear,	0.0f,			0.0f,
-						0.0f,	0.0f,	zNear + zFar,	zNear * zFar, // <-- im original verdreht
-						0.0f,	0.0f,	-1.0f,			0.0f);
-
-	/*cv::Mat orthogonal = (cv::Mat_<float>(4,4) << 
-					   2.0f / (right - left),				0.0f,								0.0f,								0.0f,
-					   0.0f,								2.0f / (top - bottom),				0.0f,								0.0f,
-					   0.0f,								0.0f,								-2.0f / (zFar - zNear),				0.0f,
-					   -(right + left) / (right - left),	-(top + bottom) / (top - bottom),	-(zNear + zFar) / (zFar - zNear),	1.0f);*/	// <-- original
-
+						camera.frustum.n,	0.0f,				0.0f,									0.0f,
+						0.0f,				camera.frustum.n,	0.0f,									0.0f,
+						0.0f,				0.0f,				camera.frustum.n + camera.frustum.f,	camera.frustum.n * camera.frustum.f,
+						0.0f,				0.0f,				-1.0f,									0.0f);
+	
 	cv::Mat orthogonal = (cv::Mat_<float>(4,4) << 
-		2.0f / (right - left),				0.0f,								0.0f,								-(right + left) / (right - left),
-		0.0f,								2.0f / (top - bottom),				0.0f,								-(top + bottom) / (top - bottom),
-		0.0f,								0.0f,								-2.0f / (zFar - zNear),				-(zNear + zFar) / (zFar - zNear),
-		0.0f,								0.0f,								0.0f,								1.0f);
+		2.0f / (camera.frustum.r - camera.frustum.l),	0.0f,											0.0f,											-(camera.frustum.r + camera.frustum.l) / (camera.frustum.r - camera.frustum.l),
+		0.0f,											2.0f / (camera.frustum.t - camera.frustum.b),	0.0f,											-(camera.frustum.t + camera.frustum.b) / (camera.frustum.t - camera.frustum.b),
+		0.0f,											0.0f,											-2.0f / (camera.frustum.f - camera.frustum.n),	-(camera.frustum.n + camera.frustum.f) / (camera.frustum.f - camera.frustum.n),
+		0.0f,											0.0f,											0.0f,											1.0f);
 	
 	return orthogonal * perspective;
-	//return perspective * orthogonal;	// <-- original
 }
 
 void SRenderer::setMesh(const Mesh* mesh) // make an optional argument, an index-list of vertices or so to render, if we don't want to render the full mesh.
@@ -165,7 +158,6 @@ void SRenderer::runVertexProcessor()
 			// this way I can also transform them all at once!
 
 			// classify vertices visibility with respect to the planes of the view frustum
-
 			unsigned char visibilityBits[3];
 
 			for (unsigned char k = 0; k < 3; k++)
@@ -260,9 +252,9 @@ void SRenderer::processProspectiveTriangleToRasterize(const Vertex& _v0, const V
 	t.v2 = _v2;
 	t.texture = _texture;
 
-	t.one_over_z0 = 1.0f / t.v0.position[3];
-	t.one_over_z1 = 1.0f / t.v1.position[3];
-	t.one_over_z2 = 1.0f / t.v2.position[3];
+	t.one_over_z0 = 1.0 / (double)t.v0.position[3];
+	t.one_over_z1 = 1.0 / (double)t.v1.position[3];
+	t.one_over_z2 = 1.0 / (double)t.v2.position[3];
 
 	// project from 4D to 2D window position with depth value in z coordinate
 	t.v0.position = t.v0.position / t.v0.position[3];	// divide by w
@@ -299,9 +291,9 @@ void SRenderer::processProspectiveTriangleToRasterize(const Vertex& _v0, const V
 		return;
 
 	// these will be used for barycentric weights computation
-	t.one_over_v0ToLine12 = 1.0f / implicitLine(t.v0.position[0], t.v0.position[1], t.v1.position, t.v2.position);
-	t.one_over_v1ToLine20 = 1.0f / implicitLine(t.v1.position[0], t.v1.position[1], t.v2.position, t.v0.position);
-	t.one_over_v2ToLine01 = 1.0f / implicitLine(t.v2.position[0], t.v2.position[1], t.v0.position, t.v1.position);
+	t.one_over_v0ToLine12 = 1.0 / implicitLine(t.v0.position[0], t.v0.position[1], t.v1.position, t.v2.position);
+	t.one_over_v1ToLine20 = 1.0 / implicitLine(t.v1.position[0], t.v1.position[1], t.v2.position, t.v0.position);
+	t.one_over_v2ToLine01 = 1.0 / implicitLine(t.v2.position[0], t.v2.position[1], t.v0.position, t.v1.position);
 
 	// for partial derivatives computation
 	t.alphaPlane = plane(cv::Vec3f(t.v0.position[0], t.v0.position[1], t.v0.texcrd[0]*t.one_over_z0),
@@ -385,9 +377,9 @@ bool SRenderer::areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, 
 	return (dx01*dy02 - dy01*dx02 > 0.0f);
 }
 
-float SRenderer::implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2)
+double SRenderer::implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2)
 {
-	return (v1[1] - v2[1])*x + (v2[0] - v1[0])*y + v1[0]*v2[1] - v2[0]*v1[1];
+	return ((double)v1[1] - (double)v2[1])*(double)x + ((double)v2[0] - (double)v1[0])*(double)y + (double)v1[0]*(double)v2[1] - (double)v2[0]*(double)v1[1];
 }
 
 
@@ -395,7 +387,7 @@ void SRenderer::runPixelProcessor()
 {
 	// clear buffers
 	this->colorBuffer = cv::Mat::zeros(screenHeight, screenWidth, CV_8UC4);
-	this->depthBuffer = cv::Mat::ones(screenHeight, screenWidth, CV_32FC1)*1000000;
+	this->depthBuffer = cv::Mat::ones(screenHeight, screenWidth, CV_64FC1)*1000000;
 
 	for (unsigned int i = 0; i < trianglesToRasterize.size(); i++)
 	{
@@ -410,9 +402,9 @@ void SRenderer::runPixelProcessor()
 				float y = (float)yi + 0.5f;
 
 				// affine barycentric weights
-				float alpha = implicitLine(x, y, t.v1.position, t.v2.position) * t.one_over_v0ToLine12;
-				float beta = implicitLine(x, y, t.v2.position, t.v0.position) * t.one_over_v1ToLine20;
-				float gamma = implicitLine(x, y, t.v0.position, t.v1.position) * t.one_over_v2ToLine01;
+				double alpha = implicitLine(x, y, t.v1.position, t.v2.position) * t.one_over_v0ToLine12;
+				double beta = implicitLine(x, y, t.v2.position, t.v0.position) * t.one_over_v1ToLine20;
+				double gamma = implicitLine(x, y, t.v0.position, t.v1.position) * t.one_over_v2ToLine01;
 
 				// if pixel (x, y) is inside the triangle or on one of its edges
 				if (alpha >= 0 && beta >= 0 && gamma >= 0)
@@ -421,13 +413,13 @@ void SRenderer::runPixelProcessor()
 					int pixelIndexRow = (screenHeight - 1 - yi);
 					int pixelIndexCol = xi;
 					
-					float z_affine = alpha*t.v0.position[2] + beta*t.v1.position[2] + gamma*t.v2.position[2];	// z
+					double z_affine = alpha*(double)t.v0.position[2] + beta*(double)t.v1.position[2] + gamma*(double)t.v2.position[2];	// z
 
-					if (z_affine < depthBuffer.at<float>(pixelIndexRow, pixelIndexCol) && z_affine <= 1.0f)
+					if (z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol) && z_affine <= 1.0)
 					{
 						// perspective-correct barycentric weights
-						float d = alpha*t.one_over_z0 + beta*t.one_over_z1 + gamma*t.one_over_z2;
-						d = 1.0f / d;
+						double d = alpha*t.one_over_z0 + beta*t.one_over_z1 + gamma*t.one_over_z2;
+						d = 1.0 / d;
 						alpha *= d*t.one_over_z0;
 						beta *= d*t.one_over_z1;
 						gamma *= d*t.one_over_z2;
@@ -473,7 +465,7 @@ void SRenderer::runPixelProcessor()
 						//colorBuffer[4*pixelIndex + 2] = red;
 						colorBuffer.at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[2] = red;
 						//depthBuffer[pixelIndex] = z_affine;
-						depthBuffer.at<float>(pixelIndexRow, pixelIndexCol) = z_affine;
+						depthBuffer.at<double>(pixelIndexRow, pixelIndexCol) = z_affine;
 					}
 				}
 			}
@@ -589,7 +581,7 @@ cv::Mat SRenderer::getRendererImage()
 
 cv::Mat SRenderer::getRendererDepthBuffer()
 {
-	cv::Mat db = this->depthBuffer * 255.0f;
+	cv::Mat db = this->depthBuffer * 255.0;
 	db.convertTo(db, CV_8UC1);
 	return db;
 }
