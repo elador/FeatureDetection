@@ -62,8 +62,6 @@ private:
 
 	unsigned int screenWidth;
 	unsigned int screenHeight;
-	int screenWidth_tiles;
-	int screenHeight_tiles;
 
 	cv::Mat windowTransform;	// 4x4 float
 
@@ -82,7 +80,6 @@ private:
 
 	bool areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2);	// should better go to a RenderUtils class?
 	float implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2);	// ->utils ?
-
 
 	/* Pixel processing: */
 	void runPixelProcessor();

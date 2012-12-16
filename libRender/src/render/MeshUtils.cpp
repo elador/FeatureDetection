@@ -119,7 +119,7 @@ Mesh MeshUtils::createCube(void)
 	cube.triangleList.push_back(render::Triangle(cube.vertex[20], cube.vertex[21], cube.vertex[22]));
 	cube.triangleList.push_back(render::Triangle(cube.vertex[20], cube.vertex[22], cube.vertex[23]));*/
 
-	cube.texture.createFromFile("data/pwr.png");
+	cube.texture.createFromFile("data/crate.png");
 	cube.hasTexture = true;
 
 	return cube;

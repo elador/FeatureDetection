@@ -41,9 +41,6 @@ void SRenderer::create()
 {
 	setViewport(640, 480);
 
-	screenWidth_tiles = (screenWidth + 15) / 16;
-	screenHeight_tiles = (screenHeight + 15) / 16;
-
 	this->colorBuffer = cv::Mat::zeros(screenHeight, screenWidth, CV_8UC4);
 	this->depthBuffer = cv::Mat::ones(screenHeight, screenWidth, CV_32FC1)*1000000;
 
@@ -76,10 +73,10 @@ cv::Mat SRenderer::constructViewTransform(const cv::Vec3f& position, const cv::V
 	cv::Mat translate = render::utils::MatrixUtils::createTranslationMatrix(-position[0], -position[1], -position[2]);
 
 	cv::Mat rotate = (cv::Mat_<float>(4,4) << 
-				   rightVector[0],	upVector[0],		forwardVector[0],	0.0f,
-			       rightVector[1],	upVector[1],		forwardVector[1],	0.0f,
-			       rightVector[2],	upVector[2],		forwardVector[2],	0.0f,
-			       0.0f,			0.0f,				0.0f,				1.0f);
+				   rightVector[0],		rightVector[1],		rightVector[2],		0.0f,
+			       upVector[0],			upVector[1],		upVector[2],		0.0f,
+			       forwardVector[0],	forwardVector[1],	forwardVector[2],	0.0f,
+			       0.0f,				0.0f,				0.0f,				1.0f);
 
 	//return translate * rotate;	// <-- original
 	return rotate * translate;

@@ -107,27 +107,41 @@ int main(int argc, char *argv[])
 		cv::Mat vt = render::Renderer->constructViewTransform(camera.getEye(), camera.getRightVector(), camera.getUpVector(), -camera.getForwardVector());
 		cv::Mat pt = render::Renderer->constructProjTransform(frustumLeft, frustumRight, frustumBottom, frustumTop, frustumNear, frustumFar);
 		cv::Mat viewProjTransform = pt * vt;
-/*
+		std::cout << "vt " << std::endl << vt << std::endl;
+		std::cout << "pt " << std::endl  << pt << std::endl;
+		std::cout << "pt*vt " << std::endl  << viewProjTransform<< std::endl;
+
 		render::Renderer->setMesh(&cube);	// The cube is the first object
 		render::Renderer->setTexture(cube.texture);	// not necessary anymore
-		for (int i = 0; i < 15; i++)	// draw 15 cubes in each direction on the plane
+		//cube.hasTexture = false;
+		for (int i = 0; i < 2; i++)	// draw 15 cubes in each direction on the plane
 		{
-			for (int j = 0; j < 15; j++)
+			for (int j = 0; j < 2; j++)
 			{
-				cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(3.0f*(i - 7), 0.5f, 3.0f*(j - 7));
+				//cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(3.0f*(i - 7), 0.5f, 3.0f*(j - 7));
+				cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(4.0f*(i - 1), 0.5f, 4.0f*(j - 1));
 				render::Renderer->setTransform(viewProjTransform * worldTransform);
 				render::Renderer->draw();
 			}
 		}
-*/
+
+		/*cube.hasTexture = false;
+		render::Renderer->setMesh(&cube);
+		//cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(3.0f*(i - 7), 0.5f, 3.0f*(j - 7));
+		render::Renderer->setTransform(viewProjTransform);
+		render::Renderer->draw();*/
+
+		plane.hasTexture = false;
 		render::Renderer->setMesh(&plane);	// The plane is the second object
-		render::Renderer->setTransform(viewProjTransform * render::utils::MatrixUtils::createScalingMatrix(15.0f, 1.0f, 15.0f));
-		render::Renderer->setTexture(plane.texture);
+		cv::Mat wrld = viewProjTransform * render::utils::MatrixUtils::createScalingMatrix(15.0f, 1.0f, 15.0f);
+		std::cout << "MVP " << std::endl  << wrld << std::endl;
+		render::Renderer->setTransform(wrld);
+		//render::Renderer->setTexture(plane.texture);
 		render::Renderer->draw();
 		
-		render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("H:\\projects\\Software Renderer\\statismo_l4_head.h5");
+		render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("H:\\projects\\Software Renderer\\statismo_l5_head.h5");
 		render::Renderer->setMesh(&mmHeadL4);
-		cv::Mat headWorld = render::utils::MatrixUtils::createScalingMatrix(1.0f/120.0f, 1.0f/120.0f, 1.0f/120.0f);
+		cv::Mat headWorld = render::utils::MatrixUtils::createScalingMatrix(1.0f/70.0f, 1.0f/70.0f, 1.0f/70.0f);
 		render::Renderer->setTransform(viewProjTransform * headWorld);
 		render::Renderer->draw();
 		
@@ -141,8 +155,19 @@ int main(int argc, char *argv[])
 		cv::Vec3f eye = camera.getEye();
 		float deltaTime = 1.0f;
 
+		std::cout << "getEye: " << cv::Mat(camera.getEye()) << std::endl;
+		std::cout << "getAt: " << cv::Mat(camera.getAt()) << std::endl;
+		std::cout << "getUp: " << cv::Mat(camera.getUp()) << std::endl;
+
+		std::cout << "getForwardVector: " << cv::Mat(camera.getForwardVector()) << std::endl;
+		std::cout << "getRightVector: " << cv::Mat(camera.getRightVector()) << std::endl;
+		std::cout << "getUpVector: " << cv::Mat(camera.getUpVector()) << std::endl;
+
+		std::cout << "verticalAngle: " << camera.verticalAngle << std::endl;
+		std::cout << "horizontalAngle: " << camera.horizontalAngle << std::endl;
+
 		char c = (char)cv::waitKey(0);
-		if (c == 'q')
+		if (c == 'b')
 			running = false;
 		else if (c == 't')
 			std::cout << "a" << std::endl;
@@ -162,6 +187,8 @@ int main(int argc, char *argv[])
 			camera.horizontalAngle += mouseSpeed;	// mouse left
 		else if (c == 'l')
 			camera.horizontalAngle -= mouseSpeed;	// mouse right
+		else if (c == 'x')
+			eye -= 2.0f * deltaTime * camera.getForwardVector();	// 's' key
 		std::cout << "next frame" << std::endl;
 
 		camera.updateFree(eye);
