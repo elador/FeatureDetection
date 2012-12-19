@@ -24,7 +24,7 @@ VideoImageSource::~VideoImageSource() {
 	capture.release();
 }
 
-const cv::Mat VideoImageSource::get() {
+const Mat VideoImageSource::get() {
 	capture >> frame;
 	return frame;
 }

@@ -9,6 +9,7 @@
 #define FACETRACKING_H_
 
 #include "imageio/ImageSource.h"
+#include "imageio/ImageSink.h"
 #include "classification/LibSvmTraining.h"
 #include "tracking/AdaptiveCondensationTracker.h"
 #include "tracking/AdaptiveMeasurementModel.h"
@@ -28,7 +29,7 @@ using namespace classification;
 
 class FaceTracking {
 public:
-	explicit FaceTracking(auto_ptr<imageio::ImageSource> imageSource,
+	explicit FaceTracking(auto_ptr<imageio::ImageSource> imageSource, auto_ptr<imageio::ImageSink> imageSink,
 			std::string svmConfigFile, std::string negativesFile);
 	virtual ~FaceTracking();
 
@@ -55,6 +56,7 @@ private:
 	const std::string negativesFile;
 
 	auto_ptr<imageio::ImageSource> imageSource;
+	auto_ptr<imageio::ImageSink> imageSink;
 
 	bool running;
 	bool paused;

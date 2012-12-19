@@ -6,30 +6,34 @@
  */
 
 #include "imageio/DirectoryImageSource.h"
+#include "opencv2/highgui/highgui.hpp"
 #include <iostream>
 
+using cv::imread;
 using boost::filesystem::exists;
 using boost::filesystem::is_directory;
 using boost::filesystem::directory_iterator;
+using std::copy;
+using std::sort;
 
 namespace imageio {
 
-DirectoryImageSource::DirectoryImageSource(std::string directory) : files(), index(0) {
+DirectoryImageSource::DirectoryImageSource(string directory) : files(), index(0) {
 	path path(directory);
 	if (!exists(path))
-		std::cerr << "directory " << directory << " does not exist" << std::endl;
+		std::cerr << "directory '" << directory << "' does not exist" << std::endl;
 	if (!is_directory(path))
-		std::cerr << directory << " is no directory" << std::endl;
-	std::copy(directory_iterator(path), directory_iterator(), back_inserter(files));
-	std::sort(files.begin(), files.end());
+		std::cerr << "'" << directory << "' is no directory" << std::endl;
+	copy(directory_iterator(path), directory_iterator(), back_inserter(files));
+	sort(files.begin(), files.end());
 }
 
 DirectoryImageSource::~DirectoryImageSource() {}
 
-const cv::Mat DirectoryImageSource::get() {
+const Mat DirectoryImageSource::get() {
 	if (index >= files.size())
-		return cv::Mat();
-	return cv::imread(files[index++].string(), 1);
+		return Mat();
+	return imread(files[index++].string(), 1);
 }
 
 } /* namespace imageio */

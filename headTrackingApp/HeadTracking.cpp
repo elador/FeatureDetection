@@ -10,6 +10,7 @@
 #include "imageio/VideoImageSource.h"
 #include "imageio/KinectImageSource.h"
 #include "imageio/DirectoryImageSource.h"
+#include "imageio/VideoImageSink.h"
 #include "classification/FrameBasedLibSvmTraining.h"
 #include "classification/FastLibSvmTraining.h"
 #include "classification/FixedSizeLibSvmTraining.h"
@@ -52,9 +53,9 @@ namespace po = boost::program_options;
 const std::string HeadTracking::videoWindowName = "Image";
 const std::string HeadTracking::controlWindowName = "Controls";
 
-HeadTracking::HeadTracking(auto_ptr<imageio::ImageSource> imageSource,
+HeadTracking::HeadTracking(auto_ptr<imageio::ImageSource> imageSource, auto_ptr<imageio::ImageSink> imageSink,
 		std::string svmConfigFile, std::string negativesFile) :
-				svmConfigFile(svmConfigFile), negativesFile(negativesFile), imageSource(imageSource) {
+				svmConfigFile(svmConfigFile), negativesFile(negativesFile), imageSource(imageSource), imageSink(imageSink) {
 	initTracking();
 	initGui();
 }
@@ -69,6 +70,7 @@ void HeadTracking::initTracking() {
 	svm->load(svmConfigFile);
 	shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>();
 	oe->load(svmConfigFile);
+	staticMeasurementModel = make_shared<HeadWvmSvmModel>(wvm, svm, oe);
 
 	// create adaptive measurement model
 	shared_ptr<LibSvmParameterBuilder> svmParameterBuilder = make_shared<RbfLibSvmParameterBuilder>(0.05);
@@ -86,10 +88,9 @@ void HeadTracking::initTracking() {
 
 	shared_ptr<HistEqFeatureExtractor> featureExtractor = make_shared<HistEqFeatureExtractor>(cv::Size(20, 20), 0.85, 0.1666, 1.0);
 
-	staticMeasurementModel = make_shared<HeadWvmSvmModel>(wvm, svm, oe);
 //	adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(featureExtractor, dynamicSvm, 0.85, 0.05);
 //	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor, classifier, 0.05, 0.5, true, true, 0);
-	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor, classifier, 3, 20, 0.0, 0.5, false, false, 10);
+	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor, classifier, 3, 40, 0.0, 0.5, false, false, 10);
 
 	// create tracker
 	unsigned int count = 800;
@@ -217,6 +218,8 @@ void HeadTracking::run() {
 				cv::rectangle(image, cv::Point(head->getX(), head->getY()),
 						cv::Point(head->getX() + head->getWidth(), head->getY() + head->getHeight()), color);
 			imshow(videoWindowName, image);
+			if (imageSink.get() != 0)
+				imageSink->add(image);
 			gettimeofday(&frameEnd, 0);
 
 			int iterationTimeMilliseconds = 1000 * (frameEnd.tv_sec - frameStart.tv_sec) + (frameEnd.tv_usec - frameStart.tv_usec) / 1000;
@@ -251,6 +254,8 @@ int main(int argc, char *argv[]) {
 	std::string filename, directory;
 	bool useCamera = false, useKinect = false, useFile = false, useDirectory = false;
 	std::string svmConfigFile, negativeRtlPatches;
+	std::string outputFile;
+	int outputFps = -1;
 
 	try {
 		po::options_description desc("Allowed options");
@@ -264,6 +269,8 @@ int main(int argc, char *argv[]) {
 			("kinect,k", po::value<int>(&kinectId)->implicit_value(0), "Windows only: Use a Kinect as camera. Optionally specify a device ID.")
 			("config,c", po::value< std::string >(&svmConfigFile)->default_value("fd_config_fft_fd.mat","fd_config_fft_fd.mat"), "The filename to the config file that contains the SVM and WVM classifiers.")
 			("nonfaces,n", po::value< std::string >(&negativeRtlPatches)->default_value("nonfaces_1000","nonfaces_1000"), "Filename to a file containing the static negative training examples for the real-time learning SVM.")
+			("output,o", po::value< std::string >(&outputFile)->default_value("","none"), "Filename to a video file for storing the image data.")
+			("output-fps,r", po::value<int>(&outputFps)->default_value(-1), "The framerate of the output video.")
 			;
 
 		po::variables_map vm;
@@ -316,7 +323,16 @@ int main(int argc, char *argv[]) {
 	else if (useDirectory)
 		imageSource.reset(new imageio::DirectoryImageSource(directory));
 
-	auto_ptr<HeadTracking> tracker(new HeadTracking(imageSource, svmConfigFile, negativeRtlPatches));
+	auto_ptr<imageio::ImageSink> imageSink;
+	if (outputFile != "") {
+		if (outputFps < 0) {
+			std::cout << "Usage: You have to specify the framerate of the output video file by using option -r. Use -h for help." << std::endl;
+			return -1;
+		}
+		imageSink.reset(new imageio::VideoImageSink(outputFile, outputFps));
+	}
+
+	auto_ptr<HeadTracking> tracker(new HeadTracking(imageSource, imageSink, svmConfigFile, negativeRtlPatches));
 	tracker->run();
 	return 0;
 }

@@ -9,7 +9,6 @@
 #define KINECTIMAGESOURCE_H_
 
 #include "ImageSource.h"
-#include "opencv2/highgui/highgui.hpp"
 #ifdef WIN32
 	#include <windows.h>
 	#include <NuiApi.h>
@@ -30,13 +29,12 @@ public:
 	 */
 	explicit KinectImageSource(int device);
 
-
 	virtual ~KinectImageSource();
 
-	const cv::Mat get();
+	const Mat get();
 
 private:
-	cv::Mat frame;            ///< The current frame.
+	Mat frame; ///< The current frame.
 
 #ifdef WIN32
 	INuiSensor * m_pNuiSensor;	///< The kinect capture device.

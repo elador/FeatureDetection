@@ -41,8 +41,11 @@ void FixedSizeLibSvmTraining::reset(LibSvmClassifier& classifier) {
 bool FixedSizeLibSvmTraining::retrain(LibSvmClassifier& classifier,
 		const vector<shared_ptr<FeatureVector> >& newPositiveExamples,
 		const vector<shared_ptr<FeatureVector> >& newNegativeExamples) {
-	if (!newPositiveExamples.empty())
+	if (positiveExamples.empty() && negativeExamples.empty()) {
+		if (newPositiveExamples.empty() || newNegativeExamples.empty()) // initially, positive and negative examples are needed
+			return false;
 		dimensions = newPositiveExamples.front()->getSize();
+	}
 	addPositiveExamples(newPositiveExamples, classifier);
 	addNegativeExamples(newNegativeExamples);
 	if (positiveExamples.empty() || negativeExamples.empty())

@@ -17,6 +17,8 @@
 #include <vector>
 
 using boost::filesystem::path;
+using std::vector;
+using std::string;
 
 namespace imageio {
 
@@ -31,16 +33,16 @@ public:
 	 *
 	 * @param[in] directory The directory containing image files.
 	 */
-	DirectoryImageSource(std::string directory);
+	DirectoryImageSource(string directory);
 
 	virtual ~DirectoryImageSource();
 
-	const cv::Mat get();
+	const Mat get();
 
 private:
 
-	std::vector<path> files; ///< The files of the given directory, ordered by name.
-	unsigned int index;      ///< The index of the next file.
+	vector<path> files; ///< The files of the given directory, ordered by name.
+	unsigned int index; ///< The index of the next file.
 };
 
 } /* namespace imageio */

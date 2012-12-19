@@ -8,7 +8,9 @@
 #ifndef IMAGESOURCE_H_
 #define IMAGESOURCE_H_
 
-#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/core/core.hpp"
+
+using cv::Mat;
 
 namespace imageio {
 
@@ -25,7 +27,7 @@ public:
 	 *
 	 * @return The image (that may be empty if no data could be retrieved).
 	 */
-	virtual const cv::Mat get() = 0;
+	virtual const Mat get() = 0;
 };
 
 } /* namespace imageio */

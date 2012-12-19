@@ -17,15 +17,20 @@ ENDIF()
 
 # source and header files
 SET(HEADERS
-	include/imageio/ImageSource.h
+	include/imageio/DirectoryImageSink.h
 	include/imageio/DirectoryImageSource.h
-	include/imageio/VideoImageSource.h
+	include/imageio/ImageSink.h
+	include/imageio/ImageSource.h
 	include/imageio/KinectImageSource.h
+	include/imageio/VideoImageSink.h
+	include/imageio/VideoImageSource.h
 )
 SET(SOURCE
+	src/imageio/DirectoryImageSink.cpp
 	src/imageio/DirectoryImageSource.cpp
-	src/imageio/VideoImageSource.cpp
 	src/imageio/KinectImageSource.cpp
+	src/imageio/VideoImageSink.cpp
+	src/imageio/VideoImageSource.cpp
 )
 
 include_directories( ${Boost_INCLUDE_DIRS} )

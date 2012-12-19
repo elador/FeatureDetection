@@ -11,6 +11,8 @@
 #include "ImageSource.h"
 #include "opencv2/highgui/highgui.hpp"
 
+using cv::VideoCapture;
+
 namespace imageio {
 
 /**
@@ -35,11 +37,11 @@ public:
 
 	virtual ~VideoImageSource();
 
-	const cv::Mat get();
+	const Mat get();
 
 private:
-	cv::VideoCapture capture; ///< The video capture.
-	cv::Mat frame;            ///< The current frame.
+	VideoCapture capture; ///< The video capture.
+	Mat frame;            ///< The current frame.
 };
 
 } /* namespace imageio */

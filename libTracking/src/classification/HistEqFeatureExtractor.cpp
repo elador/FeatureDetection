@@ -34,10 +34,10 @@ shared_ptr<FeatureVector> HistEqFeatureExtractor::extract(const Mat& patch) {
 	}
 	shared_ptr<FeatureVector> featureVector = make_shared<FeatureVector>(rows * cols);
 	int index = 0;
-	for (int r = 0; r < rows; r++) {
+	for (int r = 0; r < rows; ++r) {
 		const unsigned char* Mrow = histEqPatch.ptr<unsigned char>(r);
-		for (int c = 0; c < cols; c++)
-			featureVector->set(index++, (double)Mrow[c] / 255.0);
+		for (int c = 0; c < cols; ++c)
+			featureVector->set(index++, (float)Mrow[c] / 255.0f);
 	}
 	return featureVector;
 }

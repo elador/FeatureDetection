@@ -118,7 +118,7 @@ const cv::Mat KinectImageSource::get() {
 	{
 		// Draw the data with Direct2D
 		//m_pDrawColor->Draw(static_cast<BYTE *>(LockedRect.pBits), LockedRect.size);
-		frame = cv::Mat(480, 640, CV_8UC4, static_cast<BYTE *>(LockedRect.pBits));
+		frame = Mat(480, 640, CV_8UC4, static_cast<BYTE *>(LockedRect.pBits));
 
 		// Write out the bitmap to disk
 		//static_cast<BYTE *>(LockedRect.pBits), cColorWidth, cColorHeight, 32

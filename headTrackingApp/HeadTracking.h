@@ -9,6 +9,7 @@
 #define HEADTRACKING_H_
 
 #include "imageio/ImageSource.h"
+#include "imageio/ImageSink.h"
 #include "classification/LibSvmTraining.h"
 #include "tracking/AdaptiveCondensationTracker.h"
 #include "tracking/AdaptiveMeasurementModel.h"
@@ -28,7 +29,7 @@ using namespace classification;
 
 class HeadTracking {
 public:
-	explicit HeadTracking(auto_ptr<imageio::ImageSource> imageSource,
+	explicit HeadTracking(auto_ptr<imageio::ImageSource> imageSource, auto_ptr<imageio::ImageSink> imageSink,
 			std::string svmConfigFile, std::string negativesFile);
 	virtual ~HeadTracking();
 
@@ -55,6 +56,7 @@ private:
 	const std::string negativesFile;
 
 	auto_ptr<imageio::ImageSource> imageSource;
+	auto_ptr<imageio::ImageSink> imageSink;
 
 	bool running;
 	bool paused;
