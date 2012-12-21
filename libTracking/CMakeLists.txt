@@ -29,6 +29,9 @@ SET(HEADERS
 	include/classification/SigmoidParameterComputation.h
 	include/classification/TrainableClassifier.h
 	include/classification/Training.h
+	include/classification/TrainableTwoStageClassifier.h
+	include/classification/TwoStageClassifier.h
+	include/classification/WvmClassifier.h
 	include/tracking/AdaptiveCondensationTracker.h
 	include/tracking/AdaptiveMeasurementModel.h
 	include/tracking/CondensationTracker.h
@@ -69,6 +72,9 @@ SET(SOURCE
 	src/classification/PolyLibSvmParameterBuilder.cpp
 	src/classification/RbfLibSvmParameterBuilder.cpp
 	src/classification/SigmoidParameterComputation.cpp
+	src/classification/TrainableTwoStageClassifier.h
+	src/classification/TwoStageClassifier.h
+	src/classification/WvmClassifier.h
 	src/tracking/AdaptiveCondensationTracker.cpp
 	src/tracking/CondensationTracker.cpp
 	src/tracking/DensityPositionExtractor.cpp

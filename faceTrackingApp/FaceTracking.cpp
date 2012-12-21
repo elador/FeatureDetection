@@ -22,6 +22,8 @@
 #include "classification/TrainableClassifier.h"
 #include "classification/LibSvmClassifier.h"
 #include "classification/HistEqFeatureExtractor.h"
+#include "classification/WvmClassifier.h"
+#include "classification/TrainableTwoStageClassifier.h"
 #include "tracking/ResamplingSampler.h"
 #include "tracking/GridSampler.h"
 #include "tracking/LowVarianceSampling.h"
@@ -85,10 +87,12 @@ void FaceTracking::initTracking() {
 	shared_ptr<LibSvmTraining> training = make_shared<FixedSizeLibSvmTraining>(10, 50, 3);
 //	training->readStaticNegatives(negativesFile, 200);
 	shared_ptr<TrainableClassifier> classifier = make_shared<LibSvmClassifier>(training);
+//	shared_ptr<TrainableClassifier> classifier = make_shared<TrainableTwoStageClassifier>(
+//			make_shared<WvmClassifier>(wvm), make_shared<LibSvmClassifier>(training));
 
 	shared_ptr<HistEqFeatureExtractor> featureExtractor = make_shared<HistEqFeatureExtractor>(cv::Size(20, 20), 0.85, 0.1666, 1.0);
 
-//	adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(featureExtractor, dynamicSvm, 0.85, 0.05);
+//	adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(featureExtractor, classifier, 0.85, 0.05);
 //	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor, classifier, 0.05, 0.5, true, true, 0);
 	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor, classifier, 3, 40, 0.0, 0.5, false, false, 10);
 

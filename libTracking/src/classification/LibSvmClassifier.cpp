@@ -36,7 +36,7 @@ LibSvmClassifier::~LibSvmClassifier() {
 	deleteModel();
 }
 
-std::pair<bool, double> LibSvmClassifier::classify(const FeatureVector& featureVector) const {
+pair<bool, double> LibSvmClassifier::classify(const FeatureVector& featureVector) const {
 	if (model == 0)
 		return std::make_pair(false, 0);
 	double *sv_coef = model->sv_coef[0];
@@ -63,9 +63,9 @@ double LibSvmClassifier::kernel(const FeatureVector& x, const FeatureVector& y, 
 	return 0;
 }
 
-bool LibSvmClassifier::retrain(const vector<shared_ptr<FeatureVector> >& positiveSamples,
-			const vector<shared_ptr<FeatureVector> >& negativeSamples) {
-	return training->retrain(*this, positiveSamples, negativeSamples);
+bool LibSvmClassifier::retrain(const vector<shared_ptr<FeatureVector> >& positiveExamples,
+			const vector<shared_ptr<FeatureVector> >& negativeExamples) {
+	return training->retrain(*this, positiveExamples, negativeExamples);
 }
 
 void LibSvmClassifier::reset() {

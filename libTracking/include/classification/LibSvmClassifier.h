@@ -15,7 +15,6 @@
 #include <vector>
 
 using boost::shared_ptr;
-using std::pair;
 using std::vector;
 
 namespace classification {
@@ -37,8 +36,8 @@ public:
 
 	pair<bool, double> classify(const FeatureVector& featureVector) const;
 
-	bool retrain(const vector<shared_ptr<FeatureVector> >& positiveSamples,
-			const vector<shared_ptr<FeatureVector> >& negativeSamples);
+	bool retrain(const vector<shared_ptr<FeatureVector> >& positiveExamples,
+			const vector<shared_ptr<FeatureVector> >& negativeExamples);
 
 	void reset();
 

@@ -27,17 +27,17 @@ public:
 
 	virtual ~TrainableClassifier() {}
 
-	virtual std::pair<bool, double> classify(const FeatureVector& featureVector) const = 0;
+	virtual pair<bool, double> classify(const FeatureVector& featureVector) const = 0;
 
 	/**
 	 * Re-trains this classifier. May not change the classifier if there are not enough samples.
 	 *
-	 * @param[in] positiveSamples The new positive training examples.
-	 * @param[in] negativeSamples The new negative training examples.
+	 * @param[in] positiveExamples The new positive training examples.
+	 * @param[in] negativeExamples The new negative training examples.
 	 * @return True if this classifier was trained successfully and may be used, false otherwise.
 	 */
-	virtual bool retrain(const vector<shared_ptr<FeatureVector> >& positiveSamples,
-			const vector<shared_ptr<FeatureVector> >& negativeSamples) = 0;
+	virtual bool retrain(const vector<shared_ptr<FeatureVector> >& positiveExamples,
+			const vector<shared_ptr<FeatureVector> >& negativeExamples) = 0;
 
 	/**
 	 * Resets this classifier. May not change the classifier at all, but it should not be used

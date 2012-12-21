@@ -13,10 +13,10 @@
 #include "boost/shared_ptr.hpp"
 #include <string>
 
+using boost::shared_ptr;
+
 class VDetectorVectorMachine;
 class OverlapElimination;
-
-using boost::shared_ptr;
 
 namespace tracking {
 

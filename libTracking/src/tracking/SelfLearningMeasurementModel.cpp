@@ -68,11 +68,11 @@ void SelfLearningMeasurementModel::evaluate(const Mat& image, vector<Sample>& sa
 
 	if (positiveTrainingSamples.size() > 10) {
 		sort(positiveTrainingSamples.begin(), positiveTrainingSamples.end(), compareFeatureProbabilityPairs);
+		reverse(positiveTrainingSamples.begin(), positiveTrainingSamples.end());
 		positiveTrainingSamples.resize(10);
 	}
 	if (negativeTrainingSamples.size() > 10) {
 		sort(negativeTrainingSamples.begin(), negativeTrainingSamples.end(), compareFeatureProbabilityPairs);
-		reverse(negativeTrainingSamples.begin(), negativeTrainingSamples.end());
 		negativeTrainingSamples.resize(10);
 	}
 }

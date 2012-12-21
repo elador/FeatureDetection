@@ -10,6 +10,8 @@
 
 #include <utility>
 
+using std::pair;
+
 namespace classification {
 
 class FeatureVector;
@@ -28,7 +30,7 @@ public:
 	 * @param[in] featureVector The feature vector.
 	 * @return A pair containing a binary flag (true if positively classified) and a probability for being positive.
 	 */
-	virtual std::pair<bool, double> classify(const FeatureVector& featureVector) const = 0;
+	virtual pair<bool, double> classify(const FeatureVector& featureVector) const = 0;
 };
 
 } /* namespace classification */
