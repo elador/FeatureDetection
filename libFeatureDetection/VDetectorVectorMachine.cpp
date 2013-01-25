@@ -73,7 +73,7 @@ int VDetectorVectorMachine::initPyramids( FdImage *img )
  		subsamplingLevelEnd = std::min(subsamplingLevelEnd, subsamplingLevelStart+numSubsamplingLevels-1);
  
  	if(subsamplingLevelEnd<=0) {
-		std::cout << "[VDetVecMach] ERROR: subsamplingLevels(" << subsamplingLevelEnd << ")<=0 => Image to small (h,w:" << img->h << "," << img->w << ")" << std::endl;
+		std::cout << "[VDetVecMach] ERROR: subsamplingLevels(" << subsamplingLevelEnd << ")<=0 => Image too small (h,w:" << img->h << "," << img->w << ")" << std::endl;
  		return(-1);
  	}
 

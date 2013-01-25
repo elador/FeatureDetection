@@ -2,6 +2,7 @@
 #include "VDetector.h"
 
 #include "CascadeWvmOeSvmOe.h"
+#include "FeaturePointsModelRANSAC.h"
 
 class CircleDetector;
 class SkinDetector;
@@ -13,18 +14,16 @@ public:
 	CascadeFacialFeaturePoints(void);
 	~CascadeFacialFeaturePoints(void);
 
-	//CascadeWvmOeSvmOe *face_frontal;
-	//CascadeWvmOeSvmOe *eye_left;
-
 	DetectorWVM *wvm_frontal;
 	OverlapElimination *oe;
 
 	CircleDetector *circleDet;
 	SkinDetector *skinDet;
 
+	FeaturePointsRANSAC *ffpRansac;
+
 	CascadeFacialFeaturePointsSimple *ffpCasc;
 
-	
 	int initForImage(FdImage*);
 	int detectOnImage(FdImage*);
 

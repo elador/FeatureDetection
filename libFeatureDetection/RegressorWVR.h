@@ -22,7 +22,7 @@ protected:
 	//float limit_reliability_filter;	//We don't need this for Regression
 	int nLinFilters;
 	float**  lin_filters;      // points to the filter array (this is support_hk%d in the .mat-file)
-	float*   lin_thresholds;   // arrays of the thresholds (the SVM's b)
+	float*   lin_thresholds;   // arrays of the thresholds (the SVM's b). The same for all vectors. This could be just a float. Actually it can only be a float because it comes from param_nonlin1 in the .mat.
 	float*   lin_hierar_thresh;// a pixel whose correletion with filter i is > lin_hierar_thresh[i] 
 	                           // is retained for futher investigation,
 	                           // if it is lower, it is classified as being not a face 

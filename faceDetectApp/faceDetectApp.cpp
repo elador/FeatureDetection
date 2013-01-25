@@ -3,12 +3,12 @@
 
 #include "stdafx.h"
 
+//#include <vld.h>
+
 #include "CascadeFacialFeaturePoints.h"
-#include "CascadeWvmOeSvmOe.h"
 
 #include "SLogger.h"
 #include "FdImage.h"
-#include "FdPatch.h"
 
 namespace po = boost::program_options;
 using namespace std;
@@ -25,7 +25,7 @@ int main(int argc, char *argv[])		// Peter
 {
 	#ifdef WIN32
 	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF ); // dump leaks at return
-	//_CrtSetBreakAlloc(287);
+	//_CrtSetBreakAlloc(3759128);
 	#endif
 	
 	int verbose_level_text;
@@ -127,6 +127,10 @@ int main(int argc, char *argv[])		// Peter
 	Logger->global.img.drawScales = true;
 	Logger->global.img.writeImgPyramids = true;
 
+	/* Testing ground */
+
+	/* END */
+	
 	CascadeFacialFeaturePoints* casc = new CascadeFacialFeaturePoints();
 	casc->setIdentifier("smartFaceDetect");
 
