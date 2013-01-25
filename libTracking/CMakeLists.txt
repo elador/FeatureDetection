@@ -72,9 +72,9 @@ SET(SOURCE
 	src/classification/PolyLibSvmParameterBuilder.cpp
 	src/classification/RbfLibSvmParameterBuilder.cpp
 	src/classification/SigmoidParameterComputation.cpp
-	src/classification/TrainableTwoStageClassifier.h
-	src/classification/TwoStageClassifier.h
-	src/classification/WvmClassifier.h
+	src/classification/TrainableTwoStageClassifier.cpp
+	src/classification/TwoStageClassifier.cpp
+	src/classification/WvmClassifier.cpp
 	src/tracking/AdaptiveCondensationTracker.cpp
 	src/tracking/CondensationTracker.cpp
 	src/tracking/DensityPositionExtractor.cpp
