@@ -9,14 +9,14 @@
 #define IMAGEPYRAMIDFEATUREEXTRACTOR_H_
 
 #include "classification/FeatureExtractor.h"
-#include "boost/unordered_set.hpp"
 #include <vector>
+#include <unordered_set>
 
 using cv::Size;
 using cv::Mat;
-using boost::shared_ptr;
-using boost::unordered_set;
+using std::shared_ptr;
 using std::vector;
+using std::unordered_set;
 
 namespace classification {
 

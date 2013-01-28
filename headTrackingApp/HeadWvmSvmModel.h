@@ -10,7 +10,7 @@
 
 #include "tracking/MeasurementModel.h"
 #include "tracking/PatchDuplicateFilter.h"
-#include "boost/shared_ptr.hpp"
+#include <memory>
 #include <string>
 
 class VDetectorVectorMachine;
@@ -19,7 +19,7 @@ class OverlapElimination;
 using tracking::MeasurementModel;
 using tracking::PatchDuplicateFilter;
 using tracking::Sample;
-using boost::shared_ptr;
+using std::shared_ptr;
 
 /**
  * Measurement model that uses a WVM for quick elimination and evaluates the samples that remain after an

@@ -13,9 +13,9 @@
 #include "VDetectorVectorMachine.h"
 #include "FdImage.h"
 #include "FdPatch.h"
-#include "boost/unordered_map.hpp"
+#include <unordered_map>
 
-using boost::unordered_map;
+using std::unordered_map;
 
 namespace tracking {
 

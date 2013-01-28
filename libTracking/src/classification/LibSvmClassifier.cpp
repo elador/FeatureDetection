@@ -14,7 +14,7 @@ namespace classification {
 
 static double dot(const FeatureVector& x, const FeatureVector& y) {
 	float sum = 0;
-	for (int i = 0, n = (int)x.getSize(); i < n; ++i)
+	for (unsigned int i = 0, n = x.getSize(); i < n; ++i)
 		sum += x[i] * y[i];
 	return sum;
 }
@@ -54,7 +54,7 @@ double LibSvmClassifier::kernel(const FeatureVector& x, const FeatureVector& y, 
 		return powi(param.gamma * dot(x, y) + param.coef0, param.degree);
 	if (param.kernel_type == RBF) {
 		float sum = 0;
-		for (int i = 0, n = (int)x.getSize(); i < n; ++i) {
+		for (unsigned int i = 0, n = x.getSize(); i < n; ++i) {
 			float d = x[i] - y[i];
 			sum += d * d;
 		}

@@ -9,11 +9,11 @@
 #define DUALSVMMODEL_H_
 
 #include "tracking/MeasurementModel.h"
-#include "boost/shared_ptr.hpp"
+#include <memory>
 
 class VDetectorVectorMachine;
 
-using boost::shared_ptr;
+using std::shared_ptr;
 
 namespace tracking {
 

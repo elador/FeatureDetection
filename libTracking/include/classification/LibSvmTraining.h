@@ -15,14 +15,13 @@
 #include "classification/SigmoidParameterComputation.h"
 #include "classification/FixedApproximateSigmoidParameterComputation.h"
 #include "svm.h"
-#include "boost/shared_ptr.hpp"
-#include "boost/make_shared.hpp"
+#include <memory>
 #include <vector>
 
 struct svm_parameter;
 
-using boost::shared_ptr;
-using boost::make_shared;
+using std::shared_ptr;
+using std::make_shared;
 
 namespace classification {
 

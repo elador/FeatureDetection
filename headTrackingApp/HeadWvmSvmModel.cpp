@@ -13,9 +13,9 @@
 #include "VDetectorVectorMachine.h"
 #include "FdImage.h"
 #include "FdPatch.h"
-#include "boost/unordered_map.hpp"
+#include <unordered_map>
 
-using boost::unordered_map;
+using std::unordered_map;
 
 HeadWvmSvmModel::HeadWvmSvmModel(shared_ptr<VDetectorVectorMachine> wvm, shared_ptr<VDetectorVectorMachine> svm,
 		shared_ptr<OverlapElimination> oe) : wvm(wvm), svm(svm), oe(oe) {}

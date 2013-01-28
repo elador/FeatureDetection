@@ -11,10 +11,10 @@
 #include "classification/TrainableClassifier.h"
 #include "classification/Training.h"
 #include "svm.h"
-#include "boost/shared_ptr.hpp"
+#include <memory>
 #include <vector>
 
-using boost::shared_ptr;
+using std::shared_ptr;
 using std::vector;
 
 namespace classification {

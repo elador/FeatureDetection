@@ -9,10 +9,10 @@
 #define TRAINABLECLASSIFIER_H_
 
 #include "classification/Classifier.h"
-#include "boost/shared_ptr.hpp"
+#include <memory>
 #include <vector>
 
-using boost::shared_ptr;
+using std::shared_ptr;
 using std::vector;
 
 namespace classification {

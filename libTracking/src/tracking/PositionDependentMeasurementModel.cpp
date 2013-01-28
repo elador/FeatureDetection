@@ -10,12 +10,11 @@
 #include "classification/FeatureVector.h"
 #include "classification/FeatureExtractor.h"
 #include "classification/TrainableClassifier.h"
-#include "boost/make_shared.hpp"
-#include "boost/unordered_map.hpp"
+#include <unordered_map>
 #include <utility>
 
-using boost::make_shared;
-using boost::unordered_map;
+using std::make_shared;
+using std::unordered_map;
 using std::pair;
 
 namespace tracking {

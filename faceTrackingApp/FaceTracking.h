@@ -17,19 +17,18 @@
 #include "tracking/ResamplingSampler.h"
 #include "tracking/GridSampler.h"
 #include "opencv2/highgui/highgui.hpp"
-#include "boost/shared_ptr.hpp"
-#include "boost/make_shared.hpp"
+#include <memory>
 #include <string>
 
-using std::auto_ptr;
-using boost::shared_ptr;
-using boost::make_shared;
+using std::unique_ptr;
+using std::shared_ptr;
+using std::make_shared;
 using namespace tracking;
 using namespace classification;
 
 class FaceTracking {
 public:
-	explicit FaceTracking(auto_ptr<imageio::ImageSource> imageSource, auto_ptr<imageio::ImageSink> imageSink,
+	explicit FaceTracking(unique_ptr<imageio::ImageSource> imageSource, unique_ptr<imageio::ImageSink> imageSink,
 			std::string svmConfigFile, std::string negativesFile);
 	virtual ~FaceTracking();
 
@@ -55,14 +54,14 @@ private:
 	const std::string svmConfigFile;
 	const std::string negativesFile;
 
-	auto_ptr<imageio::ImageSource> imageSource;
-	auto_ptr<imageio::ImageSink> imageSink;
+	unique_ptr<imageio::ImageSource> imageSource;
+	unique_ptr<imageio::ImageSink> imageSink;
 
 	bool running;
 	bool paused;
 	bool drawSamples;
 
-	auto_ptr<AdaptiveCondensationTracker> tracker;
+	unique_ptr<AdaptiveCondensationTracker> tracker;
 	shared_ptr<MeasurementModel> staticMeasurementModel;
 	shared_ptr<AdaptiveMeasurementModel> adaptiveMeasurementModel;
 	shared_ptr<SimpleTransitionModel> transitionModel;

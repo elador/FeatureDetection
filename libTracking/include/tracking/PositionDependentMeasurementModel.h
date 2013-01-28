@@ -9,12 +9,12 @@
 #define POSITIONDEPENDENTMEASUREMENTMODEL_H_
 
 #include "tracking/AdaptiveMeasurementModel.h"
-#include "boost/shared_ptr.hpp"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int.hpp"
+#include <memory>
 #include <string>
 
-using boost::shared_ptr;
+using std::shared_ptr;
 
 namespace classification {
 

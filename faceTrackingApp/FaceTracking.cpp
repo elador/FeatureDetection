@@ -50,14 +50,19 @@
 	#include <sys/time.h>
 #endif
 
+using std::move;
+
 namespace po = boost::program_options;
 
 const std::string FaceTracking::videoWindowName = "Image";
 const std::string FaceTracking::controlWindowName = "Controls";
 
-FaceTracking::FaceTracking(auto_ptr<imageio::ImageSource> imageSource, auto_ptr<imageio::ImageSink> imageSink,
+FaceTracking::FaceTracking(unique_ptr<imageio::ImageSource> imageSource, unique_ptr<imageio::ImageSink> imageSink,
 		std::string svmConfigFile, std::string negativesFile) :
-				svmConfigFile(svmConfigFile), negativesFile(negativesFile), imageSource(imageSource), imageSink(imageSink) {
+				svmConfigFile(svmConfigFile),
+				negativesFile(negativesFile),
+				imageSource(move(imageSource)),
+				imageSink(move(imageSink)) {
 	initTracking();
 	initGui();
 }
@@ -103,7 +108,7 @@ void FaceTracking::initTracking() {
 	resamplingSampler = make_shared<ResamplingSampler>(count, randomRate, make_shared<LowVarianceSampling>(),
 			transitionModel, 0.1666, 1.0);
 	gridSampler = make_shared<GridSampler>(0.1666, 0.8, 1 / 0.85, 0.1);
-	tracker = auto_ptr<AdaptiveCondensationTracker>(new AdaptiveCondensationTracker(
+	tracker = unique_ptr<AdaptiveCondensationTracker>(new AdaptiveCondensationTracker(
 			resamplingSampler, staticMeasurementModel, adaptiveMeasurementModel,
 			make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>())));
 //	tracker->setUseAdaptiveModel(false);
@@ -317,7 +322,7 @@ int main(int argc, char *argv[]) {
 	Logger->setVerboseLevelText(verboseLevelText);
 	Logger->setVerboseLevelImages(verboseLevelImages);
 
-	auto_ptr<imageio::ImageSource> imageSource;
+	unique_ptr<imageio::ImageSource> imageSource;
 	if (useCamera)
 		imageSource.reset(new imageio::VideoImageSource(deviceId));
 	else if (useKinect)
@@ -327,7 +332,7 @@ int main(int argc, char *argv[]) {
 	else if (useDirectory)
 		imageSource.reset(new imageio::DirectoryImageSource(directory));
 
-	auto_ptr<imageio::ImageSink> imageSink;
+	unique_ptr<imageio::ImageSink> imageSink;
 	if (outputFile != "") {
 		if (outputFps < 0) {
 			std::cout << "Usage: You have to specify the framerate of the output video file by using option -r. Use -h for help." << std::endl;
@@ -336,7 +341,7 @@ int main(int argc, char *argv[]) {
 		imageSink.reset(new imageio::VideoImageSink(outputFile, outputFps));
 	}
 
-	auto_ptr<FaceTracking> tracker(new FaceTracking(imageSource, imageSink, svmConfigFile, negativeRtlPatches));
+	unique_ptr<FaceTracking> tracker(new FaceTracking(move(imageSource), move(imageSink), svmConfigFile, negativeRtlPatches));
 	tracker->run();
 	return 0;
 }

@@ -10,10 +10,10 @@
 #include "classification/FeatureVector.h"
 #include "classification/FeatureExtractor.h"
 #include "classification/TrainableClassifier.h"
-#include "boost/unordered_map.hpp"
+#include <unordered_map>
 #include <algorithm>
 
-using boost::unordered_map;
+using std::unordered_map;
 using std::make_pair;
 using std::sort;
 using std::reverse;

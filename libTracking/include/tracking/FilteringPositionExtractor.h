@@ -9,9 +9,9 @@
 #define FILTERINGPOSITIONEXTRACTOR_H_
 
 #include "tracking/PositionExtractor.h"
-#include "boost/shared_ptr.hpp"
+#include <memory>
 
-using boost::shared_ptr;
+using std::shared_ptr;
 
 namespace tracking {
 

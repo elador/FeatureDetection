@@ -10,11 +10,11 @@
 
 #include "tracking/Sample.h"
 #include "opencv2/core/core.hpp"
-#include "boost/shared_ptr.hpp"
 #include "boost/optional.hpp"
+#include <memory>
 #include <vector>
 
-using boost::shared_ptr;
+using std::shared_ptr;
 using boost::optional;
 using cv::Mat;
 using std::vector;

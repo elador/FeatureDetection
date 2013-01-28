@@ -1,6 +1,14 @@
 SET( PROJECT_NAME FeatureDetection )
 PROJECT( ${PROJECT_NAME} )
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+
+# G++ needs a compiler flag to use the (experimental) C++11 support
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag(-std=c++11 HAS_CXX11_FLAG)
+if (HAS_CXX11_FLAG)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif()
+
 add_subdirectory(libImageIO)			# Input-library for cameras, Kinect and hard-drive images.
 add_subdirectory(libFeatureDetection)	# Library for face feature detecion.
 add_subdirectory(libTracking)

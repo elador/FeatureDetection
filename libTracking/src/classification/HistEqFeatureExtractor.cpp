@@ -8,11 +8,10 @@
 #include "classification/HistEqFeatureExtractor.h"
 #include "classification/FeatureVector.h"
 #include "opencv2/imgproc/imgproc.hpp"
-#include "boost/shared_ptr.hpp"
-#include "boost/make_shared.hpp"
+#include <memory>
 
-using boost::shared_ptr;
-using boost::make_shared;
+using std::shared_ptr;
+using std::make_shared;
 
 namespace classification {
 

@@ -132,25 +132,6 @@ shared_ptr<FeatureVector> ImagePyramidFeatureExtractor::extract(int x, int y, in
 	} else { // patch and feature vector exist already
 		return pit->getFeatureVector();
 	}
-	// TODO the following code might work if std::unordered_set does not return a const_iterator
-	/*pair<unordered_set<Patch, Patch::hash>::iterator, bool> insertion = level->getPatches().insert(patch);
-	if (insertion.second) { // patch was inserted (was not existing before)
-		const Mat& image = level->getScaledImage();
-		int patchBeginX = scaledX - featureSize.width / 2; // inclusive
-		int patchBeginY = scaledY - featureSize.height / 2; // inclusive
-		int patchEndX = patchBeginX + featureSize.width; // exclusive
-		int patchEndY = patchBeginY + featureSize.height; // exclusive
-		if (patchBeginX < 0 || patchEndX > image.cols
-				|| patchBeginY < 0 || patchEndY > image.rows)
-			return shared_ptr<FeatureVector>();
-		Mat patch(image, Rect(patchBeginX, patchBeginY, patchEndX, patchEndY));
-		shared_ptr<FeatureVector> featureVector = extract(patch);
-		insertion.first->setFeatureVector(featureVector);
-		return featureVector;
-	} else {
-		insertion.first.
-		return insertion.first->getFeatureVector();
-	}*/
 }
 
 void ImagePyramidFeatureExtractor::clearLevels() {

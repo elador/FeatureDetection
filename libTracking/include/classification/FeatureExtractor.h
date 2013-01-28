@@ -9,9 +9,9 @@
 #define FEATUREEXTRACTOR_H_
 
 #include "opencv2/core/core.hpp"
-#include "boost/shared_ptr.hpp"
+#include <memory>
 
-using boost::shared_ptr;
+using std::shared_ptr;
 
 namespace classification {
 
