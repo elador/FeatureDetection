@@ -91,7 +91,8 @@ int main(int argc, char *argv[])
 
 	const float& aspect = 640.0f/480.0f;
 
-	render::Renderer->camera.setFrustum(-0.25f*aspect, 0.25f*aspect, 0.25f, -0.25f, 0.5f, 500.0f);
+	//render::Renderer->camera.setFrustum(-0.25f*aspect, 0.25f*aspect, 0.25f, -0.25f, 0.5f, 500.0f);
+	render::Renderer->camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, 5.0f, 1000.0f);
 
 	// loop start
 	bool running = true;
@@ -136,7 +137,7 @@ int main(int argc, char *argv[])
 		render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("H:\\projects\\Software Renderer\\statismo_l4_head.h5");
 		render::Renderer->setMesh(&mmHeadL4);
 		cv::Mat headWorld = render::utils::MatrixUtils::createScalingMatrix(1.0f/70.0f, 1.0f/70.0f, 1.0f/70.0f);
-		render::Renderer->setTransform(viewProjTransform * headWorld);
+		render::Renderer->setTransform(viewProjTransform/* headWorld*/);
 		render::Renderer->draw();
 		
 		render::Renderer->end();
@@ -144,7 +145,7 @@ int main(int argc, char *argv[])
 		cv::namedWindow("renderOutput");
 		cv::imshow("renderOutput", render::Renderer->getRendererImage());
 
-		float speed = 0.4f;
+		float speed = 20.0f;
 		float mouseSpeed = 0.2f;
 		cv::Vec3f eye = render::Renderer->camera.getEye();
 		float deltaTime = 1.0f;
