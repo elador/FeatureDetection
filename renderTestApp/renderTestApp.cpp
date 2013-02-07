@@ -134,7 +134,8 @@ int main(int argc, char *argv[])
 		//render::Renderer->setTexture(plane.texture);
 		render::Renderer->draw();
 		
-		render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("H:\\projects\\Software Renderer\\statismo_l4_head.h5");
+		//render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("H:\\projects\\Software Renderer\\statismo_l4_head.h5");
+		render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("D:/FeatureDetection/statismo_l4_head.h5");
 		render::Renderer->setMesh(&mmHeadL4);
 		cv::Mat headWorld = render::utils::MatrixUtils::createScalingMatrix(1.0f/70.0f, 1.0f/70.0f, 1.0f/70.0f);
 		render::Renderer->setTransform(viewProjTransform/* headWorld*/);

@@ -57,7 +57,7 @@ H5::Group Hdf5Utils::openPath(H5::H5File& file, const std::string& path) {
 
 cv::Mat Hdf5Utils::readMatrixFloat(const H5::CommonFG& fg, std::string name) {
 	
-	H5::DataSet ds = fg.openDataSet( name );
+	H5::DataSet ds = fg.openDataSet( name.c_str() );
 	hsize_t dims[2];
 	ds.getSpace().getSimpleExtentDims(dims, NULL);
 	cv::Mat matrix((int)dims[0], (int)dims[1], CV_32FC1); // r, c?

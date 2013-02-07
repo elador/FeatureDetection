@@ -4,6 +4,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
+MESSAGE(STATUS "Configuring ${SUBPROJECT_NAME}:")
+MESSAGE(STATUS "-------------------------------")
+
 #OpenCV:
 FIND_PACKAGE( OpenCV REQUIRED core imgproc highgui)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
@@ -19,6 +22,9 @@ ENDIF()
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 
 #HDF5: (needed for reading the Model)
+MESSAGE(STATUS "HDF5_ROOT: ${HDF5_ROOT}")
+SET( CMAKE_MODULE_PATH ${HDF5_ROOT}/cmake/hdf5 )
+MESSAGE(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 FIND_PACKAGE( HDF5 REQUIRED COMPONENTS C CXX )
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
 MESSAGE(STATUS "HDF5 include dir: ${HDF5_INCLUDE_DIRS}")
@@ -52,3 +58,6 @@ include_directories( "include" )
 
 #Make the library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
+
+MESSAGE(STATUS "Finished configuring ${SUBPROJECT_NAME}")
+MESSAGE(STATUS "===============================")

@@ -4,6 +4,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
+MESSAGE(STATUS "Configuring ${SUBPROJECT_NAME}:")
+MESSAGE(STATUS "-------------------------------")
+
 # find dependencies
 FIND_PACKAGE(Boost COMPONENTS random system filesystem program_options REQUIRED)
 FIND_PACKAGE(OpenCV REQUIRED core imgproc highgui)
@@ -40,3 +43,6 @@ include_directories( ${libFeatureDetection_SOURCE_DIR} )
 # make executable
 ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
 TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} ImageIO ${KINECT_LIBNAME} Tracking libFeatureDetection ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )
+
+MESSAGE(STATUS "Finished configuring ${SUBPROJECT_NAME}")
+MESSAGE(STATUS "===============================")

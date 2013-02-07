@@ -4,6 +4,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
+MESSAGE(STATUS "Configuring ${SUBPROJECT_NAME}:")
+MESSAGE(STATUS "-------------------------------")
+
 #OpenCV:
 FIND_PACKAGE( OpenCV REQUIRED core imgproc highgui)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
@@ -47,3 +50,6 @@ include_directories( ${libFeatureDetection_SOURCE_DIR} )
 #Make the app depend on the libraries
 TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} libFeatureDetection ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )
 #MESSAGE(STATUS "Boost libs inc: ${Boost_LIBRARIES}")
+
+MESSAGE(STATUS "Finished configuring ${SUBPROJECT_NAME}")
+MESSAGE(STATUS "===============================")

@@ -4,6 +4,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
+MESSAGE(STATUS "Configuring ${SUBPROJECT_NAME}:")
+MESSAGE(STATUS "-------------------------------")
+
 # find dependencies
 FIND_PACKAGE(Boost COMPONENTS filesystem REQUIRED)
 FIND_PACKAGE(OpenCV REQUIRED core)
@@ -38,3 +41,6 @@ include_directories( "include" )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
+
+MESSAGE(STATUS "Finished configuring ${SUBPROJECT_NAME}")
+MESSAGE(STATUS "===============================")

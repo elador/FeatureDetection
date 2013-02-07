@@ -172,7 +172,7 @@ Mesh MeshUtils::readFromHdf5(std::string filename)
 	H5::H5File h5Model;
 	try
 	{
-		h5Model = H5::H5File( filename, H5F_ACC_RDONLY );
+		h5Model = H5::H5File( filename.c_str(), H5F_ACC_RDONLY ); // TODO: Since HDF5 1.8.10 or so, in windows, a std::string won't work anymore... Bug?
 	}
 	catch ( H5::Exception& e )
 	{

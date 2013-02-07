@@ -98,7 +98,8 @@ int main(int argc, char *argv[])		// Peter
 		return 1;
 	}
 
-	std::string fn_detFrontal = "C:\\Users\\Patrik\\Documents\\GitHub\\config\\cfg\\ffpDetectApp\\fd_config_ffd_fd.mat";
+	//std::string fn_detFrontal = "C:\\Users\\Patrik\\Documents\\GitHub\\config\\cfg\\ffpDetectApp\\fd_config_ffd_fd.mat";
+	std::string fn_detFrontal = "D:\\FeatureDetection\\config\\fdetection\\fd_config_ffd_fd.mat";
 	
 	FdImage *myimg;
 
