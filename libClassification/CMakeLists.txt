@@ -31,7 +31,8 @@ SET(HEADERS
 	include/classification/VDetector.h
 	include/classification/VDetectorVectorMachine.h
 	include/classification/WvmClassifier.h
-	include/classification/Classifier.hpp
+	include/classification/BinaryClassifier.hpp
+	include/classification/ProbabilisticClassifier.hpp
 	include/classification/TrainableClassifier.h
 	include/classification/Training.h
 	include/svm.h

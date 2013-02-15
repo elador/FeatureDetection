@@ -21,7 +21,6 @@ SET(HEADERS
 	include/imageprocessing/HistEqFeatureTransformer.h
 	include/imageprocessing/IImg.hpp
 	include/imageprocessing/ImagePyramidFeatureExtractor_old.h
-	include/imageprocessing/StdImage.h
 	
 )
 SET(SOURCE
@@ -33,7 +32,6 @@ SET(SOURCE
 	src/imageprocessing/ImagePyramidFeatureExtractor_old.cpp
 	src/imageprocessing/IImg.cpp
 	src/imageprocessing/HistEqFeatureTransformer.cpp
-	src/imageprocessing/StdImage.cpp
 )
 
 include_directories( "include" )
