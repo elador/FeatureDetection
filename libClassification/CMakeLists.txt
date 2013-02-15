@@ -10,17 +10,62 @@ FIND_PACKAGE(OpenCV REQUIRED core)
 
 # source and header files
 SET(HEADERS
-	include/stuff.h
+	include/classification/ApproximateSigmoidParameterComputation.h
+	include/classification/DetectorSVM.h
+	include/classification/DetectorWVM.h
+	include/classification/FastLibSvmTraining.h
+	include/classification/FixedApproximateSigmoidParameterComputation.h
+	include/classification/FixedSizeLibSvmTraining.h
+	include/classification/FrameBasedLibSvmTraining.h
+	include/classification/LibSvmClassifier.h
+	include/classification/LibSvmParameterBuilder.h
+	include/classification/LibSvmTraining.h
+	include/classification/MatlabReader.h
+	include/classification/PolyLibSvmParameterBuilder.h
+	include/classification/RbfLibSvmParameterBuilder.h
+	include/classification/RegressorSVR.h
+	include/classification/RegressorWVR.h
+	include/classification/SigmoidParameterComputation.h
+	include/classification/TrainableTwoStageClassifier.h
+	include/classification/TwoStageClassifier.h
+	include/classification/VDetector.h
+	include/classification/VDetectorVectorMachine.h
+	include/classification/WvmClassifier.h
+	include/classification/Classifier.hpp
+	include/classification/TrainableClassifier.h
+	include/classification/Training.h
+	include/svm.h
 )
 SET(SOURCE
-	src/stuff.cpp
+	src/classification/ApproximateSigmoidParameterComputation.cpp
+	src/classification/DetectorSVM.cpp
+	src/classification/DetectorWVM.cpp
+	src/classification/FastLibSvmTraining.cpp
+	src/classification/FixedApproximateSigmoidParameterComputation.cpp
+	src/classification/FixedSizeLibSvmTraining.cpp
+	src/classification/FrameBasedLibSvmTraining.cpp
+	src/classification/LibSvmClassifier.cpp
+	src/classification/LibSvmParameterBuilder.cpp
+	src/classification/LibSvmTraining.cpp
+	src/classification/MatlabReader.cpp
+	src/classification/PolyLibSvmParameterBuilder.cpp
+	src/classification/RbfLibSvmParameterBuilder.cpp
+	src/classification/RegressorSVR.cpp
+	src/classification/RegressorWVR.cpp
+	src/classification/SigmoidParameterComputation.cpp
+	src/classification/TrainableTwoStageClassifier.cpp
+	src/classification/TwoStageClassifier.cpp
+	src/classification/VDetector.cpp
+	src/classification/VDetectorVectorMachine.cpp
+	src/classification/WvmClassifier.cpp
+	src/svm.cpp
 )
 
 include_directories( "include" )
 
 # add dependencies
 include_directories( ${Boost_INCLUDE_DIRS} )
-include_directories( ${libFeatureDetection_SOURCE_DIR} )
+#include_directories( ${libFeatureDetection_SOURCE_DIR} )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )

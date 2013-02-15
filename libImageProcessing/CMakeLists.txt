@@ -31,7 +31,7 @@ include_directories( "include" )
 
 # add dependencies
 #include_directories( ${Boost_INCLUDE_DIRS} )
-include_directories( ${libFeatureDetection_SOURCE_DIR} )
+#include_directories( ${libFeatureDetection_SOURCE_DIR} )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
