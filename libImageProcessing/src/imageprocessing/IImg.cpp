@@ -1,6 +1,6 @@
-#include "stdafx.h"
-#include "IImg.h"
+#include "imageprocessing/IImg.hpp"
 
+namespace imageprocessing {
 
 IImg::IImg(void) : data(0), w(0), h(0), colordepth(0)
 {
@@ -64,10 +64,7 @@ void IImg::calIImgPatch(const unsigned char* in_img, bool sqr=false)
 	}
 }
 
-
-
-
-
+} /* namespace imageprocessing */
 
 
 //float IImg::Max(int _x /*=0*/, int _y /*=0*/, int _w /*=0*/, int _h /*=0*/)

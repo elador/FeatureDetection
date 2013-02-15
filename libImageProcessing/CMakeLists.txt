@@ -17,12 +17,10 @@ SET(HEADERS
 	include/imageprocessing/FeatureTransformer.hpp
 	include/imageprocessing/RowFeatureTransformer.hpp
 	include/imageprocessing/ImageFilter.hpp
-	include/imageprocessing/FdImage.h
 	include/imageprocessing/FeatureExtractor.h
 	include/imageprocessing/HistEqFeatureTransformer.h
-	include/imageprocessing/IImg.h
+	include/imageprocessing/IImg.hpp
 	include/imageprocessing/ImagePyramidFeatureExtractor_old.h
-	include/imageprocessing/Pyramid.h
 	include/imageprocessing/StdImage.h
 	
 )
@@ -35,8 +33,6 @@ SET(SOURCE
 	src/imageprocessing/ImagePyramidFeatureExtractor_old.cpp
 	src/imageprocessing/IImg.cpp
 	src/imageprocessing/HistEqFeatureTransformer.cpp
-	src/imageprocessing/FdImage.cpp
-	src/imageprocessing/Pyramid.cpp
 	src/imageprocessing/StdImage.cpp
 )
 

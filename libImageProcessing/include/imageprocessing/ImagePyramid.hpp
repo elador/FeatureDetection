@@ -1,3 +1,12 @@
+/*
+ * ImagePyramid.hpp
+ *
+ *  Created on: 15.02.2013
+ *      Author: huber & poschmann
+ */
+
+#pragma once
+
 #ifndef IMAGEPYRAMID_H
 #define IMAGEPYRAMID_H
 

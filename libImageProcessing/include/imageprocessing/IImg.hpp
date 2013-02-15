@@ -1,9 +1,24 @@
+/*
+ * IImg.hpp
+ *
+ *  Created on: 2011/2012
+ *      Author: Patrik Huber
+ */
+
 #pragma once
+
+#ifndef IIMG_HPP_
+#define IIMG_HPP_
+
+namespace imageprocessing {
+
+/**
+ * Integral Image class that represents (stores) integral images and is able to calculate them for a patch.
+ */
 class IImg
 {
 	//IImg(void);
 	//~IImg(void);
-
 
 public:
 	float* data;
@@ -19,8 +34,8 @@ public:
 
 };
 
-
-
+} /* namespace imageprocessing */
+#endif /* IIMG_HPP_ */
 
 
 /*
