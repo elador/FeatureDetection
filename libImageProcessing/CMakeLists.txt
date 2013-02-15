@@ -10,21 +10,34 @@ FIND_PACKAGE(OpenCV REQUIRED core)
 
 # source and header files
 SET(HEADERS
-	include/ImagePyramid.hpp
-	include/PyramidLayer.hpp
-	include/Patch.hpp
-	include/PatchExtractor.hpp
-	include/FeatureTransformer.hpp
-	include/RowFeatureTransformer.hpp
-	include/ImageFilter.hpp
+	include/imageprocessing/ImagePyramid.hpp
+	include/imageprocessing/PyramidLayer.hpp
+	include/imageprocessing/Patch.hpp
+	include/imageprocessing/PatchExtractor.hpp
+	include/imageprocessing/FeatureTransformer.hpp
+	include/imageprocessing/RowFeatureTransformer.hpp
+	include/imageprocessing/ImageFilter.hpp
+	include/imageprocessing/FdImage.h
+	include/imageprocessing/FeatureExtractor.h
+	include/imageprocessing/HistEqFeatureTransformer.h
+	include/imageprocessing/IImg.h
+	include/imageprocessing/ImagePyramidFeatureExtractor_old.h
+	include/imageprocessing/Pyramid.h
+	include/imageprocessing/StdImage.h
 	
 )
 SET(SOURCE
-	src/ImagePyramid.cpp
-	src/PyramidLayer.cpp
-	src/Patch.cpp
-	src/PatchExtractor.cpp
-	src/RowFeatureTransformer.cpp
+	src/imageprocessing/ImagePyramid.cpp
+	src/imageprocessing/PyramidLayer.cpp
+	src/imageprocessing/Patch.cpp
+	src/imageprocessing/PatchExtractor.cpp
+	src/imageprocessing/RowFeatureTransformer.cpp
+	src/imageprocessing/ImagePyramidFeatureExtractor_old.cpp
+	src/imageprocessing/IImg.cpp
+	src/imageprocessing/HistEqFeatureTransformer.cpp
+	src/imageprocessing/FdImage.cpp
+	src/imageprocessing/Pyramid.cpp
+	src/imageprocessing/StdImage.cpp
 )
 
 include_directories( "include" )
