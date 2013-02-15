@@ -2,7 +2,7 @@
  * Patch.hpp
  *
  *  Created on: 15.02.2013
- *      Author: poschmann
+ *      Author: poschmann & huber
  */
 
 #ifndef PATCH_HPP_
@@ -15,7 +15,7 @@ using cv::Mat;
 namespace imageprocessing {
 
 /**
- * An possibly scaled image patch, extracted from an image pyramid.
+ * A possibly scaled image patch, extracted from an image pyramid.
  */
 class Patch {
 public:

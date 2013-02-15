@@ -2,7 +2,7 @@
  * Patch.cpp
  *
  *  Created on: 15.02.2013
- *      Author: poschmann
+ *      Author: poschmann & huber
  */
 
 #include "imageprocessing/Patch.hpp"
