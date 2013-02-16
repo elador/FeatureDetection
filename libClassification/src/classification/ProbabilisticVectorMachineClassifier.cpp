@@ -5,16 +5,16 @@
  *      Author: Patrik Huber
  */
 
-#include "classification/VectorMachineClassifier.hpp"
+#include "classification/ProbabilisticVectorMachineClassifier.hpp"
 
 namespace classification {
 
-VectorMachineClassifier::VectorMachineClassifier(void)
+ProbabilisticVectorMachineClassifier::ProbabilisticVectorMachineClassifier(void)
 {
 }
 
 
-VectorMachineClassifier::~VectorMachineClassifier(void)
+ProbabilisticVectorMachineClassifier::~ProbabilisticVectorMachineClassifier(void)
 {
 }
 

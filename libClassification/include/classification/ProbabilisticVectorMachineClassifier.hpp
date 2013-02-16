@@ -7,23 +7,29 @@
 
 #pragma once
 
-#ifndef VECTORMACHINECLASSIFIER_HPP_
-#define VECTORMACHINECLASSIFIER_HPP_
+#ifndef PROBABILISTICVECTORMACHINECLASSIFIER_HPP_
+#define PROBABILISTICVECTORMACHINECLASSIFIER_HPP_
 
-#include "classification/BinaryClassifier.hpp"
+#include "classification/ProbabilisticClassifier.hpp"
+#include "classification/VectorMachineClassifier.hpp"
 
 namespace classification {
 
 /**
- * A classifier that uses some kind of support vectors to classify a feature vector.
+ * A classifier that uses a VectorMachineClassifier together with a sigmoid function to produce pseudo-probabilistic output.
  */
-class VectorMachineClassifier : BinaryClassifier
+	class ProbabilisticVectorMachineClassifier : ProbabilisticClassifier
 {
 public:
-	VectorMachineClassifier(void);
-	~VectorMachineClassifier(void);
+	ProbabilisticVectorMachineClassifier(void);
+	~ProbabilisticVectorMachineClassifier(void);
+
+private:
+	VectorMachineClassifier classifier;	// TODO pointer?
+	// TODO Sigmoid-stuff
+
 };
 
 } /* namespace classification */
-#endif /* VECTORMACHINECLASSIFIER_HPP_ */
+#endif /* PROBABILISTICVECTORMACHINECLASSIFIER_HPP_ */
 

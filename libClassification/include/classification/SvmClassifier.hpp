@@ -1,43 +1,39 @@
 /*
- * WvmClassifier.h
+ * SvmClassifier.hpp
  *
  *  Created on: 21.12.2012
- *      Author: poschmann
+ *      Author: poschmann & huber
  */
+#pragma once
 
-#ifndef WVMCLASSIFIER_H_
-#define WVMCLASSIFIER_H_
+#ifndef SVMCLASSIFIER_HPP_
+#define SVMCLASSIFIER_HPP_
 
-#include "classification/Classifier.h"
-#include <memory>
+#include "classification/VectorMachineClassifier.hpp"
+#include "opencv2/core/core.hpp"
 
-using std::shared_ptr;
-
-class VDetectorVectorMachine;
+using cv::Mat;
 
 namespace classification {
 
 /**
- * Classifier based on the Wavelet Reduced Vector Machine of libFeatureDetection.
+ * Classifier based on a Support Vector Machine.
  */
-class WvmClassifier : public Classifier {
+class SvmClassifier : public VectorMachineClassifier {
 public:
 
 	/**
-	 * Constructs a new WVM classifier.
+	 * Constructs a new SVM classifier.
 	 *
-	 * @param[in] wvm The WVM.
+	 * @param[in] svm The SVM.
 	 */
-	explicit WvmClassifier(shared_ptr<VDetectorVectorMachine> wvm);
+	explicit SvmClassifier();
 
-	~WvmClassifier();
+	~SvmClassifier();
 
-	pair<bool, double> classify(const FeatureVector& featureVector) const;
+	pair<bool, double> classify(const Mat& featureVector) const;
 
-private:
-
-	shared_ptr<VDetectorVectorMachine> wvm; ///< The WVM.
 };
 
 } /* namespace classification */
-#endif /* WVMCLASSIFIER_H_ */
+#endif /* SVMCLASSIFIER_HPP_ */

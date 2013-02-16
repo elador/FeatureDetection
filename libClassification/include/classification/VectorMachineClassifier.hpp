@@ -11,6 +11,7 @@
 #define VECTORMACHINECLASSIFIER_HPP_
 
 #include "classification/BinaryClassifier.hpp"
+#include "classification/Kernel.hpp"
 
 namespace classification {
 
@@ -22,6 +23,15 @@ class VectorMachineClassifier : BinaryClassifier
 public:
 	VectorMachineClassifier(void);
 	~VectorMachineClassifier(void);
+
+private:
+	// TODO: Den Kernel und seine Parameter könnte man auch kapseln.
+	Kernel kernel;
+	float nonlin_threshold;		// b parameter of the SVM
+	int nonLinType;				// 2 = rbf (?)
+	float basisParam;
+	int polyPower;
+	float divisor;
 };
 
 } /* namespace classification */

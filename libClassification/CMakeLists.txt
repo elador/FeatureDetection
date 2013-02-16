@@ -28,8 +28,6 @@ SET(HEADERS
 	include/classification/SigmoidParameterComputation.h
 	include/classification/TrainableTwoStageClassifier.h
 	include/classification/TwoStageClassifier.h
-	include/classification/VDetector.h
-	include/classification/VDetectorVectorMachine.h
 	include/classification/WvmClassifier.hpp
 	include/classification/BinaryClassifier.hpp
 	include/classification/ProbabilisticClassifier.hpp
@@ -38,6 +36,8 @@ SET(HEADERS
 	include/classification/TrainableClassifier.h
 	include/classification/Training.h
 	include/classification/ProbabilisticVectorMachineClassifier.hpp
+	include/classification/Kernel.hpp
+	include/classification/RbfKernel.hpp
 	include/svm.h
 )
 SET(SOURCE
@@ -59,12 +59,11 @@ SET(SOURCE
 	src/classification/SigmoidParameterComputation.cpp
 	src/classification/TrainableTwoStageClassifier.cpp
 	src/classification/TwoStageClassifier.cpp
-	src/classification/VDetector.cpp
-	src/classification/VDetectorVectorMachine.cpp
 	src/classification/WvmClassifier.cpp
 	src/classification/SvmClassifier.cpp
 	src/classification/VectorMachineClassifier.cpp
 	src/classification/ProbabilisticVectorMachineClassifier.cpp
+	src/classification/RbfKernel.cpp
 	src/svm.cpp
 )
 
