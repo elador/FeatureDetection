@@ -30,11 +30,14 @@ SET(HEADERS
 	include/classification/TwoStageClassifier.h
 	include/classification/VDetector.h
 	include/classification/VDetectorVectorMachine.h
-	include/classification/WvmClassifier.h
+	include/classification/WvmClassifier.hpp
 	include/classification/BinaryClassifier.hpp
 	include/classification/ProbabilisticClassifier.hpp
+	include/classification/VectorMachineClassifier.hpp
+	include/classification/SvmClassifier.hpp
 	include/classification/TrainableClassifier.h
 	include/classification/Training.h
+	include/classification/ProbabilisticVectorMachineClassifier.hpp
 	include/svm.h
 )
 SET(SOURCE
@@ -59,6 +62,9 @@ SET(SOURCE
 	src/classification/VDetector.cpp
 	src/classification/VDetectorVectorMachine.cpp
 	src/classification/WvmClassifier.cpp
+	src/classification/SvmClassifier.cpp
+	src/classification/VectorMachineClassifier.cpp
+	src/classification/ProbabilisticVectorMachineClassifier.cpp
 	src/svm.cpp
 )
 

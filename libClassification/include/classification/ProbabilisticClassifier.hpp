@@ -7,8 +7,8 @@
 
 #pragma once
 
-#ifndef PROBABILISTICCLASSIFIER_H_
-#define PROBABILISTICCLASSIFIER_H_
+#ifndef PROBABILISTICCLASSIFIER_HPP_
+#define PROBABILISTICCLASSIFIER_HPP_
 
 #include "opencv2/core/core.hpp"
 
@@ -35,4 +35,4 @@ public:
 };
 
 } /* namespace classification */
-#endif /* PROBABILISTICCLASSIFIER_H_ */
+#endif /* PROBABILISTICCLASSIFIER_HPP_ */

@@ -7,12 +7,14 @@
 
 #pragma once
 
-#ifndef BINARYCLASSIFIER_H_
-#define BINARYCLASSIFIER_H_
+#ifndef BINARYCLASSIFIER_HPP_
+#define BINARYCLASSIFIER_HPP_
 
 #include "opencv2/core/core.hpp"
+#include <utility>
 
 using cv::Mat;
+using std::pair;
 
 namespace classification {
 
@@ -29,9 +31,15 @@ public:
 	 *
 	 * @param[in] featureVector The feature vector.
 	 * @return A binary flag, true if positively classified.) and a probability for being positive.
+	 * TODO: We should really only return a bool. I left this for backward compatibility for now.
+	 *			- Do we actually need the hyperplane distance from the SVM somewhere? Peter?
+	 *			- The ProbabilisticVectorMachine needs it for sure. I think we shouldn't just add a public 
+	 *			  function getHyperplaneDist() or something like that because it would brake the interface
+	 *			  with other BinaryClassifier's. Maybe make VectorMachineClassifier a friend of
+	 *			  ProbabilisticVectorMachineClassifier and let it use its private/protected function? Peter?
 	 */
-	virtual bool classify(const Mat& featureVector) const = 0;
+	virtual pair<bool, double> classify(const Mat& featureVector) const = 0;
 };
 
 } /* namespace classification */
-#endif /* BINARYCLASSIFIER_H_ */
+#endif /* BINARYCLASSIFIER_HPP_ */

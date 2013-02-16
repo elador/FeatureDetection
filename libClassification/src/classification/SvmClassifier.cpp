@@ -2,10 +2,13 @@
  * WvmClassifier.cpp
  *
  *  Created on: 21.12.2012
- *      Author: poschmann & huber
+ *      Author: poschmann
  */
 
-#include "classification/WvmClassifier.hpp"
+#include "classification/WvmClassifier.h"
+#include "classification/FeatureVector.h"
+#include "VDetectorVectorMachine.h"
+#include "FdPatch.h"
 
 using std::make_pair;
 
