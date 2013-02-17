@@ -9,9 +9,12 @@ if (HAS_CXX11_FLAG)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
-add_subdirectory(libImageIO)			# Input-library for cameras, Kinect and hard-drive images.
-add_subdirectory(libImageProcessing)	# Image pyramids, patch extraction, feature transformation
+#add_subdirectory(libImageIO)			# Input-library for cameras, Kinect and hard-drive images.
+#add_subdirectory(libImageProcessing)	# Image pyramids, patch extraction, feature transformation
 add_subdirectory(libClassification)		# Classification and regression library
+
+add_subdirectory(mergePlaygroundApp)	# Test-app for the refactored/merged code
+
 #add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 #add_subdirectory(libDetection)			# Sliding-window detection, Skin detection
 #add_subdirectory(libHeadDetection)		# Head/face specific things; 2D/3D models; Combining feature points

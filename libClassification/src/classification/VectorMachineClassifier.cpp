@@ -9,13 +9,15 @@
 
 namespace classification {
 
-VectorMachineClassifier::VectorMachineClassifier(void)
+VectorMachineClassifier::VectorMachineClassifier(void) : nonlinThreshold(0.0f)
 {
+	kernel = NULL;
 }
 
 
 VectorMachineClassifier::~VectorMachineClassifier(void)
 {
+	// Who allocates the kernel? Maybe delete it here?
 }
 
 } /* namespace classification */

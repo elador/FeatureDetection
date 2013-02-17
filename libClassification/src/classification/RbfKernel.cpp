@@ -13,14 +13,12 @@ RbfKernel::RbfKernel(void)
 {
 }
 
-
-RbfKernel::~RbfKernel(void)
+RbfKernel::RbfKernel(double gamma) : gamma(gamma)
 {
 }
 
-double RbfKernel::compute(const Mat& value)
+RbfKernel::~RbfKernel(void)
 {
-	return 0;
 }
 
 } /* namespace classification */

@@ -14,19 +14,21 @@
 #include "classification/Kernel.hpp"
 #include <memory>
 
+using std::shared_ptr;
+
 namespace classification {
 
 /**
  * A classifier that uses some kind of support vectors to classify a feature vector.
  */
-class VectorMachineClassifier : BinaryClassifier
+class VectorMachineClassifier : public BinaryClassifier
 {
 public:
 	VectorMachineClassifier(void);
 	~VectorMachineClassifier(void);
 
-private:
-	std::shared_ptr<Kernel> kernel;	// TODO unique_ptr? Look up difference... (shame on me)
+protected:
+	shared_ptr<Kernel> kernel;	// TODO unique_ptr? Look up difference... (shame on me)
 	float nonlinThreshold;		// b parameter of the vector machine
 
 };

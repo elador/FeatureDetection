@@ -11,8 +11,10 @@
 
 #include "classification/VectorMachineClassifier.hpp"
 #include "opencv2/core/core.hpp"
+#include <string>
 
 using cv::Mat;
+using std::string;
 
 namespace classification {
 
@@ -32,7 +34,7 @@ public:
 
 	pair<bool, double> classify(const Mat& featureVector) const;
 
-	void load(const std::string classifierFilename, const std::string thresholdsFilename, float limitReliability); // TODO: Re-work this. Should also pass a Kernel.
+	void load(const string classifierFilename, const string thresholdsFilename, float limitReliability); // TODO: Re-work this. Should also pass a Kernel.
 
 private:
 	int numSV;

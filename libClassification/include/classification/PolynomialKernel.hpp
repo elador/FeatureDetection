@@ -10,16 +10,14 @@
 #ifndef POLYNOMIALKERNEL_HPP_
 #define POLYNOMIALKERNEL_HPP_
 
-#include "opencv2/core/core.hpp"
-
-using cv::Mat;
+#include "classification/Kernel.hpp"
 
 namespace classification {
 
 /**
  * A polynomial kernel funcion.
  */
-class PolynomialKernel {
+class PolynomialKernel : public Kernel {
 public:
 
 	explicit PolynomialKernel();
@@ -31,7 +29,7 @@ public:
 	 * @param[in] input The ...
 	 * @return The result of the kernel computation
 	 */
-	inline double compute(const Mat& value);	// Write the implementation in the header to allow inlining?
+	inline double compute(unsigned char* data, unsigned char* support, int nDim) const;	// Write the implementation in the header to allow inlining?
 	// float kernel(unsigned char*, unsigned char*, int, float, float, int, int); // from DetSVM.h
 
 	/*
