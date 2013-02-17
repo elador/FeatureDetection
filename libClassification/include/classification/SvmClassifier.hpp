@@ -28,10 +28,18 @@ public:
 	 * @param[in] svm The SVM.
 	 */
 	explicit SvmClassifier();
-
 	~SvmClassifier();
 
 	pair<bool, double> classify(const Mat& featureVector) const;
+
+	void load(const std::string classifierFilename, const std::string thresholdsFilename, float limitReliability); // TODO: Re-work this. Should also pass a Kernel.
+
+private:
+	int numSV;
+	unsigned char** support;	// support[i] hold support vector i
+	float* alpha;				// alpha[i] hold the weight of support vector i
+
+	float limitReliability;	// if fout>=limitReliability(threshold_fullsvm), then its a face. (MR default: -1.2)
 
 };
 

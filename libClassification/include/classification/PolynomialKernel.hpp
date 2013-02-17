@@ -1,14 +1,14 @@
 /*
- * RbfKernel.hpp
+ * PolynomialKernel.hpp
  *
- *  Created on: 16.02.2013
+ *  Created on: 17.02.2013
  *      Author: Patrik Huber
  */
 
 #pragma once
 
-#ifndef RBFKERNEL_HPP_
-#define RBFKERNEL_HPP_
+#ifndef POLYNOMIALKERNEL_HPP_
+#define POLYNOMIALKERNEL_HPP_
 
 #include "opencv2/core/core.hpp"
 
@@ -17,16 +17,16 @@ using cv::Mat;
 namespace classification {
 
 /**
- * A radial basis function kernel.
+ * A polynomial kernel funcion.
  */
-class RbfKernel {
+class PolynomialKernel {
 public:
 
-	explicit RbfKernel();
-	~RbfKernel();
+	explicit PolynomialKernel();
+	~PolynomialKernel();
 
 	/**
-	 * Computes the radial basis function kernel of ...
+	 * Computes the polynomial kernel of ...
 	 *
 	 * @param[in] input The ...
 	 * @return The result of the kernel computation
@@ -67,8 +67,8 @@ float DetectorSVM::kernel(unsigned char* data, unsigned char* support, int nonLi
 	*/
 
 private:
-	double gamma; ///< Parameter of the radial basis function exp(-gamma*|u-v|^2). TODO CHECK WITH MR IMPLEMENTATION! REALLY? What about a) 0-255 / 0-1 scaling? And 1/gamma or gamma?
+	
 };
 
 } /* namespace classification */
-#endif /* RBFKERNEL_HPP_ */
+#endif /* POLYNOMIALKERNEL_HPP_ */

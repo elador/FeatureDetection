@@ -11,7 +11,6 @@ FIND_PACKAGE(OpenCV REQUIRED core)
 # source and header files
 SET(HEADERS
 	include/classification/ApproximateSigmoidParameterComputation.h
-	include/classification/DetectorSVM.h
 	include/classification/DetectorWVM.h
 	include/classification/FastLibSvmTraining.h
 	include/classification/FixedApproximateSigmoidParameterComputation.h
@@ -38,11 +37,11 @@ SET(HEADERS
 	include/classification/ProbabilisticVectorMachineClassifier.hpp
 	include/classification/Kernel.hpp
 	include/classification/RbfKernel.hpp
+	include/classification/PolynomialKernel.hpp
 	include/svm.h
 )
 SET(SOURCE
 	src/classification/ApproximateSigmoidParameterComputation.cpp
-	src/classification/DetectorSVM.cpp
 	src/classification/DetectorWVM.cpp
 	src/classification/FastLibSvmTraining.cpp
 	src/classification/FixedApproximateSigmoidParameterComputation.cpp

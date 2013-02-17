@@ -27,6 +27,7 @@ public:
 private:
 	VectorMachineClassifier classifier;	// TODO pointer?
 	// TODO Sigmoid-stuff
+	float posterior_svm[2];	// probabilistic svm output: p(ffp|t) = 1 / (1 + exp(p[0]*t +p[1]))
 
 };
 

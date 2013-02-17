@@ -12,6 +12,7 @@
 
 #include "classification/BinaryClassifier.hpp"
 #include "classification/Kernel.hpp"
+#include <memory>
 
 namespace classification {
 
@@ -25,13 +26,9 @@ public:
 	~VectorMachineClassifier(void);
 
 private:
-	// TODO: Den Kernel und seine Parameter könnte man auch kapseln.
-	Kernel kernel;
-	float nonlin_threshold;		// b parameter of the SVM
-	int nonLinType;				// 2 = rbf (?)
-	float basisParam;
-	int polyPower;
-	float divisor;
+	std::shared_ptr<Kernel> kernel;	// TODO unique_ptr? Look up difference... (shame on me)
+	float nonlinThreshold;		// b parameter of the vector machine
+
 };
 
 } /* namespace classification */
