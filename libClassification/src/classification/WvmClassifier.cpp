@@ -109,6 +109,8 @@ pair<bool, double> WvmClassifier::classify(const Mat& featureVector) const {
 	} while (fout >= this->hierarchicalThresholds[filter_level] && filter_level+1 < this->numUsedFilters); //280
 
 	// fout = final result now!
+	delete iimg_x;
+	delete iimg_xx;
 
 	// TODO: filter statistics, nDropedOutAsNonFace[filter_level]++;
 	// We ran till the REAL LAST filter (not just the numUsedFilters one), save the certainty

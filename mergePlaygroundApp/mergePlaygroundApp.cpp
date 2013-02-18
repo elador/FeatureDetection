@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 {
 	#ifdef WIN32
 	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF ); // dump leaks at return
-	//_CrtSetBreakAlloc(308);
+	//_CrtSetBreakAlloc(22978);
 	#endif
 	
 	cout << "Starting tests..." << endl;
@@ -76,6 +76,7 @@ int main(int argc, char *argv[])
 
 	cout << "The end." << endl;
 	delete svm;
+	delete wvm;
 	
 	return 0;
 }
