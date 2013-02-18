@@ -73,12 +73,10 @@ pair<bool, double> SvmClassifier::classify(const Mat& featureVector) const
 	return result;
 }
 
-void SvmClassifier::load(const std::string classifierFilename, const std::string thresholdsFilename, float limitReliability)
+void SvmClassifier::load(const std::string classifierFilename, const std::string thresholdsFilename)
 {
 	std::cout << "[SvmClassifier] Loading " << classifierFilename << std::endl;	// TODO replace with Logger
 
-	this->limitReliability = limitReliability;	// TODO nonlinThreshold gets ADDED to this, and limitRel is used in classify loop - RIGHT?
-	
 	MATFile *pmatfile;
 	mxArray *pmxarray; // =mat
 	double *matdata;

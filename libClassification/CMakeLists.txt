@@ -20,7 +20,6 @@ ENDIF(MATLAB_FOUND)
 # source and header files
 SET(HEADERS
 #	include/classification/ApproximateSigmoidParameterComputation.h
-#	include/classification/DetectorWVM.h
 #	include/classification/FastLibSvmTraining.h
 #	include/classification/FixedApproximateSigmoidParameterComputation.h
 #	include/classification/FixedSizeLibSvmTraining.h
@@ -28,7 +27,6 @@ SET(HEADERS
 #	include/classification/LibSvmClassifier.h
 #	include/classification/LibSvmParameterBuilder.h
 #	include/classification/LibSvmTraining.h
-#	include/classification/MatlabReader.h
 #	include/classification/PolyLibSvmParameterBuilder.h
 #	include/classification/RbfLibSvmParameterBuilder.h
 #	include/classification/RegressorSVR.h
@@ -36,7 +34,7 @@ SET(HEADERS
 #	include/classification/SigmoidParameterComputation.h
 #	include/classification/TrainableTwoStageClassifier.h
 #	include/classification/TwoStageClassifier.h
-#	include/classification/WvmClassifier.hpp
+	include/classification/WvmClassifier.hpp
 	include/classification/BinaryClassifier.hpp
 	include/classification/ProbabilisticClassifier.hpp
 	include/classification/VectorMachineClassifier.hpp
@@ -51,7 +49,7 @@ SET(HEADERS
 )
 SET(SOURCE
 #	src/classification/ApproximateSigmoidParameterComputation.cpp
-#	src/classification/DetectorWVM.cpp
+	src/classification/DetectorWVM.cpp
 #	src/classification/FastLibSvmTraining.cpp
 #	src/classification/FixedApproximateSigmoidParameterComputation.cpp
 #	src/classification/FixedSizeLibSvmTraining.cpp
@@ -59,7 +57,6 @@ SET(SOURCE
 #	src/classification/LibSvmClassifier.cpp
 #	src/classification/LibSvmParameterBuilder.cpp
 #	src/classification/LibSvmTraining.cpp
-#	src/classification/MatlabReader.cpp
 #	src/classification/PolyLibSvmParameterBuilder.cpp
 #	src/classification/RbfLibSvmParameterBuilder.cpp
 #	src/classification/RegressorSVR.cpp
@@ -67,7 +64,7 @@ SET(SOURCE
 #	src/classification/SigmoidParameterComputation.cpp
 #	src/classification/TrainableTwoStageClassifier.cpp
 #	src/classification/TwoStageClassifier.cpp
-#	src/classification/WvmClassifier.cpp
+	src/classification/WvmClassifier.cpp
 	src/classification/SvmClassifier.cpp
 	src/classification/VectorMachineClassifier.cpp
 	src/classification/ProbabilisticVectorMachineClassifier.cpp
