@@ -48,10 +48,11 @@ public:
 
 protected:
 
-	float linEvalWvmHisteq64(int, int, int, int, float*, float*, const IImg*, const IImg*) const;
+	float linEvalWvmHisteq64(int, int, float*, float*, const IImg*, const IImg*) const;
 
 	int filter_size_x;	///< We need this for the integral image. Better solution maybe later...
 	int filter_size_y;	///< We need this for the integral image. Better solution maybe later...
+	float basisParam;	///< The Rbf-Kernel parameter. Maybe better solution later to encapsulate it, like in the SVM.
 
 	float**  linFilters;      ///< points to the filter array (this is support_hk%d in the .mat-file). These are the actual vectors.
 	float**  hkWeights;       ///< weights[i] contains the weights of the kernels of the i hierarchical kernel.

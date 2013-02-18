@@ -22,6 +22,7 @@
 
 #include "classification/RbfKernel.hpp"
 #include "classification/SvmClassifier.hpp"
+#include "classification/WvmClassifier.hpp"
 
 
 #include "opencv2/core/core.hpp"
@@ -58,10 +59,19 @@ int main(int argc, char *argv[])
 	svm->load("D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
 	BinaryClassifier* myclass = svm;
 
+	WvmClassifier* wvm =  new WvmClassifier();
+	wvm->load("D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
+	BinaryClassifier* myclassw = wvm;
+
 	pair<bool, double> res;
 	res = myclass->classify(fvp);
 	cout << "f: " << res.first << ", s: " << res.second << endl;
 	res = myclass->classify(fvn);
+	cout << "f: " << res.first << ", s: " << res.second << endl;
+
+	res = myclassw->classify(fvp);
+	cout << "f: " << res.first << ", s: " << res.second << endl;
+	res = myclassw->classify(fvn);
 	cout << "f: " << res.first << ", s: " << res.second << endl;
 
 	cout << "The end." << endl;

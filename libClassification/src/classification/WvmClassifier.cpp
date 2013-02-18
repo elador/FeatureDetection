@@ -6,6 +6,7 @@
  */
 
 #include "classification/WvmClassifier.hpp"
+#include "classification/IImg.hpp"
 #include "Mat.h"
 #include <iostream>
 
@@ -29,6 +30,8 @@ WvmClassifier::WvmClassifier()
 	u_kernel_eval = NULL;
 
 	limitReliabilityFilter = 0.0f;
+
+	basisParam = 0.0f;
 
 }
 
@@ -88,14 +91,11 @@ pair<bool, double> WvmClassifier::classify(const Mat& featureVector) const {
 	// So: The fout value is not already computed. Go ahead.
 
 	// patch II of fp already calc'ed?
-	if(fp->iimg_x == NULL) {
-		fp->iimg_x = new IImg(this->filter_size_x, this->filter_size_y, 8);
-		fp->iimg_x->calIImgPatch(fp->data, false);
-	}
-	if(fp->iimg_xx == NULL) {
-		fp->iimg_xx = new IImg(this->filter_size_x, this->filter_size_y, 8);
-		fp->iimg_xx->calIImgPatch(fp->data, true);
-	}
+	
+	IImg* iimg_x = new IImg(this->filter_size_x, this->filter_size_y, 8);
+	iimg_x->calIImgPatch(data, false);
+	IImg* iimg_xx = new IImg(this->filter_size_x, this->filter_size_y, 8);
+	iimg_xx->calIImgPatch(data, true);
 
 	for (int n=0;n<this->numFiltersPerLevel;n++) {
 		u_kernel_eval[n]=0.0f;
@@ -104,7 +104,7 @@ pair<bool, double> WvmClassifier::classify(const Mat& featureVector) const {
 	float fout = 0.0;
 	do {
 		filter_level++;
-		fout = this->linEvalWvmHisteq64(filter_level, (filter_level%this->numFiltersPerLevel), fp->c.x_py, fp->c.y_py, filter_output, u_kernel_eval, fp->iimg_x, fp->iimg_xx);
+		fout = this->linEvalWvmHisteq64(filter_level, (filter_level%this->numFiltersPerLevel), filter_output, u_kernel_eval, iimg_x, iimg_xx);
 		//} while (fout >= this->hierarchicalThresholds[filter_level] && filter_level+1 < this->numLinFilters); //280
 	} while (fout >= this->hierarchicalThresholds[filter_level] && filter_level+1 < this->numUsedFilters); //280
 
@@ -112,8 +112,9 @@ pair<bool, double> WvmClassifier::classify(const Mat& featureVector) const {
 
 	// TODO: filter statistics, nDropedOutAsNonFace[filter_level]++;
 	// We ran till the REAL LAST filter (not just the numUsedFilters one), save the certainty
+	bool pos = false;
 	if(filter_level+1 == this->numLinFilters && fout >= this->hierarchicalThresholds[filter_level]) {
-		return true;	// Positive patch!
+		pos = true; // Positive patch!
 	}
 
 
@@ -121,12 +122,8 @@ pair<bool, double> WvmClassifier::classify(const Mat& featureVector) const {
 
 
 	pair<bool, double> result;
-	result.second = res;	// the fout value, the hyperplaneDist
-	if (res >= this->limitReliability) {
-		result.first = true;
-	} else {
-		result.first = false;
-	}
+	result.second = fout;	// the fout value, the hyperplaneDist
+	result.first = pos;
 
 	delete[] data;
 	data = NULL;
@@ -340,7 +337,7 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 		matdata = mxGetPr(pmxarray);
 		this->nonlinThreshold = (float)matdata[0];
 		int nonLinType       = (int)matdata[1];
-		float basisParam       = (float)(matdata[2]/65025.0); // because the training images grey level values were divided by 255
+		this->basisParam       = (float)(matdata[2]/65025.0); // because the training images grey level values were divided by 255
 		int polyPower        = (int)matdata[3];
 		float divisor          = (float)matdata[4];
 		mxDestroyArray(pmxarray);
@@ -350,7 +347,7 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 			matdata = mxGetPr(pmxarray);
 			this->nonlinThreshold = (float)matdata[0];
 			int nonLinType       = (int)matdata[1];
-			float basisParam       = (float)(matdata[2]/65025.0); // because the training images grey level values were divided by 255
+			this->basisParam       = (float)(matdata[2]/65025.0); // because the training images grey level values were divided by 255
 			int polyPower        = (int)matdata[3];
 			float divisor          = (float)matdata[4];
 			mxDestroyArray(pmxarray);
@@ -496,9 +493,7 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 	if (matClose(pmatfile) != 0) {
 		std::cout << "[WvmClassifier] Error closing file" << std::endl;
 	}
-	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=1) {
-		std::cout << "[WvmClassifier] Done reading WVM!" << std::endl;
-	}
+	std::cout << "[WvmClassifier] Done reading WVM!" << std::endl;
 
 
 	
@@ -548,9 +543,7 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 
 	//for (i = 0; i < this->numLinFilters; ++i) printf("b%d=%g ",i+1,this->hierarchicalThresholds[i]);
 	//printf("\n");
-	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=1) {
-		std::cout << "[WvmClassifier] Done reading WVM-threshold file " << fn_threshold << std::endl;
-	}
+	std::cout << "[WvmClassifier] Done reading WVM-threshold file " << thresholdsFilename << std::endl;
 
 	filter_output = new float[this->numLinFilters];
  	u_kernel_eval = new float[this->numLinFilters];
@@ -598,7 +591,7 @@ float WvmClassifier::getLimitReliabilityFilter(void)
  * WVM evaluation with a histogram equalized patch (64 bins) and patch integral image 
 */
 float WvmClassifier::linEvalWvmHisteq64(
-												int level, int n, int x, int y, //n: n-th WSV at this apprlevel
+												int level, int n,  //n: n-th WSV at this apprlevel
 												float* hk_kernel_eval,
 												float* u_kernel_eval,
 												const IImg* iimg_x/*=NULL*/, 

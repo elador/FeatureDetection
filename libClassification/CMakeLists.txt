@@ -35,6 +35,7 @@ SET(HEADERS
 #	include/classification/TrainableTwoStageClassifier.h
 #	include/classification/TwoStageClassifier.h
 	include/classification/WvmClassifier.hpp
+	include/classification/IImg.hpp
 	include/classification/BinaryClassifier.hpp
 	include/classification/ProbabilisticClassifier.hpp
 	include/classification/VectorMachineClassifier.hpp
@@ -49,7 +50,6 @@ SET(HEADERS
 )
 SET(SOURCE
 #	src/classification/ApproximateSigmoidParameterComputation.cpp
-	src/classification/DetectorWVM.cpp
 #	src/classification/FastLibSvmTraining.cpp
 #	src/classification/FixedApproximateSigmoidParameterComputation.cpp
 #	src/classification/FixedSizeLibSvmTraining.cpp
@@ -65,6 +65,7 @@ SET(SOURCE
 #	src/classification/TrainableTwoStageClassifier.cpp
 #	src/classification/TwoStageClassifier.cpp
 	src/classification/WvmClassifier.cpp
+	src/classification/IImg.cpp
 	src/classification/SvmClassifier.cpp
 	src/classification/VectorMachineClassifier.cpp
 	src/classification/ProbabilisticVectorMachineClassifier.cpp

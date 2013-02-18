@@ -1,6 +1,6 @@
-#include "imageprocessing/IImg.hpp"
+#include "classification/IImg.hpp"
 
-namespace imageprocessing {
+namespace classification {
 
 IImg::IImg(void) : data(0), w(0), h(0), colordepth(0)
 {
@@ -64,7 +64,7 @@ void IImg::calIImgPatch(const unsigned char* in_img, bool sqr=false)
 	}
 }
 
-} /* namespace imageprocessing */
+} /* namespace classification */
 
 
 //float IImg::Max(int _x /*=0*/, int _y /*=0*/, int _w /*=0*/, int _h /*=0*/)

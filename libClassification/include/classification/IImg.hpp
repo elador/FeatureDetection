@@ -10,7 +10,7 @@
 #ifndef IIMG_HPP_
 #define IIMG_HPP_
 
-namespace imageprocessing {
+namespace classification {
 
 /**
  * Integral Image class that represents (stores) integral images and is able to calculate them for a patch.
@@ -34,7 +34,7 @@ public:
 
 };
 
-} /* namespace imageprocessing */
+} /* namespace classification */
 #endif /* IIMG_HPP_ */
 
 
