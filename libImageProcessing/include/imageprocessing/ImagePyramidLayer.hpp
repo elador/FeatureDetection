@@ -1,12 +1,12 @@
 /*
- * PyramidLayer.hpp
+ * ImagePyramidLayer.hpp
  *
  *  Created on: 15.02.2013
  *      Author: poschmann
  */
 
-#ifndef PYRAMIDLAYER_HPP_
-#define PYRAMIDLAYER_HPP_
+#ifndef IMAGEPYRAMIDLAYER_HPP_
+#define IMAGEPYRAMIDLAYER_HPP_
 
 #include "opencv2/core/core.hpp"
 
@@ -17,18 +17,19 @@ namespace imageprocessing {
 /**
  * Layer of an image pyramid.
  */
-class PyramidLayer {
+class ImagePyramidLayer {
 public:
 
 	/**
 	 * Constructs a new pyramid layer.
 	 *
+	 * @param[in] index The index of this layer (0 is the original sized layer).
 	 * @param[in] scaleFactor The scale factor of this layer compared to the original image.
 	 * @param[in] scaledImage The scaled image.
 	 */
-	explicit PyramidLayer(double scaleFactor, const Mat& scaledImage);
+	explicit ImagePyramidLayer(int index, double scaleFactor, const Mat& scaledImage);
 
-	virtual ~PyramidLayer();
+	~ImagePyramidLayer();
 
 	/**
 	 * Computes the scaled representation of an original value (coordinate, size, ...) and rounds accordingly.
@@ -51,6 +52,13 @@ public:
 	}
 
 	/**
+	 * @return The index of this layer (0 is the original sized layer).
+	 */
+	int getIndex() const {
+		return index;
+	}
+
+	/**
 	 * @return The scale factor of this level compared to the original image.
 	 */
 	double getScaleFactor() const {
@@ -64,11 +72,19 @@ public:
 		return scaledImage;
 	}
 
+	/**
+	 * @return The scaled image.
+	 */
+	Mat& getScaledImage() {
+		return scaledImage;
+	}
+
 private:
 
-	double scaleFactor;    ///< The scale factor of this layer compared to the original image.
-	const Mat scaledImage; ///< The scaled image.
+	int index;          ///< The index of this layer (0 is the original sized layer).
+	double scaleFactor; ///< The scale factor of this layer compared to the original image.
+	Mat scaledImage;    ///< The scaled image.
 };
 
 } /* namespace imageprocessing */
-#endif /* PYRAMIDLAYER_HPP_ */
+#endif /* IMAGEPYRAMIDLAYER_HPP_ */

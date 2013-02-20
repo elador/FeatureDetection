@@ -5,40 +5,38 @@ SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # find dependencies
-#FIND_PACKAGE(Boost REQUIRED)
-FIND_PACKAGE(OpenCV REQUIRED core)
+FIND_PACKAGE(OpenCV REQUIRED core imgproc)
 
 # source and header files
 SET(HEADERS
+	include/imageprocessing/FeatureExtractor.h
+	include/imageprocessing/FeatureTransformer.hpp
+	include/imageprocessing/FilteringFeatureTransformer.hpp
+	include/imageprocessing/GrayscaleFilter.hpp
+	include/imageprocessing/HistogramEqualizationFilter.hpp
+	include/imageprocessing/IdentityFeatureTransformer.hpp
+	include/imageprocessing/ImageFilter.hpp
 	include/imageprocessing/ImagePyramid.hpp
-	include/imageprocessing/PyramidLayer.hpp
+	include/imageprocessing/ImagePyramidLayer.hpp
+	include/imageprocessing/IntegralImageFilter.hpp
+	include/imageprocessing/MultipleImageFilter.hpp
 	include/imageprocessing/Patch.hpp
 	include/imageprocessing/PatchExtractor.hpp
-	include/imageprocessing/FeatureTransformer.hpp
+	include/imageprocessing/PyramidPatchExtractor.hpp
 	include/imageprocessing/RowFeatureTransformer.hpp
-	include/imageprocessing/ImageFilter.hpp
-	include/imageprocessing/FeatureExtractor.h
-	include/imageprocessing/HistEqFeatureTransformer.h
-	include/imageprocessing/IImg.hpp
-	include/imageprocessing/ImagePyramidFeatureExtractor_old.h
 	
 )
 SET(SOURCE
+	src/imageprocessing/GrayscaleFilter.cpp
+	src/imageprocessing/HistogramEqualizationFilter.cpp
 	src/imageprocessing/ImagePyramid.cpp
-	src/imageprocessing/PyramidLayer.cpp
-	src/imageprocessing/Patch.cpp
-	src/imageprocessing/PatchExtractor.cpp
-	src/imageprocessing/RowFeatureTransformer.cpp
-	src/imageprocessing/ImagePyramidFeatureExtractor_old.cpp
-	src/imageprocessing/IImg.cpp
-	src/imageprocessing/HistEqFeatureTransformer.cpp
+	src/imageprocessing/ImagePyramidLayer.cpp
+	src/imageprocessing/IntegralImageFilter.cpp
+	src/imageprocessing/MultipleImageFilter.cpp
+	src/imageprocessing/PyramidPatchExtractor.cpp
 )
 
 include_directories( "include" )
-
-# add dependencies
-#include_directories( ${Boost_INCLUDE_DIRS} )
-#include_directories( ${libFeatureDetection_SOURCE_DIR} )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )

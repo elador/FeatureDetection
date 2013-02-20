@@ -8,80 +8,41 @@
 #ifndef PATCHEXTRACTOR_HPP_
 #define PATCHEXTRACTOR_HPP_
 
-#include "imageprocessing/Patch.hpp"
+#include "opencv2/core/core.hpp"
 #include <memory>
-#include <vector>
 
+using cv::Mat;
 using std::shared_ptr;
-using std::unique_ptr;
-using std::vector;
 
 namespace imageprocessing {
 
-class ImagePyramid;
-class PyramidLayer;
+class Patch;
 
 /**
- * Extracts patches of a constant size from an image pyramid.
+ * Extracts patches from an image.
  */
 class PatchExtractor {
 public:
 
+	virtual ~PatchExtractor() {}
+
 	/**
-	 * Constructs a new patch extractor.
+	 * Updates this extractor, so subsequent extracted patches are based on the new image.
 	 *
-	 * @param[in] pyramid The image pyramid.
-	 * @param[in] width The width of the extracted patches.
-	 * @param[in] height The height of the extracted patches.
+	 * @param[in] image The new source image of extracted patches.
 	 */
-	explicit PatchExtractor(shared_ptr<ImagePyramid> pyramid, int width, int height);
-
-	~PatchExtractor();
+	virtual void update(const Mat& image) = 0;
 
 	/**
-	 * Updates this patch extractor with a new image.
-	 *
-	 * @param[in] image The image.
-	 */
-	void update(const Mat& image);
-
-	/**
-	 * Extracts a patch from the corresponding image pyramid.
+	 * Extracts a patch from the corresponding image.
 	 *
 	 * @param[in] x The x-coordinate of the patch center in the original image.
 	 * @param[in] y The y-coordinate of the patch center in the original image.
-	 * @param[in] width The width of the patch in the original image.
-	 * @param[in] height The height of the patch in the original image.
-	 * @return The extracted patch.
+	 * @param[in] width The width of the patch in the image.
+	 * @param[in] height The height of the patch in the image.
+	 * @return The extracted patch (might have a size other than the given one).
 	 */
-	unique_ptr<Patch> extract(int x, int y, int width, int height);
-
-	/**
-	 * TODO iterator oder sowas statt vector?!
-	 * Extracts several patches from all layers of the corresponding image pyramid.
-	 *
-	 * @param[in] stepX The step size in x-direction in pixels.
-	 * @param[in] stepY The step size in y-direction in pixels.
-	 * @return The extracted patches.
-	 * TODO pointer-zeuch, damit keine kopie?!
-	 */
-	vector<Patch> extract(int stepX, int stepY);
-
-private:
-
-	/**
-	 * Determines the pyramid level that represents the given patch size.
-	 *
-	 * @param[in] size The patch size.
-	 * @return The pyramid level that represents the patch size or null if there is none.
-	 */
-	PyramidLayer* getPyramidLayer(int size);
-
-private:
-
-	shared_ptr<ImagePyramid> pyramid; ///< The image pyramid.
-	int patchWidth;  ///< The width of the extracted patches.
-	int patchHeight; ///< The height of the extracted patches.
+	virtual shared_ptr<Patch> extract(int x, int y, int width, int height) = 0;
 };
 
 } /* namespace imageprocessing */

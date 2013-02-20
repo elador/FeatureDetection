@@ -1,0 +1,26 @@
+/*
+ * HistogramEqualizationFilter.cpp
+ *
+ *  Created on: 19.02.2013
+ *      Author: poschmann
+ */
+
+#include "imageprocessing/HistogramEqualizationFilter.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+
+namespace imageprocessing {
+
+HistogramEqualizationFilter::HistogramEqualizationFilter() {}
+
+HistogramEqualizationFilter::~HistogramEqualizationFilter() {}
+
+Mat HistogramEqualizationFilter::applyTo(const Mat& image, Mat& filtered) {
+	cv::equalizeHist(image, filtered);
+	return filtered;
+}
+
+void HistogramEqualizationFilter::applyInPlace(Mat& image) {
+	applyTo(image, image);
+}
+
+} /* namespace imageprocessing */

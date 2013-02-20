@@ -20,23 +20,40 @@ namespace imageprocessing {
 class ImageFilter {
 public:
 
+	/**
+	 * Constructs a new image filter.
+	 */
+	ImageFilter() {}
+
 	virtual ~ImageFilter() {}
 
 	/**
-	 * Creates a new filtered image.
+	 * Applies this filter to an image, writing the filtered image data into a newly created image.
 	 *
-	 * @param[in] in The input image.
+	 * @param[in] image The image that should be filtered.
 	 * @return The filtered image.
 	 */
-	Mat filter(const Mat &in);
+	Mat applyTo(const Mat& image) {
+		Mat filtered;
+		applyTo(image, filtered);
+		return filtered;
+	}
 
 	/**
-	 * Writes the filtered image data into the output image.
+	 * Applies this filter to an image, writing the filtered image data into a new image.
 	 *
-	 * @param[in] in The input image.
-	 * @param[in] out The output image.
+	 * @param[in] image The image that should be filtered.
+	 * @param[out] filtered The image for writing the filtered data into.
+	 * @return The filtered image.
 	 */
-	virtual void filter(const Mat &in, Mat &out) = 0;
+	virtual Mat applyTo(const Mat& image, Mat& filtered) = 0;
+
+	/**
+	 * Applies this filter to an image, writing the filtered data into the image itself.
+	 *
+	 * @param[in,out] image The image that should be filtered.
+	 */
+	virtual void applyInPlace(Mat& image) = 0;
 };
 
 } /* namespace imageprocessing */

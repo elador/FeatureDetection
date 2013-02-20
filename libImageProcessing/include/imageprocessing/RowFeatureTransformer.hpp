@@ -8,25 +8,26 @@
 #ifndef ROWFEATURETRANSFORMER_HPP_
 #define ROWFEATURETRANSFORMER_HPP_
 
-#include "opencv2/core/core.hpp"
-
-using cv::Mat;
+#include "imageprocessing/FeatureTransformer.hpp"
 
 namespace imageprocessing {
 
 /**
  * Feature transformer that applies image filters to an image patch and transforms it to a row vector.
  */
-class RowFeatureTransformer {
+class RowFeatureTransformer : public FeatureTransformer {
 public:
 
-	explicit RowFeatureTransformer();
+	/**
+	 * Constructs a new row feature transformer.
+	 */
+	explicit RowFeatureTransformer() {}
 
-	~RowFeatureTransformer();
+	~RowFeatureTransformer() {}
 
-	Mat transform(const Mat& patch);
-
-	// TODO liste von ImageFilter -> zuerst filtern, dann transformieren (aneinanderhängen)
+	void transform(Mat& patch) const {
+		patch.reshape(0, 1);
+	}
 };
 
 } /* namespace imageprocessing */

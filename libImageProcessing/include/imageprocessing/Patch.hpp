@@ -15,106 +15,116 @@ using cv::Mat;
 namespace imageprocessing {
 
 /**
- * A possibly scaled image patch, extracted from an image pyramid.
+ * Image patch with data, extracted from an image.
  */
 class Patch {
 public:
 
 	/**
-	 * Constructs a new patch.
-	 *
-	 * @param[in] x The x-coordinate of the center of this patch inside its corresponding pyramid layer.
-	 * @param[in] y The y-coordinate of the center of this patch inside its corresponding pyramid layer.
-	 * @param[in] scale The scale factor of this patch in relation to its size in the original image.
-	 * @param[in] data The image data.
+	 * Constructs a new empty patch. All values will be zero and the data will be an empty.
 	 */
-	explicit Patch(int x, int y, double scale, Mat data);
-
-	~Patch();
+	Patch() :
+			x(0), y(0), width(0), height(0), data() {}
 
 	/**
-	 * @return The x-coordinate of the center of this patch inside its corresponding pyramid layer.
+	 * Constructs a new patch.
+	 *
+	 * @param[in] x The original x-coordinate of the center of this patch.
+	 * @param[in] y The original y-coordinate of the center of this patch.
+	 * @param[in] width The original width.
+	 * @param[in] height The original height.
+	 * @param[in] data The patch data (might be an image patch or a feature vector).
+	 */
+	explicit Patch(int x, int y, int width, int height, Mat data) :
+			x(x), y(y), width(width), height(height), data(data) {}
+
+	/**
+	 * Copy constructor that clones the patch data.
+	 *
+	 * @param[in] other The patch that should be copied.
+	 */
+	Patch(const Patch& other) :
+			x(other.x), y(other.y), width(other.width), height(other.height), data(other.data.clone()) {}
+
+	~Patch() {}
+
+	/**
+	 * Assignment operator that clones the patch data.
+	 *
+	 * @param[in] other The patch whose data should be assigned to this one.
+	 */
+	Patch& operator=(const Patch& other) {
+		x = other.x;
+		y = other.y;
+		width = other.width;
+		height = other.height;
+		data = other.data.clone();
+		return *this;
+	}
+
+	/**
+	 * @return The original x-coordinate of the center of this patch.
 	 */
 	int getX() const {
 		return x;
 	}
 
 	/**
-	 * @return The y-coordinate of the center of this patch inside its corresponding pyramid layer.
+	 * @return The original y-coordinate of the center of this patch.
 	 */
 	int getY() const {
 		return y;
 	}
 
 	/**
-	 * @return The width of the data of this patch.
+	 * @return The original width.
 	 */
 	int getWidth() const {
-		return data.cols;
+		return width;
 	}
 
 	/**
-	 * @return The height of the data of this patch.
+	 * @return The original height.
 	 */
 	int getHeight() const {
-		return data.rows;
+		return height;
 	}
 
 	/**
-	 * @return The x-coordinate of the center of this patch in the original image.
+	 * @return The scale factor of the x-axis from the original size to the image data size.
 	 */
-	int getOriginalX() const {
-		return cvRound(x / scale);
+	double getScaleFactorX() const {
+		return static_cast<double>(data.cols) / static_cast<double>(width);
 	}
 
 	/**
-	 * @return The y-coordinate of the center of this patch in the original image.
+	 * @return The scale factor of the y-axis from the original size to the image data size.
 	 */
-	int getOriginalY() const {
-		return cvRound(y / scale);
+	double getScaleFactorY() const {
+		return static_cast<double>(data.rows) / static_cast<double>(height);
 	}
 
 	/**
-	 * @return The width of this patch in the original image.
+	 * @return The patch data (might be an image patch or a feature vector).
 	 */
-	int getOriginalWidth() const {
-		return cvRound(getWidth() / scale);
-	}
-
-	/**
-	 * @return The height of this patch in the original image.
-	 */
-	int getOriginalHeight() const {
-		return cvRound(getHeight() / scale);
-	}
-
-	/**
-	 * @return The scale factor of this patch in relation to its size in the original image.
-	 */
-	double getScale() const {
-		return scale;
-	}
-
-	/**
-	 * @return The actual image data of this patch.
-	 */
-	Mat getData() {
+	Mat& getData() {
 		return data;
 	}
 
 	/**
-	 * @return The actual image data of this patch.
+	 * @return The patch data (might be an image patch or a feature vector).
 	 */
-	const Mat getData() const {
+	const Mat& getData() const {
 		return data;
 	}
 
 private:
 
-	int x;        ///< The x-coordinate of the center of this patch inside its corresponding pyramid layer.
-	int y;        ///< The y-coordinate of the center of this patch inside its corresponding pyramid layer.
-	double scale; ///< The scale factor of this patch in relation to its size in the original image.
-	Mat data;     ///< The image data.
+	int x;        ///< The original x-coordinate of the center of this patch.
+	int y;        ///< The original y-coordinate of the center of this patch.
+	int width;    ///< The original width.
+	int height;   ///< The original height.
+	Mat data;     ///< The patch data (might be an image patch or a feature vector).
 };
 
 } /* namespace imageprocessing */

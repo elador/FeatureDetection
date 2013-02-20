@@ -15,7 +15,8 @@ using cv::Mat;
 namespace imageprocessing {
 
 /**
- * Feature transformer that transforms an image patch to a feature vector.
+ * Feature transformer that transforms an image patch into a feature vector. That feature vector should be a row vector,
+ * but in some special cases that might not be the case.
  */
 class FeatureTransformer {
 public:
@@ -23,12 +24,11 @@ public:
 	virtual ~FeatureTransformer() {}
 
 	/**
-	 * Extracts the feature vector based on an image patch.
+	 * Transforms the given image patch into a feature vector.
 	 *
-	 * @param[in] patch The image patch.
-	 * @return A row vector containing the feature values.
+	 * @param[in,out] patch The image patch that is transformed into a feature vector.
 	 */
-	virtual Mat transform(const Mat& patch) = 0;
+	virtual void transform(Mat& patch) const = 0;
 };
 
 } /* namespace imageprocessing */
