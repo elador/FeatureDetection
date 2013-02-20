@@ -27,9 +27,13 @@ public:
 	VectorMachineClassifier(void);
 	~VectorMachineClassifier(void);
 
+	float getLimitReliability();
+	void setLimitReliability(float limitReliability);
+
 protected:
-	shared_ptr<Kernel> kernel;	// TODO unique_ptr? Look up difference... (shame on me)
-	float nonlinThreshold;		// b parameter of the vector machine
+	shared_ptr<Kernel> kernel;	///< The kernel the vector machine uses.
+	float nonlinThreshold;		///< The b parameter of the vector machine.
+	float limitReliability;	///< Additional (dynamic) threshold to adjust the threshold at which featureVectors pass the vector machine. 
 
 };
 
