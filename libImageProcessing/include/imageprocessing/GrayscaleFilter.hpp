@@ -24,7 +24,7 @@ public:
 	 */
 	GrayscaleFilter();
 
-	virtual ~GrayscaleFilter();
+	~GrayscaleFilter();
 
 	using ImageFilter::applyTo;
 

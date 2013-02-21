@@ -28,7 +28,7 @@ public:
 	 */
 	IntegralImageFilter(bool squared);
 
-	virtual ~IntegralImageFilter();
+	~IntegralImageFilter();
 
 	using ImageFilter::applyTo;
 

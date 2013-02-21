@@ -24,6 +24,8 @@ SET(HEADERS
 	include/imageprocessing/PatchExtractor.hpp
 	include/imageprocessing/PyramidPatchExtractor.hpp
 	include/imageprocessing/RowFeatureTransformer.hpp
+	include/imageprocessing/WhiteningFilter.hpp
+	include/imageprocessing/ZeroMeanUnitVarianceFilter.hpp
 	
 )
 SET(SOURCE
@@ -34,6 +36,8 @@ SET(SOURCE
 	src/imageprocessing/IntegralImageFilter.cpp
 	src/imageprocessing/MultipleImageFilter.cpp
 	src/imageprocessing/PyramidPatchExtractor.cpp
+	src/imageprocessing/WhiteningFilter.cpp
+	src/imageprocessing/ZeroMeanUnitVarianceFilter.cpp
 )
 
 include_directories( "include" )

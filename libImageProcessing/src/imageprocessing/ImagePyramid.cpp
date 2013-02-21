@@ -59,8 +59,8 @@ void ImagePyramid::build(const Mat& image, double incrementalScaleFactor, double
 		} else {
 			resize(previousScaledImage, scaledImage, scaledImageSize, 0, 0, cv::INTER_LINEAR);
 		}
-		previousScaledImage = scaledImage;
 		layers.push_back(make_shared<ImagePyramidLayer>(i, scaleFactor, layerFilter->applyTo(scaledImage)));
+		previousScaledImage = scaledImage;
 	}
 }
 
