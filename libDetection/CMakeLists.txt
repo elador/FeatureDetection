@@ -10,22 +10,25 @@ FIND_PACKAGE(OpenCV REQUIRED core)
 
 # source and header files
 SET(HEADERS
-	include/detection/CascadeWvmOeSvmOe.cpp
-	include/detection/CascadeWvmSvm.cpp
-	include/detection/CircleDetector.cpp
-	include/detection/DetectorSVM.cpp
-	include/detection/DetectorWVM.cpp
-	include/detection/FdPatch.cpp
-	include/detection/FdPoint.cpp
-	include/detection/OverlapElimination.cpp
-	include/detection/Rect.cpp
-	include/detection/RegressorSVR.cpp
-	include/detection/RegressorWVR.cpp
-	include/detection/SkinDetector.cpp
-	include/detection/VDetector.cpp
-	include/detection/VDetectorVectorMachine.cpp
+	include/detection/Detector.hpp
+	include/detection/SlidingWindowDetector.hpp
+	include/detection/CascadeWvmOeSvmOe.h
+	include/detection/CascadeWvmSvm.h
+	include/detection/CircleDetector.h
+	include/detection/DetectorSVM.h
+	include/detection/DetectorWVM.h
+	include/detection/FdPatch.h
+	include/detection/FdPoint.h
+	include/detection/OverlapElimination.h
+	include/detection/Rect.h
+	include/detection/RegressorSVR.h
+	include/detection/RegressorWVR.h
+	include/detection/SkinDetector.h
+	include/detection/VDetector.h
+	include/detection/VDetectorVectorMachine.h
 )
 SET(SOURCE
+	src/detection/SlidingWindowDetector.cpp
 	src/detection/CascadeWvmOeSvmOe.cpp
 	src/detection/CascadeWvmSvm.cpp
 	src/detection/CircleDetector.cpp
