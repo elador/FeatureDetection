@@ -10,17 +10,24 @@ FIND_PACKAGE(OpenCV REQUIRED core)
 
 # source and header files
 SET(HEADERS
-	include/stuff.h
+	include/shapemodels/FeaturePointsModel.hpp
+	include/shapemodels/FeaturePointsSelector.hpp
+	include/shapemodels/ListFeaturePointsSelector.hpp
+	include/shapemodels/RansacFeaturePointsSelector.hpp
+	include/shapemodels/FeaturePointsEvaluator.hpp
+	include/shapemodels/TwoStepFeaturePointsEvaluator.hpp
+	include/shapemodels/FastProjectionFeaturePointsEvaluator.hpp
+	include/shapemodels/FeaturePointsEvaluator3dmm.hpp
 )
 SET(SOURCE
-	src/stuff.cpp
+	src/shapemodels/RansacFeaturePointsSelector.cpp
 )
 
 include_directories( "include" )
 
 # add dependencies
-include_directories( ${Boost_INCLUDE_DIRS} )
-include_directories( ${libFeatureDetection_SOURCE_DIR} )
+#include_directories( ${Boost_INCLUDE_DIRS} )
+#include_directories( ${libFeatureDetection_SOURCE_DIR} )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
