@@ -32,48 +32,57 @@ public:
 
 	/**
 	 * Constructs a new empty image pyramid.
+	 *
+	 * @param[in] minScaleFactor The minimum scale factor (the scale factor of the smallest scaled (last) image is bigger or equal).
+	 * @param[in] maxScaleFactor The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
+	 * @param[in] incrementalScaleFactor The incremental scale factor between two layers of the pyramid.
 	 */
-	ImagePyramid();
+	ImagePyramid(double minScaleFactor = 0, double maxScaleFactor = 1, double incrementalScaleFactor = 0.9);
+
+	/**
+	 * Constructs a new empty image pyramid with another pyramid as its source.
+	 *
+	 * @param[in] pyramid The new source pyramid.
+	 * @param[in] minScaleFactor The minimum scale factor (the scale factor of the smallest scaled (last) image is bigger or equal).
+	 * @param[in] maxScaleFactor The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
+	 */
+	ImagePyramid(shared_ptr<ImagePyramid> pyramid, double minScaleFactor = 0, double maxScaleFactor = 1);
 
 	~ImagePyramid();
 
 	/**
-	 * Re-builds this pyramid based on an image.
+	 * Changes the source to the given image. The pyramid will not get updated, therefore for the source change to take
+	 * effect update() has to be called.
 	 *
 	 * @param[in] image The new source image.
-	 * @param[in] incrementalScaleFactor The incremental scale factor between two layers of the pyramid.
-	 * @param[in] maxScaleFactor The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
-	 * @param[in] minScaleFactor The minimum scale factor (the scale factor of the smallest scaled (last) image is bigger or equal).
 	 */
-	void build(const Mat& image, double incrementalScaleFactor, double maxScaleFactor, double minScaleFactor);
+	void setSource(const Mat& image);
 
 	/**
-	 * Re-builds this pyramid based on another pyramid.
+	 * Changes the source to the given pyramid. This pyramid will not get updated, therefore for the source change to take
+	 * effect update() has to be called.
 	 *
 	 * @param[in] pyramid The new source pyramid.
 	 */
-	void build(shared_ptr<ImagePyramid> pyramid);
+	void setSource(shared_ptr<ImagePyramid> pyramid);
 
 	/**
-	 * Re-builds this pyramid based on another pyramid with additional scale restrictions.
-	 *
-	 * @param[in] pyramid The new source pyramid.
-	 * @param[in] maxScaleFactor The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
-	 * @param[in] minScaleFactor The minimum scale factor (the scale factor of the smallest scaled (last) image is bigger or equal).
+	 * Forces an update of this pyramid based on the source (either an image or another pyramid).
 	 */
-	void build(shared_ptr<ImagePyramid> pyramid, double maxScaleFactor, double minScaleFactor);
+	void update();
 
 	/**
-	 * Updates this pyramid using the saved parameters. If this pyramid was updated or built with the
-	 * same image, then the pyramid will remain unchanged even if the image content is different. If
-	 * this pyramid was built using another pyramid, then that pyramid will be updated first.
+	 * Updates this pyramid using the saved parameters. If this pyramid's source is the same image as the one given, then
+	 * the pyramid will remain unchanged even if the image content is different. If this pyramid's source is another
+	 * pyramid, then that pyramid will be updated first with the given image. If this pyramid has no source yet, the image
+	 * will be the new source.
 	 *
 	 * @param[in] image The new image.
 	 */
 	void update(const Mat& image);
 
 	/**
-	 * Adds a new image filter that is applied to original image after the currently existing image filters.
+	 * Adds a new image filter that is applied to the original image after the currently existing image filters.
 	 *
 	 * @param[in] filter The new image filter.
 	 */
@@ -103,9 +112,9 @@ public:
 
 private:
 
-	double incrementalScaleFactor; ///< The incremental scale factor between two layers of the pyramid.
-	double maxScaleFactor; ///< The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
 	double minScaleFactor; ///< The minimum scale factor (the scale factor of the smallest scaled (last) image is bigger or equal).
+	double maxScaleFactor; ///< The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
+	double incrementalScaleFactor; ///< The incremental scale factor between two layers of the pyramid.
 	int firstLayer;                               ///< The index of the first stored pyramid layer.
 	vector<shared_ptr<ImagePyramidLayer>> layers; ///< The pyramid layers.
 

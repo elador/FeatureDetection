@@ -49,7 +49,7 @@ public:
 	 * @return A row vector containing the feature values.
 	 */
 	void transform(Mat& patch) const {
-		filter->applyTo(patch, patch);
+		filter->applyInPlace(patch);
 		transformer->transform(patch);
 	}
 
