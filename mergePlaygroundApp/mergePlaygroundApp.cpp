@@ -24,6 +24,8 @@
 #include "classification/SvmClassifier.hpp"
 #include "classification/WvmClassifier.hpp"
 
+#include "imageprocessing/ImagePyramid.hpp"
+#include "detection/SlidingWindowDetector.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -37,6 +39,8 @@
 #endif
 
 using namespace std;
+using namespace imageprocessing;
+using namespace detection;
 using namespace classification;
 
 
@@ -48,7 +52,7 @@ int main(int argc, char *argv[])
 	#endif
 	
 	cout << "Starting tests..." << endl;
-
+	/*
 	Mat fvp = cv::imread("D:/FeatureDetection/patchp.png");
 	Mat fvn = cv::imread("D:/FeatureDetection/patchn.png");
 
@@ -77,6 +81,19 @@ int main(int argc, char *argv[])
 	cout << "The end." << endl;
 	delete svm;
 	delete wvm;
+	*/
+	Mat img = cv::imread("D:/FeatureDetection/data/firstrun/ws_8.png");
+
+	ImagePyramid* pyr = new ImagePyramid(0.0, 1.0, 0.9);
+	shared_ptr<ImageFilter> imgFil = make_shared<ImageFilter>();
+	pyr->addImageFilter(imgFil);
+	pyr->addLayerFilter(imgFil);
+	pyr->setSource(img);
+	pyr->update(img);
 	
+	shared_ptr<BinaryClassifier> wvm = make_shared<WvmClassifier>();
+	SlidingWindowDetector* det = new SlidingWindowDetector(wvm);
+
+
 	return 0;
 }

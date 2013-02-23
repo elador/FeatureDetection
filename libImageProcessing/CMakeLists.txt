@@ -9,7 +9,7 @@ FIND_PACKAGE(OpenCV REQUIRED core imgproc)
 
 # source and header files
 SET(HEADERS
-	include/imageprocessing/FeatureExtractor.h
+	include/imageprocessing/FeatureExtractor.hpp
 	include/imageprocessing/FeatureTransformer.hpp
 	include/imageprocessing/FilteringFeatureTransformer.hpp
 	include/imageprocessing/GrayscaleFilter.hpp

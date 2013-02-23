@@ -9,13 +9,27 @@
 #define DETECTOR_HPP_
 
 #include "opencv2/core/core.hpp"
+#include <vector>
+#include <utility>
 
 using cv::Mat;
+using std::vector;
+using std::pair;
+
+namespace imageprocessing {		// Forward-declarations from another namespace
+	class Patch;
+	class ImagePyramid;
+}
+using imageprocessing::Patch;	// TODO ... is there a better way of doing this? Just include the header...?
+using imageprocessing::ImagePyramid;
 
 namespace detection {
 
 /**
  * Detector interface. TODO This has yet to be defined, this is only a rough and stupid draft!
+ * Split into a BinaryDetector and ProbabilisticDetector? Split again between a SlidingWindow 
+ * on a Pyramid and a SlidingWindow on a cv::Mat? Compose a PyrSlidingWindowDet of a MatSlidingWinDet?
+ * Or two detect(Mat / Pyr) functions? ...
  */
 class Detector {
 public:
@@ -33,7 +47,7 @@ public:
 	 * @param[in] image The image that the detector should run on.
 	 * @return Something probably.
 	 */
-	virtual void detect(const Mat& image) const = 0;
+	virtual vector<pair<Patch, pair<bool, double>>> detect(const ImagePyramid& imagePyramid) const = 0;
 
 };
 

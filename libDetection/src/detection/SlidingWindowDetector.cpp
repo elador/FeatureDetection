@@ -6,12 +6,21 @@
  */
 
 #include "detection/SlidingWindowDetector.hpp"
+#include "classification/BinaryClassifier.hpp"
+#include "imageprocessing/Patch.hpp"
+#include "imageprocessing/ImagePyramid.hpp"
 
 namespace detection {
 
-void SlidingWindowDetector::detect( const Mat& image ) const
+SlidingWindowDetector::SlidingWindowDetector( shared_ptr<BinaryClassifier> classifier ) : classifier(classifier)
 {
 
+}
+
+vector<pair<Patch, pair<bool, double>>> SlidingWindowDetector::detect( const ImagePyramid& imagePyramid ) const
+{
+	vector<pair<Patch, pair<bool, double>>> classifiedPatches;
+	return classifiedPatches;
 }
 
 } /* namespace detection */

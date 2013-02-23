@@ -10,7 +10,7 @@ if (HAS_CXX11_FLAG)
 endif()
 
 #add_subdirectory(libImageIO)			# Input-library for cameras, Kinect and hard-drive images.
-#add_subdirectory(libImageProcessing)	# Image pyramids, patch extraction, feature transformation
+add_subdirectory(libImageProcessing)	# Image pyramids, patch extraction, feature transformation
 add_subdirectory(libClassification)		# Classification and regression library
 
 add_subdirectory(mergePlaygroundApp)	# Test-app for the refactored/merged code
