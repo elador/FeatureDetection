@@ -47,24 +47,19 @@ vector<pair<shared_ptr<Patch>, pair<bool, double>>> SlidingWindowDetector::detec
 	shared_ptr<FilteringFeatureTransformer> fft = make_shared<FilteringFeatureTransformer>(ift, mif);
 
 	for(unsigned int i=0; i<pyramidPatches.size(); ++i) {
-		cv::namedWindow("p", CV_WINDOW_AUTOSIZE); cv::imshow("p", pyramidPatches[i]->getData());
-		pair<bool, double> res = classifier->classify(pyramidPatches[i]->getData());
-		std::cout << res.second << ", ";
+		//cv::namedWindow("p", CV_WINDOW_AUTOSIZE); cv::imshow("p", pyramidPatches[i]->getData());
+		//pair<bool, double> res = classifier->classify(pyramidPatches[i]->getData());
+		//std::cout << res.second << ", ";
 		fft->transform(pyramidPatches[i]->getData());
-		cv::namedWindow("p2", CV_WINDOW_AUTOSIZE); cv::imshow("p2", pyramidPatches[i]->getData());
-		pair<bool, double> res2 = classifier->classify(pyramidPatches[i]->getData());
-		std::cout << res2.second << std::endl;
-		cv::waitKey();
+		//cv::namedWindow("p2", CV_WINDOW_AUTOSIZE); cv::imshow("p2", pyramidPatches[i]->getData());
+		pair<bool, double> res = classifier->classify(pyramidPatches[i]->getData());
+		classifiedPatches.push_back(make_pair(pyramidPatches[i], res));
+		//std::cout << res2.second << std::endl;
+		//cv::waitKey();
 	}
 
-	for(unsigned int i=0; i<pyramidPatches.size(); ++i) {
-		pair<bool, double> res = classifier->classify(pyramidPatches[i]->getData());
-	}
-	
 	// TODO: Try with a FeatureExtractor! (combines PatchExtractor & FeatureTransformer)
 				//classifier->classify()
-
-
 
 	return classifiedPatches;
 }

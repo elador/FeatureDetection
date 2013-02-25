@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 	Mat img = cv::imread("D:/FeatureDetection/data/firstrun/ws_8.png");
 	cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
 	
-	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(0.1, 0.8, 0.7);
+	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(0.02, 0.12, 0.7);
 	shared_ptr<ImageFilter> imgFil = make_shared<GrayscaleFilter>();
 	pyr->addImageFilter(imgFil);
 	pyr->update(img);
@@ -102,7 +102,13 @@ int main(int argc, char *argv[])
 	wvm->load("D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
 	shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(wvm);
 	vector<pair<shared_ptr<Patch>, pair<bool, double>>> resultingPatches = det->detect(pyr);
-	
+
+	Mat rgbimg = img.clone();
+	std::vector<pair<shared_ptr<Patch>, pair<bool, double>>>::iterator pit = resultingPatches.begin();
+	for(; pit != resultingPatches.end(); pit++) {
+		cv::rectangle(rgbimg, cv::Point(pit->first->getX()-pit->first->getWidth()/2, pit->first->getY()-pit->first->getHeight()/2), cv::Point(pit->first->getX()+pit->first->getWidth()/2, pit->first->getY()+pit->first->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((pit->second.second+2.0)/2.0)   ));
+	}
+	cv::namedWindow("final", CV_WINDOW_AUTOSIZE); cv::imshow("final", rgbimg);
 	cv::waitKey(0);
 	return 0;
 }
