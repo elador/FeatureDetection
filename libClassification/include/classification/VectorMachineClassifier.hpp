@@ -13,8 +13,10 @@
 #include "classification/BinaryClassifier.hpp"
 #include "classification/Kernel.hpp"
 #include <memory>
+#include <string>
 
 using std::shared_ptr;
+using std::string;
 
 namespace classification {
 
@@ -26,6 +28,8 @@ class VectorMachineClassifier : public BinaryClassifier
 public:
 	VectorMachineClassifier(void);
 	~VectorMachineClassifier(void);
+
+	virtual void load(const string classifierFilename, const string thresholdsFilename) = 0;
 
 	float getLimitReliability();
 	void setLimitReliability(float limitReliability);
