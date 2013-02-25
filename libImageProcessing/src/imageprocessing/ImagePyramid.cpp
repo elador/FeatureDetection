@@ -81,7 +81,7 @@ void ImagePyramid::update() {
 			// The bilinear interpolation is used for the following down-scalings because of speed and similar results as area.
 			// TODO resizing-strategy
 			Mat scaledImage;
-			Size scaledImageSize(cvRound(sourceImage.cols / scaleFactor), cvRound(sourceImage.rows / scaleFactor));
+			Size scaledImageSize(cvRound(sourceImage.cols * scaleFactor), cvRound(sourceImage.rows * scaleFactor));
 			if (layers.empty()) {
 				firstLayer = i;
 				resize(filteredImage, scaledImage, scaledImageSize, 0, 0, cv::INTER_AREA);
