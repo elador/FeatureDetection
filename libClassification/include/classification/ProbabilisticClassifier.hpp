@@ -11,8 +11,10 @@
 #define PROBABILISTICCLASSIFIER_HPP_
 
 #include "opencv2/core/core.hpp"
+#include <utility>
 
 using cv::Mat;
+using std::pair;
 
 namespace classification {
 
@@ -31,7 +33,7 @@ public:
 	 * @param[in] featureVector The feature vector.
 	 * @return A probability between 0 and 1 for being in the positive class.
 	 */
-	virtual float classify(const Mat& featureVector) const = 0;
+	virtual pair<bool, double> classify(const Mat& featureVector) const = 0;
 };
 
 } /* namespace classification */
