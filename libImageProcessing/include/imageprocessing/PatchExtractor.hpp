@@ -42,7 +42,7 @@ public:
 	 * @param[in] height The height of the patch in the image.
 	 * @return The extracted patch (might have a size other than the given one).
 	 */
-	virtual shared_ptr<Patch> extract(int x, int y, int width, int height) = 0;
+	virtual shared_ptr<Patch> extract(int x, int y, int width, int height) const = 0;
 };
 
 } /* namespace imageprocessing */
