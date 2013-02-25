@@ -13,7 +13,7 @@
 
 namespace classification {
 
-class VectorMachineClassifier;
+class WvmClassifier;
 
 /**
  * A classifier that uses a VectorMachineClassifier together with a sigmoid function to produce pseudo-probabilistic output.
@@ -23,8 +23,8 @@ class VectorMachineClassifier;
 class ProbabilisticWvmClassifier : public ProbabilisticVectorMachineClassifier
 {
 public:
-	//ProbabilisticWvmClassifier(shared_ptr<WvmClassifier> classifier); 	// TODO See also ProbabilisticVectorMachineClassifier.hpp. How do we solve this?
-	~ProbabilisticWvmClassifier(void);
+	ProbabilisticWvmClassifier(shared_ptr<WvmClassifier> classifier); 	// TODO See also ProbabilisticVectorMachineClassifier.hpp. How do we solve this?
+	//~ProbabilisticWvmClassifier(void);
 
 	/**
 	 * Loads the sigmoid parameters from the matlab file, then passes the loading to the underlying classifier which loads the vectors and thresholds from the matlab file.
@@ -34,6 +34,11 @@ public:
 	 */
 	void load(const string classifierFilename, const string thresholdsFilename); // TODO: Re-work this. Should also pass a Kernel.
 
+	pair<bool, double> classify(const Mat& featureVector) const;
+
+private:
+	shared_ptr<VectorMachineClassifier> classifier;
+	float sigmoidParameters[2];	// probabilistic svm output: p(ffp|t) = 1 / (1 + exp(p[0]*t +p[1]))
 };
 
 } /* namespace classification */

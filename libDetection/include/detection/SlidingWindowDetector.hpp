@@ -11,9 +11,9 @@
 #include "detection/Detector.hpp"
 
 namespace classification {
-	class BinaryClassifier;
+	class ProbabilisticClassifier;
 }
-using classification::BinaryClassifier;
+using classification::ProbabilisticClassifier;
 
 namespace detection {
 
@@ -29,7 +29,7 @@ public:
 	 *
 	 * @param[in] something Bla.
 	 */
-	explicit SlidingWindowDetector(shared_ptr<BinaryClassifier> classifier, int stepSizeX=1, int stepSizeY=1);
+	explicit SlidingWindowDetector(shared_ptr<ProbabilisticClassifier> classifier, int stepSizeX=1, int stepSizeY=1);
 
 	virtual ~SlidingWindowDetector() {}
 
@@ -46,7 +46,7 @@ public:
 	vector<pair<shared_ptr<Patch>, pair<bool, double>>> detect(shared_ptr<ImagePyramid> imagePyramid) const;
 
 private:
-	shared_ptr<BinaryClassifier> classifier;	///< The classifier that is used to evaluate every step of the sliding window.
+	shared_ptr<ProbabilisticClassifier> classifier;	///< The classifier that is used to evaluate every step of the sliding window.
 	int stepSizeX;	///< The step-size in pixels which the detector should move forward in x direction in every step. Default 1.
 	int stepSizeY;	///< The step-size in pixels which the detector should move forward in y direction in every step. Default 1.
 

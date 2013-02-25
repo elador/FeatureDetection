@@ -13,7 +13,7 @@
 
 namespace classification {
 
-class VectorMachineClassifier;
+class SvmClassifier;
 
 /**
  * A classifier that uses a VectorMachineClassifier together with a sigmoid function to produce pseudo-probabilistic output.
@@ -23,7 +23,7 @@ class VectorMachineClassifier;
 class ProbabilisticSvmClassifier : public ProbabilisticVectorMachineClassifier
 {
 public:
-	//ProbabilisticSvmClassifier(shared_ptr<SvmClassifier> classifier);	// TODO See also ProbabilisticVectorMachineClassifier.hpp. How do we solve this?
+	ProbabilisticSvmClassifier(shared_ptr<SvmClassifier> classifier);	// TODO See also ProbabilisticVectorMachineClassifier.hpp. How do we solve this?
 	~ProbabilisticSvmClassifier(void);
 
 	/**
@@ -34,6 +34,11 @@ public:
 	 */
 	void load(const string classifierFilename, const string thresholdsFilename); // TODO: Re-work this. Should also pass a Kernel.
 
+	pair<bool, double> classify(const Mat& featureVector) const;
+
+private:
+	shared_ptr<VectorMachineClassifier> classifier;
+	float sigmoidParameters[2];	// probabilistic svm output: p(ffp|t) = 1 / (1 + exp(p[0]*t +p[1]))
 };
 
 } /* namespace classification */

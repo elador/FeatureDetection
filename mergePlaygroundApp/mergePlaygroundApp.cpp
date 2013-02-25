@@ -23,7 +23,7 @@
 #include "classification/RbfKernel.hpp"
 #include "classification/SvmClassifier.hpp"
 #include "classification/WvmClassifier.hpp"
-#include "classification/ProbabilisticVectorMachineClassifier.hpp"
+#include "classification/ProbabilisticWvmClassifier.hpp"
 
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/ImagePyramidLayer.hpp"
@@ -100,16 +100,16 @@ int main(int argc, char *argv[])
 		cv::namedWindow(ss.str(), CV_WINDOW_AUTOSIZE); cv::imshow(ss.str(), l[i]->getScaledImage());
 	}
 	shared_ptr<WvmClassifier> wvm = make_shared<WvmClassifier>();
-	shared_ptr<ProbabilisticVectorMachineClassifier> pwvm = make_shared<ProbabilisticVectorMachineClassifier>(wvm);
+	shared_ptr<ProbabilisticWvmClassifier> pwvm = make_shared<ProbabilisticWvmClassifier>(wvm);
 
 	pwvm->load("D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
-	shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(wvm);
+	shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm);
 	vector<pair<shared_ptr<Patch>, pair<bool, double>>> resultingPatches = det->detect(pyr);
 
 	Mat rgbimg = img.clone();
 	std::vector<pair<shared_ptr<Patch>, pair<bool, double>>>::iterator pit = resultingPatches.begin();
 	for(; pit != resultingPatches.end(); pit++) {
-		cv::rectangle(rgbimg, cv::Point(pit->first->getX()-pit->first->getWidth()/2, pit->first->getY()-pit->first->getHeight()/2), cv::Point(pit->first->getX()+pit->first->getWidth()/2, pit->first->getY()+pit->first->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((pit->second.second+2.0)/2.0)   ));
+		cv::rectangle(rgbimg, cv::Point(pit->first->getX()-pit->first->getWidth()/2, pit->first->getY()-pit->first->getHeight()/2), cv::Point(pit->first->getX()+pit->first->getWidth()/2, pit->first->getY()+pit->first->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((pit->second.second)/1.0)   ));
 	}
 	cv::namedWindow("final", CV_WINDOW_AUTOSIZE); cv::imshow("final", rgbimg);
 	cv::waitKey(0);

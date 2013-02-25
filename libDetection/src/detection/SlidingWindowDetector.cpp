@@ -15,7 +15,7 @@
 #include "imageprocessing/MultipleImageFilter.hpp"
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
 //#include "imageprocessing/FeatureExtractor.hpp"
-#include "classification/BinaryClassifier.hpp"
+#include "classification/ProbabilisticClassifier.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -27,7 +27,7 @@ using namespace imageprocessing;
 
 namespace detection {
 
-SlidingWindowDetector::SlidingWindowDetector( shared_ptr<BinaryClassifier> classifier, int stepSizeX, int stepSizeY ) :
+SlidingWindowDetector::SlidingWindowDetector( shared_ptr<ProbabilisticClassifier> classifier, int stepSizeX, int stepSizeY ) :
 		classifier(classifier), stepSizeX(stepSizeX), stepSizeY(stepSizeY)
 {
 
@@ -53,7 +53,8 @@ vector<pair<shared_ptr<Patch>, pair<bool, double>>> SlidingWindowDetector::detec
 		fft->transform(pyramidPatches[i]->getData());
 		//cv::namedWindow("p2", CV_WINDOW_AUTOSIZE); cv::imshow("p2", pyramidPatches[i]->getData());
 		pair<bool, double> res = classifier->classify(pyramidPatches[i]->getData());
-		classifiedPatches.push_back(make_pair(pyramidPatches[i], res));
+		if(res.first==true)
+			classifiedPatches.push_back(make_pair(pyramidPatches[i], res));
 		//std::cout << res2.second << std::endl;
 		//cv::waitKey();
 	}

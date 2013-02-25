@@ -10,19 +10,19 @@
 
 namespace classification {
 
-ProbabilisticVectorMachineClassifier::ProbabilisticVectorMachineClassifier( shared_ptr<VectorMachineClassifier> classifier ) : classifier(classifier)
+/*ProbabilisticVectorMachineClassifier::ProbabilisticVectorMachineClassifier( shared_ptr<VectorMachineClassifier> classifier ) : classifier(classifier)
 {
 	sigmoidParameters[0] = 0.0f;	// How to initialize this in an initializer list?
 	sigmoidParameters[1] = 0.0f;
-}
+}*/
 
 
-ProbabilisticVectorMachineClassifier::~ProbabilisticVectorMachineClassifier(void)
+/*ProbabilisticVectorMachineClassifier::~ProbabilisticVectorMachineClassifier(void)
 {
-}
+}*/
 
 
-pair<bool, double> ProbabilisticVectorMachineClassifier::classify( const Mat& featureVector ) const
+/*pair<bool, double> ProbabilisticVectorMachineClassifier::classify( const Mat& featureVector ) const
 {
 	pair<bool, double> res = classifier->classify(featureVector);
 	// Do sigmoid stuff:
@@ -47,6 +47,6 @@ pair<bool, double> ProbabilisticVectorMachineClassifier::classify( const Mat& fe
 		return false;
 	}
 	*/
-}
+//}
 
 } /* namespace classification */
