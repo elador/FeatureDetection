@@ -110,5 +110,8 @@ int main(int argc, char *argv[])
 	}
 	cv::namedWindow("final", CV_WINDOW_AUTOSIZE); cv::imshow("final", rgbimg);
 	cv::waitKey(0);
+
+	// TEST
+
 	return 0;
 }
