@@ -38,7 +38,7 @@ public:
 	 * @return The corresponding value in this layer.
 	 */
 	int getScaled(int value) const {
-		return cvRound(value * scaleFactor);	// Patrik: @Peter, please check this
+		return cvRound(value * scaleFactor);
 	}
 
 	/**
@@ -48,7 +48,7 @@ public:
 	 * @return corresponding The value in the original image.
 	 */
 	int getOriginal(int value) const {
-		return cvRound(value / scaleFactor);	// Patrik: @Peter, please check this
+		return cvRound(value / scaleFactor);
 	}
 
 	/**

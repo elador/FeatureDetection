@@ -13,8 +13,10 @@
 namespace imageprocessing {
 
 /**
- * Image filter that approximately whitens the power spectrum of natural images. The algorithm was taken
- * from http://sun360.csail.mit.edu/jxiao/SFMedu/SFMedu/lib/vlfeat/toolbox/imop/vl_imwhiten.m.
+ * Image filter that approximately whitens the power spectrum of natural images. The input image
+ * must not have more than one channel.
+ *
+ * The algorithm was taken from http://sun360.csail.mit.edu/jxiao/SFMedu/SFMedu/lib/vlfeat/toolbox/imop/vl_imwhiten.m.
  */
 class WhiteningFilter : public ImageFilter {
 public:

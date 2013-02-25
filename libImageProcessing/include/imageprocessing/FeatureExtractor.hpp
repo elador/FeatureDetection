@@ -56,7 +56,7 @@ public:
 	shared_ptr<Patch> extract(int x, int y, int width, int height) {
 		shared_ptr<Patch> patch = extractor->extract(x, y, width, height);
 		if (!patch)
-			return Mat;		// Patrik: TODO There's a compiler error here (return-type)
+			return patch;
 		transformer->transform(patch->getData());
 		return patch;
 	}

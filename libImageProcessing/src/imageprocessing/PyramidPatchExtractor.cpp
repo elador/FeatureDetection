@@ -25,7 +25,7 @@ void PyramidPatchExtractor::update(const Mat& image) {
 	pyramid->update(image);
 }
 
-shared_ptr<Patch> PyramidPatchExtractor::extract(int x, int y, int width, int height) {
+shared_ptr<Patch> PyramidPatchExtractor::extract(int x, int y, int width, int height) const {
 	double scaleFactor = static_cast<double>(width) / static_cast<double>(patchWidth);
 	const shared_ptr<ImagePyramidLayer> layer = pyramid->getLayer(scaleFactor);
 	if (!layer)
@@ -45,10 +45,10 @@ shared_ptr<Patch> PyramidPatchExtractor::extract(int x, int y, int width, int he
 	int originalWidth = layer->getOriginal(patchWidth);
 	int originalHeight = layer->getOriginal(patchHeight);
 	const Mat data(image, Rect(patchBeginX, patchBeginY, patchWidth, patchHeight));
-	return make_shared<Patch>(originalX, originalY, originalWidth, originalHeight, data.clone());	// Patrik: Hmm, do we really want to clone the patch-data here? Wouldn't it be better to work with the same data and just the ROI as long as possible?
+	return make_shared<Patch>(originalX, originalY, originalWidth, originalHeight, data.clone());
 }
 
-vector<shared_ptr<Patch>> PyramidPatchExtractor::extract(int stepX, int stepY) {
+vector<shared_ptr<Patch>> PyramidPatchExtractor::extract(int stepX, int stepY) const {
 	vector<shared_ptr<Patch>> patches;
 	const vector<shared_ptr<ImagePyramidLayer>>& layers = pyramid->getLayers();
 	for (vector<shared_ptr<ImagePyramidLayer>>::const_iterator layIt = layers.begin(); layIt != layers.end(); ++layIt) {
@@ -63,14 +63,14 @@ vector<shared_ptr<Patch>> PyramidPatchExtractor::extract(int stepX, int stepY) {
 				Mat data(image, patchBounds);
 				int originalX = layer->getOriginal(center.x);
 				int originalY = layer->getOriginal(center.y);
-				patches.push_back(make_shared<Patch>(originalX, originalY, originalWidth, originalHeight, data.clone())); // Patrik: Hmm, do we really want to clone the patch-data here? Wouldn't it be better to work with the same data and just the ROI as long as possible?
+				patches.push_back(make_shared<Patch>(originalX, originalY, originalWidth, originalHeight, data.clone()));
 				patchBounds.x += stepX;
 				center.x += stepX;
 			}
 			patchBounds.y += stepY;
 			center.y += stepY;
-			patchBounds.x = 0;		// Patrik: @Peter, please check my changes here and on the next line.
-			center.x = patchWidth / 2;		// see above
+			patchBounds.x = 0;
+			center.x = patchWidth / 2;
 		}
 	}
 	return patches;

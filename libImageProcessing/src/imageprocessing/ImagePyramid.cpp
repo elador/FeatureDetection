@@ -37,6 +37,10 @@ ImagePyramid::~ImagePyramid() {}
 void ImagePyramid::setSource(const Mat& image) {
 	if (minScaleFactor <= 0)
 		throw "ImagePyramid: the minimum scale factor must be greater than zero if the source should be an image";
+	if (incrementalScaleFactor <= 0 || incrementalScaleFactor >= 1)
+		throw "ImagePyramid: the incremental scale factor must be greater than zero and smaller than one";
+	if (maxScaleFactor > 1)
+		throw "ImagePyramid: the maximum scale factor must not exceed one";
 	sourcePyramid.reset();
 	sourceImage = image;
 }
