@@ -10,10 +10,12 @@
 
 #include "opencv2/core/core.hpp"
 #include <vector>
+#include <memory>
 #include <utility>
 
 using cv::Mat;
 using std::vector;
+using std::shared_ptr;
 using std::pair;
 
 namespace imageprocessing {		// Forward-declarations from another namespace
@@ -47,7 +49,7 @@ public:
 	 * @param[in] image The image that the detector should run on.
 	 * @return Something probably.
 	 */
-	virtual vector<pair<Patch, pair<bool, double>>> detect(const ImagePyramid& imagePyramid) const = 0;
+	virtual vector<pair<shared_ptr<Patch>, pair<bool, double>>> detect(shared_ptr<ImagePyramid> imagePyramid) const = 0;
 
 };
 

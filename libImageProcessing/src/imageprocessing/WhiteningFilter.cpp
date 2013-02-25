@@ -21,7 +21,7 @@ Mat WhiteningFilter::applyTo(const Mat& image, Mat& filtered) {
 		throw "WhiteningFilter: the image must have exactly one channel";
 
 	// Fourier transformation
-	image.convertTo(floatImage, CV_32F);
+	image.convertTo(floatImage, CV_32F);	// Patrik: It crashes here (without any error message) when image is a BGR (3chan) image. Maybe we should add to the description of WhiteningFilter what input it supports? Actually I'm not sure if it really is OpenCV that crashes. It's the runtime that says "C++ exception: char at memory location ...". The same goes for the ZeroMeanUnitVarianceFilter.
 	dft(floatImage, fourierImage, cv::DFT_SCALE | cv::DFT_COMPLEX_OUTPUT);
 
 	// whitening filter

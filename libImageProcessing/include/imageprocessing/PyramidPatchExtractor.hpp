@@ -30,7 +30,7 @@ public:
 	 * @param[in] width The width of the image data of the extracted patches.
 	 * @param[in] height The height of the image data of the extracted patches.
 	 */
-	explicit PyramidPatchExtractor(shared_ptr<ImagePyramid> pyramid, int width, int height);
+	explicit PyramidPatchExtractor(shared_ptr<ImagePyramid> pyramid, int width, int height);	// Patrik: Why no const here?
 
 	~PyramidPatchExtractor();
 
@@ -45,7 +45,7 @@ public:
 	 * @param[in] height The height of the patch in the original image.
 	 * @return The extracted patch or an empty pointer in case the patch could not be extracted.
 	 */
-	shared_ptr<Patch> extract(int x, int y, int width, int height);
+	shared_ptr<Patch> extract(int x, int y, int width, int height); // Patrik: Why no const here?
 
 	/**
 	 * TODO iterator oder sowas statt vector?!
@@ -55,7 +55,7 @@ public:
 	 * @param[in] stepY The step size in y-direction in pixels (will be the same absolute value in all pyramid layers).
 	 * @return The extracted patches.
 	 */
-	vector<shared_ptr<Patch>> extract(int stepX, int stepY);
+	vector<shared_ptr<Patch>> extract(int stepX, int stepY); // Patrik: Why no const here?
 
 private:
 

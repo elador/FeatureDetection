@@ -45,7 +45,7 @@ shared_ptr<Patch> PyramidPatchExtractor::extract(int x, int y, int width, int he
 	int originalWidth = layer->getOriginal(patchWidth);
 	int originalHeight = layer->getOriginal(patchHeight);
 	const Mat data(image, Rect(patchBeginX, patchBeginY, patchWidth, patchHeight));
-	return make_shared<Patch>(originalX, originalY, originalWidth, originalHeight, data.clone());
+	return make_shared<Patch>(originalX, originalY, originalWidth, originalHeight, data.clone());	// Patrik: Hmm, do we really want to clone the patch-data here? Wouldn't it be better to work with the same data and just the ROI as long as possible?
 }
 
 vector<shared_ptr<Patch>> PyramidPatchExtractor::extract(int stepX, int stepY) {
@@ -70,7 +70,7 @@ vector<shared_ptr<Patch>> PyramidPatchExtractor::extract(int stepX, int stepY) {
 			patchBounds.y += stepY;
 			center.y += stepY;
 			patchBounds.x += 0;
-			center.x += patchWidth / 2;
+			center.x += patchWidth / 2;		// Patrik: TODO Hmm, check if this is correct
 		}
 	}
 	return patches;

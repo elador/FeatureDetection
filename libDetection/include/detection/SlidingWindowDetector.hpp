@@ -9,9 +9,6 @@
 #define SLIDINGWINDOWDETECTOR_HPP_
 
 #include "detection/Detector.hpp"
-#include <memory>
-
-using std::shared_ptr;
 
 namespace classification {
 	class BinaryClassifier;
@@ -32,7 +29,7 @@ public:
 	 *
 	 * @param[in] something Bla.
 	 */
-	explicit SlidingWindowDetector(shared_ptr<BinaryClassifier> classifier);
+	explicit SlidingWindowDetector(shared_ptr<BinaryClassifier> classifier, int stepSizeX=1, int stepSizeY=1);
 
 	virtual ~SlidingWindowDetector() {}
 
@@ -46,11 +43,12 @@ public:
 						A wrapper-class around Patch? What do we do when we want to re-use Patch-data for different classifiers
 						and "attach" several outputs to one Patch? Implement like in the "before-merge"-Lib ?
 	 */
-	vector<pair<Patch, pair<bool, double>>> detect(const ImagePyramid& imagePyramid) const;
+	vector<pair<shared_ptr<Patch>, pair<bool, double>>> detect(shared_ptr<ImagePyramid> imagePyramid) const;
 
 private:
 	shared_ptr<BinaryClassifier> classifier;	///< The classifier that is used to evaluate every step of the sliding window.
-	int stepSize;	///< The step-size in pixels which the detector should move forward in every step. Default 1.
+	int stepSizeX;	///< The step-size in pixels which the detector should move forward in x direction in every step. Default 1.
+	int stepSizeY;	///< The step-size in pixels which the detector should move forward in y direction in every step. Default 1.
 
 };
 

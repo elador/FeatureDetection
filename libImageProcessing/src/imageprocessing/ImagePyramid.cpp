@@ -68,7 +68,7 @@ void ImagePyramid::update() {
 		double scaleFactor = 1;
 		Mat previousScaledImage;
 		for (int i = 0; ; ++i, scaleFactor *= incrementalScaleFactor) {
-			if (scaleFactor > maxScaleFactor)
+			if (scaleFactor > maxScaleFactor)	// This goes into an endless loop if the user specifies a scale-factor with which it is impossible to produce the desired pyramids. We could add a check for this here, but I (Patrik) think we could also leave it this way because every 'if' costs runtime performance.
 				continue;
 			if (scaleFactor < minScaleFactor)
 				break;

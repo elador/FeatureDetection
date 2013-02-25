@@ -7,8 +7,8 @@
 
 #pragma once
 
-#ifndef IMAGEPYRAMID_H
-#define IMAGEPYRAMID_H
+#ifndef IMAGEPYRAMID_HPP_
+#define IMAGEPYRAMID_HPP_
 
 #include "opencv2/core/core.hpp"
 #include <vector>
@@ -126,4 +126,4 @@ private:
 };
 
 } /* namespace imageprocessing */
-#endif // IMAGEPYRAMID_H
+#endif // IMAGEPYRAMID_HPP_
