@@ -15,6 +15,11 @@ namespace classification {
 }
 using classification::ProbabilisticClassifier;
 
+namespace imageprocessing {
+	class FilteringFeatureTransformer;
+}
+using imageprocessing::FilteringFeatureTransformer;
+
 namespace detection {
 
 /**
@@ -29,7 +34,7 @@ public:
 	 *
 	 * @param[in] something Bla.
 	 */
-	explicit SlidingWindowDetector(shared_ptr<ProbabilisticClassifier> classifier, int stepSizeX=1, int stepSizeY=1);
+	explicit SlidingWindowDetector(shared_ptr<ProbabilisticClassifier> classifier, shared_ptr<FilteringFeatureTransformer> patchTransformer, int stepSizeX=1, int stepSizeY=1);
 
 	virtual ~SlidingWindowDetector() {}
 
@@ -47,6 +52,7 @@ public:
 
 private:
 	shared_ptr<ProbabilisticClassifier> classifier;	///< The classifier that is used to evaluate every step of the sliding window.
+	shared_ptr<FilteringFeatureTransformer> patchTransformer;	///< First filters the patches extracted from the pyramids and then transforms them to feature vectors.
 	int stepSizeX;	///< The step-size in pixels which the detector should move forward in x direction in every step. Default 1.
 	int stepSizeY;	///< The step-size in pixels which the detector should move forward in y direction in every step. Default 1.
 

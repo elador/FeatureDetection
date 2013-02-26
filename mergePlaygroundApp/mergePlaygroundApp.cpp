@@ -31,6 +31,11 @@
 #include "imageprocessing/GrayscaleFilter.hpp"
 #include "imageprocessing/Patch.hpp"
 
+#include "imageprocessing/FilteringFeatureTransformer.hpp"
+#include "imageprocessing/IdentityFeatureTransformer.hpp"
+#include "imageprocessing/MultipleImageFilter.hpp"
+#include "imageprocessing/HistEq64Filter.hpp"
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -94,16 +99,19 @@ int main(int argc, char *argv[])
 	shared_ptr<ImageFilter> imgFil = make_shared<GrayscaleFilter>();
 	pyr->addImageFilter(imgFil);
 	pyr->update(img);
-	vector<shared_ptr<ImagePyramidLayer>> l = pyr->getLayers();
-	for(unsigned int i=0; i<l.size(); ++i) {
-		stringstream ss; ss << i;
-		cv::namedWindow(ss.str(), CV_WINDOW_AUTOSIZE); cv::imshow(ss.str(), l[i]->getScaledImage());
-	}
+
 	shared_ptr<WvmClassifier> wvm = make_shared<WvmClassifier>();
 	shared_ptr<ProbabilisticWvmClassifier> pwvm = make_shared<ProbabilisticWvmClassifier>(wvm);
 
 	pwvm->load("D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.001--with-outnew02HQ64SVM.mat");
-	shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm);
+	
+	shared_ptr<IdentityFeatureTransformer> idTransform = make_shared<IdentityFeatureTransformer>();
+	shared_ptr<MultipleImageFilter> patchFilter = make_shared<MultipleImageFilter>();
+	shared_ptr<HistEq64Filter> histEq64Filter = make_shared<HistEq64Filter>();
+	patchFilter->add(histEq64Filter);
+	shared_ptr<FilteringFeatureTransformer> fft = make_shared<FilteringFeatureTransformer>(idTransform, patchFilter);
+	
+	shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm, fft);
 	vector<pair<shared_ptr<Patch>, pair<bool, double>>> resultingPatches = det->detect(pyr);
 
 	Mat rgbimg = img.clone();
