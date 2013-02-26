@@ -12,16 +12,17 @@ FIND_PACKAGE(OpenCV REQUIRED core)
 SET(HEADERS
 	include/detection/Detector.hpp
 	include/detection/SlidingWindowDetector.hpp
+	#include/detection/OverlapElimination.hpp
 )
 SET(SOURCE
 	src/detection/SlidingWindowDetector.cpp
+	#src/detection/OverlapElimination.cpp
 )
 
 include_directories( "include" )
 
 # add dependencies
 #include_directories( ${Boost_INCLUDE_DIRS} )
-#include_directories( ${libFeatureDetection_SOURCE_DIR} )
 include_directories( "${Classification_SOURCE_DIR}/include" )
 include_directories( "${ImageProcessing_SOURCE_DIR}/include" )
 

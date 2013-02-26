@@ -1,118 +1,34 @@
-#include "stdafx.h"
-#include "OverlapElimination.h"
+/*
+ * OverlapElimination.cpp
+ *
+ *  Created on: 26.02.2013
+ *      Author: Patrik Huber
+ */
 
-#include "FdPatch.h"
-#include "MatlabReader.h"
-#include "SLogger.h"
+#include "detection/OverlapElimination.hpp"
 
-#include <vector>
-#include <algorithm>
-#include <iostream>
-#include <cstring>
+namespace detection {
 
 OverlapElimination::OverlapElimination(void)
 {
-	//strcpy(outputPath, "");
-	identifier = "OverlapElimination";
-	expected_num_faces[0]=0; expected_num_faces[1]=1;
-
+	maxNumFaces = 0;
 	doOE = 1;	// only before SVM
 	dist = 5.0f;	//5px
 	ratio = -1.0f;	//no ratio
 }
 
 
-OverlapElimination::~OverlapElimination(void)
-{
-}
-
-std::string OverlapElimination::getIdentifier()
-{
-	return this->identifier;
-}
-
-void OverlapElimination::setIdentifier(std::string identifier)
-{
-	this->identifier = identifier;
-}
-
-int OverlapElimination::load(const std::string filename)
-{
-	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
-		std::cout << "[OverlapElimination] Loading " << filename << std::endl;
-	}
-
-	MatlabReader *configReader = new MatlabReader(filename);
-	int id;
-	char buff[255], key[255], pos[255];
-
-	if(!configReader->getKey("FD.ffp", buff)) {	// which feature point does this detector detect?
-		std::cout << "Warning: Key in Config nicht gefunden, key:'" << "FD.ffp" << "'" << std::endl;
-	} else {
-		if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
-			std::cout << "[OverlapElimination] ffp: " << atoi(buff) << std::endl;
-		}
-	}
-
-/*	if (!configReader->getKey("ALLGINFO.outputdir", this->outputPath)) // Output folder of this detector
-		std::cout << "Warning: Key in Config nicht gefunden, key:'" << "ALLGINFO.outputdir" << "'" << std::endl;
-	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
-		std::cout << "[OverlapElimination] outputdir: " << this->outputPath << std::endl;
-	}*/
-
-	//min. und max. erwartete Anzahl Gesichter im Bild (vorerst null bis eins);											  
-	sprintf(pos,"FD.expected_number_faces.#%d",0);																		  
-	if (!configReader->getKey(pos,buff))																						  
-		std::cout << "[OverlapElimination] WARNING: Key in Config nicht gefunden, key:'" << pos << "', nehme Default: " << this->expected_num_faces[0] << std::endl;
-	else
-		this->expected_num_faces[0]=atoi(buff);
-	sprintf(pos,"FD.expected_number_faces.#%d",1);
-	if (!configReader->getKey(pos,buff))
-		std::cout << "[OverlapElimination] WARNING: Key in Config nicht gefunden, key:'" << pos << "', nehme Default: " << this->expected_num_faces[1] << std::endl;
-	else
-		this->expected_num_faces[1]=atoi(buff);
-
-	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
-		std::cout << "[OverlapElimination] expected_num_faces: " << this->expected_num_faces[0] << ", " << this->expected_num_faces[1] << std::endl;
-	}
-
-
-	//Does overlap elimination 
-	if (!configReader->getKey("FD.doesPPOverlapElimination",buff))
-		std::cout << "[OverlapElimination] WARNING: Key in Config nicht gefunden, key:'FD.doesPPOverlapElimination', nehme Default: " << this->doOE << std::endl;
-	else this->doOE=atoi(buff);
-
-	//Dist overlap elimination 
-	if (!configReader->getKey("FD.distOverlapElimination.#0",buff))
-		std::cout << "[OverlapElimination] WARNING: Key in Config nicht gefunden, key:'FD.distOverlapElimination.#0', nehme Default: " << this->dist << std::endl;
-	else this->dist=(float)atof(buff);
-	if (!configReader->getKey("FD.distOverlapElimination.#1",buff))
-		std::cout << "[OverlapElimination] WARNING: Key in Config nicht gefunden, key:'FD.distOverlapElimination.#1', nehme Default: " << this->ratio << std::endl;
-	else this->ratio=(float)atof(buff);
-
-	delete configReader;
-	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=1) {
-		std::cout << "[OverlapElimination] Done reading OverlapElimination parameters!" << std::endl;
-	}
-	return 1;
-
-}
-
-
 ///////////////////////////////////////////////////////////////////////////////////
 // pp_overlap_elimination
 // simple clustering function, for each cluster only the best (with highest certainty)
-// will be keept, the others deleted.
+// will be kept, the others deleted.
 // Objects are at the same cluster when 
-//   The max. distance of the centre coord. is smaller as thresholds[0] and 
+//   The max. distance of the center coord. is smaller as thresholds[0] and 
 //	 the ratio of the obj. width is smaller as thresholds[1].
-//	 The distance is messured in pixel if thresholds[0]>1 else rel. to patch width.
+//	 The distance is measured in pixel if thresholds[0]>1 else rel. to patch width.
 std::vector<FdPatch*> OverlapElimination::eliminate(std::vector<FdPatch*> &patchvec, std::string detectorIdForSorting)
 {
 
-	if(Logger->getVerboseLevelText()>=2) {
-		std::cout << "[OverlapElimination] Running OverlapElimination..." << std::endl;
-	}
 	if(this->doOE > 1) {
 		std::cout << "[OverlapElimination] I am sorry, FD.doesPPOverlapElimination > 1 is not yet implemented. I'm going to set it to 1 and continue with this." << std::endl;
 		this->doOE = 1;
@@ -257,7 +173,7 @@ std::vector<FdPatch*> OverlapElimination::expNumFpElimination(std::vector<FdPatc
 
 }
 
-
+} /* namespace detection */
 
 /*
 std::vector<unsigned int> CFdDetectImg::pp_overlap_elimination(CFdPatchMap& faces, float thresholds[2], int cache, bool collect_removed=true) const {

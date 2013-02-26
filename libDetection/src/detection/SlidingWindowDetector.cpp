@@ -8,8 +8,6 @@
 #include "detection/SlidingWindowDetector.hpp"
 #include "imageprocessing/Patch.hpp"
 #include "imageprocessing/ImagePyramid.hpp"
-//#include "imageprocessing/ImagePyramidLayer.hpp"
-
 #include "imageprocessing/PyramidPatchExtractor.hpp"
 #include "imageprocessing/FilteringFeatureTransformer.hpp"
 #include "classification/ProbabilisticClassifier.hpp"
@@ -20,7 +18,7 @@
 
 #include <iostream>
 
-using namespace imageprocessing;
+using imageprocessing::PyramidPatchExtractor;
 
 namespace detection {
 

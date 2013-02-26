@@ -4,6 +4,7 @@
  *  Created on: 22.02.2013
  *      Author: Patrik Huber
  */
+#pragma once
 
 #ifndef DETECTOR_HPP_
 #define DETECTOR_HPP_

@@ -4,6 +4,7 @@
  *  Created on: 22.02.2013
  *      Author: Patrik Huber
  */
+#pragma once
 
 #ifndef SLIDINGWINDOWDETECTOR_HPP_
 #define SLIDINGWINDOWDETECTOR_HPP_
@@ -23,16 +24,19 @@ using imageprocessing::FilteringFeatureTransformer;
 namespace detection {
 
 /**
- * Detector that runs over an image with a sliding window of a fixed size.
+ * Detector that runs over an image with a sliding window of a fixed size and uses a classifier to classify every patch.
  * TODO: What do we do with BinaryClassifier/ProbabilisticClassifier? Do we also make two different SlidingWindowDetectors?
  */
 class SlidingWindowDetector : public Detector {
 public:
 
 	/**
-	 * Constructs a new detector ... .
+	 * Constructs a new sliding window detector.
 	 *
-	 * @param[in] something Bla.
+	 * @param[in] classifier The classifier that is used to classify every image patch.
+	 * @param[in] patchTransformer The filter and transformer that is applied before classifying each patch.
+	 * @param[in] stepSizeX The step-size in x-direction the detector moves forward on the pyramids in every step.
+	 * @param[in] stepSizeY The step-size in y-direction the detector moves forward on the pyramids in every step.
 	 */
 	explicit SlidingWindowDetector(shared_ptr<ProbabilisticClassifier> classifier, shared_ptr<FilteringFeatureTransformer> patchTransformer, int stepSizeX=1, int stepSizeY=1);
 
