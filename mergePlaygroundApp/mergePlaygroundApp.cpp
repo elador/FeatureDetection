@@ -87,10 +87,10 @@ int main(int argc, char *argv[])
 	delete svm;
 	delete wvm;
 	*/
-	Mat img = cv::imread("D:/FeatureDetection/data/firstrun/ws_8.png");
+	Mat img = cv::imread("D:/FeatureDetection/data/firstrun/ws_115.png");
 	cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
 	
-	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(0.02, 0.12, 0.7);
+	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(0.09, 0.25, 0.9);	// (0.09, 0.25, 0.9) is the same as old 90, 9, 0.9
 	shared_ptr<ImageFilter> imgFil = make_shared<GrayscaleFilter>();
 	pyr->addImageFilter(imgFil);
 	pyr->update(img);
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 	shared_ptr<WvmClassifier> wvm = make_shared<WvmClassifier>();
 	shared_ptr<ProbabilisticWvmClassifier> pwvm = make_shared<ProbabilisticWvmClassifier>(wvm);
 
-	pwvm->load("D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
+	pwvm->load("D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.001--with-outnew02HQ64SVM.mat");
 	shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm);
 	vector<pair<shared_ptr<Patch>, pair<bool, double>>> resultingPatches = det->detect(pyr);
 

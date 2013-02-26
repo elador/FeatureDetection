@@ -14,6 +14,7 @@ SET(HEADERS
 	include/imageprocessing/FilteringFeatureTransformer.hpp
 	include/imageprocessing/GrayscaleFilter.hpp
 	include/imageprocessing/HistogramEqualizationFilter.hpp
+	include/imageprocessing/HistEq64Filter.hpp
 	include/imageprocessing/IdentityFeatureTransformer.hpp
 	include/imageprocessing/ImageFilter.hpp
 	include/imageprocessing/ImagePyramid.hpp
@@ -31,6 +32,7 @@ SET(HEADERS
 SET(SOURCE
 	src/imageprocessing/GrayscaleFilter.cpp
 	src/imageprocessing/HistogramEqualizationFilter.cpp
+	src/imageprocessing/HistEq64Filter.cpp
 	src/imageprocessing/ImagePyramid.cpp
 	src/imageprocessing/ImagePyramidLayer.cpp
 	src/imageprocessing/IntegralImageFilter.cpp
