@@ -10,10 +10,12 @@
 #include "imageprocessing/MultipleImageFilter.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
+#include <stdexcept>
 
 using cv::Size;
 using cv::resize;
 using std::make_shared;
+using std::invalid_argument;
 
 namespace imageprocessing {
 
@@ -35,12 +37,12 @@ ImagePyramid::ImagePyramid(shared_ptr<ImagePyramid> pyramid, double minScaleFact
 ImagePyramid::~ImagePyramid() {}
 
 void ImagePyramid::setSource(const Mat& image) {
-	if (minScaleFactor <= 0)
-		throw "ImagePyramid: the minimum scale factor must be greater than zero if the source should be an image";
 	if (incrementalScaleFactor <= 0 || incrementalScaleFactor >= 1)
-		throw "ImagePyramid: the incremental scale factor must be greater than zero and smaller than one";
+		throw invalid_argument("ImagePyramid: the incremental scale factor must be greater than zero and smaller than one");
+	if (minScaleFactor <= 0)
+		throw invalid_argument("ImagePyramid: the minimum scale factor must be greater than zero");
 	if (maxScaleFactor > 1)
-		throw "ImagePyramid: the maximum scale factor must not exceed one";
+		throw invalid_argument("ImagePyramid: the maximum scale factor must not exceed one");
 	sourcePyramid.reset();
 	sourceImage = image;
 }
@@ -96,7 +98,7 @@ void ImagePyramid::update() {
 			previousScaledImage = scaledImage;
 		}
 	} else { // neither source pyramid nor source image are set, therefore the other parameters are missing, too
-		// TODO exception? oder ignore?
+		// TODO exception? oder ignore? oder noch besser: logging!
 		std::cerr << "ImagePyramid: could not update because there is no source (image or pyramid)" << std::endl;
 	}
 }

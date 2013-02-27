@@ -6,6 +6,9 @@
  */
 
 #include "imageprocessing/IntegralImageFilter.hpp"
+#include <stdexcept>
+
+using std::invalid_argument;
 
 namespace imageprocessing {
 
@@ -16,7 +19,7 @@ IntegralImageFilter::~IntegralImageFilter() {}
 Mat IntegralImageFilter::applyTo(const Mat& image, Mat& filtered) {
 	// TODO replace by cv::integral (and change documentation of the class accordingly because of the trailing 0-row and -column)
 	if (image.type() != CV_8U)
-		throw "IntegralImageFilter: the input image must be of type CV_8U";
+		throw invalid_argument("IntegralImageFilter: the input image must be of type CV_8U");
 	filtered.create(image.rows, image.cols, CV_32F);
 
 	float rowSum;

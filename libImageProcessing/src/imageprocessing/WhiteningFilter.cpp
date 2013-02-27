@@ -6,8 +6,10 @@
  */
 
 #include "imageprocessing/WhiteningFilter.hpp"
+#include <stdexcept>
 
 using cv::Vec2f;
+using std::invalid_argument;
 
 namespace imageprocessing {
 
@@ -18,7 +20,7 @@ WhiteningFilter::~WhiteningFilter() {}
 
 Mat WhiteningFilter::applyTo(const Mat& image, Mat& filtered) {
 	if (image.channels() > 1)
-		throw "WhiteningFilter: the image must have exactly one channel";
+		throw invalid_argument("WhiteningFilter: the image must have exactly one channel");
 
 	// Fourier transformation
 	image.convertTo(floatImage, CV_32F);
