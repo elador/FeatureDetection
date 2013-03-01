@@ -25,9 +25,18 @@ void PyramidPatchExtractor::update(const Mat& image) {
 	pyramid->update(image);
 }
 
-shared_ptr<Patch> PyramidPatchExtractor::extract(int x, int y, int width, int height) const {
+const shared_ptr<ImagePyramidLayer> PyramidPatchExtractor::getLayer(int width, int height) const {
 	double scaleFactor = static_cast<double>(width) / static_cast<double>(patchWidth);
-	const shared_ptr<ImagePyramidLayer> layer = pyramid->getLayer(scaleFactor);
+	return pyramid->getLayer(scaleFactor);
+}
+
+int PyramidPatchExtractor::getLayerIndex(int width, int height) const {
+	const shared_ptr<ImagePyramidLayer> layer = getLayer(width, height);
+	return layer ? layer->getIndex() : -1;
+}
+
+shared_ptr<Patch> PyramidPatchExtractor::extract(int x, int y, int width, int height) const {
+	const shared_ptr<ImagePyramidLayer> layer = getLayer(width, height);
 	if (!layer)
 		return shared_ptr<Patch>();
 	const Mat& image = layer->getScaledImage();
@@ -48,18 +57,39 @@ shared_ptr<Patch> PyramidPatchExtractor::extract(int x, int y, int width, int he
 	return make_shared<Patch>(originalX, originalY, originalWidth, originalHeight, data.clone());
 }
 
-vector<shared_ptr<Patch>> PyramidPatchExtractor::extract(int stepX, int stepY) const {
+vector<shared_ptr<Patch>> PyramidPatchExtractor::extract(int stepX, int stepY, Rect roi, int firstLayer, int lastLayer) const {
+	Rect empty;
 	vector<shared_ptr<Patch>> patches;
 	const vector<shared_ptr<ImagePyramidLayer>>& layers = pyramid->getLayers();
-	for (vector<shared_ptr<ImagePyramidLayer>>::const_iterator layIt = layers.begin(); layIt != layers.end(); ++layIt) {
+	if (firstLayer < 0)
+		firstLayer = layers.front()->getIndex();
+	if (lastLayer < 0)
+		lastLayer = layers.back()->getIndex();
+	for (auto layIt = layers.begin(); layIt != layers.end(); ++layIt) {
 		shared_ptr<ImagePyramidLayer> layer = *layIt;
+		if (layer->getIndex() < firstLayer)
+			continue;
+		if (layer->getIndex() > lastLayer)
+			break;
+
 		int originalWidth = layer->getOriginal(patchWidth);
 		int originalHeight = layer->getOriginal(patchHeight);
 		const Mat& image = layer->getScaledImage();
-		Rect patchBounds(0, 0, patchWidth, patchHeight);
-		Point center(patchWidth / 2, patchHeight / 2);
-		while (patchBounds.y + patchBounds.height <= image.rows) {
-			while (patchBounds.x + patchBounds.width <= image.cols) {
+		Point roiBegin(0, 0);
+		Point roiEnd(image.cols, image.rows);
+		if (roi != empty) {
+			roiBegin.x = layer->getScaled(roi.x);
+			roiBegin.y = layer->getScaled(roi.y);
+			roiEnd.x = layer->getScaled(roi.x + roi.width);
+			roiEnd.y = layer->getScaled(roi.y + roi.height);
+		}
+
+		Rect patchBounds(roiBegin.x, roiBegin.y, patchWidth, patchHeight);
+		Point center(patchBounds.x + patchWidth / 2, patchBounds.y + patchHeight / 2);
+		while (patchBounds.y + patchBounds.height <= roiEnd.y) {
+			patchBounds.x = roiBegin.x;
+			center.x = patchBounds.x + patchWidth / 2;
+			while (patchBounds.x + patchBounds.width <= roiEnd.x) {
 				Mat data(image, patchBounds);
 				int originalX = layer->getOriginal(center.x);
 				int originalY = layer->getOriginal(center.y);
@@ -69,8 +99,6 @@ vector<shared_ptr<Patch>> PyramidPatchExtractor::extract(int stepX, int stepY) c
 			}
 			patchBounds.y += stepY;
 			center.y += stepY;
-			patchBounds.x = 0;
-			center.x = patchWidth / 2;
 		}
 	}
 	return patches;

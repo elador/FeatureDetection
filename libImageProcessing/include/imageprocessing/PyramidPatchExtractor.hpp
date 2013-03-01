@@ -11,14 +11,18 @@
 #include "imageprocessing/PatchExtractor.hpp"
 #include <vector>
 
+using cv::Rect;
 using std::vector;
 
 namespace imageprocessing {
 
 class ImagePyramid;
+class ImagePyramidLayer;
 
 /**
- * Extracts patches of a constant size from an image pyramid.
+ * Extracts patches of a constant size from an image pyramid. Does only consider the given width when extracting single
+ * patches, as this extractor assumes the given aspect ratio to be the same as the one given at construction, so the
+ * extracted patches will not be scaled to fit.
  */
 class PyramidPatchExtractor : public PatchExtractor {
 public:
@@ -48,16 +52,39 @@ public:
 	shared_ptr<Patch> extract(int x, int y, int width, int height) const;
 
 	/**
-	 * TODO iterator oder sowas statt vector?!
-	 * Extracts several patches from all layers of the corresponding image pyramid.
+	 * Extracts several patches from the layers of the corresponding image pyramid.
+	 * TODO iterator instead of vector?
 	 *
 	 * @param[in] stepX The step size in x-direction in pixels (will be the same absolute value in all pyramid layers).
 	 * @param[in] stepY The step size in y-direction in pixels (will be the same absolute value in all pyramid layers).
+	 * @param[in] roi The region of interest inside the original image (region will be scaled accordingly to the layers).
+	 * @param[in] firstLayer The index of the first layer to extract patches from.
+	 * @param[in] lastLayer The index of the first layer to extract patches from.
 	 * @return The extracted patches.
 	 */
-	vector<shared_ptr<Patch>> extract(int stepX, int stepY) const;
+	vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(), int firstLayer = -1, int lastLayer = -1) const;
+
+	/**
+	 * Determines the index of the pyramid layer that approximately contains patches of the given size. Only the width
+	 * will be considered.
+	 *
+	 * @param[in] width The width of the patches.
+	 * @param[in] height The height of the patches.
+	 * @return The index of the pyramid layer or -1 if there is no layer with an appropriate patch size.
+	 */
+	int getLayerIndex(int width, int height) const;
 
 private:
+
+	/**
+	 * Determines the pyramid layer that approximately contains patches of the given size. Only the width
+	 * will be considered.
+	 *
+	 * @param[in] width The width of the patches.
+	 * @param[in] height The height of the patches.
+	 * @return The pyramid layer or an empty pointer if there is no layer with an appropriate patch size.
+	 */
+	const shared_ptr<ImagePyramidLayer> getLayer(int width, int height) const;
 
 	shared_ptr<ImagePyramid> pyramid; ///< The image pyramid.
 	int patchWidth;  ///< The width of the image data of the extracted patches.
