@@ -16,13 +16,13 @@ namespace logging {
 class LoggerFactory
 {
 private:
-	LoggerFactory(void);
-	~LoggerFactory(void);
+	LoggerFactory();
+	~LoggerFactory();
 	LoggerFactory(const LoggerFactory &);
 	LoggerFactory& operator=(const LoggerFactory &);
 
 public:
-	static LoggerFactory* Instance(void);
+	static LoggerFactory* Instance();
 
 };
 

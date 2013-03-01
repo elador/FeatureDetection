@@ -9,16 +9,16 @@
 
 namespace logging {
 
-LoggerFactory::LoggerFactory(void)
+LoggerFactory::LoggerFactory()
 {
 }
 
 
-LoggerFactory::~LoggerFactory(void)
+LoggerFactory::~LoggerFactory()
 {
 }
 
-LoggerFactory* LoggerFactory::Instance(void)
+LoggerFactory* LoggerFactory::Instance()
 {
 	static LoggerFactory instance;
 	return &instance;

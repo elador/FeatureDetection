@@ -5,22 +5,25 @@ SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # find dependencies
-FIND_PACKAGE(Boost REQUIRED)
-FIND_PACKAGE(OpenCV REQUIRED core)
 
 # source and header files
 SET(HEADERS
-	include/stuff.h
+	include/logging/Logger.hpp
+	include/logging/LoggerFactory.hpp
+	include/logging/Appender.hpp
+	include/logging/ConsoleAppender.hpp
+	include/logging/FileAppender.hpp
 )
 SET(SOURCE
-	src/stuff.cpp
+	src/logging/Logger.cpp
+	src/logging/LoggerFactory.cpp
+	src/logging/ConsoleAppender.cpp
+	src/logging/FileAppender.cpp
 )
 
 include_directories( "include" )
 
 # add dependencies
-include_directories( ${Boost_INCLUDE_DIRS} )
-include_directories( ${libFeatureDetection_SOURCE_DIR} )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
