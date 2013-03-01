@@ -11,60 +11,25 @@
 #include "mat.h"
 #include <iostream>
 
+using std::make_pair;
+using std::make_shared;
+
 namespace classification {
 
-ProbabilisticWvmClassifier::ProbabilisticWvmClassifier( shared_ptr<WvmClassifier> classifier )
-{
-	sigmoidParameters[0] = 0.0f;	// How to initialize this in an initializer list?
-	sigmoidParameters[1] = 0.0f;
-	this->classifier = classifier;	// TODO initializer list doesn't work? This is all not optimal......
-	
-}
+ProbabilisticWvmClassifier::ProbabilisticWvmClassifier(shared_ptr<WvmClassifier> wvm, double logisticA, double logisticB) :
+		wvm(wvm), logisticA(logisticA), logisticB(logisticB) {}
 
-void ProbabilisticWvmClassifier::load( const string classifierFilename, const string thresholdsFilename )
-{
-	// Load sigmoid stuff:
-	MATFile *pmatfile;
-	mxArray *pmxarray; // =mat
-	pmatfile = matOpen(thresholdsFilename.c_str(), "r");
-	if (pmatfile == 0) {
-		std::cout << "[DetWVM] : Unable to open the file (wrong format?):" << std::endl << thresholdsFilename << std::endl;
-		exit(EXIT_FAILURE);
-	} 
-
-	//printf("fd_ReadDetector(): read posterior_svm parameter for probabilistic SVM output\n");
-	//read posterior_wrvm parameter for probabilistic WRVM output
-	//TODO is there a case (when svm+wvm from same trainingdata) when there exists only a posterior_svm, and I should use this here?
-	pmxarray = matGetVariable(pmatfile, "posterior_wrvm");
-	if (pmxarray == 0) {
-		std::cout << "[DetWVM] WARNING: Unable to find the vector posterior_wrvm, disable prob. SVM output;" << std::endl;
-		this->sigmoidParameters[0]=this->sigmoidParameters[1]=0.0f;
-	} else {
-		double* matdata = mxGetPr(pmxarray);
-		const mwSize *dim = mxGetDimensions(pmxarray);
-		if (dim[1] != 2) {
-			std::cout << "[DetWVM] WARNING: Size of vector posterior_wrvm !=2, disable prob. WRVM output;" << std::endl;
-			this->sigmoidParameters[0]=this->sigmoidParameters[1]=0.0f;
-		} else {
-			this->sigmoidParameters[0]=(float)matdata[0]; this->sigmoidParameters[1]=(float)matdata[1];
-		}
-		mxDestroyArray(pmxarray);
-	}
-	matClose(pmatfile);
-
-	// Load the detector and thresholds:
-	classifier->load(classifierFilename, thresholdsFilename);
-}
+ProbabilisticWvmClassifier::~ProbabilisticWvmClassifier() {}
 
 pair<bool, double> ProbabilisticWvmClassifier::classify( const Mat& featureVector ) const
 {
-	pair<bool, double> res = classifier->classify(featureVector);
+	pair<int, double> levelAndDistance = wvm->computeHyperplaneDistance(featureVector);
 	// Do sigmoid stuff:
-	res.second = 1.0f / (1.0f + exp(sigmoidParameters[0]*res.second + sigmoidParameters[1]));
-	return res;
+	double probability = 1.0f / (1.0f + exp(logisticA + logisticB * levelAndDistance.second));
+	return make_pair(wvm->classify(levelAndDistance), probability);
 
 	/* TODO: In case of the WVM, we could again distinguish if we calculate the ("wrong") probability
-	 *			of all patches or only the ones that pass the last stage (correct probability), and 
+	 *			of all patches or only the ones that pass the last stage (correct probability), and
 	 *			set all others to zero.
 	//fp->certainty = 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]));
 	// We ran till the REAL LAST filter (not just the numUsedFilters one):
@@ -81,6 +46,47 @@ pair<bool, double> ProbabilisticWvmClassifier::classify( const Mat& featureVecto
 		return false;
 	}
 	*/
+}
+
+shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::load(const string& classifierFilename, const string& thresholdsFilename)
+{
+	// Load sigmoid stuff:
+	double logisticA, logisticB;
+	MATFile *pmatfile;
+	mxArray *pmxarray; // =mat
+	pmatfile = matOpen(thresholdsFilename.c_str(), "r");
+	if (pmatfile == 0) {
+		std::cout << "[DetWVM] : Unable to open the file (wrong format?):" << std::endl << thresholdsFilename << std::endl;
+		exit(EXIT_FAILURE);
+	} 
+
+	//printf("fd_ReadDetector(): read posterior_svm parameter for probabilistic SVM output\n");
+	//read posterior_wrvm parameter for probabilistic WRVM output
+	//TODO is there a case (when svm+wvm from same trainingdata) when there exists only a posterior_svm, and I should use this here?
+	pmxarray = matGetVariable(pmatfile, "posterior_wrvm");
+	if (pmxarray == 0) {
+		std::cout << "[DetWVM] WARNING: Unable to find the vector posterior_wrvm, disable prob. SVM output;" << std::endl;
+		// TODO prob. output cannot be disabled in the new version of this lib -> throw exception or log info message or something
+		logisticA = logisticB = 0;
+	} else {
+		double* matdata = mxGetPr(pmxarray);
+		const mwSize *dim = mxGetDimensions(pmxarray);
+		if (dim[1] != 2) {
+			std::cout << "[DetWVM] WARNING: Size of vector posterior_wrvm !=2, disable prob. WRVM output;" << std::endl;
+			// TODO same as previous TODO
+			logisticA = logisticB = 0;
+		} else {
+			logisticB = matdata[0];
+			logisticA = matdata[1];
+		}
+		mxDestroyArray(pmxarray);
+	}
+	matClose(pmatfile);
+
+	// Load the detector and thresholds:
+	shared_ptr<WvmClassifier> wvm = WvmClassifier::load(classifierFilename, thresholdsFilename);
+
+	return make_shared<ProbabilisticWvmClassifier>(wvm, logisticA, logisticB);
 }
 
 } /* namespace classification */

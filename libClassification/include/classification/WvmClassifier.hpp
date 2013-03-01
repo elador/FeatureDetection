@@ -30,16 +30,31 @@ public:
 
 	/**
 	 * Constructs a new WVM classifier.
-	 *
-	 * @param[in] wvm The WVM.
 	 */
-	explicit WvmClassifier();
+	WvmClassifier();
 
 	~WvmClassifier();
 
-	pair<bool, double> classify(const Mat& featureVector) const;
+	bool classify(const Mat& featureVector) const;
 
-	void load(const string classifierFilename, const string thresholdsFilename); // TODO: Re-work this. Should also pass a Kernel.
+	/**
+	 * Determines the classification result given the distance of a feature vector to the decision hyperplane.
+	 *
+	 * @param[in] levelAndDistance The index of the last used filter and distance of that filter level.
+	 * @return True if feature vectors of the given distance would be classified positively, false otherwise.
+	 */
+	bool classify(pair<int, double> levelAndDistance) const;
+
+	/**
+	 * Computes the approximate distance of a feature vector to the decision hyperplane. This is the real distance
+	 * without any influence by the offset for configuring the operating point of the SVM.
+	 *
+	 * @param[in] featureVector The feature vector.
+	 * @return A pair with the index of the last used filter and the distance to the decision hyperplane of that filter level.
+	 */
+	pair<int, double> computeHyperplaneDistance(const Mat& featureVector) const;
+
+	static shared_ptr<WvmClassifier> load(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this. Should also pass a Kernel.
 
 	int getNumUsedFilters(void);
 	void setNumUsedFilters(int);			 ///< Change the number of currently used wavelet-vectors

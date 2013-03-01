@@ -32,7 +32,7 @@ public:
 	 * @param[in] input The ...
 	 * @return The result of the kernel computation
 	 */
-	inline virtual double compute(unsigned char* data, unsigned char* support, int nDim) const = 0;
+	virtual double compute(unsigned char* data, unsigned char* support, int nDim) const = 0;
 };
 
 } /* namespace classification */

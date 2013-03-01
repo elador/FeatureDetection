@@ -44,7 +44,6 @@ SET(HEADERS
 	include/classification/SvmClassifier.hpp
 #	include/classification/TrainableClassifier.h
 #	include/classification/Training.h
-	include/classification/ProbabilisticVectorMachineClassifier.hpp
 	include/classification/Kernel.hpp
 	include/classification/RbfKernel.hpp
 	include/classification/PolynomialKernel.hpp
@@ -70,7 +69,6 @@ SET(SOURCE
 	src/classification/IImg.cpp
 	src/classification/SvmClassifier.cpp
 	src/classification/VectorMachineClassifier.cpp
-	src/classification/ProbabilisticVectorMachineClassifier.cpp
 	src/classification/ProbabilisticWvmClassifier.cpp
 	src/classification/ProbabilisticSvmClassifier.cpp
 	src/classification/RbfKernel.cpp

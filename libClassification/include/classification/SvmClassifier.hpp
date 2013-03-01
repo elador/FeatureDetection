@@ -26,15 +26,31 @@ public:
 
 	/**
 	 * Constructs a new SVM classifier.
-	 *
-	 * @param[in] svm The SVM.
 	 */
-	explicit SvmClassifier();
+	SvmClassifier();
+
 	~SvmClassifier();
 
-	pair<bool, double> classify(const Mat& featureVector) const;
+	bool classify(const Mat& featureVector) const;
 
-	void load(const string classifierFilename, const string thresholdsFilename); // TODO: Re-work this. Should also pass a Kernel.
+	/**
+	 * Determines the classification result given the distance of a feature vector to the decision hyperplane.
+	 *
+	 * @param[in] hyperplaneDistance The distance of a feature vector to the decision hyperplane.
+	 * @return True if feature vectors of the given distance would be classified positively, false otherwise.
+	 */
+	bool classify(double hyperplaneDistance) const;
+
+	/**
+	 * Computes the distance of a feature vector to the decision hyperplane. This is the real distance without
+	 * any influence by the offset for configuring the operating point of the SVM.
+	 *
+	 * @param[in] featureVector The feature vector.
+	 * @return The distance of the feature vector to the decision hyperplane.
+	 */
+	double computeHyperplaneDistance(const Mat& featureVector) const;
+
+	static shared_ptr<SvmClassifier> load(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this. Should also pass a Kernel.
 
 private:
 	int numSV;

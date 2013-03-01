@@ -18,7 +18,6 @@ using std::pair;
 
 namespace classification {
 
-
 /**
  * Classifier that determines the probability of a feature vector being of a certain class.
  */
@@ -31,7 +30,7 @@ public:
 	 * Classifies a feature vector.
 	 *
 	 * @param[in] featureVector The feature vector.
-	 * @return A probability between 0 and 1 for being in the positive class.
+	 * @return A pair containing the binary classification result and a probability between zero and one for being positive.
 	 */
 	virtual pair<bool, double> classify(const Mat& featureVector) const = 0;
 };

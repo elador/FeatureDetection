@@ -7,9 +7,10 @@
 
 #include "classification/WvmClassifier.hpp"
 #include "classification/IImg.hpp"
-#include "Mat.h"
+#include "mat.h"
 #include <iostream>
 
+using std::make_shared;
 using std::make_pair;
 using std::cout;
 
@@ -60,7 +61,20 @@ WvmClassifier::~WvmClassifier()
 	if (u_kernel_eval!=NULL) delete [] u_kernel_eval;
 }
 
-pair<bool, double> WvmClassifier::classify(const Mat& featureVector) const {
+bool WvmClassifier::classify(const Mat& featureVector) const {
+	return classify(computeHyperplaneDistance(featureVector));
+}
+
+bool WvmClassifier::classify(pair<int, double> levelAndDistance) const {
+	// TODO the following todo was moved here from the end of the getHyperplaneDistance function (was in classify before)
+	// TODO: filter statistics, nDropedOutAsNonFace[filter_level]++;
+	// We ran till the REAL LAST filter (not just the numUsedFilters one), save the certainty
+	int filterLevel = levelAndDistance.first;
+	double fout = levelAndDistance.second;
+	return filterLevel + 1 == this->numLinFilters && fout >= this->hierarchicalThresholds[filterLevel];
+}
+
+pair<int, double> WvmClassifier::computeHyperplaneDistance(const Mat& featureVector) const {
 	unsigned int featureVectorLength = featureVector.rows * featureVector.cols;
 	unsigned char* data = new unsigned char[featureVectorLength];
 
@@ -112,36 +126,24 @@ pair<bool, double> WvmClassifier::classify(const Mat& featureVector) const {
 	delete iimg_x;
 	delete iimg_xx;
 
-	// TODO: filter statistics, nDropedOutAsNonFace[filter_level]++;
-	// We ran till the REAL LAST filter (not just the numUsedFilters one), save the certainty
-	bool pos = false;
-	if(filter_level+1 == this->numLinFilters && fout >= this->hierarchicalThresholds[filter_level]) {
-		pos = true; // Positive patch!
-	}
-
-
 	// EEEEEEEEEEEEEEND
-
-
-	pair<bool, double> result;
-	result.second = fout;	// the fout value, the hyperplaneDist
-	result.first = pos;
 
 	delete[] data;
 	data = NULL;
-	return result;
+	return make_pair(filter_level, fout);
 }
 
-void WvmClassifier::load( const string classifierFilename, const string thresholdsFilename )
+shared_ptr<WvmClassifier> WvmClassifier::load(const string& classifierFilename, const string& thresholdsFilename)
 {
+	shared_ptr<WvmClassifier> wvm = make_shared<WvmClassifier>();
 	
 	//Number filters to use
-	this->numUsedFilters=280;	// Todo make dynamic (from script)
+	wvm->numUsedFilters=280;	// Todo make dynamic (from script)
 
 	//Grenze der Zuverlaesigkeit ab der Gesichter aufgenommen werden (Diffwert fr W-RSV's-Schwellen)
-	// zB. +0.1 => weniger patches drüber(mehr rejected, langsamer),    dh. mehr fn(FRR), weniger fp(FAR)  und
-	// zB. -0.1 => mehr patches drüber(mehr nicht rejected, schneller), dh. weniger fn(FRR), mehr fp(FAR)
-	this->limitReliabilityFilter=0.0f;	// FD.limit_reliability_filter (for WVM) (without _filter, it's for the SVM)
+	// zB. +0.1 => weniger patches drï¿½ber(mehr rejected, langsamer),    dh. mehr fn(FRR), weniger fp(FAR)  und
+	// zB. -0.1 => mehr patches drï¿½ber(mehr nicht rejected, schneller), dh. weniger fn(FRR), mehr fp(FAR)
+	wvm->limitReliabilityFilter=0.0f;	// FD.limit_reliability_filter (for WVM) (without _filter, it's for the SVM)
 
 	std::cout << "[WvmClassifier] Loading " << classifierFilename << std::endl;
 	
@@ -271,18 +273,18 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 		int h = (int)dim[0];
 		int w = (int)dim[1];
 		//assert(w && h);
-		this->filter_size_x = w;	// TODO check if this is right with eg 24x16
-		this->filter_size_y = h;
-					
-		numLinFilters = nfilter;
-		linFilters = new float* [numLinFilters];
-		for (int i = 0; i < numLinFilters; ++i) 
-			linFilters[i] = new float[w*h];
+		wvm->filter_size_x = w;	// TODO check if this is right with eg 24x16
+		wvm->filter_size_y = h;
+
+		wvm->numLinFilters = nfilter;
+		wvm->linFilters = new float* [wvm->numLinFilters];
+		for (int i = 0; i < wvm->numLinFilters; ++i)
+			wvm->linFilters[i] = new float[w*h];
 		
 		//hierarchicalThresholds = new float [numLinFilters];
-		hkWeights = new float* [numLinFilters];
-		for (int i = 0; i < numLinFilters; ++i) 
-			hkWeights[i] = new float[numLinFilters];
+		wvm->hkWeights = new float* [wvm->numLinFilters];
+		for (int i = 0; i < wvm->numLinFilters; ++i)
+			wvm->hkWeights[i] = new float[wvm->numLinFilters];
 
 		if (pmxarray == 0) {
 			std::cout << "[WvmClassifier]  Unable to find the matrix \'support_hk1\'" << std::endl;
@@ -294,7 +296,7 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 		}
 		mxDestroyArray(pmxarray);
 
-		for (int i = 0; i < this->numLinFilters; i++) {
+		for (int i = 0; i < wvm->numLinFilters; i++) {
 
 			sprintf(str, "support_hk%d", i+1);
 			pmxarray = matGetVariable(pmatfile, str);
@@ -310,9 +312,9 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 			matdata = mxGetPr(pmxarray);
 				
 			int k = 0;
-			for (int x = 0; x < this->filter_size_x; ++x)
-				for (int y = 0; y < this->filter_size_y; ++y)
-					this->linFilters[i][y*this->filter_size_x+x] = 255.0f*(float)matdata[k++];	// because the training images grey level values were divided by 255;
+			for (int x = 0; x < wvm->filter_size_x; ++x)
+				for (int y = 0; y < wvm->filter_size_y; ++y)
+					wvm->linFilters[i][y*wvm->filter_size_x+x] = 255.0f*(float)matdata[k++];	// because the training images grey level values were divided by 255;
 			mxDestroyArray(pmxarray);
 
 			sprintf(str, "weight_hk%d", i+1);
@@ -325,7 +327,7 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 				}
 				matdata = mxGetPr(pmxarray);
 				for (int j = 0; j <= i; ++j) {
-					this->hkWeights[i][j] = (float)matdata[j];
+					wvm->hkWeights[i][j] = (float)matdata[j];
 				}
 				mxDestroyArray(pmxarray);
 			}
@@ -337,9 +339,9 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 	pmxarray = matGetVariable(pmatfile, "param_nonlin1_rvm");
 	if (pmxarray != 0) {
 		matdata = mxGetPr(pmxarray);
-		this->nonlinThreshold = (float)matdata[0];
+		wvm->nonlinThreshold = (float)matdata[0];
 		int nonLinType       = (int)matdata[1];
-		this->basisParam       = (float)(matdata[2]/65025.0); // because the training images grey level values were divided by 255
+		wvm->basisParam       = (float)(matdata[2]/65025.0); // because the training images grey level values were divided by 255
 		int polyPower        = (int)matdata[3];
 		float divisor          = (float)matdata[4];
 		mxDestroyArray(pmxarray);
@@ -347,17 +349,17 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 		pmxarray = matGetVariable(pmatfile, "param_nonlin1");
 		if (pmxarray != 0) {
 			matdata = mxGetPr(pmxarray);
-			this->nonlinThreshold = (float)matdata[0];
+			wvm->nonlinThreshold = (float)matdata[0];
 			int nonLinType       = (int)matdata[1];
-			this->basisParam       = (float)(matdata[2]/65025.0); // because the training images grey level values were divided by 255
+			wvm->basisParam       = (float)(matdata[2]/65025.0); // because the training images grey level values were divided by 255
 			int polyPower        = (int)matdata[3];
 			float divisor          = (float)matdata[4];
 			mxDestroyArray(pmxarray);
 		}
 	}
-	lin_thresholds = new float [numLinFilters];
-	for (int i = 0; i < numLinFilters; ++i) {			//wrvm_out=treshSVM+sum(beta*kernel) 
-		lin_thresholds[i] = (float)nonlinThreshold;
+	wvm->lin_thresholds = new float [wvm->numLinFilters];
+	for (int i = 0; i < wvm->numLinFilters; ++i) {			//wrvm_out=treshSVM+sum(beta*kernel)
+		wvm->lin_thresholds[i] = (float)wvm->nonlinThreshold;
 	}
 
 	// number of filters per level (eg 14)
@@ -365,7 +367,7 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 	if (pmxarray != 0) {
 		matdata = mxGetPr(pmxarray);
 		assert(matdata != 0);	// TODO REMOVE
-		this->numFiltersPerLevel = (int)matdata[0]; 
+		wvm->numFiltersPerLevel = (int)matdata[0];
 		mxDestroyArray(pmxarray);
 	} else {
 		std::cout << "[WvmClassifier] : 'num_hk_wvm' not found in:" << std::endl;
@@ -376,7 +378,7 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 	if (pmxarray != 0) {
 		matdata = mxGetPr(pmxarray);
 		assert(matdata != 0);
-		this->numLevels = (int)matdata[0]; 
+		wvm->numLevels = (int)matdata[0];
 		mxDestroyArray(pmxarray);
 	} else {
 		std::cout << "[WvmClassifier] : 'num_lev_wvm' not found in:" << std::endl;
@@ -396,21 +398,21 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 		const char valstr[]="val_u";
 		const char cntrecstr[]="cntrec_u";
 
-		w=this->filter_size_x; // again?
-		h=this->filter_size_y;
+		w=wvm->filter_size_x; // again?
+		h=wvm->filter_size_y;
 
 		const mwSize *dim=mxGetDimensions(pmxarray);
 		int nHK=(int)dim[1];
-		if (this->numLinFilters!=nHK){
-			std::cout << "[WvmClassifier] : 'area' not right dim:" << nHK << "(==" << this->numLinFilters << ")" << std::endl;
+		if (wvm->numLinFilters!=nHK){
+			std::cout << "[WvmClassifier] : 'area' not right dim:" << nHK << "(==" << wvm->numLinFilters << ")" << std::endl;
 			exit(EXIT_FAILURE);
 		}
-		if ((this->numFiltersPerLevel*this->numLevels)!=nHK){
-			std::cout << "[WvmClassifier] : 'area' not right dim:" << nHK <<  "(==" << this->numLinFilters << ")" << std::endl;
+		if ((wvm->numFiltersPerLevel*wvm->numLevels)!=nHK){
+			std::cout << "[WvmClassifier] : 'area' not right dim:" << nHK <<  "(==" << wvm->numLinFilters << ")" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 
-		this->area = new Area*[nHK];
+		wvm->area = new Area*[nHK];
 
 		int cntval;
 		for (hrsv=0;hrsv<nHK;hrsv++)  {
@@ -428,17 +430,17 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 			d = mxGetPr(mcntrec);
 			for (v=0;v<cntval;v++) 
 				cntrec[v]=(int)d[v];
-			this->area[hrsv] = new Area(cntval,cntrec);
+			wvm->area[hrsv] = new Area(cntval,cntrec);
 
 			d = mxGetPr(mval);
 			for (v=0;v<cntval;v++) 
-				this->area[hrsv]->val[v]=d[v]*255.0F; // because the training images grey level values were divided by 255;
+				wvm->area[hrsv]->val[v]=d[v]*255.0F; // because the training images grey level values were divided by 255;
 
 			mxArray* mrec=mxGetField(pmxarray,hrsv,"crec");
 			for (v=0;v<cntval;v++) 
-				for (r=0;r<this->area[hrsv]->cntrec[v];r++) {
+				for (r=0;r<wvm->area[hrsv]->cntrec[v];r++) {
 					mxArray* mk;
-					rec=&this->area[hrsv]->rec[v][r];
+					rec=&wvm->area[hrsv]->rec[v][r];
 
 					mk=mxGetField(mrec,r*cntval+v,"x1");
 					d = mxGetPr(mk); rec->x1=(int)d[0];
@@ -479,13 +481,13 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 		matdata = mxGetPr(pmxarray);
 		const mwSize *dim = mxGetDimensions(pmxarray);
 		int nHK=(int)dim[1];
-		if (this->numLinFilters!=nHK){
-			std::cout << "[WvmClassifier] : 'app_rsv_convol' not right dim:" << nHK << " (==" << this->numLinFilters << ")" << std::endl;
+		if (wvm->numLinFilters!=nHK){
+			std::cout << "[WvmClassifier] : 'app_rsv_convol' not right dim:" << nHK << " (==" << wvm->numLinFilters << ")" << std::endl;
 			exit(EXIT_FAILURE);
 		}
-		this->app_rsv_convol = new double[nHK];
+		wvm->app_rsv_convol = new double[nHK];
 		for (int hrsv=0; hrsv<nHK; ++hrsv)
-			this->app_rsv_convol[hrsv]=matdata[hrsv]*65025.0; // because the training images grey level values were divided by 255;
+			wvm->app_rsv_convol[hrsv]=matdata[hrsv]*65025.0; // because the training images grey level values were divided by 255;
 		mxDestroyArray(pmxarray);
 	} else {
 		std::cout << "[WvmClassifier] : 'app_rsv_convol' not found" << std::endl;
@@ -517,7 +519,7 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 				//TPairIf p(o+1, (float)matdata[o]);
 				//std::pair<int, float> p(o+1, (float)matdata[o]); // = std::make_pair<int, float>
 				//this->hierarchicalThresholdsFromFile.push_back(p);
-				this->hierarchicalThresholdsFromFile.push_back((float)matdata[o]);
+				wvm->hierarchicalThresholdsFromFile.push_back((float)matdata[o]);
 			}
 			mxDestroyArray(pmxarray);
 		}
@@ -537,20 +539,20 @@ void WvmClassifier::load( const string classifierFilename, const string threshol
 	if (this->limitReliabilityFilter!=0.0)
 		for (i = 0; i < this->numLinFilters; ++i) this->hierarchicalThresholds[i]+=this->limitReliabilityFilter;
 	*/
-	if(this->hierarchicalThresholdsFromFile.size() != this->numLinFilters) {
-		std::cout << "[WvmClassifier] Something seems to be wrong, hierarchicalThresholdsFromFile.size() != numLinFilters; " << this->hierarchicalThresholdsFromFile.size() << "!=" << this->numLinFilters << std::endl;
+	if(wvm->hierarchicalThresholdsFromFile.size() != wvm->numLinFilters) {
+		std::cout << "[WvmClassifier] Something seems to be wrong, hierarchicalThresholdsFromFile.size() != numLinFilters; " << wvm->hierarchicalThresholdsFromFile.size() << "!=" << wvm->numLinFilters << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	this->setLimitReliabilityFilter(this->limitReliabilityFilter);	// This initializes the vector hierarchicalThresholds
+	wvm->setLimitReliabilityFilter(wvm->limitReliabilityFilter);	// This initializes the vector hierarchicalThresholds
 
 	//for (i = 0; i < this->numLinFilters; ++i) printf("b%d=%g ",i+1,this->hierarchicalThresholds[i]);
 	//printf("\n");
 	std::cout << "[WvmClassifier] Done reading WVM-threshold file " << thresholdsFilename << std::endl;
 
-	filter_output = new float[this->numLinFilters];
- 	u_kernel_eval = new float[this->numLinFilters];
+	wvm->filter_output = new float[wvm->numLinFilters];
+	wvm->u_kernel_eval = new float[wvm->numLinFilters];
 
-	this->setNumUsedFilters(this->numUsedFilters);	// Makes sure that we don't use more filters than the loaded WVM has, and if zero, set to numLinFilters.
+	wvm->setNumUsedFilters(wvm->numUsedFilters);	// Makes sure that we don't use more filters than the loaded WVM has, and if zero, set to numLinFilters.
 
 }
 
@@ -722,7 +724,7 @@ float WvmClassifier::linEvalWvmHisteq64(
 
 	//3rd term: p'*p (convolution of the appr. RSV - constrant calculated at the training)
 	//spp_begin = clock();
-	sum_pp=app_rsv_convol[level]; // patrik: überflüssig?
+	sum_pp=app_rsv_convol[level]; // patrik: ï¿½berflï¿½ssig?
 	norm_new+=app_rsv_convol[level];
 	//Profiler.spp += (double)(clock()-spp_begin);
 

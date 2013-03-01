@@ -9,15 +9,14 @@
 #define PYRAMIDPATCHEXTRACTOR_HPP_
 
 #include "imageprocessing/PatchExtractor.hpp"
+#include "imageprocessing/ImagePyramid.hpp"
+#include "imageprocessing/ImagePyramidLayer.hpp"
 #include <vector>
 
 using cv::Rect;
 using std::vector;
 
 namespace imageprocessing {
-
-class ImagePyramid;
-class ImagePyramidLayer;
 
 /**
  * Extracts patches of a constant size from an image pyramid. Does only consider the given width when extracting single
@@ -38,7 +37,9 @@ public:
 
 	~PyramidPatchExtractor();
 
-	void update(const Mat& image);
+	void update(const Mat& image) {
+		pyramid->update(image);
+	}
 
 	/**
 	 * Extracts a patch from the corresponding image pyramid.
@@ -72,7 +73,10 @@ public:
 	 * @param[in] height The height of the patches.
 	 * @return The index of the pyramid layer or -1 if there is no layer with an appropriate patch size.
 	 */
-	int getLayerIndex(int width, int height) const;
+	int getLayerIndex(int width, int height) const {
+		const shared_ptr<ImagePyramidLayer> layer = getLayer(width, height);
+		return layer ? layer->getIndex() : -1;
+	}
 
 private:
 
@@ -84,7 +88,10 @@ private:
 	 * @param[in] height The height of the patches.
 	 * @return The pyramid layer or an empty pointer if there is no layer with an appropriate patch size.
 	 */
-	const shared_ptr<ImagePyramidLayer> getLayer(int width, int height) const;
+	const shared_ptr<ImagePyramidLayer> getLayer(int width, int height) const {
+		double scaleFactor = static_cast<double>(width) / static_cast<double>(patchWidth);
+		return pyramid->getLayer(scaleFactor);
+	}
 
 	shared_ptr<ImagePyramid> pyramid; ///< The image pyramid.
 	int patchWidth;  ///< The width of the image data of the extracted patches.

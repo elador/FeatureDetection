@@ -29,8 +29,6 @@ public:
 	VectorMachineClassifier(void);
 	~VectorMachineClassifier(void);
 
-	virtual void load(const string classifierFilename, const string thresholdsFilename) = 0;
-
 	float getLimitReliability();
 	void setLimitReliability(float limitReliability);
 

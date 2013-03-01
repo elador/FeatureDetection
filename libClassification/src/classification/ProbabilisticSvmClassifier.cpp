@@ -10,18 +10,26 @@
 #include "mat.h"
 #include <iostream>
 
+using std::make_pair;
+using std::make_shared;
+
 namespace classification {
 
-ProbabilisticSvmClassifier::ProbabilisticSvmClassifier( shared_ptr<SvmClassifier> classifier )
-{
-	sigmoidParameters[0] = 0.0f;	// How to initialize this in an initializer list?
-	sigmoidParameters[1] = 0.0f;
-	classifier = classifier;	// TODO initializer list doesn't work? This is all not optimal......
+ProbabilisticSvmClassifier::ProbabilisticSvmClassifier(shared_ptr<SvmClassifier> svm, double logisticA, double logisticB) :
+		svm(svm), logisticA(logisticA), logisticB(logisticB) {}
+
+ProbabilisticSvmClassifier::~ProbabilisticSvmClassifier() {}
+
+pair<bool, double> ProbabilisticSvmClassifier::classify(const Mat& featureVector) const {
+	double hyperplaneDistance = svm->computeHyperplaneDistance(featureVector);
+	double probability = 1.0f / (1.0f + exp(logisticA + logisticB * hyperplaneDistance));
+	return make_pair(svm->classify(hyperplaneDistance), probability);
 }
 
-void ProbabilisticSvmClassifier::load( const string classifierFilename, const string thresholdsFilename )
+shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::load(const string& classifierFilename, const string& thresholdsFilename)
 {
 	// Load sigmoid stuff:
+	double logisticA, logisticB;
 	MATFile *pmatfile;
 	mxArray *pmxarray; // =mat
 	pmatfile = matOpen(thresholdsFilename.c_str(), "r");
@@ -35,15 +43,18 @@ void ProbabilisticSvmClassifier::load( const string classifierFilename, const st
 		pmxarray = matGetVariable(pmatfile, "posterior_svm");
 		if (pmxarray == 0) {
 			std::cout << "[DetSVM] WARNING: Unable to find the vector posterior_svm, disable prob. SVM output;" << std::endl;
-			this->sigmoidParameters[0]=this->sigmoidParameters[1]=0.0f;
+			// TODO prob. output cannot be disabled in the new version of this lib -> throw exception or log info message or something
+			logisticA = logisticB = 0;
 		} else {
 			double* matdata = mxGetPr(pmxarray);
 			const mwSize *dim = mxGetDimensions(pmxarray);
 			if (dim[1] != 2) {
 				std::cout << "[DetSVM] WARNING: Size of vector posterior_svm !=2, disable prob. SVM output;" << std::endl;
-				this->sigmoidParameters[0]=this->sigmoidParameters[1]=0.0f;
+				// TODO same as previous TODO
+				logisticA = logisticB = 0;
 			} else {
-				this->sigmoidParameters[0]=(float)matdata[0]; this->sigmoidParameters[1]=(float)matdata[1];
+				logisticB = matdata[0];
+				logisticA = matdata[1];
 			}
 			mxDestroyArray(pmxarray);
 		}
@@ -51,34 +62,9 @@ void ProbabilisticSvmClassifier::load( const string classifierFilename, const st
 	}
 
 	// Load the detector and thresholds:
-	classifier->load(classifierFilename, thresholdsFilename);
-}
+	shared_ptr<SvmClassifier> svm = SvmClassifier::load(classifierFilename, thresholdsFilename);
 
-pair<bool, double> ProbabilisticSvmClassifier::classify( const Mat& featureVector ) const
-{
-	pair<bool, double> res = classifier->classify(featureVector);
-	// Do sigmoid stuff:
-	res.second = 1.0f / (1.0f + exp(sigmoidParameters[0]*res.second + sigmoidParameters[1]));
-	return res;
-
-	/* TODO: In case of the WVM, we could again distinguish if we calculate the ("wrong") probability
-	 *			of all patches or only the ones that pass the last stage (correct probability), and 
-	 *			set all others to zero.
-	//fp->certainty = 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]));
-	// We ran till the REAL LAST filter (not just the numUsedFilters one):
-	if(filter_level+1 == this->numLinFilters && fout >= this->hierarchicalThresholds[filter_level]) {
-		certainty = 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]));
-		return true;
-	}
-	// We didn't run up to the last filter (or only up to the numUsedFilters one)
-	if(this->calculateProbabilityOfAllPatches==true) {
-		certainty = 1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]));
-		return false;
-	} else {
-		certainty = 0.0f;
-		return false;
-	}
-	*/
+	return make_shared<ProbabilisticSvmClassifier>(svm, logisticA, logisticB);
 }
 
 } /* namespace classification */

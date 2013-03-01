@@ -7,10 +7,7 @@
 
 #include "imageprocessing/PyramidPatchExtractor.hpp"
 #include "imageprocessing/Patch.hpp"
-#include "imageprocessing/ImagePyramid.hpp"
-#include "imageprocessing/ImagePyramidLayer.hpp"
 
-using cv::Rect;
 using cv::Point;
 using std::make_shared;
 
@@ -20,20 +17,6 @@ PyramidPatchExtractor::PyramidPatchExtractor(shared_ptr<ImagePyramid> pyramid, i
 		pyramid(pyramid), patchWidth(width), patchHeight(height) {}
 
 PyramidPatchExtractor::~PyramidPatchExtractor() {}
-
-void PyramidPatchExtractor::update(const Mat& image) {
-	pyramid->update(image);
-}
-
-const shared_ptr<ImagePyramidLayer> PyramidPatchExtractor::getLayer(int width, int height) const {
-	double scaleFactor = static_cast<double>(width) / static_cast<double>(patchWidth);
-	return pyramid->getLayer(scaleFactor);
-}
-
-int PyramidPatchExtractor::getLayerIndex(int width, int height) const {
-	const shared_ptr<ImagePyramidLayer> layer = getLayer(width, height);
-	return layer ? layer->getIndex() : -1;
-}
 
 shared_ptr<Patch> PyramidPatchExtractor::extract(int x, int y, int width, int height) const {
 	const shared_ptr<ImagePyramidLayer> layer = getLayer(width, height);

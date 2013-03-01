@@ -7,9 +7,10 @@
 
 #include "classification/SvmClassifier.hpp"
 #include "classification/RbfKernel.hpp"
-#include "Mat.h"
+#include "mat.h"
 #include <iostream>
 
+using std::make_shared;
 using std::make_pair;
 using std::cout;
 
@@ -33,8 +34,15 @@ SvmClassifier::~SvmClassifier()
 	delete[] alpha;
 }
 
-pair<bool, double> SvmClassifier::classify(const Mat& featureVector) const
-{
+bool SvmClassifier::classify(const Mat& featureVector) const {
+	return classify(computeHyperplaneDistance(featureVector));
+}
+
+bool SvmClassifier::classify(double hyperplaneDistance) const {
+	return hyperplaneDistance >= limitReliability;
+}
+
+double SvmClassifier::computeHyperplaneDistance(const Mat& featureVector) const {
 	unsigned int featureVectorLength = featureVector.rows * featureVector.cols;
 	unsigned char* data = new unsigned char[featureVectorLength];
 
@@ -60,22 +68,15 @@ pair<bool, double> SvmClassifier::classify(const Mat& featureVector) const
 		res += this->alpha[i] * kernel->compute(data, this->support[i], featureVectorLength);
 	}
 
-	pair<bool, double> result;
-	result.second = res;	// the fout value, the hyperplaneDist
-	if (res >= this->limitReliability) {
-		result.first = true;
-	} else {
-		result.first = false;
-	}
-
 	delete[] data;
 	data = NULL;
-	return result;
+	return res;
 }
 
-void SvmClassifier::load(const std::string classifierFilename, const std::string thresholdsFilename)
+shared_ptr<SvmClassifier> SvmClassifier::load(const string& classifierFilename, const string& thresholdsFilename)
 {
 	std::cout << "[SvmClassifier] Loading " << classifierFilename << std::endl;	// TODO replace with Logger
+	shared_ptr<SvmClassifier> svm = make_shared<SvmClassifier>();
 
 	MATFile *pmatfile;
 	mxArray *pmxarray; // =mat
@@ -94,15 +95,15 @@ void SvmClassifier::load(const std::string classifierFilename, const std::string
 	std::cout << "[SvmClassifier] Reading param_nonlin1" << std::endl;
 	matdata = mxGetPr(pmxarray);
 	// TODO we don't need all of those
-	this->nonlinThreshold = (float)matdata[0];
+	svm->nonlinThreshold = (float)matdata[0];
 	int nonLinType       = (int)matdata[1];
 	float basisParam       = (float)(matdata[2]/65025.0); // because the training image's graylevel values were divided by 255
 	int polyPower        = (int)matdata[3];
 	float divisor          = (float)matdata[4];
 	mxDestroyArray(pmxarray);
 
-	this->kernel = std::make_shared<RbfKernel>(basisParam);	// TODO correct??
-		
+	svm->kernel = std::make_shared<RbfKernel>(basisParam);	// TODO correct??
+
 	pmxarray = matGetVariable(pmatfile, "support_nonlin1");
 	if (pmxarray == 0) {
 		std::cout << "[SvmClassifier] Error: There is a nonlinear SVM in the file, but the matrix support_nonlin1 is lacking!" << std::endl;
@@ -113,7 +114,7 @@ void SvmClassifier::load(const std::string classifierFilename, const std::string
 		exit(EXIT_FAILURE);
 	}
 	const mwSize *dim = mxGetDimensions(pmxarray);
-	this->numSV = (int)dim[2];
+	svm->numSV = (int)dim[2];
 	matdata = mxGetPr(pmxarray);
 
 	int is;
@@ -121,17 +122,17 @@ void SvmClassifier::load(const std::string classifierFilename, const std::string
 	int filter_size_y = (int)dim[0];
 
 	// Alloc space for SV's and alphas (weights)
-	this->support = new unsigned char* [this->numSV];
+	svm->support = new unsigned char* [svm->numSV];
 	int size = filter_size_x*filter_size_y;
-	for (int i = 0; i < this->numSV; ++i) 
-		this->support[i] = new unsigned char[size];
-	this->alpha = new float [this->numSV];
+	for (int i = 0; i < svm->numSV; ++i)
+		svm->support[i] = new unsigned char[size];
+	svm->alpha = new float [svm->numSV];
 
 	int k = 0;
 	for (is = 0; is < (int)dim[2]; ++is)
 		for (int x = 0; x < filter_size_x; ++x)	// row-first (ML-convention)
 			for (int y = 0; y < filter_size_y; ++y)
-				this->support[is][y*filter_size_x+x] = (unsigned char)(255.0*matdata[k++]);	 // because the training images gray level values were divided by 255;
+				svm->support[is][y*filter_size_x+x] = (unsigned char)(255.0*matdata[k++]);	 // because the training images gray level values were divided by 255;
 	mxDestroyArray(pmxarray);
 
 	pmxarray = matGetVariable(pmatfile, "weight_nonlin1");
@@ -140,8 +141,8 @@ void SvmClassifier::load(const std::string classifierFilename, const std::string
 		exit(EXIT_FAILURE);
 	}
 	matdata = mxGetPr(pmxarray);
-	for (is = 0; is < this->numSV; ++is)
-		this->alpha[is] = (float)matdata[is];
+	for (is = 0; is < svm->numSV; ++is)
+		svm->alpha[is] = (float)matdata[is];
 	mxDestroyArray(pmxarray);
 
 	if (matClose(pmatfile) != 0) {
