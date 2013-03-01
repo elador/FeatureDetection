@@ -85,12 +85,14 @@ shared_ptr<SvmClassifier> SvmClassifier::load(const string& classifierFilename, 
 	if (pmatfile == NULL) {
 		std::cout << "[SvmClassifier] Error opening file." << std::endl;
 		exit(EXIT_FAILURE);	// TODO replace with error throwing!
+		return shared_ptr<SvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
 	}
 
 	pmxarray = matGetVariable(pmatfile, "param_nonlin1");
 	if (pmxarray == 0) {
 		std::cout << "[SvmClassifier] Error: There is a no param_nonlin1 in the file." << std::endl;
 		exit(EXIT_FAILURE);
+		return shared_ptr<SvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
 	}
 	std::cout << "[SvmClassifier] Reading param_nonlin1" << std::endl;
 	matdata = mxGetPr(pmxarray);
@@ -108,10 +110,12 @@ shared_ptr<SvmClassifier> SvmClassifier::load(const string& classifierFilename, 
 	if (pmxarray == 0) {
 		std::cout << "[SvmClassifier] Error: There is a nonlinear SVM in the file, but the matrix support_nonlin1 is lacking!" << std::endl;
 		exit(EXIT_FAILURE);
+		return shared_ptr<SvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
 	} 
 	if (mxGetNumberOfDimensions(pmxarray) != 3) {
 		std::cout << "[SvmClassifier] Error: The matrix support_nonlin1 in the file should have 3 dimensions." << std::endl;
 		exit(EXIT_FAILURE);
+		return shared_ptr<SvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
 	}
 	const mwSize *dim = mxGetDimensions(pmxarray);
 	svm->numSV = (int)dim[2];
@@ -139,6 +143,7 @@ shared_ptr<SvmClassifier> SvmClassifier::load(const string& classifierFilename, 
 	if (pmxarray == 0) {
 		std::cout << "[SvmClassifier] Error: There is a nonlinear SVM in the file but the matrix threshold_nonlin is lacking." << std::endl;
 		exit(EXIT_FAILURE);
+		return shared_ptr<SvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
 	}
 	matdata = mxGetPr(pmxarray);
 	for (is = 0; is < svm->numSV; ++is)
@@ -151,6 +156,7 @@ shared_ptr<SvmClassifier> SvmClassifier::load(const string& classifierFilename, 
 
 	std::cout << "[SvmClassifier] Done reading SVM!" << std::endl;
 
+	return svm;
 }
 
 } /* namespace classification */
