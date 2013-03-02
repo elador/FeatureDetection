@@ -14,14 +14,13 @@
 namespace logging {
 
 /**
- * Image filter that equalizes the histogram using OpenCV's equalizeHist function. The images must
- * be of type 8-bit single channel (CV_8U / CV_8UC1).
+ * An appender that logs all messages equal or below its log-level to a text file.
  */
 class FileAppender : public Appender {
 public:
 
 	/**
-	 * Constructs a new histogram equalization filter.
+	 * Constructs a new file appender with default loglevel INFO.
 	 */
 	FileAppender();
 

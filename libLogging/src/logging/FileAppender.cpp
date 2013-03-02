@@ -6,11 +6,18 @@
  */
 
 #include "logging/FileAppender.hpp"
+#include "logging/loglevels.hpp"
 
 namespace logging {
 
-FileAppender::FileAppender() {}
+FileAppender::FileAppender()
+{
+	logLevel = loglevel::INFO;
+}
 
-FileAppender::~FileAppender() {}
+FileAppender::~FileAppender()
+{
+
+}
 
 } /* namespace logging */

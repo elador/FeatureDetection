@@ -36,6 +36,8 @@
 #include "imageprocessing/MultipleImageFilter.hpp"
 #include "imageprocessing/HistEq64Filter.hpp"
 
+#include "logging/LoggerFactory.hpp"
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -52,7 +54,9 @@ using namespace std;
 using namespace imageprocessing;
 using namespace detection;
 using namespace classification;
-
+using logging::Logger;
+using logging::LoggerFactory;
+using logging::loglevel;
 
 int main(int argc, char *argv[])
 {
@@ -94,6 +98,12 @@ int main(int argc, char *argv[])
 	*/
 	Mat img = cv::imread("D:/FeatureDetection/data/firstrun/ws_115.png");
 	cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
+
+	Logger root = Loggers->getLogger("root");
+	root.log(loglevel::INFO, "Hi!");
+	root.log(loglevel::WARN, "WAAAARN!");
+	root.log(loglevel::DEBUG, "dbg...");
+	root.log(loglevel::ERROR, "err :-(...");
 	
 	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(0.09, 0.25, 0.9);	// (0.09, 0.25, 0.9) is the same as old 90, 9, 0.9
 	shared_ptr<ImageFilter> imgFil = make_shared<GrayscaleFilter>();

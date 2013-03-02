@@ -28,5 +28,6 @@ ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
 include_directories( "${Classification_SOURCE_DIR}/include" )
 include_directories( "${ImageProcessing_SOURCE_DIR}/include" )
 include_directories( "${Detection_SOURCE_DIR}/include" )
+include_directories( "${Logging_SOURCE_DIR}/include" )
 #Make the app depend on the libraries
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Classification ImageProcessing Detection ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Classification ImageProcessing Detection Logging ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )

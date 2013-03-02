@@ -6,11 +6,26 @@
  */
 
 #include "logging/ConsoleAppender.hpp"
+#include "logging/loglevels.hpp"
+#include <iostream>
+
+using std::cout;
 
 namespace logging {
 
-ConsoleAppender::ConsoleAppender() {}
+ConsoleAppender::ConsoleAppender()
+{
+	logLevel = loglevel::INFO;
+}
 
 ConsoleAppender::~ConsoleAppender() {}
+
+void ConsoleAppender::log(const loglevel logLevel, const string logMessage)
+{
+	if(logLevel <= this->logLevel) {
+		cout << "[" << loglevelToString(logLevel) << "] " << logMessage << std::endl;
+		;
+	}
+}
 
 } /* namespace logging */

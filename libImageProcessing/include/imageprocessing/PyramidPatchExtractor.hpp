@@ -4,6 +4,7 @@
  *  Created on: 18.02.2013
  *      Author: poschmann
  */
+#pragma once
 
 #ifndef PYRAMIDPATCHEXTRACTOR_HPP_
 #define PYRAMIDPATCHEXTRACTOR_HPP_

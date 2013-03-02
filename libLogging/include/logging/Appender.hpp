@@ -9,6 +9,7 @@
 #ifndef APPENDER_HPP_
 #define APPENDER_HPP_
 
+#include "logging/loglevels.hpp"
 #include <string>
 
 using std::string;
@@ -21,7 +22,7 @@ namespace logging {
 class Appender {
 public:
 
-	virtual ~Appender() {}
+	virtual ~Appender() {};
 
 	/**
 	 * Logs a message into its target (e.g. the console or a file).
@@ -29,14 +30,24 @@ public:
 	 * @param[in] logLevel The log-level of the message.
 	 * @param[in] logMessage The message to be logged.
 	 */
-	virtual void log(const int logLevel, const string logMessage) = 0;	// const?
+	virtual void log(const loglevel logLevel, const string logMessage) = 0;	// const?
+
+	/**
+	 * Tests if this appender is actually doing logging at the given log-level.
+	 *
+	 * @param[in] logLevel The log-level to be tested for.
+	 * @return True if the appender is logging at this level, false otherwise.
+	 */
+	bool isLogLevelEnabled(const loglevel logLevel) const {
+		return true;	// TODO
+	};
 
 	/**
 	 * Get the log-level at which this appender is currently logging the messages.
 	 *
 	 * @return The log-level at which this appender is logging the messages.
 	 */
-	int getLogLevel() const {
+	loglevel getLogLevel() const {
 		return logLevel;
 	};
 
@@ -45,12 +56,12 @@ public:
 	 *
 	 * @param[in] logLevel The log-level.
 	 */
-	void setLogLevel(const int logLevel) {
+	void setLogLevel(const loglevel logLevel) {
 		this->logLevel = logLevel;
 	};
 
-private:
-	int logLevel;
+protected:
+	loglevel logLevel;
 
 };
 

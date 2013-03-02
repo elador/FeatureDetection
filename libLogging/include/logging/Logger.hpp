@@ -9,21 +9,51 @@
 #ifndef LOGGER_HPP_
 #define LOGGER_HPP_
 
+#include "logging/loglevels.hpp"
+#include <string>
+#include <vector>
+#include <memory>
+
+using std::string;
+using std::vector;
+using std::shared_ptr;
+
 namespace logging {
 
+class Appender;
+
 /**
- * Image filter that equalizes the histogram using OpenCV's equalizeHist function. The images must
- * be of type 8-bit single channel (CV_8U / CV_8UC1).
+ * A logger that is e.g. responsible for a certain class or namespace. A logger can log to several outputs (appenders).
+ *
+ * Possible TODO: Instead of using a string, make the logger usable like an ostream, like: "log[WARN] << "hello" << var << endl;".
  */
 class Logger {
 public:
 
 	/**
-	 * Constructs a new histogram equalization filter.
+	 * Constructs a new logger that is not logging anything yet.
 	 */
 	Logger();
 
 	~Logger();
+
+	/**
+	 * Logs a message to all appenders (e.g. the console or a file) with corresponding log-levels.
+	 *
+	 * @param[in] logLevel The log-level of the message.
+	 * @param[in] logMessage The message to be logged.
+	 */
+	void log(const loglevel logLevel, const string logMessage);
+
+	/**
+	 * Adds an appender to this logger.
+	 *
+	 * @param[in] The new appender.
+	 */
+	void addAppender(shared_ptr<Appender> appender);
+
+private:
+	vector<shared_ptr<Appender>> appenders;
 
 };
 
