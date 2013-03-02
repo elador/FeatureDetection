@@ -39,6 +39,8 @@
 #include "logging/LoggerFactory.hpp"
 #include "logging/FileAppender.hpp"
 
+#include "configparser/ConfigParser.hpp"
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -49,7 +51,7 @@
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
-#endif
+#endif							// We could also use add_definitions( -DBOOST_ALL_NO_LIB ) (+the other one) in the cmake file instead of here.
 
 using namespace std;
 using namespace imageprocessing;
@@ -107,6 +109,9 @@ int main(int argc, char *argv[])
 	root.log(loglevel::WARN, "WAAAARN!");
 	root.log(loglevel::DEBUG, "dbg...");
 	root.log(loglevel::ERROR, "err :-(...");
+
+	//configparser::ConfigParser cp = configparser::ConfigParser();
+	//cp.parse("D:\\FeatureDetection\\config\\facedet.txt");
 	
 	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(0.09, 0.25, 0.9);	// (0.09, 0.25, 0.9) is the same as old 90, 9, 0.9
 	shared_ptr<ImageFilter> imgFil = make_shared<GrayscaleFilter>();
