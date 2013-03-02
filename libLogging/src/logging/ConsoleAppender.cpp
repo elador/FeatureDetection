@@ -24,7 +24,6 @@ void ConsoleAppender::log(const loglevel logLevel, const string logMessage)
 {
 	if(logLevel <= this->logLevel) {
 		cout << "[" << loglevelToString(logLevel) << "] " << logMessage << std::endl;
-		;
 	}
 }
 

@@ -141,8 +141,8 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 	wvm->numUsedFilters=280;	// Todo make dynamic (from script)
 
 	//Grenze der Zuverlaesigkeit ab der Gesichter aufgenommen werden (Diffwert fr W-RSV's-Schwellen)
-	// zB. +0.1 => weniger patches dr�ber(mehr rejected, langsamer),    dh. mehr fn(FRR), weniger fp(FAR)  und
-	// zB. -0.1 => mehr patches dr�ber(mehr nicht rejected, schneller), dh. weniger fn(FRR), mehr fp(FAR)
+	// zB. +0.1 => weniger patches drueber(mehr rejected, langsamer),    dh. mehr fn(FRR), weniger fp(FAR)  und
+	// zB. -0.1 => mehr patches drueber(mehr nicht rejected, schneller), dh. weniger fn(FRR), mehr fp(FAR)
 	wvm->limitReliabilityFilter=0.0f;	// FD.limit_reliability_filter (for WVM) (without _filter, it's for the SVM)
 
 	std::cout << "[WvmClassifier] Loading " << classifierFilename << std::endl;

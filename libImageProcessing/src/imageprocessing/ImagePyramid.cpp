@@ -37,7 +37,7 @@ ImagePyramid::ImagePyramid(shared_ptr<ImagePyramid> pyramid, double minScaleFact
 ImagePyramid::~ImagePyramid() {}
 
 void ImagePyramid::setSource(const Mat& image) {
-	if (incrementalScaleFactor <= 0 || incrementalScaleFactor >= 1)
+	if (incrementalScaleFactor <= 0 || incrementalScaleFactor >= 1)	// Isn't that a strange place to check for that? Shouldn't we check when the values are set?
 		throw invalid_argument("ImagePyramid: the incremental scale factor must be greater than zero and smaller than one");
 	if (minScaleFactor <= 0)
 		throw invalid_argument("ImagePyramid: the minimum scale factor must be greater than zero");

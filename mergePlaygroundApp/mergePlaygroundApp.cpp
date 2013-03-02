@@ -37,6 +37,7 @@
 #include "imageprocessing/HistEq64Filter.hpp"
 
 #include "logging/LoggerFactory.hpp"
+#include "logging/FileAppender.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -100,6 +101,8 @@ int main(int argc, char *argv[])
 	cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
 
 	Logger root = Loggers->getLogger("root");
+	root.addAppender(make_shared<logging::FileAppender>("d:/logfile.txt"));
+	
 	root.log(loglevel::INFO, "Hi!");
 	root.log(loglevel::WARN, "WAAAARN!");
 	root.log(loglevel::DEBUG, "dbg...");
