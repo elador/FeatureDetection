@@ -50,7 +50,13 @@ public:
 	 */
 	double computeHyperplaneDistance(const Mat& featureVector) const;
 
-	static shared_ptr<SvmClassifier> load(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this. Should also pass a Kernel.
+	/**
+	 * Creates a new SVM classifier from the parameters given in some Matlab file.
+	 *
+	 * @param[in] classifierFilename TODO
+	 * @param[in] thresholdsFilename TODO
+	 */
+	static shared_ptr<SvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this. Should also pass a Kernel.
 
 private:
 	int numSV;

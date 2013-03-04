@@ -48,7 +48,7 @@ pair<bool, double> ProbabilisticWvmClassifier::classify( const Mat& featureVecto
 	*/
 }
 
-shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::load(const string& classifierFilename, const string& thresholdsFilename)
+shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadMatlab(const string& classifierFilename, const string& thresholdsFilename)
 {
 	// Load sigmoid stuff:
 	double logisticA, logisticB;
@@ -84,7 +84,7 @@ shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::load(const st
 	matClose(pmatfile);
 
 	// Load the detector and thresholds:
-	shared_ptr<WvmClassifier> wvm = WvmClassifier::load(classifierFilename, thresholdsFilename);
+	shared_ptr<WvmClassifier> wvm = WvmClassifier::loadMatlab(classifierFilename, thresholdsFilename);
 
 	return make_shared<ProbabilisticWvmClassifier>(wvm, logisticA, logisticB);
 }

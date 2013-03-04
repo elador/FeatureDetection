@@ -133,7 +133,7 @@ pair<int, double> WvmClassifier::computeHyperplaneDistance(const Mat& featureVec
 	return make_pair(filter_level, fout);
 }
 
-shared_ptr<WvmClassifier> WvmClassifier::load(const string& classifierFilename, const string& thresholdsFilename)
+shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFilename, const string& thresholdsFilename)
 {
 	shared_ptr<WvmClassifier> wvm = make_shared<WvmClassifier>();
 	

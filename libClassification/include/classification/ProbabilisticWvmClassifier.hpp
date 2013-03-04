@@ -43,12 +43,14 @@ public:
 	pair<bool, double> classify(const Mat& featureVector) const;
 
 	/**
-	 * Loads the sigmoid parameters from the matlab file, then passes the loading to the underlying classifier which loads the vectors and thresholds from the matlab file.
+	 * Creates a new probabilistic WVM classifier from the parameters given in some Matlab file. Loads the logistic function's
+	 * parameters from the matlab file, then passes the loading to the underlying WVM which loads the vectors and thresholds
+	 * from the matlab file.
 	 *
 	 * @param[in] classifierFilename TODO.
 	 * @param[in] thresholdsFilename TODO.
 	 */
-	static shared_ptr<ProbabilisticWvmClassifier> load(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this. Should also pass a Kernel.
+	static shared_ptr<ProbabilisticWvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this. Should also pass a Kernel.
 
 private:
 

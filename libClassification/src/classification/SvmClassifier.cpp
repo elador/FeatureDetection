@@ -73,7 +73,7 @@ double SvmClassifier::computeHyperplaneDistance(const Mat& featureVector) const 
 	return res;
 }
 
-shared_ptr<SvmClassifier> SvmClassifier::load(const string& classifierFilename, const string& thresholdsFilename)
+shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFilename, const string& thresholdsFilename)
 {
 	std::cout << "[SvmClassifier] Loading " << classifierFilename << std::endl;	// TODO replace with Logger
 	shared_ptr<SvmClassifier> svm = make_shared<SvmClassifier>();

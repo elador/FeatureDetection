@@ -54,7 +54,13 @@ public:
 	 */
 	pair<int, double> computeHyperplaneDistance(const Mat& featureVector) const;
 
-	static shared_ptr<WvmClassifier> load(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this. Should also pass a Kernel.
+	/**
+	 * Creates a new WVM classifier from the parameters given in some Matlab file.
+	 *
+	 * @param[in] classifierFilename TODO
+	 * @param[in] thresholdsFilename TODO
+	 */
+	static shared_ptr<WvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this. Should also pass a Kernel.
 
 	int getNumUsedFilters(void);
 	void setNumUsedFilters(int);			 ///< Change the number of currently used wavelet-vectors
