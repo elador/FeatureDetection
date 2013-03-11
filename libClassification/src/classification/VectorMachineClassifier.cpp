@@ -9,16 +9,10 @@
 
 namespace classification {
 
-VectorMachineClassifier::VectorMachineClassifier(void) : nonlinThreshold(0.0f), limitReliability(0.0f)
-{
-	kernel = NULL;
-}
+VectorMachineClassifier::VectorMachineClassifier(shared_ptr<Kernel> kernel) :
+		kernel(kernel), nonlinThreshold(0.0f), limitReliability(0.0f) {}
 
-
-VectorMachineClassifier::~VectorMachineClassifier(void)
-{
-	// Who allocates the kernel? Maybe delete it here?
-}
+VectorMachineClassifier::~VectorMachineClassifier() {}
 
 void VectorMachineClassifier::setLimitReliability(float limitReliability)
 {

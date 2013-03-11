@@ -11,41 +11,50 @@
 #define RBFKERNEL_HPP_
 
 #include "classification/Kernel.hpp"
+#include "svm.h"
+#include <stdexcept>
+#include <cstdint>
+
+using std::invalid_argument;
 
 namespace classification {
 
 /**
- * A radial basis function kernel.
+ * A radial basis function kernel of the form k(x, y) = exp(-&gamma; * |u - v|²).
  */
 class RbfKernel : public Kernel {
 public:
 
-	explicit RbfKernel();
-	RbfKernel(double gamma);
+	/**
+	 * Constructs a new RBF kernel.
+	 *
+	 * @param[in] gamma The parameter &gamma; of the radial basis function exp(-&gamma; * |u - v|²).
+	 */
+	explicit RbfKernel(double gamma);
+
 	~RbfKernel();
 
-	/**
-	 * Computes the radial basis function kernel of ...
-	 * TODO I will change this to cv::Mat, once it is tested and running!
-	 * TODO Also, the kernel parameters have to be removed from compute(...)!
-	 *
-	 * @param[in] input The ...
-	 * @return The result of the kernel computation
-	 */
-	inline double compute(unsigned char* data, unsigned char* support, int nDim) const {	// Write the implementation in the header to allow inlining?
-		int dot = 0;
-		int val2;
-		int i;
-		for (i = 0; i != nDim; ++i) {
-			val2 = data[i] - support[i];
-			dot += val2 * val2;
-		}
-		return (float)exp(-gamma*dot);
-	};
+	double compute(const Mat& lhs, const Mat& rhs) const {
+		return exp(-gamma * computeSumOfSquaredDifferences(lhs, rhs));
+	}
+
+	void setLibSvmParams(struct svm_parameter *param) const {
+		param->kernel_type = RBF;
+		param->gamma = gamma;
+	}
 
 private:
-	double gamma; ///< Parameter of the radial basis function exp(-gamma*|u-v|^2). TODO CHECK WITH MR IMPLEMENTATION! REALLY? What about a) 0-255 / 0-1 scaling? And 1/gamma or gamma?
-				 // When loading, we do gamma/255^2 or something because we convert [0..1] (in .mat) to [0..255]uchar in c++ lib
+
+	/**
+	 * Computes the sum of the squared differences of two vectors.
+	 *
+	 * @param[in] lhs The first vector.
+	 * @param[in] rhs The second vector.
+	 * @return The sum of the squared differences.
+	 */
+	double computeSumOfSquaredDifferences(const Mat& lhs, const Mat& rhs) const;
+
+	double gamma; ///< The parameter &gamma; of the radial basis function exp(-&gamma; * |u - v|²).
 };
 
 } /* namespace classification */

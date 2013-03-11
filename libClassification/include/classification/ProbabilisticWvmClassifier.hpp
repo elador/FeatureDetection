@@ -24,7 +24,6 @@ class WvmClassifier;
  * into a probability using a logistic function p(x) = 1 / (1 + exp(a + b * x)) with x being the hyperplane distance and a and
  * b being parameters.
  * TODO: different computation when feature vector did not reach the final stage -> mention it in this documentation (and change computation)
- * TODO: It's a shame that we have to implement this separately for the SVM and the WVM. But the load() methods differ, one has to load 'posterior_svm' and the other one 'posterior_wrvm'.
  */
 class ProbabilisticWvmClassifier : public ProbabilisticClassifier {
 public:
@@ -40,6 +39,20 @@ public:
 
 	~ProbabilisticWvmClassifier();
 
+	/**
+	 * @return The actual WVM.
+	 */
+	shared_ptr<WvmClassifier> getWvm() {
+		return wvm;
+	}
+
+	/**
+	 * @return The actual WVM.
+	 */
+	const shared_ptr<WvmClassifier> getWvm() const {
+		return wvm;
+	}
+
 	pair<bool, double> classify(const Mat& featureVector) const;
 
 	/**
@@ -47,14 +60,14 @@ public:
 	 * parameters from the matlab file, then passes the loading to the underlying WVM which loads the vectors and thresholds
 	 * from the matlab file.
 	 *
-	 * @param[in] classifierFilename TODO.
-	 * @param[in] thresholdsFilename TODO.
+	 * @param[in] classifierFilename TODO
+	 * @param[in] thresholdsFilename TODO
 	 */
-	static shared_ptr<ProbabilisticWvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this. Should also pass a Kernel.
+	static shared_ptr<ProbabilisticWvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this.
 
 private:
 
-	shared_ptr<WvmClassifier> wvm; ///< The actual SVM.
+	shared_ptr<WvmClassifier> wvm; ///< The actual WVM.
 	double logisticA; ///< Parameter a of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 	double logisticB; ///< Parameter b of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 };

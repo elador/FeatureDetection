@@ -12,9 +12,11 @@
 #include "classification/VectorMachineClassifier.hpp"
 #include "opencv2/core/core.hpp"
 #include <string>
+#include <vector>
 
 using cv::Mat;
 using std::string;
+using std::vector;
 
 namespace classification {
 
@@ -26,8 +28,10 @@ public:
 
 	/**
 	 * Constructs a new SVM classifier.
+	 *
+	 * @param[in] kernel The kernel function.
 	 */
-	SvmClassifier();
+	explicit SvmClassifier(shared_ptr<Kernel> kernel);
 
 	~SvmClassifier();
 
@@ -51,18 +55,26 @@ public:
 	double computeHyperplaneDistance(const Mat& featureVector) const;
 
 	/**
+	 * Changes the parameters of this SVM.
+	 *
+	 * @param[in] supportVectors The support vectors.
+	 * @param[in] coefficients The coefficients of the support vectors.
+	 * @param[in] bias The bias.
+	 */
+	void setSvmParameters(vector<Mat> supportVectors, vector<float> coefficients, double bias);
+
+	/**
 	 * Creates a new SVM classifier from the parameters given in some Matlab file.
 	 *
 	 * @param[in] classifierFilename TODO
 	 * @param[in] thresholdsFilename TODO
 	 */
-	static shared_ptr<SvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this. Should also pass a Kernel.
+	static shared_ptr<SvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this.
 
 private:
-	int numSV;
-	unsigned char** support;	///< support[i] hold support vector i
-	float* alpha;				///< alpha[i] hold the weight of support vector i
 
+	vector<Mat> supportVectors; ///< The support vectors.
+	vector<float> coefficients; ///< The coefficients of the support vectors.
 };
 
 } /* namespace classification */

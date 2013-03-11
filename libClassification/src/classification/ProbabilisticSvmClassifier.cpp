@@ -15,6 +15,9 @@ using std::make_shared;
 
 namespace classification {
 
+ProbabilisticSvmClassifier::ProbabilisticSvmClassifier() :
+		svm(), logisticA(0), logisticB(0) {}
+
 ProbabilisticSvmClassifier::ProbabilisticSvmClassifier(shared_ptr<SvmClassifier> svm, double logisticA, double logisticB) :
 		svm(svm), logisticA(logisticA), logisticB(logisticB) {}
 
@@ -26,10 +29,16 @@ pair<bool, double> ProbabilisticSvmClassifier::classify(const Mat& featureVector
 	return make_pair(svm->classify(hyperplaneDistance), probability);
 }
 
+void ProbabilisticSvmClassifier::setLogisticParameters(double logisticA, double logisticB) {
+	this->logisticA = logisticA;
+	this->logisticB = logisticB;
+}
+
 shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadMatlab(const string& classifierFilename, const string& thresholdsFilename)
 {
 	// Load sigmoid stuff:
-	double logisticA, logisticB;
+	double logisticA = 0;
+	double logisticB = 0;
 	MATFile *pmatfile;
 	mxArray *pmxarray; // =mat
 	pmatfile = matOpen(thresholdsFilename.c_str(), "r");
@@ -63,7 +72,6 @@ shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadMatlab(co
 
 	// Load the detector and thresholds:
 	shared_ptr<SvmClassifier> svm = SvmClassifier::loadMatlab(classifierFilename, thresholdsFilename);
-
 	return make_shared<ProbabilisticSvmClassifier>(svm, logisticA, logisticB);
 }
 

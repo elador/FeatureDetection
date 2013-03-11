@@ -44,7 +44,7 @@ RegressorWVR::~RegressorWVR(void)
 
 	if (area!=NULL)	 {
 		for (int i=0;i<nLinFilters;i++)
-			if (area[i]!=NULL) 
+			if (area[i]!=NULL)
 				delete area[i];
 		delete[] area;
 	}
@@ -90,13 +90,13 @@ bool RegressorWVR::classify(FdPatch* fp)
 		filter_level++;
 		fout = this->linEvalWvmHisteq64(filter_level, (filter_level%this->nLinFilters_wvm), fp->c.x_py, fp->c.y_py, filter_output, u_kernel_eval, fp->iimg_x, fp->iimg_xx);
 	} while (/*fout >= this->lin_hierar_thresh[filter_level] &&*/ filter_level+1 < this->nLinFilters); //280
-	
+
 	//fp->fout = fout;
 	std::pair<FoutMap::iterator, bool> fout_insert = fp->fout.insert(FoutMap::value_type(this->identifier, fout));
 	if(fout_insert.second == false) {
 		std::cout << "[RegressorWVR] An element 'fout' already exists for this detector, you classified the same patch twice. This should never happen." << std::endl;
 	}
-	
+
 	//fp->certainty = NOTCOMPUTED;//1.0f / (1.0f + exp(posterior_wrvm[0]*fout + posterior_wrvm[1]));
 	// TODO: filter statistics, nDropedOutAsNonFace[filter_level]++;
 	//if(filter_level+1 == this->nLinFilters) {
@@ -107,14 +107,14 @@ bool RegressorWVR::classify(FdPatch* fp)
 }
 
 /*
- * WVM evaluation with a histogram equalized patch (64 bins) and patch integral image 
+ * WVM evaluation with a histogram equalized patch (64 bins) and patch integral image
 */
 float RegressorWVR::linEvalWvmHisteq64(
 												int level, int n, int x, int y, //n: n-th WSV at this apprlevel
 												float* hk_kernel_eval,
 												float* u_kernel_eval,
-												const IImg* iimg_x/*=NULL*/, 
-												const IImg* iimg_xx/*=NULL*/      ) const 
+												const IImg* iimg_x/*=NULL*/,
+												const IImg* iimg_xx/*=NULL*/      ) const
 {
 	/* iimg_x and iimg_xx are now patch-integral images! */
 
@@ -128,7 +128,7 @@ float RegressorWVR::linEvalWvmHisteq64(
 	const int ly = filter_size_y-1;
 
 
-		
+
 	//###########################################
 	// compute evaluation and return it to fout.Pixel(x,y)
 	// eval = sum_{i=1,...,level} [ hk_weights[level][i] * exp(-basisParam*(lin_filters[i]-img.data)^2) ]
@@ -136,7 +136,7 @@ float RegressorWVR::linEvalWvmHisteq64(
 	//      = sum_{i=1,...,level} [ hk_weights[level][i] * hk_kernel_eval[i] ]
 
 	//===========================================
-	// first, compute this kernel and save it in hk_kernel_eval[level], 
+	// first, compute this kernel and save it in hk_kernel_eval[level],
 	// because the hk_kernel_eval[0,...,level-1] are the same for each new level
 	// hk_kernel_eval[level] = exp( -basisParam * (lin_filters[level]-img.data)^2 )
 	//                       = exp( -basisParam * norm[level] )
@@ -149,7 +149,7 @@ float RegressorWVR::linEvalWvmHisteq64(
 
 	//.........................................
 	// calculate the norm for that kernel (hk_kernel_eval[level] = exp(-basisParam*(lin_filters[level]-img.data)^2))
-	//  norm[level] = ||x-z||^2 = (lin_filters[level]-img.data)^2   approximated by     
+	//  norm[level] = ||x-z||^2 = (lin_filters[level]-img.data)^2   approximated by
 	//  norm[level] = ||x-p||^2 = x*x - 2*x*p + p*p   with  (x: cur. patch img.data, p: appr. RSV lin_filters[level])
 
 	double	norm_new = 0.0F,sum_xp = 0.0F,sum_xx = 0.0F,sum_pp = 0.0F;
@@ -167,7 +167,7 @@ float RegressorWVR::linEvalWvmHisteq64(
 	const int dr=ly*filter_size_x/*img.w*/ + lx;
 	/*if (fx>0 && fy>0)  {
 		norm_new= iimg_xx->data[dr] - iimg_xx->data[uur] - iimg_xx->data[dll] + iimg_xx->data[uull];
-		sumv0=    iimg_x->data[dr]  - iimg_x->data[uur]  - iimg_x->data[dll]  + iimg_x->data[uull]; 
+		sumv0=    iimg_x->data[dr]  - iimg_x->data[uur]  - iimg_x->data[dll]  + iimg_x->data[uull];
 	} else if (fx>0)   {
 		norm_new= iimg_xx->data[dr] - iimg_xx->data[dll]; sumv0= iimg_x->data[dr] - iimg_x->data[dll];
 	} else if (fy>0)	{
@@ -179,15 +179,15 @@ float RegressorWVR::linEvalWvmHisteq64(
 
 	//Profiler.sxx += (double)(clock()-sxx_begin);
 
-	//2nd term : 2x'*p 
-	//    (sum 'sum_xp' over the sums 'sumv' for each gray level of the appr. RSV 
+	//2nd term : 2x'*p
+	//    (sum 'sum_xp' over the sums 'sumv' for each gray level of the appr. RSV
 	//     over all rectangles of that gray level which are calculated by integral input image
 	//     multiplied the sum_v by the gray value)
 	//
 	//		dh. sum_xp= sumv0*val0 - sum_{v=1}^cntval ( sum_{r=0}^cntrec_v(iimg_x->ISum(rec_{r,v})) * val_v )
-	// also we can simplify 
+	// also we can simplify
 	//		2x'*p = 2x'* ( sum_{l=0}^{lev-1}(res_{l,n}) + res_{lev,n} ) for the n-th SV at apprlevel lev
-	//		      = 2x'*u_{lev-1,n} + 2x'*res_{lev,n} 
+	//		      = 2x'*u_{lev-1,n} + 2x'*res_{lev,n}
 	//		      = u_kernel_eval[n] + sum_xp, with p=res_{lev,n}
 	//                                        and u_kernel_eval[n]_{lev+1}=u_kernel_eval[n] + sum_xp
 
@@ -200,19 +200,19 @@ float RegressorWVR::linEvalWvmHisteq64(
 		for (r=0;r<area[level]->cntrec[v];r++)   {
 			rec=&area[level]->rec[v][r];
 			//sxp_iimg_begin = clock();
-			//if (rec->x1==rec->x2 && rec->y1==rec->y2) 
+			//if (rec->x1==rec->x2 && rec->y1==rec->y2)
 			//	sumv+=img.data[(fy+rec->y1)*img.w+(fx+rec->x1)];
 			//
-			////TODO: fasten up for lines 
+			////TODO: fasten up for lines
 			////else if (rec->x1==rec->x2 || rec->y1==rec->y2)
 			//
 			//else //if (rec->x1!=rec->x2 && rec->y1!=rec->y2)
 			//	sumv+=iimg_x->ISum(fx+rec->x1,fy+rec->y1,fx+rec->x2,fy+rec->y2);
 			//	sumv+=iimg_x->ISumV(rec->uull,rec->uur,rec->dll,rec->dr,rec->x1,rec->y1,rec->x2,rec->y2);
-			//	sumv+=   iimg_x->data[rec->dr]                   - ((rec->y1>0)? iimg_x->data[rec->uur]:0) 
+			//	sumv+=   iimg_x->data[rec->dr]                   - ((rec->y1>0)? iimg_x->data[rec->uur]:0)
 			//		   - ((rec->x1>0)? iimg_x->data[rec->dll]:0) + ((rec->x1>0 && rec->y1>0)? iimg_x->data[rec->uull]:0);
 			ax1=fx+rec->x1-1; ax2=fx+rec->x2; ay1=fy+rec->y1;
-			ay1w=(ay1-1)*filter_size_x/*img.w*/; ay2w=(fy+rec->y2)*filter_size_x/*img.w*/; 
+			ay1w=(ay1-1)*filter_size_x/*img.w*/; ay2w=(fy+rec->y2)*filter_size_x/*img.w*/;
 			if (ax1+1>0 && ay1>0)
 				sumv+=   iimg_x->data[ay2w +ax2] - iimg_x->data[ay1w +ax2]
 					   - iimg_x->data[ay2w +ax1] + iimg_x->data[ay1w +ax1];
@@ -248,10 +248,10 @@ float RegressorWVR::linEvalWvmHisteq64(
 	//Profiler.rvm_norm += (double)(clock()-rvm_norm_begin);
 
 	//.........................................
-	// calculate  now this kernel and save it in hk_kernel_eval[level], 
+	// calculate  now this kernel and save it in hk_kernel_eval[level],
 	// hk_kernel_eval[level] = exp(-basisParam*(lin_filters[level]-img.data)^2) ]
 
-	hk_kernel_eval[level] = (float)(exp(-basisParam*norm)); //save it, because they 0...level-1 the same for each new level 
+	hk_kernel_eval[level] = (float)(exp(-basisParam*norm)); //save it, because they 0...level-1 the same for each new level
 
 	//===========================================
 	// second, sum over all the kernels to get the output
@@ -291,9 +291,9 @@ int RegressorWVR::load(const std::string filename)
 //		std::cout << "[RegrWVR] outputdir: " << this->outputPath << std::endl;
 //	}
 
-	//min. und max. erwartete Anzahl Gesichter im Bild (vorerst null bis eins);											  
-	sprintf(pos,"FD.expected_number_faces.#%d",0);																		  
-	if (!configReader->getKey(pos,buff))																						  
+	//min. und max. erwartete Anzahl Gesichter im Bild (vorerst null bis eins);
+	sprintf(pos,"FD.expected_number_faces.#%d",0);
+	if (!configReader->getKey(pos,buff))
 		std::cout << "[RegrWVR] WARNING: Key in Config nicht gefunden, key:'" << pos << "', nehme Default: " << this->expected_num_faces[0] << std::endl;
 	else
 		this->expected_num_faces[0]=atoi(buff);
@@ -314,7 +314,7 @@ int RegressorWVR::load(const std::string filename)
 	else args->threshold_fullsvm=(float)atof(buff); */
 
 	//ROI: left, top, right, bottom
-    // 0 0 0 0 (ganze Bild), -1 -1 -1 -1 (bzw. ganze FD-ROI) 
+    // 0 0 0 0 (ganze Bild), -1 -1 -1 -1 (bzw. ganze FD-ROI)
 	int v=1;
 	if (!configReader->getInt("FD.roi.#0",&v))		std::cout << "[RegrWVR] WARNING: Key in Config nicht gefunden, key:'FD.roi.#0', nehme Default: " << this->roiDistFromBorder.left << std::endl;
 	else										this->roiDistFromBorder.left=v;
@@ -324,8 +324,8 @@ int RegressorWVR::load(const std::string filename)
 	else										this->roiDistFromBorder.right=v;
 	if (!configReader->getInt("FD.roi.#3",&v))		std::cout << "[RegrWVR] WARNING: Key in Config nicht gefunden, key:'FD.roi.#3', nehme Default: " << this->roiDistFromBorder.bottom << std::endl;
 	else										this->roiDistFromBorder.bottom=v;
-	
-	//Minimale Gesichtsoehe in Pixel 
+
+	//Minimale Gesichtsoehe in Pixel
 	if (!configReader->getInt("FD.face_size_min",&this->subsamplingMinHeight))
 		std::cout << "[RegrWVR] WARNING: Key in Config nicht gefunden, key:'FD.face_size_min', nehme Default: " << this->subsamplingMinHeight << std::endl;
 	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
@@ -337,7 +337,7 @@ int RegressorWVR::load(const std::string filename)
 	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
 		std::cout << "[RegrWVR] maxscales: " << this->numSubsamplingLevels << std::endl;
 	}
-	//Scalierungsfaktor 
+	//Scalierungsfaktor
 	if (!configReader->getKey("FD.scalefactor",buff))
 		std::cout << "[RegrWVR] WARNING: Key in Config nicht gefunden, key:'FD.scalefactor', nehme Default: " << this->subsamplingFactor << std::endl;
 	else
@@ -403,7 +403,7 @@ int RegressorWVR::load(const std::string filename)
 		std::cout << "[RegrWVR] Stopping, because this is not yet tested!" << std::endl;
 		exit(EXIT_FAILURE);
 		/*
-				//read dim. hxw of support_hk's 
+				//read dim. hxw of support_hk's
 				mxArray* msup=mxGetField(pmxarray, 0, "dim");
 				if (msup == 0) {
 					printf("\nfd_ReadDetector(): Unable to find the matrix \'wrvm.dim\'\n");
@@ -423,12 +423,12 @@ int RegressorWVR::load(const std::string filename)
 
 				nLinFilters = nfilter;
 				lin_filters = new float* [nLinFilters];
-				for (i = 0; i < nLinFilters; ++i) 
+				for (i = 0; i < nLinFilters; ++i)
 					lin_filters[i] = new float[nDim];
 				lin_thresholds = new float [nLinFilters];
 				lin_hierar_thresh = new float [nLinFilters];
 				hk_weights = new float* [nLinFilters];
-				for (i = 0; i < nLinFilters; ++i) 
+				for (i = 0; i < nLinFilters; ++i)
 					hk_weights[i] = new float[nLinFilters];
 
 
@@ -445,20 +445,20 @@ int RegressorWVR::load(const std::string filename)
 					return 4;
 				}
 				const MYMWSIZE *dim = mxGetDimensions(msup);
-				int size = (int)dim[0], n = (int)dim[1]; 
+				int size = (int)dim[0], n = (int)dim[1];
 
 				if ( n!=nfilter || w*h!=size) {
 					fprintf(stderr, "\nfd_ReadDetector(): The dimensions of matrix \'wrvm.support_hk\' should be (size=w*h=%d x nfilter=%d), but is %dx%d\7\n",w*h,nfilter,size,n);
 					return 4;
 				}
 				//fprintf(stdout, "fd_ReadDetector(): dimensions of matrix \'wrvm.support_hk\' should be (size=w*h=%d x nfilter=%d), and is %dx%d\n",w*h,nfilter,size,n);
-				
+
 				matdata = mxGetPr(msup);
 				for (int i = 0, j=0; i < nfilter; ++i) {
 					for (k = 0; k < size; ++k)
 						detector->lin_filters[i][k] = 255.0f*(float)matdata[j++];	// because the training images grey level values were divided by 255;
 				}
-				
+
 				//read matrix weight_hk (1,...,i,...,nfilter) x nfilter
 				//only the first 0,...,i-1 are set, all other are set to 0 in the matrix weight_hk
 				msup=mxGetField(pmxarray,0,"weight_hk");
@@ -472,23 +472,23 @@ int RegressorWVR::load(const std::string filename)
 					return 4;
 				}
 				dim = mxGetDimensions(msup);
-				int n1 = (int)dim[0], n2 = (int)dim[1]; 
+				int n1 = (int)dim[0], n2 = (int)dim[1];
 
 				if ( n1!=nfilter || n2!=nfilter) {
 					fprintf(stderr, "\nfd_ReadDetector(): The dimensions of matrix \'wrvm.weight_hk\' should be (nfilter=%d x nfilter=%d), but is %dx%d\7\n",nfilter,nfilter,n1,n2);
 					return 4;
 				}
 				//fprintf(stdout, "fd_ReadDetector(): dimensions of matrix \'wrvm.weight_hk\' should be (nfilter=%d x nfilter=%d), and is %dx%d\n",nfilter,nfilter,n1,n2);
-				
+
 				matdata = mxGetPr(msup);
 				for (int i = 0, r=0; i < nfilter; ++i, r+=nfilter) {
 					for (k = 0; k <= i; ++k)
-						detector->hk_weights[i][k] = (float)matdata[r + k];	
+						detector->hk_weights[i][k] = (float)matdata[r + k];
 				}
 
-				//for (k = 0; k < 5; ++k)	fprintf(stdout, "%1.2f ",detector->hk_weights[4][k]);	
-				//fprintf(stdout, "\n");	
-	
+				//for (k = 0; k < 5; ++k)	fprintf(stdout, "%1.2f ",detector->hk_weights[4][k]);
+				//fprintf(stdout, "\n");
+
 				mxDestroyArray(pmxarray);
 				printf("...done\n");
 				*/
@@ -508,15 +508,15 @@ int RegressorWVR::load(const std::string filename)
 		//assert(w && h);
 		this->filter_size_x = w;	// TODO check if this is right with eg 24x16
 		this->filter_size_y = h;
-					
+
 		nLinFilters = nfilter;
 		lin_filters = new float* [nLinFilters];
-		for (int i = 0; i < nLinFilters; ++i) 
+		for (int i = 0; i < nLinFilters; ++i)
 			lin_filters[i] = new float[w*h];
-		
+
 		lin_hierar_thresh = new float [nLinFilters];
 		hk_weights = new float* [nLinFilters];
-		for (int i = 0; i < nLinFilters; ++i) 
+		for (int i = 0; i < nLinFilters; ++i)
 			hk_weights[i] = new float[nLinFilters];
 
 		if (pmxarray == 0) {
@@ -543,7 +543,7 @@ int RegressorWVR::load(const std::string filename)
 			}
 
 			matdata = mxGetPr(pmxarray);
-				
+
 			int k = 0;
 			for (int x = 0; x < this->filter_size_x; ++x)
 				for (int y = 0; y < this->filter_size_y; ++y)
@@ -569,7 +569,7 @@ int RegressorWVR::load(const std::string filename)
 			std::cout << "[RegrWVR] Done" << std::endl;
 		}
 	}// end else read vecs/weights sequentially
-	
+
 	pmxarray = matGetVariable(pmatfile, "param_nonlin1_rvm");
 	if (pmxarray != 0) {
 		matdata = mxGetPr(pmxarray);
@@ -592,7 +592,7 @@ int RegressorWVR::load(const std::string filename)
 		}
 	}
 	lin_thresholds = new float [nLinFilters];
-	for (int i = 0; i < nLinFilters; ++i) {			//wrvm_out=treshSVM+sum(beta*kernel) 
+	for (int i = 0; i < nLinFilters; ++i) {			//wrvm_out=treshSVM+sum(beta*kernel)
 		lin_thresholds[i] = (float)nonlin_threshold;
 	}
 
@@ -601,7 +601,7 @@ int RegressorWVR::load(const std::string filename)
 	if (pmxarray != 0) {
 		matdata = mxGetPr(pmxarray);
 		assert(matdata != 0);	// TODO REMOVE
-		this->nLinFilters_wvm = (int)matdata[0]; 
+		this->nLinFilters_wvm = (int)matdata[0];
 		mxDestroyArray(pmxarray);
 	} else {
 		std::cout << "[RegrWVR] 'num_hk_wvm' not found in:" << std::endl;
@@ -612,14 +612,14 @@ int RegressorWVR::load(const std::string filename)
 	if (pmxarray != 0) {
 		matdata = mxGetPr(pmxarray);
 		assert(matdata != 0);
-		this->nLevels_wvm = (int)matdata[0]; 
+		this->nLevels_wvm = (int)matdata[0];
 		mxDestroyArray(pmxarray);
 	} else {
 		std::cout << "[RegrWVR] 'num_lev_wvm' not found in:" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 
-  
+
 	//read recangles in area
 	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
 		std::cout << "[RegrWVR] Reading rectangles in area..." << std::endl;
@@ -663,16 +663,16 @@ int RegressorWVR::load(const std::string filename)
 			cntrec = new int[cntval];
 			mxArray* mcntrec=mxGetField(pmxarray,hrsv,cntrecstr);
 			d = mxGetPr(mcntrec);
-			for (v=0;v<cntval;v++) 
+			for (v=0;v<cntval;v++)
 				cntrec[v]=(int)d[v];
 			this->area[hrsv] = new Area(cntval,cntrec);
 
 			d = mxGetPr(mval);
-			for (v=0;v<cntval;v++) 
+			for (v=0;v<cntval;v++)
 				this->area[hrsv]->val[v]=d[v]*255.0F; // because the training images grey level values were divided by 255;
 
 			mxArray* mrec=mxGetField(pmxarray,hrsv,"crec");
-			for (v=0;v<cntval;v++) 
+			for (v=0;v<cntval;v++)
 				for (r=0;r<this->area[hrsv]->cntrec[v];r++) {
 					mxArray* mk;
 					rec=&this->area[hrsv]->rec[v][r];
@@ -694,11 +694,11 @@ int RegressorWVR::load(const std::string filename)
 					rec->dll= (rec->y2)*w   + rec->x1-1;
 					rec->dr=  (rec->y2)*w   + rec->x2;
 				}
-	
+
 			delete [] cntrec;
 
 			//char name[255];
-			//if (args->moreOutput) { 
+			//if (args->moreOutput) {
 			//sprintf(name,"%d",hrsv); this->area[hrsv]->dump(name);
 			//}
 
@@ -739,7 +739,7 @@ int RegressorWVR::load(const std::string filename)
 	}
 
 
-	
+
 	//printf("fd_ReadDetector(): making the hierarchical thresholds\n");
 	// making the hierarchical thresholds
 	//MATFile *mxtFile = matOpen(args->threshold, "r");
@@ -761,7 +761,7 @@ int RegressorWVR::load(const std::string filename)
 			}
 			mxDestroyArray(pmxarray);
 		}
-			
+
 		//printf("fd_ReadDetector(): read posterior_svm parameter for probabilistic SVM output\n");
 		//read posterior_wrvm parameter for probabilistic WRVM output
 		//TODO is there a case (when svm+wvm from same trainingdata) when there exists only a posterior_svm, and I should use this here?
@@ -791,8 +791,8 @@ int RegressorWVR::load(const std::string filename)
 		if (this->hierarchical_thresholds[i].first <= this->nLinFilters)
 			this->lin_hierar_thresh[this->hierarchical_thresholds[i].first-1] = this->hierarchical_thresholds[i].second;
 	}*/
-	
-	//Diffwert fuer W-RSV's-Schwellen 
+
+	//Diffwert fuer W-RSV's-Schwellen
 	//if (this->limit_reliability_filter!=0.0)
 	//	for (int i = 0; i < this->nLinFilters; ++i) this->lin_hierar_thresh[i]+=this->limit_reliability_filter;
 
@@ -858,17 +858,17 @@ RegressorWVR::Area::~Area(void)
 }
 
 void RegressorWVR::Area::dump(char *name="") {
-	int r,v;  
+	int r,v;
 
 	std::cout << std::endl << "area" << name << ": cntval:" << cntval << ", cntallrec:" << cntallrec << ", val:";
 	for (v=0;v<cntval;v++) std::cout << " " << val[v];	//printf(" %1.4f",val[v]);
 	std::cout << std::endl;
 
 	for (v=0;v<cntval;v++) {
-		for (r=0;r<cntrec[v];r++) { 
+		for (r=0;r<cntrec[v];r++) {
 			//printf("r[%d][%d]:(%d,%d,%d,%d) ",v,r,rec[v][r].x1,rec[v][r].y1,rec[v][r].x2,rec[v][r].y2);
 			std::cout << "r[" << v << "][" << r << "]:(" << rec[v][r].x1 << "," << rec[v][r].y1 << "," << rec[v][r].x2 << "," << rec[v][r].y2 << ") ";
-			if ((r%5)==4) 
+			if ((r%5)==4)
 				std::cout << std::endl;
 		}
 		std::cout << std::endl;

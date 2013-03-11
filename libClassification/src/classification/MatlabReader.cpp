@@ -54,7 +54,7 @@ int MatlabReader::getKey(const char *key, char *buffer) // liest einen Key oder 
 			std::cout << "getKey() Error in pos, no '.'; '"<< key << "'\n" << std::endl;
 			return false;
 		}
-		int j=0; sc[i]=0;  i++; 
+		int j=0; sc[i]=0;  i++;
  		while ((key[i]!='.') && (i<len)) ky[j++]=key[i++];
 		ky[j]=0;
 		if (!strncmp(&key[i],".#",2) && (key[i+2]!=0)) {
@@ -62,8 +62,8 @@ int MatlabReader::getKey(const char *key, char *buffer) // liest einen Key oder 
 		}
 		//fprintf(stdout,"key:'%s' => '%s.%s.#%d'\n",key,sc,ky,id);
 
-					
-		mxArray* mat = matGetVariable(this->matFile, sc);  
+
+		mxArray* mat = matGetVariable(this->matFile, sc);
 		if (mat == 0 || !mxIsStruct(mat)) {
  			std::cout << "getKey() Error in pos, Section is not found or no struct'.'; '"<< sc << "'\n" << std::endl;
 			return false;
@@ -74,7 +74,7 @@ int MatlabReader::getKey(const char *key, char *buffer) // liest einen Key oder 
  			std::cout << "getKey() Error in pos '"<< key << "', key '"<< ky << "' not found in section '"<< sc << "'" << std::endl;
 			return false;
 		}
-			
+
 		if (id>-1) {
  			double *b=(double*)mxGetPr(mk);
   			if (mk == 0) {
@@ -92,7 +92,7 @@ int MatlabReader::getKey(const char *key, char *buffer) // liest einen Key oder 
 				sprintf(buffer,"%1.16f",b[0]);
 			}
 		len=strlen(buffer);
-		for (i=0;i<len;i++) 
+		for (i=0;i<len;i++)
 			#ifdef WIN32
 				if (buffer[i]=='/')  buffer[i]='\\';
 			#else
@@ -113,7 +113,7 @@ int MatlabReader::getInt(const char *k, int *i)	// liest einen Integer
 
 	if ((rc=getKey(k, buffer))!=0)
 		*i=atoi(buffer);
-	else 
+	else
 		*i=0;
 
 	return rc;

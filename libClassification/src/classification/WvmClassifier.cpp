@@ -16,7 +16,7 @@ using std::cout;
 
 namespace classification {
 
-WvmClassifier::WvmClassifier()
+WvmClassifier::WvmClassifier() : VectorMachineClassifier(nullptr)
 {
 	linFilters			= NULL;
 	lin_thresholds		= NULL;

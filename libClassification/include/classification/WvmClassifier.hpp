@@ -60,7 +60,7 @@ public:
 	 * @param[in] classifierFilename TODO
 	 * @param[in] thresholdsFilename TODO
 	 */
-	static shared_ptr<WvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this. Should also pass a Kernel.
+	static shared_ptr<WvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this.
 
 	int getNumUsedFilters(void);
 	void setNumUsedFilters(int);			 ///< Change the number of currently used wavelet-vectors

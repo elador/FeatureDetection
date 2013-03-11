@@ -26,17 +26,38 @@ namespace classification {
 class VectorMachineClassifier : public BinaryClassifier
 {
 public:
-	VectorMachineClassifier(void);
-	~VectorMachineClassifier(void);
+
+	/**
+	 * Constructs a new vector machine classifier with a default threshold of zero.
+	 *
+	 * @param[in] kernel The kernel function.
+	 */
+	explicit VectorMachineClassifier(shared_ptr<Kernel> kernel);
+
+	virtual ~VectorMachineClassifier();
 
 	float getLimitReliability();
 	void setLimitReliability(float limitReliability);
 
-protected:
-	shared_ptr<Kernel> kernel;	///< The kernel the vector machine uses.
-	float nonlinThreshold;		///< The b parameter of the vector machine.
-	float limitReliability;	///< Additional (dynamic) threshold to adjust the threshold at which featureVectors pass the vector machine. 
+	/**
+	 * @return The kernel function.
+	 */
+	shared_ptr<Kernel> getKernel() {
+		return kernel;
+	}
 
+	/**
+	 * @return The kernel function.
+	 */
+	const shared_ptr<Kernel> getKernel() const {
+		return kernel;
+	}
+
+protected:
+
+	shared_ptr<Kernel> kernel; ///< The kernel function.
+	float nonlinThreshold;     ///< The bias. TODO rename to bias?
+	float limitReliability;    ///< The threshold to compare the hyperplane distance against for determining the label. TODO rename to threshold?
 };
 
 } /* namespace classification */

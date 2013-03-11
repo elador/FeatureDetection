@@ -19,21 +19,10 @@ ENDIF(MATLAB_FOUND)
 
 # source and header files
 SET(HEADERS
-#	include/classification/ApproximateSigmoidParameterComputation.h
-#	include/classification/FastLibSvmTraining.h
-#	include/classification/FixedApproximateSigmoidParameterComputation.h
-#	include/classification/FixedSizeLibSvmTraining.h
-#	include/classification/FrameBasedLibSvmTraining.h
-#	include/classification/LibSvmClassifier.h
-#	include/classification/LibSvmParameterBuilder.h
-#	include/classification/LibSvmTraining.h
-#	include/classification/PolyLibSvmParameterBuilder.h
-#	include/classification/RbfLibSvmParameterBuilder.h
 #	include/classification/RegressorSVR.h
 #	include/classification/RegressorWVR.h
-#	include/classification/SigmoidParameterComputation.h
-#	include/classification/TrainableTwoStageClassifier.h
-#	include/classification/TwoStageClassifier.h
+	include/classification/TrainableProbabilisticTwoStageClassifier.hpp
+	include/classification/ProbabilisticTwoStageClassifier.hpp
 	include/classification/WvmClassifier.hpp
 	include/classification/IImg.hpp
 	include/classification/BinaryClassifier.hpp
@@ -42,37 +31,36 @@ SET(HEADERS
 	include/classification/ProbabilisticWvmClassifier.hpp
 	include/classification/ProbabilisticSvmClassifier.hpp
 	include/classification/SvmClassifier.hpp
-#	include/classification/TrainableClassifier.h
-#	include/classification/Training.h
+	include/classification/TrainableClassifier.hpp
+	include/classification/TrainableBinaryClassifier.hpp
+	include/classification/TrainableProbabilisticClassifier.hpp
+	include/classification/TrainableSvmClassifier.hpp
+	include/classification/FrameBasedTrainableSvmClassifier.hpp
+	include/classification/FixedSizeTrainableSvmClassifier.hpp
+	include/classification/TrainableProbabilisticSvmClassifier.hpp
+	include/classification/FixedTrainableProbabilisticSvmClassifier.hpp
 	include/classification/Kernel.hpp
+	include/classification/LinearKernel.hpp
 	include/classification/RbfKernel.hpp
 	include/classification/PolynomialKernel.hpp
-#	include/svm.h
+	include/svm.h
 )
 SET(SOURCE
-#	src/classification/ApproximateSigmoidParameterComputation.cpp
-#	src/classification/FastLibSvmTraining.cpp
-#	src/classification/FixedApproximateSigmoidParameterComputation.cpp
-#	src/classification/FixedSizeLibSvmTraining.cpp
-#	src/classification/FrameBasedLibSvmTraining.cpp
-#	src/classification/LibSvmClassifier.cpp
-#	src/classification/LibSvmParameterBuilder.cpp
-#	src/classification/LibSvmTraining.cpp
-#	src/classification/PolyLibSvmParameterBuilder.cpp
-#	src/classification/RbfLibSvmParameterBuilder.cpp
 #	src/classification/RegressorSVR.cpp
 #	src/classification/RegressorWVR.cpp
-#	src/classification/SigmoidParameterComputation.cpp
-#	src/classification/TrainableTwoStageClassifier.cpp
-#	src/classification/TwoStageClassifier.cpp
+	src/classification/ProbabilisticTwoStageClassifier.cpp
 	src/classification/WvmClassifier.cpp
 	src/classification/IImg.cpp
 	src/classification/SvmClassifier.cpp
 	src/classification/VectorMachineClassifier.cpp
 	src/classification/ProbabilisticWvmClassifier.cpp
 	src/classification/ProbabilisticSvmClassifier.cpp
+	src/classification/TrainableSvmClassifier.cpp
+	src/classification/FrameBasedTrainableSvmClassifier.cpp
+	src/classification/FixedSizeTrainableSvmClassifier.cpp
+	src/classification/TrainableProbabilisticSvmClassifier.cpp
 	src/classification/RbfKernel.cpp
-#	src/svm.cpp
+	src/svm.cpp
 )
 
 include_directories( "include" )

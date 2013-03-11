@@ -41,7 +41,7 @@ bool RegressorSVR::classify(FdPatch* fp)
 		return true;
 	} // else: The fout value is not already computed. Go ahead.
 
-	
+
 	float res = -this->nonlin_threshold;	// TODO ASK MR Why minus???
 	for (int i = 0; i != this->numSV; ++i) {
 		res += this->alpha[i] * kernel(fp->data, this->support[i], this->nonLinType, this->basisParam, this->divisor, this->polyPower, this->filter_size_x*this->filter_size_y);
@@ -109,9 +109,9 @@ int RegressorSVR::load(const std::string filename)
 //		std::cout << "[RegrSVR] outputdir: " << this->outputPath << std::endl;
 //	}
 
-	//min. und max. erwartete Anzahl Gesichter im Bild (vorerst null bis eins);											  
-	sprintf(pos,"FD.expected_number_faces.#%d",0);																		  
-	if (!configReader->getKey(pos,buff))																						  
+	//min. und max. erwartete Anzahl Gesichter im Bild (vorerst null bis eins);
+	sprintf(pos,"FD.expected_number_faces.#%d",0);
+	if (!configReader->getKey(pos,buff))
 		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'" << pos << "', nehme Default: " << this->expected_num_faces[0] << std::endl;
 	else
 		this->expected_num_faces[0]=atoi(buff);
@@ -132,7 +132,7 @@ int RegressorSVR::load(const std::string filename)
 	else args->threshold_fullsvm=(float)atof(buff); */
 
 	//ROI: left, top, right, bottom
-    // 0 0 0 0 (ganze Bild), -1 -1 -1 -1 (bzw. ganze FD-ROI) 
+    // 0 0 0 0 (ganze Bild), -1 -1 -1 -1 (bzw. ganze FD-ROI)
 	int v=1;
 	if (!configReader->getInt("FD.roi.#0",&v))		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'FD.roi.#0', nehme Default: " << this->roiDistFromBorder.left << std::endl;
 	else										this->roiDistFromBorder.left=v;
@@ -142,8 +142,8 @@ int RegressorSVR::load(const std::string filename)
 	else										this->roiDistFromBorder.right=v;
 	if (!configReader->getInt("FD.roi.#3",&v))		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'FD.roi.#3', nehme Default: " << this->roiDistFromBorder.bottom << std::endl;
 	else										this->roiDistFromBorder.bottom=v;
-	
-	//Minimale Gesichtsoehe in Pixel 
+
+	//Minimale Gesichtsoehe in Pixel
 	if (!configReader->getInt("FD.face_size_min",&this->subsamplingMinHeight))
 		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'FD.face_size_min', nehme Default: " << this->subsamplingMinHeight << std::endl;
 	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
@@ -155,7 +155,7 @@ int RegressorSVR::load(const std::string filename)
 	if((Logger->global.text.outputFullStartup==true) || Logger->getVerboseLevelText()>=2) {
 		std::cout << "[RegrSVR] maxscales: " << this->numSubsamplingLevels << std::endl;
 	}
-	//Scalierungsfaktor 
+	//Scalierungsfaktor
 	if (!configReader->getKey("FD.scalefactor",buff))
 		std::cout << "[RegrSVR] WARNING: Key in Config nicht gefunden, key:'FD.scalefactor', nehme Default: " << this->subsamplingFactor << std::endl;
 	else
@@ -204,12 +204,12 @@ int RegressorSVR::load(const std::string filename)
 	this->polyPower        = (int)matdata[3];
 	this->divisor          = (float)matdata[4];
 	mxDestroyArray(pmxarray);
-		
+
 	pmxarray = matGetVariable(pmatfile, "support_nonlin1");
 	if (pmxarray == 0) {
 		std::cout << "[RegrSVR] Error: There is a nonlinear SVM in the file, but the matrix support_nonlin1 is lacking!" << std::endl;
 		exit(EXIT_FAILURE);
-	} 
+	}
 	if (mxGetNumberOfDimensions(pmxarray) != 3) {
 		std::cout << "[RegrSVR] Error: The matrix support_nonlin1 in the file should have 3 dimensions." << std::endl;
 		exit(EXIT_FAILURE);
@@ -225,7 +225,7 @@ int RegressorSVR::load(const std::string filename)
 	// Alloc space for SV's and alphas (weights)
 	this->support = new unsigned char* [this->numSV];
 	int size = filter_size_x*filter_size_y;
-	for (int i = 0; i < this->numSV; ++i) 
+	for (int i = 0; i < this->numSV; ++i)
 		this->support[i] = new unsigned char[size];
 	this->alpha = new float [this->numSV];
 
@@ -250,7 +250,7 @@ int RegressorSVR::load(const std::string filename)
 		std::cout << "[RegrSVR] Error closing file" << std::endl;
 	}
 
-	
+
 	/*pmatfile = matOpen(fn_threshold, "r");
 	if (pmatfile == 0) {
 		printf("fd_ReadDetector(): Unable to open the file (wrong format?):\n'%s' \n", fn_threshold);

@@ -23,13 +23,17 @@ class SvmClassifier;
  * SVM classifier that produces pseudo-probabilistic output. The hyperplane distance of a feature vector will be transformed
  * into a probability using a logistic function p(x) = 1 / (1 + exp(a + b * x)) with x being the hyperplane distance and a and
  * b being parameters.
- * TODO: It's a shame that we have to implement this separately for the SVM and the WVM. But the load() methods differ, one has to load 'posterior_svm' and the other one 'posterior_wrvm'.
  */
 class ProbabilisticSvmClassifier : public ProbabilisticClassifier {
 public:
 
 	/**
-	 * Constructs a probabilistic SVM classifier.
+	 * Constructs a new empty probabilistic SVM classifier.
+	 */
+	ProbabilisticSvmClassifier();
+
+	/**
+	 * Constructs a new probabilistic SVM classifier.
 	 *
 	 * @param[in] svm The actual SVM.
 	 * @param[in] logisticA Parameter a of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
@@ -39,17 +43,39 @@ public:
 
 	~ProbabilisticSvmClassifier();
 
+	/**
+	 * @return The actual SVM.
+	 */
+	shared_ptr<SvmClassifier> getSvm() {
+		return svm;
+	}
+
+	/**
+	 * @return The actual SVM.
+	 */
+	const shared_ptr<SvmClassifier> getSvm() const {
+		return svm;
+	}
+
 	pair<bool, double> classify(const Mat& featureVector) const;
+
+	/**
+	 * Changes the logistic parameters of this probabilistic SVM.
+	 *
+	 * @param[in] logisticA Parameter a of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
+	 * @param[in] logisticB Parameter b of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
+	 */
+	void setLogisticParameters(double logisticA, double logisticB);
 
 	/**
 	 * Creates a new probabilistic SVM classifier from the parameters given in some Matlab file. Loads the logistic function's
 	 * parameters from the matlab file, then passes the loading to the underlying SVM which loads the vectors and thresholds
 	 * from the matlab file.
 	 *
-	 * @param[in] classifierFilename TODO.
-	 * @param[in] thresholdsFilename TODO.
+	 * @param[in] classifierFilename TODO
+	 * @param[in] thresholdsFilename TODO
 	 */
-	static shared_ptr<ProbabilisticSvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this. Should also pass a Kernel.
+	static shared_ptr<ProbabilisticSvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this.
 
 private:
 

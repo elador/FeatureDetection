@@ -6,6 +6,7 @@
  */
 
 #include "classification/SvmClassifier.hpp"
+#include "classification/PolynomialKernel.hpp"
 #include "classification/RbfKernel.hpp"
 #include "mat.h"
 #include <iostream>
@@ -16,23 +17,10 @@ using std::cout;
 
 namespace classification {
 
-SvmClassifier::SvmClassifier()
-{
-	numSV = 0;
-	support = NULL;
-	alpha = NULL;
-	limitReliability = 0.0f;
-}
+SvmClassifier::SvmClassifier(shared_ptr<Kernel> kernel) :
+		VectorMachineClassifier(kernel), supportVectors(), coefficients() {}
 
-SvmClassifier::~SvmClassifier()
-{
-	if(support != 0) {
-		for(int i = 0; i < numSV; ++i)
-			delete[] support[i];
-	}
-	delete[] support;
-	delete[] alpha;
-}
+SvmClassifier::~SvmClassifier() {}
 
 bool SvmClassifier::classify(const Mat& featureVector) const {
 	return classify(computeHyperplaneDistance(featureVector));
@@ -43,7 +31,13 @@ bool SvmClassifier::classify(double hyperplaneDistance) const {
 }
 
 double SvmClassifier::computeHyperplaneDistance(const Mat& featureVector) const {
-	unsigned int featureVectorLength = featureVector.rows * featureVector.cols;
+	double distance = -nonlinThreshold; // TODO sinnvoll benennen?! bias, rho, offset
+	for (size_t i = 0; i < supportVectors.size(); ++i)
+		distance += coefficients[i] * kernel->compute(featureVector, supportVectors[i]);
+	return distance;
+
+	// TODO raus
+	/*unsigned int featureVectorLength = featureVector.rows * featureVector.cols;
 	unsigned char* data = new unsigned char[featureVectorLength];
 
 	int w = featureVector.cols;
@@ -70,13 +64,18 @@ double SvmClassifier::computeHyperplaneDistance(const Mat& featureVector) const 
 
 	delete[] data;
 	data = NULL;
-	return res;
+	return res;*/
+}
+
+void SvmClassifier::setSvmParameters(vector<Mat> supportVectors, vector<float> coefficients, double bias) {
+	this->supportVectors = supportVectors;
+	this->coefficients = coefficients;
+	this->nonlinThreshold = bias;
 }
 
 shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFilename, const string& thresholdsFilename)
 {
 	std::cout << "[SvmClassifier] Loading " << classifierFilename << std::endl;	// TODO replace with Logger
-	shared_ptr<SvmClassifier> svm = make_shared<SvmClassifier>();
 
 	MATFile *pmatfile;
 	mxArray *pmxarray; // =mat
@@ -96,15 +95,25 @@ shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFile
 	}
 	std::cout << "[SvmClassifier] Reading param_nonlin1" << std::endl;
 	matdata = mxGetPr(pmxarray);
-	// TODO we don't need all of those
-	svm->nonlinThreshold = (float)matdata[0];
-	int nonLinType       = (int)matdata[1];
-	float basisParam       = (float)(matdata[2]/65025.0); // because the training image's graylevel values were divided by 255
-	int polyPower        = (int)matdata[3];
-	float divisor          = (float)matdata[4];
+	// TODO we don't need all of those (added by peter: or do we? see polynomial kernel type)
+	float nonlinThreshold = (float)matdata[0];
+	int nonLinType        = (int)matdata[1];
+	float basisParam      = (float)(matdata[2]/65025.0); // because the training image's graylevel values were divided by 255
+	int polyPower         = (int)matdata[3];
+	float divisor         = (float)matdata[4];
 	mxDestroyArray(pmxarray);
 
-	svm->kernel = std::make_shared<RbfKernel>(basisParam);	// TODO correct??
+	shared_ptr<Kernel> kernel;
+	if (nonLinType == 1) { // polynomial kernel
+		kernel.reset(new PolynomialKernel(1 / divisor, basisParam / divisor, polyPower));
+	} else if (nonLinType == 2) { // RBF kernel
+		kernel.reset(new RbfKernel(basisParam));
+	} else {
+		// TODO exception?
+	}
+
+	shared_ptr<SvmClassifier> svm = make_shared<SvmClassifier>(kernel);
+	svm->nonlinThreshold = nonlinThreshold;
 
 	pmxarray = matGetVariable(pmatfile, "support_nonlin1");
 	if (pmxarray == 0) {
@@ -118,25 +127,26 @@ shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFile
 		return shared_ptr<SvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
 	}
 	const mwSize *dim = mxGetDimensions(pmxarray);
-	svm->numSV = (int)dim[2];
+	int numSV = (int)dim[2];
 	matdata = mxGetPr(pmxarray);
 
-	int is;
 	int filter_size_x = (int)dim[1];
 	int filter_size_y = (int)dim[0];
 
 	// Alloc space for SV's and alphas (weights)
-	svm->support = new unsigned char* [svm->numSV];
-	int size = filter_size_x*filter_size_y;
-	for (int i = 0; i < svm->numSV; ++i)
-		svm->support[i] = new unsigned char[size];
-	svm->alpha = new float [svm->numSV];
+	svm->supportVectors.reserve(numSV);
+	svm->coefficients.reserve(numSV);
 
 	int k = 0;
-	for (is = 0; is < (int)dim[2]; ++is)
-		for (int x = 0; x < filter_size_x; ++x)	// row-first (ML-convention)
+	int size = filter_size_x * filter_size_y;
+	for (int sv = 0; sv < numSV; ++sv) {
+		Mat supportVector(1, size, CV_8U);
+		uchar* values = supportVector.ptr<uchar>(0);
+		for (int x = 0; x < filter_size_x; ++x)	// column-major order (ML-convention)
 			for (int y = 0; y < filter_size_y; ++y)
-				svm->support[is][y*filter_size_x+x] = (unsigned char)(255.0*matdata[k++]);	 // because the training images gray level values were divided by 255;
+				values[y * filter_size_x + x] = static_cast<uchar>(255.0 * matdata[k++]); // because the training images gray level values were divided by 255
+		svm->supportVectors.push_back(supportVector);
+	}
 	mxDestroyArray(pmxarray);
 
 	pmxarray = matGetVariable(pmatfile, "weight_nonlin1");
@@ -146,8 +156,8 @@ shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFile
 		return shared_ptr<SvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
 	}
 	matdata = mxGetPr(pmxarray);
-	for (is = 0; is < svm->numSV; ++is)
-		svm->alpha[is] = (float)matdata[is];
+	for (int sv = 0; sv < numSV; ++sv)
+		svm->coefficients.push_back(static_cast<float>(matdata[sv]));
 	mxDestroyArray(pmxarray);
 
 	if (matClose(pmatfile) != 0) {
