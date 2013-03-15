@@ -15,7 +15,7 @@ using imageprocessing::Patch;
 using std::shared_ptr;
 using std::pair;
 
-namespace imageprocessing {
+namespace detection {
 
 /**
  * Patch with a classification result.
@@ -30,7 +30,7 @@ public:
 	 * @param[in] positive Flag that indicates whether the patch was classified as positive.
 	 * @param[in] probability Probability of the patch being positive (optional).
 	 */
-	ClassifiedPatch(shared_ptr<Patch> patch, bool positive, double probability = (positive ? 1 : 0)) :
+	ClassifiedPatch(shared_ptr<Patch> patch, bool positive, double probability = 0.5) :
 			patch(patch), positive(positive), probability(probability) {}
 
 	/**
@@ -42,7 +42,7 @@ public:
 	ClassifiedPatch(shared_ptr<Patch> patch, pair<bool, double> result) :
 			patch(patch), positive(result.first), probability(result.second) {}
 
-	~ClassifiedPatch();
+	~ClassifiedPatch() {}
 
 	/**
 	 * @return The actual patch.
@@ -70,6 +70,29 @@ public:
 	 */
 	double getProbability() const {
 		return probability;
+	}
+
+	/**
+	 * Determines whether this classified patch is less than the other one using the probability. This patch is
+	 * less than the other patch if the probability of this one is less than the probability of the other patch.
+	 *
+	 * @param[in] other The other patch.
+	 * @return True if this patch comes before the other, false otherwise.
+	 */
+	bool operator<(const ClassifiedPatch& other) const {
+		return probability < other.probability;
+	}
+
+	/**
+	 * Determines whether this classified patch is bigger than another one using the probability. This patch is
+	 * considered bigger than the other patch if the probability of this one is bigger than the probability of
+	 * the other patch.
+	 *
+	 * @param[in] other The other patch.
+	 * @return True if this patch comes before the other, false otherwise.
+	 */
+	bool operator>(const ClassifiedPatch& other) const {
+		return probability > other.probability;
 	}
 
 private:

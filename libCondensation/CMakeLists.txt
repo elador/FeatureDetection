@@ -53,6 +53,7 @@ include_directories( "include" )
 # add dependencies
 include_directories( ${ImageProcessing_SOURCE_DIR}/include )
 include_directories( ${Classification_SOURCE_DIR}/include )
+include_directories( ${Detection_SOURCE_DIR}/include )
 include_directories( ${Boost_INCLUDE_DIRS} )
 
 # make library

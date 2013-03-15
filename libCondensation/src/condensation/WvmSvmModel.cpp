@@ -11,19 +11,22 @@
 #include "imageprocessing/FeatureExtractor.hpp"
 #include "classification/ProbabilisticWvmClassifier.hpp"
 #include "classification/ProbabilisticSvmClassifier.hpp"
+#include "detection/ClassifiedPatch.hpp"
+#include "boost/iterator/indirect_iterator.hpp"
 #include <unordered_map>
 #include <utility>
+#include <functional>
 
 using imageprocessing::Patch;
 using imageprocessing::FeatureExtractor;
+using detection::ClassifiedPatch;
+using boost::make_indirect_iterator;
 using std::unordered_map;
 using std::pair;
+using std::make_shared;
+using std::greater;
 
 namespace condensation {
-
-static bool comparePatchProbabilityPairs(pair<shared_ptr<Patch>, double> lhs, pair<shared_ptr<Patch>, double> rhs) {
-	return lhs.second > rhs.second;
-}
 
 WvmSvmModel::WvmSvmModel(shared_ptr<FeatureExtractor> featureExtractor,
 		shared_ptr<ProbabilisticWvmClassifier> wvm, shared_ptr<ProbabilisticSvmClassifier> svm) :
@@ -35,8 +38,9 @@ void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& sam
 	featureExtractor->update(image);
 	// TODO das folgende macht nur dann sinn, wenn featureExtractor bereits duplikate erkennt und schonmal extrahiertes rausgibt
 	// TODO oder eigene hash-methode bereitstellen, die auf patch arbeitet (x, y, w, h) -> duplikate werden erst hier erkannt
+	// TODO ClassifiedPatch?
 	unordered_map<shared_ptr<Patch>, pair<bool, double>> results;
-	vector<pair<shared_ptr<Patch>, double>> remainingPatches;
+	vector<shared_ptr<ClassifiedPatch>> remainingPatches;
 	unordered_map<shared_ptr<Patch>, vector<Sample*>> patch2samples;
 	for (auto sample = samples.begin(); sample != samples.end(); ++sample) {
 		sample->setObject(false);
@@ -50,10 +54,8 @@ void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& sam
 				// TODO iimg-filter anwenden?
 				result = wvm->classify(patch->getData());
 				if (result.first)
-					remainingPatches.push_back(make_pair(patch, result.second));
-				// TODO const nach vorne ziehen möglich? oder ganz wech?
-				pair<const shared_ptr<Patch>, pair<bool, double>> entry = make_pair(patch, result);
-				results.insert(entry);
+					remainingPatches.push_back(make_shared<ClassifiedPatch>(patch, result));
+				results.insert(make_pair(patch, result));
 			} else {
 				result = resIt->second;
 			}
@@ -65,11 +67,11 @@ void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& sam
 	if (!remainingPatches.empty()) {
 		// TODO overlap elimination instead?
 		if (remainingPatches.size() > 10) {
-			sort(remainingPatches.begin(), remainingPatches.end(), comparePatchProbabilityPairs);
+			sort(make_indirect_iterator(remainingPatches.begin()), make_indirect_iterator(remainingPatches.end()), greater<ClassifiedPatch>());
 			remainingPatches.resize(10);
 		}
 		for (auto patchWithProb = remainingPatches.cbegin(); patchWithProb != remainingPatches.cend(); ++patchWithProb) {
-			shared_ptr<Patch> patch = patchWithProb->first;
+			shared_ptr<Patch> patch = (*patchWithProb)->getPatch();
 			pair<bool, double> result = svm->classify(patch->getData());
 			vector<Sample*>& patchSamples = patch2samples[patch];
 			for (auto sit = patchSamples.begin(); sit != patchSamples.end(); ++sit) {

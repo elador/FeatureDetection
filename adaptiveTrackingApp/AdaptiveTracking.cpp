@@ -82,9 +82,9 @@ void AdaptiveTracking::initTracking() {
 	shared_ptr<FeatureExtractor> featureExtractor1 = make_shared<FeatureExtractor>(patchExtractor, featureTransformer1);
 
 	shared_ptr<FilteringFeatureTransformer> featureTransformer2 = make_shared<FilteringFeatureTransformer>(make_shared<IdentityFeatureTransformer>());
-	featureTransformer2->add(make_shared<WhiteningFilter>());
+//	featureTransformer2->add(make_shared<WhiteningFilter>());
 	featureTransformer2->add(make_shared<HistogramEqualizationFilter>());
-	featureTransformer2->add(make_shared<ZeroMeanUnitVarianceFilter>());
+//	featureTransformer2->add(make_shared<ZeroMeanUnitVarianceFilter>());
 	shared_ptr<FeatureExtractor> featureExtractor2 = make_shared<FeatureExtractor>(patchExtractor, featureTransformer2);
 
 	// create static measurement model
@@ -95,9 +95,9 @@ void AdaptiveTracking::initTracking() {
 	staticMeasurementModel = make_shared<WvmSvmModel>(featureExtractor1, wvm, svm);
 
 	// create adaptive measurement model
-//	shared_ptr<Kernel> kernel = make_shared<RbfKernel>(0.05 / (255 * 255)); // 0..255 features
+	shared_ptr<Kernel> kernel = make_shared<RbfKernel>(0.05 / (255 * 255)); // 0..255 features
 //	shared_ptr<Kernel> kernel = make_shared<RbfKernel>(0.05); // 0..1 features
-	shared_ptr<Kernel> kernel = make_shared<RbfKernel>(0.002); // WHI features
+//	shared_ptr<Kernel> kernel = make_shared<RbfKernel>(0.002); // WHI features
 //	shared_ptr<Kernel> kernel = make_shared<PolynomialKernel>(0.05, 0, 2); // sub-optimal alpha
 //	shared_ptr<TrainableSvmClassifier> trainableSvm = make_shared<FrameBasedTrainableSvmClassifier>(kernel, 1, 5, 4);
 	shared_ptr<TrainableSvmClassifier> trainableSvm = make_shared<FixedSizeTrainableSvmClassifier>(kernel, 1, 10, 50, 3);
