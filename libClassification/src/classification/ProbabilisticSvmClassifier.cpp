@@ -72,6 +72,7 @@ shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadMatlab(co
 
 	// Load the detector and thresholds:
 	shared_ptr<SvmClassifier> svm = SvmClassifier::loadMatlab(classifierFilename, thresholdsFilename);
+	//svm->setLimitReliability(-1.2f);
 	return make_shared<ProbabilisticSvmClassifier>(svm, logisticA, logisticB);
 }
 
