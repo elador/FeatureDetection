@@ -19,8 +19,8 @@ add_subdirectory(libDetection)			# Sliding-window detection, Skin detection
 add_subdirectory(libLogging)			# Text- and Image logging
 add_subdirectory(libConfigParser)		# Supplies methods to load our config files.
 
-add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
-add_subdirectory(adaptiveTrackingApp)	# Adaptive tracking app.
+#add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
+#add_subdirectory(adaptiveTrackingApp)	# Adaptive tracking app.
 #add_subdirectory(headTrackingApp)		#
 #add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe).
 #add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature point detection app.

@@ -108,7 +108,10 @@ void AdaptiveTracking::initTracking() {
 
 //	adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(featureExtractor2, classifier, 0.85, 0.05);
 //	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor2, classifier, 0.05, 0.5, true, true, 0);
-	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor2, classifier, 3, 40, 0.0, 0.5, false, false, 10);
+
+	//adaptiveMeasurementModel = shared_ptr<PositionDependentMeasurementModel>(new PositionDependentMeasurementModel(featureExtractor2, classifier, 3, 40, 0.0, 0.5, false, false, 10));
+	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor2, classifier, 3, 40, 0.0f, 0.5f, false, false, 10);
+	//adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor2, classifier, 3, 40);
 
 	// create tracker
 	unsigned int count = 800;
@@ -227,7 +230,7 @@ void AdaptiveTracking::run() {
 				image.create(frame.rows, frame.cols, frame.type());
 			}
 			gettimeofday(&detStart, 0);
-			boost::optional<Rectangle> face = tracker->process(frame);
+			boost::optional<condensation::Rectangle> face = tracker->process(frame);
 			gettimeofday(&detEnd, 0);
 			image = frame;
 			drawDebug(image);
