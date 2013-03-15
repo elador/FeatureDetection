@@ -186,7 +186,7 @@ void FaceTracking::run() {
 				image.create(frame.rows, frame.cols, frame.type());
 			}
 			gettimeofday(&detStart, 0);
-			boost::optional<Rectangle> face = tracker->process(frame);
+			boost::optional<condensation::Rectangle> face = tracker->process(frame);
 			gettimeofday(&detEnd, 0);
 			image = frame;
 			drawDebug(image);

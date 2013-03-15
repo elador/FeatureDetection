@@ -99,11 +99,11 @@ int main(int argc, char *argv[])
 	delete svm;
 	delete wvm;
 	*/
-	Mat img = cv::imread("D:/FeatureDetection/data/firstrun/ws_115.png");
+	Mat img = cv::imread("C:/Users/Patrik/Documents/GitHub/data/firstrun/ws_115.png");
 	cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
 
 	Logger root = Loggers->getLogger("root");
-	root.addAppender(make_shared<logging::FileAppender>("d:/logfile.txt"));
+	root.addAppender(make_shared<logging::FileAppender>("C:\\Users\\Patrik\\Documents\\GitHub\\logfile.txt"));
 	
 	root.log(loglevel::INFO, "Hi!");
 	root.log(loglevel::WARN, "WAAAARN!");
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 	pyr->addImageFilter(imgFil);
 	pyr->update(img);
 
-	shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadMatlab("D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.001--with-outnew02HQ64SVM.mat");
+	shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.001--with-outnew02HQ64SVM.mat");
 	
 	shared_ptr<IdentityFeatureTransformer> idTransform = make_shared<IdentityFeatureTransformer>();
 	shared_ptr<MultipleImageFilter> patchFilter = make_shared<MultipleImageFilter>();
