@@ -58,12 +58,12 @@ private:
 	 * @param[in] examples The vector of training examples whose content should be replaced with new ones.
 	 * @param[in] newExamples The new training examples.
 	 */
-	void replaceExamples(vector<unique_ptr<struct svm_node[]>>& examples, const vector<Mat>& newExamples);
+	void replaceExamples(vector<unique_ptr<struct svm_node[], NodeDeleter>>& examples, const vector<Mat>& newExamples);
 
 	int frameLength;     ///< The length of the memory in frames.
 	float minAvgSamples; ///< The minimum average positive training examples per frame for the training to be reasonable.
-	vector<vector<unique_ptr<struct svm_node[]>>> positiveExamples; ///< The positive training examples of the last frames.
-	vector<vector<unique_ptr<struct svm_node[]>>> negativeExamples; ///< The negative training examples of the last frames.
+	vector<vector<unique_ptr<struct svm_node[], NodeDeleter>>> positiveExamples; ///< The positive training examples of the last frames.
+	vector<vector<unique_ptr<struct svm_node[], NodeDeleter>>> negativeExamples; ///< The negative training examples of the last frames.
 	int oldestEntry;                                     ///< The index of the oldest example entry.
 };
 

@@ -8,18 +8,23 @@
 #ifndef ADAPTIVECONDENSATIONTRACKER_H_
 #define ADAPTIVECONDENSATIONTRACKER_H_
 
-#include "tracking/Sample.h"
+#include "condensation/Sample.h"
 #include "opencv2/core/core.hpp"
 #include "boost/optional.hpp"
 #include <memory>
 #include <vector>
 
-using std::shared_ptr;
-using boost::optional;
 using cv::Mat;
+using boost::optional;
 using std::vector;
+using std::shared_ptr;
 
-namespace tracking {
+namespace imageprocessing {
+class VersionedImage;
+}
+using imageprocessing::VersionedImage;
+
+namespace condensation {
 
 class Rectangle;
 class Sampler;
@@ -41,9 +46,8 @@ public:
 	 * @param[in] measurementModel The adaptive measurement model.
 	 * @param[in] extractor The position extractor.
 	 */
-	explicit AdaptiveCondensationTracker(shared_ptr<Sampler> sampler,
-			shared_ptr<MeasurementModel> initialMeasurementModel, shared_ptr<AdaptiveMeasurementModel> measurementModel,
-			shared_ptr<PositionExtractor> extractor);
+	AdaptiveCondensationTracker(shared_ptr<Sampler> sampler, shared_ptr<MeasurementModel> initialMeasurementModel,
+			shared_ptr<AdaptiveMeasurementModel> measurementModel, shared_ptr<PositionExtractor> extractor);
 
 	~AdaptiveCondensationTracker();
 
@@ -105,11 +109,12 @@ private:
 	bool useAdaptiveModel;        ///< Flag that indicates whether the adaptive measurement model should be used.
 	bool usedAdaptiveModel;       ///< Flag that indicates whether the adaptive measurement model was used.
 
+	shared_ptr<VersionedImage> image;                      ///< The image used for evaluation.
 	shared_ptr<Sampler> sampler;                           ///< The sampler.
 	shared_ptr<MeasurementModel> initialMeasurementModel;  ///< The initial static measurement model.
 	shared_ptr<AdaptiveMeasurementModel> measurementModel; ///< The adaptive measurement model.
 	shared_ptr<PositionExtractor> extractor;               ///< The position extractor.
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* ADAPTIVECONDENSATIONTRACKER_H_ */

@@ -5,14 +5,17 @@
  *      Author: poschmann
  */
 
-#include "tracking/Rectangle.h"
-#include "tracking/Sample.h"
-#include "tracking/CondensationTracker.h"
-#include "tracking/Sampler.h"
-#include "tracking/MeasurementModel.h"
-#include "tracking/PositionExtractor.h"
+#include "condensation/Rectangle.h"
+#include "condensation/Sample.h"
+#include "condensation/CondensationTracker.h"
+#include "condensation/Sampler.h"
+#include "condensation/MeasurementModel.h"
+#include "condensation/PositionExtractor.h"
+#include "imageprocessing/VersionedImage.hpp"
 
-namespace tracking {
+using std::make_shared;
+
+namespace condensation {
 
 CondensationTracker::CondensationTracker(shared_ptr<Sampler> sampler,
 		shared_ptr<MeasurementModel> measurementModel, shared_ptr<PositionExtractor> extractor) :
@@ -20,6 +23,7 @@ CondensationTracker::CondensationTracker(shared_ptr<Sampler> sampler,
 				oldSamples(),
 				oldPosition(),
 				offset(3),
+				image(make_shared<VersionedImage>()),
 				sampler(sampler),
 				measurementModel(measurementModel),
 				extractor(extractor) {
@@ -30,9 +34,10 @@ CondensationTracker::CondensationTracker(shared_ptr<Sampler> sampler,
 
 CondensationTracker::~CondensationTracker() {}
 
-optional<Rectangle> CondensationTracker::process(const Mat& image) {
+optional<Rectangle> CondensationTracker::process(const Mat& imageData) {
+	image->setData(imageData);
 	oldSamples = samples;
-	sampler->sample(oldSamples, offset, image, samples);
+	sampler->sample(oldSamples, offset, image->getData(), samples);
 	// evaluate samples and extract position
 	measurementModel->evaluate(image, samples);
 	optional<Sample> position = extractor->extract(samples);
@@ -53,4 +58,4 @@ optional<Rectangle> CondensationTracker::process(const Mat& image) {
 	return optional<Rectangle>();
 }
 
-} /* namespace tracking */
+} /* namespace condensation */

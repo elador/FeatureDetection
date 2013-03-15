@@ -5,15 +5,18 @@
  *      Author: poschmann
  */
 
-#include "tracking/AdaptiveCondensationTracker.h"
-#include "tracking/Rectangle.h"
-#include "tracking/Sample.h"
-#include "tracking/Sampler.h"
-#include "tracking/MeasurementModel.h"
-#include "tracking/AdaptiveMeasurementModel.h"
-#include "tracking/PositionExtractor.h"
+#include "condensation/AdaptiveCondensationTracker.h"
+#include "condensation/Rectangle.h"
+#include "condensation/Sample.h"
+#include "condensation/Sampler.h"
+#include "condensation/MeasurementModel.h"
+#include "condensation/AdaptiveMeasurementModel.h"
+#include "condensation/PositionExtractor.h"
+#include "imageprocessing/VersionedImage.hpp"
 
-namespace tracking {
+using std::make_shared;
+
+namespace condensation {
 
 AdaptiveCondensationTracker::AdaptiveCondensationTracker(shared_ptr<Sampler> sampler,
 		shared_ptr<MeasurementModel> initialMeasurementModel, shared_ptr<AdaptiveMeasurementModel> measurementModel,
@@ -24,6 +27,7 @@ AdaptiveCondensationTracker::AdaptiveCondensationTracker(shared_ptr<Sampler> sam
 				offset(3),
 				useAdaptiveModel(true),
 				usedAdaptiveModel(false),
+				image(make_shared<VersionedImage>()),
 				sampler(sampler),
 				initialMeasurementModel(initialMeasurementModel),
 				measurementModel(measurementModel),
@@ -35,9 +39,10 @@ AdaptiveCondensationTracker::AdaptiveCondensationTracker(shared_ptr<Sampler> sam
 
 AdaptiveCondensationTracker::~AdaptiveCondensationTracker() {}
 
-optional<Rectangle> AdaptiveCondensationTracker::process(const Mat& image) {
+optional<Rectangle> AdaptiveCondensationTracker::process(const Mat& imageData) {
+	image->setData(imageData);
 	oldSamples = samples;
-	sampler->sample(oldSamples, offset, image, samples);
+	sampler->sample(oldSamples, offset, image->getData(), samples);
 	// evaluate samples and extract position
 	if (useAdaptiveModel && measurementModel->isUsable()) {
 		measurementModel->evaluate(image, samples);
@@ -77,4 +82,4 @@ void AdaptiveCondensationTracker::setUseAdaptiveModel(bool useAdaptive) {
 		measurementModel->reset();
 }
 
-} /* namespace tracking */
+} /* namespace condensation */

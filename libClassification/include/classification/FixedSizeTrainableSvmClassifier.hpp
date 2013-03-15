@@ -62,8 +62,8 @@ private:
 	 */
 	void addNegativeExamples(const vector<Mat>& newNegativeExamples);
 
-	vector<unique_ptr<struct svm_node[]>> positiveExamples; ///< The positive training examples.
-	vector<unique_ptr<struct svm_node[]>> negativeExamples; ///< The negative training examples.
+	vector<unique_ptr<struct svm_node[], NodeDeleter>> positiveExamples; ///< The positive training examples.
+	vector<unique_ptr<struct svm_node[], NodeDeleter>> negativeExamples; ///< The negative training examples.
 	unsigned int negativeInsertPosition; ///< The insertion index of new negative examples.
 	unsigned int minPositiveExamples; ///< The minimum amount of positive training examples needed for training.
 };

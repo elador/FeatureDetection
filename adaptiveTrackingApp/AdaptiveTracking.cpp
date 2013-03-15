@@ -1,27 +1,34 @@
 /*
- * FaceTracking.cpp
+ * AdaptiveTracking.cpp
  *
  *  Created on: 19.07.2012
  *      Author: poschmann
  */
 
-#include "FaceTracking.h"
+#include "AdaptiveTracking.h"
 #include "imageio/VideoImageSource.h"
 #include "imageio/KinectImageSource.h"
 #include "imageio/DirectoryImageSource.h"
 #include "imageio/VideoImageSink.h"
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/PyramidPatchExtractor.hpp"
+#include "imageprocessing/IdentityFeatureTransformer.hpp"
 #include "imageprocessing/RowFeatureTransformer.hpp"
 #include "imageprocessing/FilteringFeatureTransformer.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
-#include "imageprocessing/HistogramEqualizationFilter.hpp"
 #include "imageprocessing/HistEq64Filter.hpp"
+#include "imageprocessing/WhiteningFilter.hpp"
+#include "imageprocessing/ZeroMeanUnitVarianceFilter.hpp"
+#include "imageprocessing/HistogramEqualizationFilter.hpp"
 #include "imageprocessing/FeatureExtractor.hpp"
-#include "classification/WvmClassifier.hpp"
-#include "classification/SvmClassifier.hpp"
 #include "classification/ProbabilisticWvmClassifier.hpp"
 #include "classification/ProbabilisticSvmClassifier.hpp"
+#include "classification/RbfKernel.hpp"
+#include "classification/PolynomialKernel.hpp"
+#include "classification/FrameBasedTrainableSvmClassifier.hpp"
+#include "classification/TrainableProbabilisticTwoStageClassifier.hpp"
+#include "classification/FixedSizeTrainableSvmClassifier.hpp"
+#include "classification/FixedTrainableProbabilisticSvmClassifier.hpp"
 #include "condensation/ResamplingSampler.h"
 #include "condensation/GridSampler.h"
 #include "condensation/LowVarianceSampling.h"
@@ -49,10 +56,10 @@ using std::move;
 
 namespace po = boost::program_options;
 
-const string FaceTracking::videoWindowName = "Image";
-const string FaceTracking::controlWindowName = "Controls";
+const string AdaptiveTracking::videoWindowName = "Image";
+const string AdaptiveTracking::controlWindowName = "Controls";
 
-FaceTracking::FaceTracking(unique_ptr<ImageSource> imageSource, unique_ptr<ImageSink> imageSink,
+AdaptiveTracking::AdaptiveTracking(unique_ptr<ImageSource> imageSource, unique_ptr<ImageSink> imageSink,
 		string svmConfigFile, string negativesFile) :
 				svmConfigFile(svmConfigFile),
 				negativesFile(negativesFile),
@@ -62,41 +69,69 @@ FaceTracking::FaceTracking(unique_ptr<ImageSource> imageSource, unique_ptr<Image
 	initGui();
 }
 
-FaceTracking::~FaceTracking() {}
+AdaptiveTracking::~AdaptiveTracking() {}
 
-void FaceTracking::initTracking() {
-	// create measurement model
+void AdaptiveTracking::initTracking() {
+	// create feature extractors
 	shared_ptr<ImagePyramid> pyramid = make_shared<ImagePyramid>(20.0 / 480.0, 20.0 / 80.0, 0.85);
 	pyramid->addImageFilter(make_shared<GrayscaleFilter>());
 	shared_ptr<PatchExtractor> patchExtractor = make_shared<PyramidPatchExtractor>(pyramid, 20, 20);
-	shared_ptr<FilteringFeatureTransformer> featureTransformer = make_shared<FilteringFeatureTransformer>(make_shared<RowFeatureTransformer>());
-	//featureTransformer->add(make_shared<HistogramEqualizationFilter>());
-	featureTransformer->add(make_shared<HistEq64Filter>());
-	shared_ptr<FeatureExtractor> featureExtractor = make_shared<FeatureExtractor>(patchExtractor, featureTransformer);
+
+	shared_ptr<FilteringFeatureTransformer> featureTransformer1 = make_shared<FilteringFeatureTransformer>(make_shared<RowFeatureTransformer>());
+	featureTransformer1->add(make_shared<HistEq64Filter>());
+	shared_ptr<FeatureExtractor> featureExtractor1 = make_shared<FeatureExtractor>(patchExtractor, featureTransformer1);
+
+	shared_ptr<FilteringFeatureTransformer> featureTransformer2 = make_shared<FilteringFeatureTransformer>(make_shared<IdentityFeatureTransformer>());
+	featureTransformer2->add(make_shared<WhiteningFilter>());
+	featureTransformer2->add(make_shared<HistogramEqualizationFilter>());
+	featureTransformer2->add(make_shared<ZeroMeanUnitVarianceFilter>());
+	shared_ptr<FeatureExtractor> featureExtractor2 = make_shared<FeatureExtractor>(patchExtractor, featureTransformer2);
+
+	// create static measurement model
 	string svmConfigFile1 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat";
-	string svmConfigFile2 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat";
+	string svmConfigFile2 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.0001--with-outnew02HQ64SVM.mat";
 	shared_ptr<ProbabilisticWvmClassifier> wvm = ProbabilisticWvmClassifier::loadMatlab(svmConfigFile1, svmConfigFile2);
 	shared_ptr<ProbabilisticSvmClassifier> svm = ProbabilisticSvmClassifier::loadMatlab(svmConfigFile1, svmConfigFile2);
-	wvm->getWvm()->setLimitReliability(3.2f);
-	svm->getSvm()->setLimitReliability(3.2f);
-	measurementModel = make_shared<WvmSvmModel>(featureExtractor, wvm, svm);
+	staticMeasurementModel = make_shared<WvmSvmModel>(featureExtractor1, wvm, svm);
+
+	// create adaptive measurement model
+//	shared_ptr<Kernel> kernel = make_shared<RbfKernel>(0.05 / (255 * 255)); // 0..255 features
+//	shared_ptr<Kernel> kernel = make_shared<RbfKernel>(0.05); // 0..1 features
+	shared_ptr<Kernel> kernel = make_shared<RbfKernel>(0.002); // WHI features
+//	shared_ptr<Kernel> kernel = make_shared<PolynomialKernel>(0.05, 0, 2); // sub-optimal alpha
+//	shared_ptr<TrainableSvmClassifier> trainableSvm = make_shared<FrameBasedTrainableSvmClassifier>(kernel, 1, 5, 4);
+	shared_ptr<TrainableSvmClassifier> trainableSvm = make_shared<FixedSizeTrainableSvmClassifier>(kernel, 1, 10, 50, 3);
+//	trainableSvm->loadStaticNegatives(negativesFile, 200, 1); // scale 1 / 255 possible when training data scaled to 0..1
+//	shared_ptr<TrainableProbabilisticClassifier> classifier = make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm);
+	shared_ptr<TrainableProbabilisticClassifier> classifier = make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm);
+//	shared_ptr<TrainableProbabilisticClassifier> classifier = make_shared<TrainableProbabilisticTwoStageClassifier>(
+//			wvm, make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm));
+
+//	adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(featureExtractor2, classifier, 0.85, 0.05);
+//	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor2, classifier, 0.05, 0.5, true, true, 0);
+	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor2, classifier, 3, 40, 0.0, 0.5, false, false, 10);
 
 	// create tracker
 	unsigned int count = 800;
 	double randomRate = 0.35;
 	transitionModel = make_shared<SimpleTransitionModel>(0.2);
 	resamplingSampler = make_shared<ResamplingSampler>(count, randomRate, make_shared<LowVarianceSampling>(),
-			transitionModel, 0.1666, 0.8);
-	gridSampler = make_shared<GridSampler>(0.1666, 0.8, 1 / 0.85, 0.1);
-	tracker = unique_ptr<CondensationTracker>(new CondensationTracker(
-			resamplingSampler, measurementModel, make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>())));
+			transitionModel, 0.1666, 1.0);
+	gridSampler = make_shared<GridSampler>(0.1666, 1.0, 1 / 0.85, 0.1);
+	tracker = unique_ptr<AdaptiveCondensationTracker>(new AdaptiveCondensationTracker(
+			resamplingSampler, staticMeasurementModel, adaptiveMeasurementModel,
+			make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>())));
+//	tracker->setUseAdaptiveModel(false);
 }
 
-void FaceTracking::initGui() {
+void AdaptiveTracking::initGui() {
 	drawSamples = true;
 
 	cvNamedWindow(controlWindowName.c_str(), CV_WINDOW_AUTOSIZE);
 	cvMoveWindow(controlWindowName.c_str(), 750, 50);
+
+	cv::createTrackbar("Adaptive", controlWindowName, NULL, 1, adaptiveChanged, this);
+	cv::setTrackbarPos("Adaptive", controlWindowName, tracker->isUsingAdaptiveModel() ? 1 : 0);
 
 	cv::createTrackbar("Grid/Resampling", controlWindowName, NULL, 1, samplerChanged, this);
 	cv::setTrackbarPos("Grid/Resampling", controlWindowName, tracker->getSampler() == gridSampler ? 0 : 1);
@@ -114,55 +149,62 @@ void FaceTracking::initGui() {
 	cv::setTrackbarPos("Draw samples", controlWindowName, drawSamples ? 1 : 0);
 }
 
-void FaceTracking::samplerChanged(int state, void* userdata) {
-	FaceTracking *tracking = (FaceTracking*)userdata;
+void AdaptiveTracking::adaptiveChanged(int state, void* userdata) {
+	AdaptiveTracking *tracking = (AdaptiveTracking*)userdata;
+	tracking->tracker->setUseAdaptiveModel(state == 1);
+}
+
+void AdaptiveTracking::samplerChanged(int state, void* userdata) {
+	AdaptiveTracking *tracking = (AdaptiveTracking*)userdata;
 	if (state == 0)
 		tracking->tracker->setSampler(tracking->gridSampler);
 	else
 		tracking->tracker->setSampler(tracking->resamplingSampler);
 }
 
-void FaceTracking::sampleCountChanged(int state, void* userdata) {
-	FaceTracking *tracking = (FaceTracking*)userdata;
+void AdaptiveTracking::sampleCountChanged(int state, void* userdata) {
+	AdaptiveTracking *tracking = (AdaptiveTracking*)userdata;
 	tracking->resamplingSampler->setCount(state);
 }
 
-void FaceTracking::randomRateChanged(int state, void* userdata) {
-	FaceTracking *tracking = (FaceTracking*)userdata;
+void AdaptiveTracking::randomRateChanged(int state, void* userdata) {
+	AdaptiveTracking *tracking = (AdaptiveTracking*)userdata;
 	tracking->resamplingSampler->setRandomRate(0.01 * state);
 }
 
-void FaceTracking::scatterChanged(int state, void* userdata) {
-	FaceTracking *tracking = (FaceTracking*)userdata;
+void AdaptiveTracking::scatterChanged(int state, void* userdata) {
+	AdaptiveTracking *tracking = (AdaptiveTracking*)userdata;
 	tracking->transitionModel->setScatter(0.01 * state);
 }
 
-void FaceTracking::drawSamplesChanged(int state, void* userdata) {
-	FaceTracking *tracking = (FaceTracking*)userdata;
+void AdaptiveTracking::drawSamplesChanged(int state, void* userdata) {
+	AdaptiveTracking *tracking = (AdaptiveTracking*)userdata;
 	tracking->drawSamples = (state == 1);
 }
 
-void FaceTracking::drawDebug(cv::Mat& image) {
+void AdaptiveTracking::drawDebug(cv::Mat& image) {
 	cv::Scalar black(0, 0, 0); // blue, green, red
 	cv::Scalar red(0, 0, 255); // blue, green, red
+	cv::Scalar green(0, 255, 0); // blue, green, red
 	if (drawSamples) {
 		const std::vector<Sample> samples = tracker->getSamples();
-		for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample) {
-			cv::Scalar color = sample->isObject() ? cv::Scalar(0, 0, sample->getWeight() * 255) : black;
-			cv::circle(image, cv::Point(sample->getX(), sample->getY()), 3, color);
+		for (std::vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
+			cv::Scalar color = sit->isObject() ? cv::Scalar(0, 0, sit->getWeight() * 255) : black;
+			cv::circle(image, cv::Point(sit->getX(), sit->getY()), 3, color);
 		}
 	}
-	cv::circle(image, cv::Point(10, 10), 5, red, -1);
+	cv::Scalar& svmIndicatorColor = tracker->wasUsingAdaptiveModel() ? green : red;
+	cv::circle(image, cv::Point(10, 10), 5, svmIndicatorColor, -1);
 }
 
-void FaceTracking::run() {
+void AdaptiveTracking::run() {
 	running = true;
 	paused = false;
 
 	bool first = true;
 	cv::Mat frame, image;
-	cv::Scalar red(0, 0, 255); // blue, green, red
 	cv::Scalar green(0, 255, 0); // blue, green, red
+	cv::Scalar red(0, 0, 255); // blue, green, red
 
 	timeval start, detStart, detEnd, frameStart, frameEnd;
 	float allIterationTimeSeconds = 0, allDetectionTimeSeconds = 0;
@@ -190,10 +232,10 @@ void FaceTracking::run() {
 			gettimeofday(&detEnd, 0);
 			image = frame;
 			drawDebug(image);
-			if (face) {
+			cv::Scalar& color = tracker->wasUsingAdaptiveModel() ? green : red;
+			if (face)
 				cv::rectangle(image, cv::Point(face->getX(), face->getY()),
-						cv::Point(face->getX() + face->getWidth(), face->getY() + face->getHeight()), red);
-			}
+						cv::Point(face->getX() + face->getWidth(), face->getY() + face->getHeight()), color);
 			imshow(videoWindowName, image);
 			if (imageSink.get() != 0)
 				imageSink->add(image);
@@ -219,7 +261,7 @@ void FaceTracking::run() {
 	}
 }
 
-void FaceTracking::stop() {
+void AdaptiveTracking::stop() {
 	running = false;
 }
 
@@ -310,7 +352,7 @@ int main(int argc, char *argv[]) {
 		imageSink.reset(new VideoImageSink(outputFile, outputFps));
 	}
 
-	unique_ptr<FaceTracking> tracker(new FaceTracking(move(imageSource), move(imageSink), svmConfigFile, negativeRtlPatches));
+	unique_ptr<AdaptiveTracking> tracker(new AdaptiveTracking(move(imageSource), move(imageSink), svmConfigFile, negativeRtlPatches));
 	tracker->run();
 	return 0;
 }

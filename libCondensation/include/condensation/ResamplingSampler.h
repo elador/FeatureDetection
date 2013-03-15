@@ -8,14 +8,14 @@
 #ifndef RESAMPLINGSAMPLER_H_
 #define RESAMPLINGSAMPLER_H_
 
-#include "tracking/Sampler.h"
+#include "condensation/Sampler.h"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int.hpp"
 #include <memory>
 
 using std::shared_ptr;
 
-namespace tracking {
+namespace condensation {
 
 class ResamplingAlgorithm;
 class TransitionModel;
@@ -37,9 +37,8 @@ public:
 	 * @param[in] minSize The minimum size of a sample relative to the width or height of the image (whatever is smaller).
 	 * @param[in] maxSize The maximum size of a sample relative to the width or height of the image (whatever is smaller).
 	 */
-	explicit ResamplingSampler(unsigned int count, double randomRate,
-			shared_ptr<ResamplingAlgorithm> resamplingAlgorithm, shared_ptr<TransitionModel> transitionModel,
-			float minSize = 0.1, float maxSize = 0.8);
+	ResamplingSampler(unsigned int count, double randomRate, shared_ptr<ResamplingAlgorithm> resamplingAlgorithm,
+			shared_ptr<TransitionModel> transitionModel, float minSize = 0.1, float maxSize = 0.8);
 
 	~ResamplingSampler();
 
@@ -105,5 +104,5 @@ private:
 	boost::uniform_int<> distribution; ///< Uniform integer distribution.
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* RESAMPLINGSAMPLER_H_ */

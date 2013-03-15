@@ -22,13 +22,14 @@ using std::move;
 namespace classification {
 
 TrainableSvmClassifier::TrainableSvmClassifier(shared_ptr<SvmClassifier> svm, double constraintsViolationCosts) :
-		svm(svm), constraintsViolationCosts(constraintsViolationCosts), usable(false), dimensions(0), staticNegativeExamples() {
+		svm(svm), constraintsViolationCosts(constraintsViolationCosts),
+		usable(false), dimensions(0), staticNegativeExamples(), node2example(), nodeDeleter(node2example), matType(CV_32F) {
 	createParameters(svm->getKernel(), constraintsViolationCosts);
 }
 
 TrainableSvmClassifier::TrainableSvmClassifier(shared_ptr<Kernel> kernel, double constraintsViolationCosts) :
 		svm(make_shared<SvmClassifier>(kernel)), constraintsViolationCosts(constraintsViolationCosts),
-		usable(false), dimensions(0), staticNegativeExamples() {
+		usable(false), dimensions(0), staticNegativeExamples(), node2example(), nodeDeleter(node2example), matType(CV_32F) {
 	createParameters(kernel, constraintsViolationCosts);
 }
 
@@ -74,8 +75,8 @@ pair<double, double> TrainableSvmClassifier::computeMeanSvmOutputs() {
 void TrainableSvmClassifier::loadStaticNegatives(const string& negativesFilename, int maxNegatives, double scale) {
 	staticNegativeExamples.reserve(maxNegatives);
 	int negatives = 0;
-	vector<int> values;
-	int value;
+	vector<double> values; // TODO war vorher int - funzt es noch?
+	double value; // TODO war vorher int - funzt es noch?
 	char separator;
 	string line;
 	std::ifstream file(negativesFilename.c_str());
@@ -91,8 +92,8 @@ void TrainableSvmClassifier::loadStaticNegatives(const string& negativesFilename
 				lineStream >> value >> separator;
 				values.push_back(value);
 			}
-			// create nodes
-			unique_ptr<struct svm_node[]> data(new struct svm_node[values.size() + 1]);
+			// create node
+			unique_ptr<struct svm_node[], NodeDeleter> data(new struct svm_node[values.size() + 1], nodeDeleter);
 			for (unsigned int i = 0; i < values.size(); ++i) {
 				data[i].index = i;
 				data[i].value = scale * values[i];
@@ -103,29 +104,21 @@ void TrainableSvmClassifier::loadStaticNegatives(const string& negativesFilename
 	}
 }
 
-unique_ptr<struct svm_node[]> TrainableSvmClassifier::createNode(const Mat& vector) {
+unique_ptr<struct svm_node[], NodeDeleter> TrainableSvmClassifier::createNode(const Mat& vector) {
 	unsigned int size = vector.total();
-	unique_ptr<struct svm_node[]> node(new struct svm_node[size + 1]);
-	if (vector.type() == CV_8U)
+	unique_ptr<struct svm_node[], NodeDeleter> node(new struct svm_node[size + 1], nodeDeleter);
+	matType = vector.type();
+	if (matType == CV_8U)
 		fillNode<uchar>(node.get(), size, vector);
-	else if (vector.type() == CV_32F)
+	else if (matType == CV_32F)
 		fillNode<float>(node.get(), size, vector);
-	else if (vector.type() == CV_64F)
+	else if (matType == CV_64F)
 		fillNode<double>(node.get(), size, vector);
 	else
 		throw invalid_argument("TrainableSvmClassifier: vector has to be of type CV_8U, CV_32F, or CV_64F to create a node of");
 	node[size].index = -1;
+	node2example.insert(make_pair(node.get(), vector));
 	return move(node);
-}
-
-template<class T>
-void TrainableSvmClassifier::fillNode(struct svm_node *node, unsigned int size, const Mat& vector) {
-	// TODO has to be continuous
-	const T* values = vector.ptr<T>(0);
-	for (unsigned int i = 0; i < size; ++i) {
-		node[i].index = i;
-		node[i].value = values[i];
-	}
 }
 
 double TrainableSvmClassifier::computeSvmOutput(const struct svm_node *x) {
@@ -145,7 +138,7 @@ bool TrainableSvmClassifier::retrain(const vector<Mat>& newPositiveExamples, con
 	if (isRetrainingReasonable())
 		usable = train();
 	return usable;
-//	return isRetrainingReasonable() && train();
+//	return isRetrainingReasonable() && train(); TODO raus
 }
 
 void TrainableSvmClassifier::reset() {
@@ -154,12 +147,11 @@ void TrainableSvmClassifier::reset() {
 }
 
 bool TrainableSvmClassifier::train() {
-	// TODO prüfen, ob und inwiefern sinnvoll - auch mal vertauschen oder jeweils 1 reinschreiben und testen
 	param->weight[0] = getPositiveCount();
 	param->weight[1] = getNegativeCount() + staticNegativeExamples.size();
 	problem = move(createProblem());
 	const char* message = svm_check_parameter(problem.get(), param.get());
-	if (message != 0) {// TODO exception? only logging? wenn exception, dann kann rückgabewert weg
+	if (message != 0) {// TODO exception? just logging? wenn exception, dann kann rückgabewert weg
 		std::cerr << "invalid SVM parameters: " << message << std::endl;
 		return false;
 	}
@@ -189,21 +181,63 @@ void TrainableSvmClassifier::updateSvmParameters() {
 	supportVectors.reserve(model->l);
 	coefficients.reserve(model->l);
 	for (int i = 0; i < model->l; ++i) {
-		Mat supportVector(1, dimensions, CV_32F);
-		float* values = supportVector.ptr<float>(0);
-		const svm_node *sv = model->SV[i];
-		for (int j = 0; j < dimensions; ++j) {
-			if (sv->index == j) {
-				values[j] = sv->value;
-				++sv;
-			} else {
-				values[j] = 0;
-			}
-		}
-		supportVectors.push_back(supportVector);
+		supportVectors.push_back(getSupportVector(model->SV[i]));
 		coefficients.push_back(model->sv_coef[0][i]);
 	}
 	svm->setSvmParameters(supportVectors, coefficients, model->rho[0]);
+}
+
+Mat TrainableSvmClassifier::getSupportVector(const struct svm_node *node) {
+	Mat& vector = node2example[node];
+	if (vector.empty()) {
+		vector.create(1, dimensions, matType);
+		if (matType == CV_8U)
+			fillMat<uchar>(vector, node);
+		else if (matType == CV_32F)
+			fillMat<float>(vector, node);
+		else if (matType == CV_64F)
+			fillMat<double>(vector, node);
+		else
+			throw invalid_argument("TrainableSvmClassifier: vectors have to be of type CV_8U, CV_32F, or CV_64F");
+	}
+	return vector;
+}
+
+template<class T>
+void TrainableSvmClassifier::fillNode(struct svm_node *node, unsigned int size, const Mat& vector) {
+	// TODO has to be continuous
+	const T* values = vector.ptr<T>(0);
+	for (unsigned int i = 0; i < size; ++i) {
+		node[i].index = i;
+		node[i].value = values[i];
+	}
+}
+
+template<class T>
+void TrainableSvmClassifier::fillMat(Mat& vector, const struct svm_node *node) {
+	T* values = vector.ptr<T>(0);
+	for (int i = 0; i < dimensions; ++i) {
+		if (node->index == i) {
+			values[i] = static_cast<T>(node->value);
+			++node;
+		} else {
+			values[i] = 0;
+		}
+	}
+}
+
+NodeDeleter::NodeDeleter(unordered_map<const struct svm_node*, Mat>& map) : map(map) {}
+
+NodeDeleter::NodeDeleter(const NodeDeleter& other) : map(other.map) {}
+
+NodeDeleter& NodeDeleter::operator=(const NodeDeleter& other) {
+	map = other.map;
+	return *this;
+}
+
+void NodeDeleter::operator()(struct svm_node *node) const {
+	map.erase(node);
+	delete[] node;
 }
 
 void ParameterDeleter::operator()(struct svm_parameter *param) const {

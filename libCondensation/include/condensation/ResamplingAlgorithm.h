@@ -12,7 +12,7 @@
 
 using std::vector;
 
-namespace tracking {
+namespace condensation {
 
 class Sample;
 
@@ -21,6 +21,7 @@ class Sample;
  */
 class ResamplingAlgorithm {
 public:
+
 	virtual ~ResamplingAlgorithm() {}
 
 	/**
@@ -33,5 +34,5 @@ public:
 	virtual void resample(const vector<Sample>& samples, unsigned int count, vector<Sample>& newSamples) = 0;
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* RESAMPLINGALGORITHM_H_ */

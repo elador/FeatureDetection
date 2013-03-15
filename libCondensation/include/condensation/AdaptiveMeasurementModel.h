@@ -8,12 +8,9 @@
 #ifndef ADAPTIVEMEASUREMENTMODEL_H_
 #define ADAPTIVEMEASUREMENTMODEL_H_
 
-#include "tracking/MeasurementModel.h"
+#include "condensation/MeasurementModel.h"
 
-using cv::Mat;
-using std::vector;
-
-namespace tracking {
+namespace condensation {
 
 /**
  * Measurement model that is able to adapt itself to the target.
@@ -23,7 +20,7 @@ public:
 
 	virtual ~AdaptiveMeasurementModel() {}
 
-	virtual void evaluate(const Mat& image, vector<Sample>& samples) = 0;
+	virtual void evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples) = 0;
 
 	/**
 	 * @return True if this measurement model may be used, false otherwise.
@@ -37,7 +34,7 @@ public:
 	 * @param[in] samples The weighted samples.
 	 * @param[in] target The estimated target position.
 	 */
-	virtual void adapt(const Mat& image, const vector<Sample>& samples, const Sample& target) = 0;
+	virtual void adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples, const Sample& target) = 0;
 
 	/**
 	 * Adapts this model in case the target was not found.
@@ -45,7 +42,7 @@ public:
 	 * @param[in] image The image.
 	 * @param[in] samples The weighted samples.
 	 */
-	virtual void adapt(const Mat& image, const vector<Sample>& samples) = 0;
+	virtual void adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples) = 0;
 
 	/**
 	 * Resets this model to its original state.
@@ -53,5 +50,5 @@ public:
 	virtual void reset() = 0;
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* ADAPTIVEMEASUREMENTMODEL_H_ */

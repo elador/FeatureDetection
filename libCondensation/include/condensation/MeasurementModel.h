@@ -8,13 +8,18 @@
 #ifndef MEASUREMENTMODEL_H_
 #define MEASUREMENTMODEL_H_
 
-#include "opencv2/highgui/highgui.hpp"
 #include <vector>
+#include <memory>
 
-using cv::Mat;
 using std::vector;
+using std::shared_ptr;
 
-namespace tracking {
+namespace imageprocessing {
+	class VersionedImage;
+}
+using imageprocessing::VersionedImage;
+
+namespace condensation {
 
 class Sample;
 
@@ -23,6 +28,7 @@ class Sample;
  */
 class MeasurementModel {
 public:
+
 	virtual ~MeasurementModel() {}
 
 	/**
@@ -31,8 +37,8 @@ public:
 	 * @param[in] image The image.
 	 * @param[in] samples The samples whose weight will be changed according to the likelihoods.
 	 */
-	virtual void evaluate(const Mat& image, vector<Sample>& samples) = 0;
+	virtual void evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples) = 0;
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* MEASUREMENTMODEL_H_ */

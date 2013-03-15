@@ -33,7 +33,6 @@ public:
 
 	~PolynomialKernel() {}
 
-	// float kernel(unsigned char*, unsigned char*, int, float, float, int, int); // from DetSVM.h TODO remove this line
 	double compute(const Mat& lhs, const Mat& rhs) const {
 		return powi(alpha * lhs.dot(rhs) + constant, degree);
 	}
@@ -44,40 +43,6 @@ public:
 		param->coef0 = constant;
 		param->gamma = alpha;
 	}
-
-	// TODO: as can be seen in the old implementation, the parameters were basisParam, divisor and polyPower
-	// the computation of the new parameters from the old ones (if necessary, e.g. loading from old matlab files):
-	// alpha = 1 / divisor
-	// constant = basisParam / divisor
-	// degree = polyPower
-	/*TODO remove old implementation
-float DetectorSVM::kernel(unsigned char* data, unsigned char* support, int nonLinType, float basisParam, float divisor, int polyPower, int nDim)
-{
-	int dot = 0;
-	int val2;
-	float out;
-	float val;
-	int i;
-	switch (nonLinType) {
-	case 1: // polynomial
-		for (i = 0; i != nDim; ++i)
-			dot += data[i] * support[i];
-		out = (dot+basisParam)/divisor;
-		val = out;
-		for (i = 1; i < polyPower; i++)
-			out *= val;
-		return out;
-	case 2: // RBF
-		for (i = 0; i != nDim; ++i) {
-			val2 = data[i] - support[i];
-			dot += val2 * val2;
-		}
-		return (float)exp(-basisParam*dot);
-	default: assert(0);
-	}
-	return 0;
-
-}*/
 
 private:
 	

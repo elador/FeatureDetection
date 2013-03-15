@@ -1,12 +1,12 @@
 /*
- * TrainableProbabilisticTwoStageClassifier.h
+ * TrainableProbabilisticTwoStageClassifier.hpp
  *
  *  Created on: 21.12.2012
  *      Author: poschmann
  */
 
-#ifndef PROBABILISTICTRAINABLETWOSTAGECLASSIFIER_HPP_
-#define PROBABILISTICTRAINABLETWOSTAGECLASSIFIER_HPP_
+#ifndef TRAINABLEPROBABILISTICTWOSTAGECLASSIFIER_HPP_
+#define TRAINABLEPROBABILISTICTWOSTAGECLASSIFIER_HPP_
 
 #include "classification/TrainableProbabilisticClassifier.hpp"
 #include "classification/ProbabilisticTwoStageClassifier.hpp"
@@ -25,11 +25,15 @@ public:
 	 * @param[in] first The first classifier.
 	 * @param[in] second The second classifier (that will be re-trained).
 	 */
-	explicit TrainableProbabilisticTwoStageClassifier(
+	TrainableProbabilisticTwoStageClassifier(
 			shared_ptr<ProbabilisticClassifier> first, shared_ptr<TrainableProbabilisticClassifier> second) :
 					ProbabilisticTwoStageClassifier(first, second), trainable(second) {}
 
 	~TrainableProbabilisticTwoStageClassifier() {}
+
+	bool isUsable() const {
+		return trainable->isUsable();
+	}
 
 	pair<bool, double> classify(const Mat& featureVector) const {
 		return ProbabilisticTwoStageClassifier::classify(featureVector);
@@ -49,4 +53,4 @@ private:
 };
 
 } /* namespace classification */
-#endif /* PROBABILISTICTRAINABLETWOSTAGECLASSIFIER_HPP_ */
+#endif /* TRAINABLEPROBABILISTICTWOSTAGECLASSIFIER_HPP_ */

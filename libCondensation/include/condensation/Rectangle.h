@@ -8,7 +8,7 @@
 #ifndef RECTANGLE_H_
 #define RECTANGLE_H_
 
-namespace tracking {
+namespace condensation {
 
 /**
  * Rectangle in image coordinates.
@@ -24,9 +24,9 @@ public:
 	 * @param[in] w The width.
 	 * @param[in] h The height.
 	 */
-	explicit Rectangle(int x, int y, int w, int h);
+	Rectangle(int x, int y, int w, int h) : x(x), y(y), w(w), h(h) {}
 
-	~Rectangle();
+	~Rectangle() {}
 
 	/**
 	 * @return The x coordinate of the upper left corner.
@@ -63,5 +63,5 @@ private:
 	const int h; ///< The height.
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* RECTANGLE_H_ */

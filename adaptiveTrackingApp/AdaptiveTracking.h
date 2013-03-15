@@ -1,21 +1,24 @@
 /*
- * FaceTracking.h
+ * AdaptiveTracking.h
  *
  *  Created on: 19.07.2012
  *      Author: poschmann
  */
 
-#ifndef FACETRACKING_H_
-#define FACETRACKING_H_
+#ifndef ADAPTIVETRACKING_H_
+#define ADAPTIVETRACKING_H_
 
 #include "imageio/ImageSource.h"
 #include "imageio/ImageSink.h"
-#include "condensation/CondensationTracker.h"
+#include "condensation/AdaptiveCondensationTracker.h"
+#include "condensation/AdaptiveMeasurementModel.h"
 #include "condensation/MeasurementModel.h"
 #include "condensation/SimpleTransitionModel.h"
 #include "condensation/ResamplingSampler.h"
 #include "condensation/GridSampler.h"
 #include "opencv2/highgui/highgui.hpp"
+#include <memory>
+#include <string>
 #include <memory>
 #include <string>
 
@@ -27,17 +30,18 @@ using std::unique_ptr;
 using std::shared_ptr;
 using std::make_shared;
 
-class FaceTracking {
+class AdaptiveTracking {
 public:
 
-	FaceTracking(unique_ptr<ImageSource> imageSource, unique_ptr<ImageSink> imageSink, string svmConfigFile, string negativesFile);
-	virtual ~FaceTracking();
+	AdaptiveTracking(unique_ptr<ImageSource> imageSource, unique_ptr<ImageSink> imageSink, string svmConfigFile, string negativesFile);
+	virtual ~AdaptiveTracking();
 
 	void run();
 	void stop();
 
 private:
 
+	static void adaptiveChanged(int state, void* userdata);
 	static void samplerChanged(int state, void* userdata);
 	static void sampleCountChanged(int state, void* userdata);
 	static void randomRateChanged(int state, void* userdata);
@@ -61,11 +65,12 @@ private:
 	bool paused;
 	bool drawSamples;
 
-	unique_ptr<CondensationTracker> tracker;
-	shared_ptr<MeasurementModel> measurementModel;
+	unique_ptr<AdaptiveCondensationTracker> tracker;
+	shared_ptr<MeasurementModel> staticMeasurementModel;
+	shared_ptr<AdaptiveMeasurementModel> adaptiveMeasurementModel;
 	shared_ptr<SimpleTransitionModel> transitionModel;
 	shared_ptr<ResamplingSampler> resamplingSampler;
 	shared_ptr<GridSampler> gridSampler;
 };
 
-#endif /* FACETRACKING_H_ */
+#endif /* ADAPTIVETRACKING_H_ */

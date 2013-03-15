@@ -31,40 +31,10 @@ bool SvmClassifier::classify(double hyperplaneDistance) const {
 }
 
 double SvmClassifier::computeHyperplaneDistance(const Mat& featureVector) const {
-	double distance = -nonlinThreshold; // TODO sinnvoll benennen?! bias, rho, offset
+	double distance = -nonlinThreshold;
 	for (size_t i = 0; i < supportVectors.size(); ++i)
 		distance += coefficients[i] * kernel->compute(featureVector, supportVectors[i]);
 	return distance;
-
-	// TODO raus
-	/*unsigned int featureVectorLength = featureVector.rows * featureVector.cols;
-	unsigned char* data = new unsigned char[featureVectorLength];
-
-	int w = featureVector.cols;
-	int h = featureVector.rows;
-	for (int i=0; i<featureVector.rows; i++)
-	{
-		for (int j=0; j<featureVector.cols; j++)
-		{
-			data[i*w+j] = featureVector.at<uchar>(i, j); // (y, x) !!! i=row, j=column (matrix)
-		}
-	}
-
-	//for (unsigned int i = 0; i < featureVectorLength; ++i)
-		//data[i] = (featureVector.at<unsigned char>(i));
-		//data[i] = (unsigned char)(255 * featureVector.at<float>(i) + 0.5f);
-	// TODO Check if UChar 1Chan ? Float? 
-	
-	float res = -this->nonlinThreshold;	// TODO ASK MR Why minus??? He didn't know. Look in his PhD...?
-	// TODO add up limitReliability/nonlinThresh, sort that out!
-	for (int i = 0; i != this->numSV; ++i) {
-		//res += this->alpha[i] * kernel->compute(featureVector.data, this->support[i], featureVectorLength);
-		res += this->alpha[i] * kernel->compute(data, this->support[i], featureVectorLength);
-	}
-
-	delete[] data;
-	data = NULL;
-	return res;*/
 }
 
 void SvmClassifier::setSvmParameters(vector<Mat> supportVectors, vector<float> coefficients, double bias) {

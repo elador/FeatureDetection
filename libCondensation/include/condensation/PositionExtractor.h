@@ -8,14 +8,14 @@
 #ifndef POSITIONEXTRACTOR_H_
 #define POSITIONEXTRACTOR_H_
 
-#include "tracking/Sample.h"
+#include "condensation/Sample.h"
 #include "boost/optional.hpp"
 #include <vector>
 
 using boost::optional;
 using std::vector;
 
-namespace tracking {
+namespace condensation {
 
 /**
  * Extractor of a bounding box around the estimated object position.
@@ -34,5 +34,5 @@ public:
 	virtual optional<Sample> extract(const vector<Sample>& samples) = 0;
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* POSITIONEXTRACTOR_H_ */

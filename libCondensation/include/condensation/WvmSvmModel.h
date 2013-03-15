@@ -8,17 +8,25 @@
 #ifndef WVMSVMMODEL_H_
 #define WVMSVMMODEL_H_
 
-#include "tracking/MeasurementModel.h"
-#include "tracking/PatchDuplicateFilter.h"
+#include "condensation/MeasurementModel.h"
 #include <memory>
 #include <string>
 
 using std::shared_ptr;
 
-class VDetectorVectorMachine;
-class OverlapElimination;
+namespace imageprocessing {
+class FeatureExtractor;
+}
+using imageprocessing::FeatureExtractor;
 
-namespace tracking {
+namespace classification {
+class ProbabilisticWvmClassifier;
+class ProbabilisticSvmClassifier;
+}
+using classification::ProbabilisticWvmClassifier;
+using classification::ProbabilisticSvmClassifier;
+
+namespace condensation {
 
 /**
  * Measurement model that uses a WVM for quick elimination and evaluates the samples that remain after an
@@ -26,29 +34,31 @@ namespace tracking {
  * the two detectors, they will be regarded as being independent (although they are not). The certainties
  * for the SVM of samples that are not evaluated by it will be chosen to be 0.5 (unknown).
  */
-class WvmSvmModel : public MeasurementModel, public PatchDuplicateFilter {
+class WvmSvmModel : public MeasurementModel {
 public:
 
 	/**
-	 * Constructs a new WVM SVM measurement model. The machines and algorithm must have been initialized.
+	 * Constructs a new WVM-SVM measurement model.
 	 *
+	 * @param[in] featureExtractor The feature extractor.
 	 * @param[in] wvm The fast WVM.
 	 * @param[in] svm The slower SVM.
-	 * @param[in] oe The overlap elimination algorithm.
+	 * TODO overlap elimination?
 	 */
-	explicit WvmSvmModel(shared_ptr<VDetectorVectorMachine> wvm, shared_ptr<VDetectorVectorMachine> svm,
-			shared_ptr<OverlapElimination> oe);
+	WvmSvmModel(shared_ptr<FeatureExtractor> featureExtractor,
+			shared_ptr<ProbabilisticWvmClassifier> wvm, shared_ptr<ProbabilisticSvmClassifier> svm);
 
 	~WvmSvmModel();
 
-	void evaluate(const Mat& image, vector<Sample>& samples);
+	void evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples);
 
 private:
 
-	shared_ptr<VDetectorVectorMachine> wvm; ///< The fast WVM.
-	shared_ptr<VDetectorVectorMachine> svm; ///< The slower SVM.
-	shared_ptr<OverlapElimination> oe;      ///< The overlap elimination algorithm.
+	shared_ptr<FeatureExtractor> featureExtractor; ///< The feature extractor.
+	shared_ptr<ProbabilisticWvmClassifier> wvm;    ///< The fast WVM.
+	shared_ptr<ProbabilisticSvmClassifier> svm;    ///< The slower SVM.
+	//shared_ptr<OverlapElimination> oe;      ///< The overlap elimination algorithm. TODO
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* WVMSVMMODEL_H_ */

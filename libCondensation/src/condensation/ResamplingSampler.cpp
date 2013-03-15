@@ -5,14 +5,14 @@
  *      Author: poschmann
  */
 
-#include "tracking/ResamplingSampler.h"
-#include "tracking/Sample.h"
-#include "tracking/ResamplingAlgorithm.h"
-#include "tracking/TransitionModel.h"
+#include "condensation/ResamplingSampler.h"
+#include "condensation/Sample.h"
+#include "condensation/ResamplingAlgorithm.h"
+#include "condensation/TransitionModel.h"
 #include <algorithm>
 #include <ctime>
 
-namespace tracking {
+namespace condensation {
 
 ResamplingSampler::ResamplingSampler(unsigned int count, double randomRate,
 		shared_ptr<ResamplingAlgorithm> resamplingAlgorithm, shared_ptr<TransitionModel> transitionModel,
@@ -35,11 +35,10 @@ void ResamplingSampler::sample(const vector<Sample>& samples, const vector<doubl
 	unsigned int count = this->count;
 	resamplingAlgorithm->resample(samples, (int)((1 - randomRate) * count), newSamples);
 	// predict the samples
-	for (vector<Sample>::iterator sit = newSamples.begin(); sit < newSamples.end(); ++sit) {
-		Sample& sample = *sit;
-		transitionModel->predict(sample, offset);
-		if (!isValid(sample, image))
-			sampleValid(sample, image);
+	for (auto sample = newSamples.begin(); sample != newSamples.end(); ++sample) {
+		transitionModel->predict(*sample, offset);
+		if (!isValid(*sample, image))
+			sampleValid(*sample, image);
 	}
 	// add new random samples
 	Sample newSample;
@@ -70,4 +69,4 @@ void ResamplingSampler::sampleValid(Sample& sample, const Mat& image) {
 	sample.setY(distribution(generator, image.rows - size) + halfSize);
 }
 
-} /* namespace tracking */
+} /* namespace condensation */

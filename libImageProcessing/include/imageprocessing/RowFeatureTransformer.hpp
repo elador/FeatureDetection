@@ -26,7 +26,7 @@ public:
 	~RowFeatureTransformer() {}
 
 	void transform(Mat& patch) const {
-		patch.reshape(0, 1);
+		patch = patch.reshape(0, 1);
 	}
 };
 

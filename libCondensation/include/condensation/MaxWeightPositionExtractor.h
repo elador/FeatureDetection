@@ -8,9 +8,9 @@
 #ifndef MAXWEIGHTPOSITIONEXTRACTOR_H_
 #define MAXWEIGHTPOSITIONEXTRACTOR_H_
 
-#include "tracking/PositionExtractor.h"
+#include "condensation/PositionExtractor.h"
 
-namespace tracking {
+namespace condensation {
 
 /**
  * Position extractor that uses the position of the sample with the highest weight.
@@ -21,12 +21,12 @@ public:
 	/**
 	 * Constructs a new max weight position extractor.
 	 */
-	explicit MaxWeightPositionExtractor();
+	MaxWeightPositionExtractor();
 
 	~MaxWeightPositionExtractor();
 
 	optional<Sample> extract(const vector<Sample>& samples);
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* MAXWEIGHTPOSITIONEXTRACTOR_H_ */

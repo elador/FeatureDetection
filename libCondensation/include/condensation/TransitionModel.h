@@ -12,7 +12,7 @@
 
 using std::vector;
 
-namespace tracking {
+namespace condensation {
 
 class Sample;
 
@@ -33,5 +33,5 @@ public:
 	virtual void predict(Sample& sample, const vector<double>& offset) = 0;
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* TRANSITIONMODEL_H_ */

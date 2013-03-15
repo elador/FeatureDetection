@@ -8,6 +8,7 @@
 #ifndef FEATUREEXTRACTOR_HPP_
 #define FEATUREEXTRACTOR_HPP_
 
+#include "imageprocessing/Patch.hpp"
 #include "imageprocessing/PatchExtractor.hpp"
 #include "imageprocessing/FeatureTransformer.hpp"
 #include "opencv2/core/core.hpp"
@@ -17,6 +18,8 @@ using cv::Mat;
 using std::shared_ptr;
 
 namespace imageprocessing {
+
+class VersionedImage;
 
 /**
  * Feature extractor that constructs a feature vector given an image and a rectangular size.
@@ -36,11 +39,21 @@ public:
 	~FeatureExtractor() {}
 
 	/**
-	 * Updates this feature extractor, so subsequent extracted features are based on the new image.
+	 * Forces an update of this feature extractor, so subsequent extracted features are based on the new image.
 	 *
-	 * @param[in] image The new source image of extracted features.
+	 * @param[in] image The new source image of extracted patches.
 	 */
 	void update(const Mat& image) {
+		extractor->update(image);
+	}
+
+	/**
+	 * May update this feature extractor depending on the version number of the given image. If updated, the
+	 * subsequent extracted features are based on the new image.
+	 *
+	 * @param[in] image The new source image of extracted patches.
+	 */
+	void update(shared_ptr<VersionedImage> image) {
 		extractor->update(image);
 	}
 

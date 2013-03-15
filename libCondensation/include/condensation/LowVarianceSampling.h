@@ -8,11 +8,11 @@
 #ifndef LOWVARIANCESAMPLING_H_
 #define LOWVARIANCESAMPLING_H_
 
-#include "tracking/ResamplingAlgorithm.h"
+#include "condensation/ResamplingAlgorithm.h"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_01.hpp"
 
-namespace tracking {
+namespace condensation {
 
 /**
  * Low variance sampling algorithm.
@@ -43,5 +43,5 @@ private:
 	boost::uniform_01<> distribution; ///< Uniform real distribution.
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* LOWVARIANCESAMPLING_H_ */

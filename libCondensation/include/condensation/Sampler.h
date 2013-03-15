@@ -14,7 +14,7 @@
 using cv::Mat;
 using std::vector;
 
-namespace tracking {
+namespace condensation {
 
 class Sample;
 
@@ -38,5 +38,5 @@ public:
 			vector<Sample>& newSamples) = 0;
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* SAMPLER_H_ */

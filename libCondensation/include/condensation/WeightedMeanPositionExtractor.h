@@ -8,9 +8,9 @@
 #ifndef WEIGHTEDMEANPOSITIONEXTRACTOR_H_
 #define WEIGHTEDMEANPOSITIONEXTRACTOR_H_
 
-#include "tracking/PositionExtractor.h"
+#include "condensation/PositionExtractor.h"
 
-namespace tracking {
+namespace condensation {
 
 /**
  * Position extractor that determines the position by computing the weighted mean of the samples.
@@ -21,12 +21,12 @@ public:
 	/**
 	 * Constructs a new weighted mean position extractor.
 	 */
-	explicit WeightedMeanPositionExtractor();
+	WeightedMeanPositionExtractor();
 
 	~WeightedMeanPositionExtractor();
 
 	optional<Sample> extract(const vector<Sample>& samples);
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* WEIGHTEDMEANPOSITIONEXTRACTOR_H_ */

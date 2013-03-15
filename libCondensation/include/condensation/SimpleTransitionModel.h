@@ -8,12 +8,12 @@
 #ifndef SIMPLETRANSITIONMODEL_H_
 #define SIMPLETRANSITIONMODEL_H_
 
-#include "tracking/TransitionModel.h"
+#include "condensation/TransitionModel.h"
 #include "boost/random/normal_distribution.hpp"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/variate_generator.hpp"
 
-namespace tracking {
+namespace condensation {
 
 /**
  * Transition model that linearly moves the samples and diffuses them.
@@ -26,7 +26,7 @@ public:
 	 *
 	 * @param[in] The scatter that controls the diffusion.
 	 */
-	SimpleTransitionModel(double scatter = 0.25);
+	explicit SimpleTransitionModel(double scatter = 0.25);
 
 	~SimpleTransitionModel();
 
@@ -51,5 +51,5 @@ private:
 	boost::variate_generator<boost::mt19937, boost::normal_distribution<> > generator; ///< Random number generator.
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* SIMPLETRANSITIONMODEL_H_ */

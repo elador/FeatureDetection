@@ -8,12 +8,12 @@
 #ifndef DENSITYPOSITIONEXTRACTOR_H_
 #define DENSITYPOSITIONEXTRACTOR_H_
 
-#include "tracking/PositionExtractor.h"
-#include "tracking/Sample.h"
+#include "condensation/PositionExtractor.h"
+#include "condensation/Sample.h"
 #include <algorithm>
 #include <cmath>
 
-namespace tracking {
+namespace condensation {
 
 /**
  * Position extractor that uses kernel density estimation to deliver the most probable position.
@@ -73,5 +73,5 @@ private:
 	double invertedBandwidthProduct; ///< The product of the inverted bandwidths of all three dimensions.
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* DENSITYPOSITIONEXTRACTOR_H_ */

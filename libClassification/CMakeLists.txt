@@ -59,7 +59,6 @@ SET(SOURCE
 	src/classification/FrameBasedTrainableSvmClassifier.cpp
 	src/classification/FixedSizeTrainableSvmClassifier.cpp
 	src/classification/TrainableProbabilisticSvmClassifier.cpp
-	src/classification/RbfKernel.cpp
 	src/svm.cpp
 )
 

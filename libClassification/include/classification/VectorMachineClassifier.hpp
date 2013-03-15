@@ -36,6 +36,7 @@ public:
 
 	virtual ~VectorMachineClassifier();
 
+	// TODO rename to getThreshold and setThreshold; getter can be const
 	float getLimitReliability();
 	void setLimitReliability(float limitReliability);
 
@@ -56,8 +57,8 @@ public:
 protected:
 
 	shared_ptr<Kernel> kernel; ///< The kernel function.
-	float nonlinThreshold;     ///< The bias. TODO rename to bias?
-	float limitReliability;    ///< The threshold to compare the hyperplane distance against for determining the label. TODO rename to threshold?
+	float nonlinThreshold;     ///< The bias. TODO rename to bias
+	float limitReliability;    ///< The threshold to compare the hyperplane distance against for determining the label. TODO rename to threshold
 };
 
 } /* namespace classification */

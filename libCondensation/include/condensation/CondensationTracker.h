@@ -8,18 +8,23 @@
 #ifndef CONDENSATIONTRACKER_H_
 #define CONDENSATIONTRACKER_H_
 
-#include "tracking/Sample.h"
+#include "condensation/Sample.h"
 #include "opencv2/core/core.hpp"
 #include "boost/optional.hpp"
 #include <memory>
 #include <vector>
 
 using cv::Mat;
-using std::shared_ptr;
 using boost::optional;
 using std::vector;
+using std::shared_ptr;
 
-namespace tracking {
+namespace imageprocessing {
+class VersionedImage;
+}
+using imageprocessing::VersionedImage;
+
+namespace condensation {
 
 class Rectangle;
 class Sampler;
@@ -39,8 +44,8 @@ public:
 	 * @param[in] measurementModel The measurement model.
 	 * @param[in] extractor The position extractor.
 	 */
-	explicit CondensationTracker(shared_ptr<Sampler> sampler,
-			shared_ptr<MeasurementModel> measurementModel, shared_ptr<PositionExtractor> extractor);
+	CondensationTracker(shared_ptr<Sampler> sampler, shared_ptr<MeasurementModel> measurementModel,
+			shared_ptr<PositionExtractor> extractor);
 
 	~CondensationTracker();
 
@@ -81,10 +86,11 @@ private:
 	optional<Sample> oldPosition; ///< The previous position.
 	vector<double> offset;        ///< The movement of the tracked object's center of the previous time step.
 
+	shared_ptr<VersionedImage> image;              ///< The image used for evaluation.
 	shared_ptr<Sampler> sampler;                   ///< The sampler.
 	shared_ptr<MeasurementModel> measurementModel; ///< The measurement model.
 	shared_ptr<PositionExtractor> extractor;       ///< The position extractor.
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* CONDENSATIONTRACKER_H_ */

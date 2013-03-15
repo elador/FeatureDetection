@@ -16,6 +16,7 @@ using std::shared_ptr;
 
 namespace imageprocessing {
 
+class VersionedImage;
 class Patch;
 
 /**
@@ -27,11 +28,19 @@ public:
 	virtual ~PatchExtractor() {}
 
 	/**
-	 * Updates this extractor, so subsequent extracted patches are based on the new image.
+	 * Forces an update of this extractor, so subsequent extracted patches are based on the new image.
 	 *
 	 * @param[in] image The new source image of extracted patches.
 	 */
 	virtual void update(const Mat& image) = 0;
+
+	/**
+	 * May update this extractor depending on the version number of the given image. If updated, the subsequent extracted
+	 * patches are based on the new image.
+	 *
+	 * @param[in] image The new source image of extracted patches.
+	 */
+	virtual void update(shared_ptr<VersionedImage> image) = 0;
 
 	/**
 	 * Extracts a patch from the corresponding image.

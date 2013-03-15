@@ -5,10 +5,10 @@
  *      Author: poschmann
  */
 
-#include "tracking/WeightedMeanPositionExtractor.h"
-#include "tracking/Sample.h"
+#include "condensation/WeightedMeanPositionExtractor.h"
+#include "condensation/Sample.h"
 
-namespace tracking {
+namespace condensation {
 
 WeightedMeanPositionExtractor::WeightedMeanPositionExtractor() {}
 
@@ -19,11 +19,11 @@ optional<Sample> WeightedMeanPositionExtractor::extract(const vector<Sample>& sa
 	double weightedSumY = 0;
 	double weightedSumSize = 0;
 	double weightSum = 0;
-	for (vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
-		weightedSumX += sit->getWeight() * sit->getX();
-		weightedSumY += sit->getWeight() * sit->getY();
-		weightedSumSize += sit->getWeight() * sit->getSize();
-		weightSum += sit->getWeight();
+	for (auto sample = samples.cbegin(); sample < samples.cend(); ++sample) {
+		weightedSumX += sample->getWeight() * sample->getX();
+		weightedSumY += sample->getWeight() * sample->getY();
+		weightedSumSize += sample->getWeight() * sample->getSize();
+		weightSum += sample->getWeight();
 	}
 	if (weightSum == 0)
 		return optional<Sample>();
@@ -34,4 +34,4 @@ optional<Sample> WeightedMeanPositionExtractor::extract(const vector<Sample>& sa
 			Sample((int)(weightedMeanX + 0.5), (int)(weightedMeanY + 0.5), (int)(weightedMeanSize + 0.5)));
 }
 
-} /* namespace tracking */
+} /* namespace condensation */

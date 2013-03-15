@@ -8,9 +8,9 @@
 #ifndef SAMPLE_H_
 #define SAMPLE_H_
 
-#include "tracking/Rectangle.h"
+#include "condensation/Rectangle.h"
 
-namespace tracking {
+namespace condensation {
 
 /**
  * Weighted sample representing an image region with three dimensions (x, y, size).
@@ -21,7 +21,7 @@ public:
 	/**
 	 * Constructs a new sample.
 	 */
-	Sample();
+	Sample() : x(0), y(0), size(0), weight(1), object(false) {}
 
 	/**
 	 * Constructs a new sample with a weight of one.
@@ -30,9 +30,9 @@ public:
 	 * @param[in] y The y coordinate.
 	 * @param[in] size The size (width).
 	 */
-	explicit Sample(int x, int y, int size);
+	Sample(int x, int y, int size) : x(x), y(y), size(size), weight(0), object(false) {}
 
-	~Sample();
+	~Sample() {}
 
 	/**
 	 * @return The square bounding box representing the sample.
@@ -140,5 +140,5 @@ private:
 	bool object;   ///< Flag that indicates whether this sample represents the object.
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* SAMPLE_H_ */

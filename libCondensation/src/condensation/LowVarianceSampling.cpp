@@ -5,12 +5,12 @@
  *      Author: poschmann
  */
 
-#include "tracking/LowVarianceSampling.h"
-#include "tracking/Sample.h"
+#include "condensation/LowVarianceSampling.h"
+#include "condensation/Sample.h"
 
 #include <ctime>
 
-namespace tracking {
+namespace condensation {
 
 LowVarianceSampling::LowVarianceSampling() : generator(boost::mt19937(time(0))),
 		distribution(boost::uniform_01<>()) {}
@@ -23,15 +23,15 @@ void LowVarianceSampling::resample(const vector<Sample>& samples, unsigned int c
 		double step = computeWeightSum(samples) / count;
 		if (step > 0) {
 			double start = step * distribution(generator);
-			vector<Sample>::const_iterator sit = samples.begin();
-			double weightSum = sit->getWeight();
+			vector<Sample>::const_iterator sample = samples.cbegin();
+			double weightSum = sample->getWeight();
 			for (unsigned int i = 0; i < count; ++i) {
 				double weightPointer = start + i * step;
 				while (weightPointer > weightSum) {
-					++sit;
-					weightSum += sit->getWeight();
+					++sample;
+					weightSum += sample->getWeight();
 				}
-				newSamples.push_back(*sit);
+				newSamples.push_back(*sample);
 			}
 		}
 	}
@@ -39,9 +39,9 @@ void LowVarianceSampling::resample(const vector<Sample>& samples, unsigned int c
 
 double LowVarianceSampling::computeWeightSum(const vector<Sample>& samples) {
 	double weightSum = 0;
-	for (vector<Sample>::const_iterator it = samples.begin(); it != samples.end(); ++it)
-		weightSum += it->getWeight();
+	for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample)
+		weightSum += sample->getWeight();
 	return weightSum;
 }
 
-} /* namespace tracking */
+} /* namespace condensation */

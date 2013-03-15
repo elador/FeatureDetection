@@ -5,14 +5,14 @@
  *      Author: poschmann
  */
 
-#include "tracking/GridSampler.h"
-#include "tracking/Sample.h"
+#include "condensation/GridSampler.h"
+#include "condensation/Sample.h"
 #include <algorithm>
 
 using std::min;
 using std::max;
 
-namespace tracking {
+namespace condensation {
 
 GridSampler::GridSampler(float minSize, float maxSize, float sizeScale, float stepSize) :
 		minSize(minSize), maxSize(maxSize), sizeScale(sizeScale), stepSize(stepSize) {
@@ -48,4 +48,4 @@ void GridSampler::sample(const vector<Sample>& samples, const vector<double>& of
 	}
 }
 
-} /* namespace tracking */
+} /* namespace condensation */

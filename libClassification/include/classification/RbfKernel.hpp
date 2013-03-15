@@ -13,7 +13,6 @@
 #include "classification/Kernel.hpp"
 #include "svm.h"
 #include <stdexcept>
-#include <cstdint>
 
 using std::invalid_argument;
 
@@ -30,9 +29,9 @@ public:
 	 *
 	 * @param[in] gamma The parameter &gamma; of the radial basis function exp(-&gamma; * |u - v|²).
 	 */
-	explicit RbfKernel(double gamma);
+	explicit RbfKernel(double gamma) : gamma(gamma), difference() {}
 
-	~RbfKernel();
+	~RbfKernel() {}
 
 	double compute(const Mat& lhs, const Mat& rhs) const {
 		return exp(-gamma * computeSumOfSquaredDifferences(lhs, rhs));
@@ -52,9 +51,13 @@ private:
 	 * @param[in] rhs The second vector.
 	 * @return The sum of the squared differences.
 	 */
-	double computeSumOfSquaredDifferences(const Mat& lhs, const Mat& rhs) const;
+	double computeSumOfSquaredDifferences(const Mat& lhs, const Mat& rhs) const {
+		difference = (lhs - rhs);
+		return difference.dot(difference);
+	}
 
 	double gamma; ///< The parameter &gamma; of the radial basis function exp(-&gamma; * |u - v|²).
+	mutable Mat difference; ///< The temporal buffer for the result of the vector difference.
 };
 
 } /* namespace classification */

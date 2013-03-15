@@ -5,12 +5,12 @@
  *      Author: poschmann
  */
 
-#include "tracking/SimpleTransitionModel.h"
-#include "tracking/Sample.h"
+#include "condensation/SimpleTransitionModel.h"
+#include "condensation/Sample.h"
 #include <ctime>
 #include <cmath>
 
-namespace tracking {
+namespace condensation {
 
 SimpleTransitionModel::SimpleTransitionModel(double scatter) : scatter(scatter),
 		generator(boost::mt19937(time(0)), boost::normal_distribution<>()) {}
@@ -34,4 +34,4 @@ void SimpleTransitionModel::predict(Sample& sample, const vector<double>& offset
 	sample.setSize((int)(s + 0.5));
 }
 
-} /* namespace tracking */
+} /* namespace condensation */

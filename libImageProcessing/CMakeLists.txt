@@ -9,6 +9,7 @@ FIND_PACKAGE(OpenCV REQUIRED core imgproc)
 
 # source and header files
 SET(HEADERS
+	include/imageprocessing/ConversionFilter.hpp
 	include/imageprocessing/FeatureExtractor.hpp
 	include/imageprocessing/FeatureTransformer.hpp
 	include/imageprocessing/FilteringFeatureTransformer.hpp
@@ -24,12 +25,15 @@ SET(HEADERS
 	include/imageprocessing/Patch.hpp
 	include/imageprocessing/PatchExtractor.hpp
 	include/imageprocessing/PyramidPatchExtractor.hpp
+	include/imageprocessing/ResizingFilter.hpp
 	include/imageprocessing/RowFeatureTransformer.hpp
+	include/imageprocessing/VersionedImage.hpp
 	include/imageprocessing/WhiteningFilter.hpp
 	include/imageprocessing/ZeroMeanUnitVarianceFilter.hpp
 	
 )
 SET(SOURCE
+	src/imageprocessing/ConversionFilter.cpp
 	src/imageprocessing/GrayscaleFilter.cpp
 	src/imageprocessing/HistogramEqualizationFilter.cpp
 	src/imageprocessing/HistEq64Filter.cpp
@@ -38,6 +42,7 @@ SET(SOURCE
 	src/imageprocessing/IntegralImageFilter.cpp
 	src/imageprocessing/MultipleImageFilter.cpp
 	src/imageprocessing/PyramidPatchExtractor.cpp
+	src/imageprocessing/ResizingFilter.cpp
 	src/imageprocessing/WhiteningFilter.cpp
 	src/imageprocessing/ZeroMeanUnitVarianceFilter.cpp
 )

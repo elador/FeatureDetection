@@ -8,23 +8,25 @@
 #ifndef POSITIONDEPENDENTMEASUREMENTMODEL_H_
 #define POSITIONDEPENDENTMEASUREMENTMODEL_H_
 
-#include "tracking/AdaptiveMeasurementModel.h"
+#include "condensation/AdaptiveMeasurementModel.h"
+#include "opencv2/core/core.hpp"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int.hpp"
-#include <memory>
 #include <string>
 
-using std::shared_ptr;
+using cv::Mat;
+
+namespace imageprocessing {
+class FeatureExtractor;
+}
+using imageprocessing::FeatureExtractor;
 
 namespace classification {
-
-class FeatureVector;
-class FeatureExtractor;
-class TrainableClassifier;
+class TrainableProbabilisticClassifier;
 }
-using namespace classification;
+using classification::TrainableProbabilisticClassifier;
 
-namespace tracking {
+namespace condensation {
 
 /**
  * Measurement model that adapts the classifier using the target position for positive samples, the neighborhood
@@ -47,22 +49,22 @@ public:
 	 * @param[in] sampleFalsePositives Indicates whether positive detections other than the target should be negative examples.
 	 * @param[in] randomNegatives The amount of additional random negative examples sampled from the image.
 	 */
-	explicit PositionDependentMeasurementModel(shared_ptr<FeatureExtractor> featureExtractor,
-			shared_ptr<TrainableClassifier> classifier, int startFrameCount = 3, int stopFrameCount = 20,
+	PositionDependentMeasurementModel(shared_ptr<FeatureExtractor> featureExtractor,
+			shared_ptr<TrainableProbabilisticClassifier> classifier, int startFrameCount = 3, int stopFrameCount = 20,
 			float positiveOffsetFactor = 0.05, float negativeOffsetFactor = 0.5,
 			bool sampleNegativesAroundTarget = true, bool sampleFalsePositives = true, unsigned int randomNegatives = 0);
 
 	~PositionDependentMeasurementModel();
 
-	void evaluate(const Mat& image, vector<Sample>& samples);
+	void evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples);
 
 	bool isUsable() {
 		return usable;
 	}
 
-	void adapt(const Mat& image, const vector<Sample>& samples, const Sample& target);
+	void adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples, const Sample& target);
 
-	void adapt(const Mat& image, const vector<Sample>& samples);
+	void adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples);
 
 	void reset();
 
@@ -80,14 +82,15 @@ private:
 	 * Creates a list of feature vectors from the given samples.
 	 *
 	 * @param[in] samples The samples.
+	 * @return The extracted feature vectors.
 	 */
-	vector<shared_ptr<FeatureVector> > getFeatureVectors(vector<Sample>& samples);
+	vector<Mat> getFeatureVectors(vector<Sample>& samples);
 
 	boost::mt19937 generator;          ///< Random number generator.
 	boost::uniform_int<> distribution; ///< Uniform integer distribution.
 
-	shared_ptr<FeatureExtractor> featureExtractor; ///< The feature extractor used with the dynamic SVM.
-	shared_ptr<TrainableClassifier> classifier;    ///< The classifier that will be re-trained.
+	shared_ptr<FeatureExtractor> featureExtractor;           ///< The feature extractor used with the dynamic SVM.
+	shared_ptr<TrainableProbabilisticClassifier> classifier; ///< The classifier that will be re-trained.
 
 	bool usable;         ///< Flag that indicates whether this model may be used for evaluation.
 	int frameCount;      ///< Count of frames without detections if usable, count of frames with detections otherwise.
@@ -101,5 +104,5 @@ private:
 	unsigned int randomNegatives; ///< The amount of additional random negative examples sampled from the image.
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* POSITIONDEPENDENTMEASUREMENTMODEL_H_ */

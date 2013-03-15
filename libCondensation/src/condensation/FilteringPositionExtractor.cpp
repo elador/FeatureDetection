@@ -5,10 +5,10 @@
  *      Author: poschmann
  */
 
-#include "tracking/FilteringPositionExtractor.h"
-#include "tracking/Sample.h"
+#include "condensation/FilteringPositionExtractor.h"
+#include "condensation/Sample.h"
 
-namespace tracking {
+namespace condensation {
 
 FilteringPositionExtractor::FilteringPositionExtractor(shared_ptr<PositionExtractor> extractor) : extractor(extractor) {}
 
@@ -16,11 +16,11 @@ FilteringPositionExtractor::~FilteringPositionExtractor() {}
 
 optional<Sample> FilteringPositionExtractor::extract(const vector<Sample>& samples) {
 	vector<Sample> objects;
-	for (vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
-		if (sit->isObject())
-			objects.push_back((*sit));
+	for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample) {
+		if (sample->isObject())
+			objects.push_back((*sample));
 	}
 	return extractor->extract(objects);
 }
 
-} /* namespace tracking */
+} /* namespace condensation */

@@ -43,7 +43,8 @@ void FrameBasedTrainableSvmClassifier::clearExamples() {
 	oldestEntry = 0;
 }
 
-void FrameBasedTrainableSvmClassifier::addExamples(const vector<Mat>& newPositiveExamples, const vector<Mat>& newNegativeExamples) {
+void FrameBasedTrainableSvmClassifier::addExamples(
+		const vector<Mat>& newPositiveExamples, const vector<Mat>& newNegativeExamples) {
 	replaceExamples(positiveExamples[oldestEntry], newPositiveExamples);
 	replaceExamples(negativeExamples[oldestEntry], newNegativeExamples);
 	++oldestEntry;
@@ -51,7 +52,8 @@ void FrameBasedTrainableSvmClassifier::addExamples(const vector<Mat>& newPositiv
 		oldestEntry = 0;
 }
 
-void FrameBasedTrainableSvmClassifier::replaceExamples(vector<unique_ptr<struct svm_node[]>>& examples, const vector<Mat>& newExamples) {
+void FrameBasedTrainableSvmClassifier::replaceExamples(
+		vector<unique_ptr<struct svm_node[], NodeDeleter>>& examples, const vector<Mat>& newExamples) {
 	examples.clear();
 	for (auto example = newExamples.cbegin(); example != newExamples.cend(); ++example)
 		examples.push_back(move(createNode(*example)));

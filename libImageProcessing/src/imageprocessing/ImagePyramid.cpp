@@ -7,95 +7,113 @@
 
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/ImagePyramidLayer.hpp"
+#include "imageprocessing/VersionedImage.hpp"
 #include "imageprocessing/MultipleImageFilter.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 
 using cv::Size;
 using cv::resize;
+using std::string; // TODO nur für createException
+using std::ostringstream; // TODO nur für createException
 using std::make_shared;
 using std::invalid_argument;
 
 namespace imageprocessing {
 
-// cheap comparison of two images - they are equal if they share the same size, flags and data (no element-wise comparison)
-static bool imagesAreEqual(const Mat& lhs, const Mat& rhs) {
-	return lhs.cols == rhs.cols && lhs.rows == rhs.rows && lhs.flags == rhs.flags && lhs.data == rhs.data;
+template<class T>// TODO in header-datei verschieben, die in jedem projekt eingebunden werden kann
+static T createException(const string& file, int line, const string& message) {
+	ostringstream text;
+	text << file.substr(file.find_last_of("/\\") + 1) << ':' << line << ':' << ' ' << message;
+	return T(text.str());
 }
 
 ImagePyramid::ImagePyramid(double minScaleFactor, double maxScaleFactor, double incrementalScaleFactor) :
 		minScaleFactor(minScaleFactor), maxScaleFactor(maxScaleFactor), incrementalScaleFactor(incrementalScaleFactor),
-		firstLayer(0), layers(), sourceImage(Mat()), sourcePyramid(),
-		imageFilter(make_shared<MultipleImageFilter>()), layerFilter(make_shared<MultipleImageFilter>()) {}
+		firstLayer(0), layers(), sourceImage(), sourcePyramid(), version(-1),
+		imageFilter(make_shared<MultipleImageFilter>()), layerFilter(make_shared<MultipleImageFilter>()) {
+	if (incrementalScaleFactor <= 0 || incrementalScaleFactor >= 1)
+		throw createException<invalid_argument>(__FILE__, __LINE__, "the incremental scale factor must be greater than zero and smaller than one");
+	if (maxScaleFactor > 1)
+		throw createException<invalid_argument>(__FILE__, __LINE__, "the maximum scale factor must not exceed one");
+}
 
 ImagePyramid::ImagePyramid(shared_ptr<ImagePyramid> pyramid, double minScaleFactor, double maxScaleFactor) :
 		minScaleFactor(minScaleFactor), maxScaleFactor(maxScaleFactor), incrementalScaleFactor(pyramid->incrementalScaleFactor),
-		firstLayer(0), layers(), sourceImage(Mat()), sourcePyramid(pyramid),
+		firstLayer(0), layers(), sourceImage(), sourcePyramid(pyramid), version(-1),
 		imageFilter(make_shared<MultipleImageFilter>()), layerFilter(make_shared<MultipleImageFilter>()) {}
 
 ImagePyramid::~ImagePyramid() {}
 
 void ImagePyramid::setSource(const Mat& image) {
-	if (incrementalScaleFactor <= 0 || incrementalScaleFactor >= 1)	// Isn't that a strange place to check for that? Shouldn't we check when the values are set?
-		throw invalid_argument("ImagePyramid: the incremental scale factor must be greater than zero and smaller than one");
-	if (minScaleFactor <= 0)
-		throw invalid_argument("ImagePyramid: the minimum scale factor must be greater than zero");
-	if (maxScaleFactor > 1)
-		throw invalid_argument("ImagePyramid: the maximum scale factor must not exceed one");
+	setSource(make_shared<VersionedImage>(image));
+	version = -1;
+}
+
+void ImagePyramid::setSource(shared_ptr<VersionedImage> image) {
+	if (minScaleFactor <= 0) // this is checked here because it is allowed to be zero if this pyramid has another pyramid as its source
+		throw createException<invalid_argument>(__FILE__, __LINE__, "the minimum scale factor must be greater than zero");
 	sourcePyramid.reset();
 	sourceImage = image;
 }
 
 void ImagePyramid::setSource(shared_ptr<ImagePyramid> pyramid) {
-	sourceImage = Mat();
+	sourceImage.reset();
 	sourcePyramid = pyramid;
 }
 
 void ImagePyramid::update() {
-	if (sourcePyramid) {
-		incrementalScaleFactor = sourcePyramid->incrementalScaleFactor;
-		layers.clear();
-		const vector<shared_ptr<ImagePyramidLayer>>& sourceLayers = sourcePyramid->layers;
-		for (vector<shared_ptr<ImagePyramidLayer>>::const_iterator layIt = sourceLayers.begin(); layIt != sourceLayers.end(); ++layIt) {
-			shared_ptr<ImagePyramidLayer> layer = *layIt;
-			if (layer->getScaleFactor() > maxScaleFactor)
-				continue;
-			if (layer->getScaleFactor() < minScaleFactor)
-				break;
-			if (layers.empty())
-				firstLayer = layer->getIndex();
-			layers.push_back(make_shared<ImagePyramidLayer>(
-					layer->getIndex(), layer->getScaleFactor(), layerFilter->applyTo(layer->getScaledImage())));
-		}
-	} else if (!sourceImage.empty()) {
-		layers.clear();
-		Mat filteredImage = imageFilter->applyTo(sourceImage);
-		double scaleFactor = 1;
-		Mat previousScaledImage;
-		for (int i = 0; ; ++i, scaleFactor *= incrementalScaleFactor) {
-			if (scaleFactor > maxScaleFactor)	// This goes into an endless loop if the user specifies a scale-factor with which it is impossible to produce the desired pyramids. We could add a check for this here, but I (Patrik) think we could also leave it this way because every 'if' costs runtime performance.
-				continue;
-			if (scaleFactor < minScaleFactor)
-				break;
+	if (sourceImage) {
+		if (version != sourceImage->getVersion()) {
+			layers.clear();
+			Mat filteredImage = imageFilter->applyTo(sourceImage->getData());
+			double scaleFactor = 1;
+			Mat previousScaledImage;
+			for (int i = 0; ; ++i, scaleFactor *= incrementalScaleFactor) {
+				if (scaleFactor > maxScaleFactor)	// This goes into an endless loop if the user specifies a scale-factor with which it is impossible to produce the desired pyramids. We could add a check for this here, but I (Patrik) think we could also leave it this way because every 'if' costs runtime performance.
+					continue;
+				if (scaleFactor < minScaleFactor)
+					break;
 
-			// All but the first scaled image use the previous scaled image as the base,
-			// therefore the scaling itself adds more and more blur to the image
-			// and because of that no additional Gaussian blur is applied.
-			// When scaling the image down a lot, the bilinear interpolation would lead to some artifacts (higher frequencies),
-			// therefore the first down-scaling is done using an area interpolation which produces much better results.
-			// The bilinear interpolation is used for the following down-scalings because of speed and similar results as area.
-			// TODO resizing-strategy
-			Mat scaledImage;
-			Size scaledImageSize(cvRound(sourceImage.cols * scaleFactor), cvRound(sourceImage.rows * scaleFactor));
-			if (layers.empty()) {
-				firstLayer = i;
-				resize(filteredImage, scaledImage, scaledImageSize, 0, 0, cv::INTER_AREA);
-			} else {
-				resize(previousScaledImage, scaledImage, scaledImageSize, 0, 0, cv::INTER_LINEAR);
+				// All but the first scaled image use the previous scaled image as the base,
+				// therefore the scaling itself adds more and more blur to the image
+				// and because of that no additional Gaussian blur is applied.
+				// When scaling the image down a lot, the bilinear interpolation would lead to some artifacts (higher frequencies),
+				// therefore the first down-scaling is done using an area interpolation which produces much better results.
+				// The bilinear interpolation is used for the following down-scalings because of speed and similar results as area.
+				// TODO resizing-strategy
+				Mat scaledImage;
+				Size scaledImageSize(cvRound(sourceImage->getData().cols * scaleFactor), cvRound(sourceImage->getData().rows * scaleFactor));
+				if (layers.empty()) {
+					firstLayer = i;
+					resize(filteredImage, scaledImage, scaledImageSize, 0, 0, cv::INTER_AREA);
+				} else {
+					resize(previousScaledImage, scaledImage, scaledImageSize, 0, 0, cv::INTER_LINEAR);
+				}
+				layers.push_back(make_shared<ImagePyramidLayer>(i, scaleFactor, layerFilter->applyTo(scaledImage)));
+				previousScaledImage = scaledImage;
 			}
-			layers.push_back(make_shared<ImagePyramidLayer>(i, scaleFactor, layerFilter->applyTo(scaledImage)));
-			previousScaledImage = scaledImage;
+			version = sourceImage->getVersion();
+		}
+	} else if (sourcePyramid) {
+		if (version != sourcePyramid->getVersion()) {
+			incrementalScaleFactor = sourcePyramid->incrementalScaleFactor;
+			layers.clear();
+			const vector<shared_ptr<ImagePyramidLayer>>& sourceLayers = sourcePyramid->layers;
+			for (auto layIt = sourceLayers.begin(); layIt != sourceLayers.end(); ++layIt) {
+				shared_ptr<ImagePyramidLayer> layer = *layIt;
+				if (layer->getScaleFactor() > maxScaleFactor)
+					continue;
+				if (layer->getScaleFactor() < minScaleFactor)
+					break;
+				if (layers.empty())
+					firstLayer = layer->getIndex();
+				layers.push_back(make_shared<ImagePyramidLayer>(
+						layer->getIndex(), layer->getScaleFactor(), layerFilter->applyTo(layer->getScaledImage())));
+			}
+			version = sourcePyramid->getVersion();
 		}
 	} else { // neither source pyramid nor source image are set, therefore the other parameters are missing, too
 		// TODO exception? oder ignore? oder noch besser: logging!
@@ -107,7 +125,17 @@ void ImagePyramid::update(const Mat& image) {
 	if (sourcePyramid) {
 		sourcePyramid->update(image);
 		update();
-	} else if (!imagesAreEqual(sourceImage, image)) {
+	} else {
+		setSource(image);
+		update();
+	}
+}
+
+void ImagePyramid::update(shared_ptr<VersionedImage> image) {
+	if (sourcePyramid) {
+		sourcePyramid->update(image);
+		update();
+	} else {
 		setSource(image);
 		update();
 	}

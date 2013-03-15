@@ -5,22 +5,25 @@
  *      Author: poschmann
  */
 
-#include "tracking/PositionDependentMeasurementModel.h"
-#include "tracking/Sample.h"
-#include "classification/FeatureVector.h"
-#include "classification/FeatureExtractor.h"
-#include "classification/TrainableClassifier.h"
+#include "condensation/PositionDependentMeasurementModel.h"
+#include "condensation/Sample.h"
+#include "imageprocessing/Patch.hpp"
+#include "imageprocessing/FeatureExtractor.hpp"
+#include "imageprocessing/VersionedImage.hpp"
+#include "classification/TrainableProbabilisticClassifier.hpp"
 #include <unordered_map>
 #include <utility>
 
+using imageprocessing::Patch;
+using imageprocessing::FeatureExtractor;
 using std::make_shared;
 using std::unordered_map;
 using std::pair;
 
-namespace tracking {
+namespace condensation {
 
 PositionDependentMeasurementModel::PositionDependentMeasurementModel(shared_ptr<FeatureExtractor> featureExtractor,
-		shared_ptr<TrainableClassifier> classifier, int startFrameCount, int stopFrameCount,
+		shared_ptr<TrainableProbabilisticClassifier> classifier, int startFrameCount, int stopFrameCount,
 		float positiveOffsetFactor, float negativeOffsetFactor,
 		bool sampleNegativesAroundTarget, bool sampleFalsePositives, unsigned int randomNegatives) :
 				featureExtractor(featureExtractor),
@@ -37,26 +40,28 @@ PositionDependentMeasurementModel::PositionDependentMeasurementModel(shared_ptr<
 
 PositionDependentMeasurementModel::~PositionDependentMeasurementModel() {}
 
-void PositionDependentMeasurementModel::evaluate(const Mat& image, vector<Sample>& samples) {
-	featureExtractor->init(image);
-	unordered_map<shared_ptr<FeatureVector>, pair<bool, double> > results;
-	for (vector<Sample>::iterator sit = samples.begin(); sit < samples.end(); ++sit) {
-		sit->setObject(false);
-		shared_ptr<FeatureVector> featureVector = featureExtractor->extract(sit->getX(), sit->getY(), sit->getSize());
-		if (!featureVector) {
-			sit->setWeight(0);
+void PositionDependentMeasurementModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples) {
+	featureExtractor->update(image);
+	// TODO das folgende macht nur dann sinn, wenn featureExtractor bereits duplikate erkennt und schonmal extrahiertes rausgibt
+	unordered_map<shared_ptr<Patch>, pair<bool, double>> results;
+	for (auto sample = samples.begin(); sample != samples.end(); ++sample) {
+		sample->setObject(false);
+		shared_ptr<Patch> patch = featureExtractor->extract(sample->getX(), sample->getY(), sample->getSize(), sample->getSize());
+		if (!patch) {
+			sample->setWeight(0);
 		} else {
 			pair<bool, double> result;
-			unordered_map<shared_ptr<FeatureVector>, pair<bool, double> >::iterator rit = results.find(featureVector);
-			if (rit == results.end()) {
-				result = classifier->classify(*featureVector);
-				pair<const shared_ptr<FeatureVector>, pair<bool, double> > entry = make_pair(featureVector, result);
+			auto resIt = results.find(patch);
+			if (resIt == results.end()) {
+				result = classifier->classify(patch->getData());
+				// TODO const nach vorne ziehen möglich?
+				pair<const shared_ptr<Patch>, pair<bool, double>> entry = make_pair(patch, result);
 				results.insert(entry);
 			} else {
-				result = rit->second;
+				result = resIt->second;
 			}
-			sit->setObject(result.first);
-			sit->setWeight(result.second);
+			sample->setObject(result.first);
+			sample->setWeight(result.second);
 		}
 	}
 }
@@ -66,13 +71,13 @@ void PositionDependentMeasurementModel::reset() {
 	usable = false;
 }
 
-void PositionDependentMeasurementModel::adapt(const Mat& image, const vector<Sample>& samples, const Sample& target) {
+void PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples, const Sample& target) {
 	if (!isUsable()) {
 		frameCount++;
 		if (frameCount < startFrameCount)
 			return;
 		// feature extractor has to be initialized on the image when this model was not used for evaluation
-		featureExtractor->init(image);
+		featureExtractor->update(image);
 	} else {
 		frameCount = 0;
 	}
@@ -132,12 +137,12 @@ void PositionDependentMeasurementModel::adapt(const Mat& image, const vector<Sam
 	}
 
 	if (sampleFalsePositives) {
-		for (vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
-			if (sit->isObject()
-					&& (sit->getX() <= xLowBound || sit->getX() >= xHighBound
-					|| sit->getY() <= yLowBound || sit->getY() >= yHighBound
-					|| sit->getSize() <= sizeLowBound || sit->getSize() >= sizeHighBound)) {
-				negativeSamples.push_back(*sit);
+		for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample) {
+			if (sample->isObject()
+					&& (sample->getX() <= xLowBound || sample->getX() >= xHighBound
+					|| sample->getY() <= yLowBound || sample->getY() >= yHighBound
+					|| sample->getSize() <= sizeLowBound || sample->getSize() >= sizeHighBound)) {
+				negativeSamples.push_back(*sample);
 			}
 		}
 	}
@@ -145,16 +150,16 @@ void PositionDependentMeasurementModel::adapt(const Mat& image, const vector<Sam
 	if (randomNegatives > 0) {
 		vector<Sample> additionalNegatives;
 		additionalNegatives.reserve(randomNegatives);
-		for (vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
-			if ((!sampleFalsePositives || !sit->isObject())
-					&& (sit->getX() <= xLowBound || sit->getX() >= xHighBound
-					|| sit->getY() <= yLowBound || sit->getY() >= yHighBound
-					|| sit->getSize() <= sizeLowBound || sit->getSize() >= sizeHighBound)) {
+		for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample) {
+			if ((!sampleFalsePositives || !sample->isObject())
+					&& (sample->getX() <= xLowBound || sample->getX() >= xHighBound
+					|| sample->getY() <= yLowBound || sample->getY() >= yHighBound
+					|| sample->getSize() <= sizeLowBound || sample->getSize() >= sizeHighBound)) {
 				if (additionalNegatives.size() < randomNegatives) {
-					vector<Sample>::iterator low = lower_bound(additionalNegatives.begin(), additionalNegatives.end(), *sit, Sample::WeightComparison());
-					additionalNegatives.insert(low, *sit);
-				} else if (additionalNegatives.front().getWeight() < sit->getWeight()) {
-					additionalNegatives.front() = *sit;
+					vector<Sample>::iterator low = lower_bound(additionalNegatives.begin(), additionalNegatives.end(), *sample, Sample::WeightComparison());
+					additionalNegatives.insert(low, *sample);
+				} else if (additionalNegatives.front().getWeight() < sample->getWeight()) {
+					additionalNegatives.front() = *sample;
 					Sample tmp;
 					for (unsigned int i = 1; i < additionalNegatives.size() && additionalNegatives[i - 1].getWeight() > additionalNegatives[i].getWeight(); ++i) {
 						tmp = additionalNegatives[i - 1];
@@ -165,11 +170,11 @@ void PositionDependentMeasurementModel::adapt(const Mat& image, const vector<Sam
 			}
 		}
 		while (additionalNegatives.size() < randomNegatives) {
-			Sample sample = createRandomSample(image);
+			Sample sample = createRandomSample(image->getData());
 			if (sample.getX() <= xLowBound || sample.getX() >= xHighBound
 					|| sample.getY() <= yLowBound || sample.getY() >= yHighBound
 					|| sample.getSize() <= sizeLowBound || sample.getSize() >= sizeHighBound) {
-				if (featureExtractor->extract(sample.getX(), sample.getY(), sample.getSize()))
+				if (featureExtractor->extract(sample.getX(), sample.getY(), sample.getSize(), sample.getSize()))
 					additionalNegatives.push_back(sample);
 			}
 		}
@@ -179,14 +184,16 @@ void PositionDependentMeasurementModel::adapt(const Mat& image, const vector<Sam
 	usable = classifier->retrain(getFeatureVectors(positiveSamples), getFeatureVectors(negativeSamples));
 }
 
-void PositionDependentMeasurementModel::adapt(const Mat& image, const vector<Sample>& samples) {
+void PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples) {
 	if (isUsable())
 		frameCount++;
 	if (frameCount == stopFrameCount) {
 		reset();
 		frameCount = 0;
 	} else {
-		const vector<shared_ptr<FeatureVector> > empty;
+		// TODO das könnte quark sein - retraining nicht nötig (und abfrage im training auch wegmachen)
+		// TODO nur FrameBasedTraining hätte das gebraucht, aber über nutzung entscheidet am ende das measurement model
+		const vector<Mat> empty;
 		usable = classifier->retrain(empty, empty);
 	}
 }
@@ -201,15 +208,15 @@ Sample PositionDependentMeasurementModel::createRandomSample(const Mat& image) {
 	return Sample(x, y, size);
 }
 
-vector<shared_ptr<FeatureVector> > PositionDependentMeasurementModel::getFeatureVectors(vector<Sample>& samples) {
-	vector<shared_ptr<FeatureVector> > trainingSamples;
-	trainingSamples.reserve(samples.size());
-	for (vector<Sample>::iterator sit = samples.begin(); sit < samples.end(); ++sit) {
-		shared_ptr<FeatureVector> featureVector = featureExtractor->extract(sit->getX(), sit->getY(), sit->getSize());
-		if (featureVector)
-			trainingSamples.push_back(featureVector);
+vector<Mat> PositionDependentMeasurementModel::getFeatureVectors(vector<Sample>& samples) {
+	vector<Mat> trainingExamples;
+	trainingExamples.reserve(samples.size());
+	for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample) {
+		shared_ptr<Patch> patch = featureExtractor->extract(sample->getX(), sample->getY(), sample->getSize(), sample->getSize());
+		if (patch)
+			trainingExamples.push_back(patch->getData());
 	}
-	return trainingSamples;
+	return trainingExamples;
 }
 
-} /* namespace tracking */
+} /* namespace condensation */

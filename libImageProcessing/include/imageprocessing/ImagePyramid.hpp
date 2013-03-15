@@ -20,6 +20,7 @@ using std::shared_ptr;
 
 namespace imageprocessing {
 
+class VersionedImage;
 class ImagePyramidLayer;
 class ImageFilter;
 class MultipleImageFilter;
@@ -37,7 +38,7 @@ public:
 	 * @param[in] maxScaleFactor The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
 	 * @param[in] incrementalScaleFactor The incremental scale factor between two layers of the pyramid.
 	 */
-	ImagePyramid(double minScaleFactor = 0, double maxScaleFactor = 1, double incrementalScaleFactor = 0.9);
+	explicit ImagePyramid(double minScaleFactor = 0, double maxScaleFactor = 1, double incrementalScaleFactor = 0.9);
 
 	/**
 	 * Constructs a new empty image pyramid with another pyramid as its source.
@@ -46,40 +47,66 @@ public:
 	 * @param[in] minScaleFactor The minimum scale factor (the scale factor of the smallest scaled (last) image is bigger or equal).
 	 * @param[in] maxScaleFactor The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
 	 */
-	ImagePyramid(shared_ptr<ImagePyramid> pyramid, double minScaleFactor = 0, double maxScaleFactor = 1);
+	explicit ImagePyramid(shared_ptr<ImagePyramid> pyramid, double minScaleFactor = 0, double maxScaleFactor = 1);
 
 	~ImagePyramid();
 
 	/**
+	 * @return The version number.
+	 */
+	int getVersion() const {
+		return version;
+	}
+
+	/**
 	 * Changes the source to the given image. The pyramid will not get updated, therefore for the source change to take
-	 * effect update() has to be called.
+	 * effect update() has to be called. The next call of update() will force an update based on the new image.
 	 *
 	 * @param[in] image The new source image.
 	 */
 	void setSource(const Mat& image);
 
 	/**
+	 * Changes the source to the given versioned image. The pyramid will not get updated, therefore for the source change
+	 * to take effect update() has to be called. The next call of update() will only update this pyramid if the version of
+	 * the given image differs from the one of this pyramid.
+	 *
+	 * @param[in] image The new source image.
+	 */
+	void setSource(shared_ptr<VersionedImage> image);
+
+	/**
 	 * Changes the source to the given pyramid. This pyramid will not get updated, therefore for the source change to take
-	 * effect update() has to be called.
+	 * effect update() has to be called. The next call of update() will only update this pyramid if the version of the given
+	 * pyramid differs from the one of this pyramid.
 	 *
 	 * @param[in] pyramid The new source pyramid.
 	 */
 	void setSource(shared_ptr<ImagePyramid> pyramid);
 
 	/**
-	 * Forces an update of this pyramid based on the source (either an image or another pyramid).
+	 * Updates this pyramid using its source (either an image or another pyramid). If the source has not changed since the
+	 * last update (version is the same), then this pyramid will not be changed.
 	 */
 	void update();
 
 	/**
-	 * Updates this pyramid using the saved parameters. If this pyramid's source is the same image as the one given, then
-	 * the pyramid will remain unchanged even if the image content is different. If this pyramid's source is another
-	 * pyramid, then that pyramid will be updated first with the given image. If this pyramid has no source yet, the image
-	 * will be the new source.
+	 * Forces an update of this pyramid using the saved parameters. If this pyramid's source is another pyramid, then
+	 * that pyramid will be updated first with the given image. If this pyramid's source is an image or it has no source
+	 * yet, the image will be the new source.
 	 *
 	 * @param[in] image The new image.
 	 */
 	void update(const Mat& image);
+
+	/**
+	 * Updates this pyramid using the saved parameters. If this pyramid's source is another pyramid, then that pyramid
+	 * will be updated first with the given image. If this pyramid's source is an image or it has no source yet, the
+	 * image will be the new source.
+	 *
+	 * @param[in] image The new image.
+	 */
+	void update(shared_ptr<VersionedImage> image);
 
 	/**
 	 * Adds a new image filter that is applied to the original image after the currently existing image filters.
@@ -118,8 +145,9 @@ private:
 	int firstLayer;                               ///< The index of the first stored pyramid layer.
 	vector<shared_ptr<ImagePyramidLayer>> layers; ///< The pyramid layers.
 
-	Mat sourceImage;                        ///< The source image.
+	shared_ptr<VersionedImage> sourceImage; ///< The source image.
 	shared_ptr<ImagePyramid> sourcePyramid; ///< The source pyramid.
+	int version;                            ///< The version number.
 
 	shared_ptr<MultipleImageFilter> imageFilter; ///< Filter that is applied to the image before down-scaling.
 	shared_ptr<MultipleImageFilter> layerFilter; ///< Filter that is applied to the down-scaled images of the layers.

@@ -592,6 +592,9 @@ int WvmClassifier::getNumUsedFilters(void)
 
 void WvmClassifier::setLimitReliabilityFilter(float var)
 {
+	// TODO anmerkung von peter: koennte man diesen wert nicht bei classify auf die schwelle mit aufschlagen? dann wäre es nicht
+	// noetig, hierarchicalThresholdsFromFile noch zusätzlich zu speichern, da hierarchicalThresholds immer gleich bleibt
+	// zeile 74 und 123 müssten dann um + limitReliabilityFilter (bzw + threshold nach der umbenennung) erweitert werden
 	this->limitReliabilityFilter = var;
 	if(var != 0.0f) {
 		this->hierarchicalThresholds.clear();	// Maybe we could not use clear here and just assign the new value. But then we'd have a problem the first time we call this function.

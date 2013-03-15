@@ -10,6 +10,7 @@ FIND_PACKAGE(OpenCV REQUIRED core)
 
 # source and header files
 SET(HEADERS
+	include/detection/ClassifiedPatch.hpp
 	include/detection/Detector.hpp
 	include/detection/SlidingWindowDetector.hpp
 	#include/detection/OverlapElimination.hpp

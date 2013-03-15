@@ -34,11 +34,15 @@ public:
 	 * @param[in] width The width of the image data of the extracted patches.
 	 * @param[in] height The height of the image data of the extracted patches.
 	 */
-	explicit PyramidPatchExtractor(shared_ptr<ImagePyramid> pyramid, int width, int height);
+	PyramidPatchExtractor(shared_ptr<ImagePyramid> pyramid, int width, int height);
 
 	~PyramidPatchExtractor();
 
 	void update(const Mat& image) {
+		pyramid->update(image);
+	}
+
+	void update(shared_ptr<VersionedImage> image) {
 		pyramid->update(image);
 	}
 
@@ -90,7 +94,7 @@ private:
 	 * @return The pyramid layer or an empty pointer if there is no layer with an appropriate patch size.
 	 */
 	const shared_ptr<ImagePyramidLayer> getLayer(int width, int height) const {
-		double scaleFactor = static_cast<double>(width) / static_cast<double>(patchWidth);
+		double scaleFactor = static_cast<double>(patchWidth) / static_cast<double>(width);
 		return pyramid->getLayer(scaleFactor);
 	}
 

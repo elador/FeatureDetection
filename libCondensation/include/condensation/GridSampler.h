@@ -8,9 +8,9 @@
 #ifndef GRIDSAMPLER_H_
 #define GRIDSAMPLER_H_
 
-#include "tracking/Sampler.h"
+#include "condensation/Sampler.h"
 
-namespace tracking {
+namespace condensation {
 
 /**
  * Creates new samples according to a grid (sliding-window like).
@@ -26,7 +26,7 @@ public:
 	 * @param[in] sizeScale The scale factor of the size (beginning from the minimum size). Has to be greater than one.
 	 * @param[in] stepSize The step size relative to the sample size.
 	 */
-	explicit GridSampler(float minSize, float maxSize, float sizeScale, float stepSize);
+	GridSampler(float minSize, float maxSize, float sizeScale, float stepSize);
 
 	~GridSampler();
 
@@ -41,5 +41,5 @@ private:
 	float stepSize;  ///< The step size relative to the sample size.
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* GRIDSAMPLER_H_ */

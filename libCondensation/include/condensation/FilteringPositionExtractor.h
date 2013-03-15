@@ -8,12 +8,12 @@
 #ifndef FILTERINGPOSITIONEXTRACTOR_H_
 #define FILTERINGPOSITIONEXTRACTOR_H_
 
-#include "tracking/PositionExtractor.h"
+#include "condensation/PositionExtractor.h"
 #include <memory>
 
 using std::shared_ptr;
 
-namespace tracking {
+namespace condensation {
 
 /**
  * Position extractor that filters the samples leaving only those that represent the searched object
@@ -37,5 +37,5 @@ private:
 	shared_ptr<PositionExtractor> extractor; ///< The wrapped position extractor.
 };
 
-} /* namespace tracking */
+} /* namespace condensation */
 #endif /* FILTERINGPOSITIONEXTRACTOR_H_ */
