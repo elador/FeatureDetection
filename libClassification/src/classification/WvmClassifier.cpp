@@ -78,15 +78,12 @@ pair<int, double> WvmClassifier::computeHyperplaneDistance(const Mat& featureVec
 	unsigned int featureVectorLength = featureVector.rows * featureVector.cols;
 	unsigned char* data = new unsigned char[featureVectorLength];
 
-	int w = featureVector.cols;
-	int h = featureVector.rows;
-	for (int i=0; i<featureVector.rows; i++)
-	{
-		for (int j=0; j<featureVector.cols; j++)
-		{
-			data[i*w+j] = featureVector.at<uchar>(i, j); // (y, x) !!! i=row, j=column (matrix)
-		}
-	}
+	// TODO conditions: featureVector.type() == CV_32F, featureVector.isContinuous() == true, featureVectorLength == 400 (in our case)
+	const uchar* values = featureVector.ptr<uchar>(0);
+	for (int i = 0; i < featureVectorLength; ++i)
+		data[i] = values[i];
+
+	// TODO compute integral image outside of this (IntegralImageFilter), assume featureVector to be integral image
 
 	//for (unsigned int i = 0; i < featureVectorLength; ++i)
 	//data[i] = (featureVector.at<unsigned char>(i));

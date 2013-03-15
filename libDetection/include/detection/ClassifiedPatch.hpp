@@ -102,5 +102,5 @@ private:
 	double probability;      ///< Probability of the patch being positive.
 };
 
-} /* namespace imageprocessing */
+} /* namespace detection */
 #endif /* CLASSIFIEDPATCH_HPP_ */

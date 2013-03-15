@@ -12,7 +12,7 @@
 #include "imageio/VideoImageSink.h"
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/PyramidPatchExtractor.hpp"
-#include "imageprocessing/RowFeatureTransformer.hpp"
+#include "imageprocessing/IdentityFeatureTransformer.hpp"
 #include "imageprocessing/FilteringFeatureTransformer.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
@@ -69,7 +69,7 @@ void FaceTracking::initTracking() {
 	shared_ptr<ImagePyramid> pyramid = make_shared<ImagePyramid>(20.0 / 480.0, 20.0 / 80.0, 0.85);
 	pyramid->addImageFilter(make_shared<GrayscaleFilter>());
 	shared_ptr<PatchExtractor> patchExtractor = make_shared<PyramidPatchExtractor>(pyramid, 20, 20);
-	shared_ptr<FilteringFeatureTransformer> featureTransformer = make_shared<FilteringFeatureTransformer>(make_shared<RowFeatureTransformer>());
+	shared_ptr<FilteringFeatureTransformer> featureTransformer = make_shared<FilteringFeatureTransformer>(make_shared<IdentityFeatureTransformer>());
 	//featureTransformer->add(make_shared<HistogramEqualizationFilter>());
 	featureTransformer->add(make_shared<HistEq64Filter>());
 	shared_ptr<FeatureExtractor> featureExtractor = make_shared<FeatureExtractor>(patchExtractor, featureTransformer);
@@ -77,8 +77,8 @@ void FaceTracking::initTracking() {
 	string svmConfigFile2 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat";
 	shared_ptr<ProbabilisticWvmClassifier> wvm = ProbabilisticWvmClassifier::loadMatlab(svmConfigFile1, svmConfigFile2);
 	shared_ptr<ProbabilisticSvmClassifier> svm = ProbabilisticSvmClassifier::loadMatlab(svmConfigFile1, svmConfigFile2);
-	wvm->getWvm()->setLimitReliability(3.2f);
-	svm->getSvm()->setLimitReliability(3.2f);
+//	wvm->getWvm()->setLimitReliability(3.2f);
+//	svm->getSvm()->setLimitReliability(3.2f);
 	measurementModel = make_shared<WvmSvmModel>(featureExtractor, wvm, svm);
 
 	// create tracker

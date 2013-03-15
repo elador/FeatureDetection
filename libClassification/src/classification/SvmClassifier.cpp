@@ -108,9 +108,8 @@ shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFile
 	svm->coefficients.reserve(numSV);
 
 	int k = 0;
-	int size = filter_size_x * filter_size_y;
 	for (int sv = 0; sv < numSV; ++sv) {
-		Mat supportVector(1, size, CV_8U);
+		Mat supportVector(filter_size_y, filter_size_x, CV_8U);
 		uchar* values = supportVector.ptr<uchar>(0);
 		for (int x = 0; x < filter_size_x; ++x)	// column-major order (ML-convention)
 			for (int y = 0; y < filter_size_y; ++y)

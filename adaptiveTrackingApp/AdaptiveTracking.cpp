@@ -13,7 +13,6 @@
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/PyramidPatchExtractor.hpp"
 #include "imageprocessing/IdentityFeatureTransformer.hpp"
-#include "imageprocessing/RowFeatureTransformer.hpp"
 #include "imageprocessing/FilteringFeatureTransformer.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
 #include "imageprocessing/HistEq64Filter.hpp"
@@ -77,7 +76,7 @@ void AdaptiveTracking::initTracking() {
 	pyramid->addImageFilter(make_shared<GrayscaleFilter>());
 	shared_ptr<PatchExtractor> patchExtractor = make_shared<PyramidPatchExtractor>(pyramid, 20, 20);
 
-	shared_ptr<FilteringFeatureTransformer> featureTransformer1 = make_shared<FilteringFeatureTransformer>(make_shared<RowFeatureTransformer>());
+	shared_ptr<FilteringFeatureTransformer> featureTransformer1 = make_shared<FilteringFeatureTransformer>(make_shared<IdentityFeatureTransformer>());
 	featureTransformer1->add(make_shared<HistEq64Filter>());
 	shared_ptr<FeatureExtractor> featureExtractor1 = make_shared<FeatureExtractor>(patchExtractor, featureTransformer1);
 
