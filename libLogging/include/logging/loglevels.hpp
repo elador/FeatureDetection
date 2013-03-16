@@ -20,7 +20,7 @@ namespace logging {
  *
  * TODO is this ok here? Is there a better place? If we place it in the LoggerFactory or Logger, we have circular dependencies?
  */
-enum loglevel {
+enum class loglevel {
 	PANIC,
 	ERROR,
 	WARN,
@@ -40,26 +40,26 @@ static string loglevelToString(loglevel logLevel)
 {
 	switch (logLevel)
 	{
-	case logging::PANIC:
+	case loglevel::PANIC:
 		return string("PANIC");
 		break;
-	case logging::ERROR:
+	case loglevel::ERROR:
 		return string("ERROR");
 		break;
-	case logging::WARN:
+	case loglevel::WARN:
 		return string("WARN");
 		break;
-	case logging::INFO:
+	case loglevel::INFO:
 		return string("INFO");
 		break;
-	case logging::DEBUG:
+	case loglevel::DEBUG:
 		return string("DEBUG");
 		break;
-	case logging::TRACE:
+	case loglevel::TRACE:
 		return string("TRACE");
 		break;
 	default:
-		return string("");
+		return string("UNDEFINEDLOGLEVEL");
 		break;
 	}
 }

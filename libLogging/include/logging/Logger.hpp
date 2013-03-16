@@ -32,8 +32,10 @@ public:
 
 	/**
 	 * Constructs a new logger that is not logging anything yet.
+	 *
+	 * @param[in] name The name of the logger. Usually the namespace of the library it is working in.
 	 */
-	Logger();
+	explicit Logger(string name);
 
 	~Logger();
 
@@ -54,6 +56,7 @@ public:
 
 private:
 	vector<shared_ptr<Appender>> appenders;
+	string name;
 
 };
 

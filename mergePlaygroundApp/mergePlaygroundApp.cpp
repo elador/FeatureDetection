@@ -70,47 +70,47 @@ int main(int argc, char *argv[])
 	//_CrtSetBreakAlloc(22978);
 	#endif
 	
+	Logger root = Loggers->getLogger("root");
+	root.addAppender(make_shared<logging::FileAppender>(loglevel::INFO, "C:\\Users\\Patrik\\Documents\\GitHub\\logfile.txt"));
+	root.addAppender(make_shared<logging::ConsoleAppender>(loglevel::WARN));
+
+	Loggers->getLogger("classification").addAppender(make_shared<logging::FileAppender>(loglevel::DEBUG, "C:\\Users\\Patrik\\Documents\\GitHub\\logfile.txt"));
+	Loggers->getLogger("classification").addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
+
+	// Todo bool isLogLevelEnabled(...)
+
+	root.log(loglevel::PANIC, "Test: Logging PANIC");
+	root.log(loglevel::ERROR, "Test: Logging ERROR");
+	root.log(loglevel::WARN, "Test: Logging WARN");
+	root.log(loglevel::INFO, "Test: Logging INFO");
+	root.log(loglevel::DEBUG, "Test: Logging DEBUG");
+	root.log(loglevel::TRACE, "Test: Logging TRACE");
+
+	Loggers->getLogger("classification").log(loglevel::DEBUG, "CLASSIF TEST");
+
 	cout << "Starting tests..." << endl;
-	/*
-	Mat fvp = cv::imread("D:/FeatureDetection/patchp.png");
-	Mat fvn = cv::imread("D:/FeatureDetection/patchn.png");
+	
+	Mat fvp = cv::imread("C:/Users/Patrik/Documents/GitHub/patchpos.png");
+	Mat fvn = cv::imread("C:/Users/Patrik/Documents/GitHub/patchneg.png");
 
 	cv::cvtColor(fvp, fvp, CV_BGR2GRAY);
 	cv::cvtColor(fvn, fvn, CV_BGR2GRAY);
 
-	SvmClassifier* svm =  new SvmClassifier();
-	svm->load("D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
-	BinaryClassifier* myclass = svm;
 
-	WvmClassifier* wvm =  new WvmClassifier();
-	wvm->load("D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "D:/FeatureDetection/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
-	BinaryClassifier* myclassw = wvm;
+	shared_ptr<SvmClassifier> svm = SvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
+	shared_ptr<WvmClassifier> wvm = WvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
 
-	pair<bool, double> res;
-	res = myclass->classify(fvp);
-	cout << "f: " << res.first << ", s: " << res.second << endl;
-	res = myclass->classify(fvn);
-	cout << "f: " << res.first << ", s: " << res.second << endl;
+	bool res = svm->classify(fvp);
+	bool res2 = svm->classify(fvn);
 
-	res = myclassw->classify(fvp);
-	cout << "f: " << res.first << ", s: " << res.second << endl;
-	res = myclassw->classify(fvn);
-	cout << "f: " << res.first << ", s: " << res.second << endl;
+	res = wvm->classify(fvp);
+	res2 = wvm->classify(fvn);
 
 	cout << "The end." << endl;
-	delete svm;
-	delete wvm;
-	*/
+
+	/*
 	Mat img = cv::imread("C:/Users/Patrik/Documents/GitHub/data/firstrun/ws_115.png");
 	cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
-
-	Logger root = Loggers->getLogger("root");
-	root.addAppender(make_shared<logging::FileAppender>("C:\\Users\\Patrik\\Documents\\GitHub\\logfile.txt"));
-	
-	root.log(loglevel::INFO, "Hi!");
-	root.log(loglevel::WARN, "WAAAARN!");
-	root.log(loglevel::DEBUG, "dbg...");
-	root.log(loglevel::ERROR, "err :-(...");
 
 	//configparser::ConfigParser cp = configparser::ConfigParser();
 	//cp.parse("D:\\FeatureDetection\\config\\facedet.txt");
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 
 	shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.001--with-outnew02HQ64SVM.mat");
 	
-	shared_ptr<RowFeatureTransformer> idTransform = make_shared<RowFeatureTransformer>();
+	shared_ptr<IdentityFeatureTransformer> idTransform = make_shared<IdentityFeatureTransformer>();
 	shared_ptr<MultipleImageFilter> patchFilter = make_shared<MultipleImageFilter>();
 	shared_ptr<HistEq64Filter> histEq64Filter = make_shared<HistEq64Filter>();
 	patchFilter->add(histEq64Filter);
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 		cv::rectangle(rgbimg, cv::Point(pit->first->getX()-pit->first->getWidth()/2, pit->first->getY()-pit->first->getHeight()/2), cv::Point(pit->first->getX()+pit->first->getWidth()/2, pit->first->getY()+pit->first->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((pit->second.second)/1.0)   ));
 	}
 	cv::namedWindow("final", CV_WINDOW_AUTOSIZE); cv::imshow("final", rgbimg);
-	cv::imwrite("wvm_newest.png", rgbimg);
+	cv::imwrite("wvm_newest2.png", rgbimg);
 
 	shared_ptr<ProbabilisticSvmClassifier> psvm = ProbabilisticSvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.001--with-outnew02HQ64SVM.mat");
 
@@ -145,6 +145,7 @@ int main(int argc, char *argv[])
 	Mat svmimg = img.clone();
 	Mat svmimg2 = img.clone();
 	pit = resultingPatches.begin();
+	psvm->getSvm()->setLimitReliability(-1.2f);
 	for(; pit != resultingPatches.end(); pit++) {
 		pair<bool, double> res = psvm->classify(pit->first->getData());
 		cv::rectangle(svmimg2, cv::Point(pit->first->getX()-pit->first->getWidth()/2, pit->first->getY()-pit->first->getHeight()/2), cv::Point(pit->first->getX()+pit->first->getWidth()/2, pit->first->getY()+pit->first->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((res.second)/1.0)   ));
@@ -152,11 +153,11 @@ int main(int argc, char *argv[])
 			cv::rectangle(svmimg, cv::Point(pit->first->getX()-pit->first->getWidth()/2, pit->first->getY()-pit->first->getHeight()/2), cv::Point(pit->first->getX()+pit->first->getWidth()/2, pit->first->getY()+pit->first->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((res.second)/1.0)   ));
 	}
 	cv::namedWindow("svm", CV_WINDOW_AUTOSIZE); cv::imshow("svm", svmimg);
-	imwrite("svm_after_m1.2.png", svmimg);
+	imwrite("svm_after2_m1.2.png", svmimg);
 	cv::namedWindow("svmall", CV_WINDOW_AUTOSIZE); cv::imshow("svmall", svmimg2);
-	imwrite("svmall_after_m1.2.png", svmimg2);
+	imwrite("svmall_after2_m1.2.png", svmimg2);
 
 	cv::waitKey(0);
-
+	*/
 	return 0;
 }

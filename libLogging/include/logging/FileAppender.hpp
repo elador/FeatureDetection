@@ -24,11 +24,12 @@ class FileAppender : public Appender {
 public:
 
 	/**
-	 * Constructs a new file appender with default loglevel INFO.
+	 * Constructs a new appender that logs to a file. Appends to the file if it already exists.
 	 *
+	 * param[in] loglevel The loglevel at which to log.
 	 * param[in] filename The full path to the file to log to.
 	 */
-	FileAppender(string filename);
+	FileAppender(loglevel logLevel, string filename);
 
 	~FileAppender();
 
@@ -36,11 +37,13 @@ public:
 	 * Appends a message to the opened file.
 	 *
 	 * @param[in] logLevel The log-level of the message.
+	 * @param[in] loggerName The name of the logger that is logging the message.
 	 * @param[in] logMessage The log-message itself.
 	 */
-	void log(const loglevel logLevel, const string logMessage);
+	void log(const loglevel logLevel, const string loggerName, const string logMessage);
 
 private:
+	// TODO: We should make the copy constructor (and assignment operator?) private because we have an ofstream as member variable! Read that somewhere on stackoverflow.
 	ofstream file;
 };
 

@@ -57,7 +57,7 @@ public:
 	void load(const string filename) {}; // Make static?
 
 private:
-	map<string, Logger> loggers;
+	map<string, Logger> loggers;	///< A map of all the loggers and their names.
 };
 
 } /* namespace logging */

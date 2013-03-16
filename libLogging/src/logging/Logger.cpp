@@ -10,14 +10,14 @@
 
 namespace logging {
 
-Logger::Logger() {}
+Logger::Logger(string name) : name(name) {}
 
 Logger::~Logger() {}
 
 void Logger::log(const loglevel logLevel, string logMessage)
 {
 	for (shared_ptr<Appender> appender : appenders) {
-		appender->log(logLevel, logMessage);
+		appender->log(logLevel, name, logMessage);
 	}
 }
 

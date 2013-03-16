@@ -18,9 +18,21 @@ namespace logging {
 
 /**
  * Extend this class to implement own strategies for printing log messages (e.g. to files or the console).
+ *
+ * Possible TODO: Make it possible to change the logLevel of an appender during program execution with
+ *                like a setter or so. But the problem is, how to get the right Appender.
  */
 class Appender {
 public:
+
+	/**
+	 * Construct a new appender that logs at a certain loglevel.
+	 * TODO: 1) Should this really go into the interface?
+	 *       2) What about the default constructor, is one created? Should we disable it?
+	 *
+	 * @param[in] logLevel The log-level at which the appender should log. Required for all appenders.
+	 */
+	explicit Appender(loglevel logLevel) : logLevel(logLevel) {};
 
 	virtual ~Appender() {};
 
@@ -28,9 +40,10 @@ public:
 	 * Logs a message into its target (e.g. the console or a file).
 	 *
 	 * @param[in] logLevel The log-level of the message.
+	 * @param[in] loggerName The name of the logger that is logging the message.
 	 * @param[in] logMessage The message to be logged.
 	 */
-	virtual void log(const loglevel logLevel, const string logMessage) = 0;	// const?
+	virtual void log(const loglevel logLevel, const string loggerName, const string logMessage) = 0;	// const?
 
 	/**
 	 * Tests if this appender is actually doing logging at the given log-level.
