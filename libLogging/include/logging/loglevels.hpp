@@ -21,12 +21,12 @@ namespace logging {
  * TODO is this ok here? Is there a better place? If we place it in the LoggerFactory or Logger, we have circular dependencies?
  */
 enum class loglevel {
-	PANIC,
-	ERROR,
-	WARN,
-	INFO,
-	DEBUG,
-	TRACE
+	PANIC,	// Use to log extreme situations where the entire application execution could be affected due to some cause.
+	ERROR,	// Use to log all errors and exceptions that affect the functionality of the application.
+	WARN,	// Use to log warnings, i.e. situations that are usually unexpected but do not significantly affect the functionality.
+	INFO,	// Use to log statements which are expected to be written to the log during normal operations.
+	DEBUG,	// Use to log messages helpful in debugging, but too verbose for normal situations.
+	TRACE	// Use to log method invocation or parameters.
 };
 
 
