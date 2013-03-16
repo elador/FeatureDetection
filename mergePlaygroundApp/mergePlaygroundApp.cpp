@@ -89,16 +89,22 @@ int main(int argc, char *argv[])
 	Loggers->getLogger("classification").log(loglevel::DEBUG, "CLASSIF TEST");
 
 	cout << "Starting tests..." << endl;
+
 	
 	Mat fvp = cv::imread("C:/Users/Patrik/Documents/GitHub/patchpos.png");
 	Mat fvn = cv::imread("C:/Users/Patrik/Documents/GitHub/patchneg.png");
 
 	cv::cvtColor(fvp, fvp, CV_BGR2GRAY);
 	cv::cvtColor(fvn, fvn, CV_BGR2GRAY);
+	
+	shared_ptr<SvmClassifier> svm;
+	try	{
+		svm = SvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
+	} catch (std::invalid_argument& e) {
+		root.log(loglevel::ERROR, e.what());
+	}
 
-
-	shared_ptr<SvmClassifier> svm = SvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
-	shared_ptr<WvmClassifier> wvm = WvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
+	shared_ptr<WvmClassifier> wvm = WvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
 
 	bool res = svm->classify(fvp);
 	bool res2 = svm->classify(fvn);

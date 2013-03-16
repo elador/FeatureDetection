@@ -65,9 +65,9 @@ SET(SOURCE
 include_directories( "include" )
 
 # add dependencies
+include_directories( ${Logging_SOURCE_DIR}/include )
 include_directories( ${Boost_INCLUDE_DIRS} )
 INCLUDE_DIRECTORIES( ${MATLAB_INCLUDE_DIR} )
-#include_directories( ${libFeatureDetection_SOURCE_DIR} )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )

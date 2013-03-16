@@ -8,12 +8,19 @@
 #include "classification/SvmClassifier.hpp"
 #include "classification/PolynomialKernel.hpp"
 #include "classification/RbfKernel.hpp"
+#include "logging/LoggerFactory.hpp"
 #include "mat.h"
 #include <iostream>
+#include <stdexcept>
 
+using logging::Logger;
+using logging::LoggerFactory;
+using logging::loglevel;
 using std::make_shared;
 using std::make_pair;
 using std::cout;
+using std::invalid_argument;
+using std::runtime_error;
 
 namespace classification {
 
@@ -45,25 +52,22 @@ void SvmClassifier::setSvmParameters(vector<Mat> supportVectors, vector<float> c
 
 shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFilename, const string& thresholdsFilename)
 {
-	std::cout << "[SvmClassifier] Loading " << classifierFilename << std::endl;	// TODO replace with Logger
+	Logger logger = Loggers->getLogger("classification");
+	logger.log(loglevel::INFO, "Loading SVM classifier from matlab file: " + classifierFilename);
 
 	MATFile *pmatfile;
 	mxArray *pmxarray; // =mat
 	double *matdata;
 	pmatfile = matOpen(classifierFilename.c_str(), "r");
 	if (pmatfile == NULL) {
-		std::cout << "[SvmClassifier] Error opening file." << std::endl;
-		exit(EXIT_FAILURE);	// TODO replace with error throwing!
-		return shared_ptr<SvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+		throw invalid_argument("SvmClassifier: Could not open the provided classifier filename: " + classifierFilename);
 	}
 
 	pmxarray = matGetVariable(pmatfile, "param_nonlin1");
 	if (pmxarray == 0) {
-		std::cout << "[SvmClassifier] Error: There is a no param_nonlin1 in the file." << std::endl;
-		exit(EXIT_FAILURE);
-		return shared_ptr<SvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+		throw runtime_error("SvmClassifier: There is a no param_nonlin1 in the classifier file.");
+		// TODO (concerns the whole class): I think we leak memory here (all the MATFile and double pointers etc.)?
 	}
-	std::cout << "[SvmClassifier] Reading param_nonlin1" << std::endl;
 	matdata = mxGetPr(pmxarray);
 	// TODO we don't need all of those (added by peter: or do we? see polynomial kernel type)
 	float nonlinThreshold = (float)matdata[0];
@@ -79,7 +83,8 @@ shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFile
 	} else if (nonLinType == 2) { // RBF kernel
 		kernel.reset(new RbfKernel(basisParam));
 	} else {
-		// TODO exception?
+		throw runtime_error("SvmClassifier: Unsupported kernel type. Currently, only polynomial and RBF kernels are supported.");
+		// TODO We should also throw/print the unsupported nonLinType value to the user
 	}
 
 	shared_ptr<SvmClassifier> svm = make_shared<SvmClassifier>(kernel);
@@ -87,14 +92,10 @@ shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFile
 
 	pmxarray = matGetVariable(pmatfile, "support_nonlin1");
 	if (pmxarray == 0) {
-		std::cout << "[SvmClassifier] Error: There is a nonlinear SVM in the file, but the matrix support_nonlin1 is lacking!" << std::endl;
-		exit(EXIT_FAILURE);
-		return shared_ptr<SvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+		throw runtime_error("SvmClassifier: There is a nonlinear SVM in the file, but the matrix support_nonlin1 is lacking.");
 	} 
 	if (mxGetNumberOfDimensions(pmxarray) != 3) {
-		std::cout << "[SvmClassifier] Error: The matrix support_nonlin1 in the file should have 3 dimensions." << std::endl;
-		exit(EXIT_FAILURE);
-		return shared_ptr<SvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+		throw runtime_error("SvmClassifier: The matrix support_nonlin1 in the file should have 3 dimensions.");
 	}
 	const mwSize *dim = mxGetDimensions(pmxarray);
 	int numSV = (int)dim[2];
@@ -120,9 +121,7 @@ shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFile
 
 	pmxarray = matGetVariable(pmatfile, "weight_nonlin1");
 	if (pmxarray == 0) {
-		std::cout << "[SvmClassifier] Error: There is a nonlinear SVM in the file but the matrix threshold_nonlin is lacking." << std::endl;
-		exit(EXIT_FAILURE);
-		return shared_ptr<SvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+		throw runtime_error("SvmClassifier: There is a nonlinear SVM in the file but the matrix threshold_nonlin is lacking.");
 	}
 	matdata = mxGetPr(pmxarray);
 	for (int sv = 0; sv < numSV; ++sv)
@@ -130,10 +129,11 @@ shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFile
 	mxDestroyArray(pmxarray);
 
 	if (matClose(pmatfile) != 0) {
-		std::cout << "[SvmClassifier] Error closing file." << std::endl;
+		logger.log(loglevel::WARN, "SvmClassifier: Could not close file " + classifierFilename);
+		// TODO What is this? An error? Info? Throw an exception?
 	}
 
-	std::cout << "[SvmClassifier] Done reading SVM!" << std::endl;
+	logger.log(loglevel::INFO, "SVM successfully read.");
 
 	return svm;
 }

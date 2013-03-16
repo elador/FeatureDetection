@@ -23,9 +23,9 @@ SET(SOURCE
 include_directories( "include" )
 
 # add dependencies
-#include_directories( ${Boost_INCLUDE_DIRS} )
 include_directories( ${Classification_SOURCE_DIR}/include )
 include_directories( ${ImageProcessing_SOURCE_DIR}/include )
+#include_directories( ${Boost_INCLUDE_DIRS} )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
