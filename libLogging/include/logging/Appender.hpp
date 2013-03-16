@@ -48,11 +48,15 @@ public:
 	/**
 	 * Tests if this appender is actually doing logging at the given log-level.
 	 *
+	 * TODO This makes sense in the Appender, but what is actually being used in other logging frameworks
+	 *      is that the logger itself, and not the appenders, is tested for isLogLevelEnabled(...).
+	 *      But the log-level is different for every appender. So how do other loggers work around this?
+	 *
 	 * @param[in] logLevel The log-level to be tested for.
 	 * @return True if the appender is logging at this level, false otherwise.
 	 */
 	bool isLogLevelEnabled(const loglevel logLevel) const {
-		return true;	// TODO
+		return (this->logLevel >= logLevel);
 	};
 
 	/**
