@@ -7,12 +7,21 @@
 
 #include "classification/WvmClassifier.hpp"
 #include "classification/IImg.hpp"
+#include "logging/LoggerFactory.hpp"
 #include "mat.h"
+#include "boost/lexical_cast.hpp"
 #include <iostream>
+#include <stdexcept>
 
+using logging::Logger;
+using logging::LoggerFactory;
+using logging::loglevel;
 using std::make_shared;
 using std::make_pair;
 using std::cout;
+using std::invalid_argument;
+using std::runtime_error;
+using boost::lexical_cast;
 
 namespace classification {
 
@@ -142,35 +151,33 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 	// zB. -0.1 => mehr patches drueber(mehr nicht rejected, schneller), dh. weniger fn(FRR), mehr fp(FAR)
 	wvm->limitReliabilityFilter=0.0f;	// FD.limit_reliability_filter (for WVM) (without _filter, it's for the SVM)
 
-	std::cout << "[WvmClassifier] Loading " << classifierFilename << std::endl;
+	Logger logger = Loggers->getLogger("classification");
+	logger.log(loglevel::INFO, "Loading WVM classifier from matlab file: " + classifierFilename);
 	
 	MATFile *pmatfile;
 	mxArray *pmxarray; // =mat
 	double *matdata;
 	pmatfile = matOpen(classifierFilename.c_str(), "r");
 	if (pmatfile == NULL) {
-		std::cout << "[WvmClassifier] Error opening file." << std::endl;
-		exit(EXIT_FAILURE);
-		return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+		// TODO: Maybe we should also log all of those exceptions, instead of only throwing them?
+		throw invalid_argument("WvmClassifier: Could not open the provided classifier filename: " + classifierFilename);
 	}
 
 	pmxarray = matGetVariable(pmatfile, "num_hk");
 	if (pmxarray == 0) {
-		std::cout << "[WvmClassifier] Error: There is a no num_hk in the file." << std::endl;
-		exit(EXIT_FAILURE);
-		return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+		throw runtime_error("WvmClassifier: There is a no num_hk in the classifier file.");
+		// TODO (concerns the whole class): I think we leak memory here (all the MATFile and double pointers etc.)?
 	}
 	matdata = mxGetPr(pmxarray);
 	int nfilter = (int)matdata[0];
 	mxDestroyArray(pmxarray);
-	std::cout << "[WvmClassifier] Found " << nfilter << " WVM filters" << std::endl;
+	logger.log(loglevel::DEBUG, "Found " + lexical_cast<string>(nfilter) + " WVM filters.");
 
 	pmxarray = matGetVariable(pmatfile, "wrvm");
 	if (pmxarray != 0) { // read area
-		std::cout << "[WvmClassifier] Found structur 'wrvm', reading the TODO 280 non linear filters support_hk* and weight_hk* at once" << std::endl;
-		std::cout << "[WvmClassifier] Stopping, because this is not yet tested!" << std::endl;
-		exit(EXIT_FAILURE);
-		return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+		logger.log(loglevel::ERROR, "Found a structure 'wrvm' and trying to read the " + lexical_cast<string>(nfilter) + " non-linear filters support_hk* and weight_hk* at once. However, this is not implemented yet.");
+		throw runtime_error("WvmClassifier: Reading all wvm filters at once using the structure 'wrvm' is not (yet) supported.");
+		// Note: If we at one time need this, I'll implement and test it.
 		/*
 				//read dim. hxw of support_hk's 
 				mxArray* msup=mxGetField(pmxarray, 0, "dim");
@@ -265,7 +272,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 
 
 	} else {	// read seq.
-		std::cout << "[WvmClassifier] Unable to find structur 'wrvm', reading the " << nfilter << " non linear filters support_hk* and weight_hk* sequentially (slower)" << std::endl;
+		logger.log(loglevel::DEBUG, "No structure 'wrvm' found, thus reading the " + lexical_cast<string>(nfilter) + " non-linear filters support_hk* and weight_hk* sequentially (slower).");
 		char str[100];
 		sprintf(str, "support_hk%d", 1);
 		pmxarray = matGetVariable(pmatfile, str);
@@ -287,14 +294,10 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 			wvm->hkWeights[i] = new float[wvm->numLinFilters];
 
 		if (pmxarray == 0) {
-			std::cout << "[WvmClassifier]  Unable to find the matrix \'support_hk1\'" << std::endl;
-			exit(EXIT_FAILURE);
-			return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+			throw runtime_error("WvmClassifier: Unable to find the matrix 'support_hk1' in the classifier file.");
 		}
 		if (mxGetNumberOfDimensions(pmxarray) != 2) {
-			std::cout << "[WvmClassifier] The matrix \'filter1\' in the file should have 2 dimensions" << std::endl;
-			exit(EXIT_FAILURE);
-			return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+			throw runtime_error("WvmClassifier: The matrix 'filter1' in the classifier file should have 2 dimensions.");
 		}
 		mxDestroyArray(pmxarray);
 
@@ -303,14 +306,10 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 			sprintf(str, "support_hk%d", i+1);
 			pmxarray = matGetVariable(pmatfile, str);
 			if (pmxarray == 0) {
-				std::cout << "[WvmClassifier] Unable to find the matrix \'support_hk" << i+1 << "\'" << std::endl;
-				exit(EXIT_FAILURE);
-				return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+				throw runtime_error("WvmClassifier: Unable to find the matrix 'support_hk" + lexical_cast<string>(i+1) + "' in the classifier file.");
 			}
 			if (mxGetNumberOfDimensions(pmxarray) != 2) {
-				std::cout << "[WvmClassifier] The matrix \'filter" << i+1 << "\' in the file should have 2 dimensions" << std::endl;
-				exit(EXIT_FAILURE);
-				return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+				throw runtime_error("WvmClassifier: The matrix 'filter" + lexical_cast<string>(i+1) + "' in the classifier file should have 2 dimensions.");
 			}
 
 			matdata = mxGetPr(pmxarray);
@@ -326,9 +325,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 			if (pmxarray != 0) {
 				const mwSize *dim = mxGetDimensions(pmxarray);
 				if ((dim[1] != i+1) && (dim[0] != i+1)) {
-					std::cout << "[WvmClassifier] The matrix " << str << " in the file should have a dimensions 1x" << i+1 << " or " << i+1 << "x1" << std::endl;
-					exit(EXIT_FAILURE);
-					return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+					throw runtime_error("WvmClassifier: The matrix " + lexical_cast<string>(str) + " in the classifier file should have a dimensions 1x" + lexical_cast<string>(i+1) + " or " + lexical_cast<string>(i+1) + "x1");
 				}
 				matdata = mxGetPr(pmxarray);
 				for (int j = 0; j <= i; ++j) {
@@ -337,7 +334,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 				mxDestroyArray(pmxarray);
 			}
 		}	// end for over numHKs
-		std::cout << "[WvmClassifier] Done" << std::endl;
+		logger.log(loglevel::DEBUG, "Vectors and weights successfully read.");
 
 	}// end else read vecs/weights sequentially
 	
@@ -346,7 +343,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 		matdata = mxGetPr(pmxarray);
 		wvm->nonlinThreshold = (float)matdata[0];
 		int nonLinType       = (int)matdata[1];
-		wvm->basisParam       = (float)(matdata[2]/65025.0); // because the training images grey level values were divided by 255
+		wvm->basisParam       = (float)(matdata[2]/65025.0); // because the training images gray level values were divided by 255
 		int polyPower        = (int)matdata[3];
 		float divisor          = (float)matdata[4];
 		mxDestroyArray(pmxarray);
@@ -356,7 +353,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 			matdata = mxGetPr(pmxarray);
 			wvm->nonlinThreshold = (float)matdata[0];
 			int nonLinType       = (int)matdata[1];
-			wvm->basisParam       = (float)(matdata[2]/65025.0); // because the training images grey level values were divided by 255
+			wvm->basisParam       = (float)(matdata[2]/65025.0); // because the training images gray level values were divided by 255
 			int polyPower        = (int)matdata[3];
 			float divisor          = (float)matdata[4];
 			mxDestroyArray(pmxarray);
@@ -375,9 +372,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 		wvm->numFiltersPerLevel = (int)matdata[0];
 		mxDestroyArray(pmxarray);
 	} else {
-		std::cout << "[WvmClassifier] : 'num_hk_wvm' not found in:" << std::endl;
-		exit(EXIT_FAILURE);
-		return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+		throw runtime_error("WvmClassifier: Variable 'num_hk_wvm' not found in classifier file.");
 	}
 	// number of levels with filters (eg 20)
 	pmxarray = matGetVariable(pmatfile, "num_lev_wvm");
@@ -387,15 +382,11 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 		wvm->numLevels = (int)matdata[0];
 		mxDestroyArray(pmxarray);
 	} else {
-		std::cout << "[WvmClassifier] : 'num_lev_wvm' not found in:" << std::endl;
-		exit(EXIT_FAILURE);
-		return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+		throw runtime_error("WvmClassifier: Variable 'num_lev_wvm' not found in classifier file.");
 	}
 
-  
-	//read recangles in area
-	std::cout << "[WvmClassifier] Reading rectangles in area..." << std::endl;
-
+	//read rectangles in area
+	logger.log(loglevel::DEBUG, "Reading rectangles in area...");
 	pmxarray = matGetVariable(pmatfile, "area");
 	if (pmxarray != 0 && mxIsStruct(pmxarray)) {
 		int r,v,hrsv,w,h;
@@ -411,14 +402,10 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 		const mwSize *dim=mxGetDimensions(pmxarray);
 		int nHK=(int)dim[1];
 		if (wvm->numLinFilters!=nHK){
-			std::cout << "[WvmClassifier] : 'area' not right dim:" << nHK << "(==" << wvm->numLinFilters << ")" << std::endl;
-			exit(EXIT_FAILURE);
-			return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+			throw runtime_error("WvmClassifier: Variable 'area' in the classifier file has wrong dimensions:" + lexical_cast<string>(nHK) + "(==" + lexical_cast<string>(wvm->numLinFilters) + ")");
 		}
 		if ((wvm->numFiltersPerLevel*wvm->numLevels)!=nHK){
-			std::cout << "[WvmClassifier] : 'area' not right dim:" << nHK <<  "(==" << wvm->numLinFilters << ")" << std::endl;
-			exit(EXIT_FAILURE);
-			return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+			throw runtime_error("WvmClassifier: Variable 'area' in the classifier file has wrong dimensions:" + lexical_cast<string>(nHK) +  "(==" + lexical_cast<string>(wvm->numLinFilters) + ")");
 		}
 
 		wvm->area = new Area*[nHK];
@@ -428,9 +415,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 
 			mxArray* mval=mxGetField(pmxarray,hrsv,valstr);
  			if (mval == NULL ) {
-				std::cout << "[WvmClassifier] : '" << valstr << "' not found (WVM: 'val_u', else: 'val', right *.mat/kernel?)" << std::endl;
-				exit(EXIT_FAILURE);
-				return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+				throw runtime_error("WvmClassifier: '" + lexical_cast<string>(valstr) + "' not found (WVM: 'val_u', else: 'val', right *.mat/kernel?)");
 			}
 			dim=mxGetDimensions(mval);
 			cntval=(int)dim[1];
@@ -481,9 +466,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 		mxDestroyArray(pmxarray);
 
 	} else {
-		std::cout << "[WvmClassifier] : 'area' not found (right *.mat/kernel?)" << std::endl;
-		exit(EXIT_FAILURE);
-		return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+		throw runtime_error("WvmClassifier: 'area' not found (right *.mat/kernel?)");
 	}
 
 	//read convolution of the appr. rsv (pp) in	mat file
@@ -493,39 +476,34 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 		const mwSize *dim = mxGetDimensions(pmxarray);
 		int nHK=(int)dim[1];
 		if (wvm->numLinFilters!=nHK){
-			std::cout << "[WvmClassifier] : 'app_rsv_convol' not right dim:" << nHK << " (==" << wvm->numLinFilters << ")" << std::endl;
-			exit(EXIT_FAILURE);
-			return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+			throw runtime_error("WvmClassifier: 'app_rsv_convol' not right dim:" + lexical_cast<string>(nHK) + " (==" + lexical_cast<string>(wvm->numLinFilters) + ")");
 		}
 		wvm->app_rsv_convol = new double[nHK];
 		for (int hrsv=0; hrsv<nHK; ++hrsv)
 			wvm->app_rsv_convol[hrsv]=matdata[hrsv]*65025.0; // because the training images grey level values were divided by 255;
 		mxDestroyArray(pmxarray);
 	} else {
-		std::cout << "[WvmClassifier] : 'app_rsv_convol' not found" << std::endl;
-		exit(EXIT_FAILURE);
-		return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+		throw runtime_error("WvmClassifier: 'app_rsv_convol' not found.");
 	}
 
 	if (matClose(pmatfile) != 0) {
-		std::cout << "[WvmClassifier] Error closing file" << std::endl;
+		logger.log(loglevel::WARN, "WvmClassifier: Could not close file " + classifierFilename);
+		// TODO What is this? An error? Info? Throw an exception?
 	}
-	std::cout << "[WvmClassifier] Done reading WVM!" << std::endl;
+	logger.log(loglevel::INFO, "WVM successfully read.");
 
 
-	
 	//printf("fd_ReadDetector(): making the hierarchical thresholds\n");
 	// making the hierarchical thresholds
 	//MATFile *mxtFile = matOpen(args->threshold, "r");
+	logger.log(loglevel::INFO, "Loading WVM thresholds from matlab file: " + thresholdsFilename);
 	pmatfile = matOpen(thresholdsFilename.c_str(), "r");
 	if (pmatfile == 0) {
-		std::cout << "[WvmClassifier] : Unable to open the file (wrong format?):" << std::endl << thresholdsFilename.c_str() << std::endl;
-		exit(EXIT_FAILURE);
-		return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+		throw runtime_error("WvmClassifier: Unable to open the thresholds file (wrong format?):" + thresholdsFilename);
 	} else {
 		pmxarray = matGetVariable(pmatfile, "hierar_thresh");
 		if (pmxarray == 0) {
-			std::cout << "[WvmClassifier] : Unable to find the matrix hierar_thresh in the file " << thresholdsFilename.c_str() << std::endl;
+			throw runtime_error("WvmClassifier: Unable to find the matrix hierar_thresh in the thresholds file.");
 		} else {
 			double* matdata = mxGetPr(pmxarray);
 			const mwSize *dim = mxGetDimensions(pmxarray);
@@ -554,15 +532,13 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 		for (i = 0; i < this->numLinFilters; ++i) this->hierarchicalThresholds[i]+=this->limitReliabilityFilter;
 	*/
 	if(wvm->hierarchicalThresholdsFromFile.size() != wvm->numLinFilters) {
-		std::cout << "[WvmClassifier] Something seems to be wrong, hierarchicalThresholdsFromFile.size() != numLinFilters; " << wvm->hierarchicalThresholdsFromFile.size() << "!=" << wvm->numLinFilters << std::endl;
-		exit(EXIT_FAILURE);
-		return shared_ptr<WvmClassifier>(); // FIXME just a dummy return until exceptions are thrown
+		throw runtime_error("WvmClassifier: Something seems to be wrong, hierarchicalThresholdsFromFile.size() != numLinFilters; " + lexical_cast<string>(wvm->hierarchicalThresholdsFromFile.size()) + "!=" + lexical_cast<string>(wvm->numLinFilters));
 	}
 	wvm->setLimitReliabilityFilter(wvm->limitReliabilityFilter);	// This initializes the vector hierarchicalThresholds
 
 	//for (i = 0; i < this->numLinFilters; ++i) printf("b%d=%g ",i+1,this->hierarchicalThresholds[i]);
 	//printf("\n");
-	std::cout << "[WvmClassifier] Done reading WVM-threshold file " << thresholdsFilename << std::endl;
+	logger.log(loglevel::INFO, "WVM thresholds successfully read.");
 
 	wvm->filter_output = new float[wvm->numLinFilters];
 	wvm->u_kernel_eval = new float[wvm->numLinFilters];
