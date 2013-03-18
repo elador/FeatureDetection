@@ -10,7 +10,7 @@
 
 namespace logging {
 
-Logger::Logger(string name) : name(name) {}
+Logger::Logger(string name) : name(name), appenders() {}
 
 Logger::~Logger() {}
 
@@ -24,6 +24,36 @@ void Logger::log(const loglevel logLevel, string logMessage)
 void Logger::addAppender(shared_ptr<Appender> appender)
 {
 	appenders.push_back(appender);
+}
+
+void Logger::trace(const string logMessage)
+{
+	log(loglevel::TRACE, logMessage);
+}
+
+void Logger::debug(const string logMessage)
+{
+	log(loglevel::DEBUG, logMessage);
+}
+
+void Logger::info(const string logMessage)
+{
+	log(loglevel::INFO, logMessage);
+}
+
+void Logger::warn(const string logMessage)
+{
+	log(loglevel::WARN, logMessage);
+}
+
+void Logger::error(const string logMessage)
+{
+	log(loglevel::ERROR, logMessage);
+}
+
+void Logger::panic(const string logMessage)
+{
+	log(loglevel::PANIC, logMessage);
 }
 
 } /* namespace logging */

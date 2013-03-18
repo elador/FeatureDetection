@@ -40,23 +40,65 @@ public:
 	~Logger();
 
 	/**
-	 * Logs a message to all appenders (e.g. the console or a file) with corresponding log-levels.
-	 *
-	 * @param[in] logLevel The log-level of the message.
-	 * @param[in] logMessage The message to be logged.
-	 */
-	void log(const loglevel logLevel, const string logMessage);
-
-	/**
 	 * Adds an appender to this logger.
 	 *
 	 * @param[in] The new appender.
 	 */
 	void addAppender(shared_ptr<Appender> appender);
 
+	/**
+	 * Logs a message with log-level TRACE to all appenders (e.g. the console or a file).
+	 *
+	 * @param[in] logMessage The message to be logged.
+	 */
+	void trace(const string logMessage);
+
+	/**
+	 * Logs a message with log-level DEBUG to all appenders (e.g. the console or a file).
+	 *
+	 * @param[in] logMessage The message to be logged.
+	 */
+	void debug(const string logMessage);
+
+	/**
+	 * Logs a message with log-level INFO to all appenders (e.g. the console or a file).
+	 *
+	 * @param[in] logMessage The message to be logged.
+	 */
+	void info(const string logMessage);
+
+	/**
+	 * Logs a message with log-level WARN to all appenders (e.g. the console or a file).
+	 *
+	 * @param[in] logMessage The message to be logged.
+	 */
+	void warn(const string logMessage);
+
+	/**
+	 * Logs a message with log-level ERROR to all appenders (e.g. the console or a file).
+	 *
+	 * @param[in] logMessage The message to be logged.
+	 */
+	void error(const string logMessage);
+
+	/**
+	 * Logs a message with log-level PANIC to all appenders (e.g. the console or a file).
+	 *
+	 * @param[in] logMessage The message to be logged.
+	 */
+	void panic(const string logMessage);
+
 private:
 	vector<shared_ptr<Appender>> appenders;
 	string name;
+
+	/**
+	 * Logs a message to all appenders (e.g. the console or a file) with corresponding log-levels.
+	 *
+	 * @param[in] logLevel The log-level of the message.
+	 * @param[in] logMessage The message to be logged.
+	 */
+	void log(const loglevel logLevel, const string logMessage);
 
 };
 

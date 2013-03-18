@@ -53,7 +53,7 @@ void SvmClassifier::setSvmParameters(vector<Mat> supportVectors, vector<float> c
 shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFilename, const string& thresholdsFilename)
 {
 	Logger logger = Loggers->getLogger("classification");
-	logger.log(loglevel::INFO, "Loading SVM classifier from matlab file: " + classifierFilename);
+	logger.info("Loading SVM classifier from matlab file: " + classifierFilename);
 
 	MATFile *pmatfile;
 	mxArray *pmxarray; // =mat
@@ -129,11 +129,11 @@ shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFile
 	mxDestroyArray(pmxarray);
 
 	if (matClose(pmatfile) != 0) {
-		logger.log(loglevel::WARN, "SvmClassifier: Could not close file " + classifierFilename);
+		logger.warn("SvmClassifier: Could not close file " + classifierFilename);
 		// TODO What is this? An error? Info? Throw an exception?
 	}
 
-	logger.log(loglevel::INFO, "SVM successfully read.");
+	logger.info("SVM successfully read.");
 
 	return svm;
 }

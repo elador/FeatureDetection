@@ -152,7 +152,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 	wvm->limitReliabilityFilter=0.0f;	// FD.limit_reliability_filter (for WVM) (without _filter, it's for the SVM)
 
 	Logger logger = Loggers->getLogger("classification");
-	logger.log(loglevel::INFO, "Loading WVM classifier from matlab file: " + classifierFilename);
+	logger.info("Loading WVM classifier from matlab file: " + classifierFilename);
 	
 	MATFile *pmatfile;
 	mxArray *pmxarray; // =mat
@@ -171,11 +171,11 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 	matdata = mxGetPr(pmxarray);
 	int nfilter = (int)matdata[0];
 	mxDestroyArray(pmxarray);
-	logger.log(loglevel::DEBUG, "Found " + lexical_cast<string>(nfilter) + " WVM filters.");
+	logger.debug("Found " + lexical_cast<string>(nfilter) + " WVM filters.");
 
 	pmxarray = matGetVariable(pmatfile, "wrvm");
 	if (pmxarray != 0) { // read area
-		logger.log(loglevel::ERROR, "Found a structure 'wrvm' and trying to read the " + lexical_cast<string>(nfilter) + " non-linear filters support_hk* and weight_hk* at once. However, this is not implemented yet.");
+		logger.error("Found a structure 'wrvm' and trying to read the " + lexical_cast<string>(nfilter) + " non-linear filters support_hk* and weight_hk* at once. However, this is not implemented yet.");
 		throw runtime_error("WvmClassifier: Reading all wvm filters at once using the structure 'wrvm' is not (yet) supported.");
 		// Note: If we at one time need this, I'll implement and test it.
 		/*
@@ -272,7 +272,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 
 
 	} else {	// read seq.
-		logger.log(loglevel::DEBUG, "No structure 'wrvm' found, thus reading the " + lexical_cast<string>(nfilter) + " non-linear filters support_hk* and weight_hk* sequentially (slower).");
+		logger.debug("No structure 'wrvm' found, thus reading the " + lexical_cast<string>(nfilter) + " non-linear filters support_hk* and weight_hk* sequentially (slower).");
 		char str[100];
 		sprintf(str, "support_hk%d", 1);
 		pmxarray = matGetVariable(pmatfile, str);
@@ -334,7 +334,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 				mxDestroyArray(pmxarray);
 			}
 		}	// end for over numHKs
-		logger.log(loglevel::DEBUG, "Vectors and weights successfully read.");
+		logger.debug("Vectors and weights successfully read.");
 
 	}// end else read vecs/weights sequentially
 	
@@ -386,7 +386,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 	}
 
 	//read rectangles in area
-	logger.log(loglevel::DEBUG, "Reading rectangles in area...");
+	logger.debug("Reading rectangles in area...");
 	pmxarray = matGetVariable(pmatfile, "area");
 	if (pmxarray != 0 && mxIsStruct(pmxarray)) {
 		int r,v,hrsv,w,h;
@@ -487,16 +487,16 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 	}
 
 	if (matClose(pmatfile) != 0) {
-		logger.log(loglevel::WARN, "WvmClassifier: Could not close file " + classifierFilename);
+		logger.warn("WvmClassifier: Could not close file " + classifierFilename);
 		// TODO What is this? An error? Info? Throw an exception?
 	}
-	logger.log(loglevel::INFO, "WVM successfully read.");
+	logger.info("WVM successfully read.");
 
 
 	//printf("fd_ReadDetector(): making the hierarchical thresholds\n");
 	// making the hierarchical thresholds
 	//MATFile *mxtFile = matOpen(args->threshold, "r");
-	logger.log(loglevel::INFO, "Loading WVM thresholds from matlab file: " + thresholdsFilename);
+	logger.info("Loading WVM thresholds from matlab file: " + thresholdsFilename);
 	pmatfile = matOpen(thresholdsFilename.c_str(), "r");
 	if (pmatfile == 0) {
 		throw runtime_error("WvmClassifier: Unable to open the thresholds file (wrong format?):" + thresholdsFilename);
@@ -538,7 +538,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 
 	//for (i = 0; i < this->numLinFilters; ++i) printf("b%d=%g ",i+1,this->hierarchicalThresholds[i]);
 	//printf("\n");
-	logger.log(loglevel::INFO, "WVM thresholds successfully read.");
+	logger.info("WVM thresholds successfully read.");
 
 	wvm->filter_output = new float[wvm->numLinFilters];
 	wvm->u_kernel_eval = new float[wvm->numLinFilters];

@@ -25,9 +25,12 @@ void ConsoleAppender::log(const loglevel logLevel, const string loggerName, cons
 	if(logLevel <= this->logLevel) {
 		system_clock::time_point now = system_clock::now();
 		std::time_t now_c = system_clock::to_time_t(now);
-		cout << std::put_time(std::localtime(&now_c), "%H:%M:%S") << " [" << loglevelToString(logLevel) << "] " << "[" << loggerName << "] " << logMessage << std::endl;
+		//cout << std::put_time(std::localtime(&now_c), "%H:%M:%S") << " [" << loglevelToString(logLevel) << "] " << "[" << loggerName << "] " << logMessage << std::endl;
 		// TODO	- maybe use setw()
 		//		- The windows header seems to behave very strange, certain %F... etc don't seem to work (runtime-error).
+
+		struct tm* tm_now = std::localtime(&now_c);
+		cout << tm_now->tm_year << '-' << tm_now->tm_mon << '-' << tm_now->tm_mday << ' ' << tm_now->tm_hour << ':' << tm_now->tm_min << ':' << tm_now->tm_sec << " [" << loglevelToString(logLevel) << "] " << "[" << loggerName << "] " << logMessage << std::endl;
 	}
 }
 

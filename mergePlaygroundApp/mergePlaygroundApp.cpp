@@ -79,14 +79,14 @@ int main(int argc, char *argv[])
 
 	// Todo bool isLogLevelEnabled(...)
 
-	root.log(loglevel::PANIC, "Test: Logging PANIC");
-	root.log(loglevel::ERROR, "Test: Logging ERROR");
-	root.log(loglevel::WARN, "Test: Logging WARN");
-	root.log(loglevel::INFO, "Test: Logging INFO");
-	root.log(loglevel::DEBUG, "Test: Logging DEBUG");
-	root.log(loglevel::TRACE, "Test: Logging TRACE");
+	root.panic("Test: Logging PANIC");
+	root.error("Test: Logging ERROR");
+	root.warn("Test: Logging WARN");
+	root.info("Test: Logging INFO");
+	root.debug("Test: Logging DEBUG");
+	root.trace("Test: Logging TRACE");
 
-	Loggers->getLogger("classification").log(loglevel::DEBUG, "CLASSIF TEST");
+	Loggers->getLogger("classification").debug("CLASSIF TEST");
 
 	cout << "Starting tests..." << endl;
 
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 	try	{
 		svm = SvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
 	} catch (std::invalid_argument& e) {
-		root.log(loglevel::ERROR, e.what());
+		root.error(e.what());
 	}
 
 	shared_ptr<WvmClassifier> wvm = WvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
