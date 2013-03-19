@@ -6,6 +6,8 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # find dependencies
 FIND_PACKAGE(OpenCV REQUIRED core imgproc)
+MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
+MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
 # source and header files
 SET(HEADERS
@@ -47,6 +49,7 @@ SET(SOURCE
 	src/imageprocessing/ZeroMeanUnitVarianceFilter.cpp
 )
 
+include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( "include" )
 
 # make library

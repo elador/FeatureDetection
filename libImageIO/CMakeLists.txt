@@ -7,6 +7,8 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 # find dependencies
 FIND_PACKAGE(Boost COMPONENTS filesystem REQUIRED)
 FIND_PACKAGE(OpenCV REQUIRED core)
+MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
+MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 IF(WIN32)
 	# In Windows only: Include Microsoft Kinect SDK
 	SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
@@ -33,6 +35,7 @@ SET(SOURCE
 	src/imageio/VideoImageSource.cpp
 )
 
+include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( ${Boost_INCLUDE_DIRS} )
 include_directories( "include" )
 
