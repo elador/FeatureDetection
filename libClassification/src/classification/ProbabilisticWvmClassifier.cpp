@@ -25,6 +25,10 @@ pair<bool, double> ProbabilisticWvmClassifier::classify( const Mat& featureVecto
 {
 	pair<int, double> levelAndDistance = wvm->computeHyperplaneDistance(featureVector);
 	// Do sigmoid stuff:
+	// NOTE Patrik: Here we calculate the probability for all WVM patches, also of those that
+	//      did not run up to the last filter. Those probabilities are wrong, but for the face-
+	//      detector it seems to work out ok. However, for the eye-detector, the probability-maps
+	//      don't look good. See below for the code.
 	double probability = 1.0f / (1.0f + exp(logisticA + logisticB * levelAndDistance.second));
 	return make_pair(wvm->classify(levelAndDistance), probability);
 

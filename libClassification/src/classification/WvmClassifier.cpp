@@ -10,15 +10,12 @@
 #include "logging/LoggerFactory.hpp"
 #include "mat.h"
 #include "boost/lexical_cast.hpp"
-#include <iostream>
 #include <stdexcept>
 
 using logging::Logger;
 using logging::LoggerFactory;
-using logging::loglevel;
 using std::make_shared;
 using std::make_pair;
-using std::cout;
 using std::invalid_argument;
 using std::runtime_error;
 using boost::lexical_cast;
@@ -780,18 +777,22 @@ WvmClassifier::Area::~Area(void)
 void WvmClassifier::Area::dump(char *name="") {
 	int r,v;  
 
-	std::cout << std::endl << "area" << name << ": cntval:" << cntval << ", cntallrec:" << cntallrec << ", val:";
-	for (v=0;v<cntval;v++) std::cout << " " << val[v];	//printf(" %1.4f",val[v]);
-	std::cout << std::endl;
+	Logger logger = Loggers->getLogger("classification");
+	// NOTE: This code with the logger is not tested because we haven't used Area::dump for a long time. But it should be ok.
+	logger.trace("area" + lexical_cast<string>(name) + ": cntval:" + lexical_cast<string>(cntval) + ", cntallrec:" + lexical_cast<string>(cntallrec) + ", val:");
+
+	for (v=0;v<cntval;v++)
+		logger.trace(" " + lexical_cast<string>(val[v]));
+	logger.trace("");
 
 	for (v=0;v<cntval;v++) {
 		for (r=0;r<cntrec[v];r++) { 
 			//printf("r[%d][%d]:(%d,%d,%d,%d) ",v,r,rec[v][r].x1,rec[v][r].y1,rec[v][r].x2,rec[v][r].y2);
-			std::cout << "r[" << v << "][" << r << "]:(" << rec[v][r].x1 << "," << rec[v][r].y1 << "," << rec[v][r].x2 << "," << rec[v][r].y2 << ") ";
+			logger.trace("r[" + lexical_cast<string>(v) + "][" + lexical_cast<string>(r) + "]:(" + lexical_cast<string>(rec[v][r].x1) + "," + lexical_cast<string>(rec[v][r].y1) + "," + lexical_cast<string>(rec[v][r].x2) + "," + lexical_cast<string>(rec[v][r].y2) + ") ");
 			if ((r%5)==4) 
-				std::cout << std::endl;
+				logger.trace("");
 		}
-		std::cout << std::endl;
+		logger.trace("");
 	}
 }
 
