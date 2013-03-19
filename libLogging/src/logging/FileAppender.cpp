@@ -9,26 +9,25 @@
 #include "logging/loglevels.hpp"
 #include <ios>
 #include <iostream>
+#include <sstream>
 #include <iomanip>
-#include <chrono>
+#ifdef WIN32
+	#include "wingettimeofday.h"
+#else
+	#include <sys/time.h>
+#endif
 
 using std::ios_base;
-using std::chrono::system_clock;
+using std::ostringstream;
 
 namespace logging {
 
 FileAppender::FileAppender(loglevel logLevel, string filename) : Appender(logLevel)
 {
 	file.open(filename, std::ios::out | std::ios::app);
-	if (!file.is_open()) {
+	if (!file.is_open())
 		throw ios_base::failure("Error: Could not open or create log-file: " + filename);
-	}
-	system_clock::time_point now = system_clock::now();
-	std::time_t now_c = system_clock::to_time_t(now);
-	//file << std::put_time(std::localtime(&now_c), "%Y-%m-%d %H:%M:%S") << " Starting logging to " << filename << std::endl;
-	
-	struct tm* tm_now = std::localtime(&now_c);
-	file << tm_now->tm_year << '-' << tm_now->tm_mon << '-' << tm_now->tm_mday << ' ' << tm_now->tm_hour << ':' << tm_now->tm_min << ':' << tm_now->tm_sec << " Starting logging at log-level " << loglevelToString(logLevel) << " to file " << filename << std::endl;
+	file << getCurrentTime() << " Starting logging at log-level " << loglevelToString(logLevel) << " to file " << filename << std::endl;
 	// TODO We should really also output the loggerName here! So... maybe make a member variable that holds a reference to the appenders parent logger?
 }
 
@@ -39,18 +38,22 @@ FileAppender::~FileAppender()
 
 void FileAppender::log(const loglevel logLevel, const string loggerName, const string logMessage)
 {
-	if(logLevel <= this->logLevel) {
-		system_clock::time_point now = system_clock::now();
-		std::time_t now_c = system_clock::to_time_t(now);
-		// Easier, but not yet supported on Linux and strange behaviour on Windows:
-		//		- The windows header seems to behave very strange, certain %F... etc don't seem to work (runtime-error).
-		// file << std::put_time(std::localtime(&now_c), "%Y-%m-%d %H:%M:%S") << " [" << loglevelToString(logLevel) << "] " << "[" << loggerName << "] " << logMessage << std::endl;
-		
-		struct tm* tm_now = std::localtime(&now_c);
-		file << tm_now->tm_year << '-' << tm_now->tm_mon << '-' << tm_now->tm_mday << ' ' << tm_now->tm_hour << ':' << tm_now->tm_min << ':' << tm_now->tm_sec << " [" << loglevelToString(logLevel) << "] " << "[" << loggerName << "] " << logMessage << std::endl;
-		// TODO	- maybe use setw()
-		//		- Add milliseconds to the file-logging
-	}
+	if(logLevel <= this->logLevel)
+		file << getCurrentTime() << ' ' << loglevelToString(logLevel) << ' ' << "[" << loggerName << "] " << logMessage << std::endl;
+}
+
+string FileAppender::getCurrentTime()
+{
+	timeval time;
+	gettimeofday(&time, 0);
+	struct tm* tm_time = std::localtime(&time.tv_sec);
+	ostringstream os;
+	os << std::setfill('0') << std::setw(2);
+	os << (1900 + tm_time->tm_year) << '-' << (1 + tm_time->tm_mon) << '-' << tm_time->tm_mday << ' ';
+	os << tm_time->tm_hour << ':' << tm_time->tm_min << ':' << tm_time->tm_sec << '.';
+	os << std::setw(3);
+	os << (time.tv_usec / 1000);
+	return os.str();
 }
 
 } /* namespace logging */

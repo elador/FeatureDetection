@@ -41,6 +41,15 @@ public:
 	 */
 	void log(const loglevel logLevel, const string loggerName, const string logMessage);
 
+private:
+
+	/**
+	 * Creates a new string containing the formatted current time.
+	 *
+	 * @return The formatted time.
+	 */
+	string getCurrentTime();
+
 };
 
 } /* namespace logging */

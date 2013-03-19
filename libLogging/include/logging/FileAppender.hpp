@@ -43,6 +43,14 @@ public:
 	void log(const loglevel logLevel, const string loggerName, const string logMessage);
 
 private:
+
+	/**
+	 * Creates a new string containing the formatted current time.
+	 *
+	 * @return The formatted time.
+	 */
+	string getCurrentTime();
+
 	// TODO: We should make the copy constructor (and assignment operator?) private because we have an ofstream as member variable! Read that somewhere on stackoverflow.
 	ofstream file;
 };

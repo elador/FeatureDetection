@@ -8,11 +8,16 @@
 #include "logging/ConsoleAppender.hpp"
 #include "logging/loglevels.hpp"
 #include <iostream>
+#include <sstream>
 #include <iomanip>
-#include <chrono>
+#ifdef WIN32
+	#include "wingettimeofday.h"
+#else
+	#include <sys/time.h>
+#endif
 
 using std::cout;
-using std::chrono::system_clock;
+using std::ostringstream;
 
 namespace logging {
 
@@ -22,16 +27,21 @@ ConsoleAppender::~ConsoleAppender() {}
 
 void ConsoleAppender::log(const loglevel logLevel, const string loggerName, const string logMessage)
 {
-	if(logLevel <= this->logLevel) {
-		system_clock::time_point now = system_clock::now();
-		std::time_t now_c = system_clock::to_time_t(now);
-		//cout << std::put_time(std::localtime(&now_c), "%H:%M:%S") << " [" << loglevelToString(logLevel) << "] " << "[" << loggerName << "] " << logMessage << std::endl;
-		// TODO	- maybe use setw()
-		//		- The windows header seems to behave very strange, certain %F... etc don't seem to work (runtime-error).
+	if(logLevel <= this->logLevel)
+		cout << getCurrentTime() << ' ' << loglevelToString(logLevel) << ' ' << "[" << loggerName << "] " << logMessage << std::endl;
+}
 
-		struct tm* tm_now = std::localtime(&now_c);
-		cout << tm_now->tm_year << '-' << tm_now->tm_mon << '-' << tm_now->tm_mday << ' ' << tm_now->tm_hour << ':' << tm_now->tm_min << ':' << tm_now->tm_sec << " [" << loglevelToString(logLevel) << "] " << "[" << loggerName << "] " << logMessage << std::endl;
-	}
+string ConsoleAppender::getCurrentTime()
+{
+	timeval time;
+	gettimeofday(&time, 0);
+	struct tm* tm_time = std::localtime(&time.tv_sec);
+	ostringstream os;
+	os << std::setfill('0') << std::setw(2);
+	os << tm_time->tm_hour << ':' << tm_time->tm_min << ':' << tm_time->tm_sec << '.';
+	os << std::setw(3);
+	os << (time.tv_usec / 1000);
+	return os.str();
 }
 
 } /* namespace logging */
