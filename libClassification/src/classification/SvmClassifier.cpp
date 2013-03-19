@@ -10,15 +10,12 @@
 #include "classification/RbfKernel.hpp"
 #include "logging/LoggerFactory.hpp"
 #include "mat.h"
-#include <iostream>
 #include <stdexcept>
 
 using logging::Logger;
 using logging::LoggerFactory;
-using logging::loglevel;
 using std::make_shared;
 using std::make_pair;
-using std::cout;
 using std::invalid_argument;
 using std::runtime_error;
 

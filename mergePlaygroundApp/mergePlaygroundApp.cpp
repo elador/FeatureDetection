@@ -37,6 +37,7 @@
 #include "imageprocessing/RowFeatureTransformer.hpp"
 #include "imageprocessing/MultipleImageFilter.hpp"
 #include "imageprocessing/HistEq64Filter.hpp"
+#include "imageprocessing/HistogramEqualizationFilter.hpp"
 
 #include "logging/LoggerFactory.hpp"
 #include "logging/FileAppender.hpp"
@@ -71,25 +72,13 @@ int main(int argc, char *argv[])
 	#endif
 	
 	Logger root = Loggers->getLogger("root");
-	root.addAppender(make_shared<logging::FileAppender>(loglevel::INFO, "C:\\Users\\Patrik\\Documents\\GitHub\\logfile.txt"));
-	root.addAppender(make_shared<logging::ConsoleAppender>(loglevel::WARN));
+	root.addAppender(make_shared<logging::FileAppender>(loglevel::TRACE, "C:\\Users\\Patrik\\Documents\\GitHub\\logfile.txt"));
+	root.addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
 
-	Loggers->getLogger("classification").addAppender(make_shared<logging::FileAppender>(loglevel::DEBUG, "C:\\Users\\Patrik\\Documents\\GitHub\\logfile.txt"));
+	Loggers->getLogger("classification").addAppender(make_shared<logging::FileAppender>(loglevel::TRACE, "C:\\Users\\Patrik\\Documents\\GitHub\\logfile.txt"));
 	Loggers->getLogger("classification").addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
 
-	// Todo bool isLogLevelEnabled(...)
-
-	root.panic("Test: Logging PANIC");
-	root.error("Test: Logging ERROR");
-	root.warn("Test: Logging WARN");
-	root.info("Test: Logging INFO");
-	root.debug("Test: Logging DEBUG");
-	root.trace("Test: Logging TRACE");
-
-	Loggers->getLogger("classification").debug("CLASSIF TEST");
-
-	cout << "Starting tests..." << endl;
-
+	root.info("Starting tests...");
 	
 	Mat fvp = cv::imread("C:/Users/Patrik/Documents/GitHub/patchpos.png");
 	Mat fvn = cv::imread("C:/Users/Patrik/Documents/GitHub/patchneg.png");
@@ -97,22 +86,31 @@ int main(int argc, char *argv[])
 	cv::cvtColor(fvp, fvp, CV_BGR2GRAY);
 	cv::cvtColor(fvn, fvn, CV_BGR2GRAY);
 	
-	shared_ptr<SvmClassifier> svm;
+	shared_ptr<ProbabilisticSvmClassifier> svm;
 	try	{
-		svm = SvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
+		svm = ProbabilisticSvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
 	} catch (std::invalid_argument& e) {
 		root.error(e.what());
 	}
 
-	shared_ptr<WvmClassifier> wvm = WvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
+	shared_ptr<ProbabilisticWvmClassifier> wvm = ProbabilisticWvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.001--with-outnew02HQ64SVM.mat");
 
-	bool res = svm->classify(fvp);
-	bool res2 = svm->classify(fvn);
+	svm->getSvm()->setLimitReliability(-0.2f);
+	wvm->getWvm()->setLimitReliabilityFilter(-0.5f);
+	wvm->getWvm()->setNumUsedFilters(10);
+
+	imageprocessing::HistEq64Filter hq64;
+	//imageprocessing::HistogramEqualizationFilter hq64;
+	hq64.applyInPlace(fvp);
+	hq64.applyInPlace(fvn);
+
+	pair<bool, double> res = svm->classify(fvp);
+	pair<bool, double> res2 = svm->classify(fvn);
 
 	res = wvm->classify(fvp);
 	res2 = wvm->classify(fvn);
 
-	cout << "The end." << endl;
+	root.info("End tests.");
 
 	/*
 	Mat img = cv::imread("C:/Users/Patrik/Documents/GitHub/data/firstrun/ws_115.png");

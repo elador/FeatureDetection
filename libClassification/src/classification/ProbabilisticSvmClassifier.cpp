@@ -9,9 +9,11 @@
 #include "classification/SvmClassifier.hpp"
 #include "mat.h"
 #include <iostream>
+#include <stdexcept>
 
 using std::make_pair;
 using std::make_shared;
+using std::runtime_error;
 
 namespace classification {
 
@@ -43,8 +45,7 @@ shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadMatlab(co
 	mxArray *pmxarray; // =mat
 	pmatfile = matOpen(thresholdsFilename.c_str(), "r");
 	if (pmatfile == 0) {
-		std::cout << "[DetSVM] Unable to open the file (wrong format?):" << std::endl <<  thresholdsFilename << std::endl;
-		// THROW
+		throw runtime_error("ProbabilisticSvmClassifier: Unable to open the thresholds file to read the sigmoid parameters (wrong format?):" + thresholdsFilename);
 	} else {
 		//read posterior_wrvm parameter for probabilistic WRVM output
 		//TODO 2012: is there a case (when svm+wvm from same trainingdata) when there exists only a posterior_svm, and I should use this here?
