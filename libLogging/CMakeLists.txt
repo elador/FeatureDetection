@@ -8,7 +8,6 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # source and header files
 SET(HEADERS
-	include/wingettimeofday.h
 	include/logging/Logger.hpp
 	include/logging/LoggerFactory.hpp
 	include/logging/Appender.hpp
@@ -17,7 +16,6 @@ SET(HEADERS
 	include/logging/loglevels.hpp
 )
 SET(SOURCE
-	src/wingettimeofday.cpp
 	src/logging/Logger.cpp
 	src/logging/LoggerFactory.cpp
 	src/logging/ConsoleAppender.cpp
@@ -29,4 +27,4 @@ include_directories( "include" )
 # add dependencies
 
 # make library
-add_library( ${SUBPROJECT_NAME} SHARED ${SOURCE} ${HEADERS} )
+add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )

@@ -11,14 +11,13 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
-#ifdef WIN32
-	#include "wingettimeofday.h"
-#else
-	#include <sys/time.h>
-#endif
+#include <chrono>
 
 using std::ios_base;
 using std::ostringstream;
+using std::chrono::system_clock;
+using std::chrono::duration;
+using std::chrono::duration_cast;
 
 namespace logging {
 
@@ -44,15 +43,18 @@ void FileAppender::log(const loglevel logLevel, const string loggerName, const s
 
 string FileAppender::getCurrentTime()
 {
-	timeval time;
-	gettimeofday(&time, 0);
-	struct tm* tm_time = std::localtime(&time.tv_sec);
+	system_clock::time_point now = system_clock::now();
+	duration<int, std::ratio<1>> seconds = duration_cast<duration<int, std::ratio<1>>>(now.time_since_epoch());
+	duration<int, std::milli> milliseconds = duration_cast<duration<int, std::milli>>(now.time_since_epoch());
+	duration<int, std::milli> msec = milliseconds - seconds;
+
+	std::time_t t_now = system_clock::to_time_t(now);
+	struct tm* tm_now = std::localtime(&t_now);
 	ostringstream os;
-	os << std::setfill('0') << std::setw(2);
-	os << (1900 + tm_time->tm_year) << '-' << (1 + tm_time->tm_mon) << '-' << tm_time->tm_mday << ' ';
-	os << tm_time->tm_hour << ':' << tm_time->tm_min << ':' << tm_time->tm_sec << '.';
-	os << std::setw(3);
-	os << (time.tv_usec / 1000);
+	os.fill('0');
+	os << (1900 + tm_now->tm_year) << '-' << std::setw(2) << (1 + tm_now->tm_mon) << '-' << std::setw(2) << tm_now->tm_mday;
+	os << ' ' << std::setw(2) << tm_now->tm_hour << ':' << std::setw(2) << tm_now->tm_min << ':' << std::setw(2) << tm_now->tm_sec;
+	os << '.' << std::setw(3) << msec.count();
 	return os.str();
 }
 
