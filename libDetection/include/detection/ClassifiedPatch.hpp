@@ -73,11 +73,11 @@ public:
 	}
 
 	/**
-	 * Determines whether this classified patch is less than the other one using the probability. This patch is
+	 * Determines whether this classified patch is less than another one using the probability. This patch is
 	 * less than the other patch if the probability of this one is less than the probability of the other patch.
 	 *
 	 * @param[in] other The other patch.
-	 * @return True if this patch comes before the other, false otherwise.
+	 * @return True if this patch comes before the other in a strict weak ordering, false otherwise.
 	 */
 	bool operator<(const ClassifiedPatch& other) const {
 		return probability < other.probability;
@@ -89,7 +89,7 @@ public:
 	 * the other patch.
 	 *
 	 * @param[in] other The other patch.
-	 * @return True if this patch comes before the other, false otherwise.
+	 * @return True if this patch comes after the other in a strict weak ordering, false otherwise.
 	 */
 	bool operator>(const ClassifiedPatch& other) const {
 		return probability > other.probability;

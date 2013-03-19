@@ -23,13 +23,13 @@ namespace classification {
 
 TrainableSvmClassifier::TrainableSvmClassifier(shared_ptr<SvmClassifier> svm, double constraintsViolationCosts) :
 		svm(svm), constraintsViolationCosts(constraintsViolationCosts),
-		usable(false), dimensions(0), staticNegativeExamples(), node2example(), nodeDeleter(node2example), matType(CV_32F) {
+		usable(false), dimensions(0), node2example(), nodeDeleter(node2example), staticNegativeExamples(), matType(CV_32F) {
 	createParameters(svm->getKernel(), constraintsViolationCosts);
 }
 
 TrainableSvmClassifier::TrainableSvmClassifier(shared_ptr<Kernel> kernel, double constraintsViolationCosts) :
 		svm(make_shared<SvmClassifier>(kernel)), constraintsViolationCosts(constraintsViolationCosts),
-		usable(false), dimensions(0), staticNegativeExamples(), node2example(), nodeDeleter(node2example), matType(CV_32F) {
+		usable(false), dimensions(0), node2example(), nodeDeleter(node2example), staticNegativeExamples(), matType(CV_32F) {
 	createParameters(kernel, constraintsViolationCosts);
 }
 
@@ -75,8 +75,8 @@ pair<double, double> TrainableSvmClassifier::computeMeanSvmOutputs() {
 void TrainableSvmClassifier::loadStaticNegatives(const string& negativesFilename, int maxNegatives, double scale) {
 	staticNegativeExamples.reserve(maxNegatives);
 	int negatives = 0;
-	vector<double> values; // TODO war vorher int - funzt es noch?
-	double value; // TODO war vorher int - funzt es noch?
+	vector<double> values;
+	double value;
 	char separator;
 	string line;
 	std::ifstream file(negativesFilename.c_str());

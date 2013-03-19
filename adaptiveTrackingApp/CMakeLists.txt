@@ -33,6 +33,7 @@ SET(SOURCE
 
 # add dependencies
 include_directories( ${Boost_INCLUDE_DIRS} )
+include_directories( ${Logging_SOURCE_DIR}/include )
 include_directories( ${ImageIO_SOURCE_DIR}/include )
 include_directories( ${ImageProcessing_SOURCE_DIR}/include )
 include_directories( ${Classification_SOURCE_DIR}/include )
@@ -41,4 +42,4 @@ include_directories( ${Condensation_SOURCE_DIR}/include )
 
 # make executable
 ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} ImageIO ${KINECT_LIBNAME} ImageProcessing Classification Detection Condensation ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Logging ImageIO ${KINECT_LIBNAME} ImageProcessing Classification Detection Condensation ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )

@@ -28,6 +28,11 @@ class TrainableProbabilisticClassifier;
 }
 using classification::TrainableProbabilisticClassifier;
 
+namespace detection {
+class ClassifiedPatch;
+}
+using detection::ClassifiedPatch;
+
 namespace condensation {
 
 /**
@@ -65,12 +70,12 @@ public:
 private:
 
 	/**
-	 * Creates a list of feature vectors from the given pairs.
+	 * Creates a list of feature vectors from the given classified patches.
 	 *
-	 * @param[in] pairs The extracted patches paired with their probability.
+	 * @param[in] pairs The extracted and classified patches.
 	 * @return The feature vectors.
 	 */
-	vector<Mat> getFeatureVectors(vector<pair<shared_ptr<Patch>, double>>& pairs);
+	vector<Mat> getFeatureVectors(const vector<shared_ptr<ClassifiedPatch>>& patches);
 
 	/**
 	 * Creates a list of feature vectors from the given samples.
@@ -85,8 +90,8 @@ private:
 	bool usable; ///< Flag that indicates whether this model may be used for evaluation.
 	double positiveThreshold; ///< The threshold for samples to be used as positive training samples (must be exceeded).
 	double negativeThreshold; ///< The threshold for samples to be used as negative training samples (must fall below).
-	vector<pair<shared_ptr<Patch>, double>> positiveTrainingSamples; ///< The positive training examples.
-	vector<pair<shared_ptr<Patch>, double>> negativeTrainingSamples; ///< The negative training examples.
+	vector<shared_ptr<ClassifiedPatch>> positiveTrainingExamples; ///< The positive training examples.
+	vector<shared_ptr<ClassifiedPatch>> negativeTrainingExamples; ///< The negative training examples.
 };
 
 } /* namespace condensation */

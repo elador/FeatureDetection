@@ -37,7 +37,7 @@ public:
 	/**
 	 * @return The square bounding box representing the sample.
 	 */
-	inline Rectangle getBounds() const {
+	Rectangle getBounds() const {
 		int halfSize = size / 2;
 		return Rectangle(x - halfSize, y - halfSize, size, size);
 	}
@@ -45,7 +45,7 @@ public:
 	/**
 	 * @return The x coordinate.
 	 */
-	inline int getX() const {
+	int getX() const {
 		return x;
 	}
 
@@ -54,14 +54,14 @@ public:
 	 *
 	 * @param[in] x The new x coordinate.
 	 */
-	inline void setX(int x) {
+	void setX(int x) {
 		this->x = x;
 	}
 
 	/**
 	 * @return The y coordinate.
 	 */
-	inline int getY() const {
+	int getY() const {
 		return y;
 	}
 
@@ -70,14 +70,14 @@ public:
 	 *
 	 * @param[in] y The new y coordinate.
 	 */
-	inline void setY(int y) {
+	void setY(int y) {
 		this->y = y;
 	}
 
 	/**
 	 * @return The size (width).
 	 */
-	inline int getSize() const {
+	int getSize() const {
 		return size;
 	}
 
@@ -86,14 +86,14 @@ public:
 	 *
 	 * @param[in] size The new size.
 	 */
-	inline void setSize(int size) {
+	void setSize(int size) {
 		this->size = size;
 	}
 
 	/**
 	 * @return The weight.
 	 */
-	inline double getWeight() const {
+	double getWeight() const {
 		return weight;
 	}
 
@@ -102,14 +102,14 @@ public:
 	 *
 	 * @param[in] weight The new weight.
 	 */
-	inline void setWeight(double weight) {
+	void setWeight(double weight) {
 		this->weight = weight;
 	}
 
 	/**
 	 * @return True if this sample represents the object, false otherwise.
 	 */
-	inline bool isObject() const {
+	bool isObject() const {
 		return object;
 	}
 
@@ -118,17 +118,49 @@ public:
 	 *
 	 * @param[in] object Flag that indicates whether this sample represents the object.
 	 */
-	inline void setObject(bool object) {
+	void setObject(bool object) {
 		this->object = object;
+	}
+
+	/**
+	 * Determines whether this sample is less than another sample using the weight. This sample is considered
+	 * less than the other sample if the weight of this one is less than the weight of the other sample.
+	 *
+	 * @param[in] other The other sample.
+	 * @return True if this sample comes before the other in a strict weak ordering, false otherwise.
+	 */
+	bool operator<(const Sample& other) const {
+		return weight < other.weight;
+	}
+
+	/**
+	 * Determines whether this sample is bigger than another sample using the weight. This sample is considered
+	 * bigger than the other sample if the weight of this one is bigger than the weight of the other sample.
+	 *
+	 * @param[in] other The other sample.
+	 * @return True if this sample comes before the other in a strict weak ordering, false otherwise.
+	 */
+	bool operator>(const Sample& other) const {
+		return weight > other.weight;
 	}
 
 	/**
 	 * Comparison function that compares samples by their weight in ascending order.
 	 */
-	class WeightComparison {
+	class WeightComparisonAsc {
 	public:
-		bool operator ()(const Sample& lhs, const Sample& rhs) {
+		bool operator()(const Sample& lhs, const Sample& rhs) {
 			return lhs.weight < rhs.weight;
+		}
+	};
+
+	/**
+	 * Comparison function that compares samples by their weight in descending order.
+	 */
+	class WeightComparisonDesc {
+	public:
+		bool operator()(const Sample& lhs, const Sample& rhs) {
+			return lhs.weight > rhs.weight;
 		}
 	};
 

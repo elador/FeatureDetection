@@ -155,7 +155,7 @@ void PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 					|| sample->getY() <= yLowBound || sample->getY() >= yHighBound
 					|| sample->getSize() <= sizeLowBound || sample->getSize() >= sizeHighBound)) {
 				if (additionalNegatives.size() < randomNegatives) {
-					vector<Sample>::iterator low = lower_bound(additionalNegatives.begin(), additionalNegatives.end(), *sample, Sample::WeightComparison());
+					vector<Sample>::iterator low = lower_bound(additionalNegatives.begin(), additionalNegatives.end(), *sample);
 					additionalNegatives.insert(low, *sample);
 				} else if (additionalNegatives.front().getWeight() < sample->getWeight()) {
 					additionalNegatives.front() = *sample;

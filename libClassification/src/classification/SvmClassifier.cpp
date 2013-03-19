@@ -34,11 +34,11 @@ bool SvmClassifier::classify(const Mat& featureVector) const {
 }
 
 bool SvmClassifier::classify(double hyperplaneDistance) const {
-	return hyperplaneDistance >= limitReliability;
+	return hyperplaneDistance >= threshold;
 }
 
 double SvmClassifier::computeHyperplaneDistance(const Mat& featureVector) const {
-	double distance = -nonlinThreshold;
+	double distance = -bias;
 	for (size_t i = 0; i < supportVectors.size(); ++i)
 		distance += coefficients[i] * kernel->compute(featureVector, supportVectors[i]);
 	return distance;
@@ -47,7 +47,7 @@ double SvmClassifier::computeHyperplaneDistance(const Mat& featureVector) const 
 void SvmClassifier::setSvmParameters(vector<Mat> supportVectors, vector<float> coefficients, double bias) {
 	this->supportVectors = supportVectors;
 	this->coefficients = coefficients;
-	this->nonlinThreshold = bias;
+	this->bias = bias;
 }
 
 shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFilename, const string& thresholdsFilename)
@@ -88,7 +88,7 @@ shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFile
 	}
 
 	shared_ptr<SvmClassifier> svm = make_shared<SvmClassifier>(kernel);
-	svm->nonlinThreshold = nonlinThreshold;
+	svm->bias = nonlinThreshold;
 
 	pmxarray = matGetVariable(pmatfile, "support_nonlin1");
 	if (pmxarray == 0) {

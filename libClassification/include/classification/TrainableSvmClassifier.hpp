@@ -277,9 +277,9 @@ private:
 	double constraintsViolationCosts; ///< The costs C of constraints violation.
 	bool usable;    ///< Flag that indicates whether this classifier is usable.
 	int dimensions; ///< The amount of dimensions of the feature vectors.
-	vector<unique_ptr<struct svm_node[], NodeDeleter>> staticNegativeExamples; ///< The static negative training examples.
 	unordered_map<const struct svm_node*, Mat> node2example; ///< Maps libSVM nodes to the training examples they were created with.
 	NodeDeleter nodeDeleter; ///< Deleter of libSVM nodes that removes the node from the map.
+	vector<unique_ptr<struct svm_node[], NodeDeleter>> staticNegativeExamples; ///< The static negative training examples.
 	int matType; ///< The type of the support vector data.
 	unique_ptr<struct svm_parameter, ParameterDeleter> param; ///< The libSVM parameters.
 	unique_ptr<struct svm_problem, ProblemDeleter> problem;   ///< The libSVM problem.

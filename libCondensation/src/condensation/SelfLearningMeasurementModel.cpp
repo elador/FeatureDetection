@@ -10,21 +10,22 @@
 #include "imageprocessing/Patch.hpp"
 #include "imageprocessing/FeatureExtractor.hpp"
 #include "classification/TrainableProbabilisticClassifier.hpp"
+#include "detection/ClassifiedPatch.hpp"
+#include "boost/iterator/indirect_iterator.hpp"
 #include <unordered_map>
 #include <algorithm>
-
+#include <functional>
+#include <iostream> // TODO
 using imageprocessing::Patch;
 using imageprocessing::FeatureExtractor;
+using boost::make_indirect_iterator;
 using std::unordered_map;
 using std::make_pair;
+using std::make_shared;
 using std::sort;
-using std::reverse;
+using std::greater;
 
 namespace condensation {
-
-static bool comparePatchProbabilityPairs(pair<shared_ptr<Patch>, double> a, pair<shared_ptr<Patch>, double> b) {
-	return a.second < b.second;
-}
 
 SelfLearningMeasurementModel::SelfLearningMeasurementModel(shared_ptr<FeatureExtractor> featureExtractor,
 		shared_ptr<TrainableProbabilisticClassifier> classifier, double positiveThreshold, double negativeThreshold) :
@@ -33,14 +34,14 @@ SelfLearningMeasurementModel::SelfLearningMeasurementModel(shared_ptr<FeatureExt
 				usable(false),
 				positiveThreshold(positiveThreshold),
 				negativeThreshold(negativeThreshold),
-				positiveTrainingSamples(),
-				negativeTrainingSamples() {}
+				positiveTrainingExamples(),
+				negativeTrainingExamples() {}
 
 SelfLearningMeasurementModel::~SelfLearningMeasurementModel() {}
 
 void SelfLearningMeasurementModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples) {
-	positiveTrainingSamples.clear();
-	negativeTrainingSamples.clear();
+	positiveTrainingExamples.clear();
+	negativeTrainingExamples.clear();
 	featureExtractor->update(image);
 	// TODO das folgende macht nur dann sinn, wenn featureExtractor bereits duplikate erkennt und schonmal extrahiertes rausgibt
 	// TODO ClassifiedPatch?
@@ -61,21 +62,20 @@ void SelfLearningMeasurementModel::evaluate(shared_ptr<VersionedImage> image, ve
 			}
 			sample->setObject(result.first);
 			if (result.second > positiveThreshold)
-				positiveTrainingSamples.push_back(make_pair(patch, result.second));
+				positiveTrainingExamples.push_back(make_shared<ClassifiedPatch>(patch, result));
 			else if (result.second < negativeThreshold)
-				negativeTrainingSamples.push_back(make_pair(patch, result.second));
+				negativeTrainingExamples.push_back(make_shared<ClassifiedPatch>(patch, result));
 			sample->setWeight(result.second);
 		}
 	}
 
-	if (positiveTrainingSamples.size() > 10) {
-		sort(positiveTrainingSamples.begin(), positiveTrainingSamples.end(), comparePatchProbabilityPairs);
-		reverse(positiveTrainingSamples.begin(), positiveTrainingSamples.end());
-		positiveTrainingSamples.resize(10);
+	if (positiveTrainingExamples.size() > 10) {
+		sort(make_indirect_iterator(positiveTrainingExamples.begin()), make_indirect_iterator(positiveTrainingExamples.end()), greater<ClassifiedPatch>());
+		positiveTrainingExamples.resize(10);
 	}
-	if (negativeTrainingSamples.size() > 10) {
-		sort(negativeTrainingSamples.begin(), negativeTrainingSamples.end(), comparePatchProbabilityPairs);
-		negativeTrainingSamples.resize(10);
+	if (negativeTrainingExamples.size() > 10) {
+		sort(make_indirect_iterator(negativeTrainingExamples.begin()), make_indirect_iterator(negativeTrainingExamples.end()));
+		negativeTrainingExamples.resize(10);
 	}
 }
 
@@ -90,9 +90,9 @@ void SelfLearningMeasurementModel::adapt(shared_ptr<VersionedImage> image, const
 
 void SelfLearningMeasurementModel::adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples) {
 	if (isUsable()) {
-		usable = classifier->retrain(getFeatureVectors(positiveTrainingSamples), getFeatureVectors(negativeTrainingSamples));
-		positiveTrainingSamples.clear();
-		negativeTrainingSamples.clear();
+		usable = classifier->retrain(getFeatureVectors(positiveTrainingExamples), getFeatureVectors(negativeTrainingExamples));
+		positiveTrainingExamples.clear();
+		negativeTrainingExamples.clear();
 	} else {
 		vector<Sample> goodSamples;
 		vector<Sample> badSamples;
@@ -103,12 +103,11 @@ void SelfLearningMeasurementModel::adapt(shared_ptr<VersionedImage> image, const
 				badSamples.push_back(*sample);
 		}
 		if (goodSamples.size() > 10) {
-			sort(goodSamples.begin(), goodSamples.end(), Sample::WeightComparison());
+			sort(goodSamples.begin(), goodSamples.end(), greater<Sample>());
 			goodSamples.resize(10);
 		}
 		if (badSamples.size() > 10) {
-			sort(badSamples.begin(), badSamples.end(), Sample::WeightComparison());
-			reverse(badSamples.begin(), badSamples.end());
+			sort(badSamples.begin(), badSamples.end());
 			badSamples.resize(10);
 		}
 		featureExtractor->update(image);
@@ -116,11 +115,11 @@ void SelfLearningMeasurementModel::adapt(shared_ptr<VersionedImage> image, const
 	}
 }
 
-vector<Mat> SelfLearningMeasurementModel::getFeatureVectors(vector<pair<shared_ptr<Patch>, double>>& pairs) {
+vector<Mat> SelfLearningMeasurementModel::getFeatureVectors(const vector<shared_ptr<ClassifiedPatch>>& patches) {
 	vector<Mat> trainingExamples;
-	trainingExamples.reserve(pairs.size());
-	for (auto pair = pairs.begin(); pair != pairs.end(); ++pair)
-		trainingExamples.push_back(pair->first->getData());
+	trainingExamples.reserve(patches.size());
+	for (auto patch = make_indirect_iterator(patches.cbegin()); patch != make_indirect_iterator(patches.cend()); ++patch)
+		trainingExamples.push_back(patch->getPatch()->getData());
 	return trainingExamples;
 }
 

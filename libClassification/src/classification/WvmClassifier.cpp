@@ -87,18 +87,13 @@ pair<int, double> WvmClassifier::computeHyperplaneDistance(const Mat& featureVec
 	unsigned int featureVectorLength = featureVector.rows * featureVector.cols;
 	unsigned char* data = new unsigned char[featureVectorLength];
 
-	// TODO conditions: featureVector.type() == CV_32F, featureVector.isContinuous() == true, featureVectorLength == 400 (in our case)
+	// TODO conditions: featureVector.type() == CV_8U, featureVector.isContinuous() == true, featureVectorLength == 400 (in our case)
 	const uchar* values = featureVector.ptr<uchar>(0);
 	for (int i = 0; i < featureVectorLength; ++i)
 		data[i] = values[i];
 
-	// TODO compute integral image outside of this (IntegralImageFilter), assume featureVector to be integral image
-
-	//for (unsigned int i = 0; i < featureVectorLength; ++i)
-	//data[i] = (featureVector.at<unsigned char>(i));
-	//data[i] = (unsigned char)(255 * featureVector.at<float>(i) + 0.5f);
-	// TODO Check if UChar 1Chan ? Float? 
-
+	// TODO compute integral image outside of this (IntegralImageFilter), assume featureVector to be integral image,
+	// work directly with given feature vector, throw away IImg
 
 	// STAAAAAAAAAAAART
 
@@ -341,7 +336,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 	pmxarray = matGetVariable(pmatfile, "param_nonlin1_rvm");
 	if (pmxarray != 0) {
 		matdata = mxGetPr(pmxarray);
-		wvm->nonlinThreshold = (float)matdata[0];
+		wvm->bias = (float)matdata[0];
 		int nonLinType       = (int)matdata[1];
 		wvm->basisParam       = (float)(matdata[2]/65025.0); // because the training images gray level values were divided by 255
 		int polyPower        = (int)matdata[3];
@@ -351,7 +346,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 		pmxarray = matGetVariable(pmatfile, "param_nonlin1");
 		if (pmxarray != 0) {
 			matdata = mxGetPr(pmxarray);
-			wvm->nonlinThreshold = (float)matdata[0];
+			wvm->bias = (float)matdata[0];
 			int nonLinType       = (int)matdata[1];
 			wvm->basisParam       = (float)(matdata[2]/65025.0); // because the training images gray level values were divided by 255
 			int polyPower        = (int)matdata[3];
@@ -361,7 +356,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 	}
 	wvm->lin_thresholds = new float [wvm->numLinFilters];
 	for (int i = 0; i < wvm->numLinFilters; ++i) {			//wrvm_out=treshSVM+sum(beta*kernel)
-		wvm->lin_thresholds[i] = (float)wvm->nonlinThreshold;
+		wvm->lin_thresholds[i] = (float)wvm->bias;
 	}
 
 	// number of filters per level (eg 14)

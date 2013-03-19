@@ -9,18 +9,19 @@ if (HAS_CXX11_FLAG)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
+add_subdirectory(libLogging)			# Text- and Image logging
+
 add_subdirectory(libImageIO)			# Input-library for cameras, Kinect and hard-drive images.
 add_subdirectory(libImageProcessing)	# Image pyramids, patch extraction, feature transformation
 add_subdirectory(libClassification)		# Classification and regression library
 
-add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 add_subdirectory(libDetection)			# Sliding-window detection, Skin detection
+add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 #add_subdirectory(libShapeModels)		# Head/face specific things; 2D/3D models; Combining feature points
-add_subdirectory(libLogging)			# Text- and Image logging
 add_subdirectory(libConfigParser)		# Supplies methods to load our config files.
 
-#add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
-#add_subdirectory(adaptiveTrackingApp)	# Adaptive tracking app.
+add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
+add_subdirectory(adaptiveTrackingApp)	# Adaptive tracking app.
 #add_subdirectory(headTrackingApp)		#
 #add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe).
 #add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature point detection app.

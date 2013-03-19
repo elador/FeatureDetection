@@ -29,7 +29,7 @@ public:
 	 *
 	 * @param[in] gamma The parameter &gamma; of the radial basis function exp(-&gamma; * |u - v|²).
 	 */
-	explicit RbfKernel(double gamma) : gamma(gamma), difference() {}
+	explicit RbfKernel(double gamma) : gamma(gamma) {}
 
 	~RbfKernel() {}
 
@@ -104,7 +104,6 @@ private:
 	}
 
 	double gamma; ///< The parameter &gamma; of the radial basis function exp(-&gamma; * |u - v|²).
-	mutable Mat difference; ///< The temporal buffer for the result of the vector difference.
 };
 
 } /* namespace classification */
