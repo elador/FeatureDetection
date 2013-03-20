@@ -11,15 +11,14 @@
 #include "imageio/DirectoryImageSource.h"
 #include "imageio/VideoImageSink.h"
 #include "imageprocessing/ImagePyramid.hpp"
-#include "imageprocessing/PyramidPatchExtractor.hpp"
-#include "imageprocessing/IdentityFeatureTransformer.hpp"
-#include "imageprocessing/FilteringFeatureTransformer.hpp"
+#include "imageprocessing/FeatureExtractor.hpp"
+#include "imageprocessing/PyramidFeatureExtractor.hpp"
+#include "imageprocessing/FilteringFeatureExtractor.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
 #include "imageprocessing/HistEq64Filter.hpp"
 #include "imageprocessing/WhiteningFilter.hpp"
 #include "imageprocessing/ZeroMeanUnitVarianceFilter.hpp"
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
-#include "imageprocessing/FeatureExtractor.hpp"
 #include "classification/ProbabilisticWvmClassifier.hpp"
 #include "classification/ProbabilisticSvmClassifier.hpp"
 #include "classification/RbfKernel.hpp"
@@ -74,17 +73,15 @@ void AdaptiveTracking::initTracking() {
 	// create feature extractors
 	shared_ptr<ImagePyramid> pyramid = make_shared<ImagePyramid>(20.0 / 480.0, 20.0 / 80.0, 0.85);
 	pyramid->addImageFilter(make_shared<GrayscaleFilter>());
-	shared_ptr<PatchExtractor> patchExtractor = make_shared<PyramidPatchExtractor>(pyramid, 20, 20);
+	shared_ptr<PyramidFeatureExtractor> patchExtractor = make_shared<PyramidFeatureExtractor>(pyramid, 20, 20);
 
-	shared_ptr<FilteringFeatureTransformer> featureTransformer1 = make_shared<FilteringFeatureTransformer>(make_shared<IdentityFeatureTransformer>());
-	featureTransformer1->add(make_shared<HistEq64Filter>());
-	shared_ptr<FeatureExtractor> featureExtractor1 = make_shared<FeatureExtractor>(patchExtractor, featureTransformer1);
+	shared_ptr<FilteringFeatureExtractor> featureExtractor1 = make_shared<FilteringFeatureExtractor>(patchExtractor);
+	featureExtractor1->addPatchFilter(make_shared<HistEq64Filter>());
 
-	shared_ptr<FilteringFeatureTransformer> featureTransformer2 = make_shared<FilteringFeatureTransformer>(make_shared<IdentityFeatureTransformer>());
-//	featureTransformer2->add(make_shared<WhiteningFilter>());
-	featureTransformer2->add(make_shared<HistogramEqualizationFilter>());
-//	featureTransformer2->add(make_shared<ZeroMeanUnitVarianceFilter>());
-	shared_ptr<FeatureExtractor> featureExtractor2 = make_shared<FeatureExtractor>(patchExtractor, featureTransformer2);
+	shared_ptr<FilteringFeatureExtractor> featureExtractor2 = make_shared<FilteringFeatureExtractor>(patchExtractor);
+//	featureExtractor2->addPatchFilter(make_shared<WhiteningFilter>());
+	featureExtractor2->addPatchFilter(make_shared<HistogramEqualizationFilter>());
+//	featureExtractor2->addPatchFilter(make_shared<ZeroMeanUnitVarianceFilter>());
 
 	// create static measurement model
 	string svmConfigFile1 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat";

@@ -1,15 +1,15 @@
 /*
- * PyramidPatchExtractor.hpp
+ * PyramidFeatureExtractor.hpp
  *
  *  Created on: 18.02.2013
  *      Author: poschmann
  */
 #pragma once
 
-#ifndef PYRAMIDPATCHEXTRACTOR_HPP_
-#define PYRAMIDPATCHEXTRACTOR_HPP_
+#ifndef PYRAMIDFEATUREEXTRACTOR_HPP_
+#define PYRAMIDFEATUREEXTRACTOR_HPP_
 
-#include "imageprocessing/PatchExtractor.hpp"
+#include "imageprocessing/FeatureExtractor.hpp"
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/ImagePyramidLayer.hpp"
 #include <vector>
@@ -19,24 +19,34 @@ using std::vector;
 
 namespace imageprocessing {
 
+class ImageFilter;
+class MultipleImageFilter;
+
 /**
- * Extracts patches of a constant size from an image pyramid. Does only consider the given width when extracting single
- * patches, as this extractor assumes the given aspect ratio to be the same as the one given at construction, so the
- * extracted patches will not be scaled to fit.
+ * Feature extractor whose features are patches of a constant size extracted from an image pyramid. Does only consider
+ * the given width when extracting single patches, as this extractor assumes the given aspect ratio to be the same as
+ * the one given at construction, so the extracted patches will not be scaled to fit.
  */
-class PyramidPatchExtractor : public PatchExtractor {
+class PyramidFeatureExtractor : public FeatureExtractor {
 public:
 
 	/**
-	 * Constructs a new pyramid based patch extractor.
+	 * Constructs a new pyramid based feature extractor.
 	 *
 	 * @param[in] pyramid The image pyramid.
 	 * @param[in] width The width of the image data of the extracted patches.
 	 * @param[in] height The height of the image data of the extracted patches.
 	 */
-	PyramidPatchExtractor(shared_ptr<ImagePyramid> pyramid, int width, int height);
+	PyramidFeatureExtractor(shared_ptr<ImagePyramid> pyramid, int width, int height);
 
-	~PyramidPatchExtractor();
+	~PyramidFeatureExtractor();
+
+	/**
+	 * Adds a new filter that is applied to the patches.
+	 *
+	 * @param[in] filter The new patch filter.
+	 */
+	void addPatchFilter(shared_ptr<ImageFilter> filter);
 
 	void update(const Mat& image) {
 		pyramid->update(image);
@@ -101,7 +111,8 @@ private:
 	shared_ptr<ImagePyramid> pyramid; ///< The image pyramid.
 	int patchWidth;  ///< The width of the image data of the extracted patches.
 	int patchHeight; ///< The height of the image data of the extracted patches.
+	shared_ptr<MultipleImageFilter> patchFilter; ///< Filter that is applied to the patches.
 };
 
 } /* namespace imageprocessing */
-#endif /* PYRAMIDPATCHEXTRACTOR_HPP_ */
+#endif /* PYRAMIDFEATUREEXTRACTOR_HPP_ */

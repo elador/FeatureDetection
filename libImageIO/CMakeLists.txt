@@ -35,9 +35,9 @@ SET(SOURCE
 	src/imageio/VideoImageSource.cpp
 )
 
+include_directories( "include" )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( ${Boost_INCLUDE_DIRS} )
-include_directories( "include" )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )

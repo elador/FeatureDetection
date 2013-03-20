@@ -1,24 +1,29 @@
 /*
- * PyramidPatchExtractor.cpp
+ * PyramidFeatureExtractor.cpp
  *
  *  Created on: 18.02.2013
  *      Author: poschmann
  */
 
-#include "imageprocessing/PyramidPatchExtractor.hpp"
+#include "imageprocessing/PyramidFeatureExtractor.hpp"
 #include "imageprocessing/Patch.hpp"
+#include "imageprocessing/MultipleImageFilter.hpp"
 
 using cv::Point;
 using std::make_shared;
 
 namespace imageprocessing {
 
-PyramidPatchExtractor::PyramidPatchExtractor(shared_ptr<ImagePyramid> pyramid, int width, int height) :
-		pyramid(pyramid), patchWidth(width), patchHeight(height) {}
+PyramidFeatureExtractor::PyramidFeatureExtractor(shared_ptr<ImagePyramid> pyramid, int width, int height) :
+		pyramid(pyramid), patchWidth(width), patchHeight(height), patchFilter(make_shared<MultipleImageFilter>()) {}
 
-PyramidPatchExtractor::~PyramidPatchExtractor() {}
+PyramidFeatureExtractor::~PyramidFeatureExtractor() {}
 
-shared_ptr<Patch> PyramidPatchExtractor::extract(int x, int y, int width, int height) const {
+void PyramidFeatureExtractor::addPatchFilter(shared_ptr<ImageFilter> filter) {
+	patchFilter->add(filter);
+}
+
+shared_ptr<Patch> PyramidFeatureExtractor::extract(int x, int y, int width, int height) const {
 	const shared_ptr<ImagePyramidLayer> layer = getLayer(width, height);
 	if (!layer)
 		return shared_ptr<Patch>();
@@ -37,10 +42,10 @@ shared_ptr<Patch> PyramidPatchExtractor::extract(int x, int y, int width, int he
 	int originalWidth = layer->getOriginal(patchWidth);
 	int originalHeight = layer->getOriginal(patchHeight);
 	const Mat data(image, Rect(patchBeginX, patchBeginY, patchWidth, patchHeight));
-	return make_shared<Patch>(originalX, originalY, originalWidth, originalHeight, data.clone());
+	return make_shared<Patch>(originalX, originalY, originalWidth, originalHeight, patchFilter->applyTo(data));
 }
 
-vector<shared_ptr<Patch>> PyramidPatchExtractor::extract(int stepX, int stepY, Rect roi, int firstLayer, int lastLayer) const {
+vector<shared_ptr<Patch>> PyramidFeatureExtractor::extract(int stepX, int stepY, Rect roi, int firstLayer, int lastLayer) const {
 	Rect empty;
 	vector<shared_ptr<Patch>> patches;
 	const vector<shared_ptr<ImagePyramidLayer>>& layers = pyramid->getLayers();
@@ -76,7 +81,7 @@ vector<shared_ptr<Patch>> PyramidPatchExtractor::extract(int stepX, int stepY, R
 				Mat data(image, patchBounds);
 				int originalX = layer->getOriginal(center.x);
 				int originalY = layer->getOriginal(center.y);
-				patches.push_back(make_shared<Patch>(originalX, originalY, originalWidth, originalHeight, data.clone()));
+				patches.push_back(make_shared<Patch>(originalX, originalY, originalWidth, originalHeight, patchFilter->applyTo(data)));
 				patchBounds.x += stepX;
 				center.x += stepX;
 			}

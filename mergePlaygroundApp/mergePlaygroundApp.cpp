@@ -27,15 +27,12 @@
 #include "classification/ProbabilisticSvmClassifier.hpp"
 
 #include "imageprocessing/ImagePyramid.hpp"
-#include "imageprocessing/ImagePyramidLayer.hpp"
-#include "detection/SlidingWindowDetector.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
 #include "imageprocessing/Patch.hpp"
+#include "detection/SlidingWindowDetector.hpp"
+#include "detection/ClassifiedPatch.hpp"
 
-#include "imageprocessing/FilteringFeatureTransformer.hpp"
-#include "imageprocessing/IdentityFeatureTransformer.hpp"
-#include "imageprocessing/RowFeatureTransformer.hpp"
-#include "imageprocessing/MultipleImageFilter.hpp"
+#include "imageprocessing/PyramidFeatureExtractor.hpp"
 #include "imageprocessing/HistEq64Filter.hpp"
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
 
@@ -118,27 +115,22 @@ int main(int argc, char *argv[])
 
 	//configparser::ConfigParser cp = configparser::ConfigParser();
 	//cp.parse("D:\\FeatureDetection\\config\\facedet.txt");
-	
-	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(0.09, 0.25, 0.9);	// (0.09, 0.25, 0.9) is the same as old 90, 9, 0.9
-	shared_ptr<ImageFilter> imgFil = make_shared<GrayscaleFilter>();
-	pyr->addImageFilter(imgFil);
-	pyr->update(img);
 
 	shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.001--with-outnew02HQ64SVM.mat");
 	
-	shared_ptr<IdentityFeatureTransformer> idTransform = make_shared<IdentityFeatureTransformer>();
-	shared_ptr<MultipleImageFilter> patchFilter = make_shared<MultipleImageFilter>();
-	shared_ptr<HistEq64Filter> histEq64Filter = make_shared<HistEq64Filter>();
-	patchFilter->add(histEq64Filter);
-	shared_ptr<FilteringFeatureTransformer> fft = make_shared<FilteringFeatureTransformer>(idTransform, patchFilter);
-	
-	shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm, fft);
-	vector<pair<shared_ptr<Patch>, pair<bool, double>>> resultingPatches = det->detect(pyr);
+	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(0.09, 0.25, 0.9);	// (0.09, 0.25, 0.9) is the same as old 90, 9, 0.9
+	pyr->addImageFilter(make_shared<GrayscaleFilter>());
+	shared_ptr<PyramidFeatureExtractor> featureExtractor = make_shared<PyramidFeatureExtractor>(pyr, 20, 20);
+	featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
+
+	shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm, featureExtractor);
+	vector<shared_ptr<ClassifiedPatch>> resultingPatches = det->detect(img);
 
 	Mat rgbimg = img.clone();
-	std::vector<pair<shared_ptr<Patch>, pair<bool, double>>>::iterator pit = resultingPatches.begin();
-	for(; pit != resultingPatches.end(); pit++) {
-		cv::rectangle(rgbimg, cv::Point(pit->first->getX()-pit->first->getWidth()/2, pit->first->getY()-pit->first->getHeight()/2), cv::Point(pit->first->getX()+pit->first->getWidth()/2, pit->first->getY()+pit->first->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((pit->second.second)/1.0)   ));
+	for(auto pit = resultingPatches.begin(); pit != resultingPatches.end(); pit++) {
+		shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
+		shared_ptr<Patch> patch = classifiedPatch->getPatch();
+		cv::rectangle(rgbimg, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
 	}
 	cv::namedWindow("final", CV_WINDOW_AUTOSIZE); cv::imshow("final", rgbimg);
 	cv::imwrite("wvm_newest2.png", rgbimg);
@@ -148,13 +140,14 @@ int main(int argc, char *argv[])
 	vector<pair<shared_ptr<Patch>, pair<bool, double>>> resultingPatchesAfterSVM;
 	Mat svmimg = img.clone();
 	Mat svmimg2 = img.clone();
-	pit = resultingPatches.begin();
-	psvm->getSvm()->setLimitReliability(-1.2f);
-	for(; pit != resultingPatches.end(); pit++) {
-		pair<bool, double> res = psvm->classify(pit->first->getData());
-		cv::rectangle(svmimg2, cv::Point(pit->first->getX()-pit->first->getWidth()/2, pit->first->getY()-pit->first->getHeight()/2), cv::Point(pit->first->getX()+pit->first->getWidth()/2, pit->first->getY()+pit->first->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((res.second)/1.0)   ));
+	psvm->getSvm()->setThreshold(-1.2f);
+	for(auto pit = resultingPatches.begin(); pit != resultingPatches.end(); pit++) {
+		shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
+		shared_ptr<Patch> patch = classifiedPatch->getPatch();
+		pair<bool, double> res = psvm->classify(patch->getData());
+		cv::rectangle(svmimg2, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((res.second)/1.0)   ));
 		if(res.first)
-			cv::rectangle(svmimg, cv::Point(pit->first->getX()-pit->first->getWidth()/2, pit->first->getY()-pit->first->getHeight()/2), cv::Point(pit->first->getX()+pit->first->getWidth()/2, pit->first->getY()+pit->first->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((res.second)/1.0)   ));
+			cv::rectangle(svmimg, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((res.second)/1.0)   ));
 	}
 	cv::namedWindow("svm", CV_WINDOW_AUTOSIZE); cv::imshow("svm", svmimg);
 	imwrite("svm_after2_m1.2.png", svmimg);

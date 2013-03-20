@@ -13,12 +13,10 @@ MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 SET(HEADERS
 	include/imageprocessing/ConversionFilter.hpp
 	include/imageprocessing/FeatureExtractor.hpp
-	include/imageprocessing/FeatureTransformer.hpp
-	include/imageprocessing/FilteringFeatureTransformer.hpp
+	include/imageprocessing/FilteringFeatureExtractor.hpp
 	include/imageprocessing/GrayscaleFilter.hpp
 	include/imageprocessing/HistogramEqualizationFilter.hpp
 	include/imageprocessing/HistEq64Filter.hpp
-	include/imageprocessing/IdentityFeatureTransformer.hpp
 	include/imageprocessing/ImageFilter.hpp
 	include/imageprocessing/ImagePyramid.hpp
 	include/imageprocessing/ImagePyramidLayer.hpp
@@ -26,9 +24,8 @@ SET(HEADERS
 	include/imageprocessing/MultipleImageFilter.hpp
 	include/imageprocessing/Patch.hpp
 	include/imageprocessing/PatchExtractor.hpp
-	include/imageprocessing/PyramidPatchExtractor.hpp
+	include/imageprocessing/PyramidFeatureExtractor.hpp
 	include/imageprocessing/ResizingFilter.hpp
-	include/imageprocessing/RowFeatureTransformer.hpp
 	include/imageprocessing/VersionedImage.hpp
 	include/imageprocessing/WhiteningFilter.hpp
 	include/imageprocessing/ZeroMeanUnitVarianceFilter.hpp
@@ -37,20 +34,20 @@ SET(HEADERS
 SET(SOURCE
 	src/imageprocessing/ConversionFilter.cpp
 	src/imageprocessing/GrayscaleFilter.cpp
-	src/imageprocessing/HistogramEqualizationFilter.cpp
 	src/imageprocessing/HistEq64Filter.cpp
+	src/imageprocessing/HistogramEqualizationFilter.cpp
 	src/imageprocessing/ImagePyramid.cpp
 	src/imageprocessing/ImagePyramidLayer.cpp
 	src/imageprocessing/IntegralImageFilter.cpp
 	src/imageprocessing/MultipleImageFilter.cpp
-	src/imageprocessing/PyramidPatchExtractor.cpp
+	src/imageprocessing/PyramidFeatureExtractor.cpp
 	src/imageprocessing/ResizingFilter.cpp
 	src/imageprocessing/WhiteningFilter.cpp
 	src/imageprocessing/ZeroMeanUnitVarianceFilter.cpp
 )
 
-include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( "include" )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )

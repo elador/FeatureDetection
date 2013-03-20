@@ -17,9 +17,9 @@ namespace classification {
 using classification::ProbabilisticClassifier;
 
 namespace imageprocessing {
-	class FilteringFeatureTransformer;
+	class PyramidFeatureExtractor;
 }
-using imageprocessing::FilteringFeatureTransformer;
+using imageprocessing::PyramidFeatureExtractor;
 
 namespace detection {
 
@@ -34,29 +34,49 @@ public:
 	 * Constructs a new sliding window detector.
 	 *
 	 * @param[in] classifier The classifier that is used to classify every image patch.
-	 * @param[in] patchTransformer The filter and transformer that is applied before classifying each patch.
+	 * @param[in] featureExtractor The image pyramid based feature extractor.
 	 * @param[in] stepSizeX The step-size in x-direction the detector moves forward on the pyramids in every step.
 	 * @param[in] stepSizeY The step-size in y-direction the detector moves forward on the pyramids in every step.
 	 */
-	explicit SlidingWindowDetector(shared_ptr<ProbabilisticClassifier> classifier, shared_ptr<FilteringFeatureTransformer> patchTransformer, int stepSizeX=1, int stepSizeY=1);
+	SlidingWindowDetector(shared_ptr<ProbabilisticClassifier> classifier, shared_ptr<PyramidFeatureExtractor> featureExtractor, int stepSizeX=1, int stepSizeY=1);
 
 	virtual ~SlidingWindowDetector() {}
 
 	/**
 	 * Processes the image in a sliding window fashion.
 	 *
-	 * @param[in] patch The image to process.
+	 * @param[in] image The image to process.
 	 * @return TODO - Should we return all patches or only the ones that pass the classifier?
 	 *				- We should return those patches and their classifier output. It should be in some kind
 						of structure that it can be sorted by the OverlapElimination! vector, unordered_map, unordered_set?
 						A wrapper-class around Patch? What do we do when we want to re-use Patch-data for different classifiers
 						and "attach" several outputs to one Patch? Implement like in the "before-merge"-Lib ?
 	 */
-	vector<pair<shared_ptr<Patch>, pair<bool, double>>> detect(shared_ptr<ImagePyramid> imagePyramid) const;
+	vector<shared_ptr<ClassifiedPatch>> detect(const Mat& image);
+
+	/**
+	 * Processes the image in a sliding window fashion.
+	 *
+	 * @param[in] image The image to process.
+	 * @return TODO - Should we return all patches or only the ones that pass the classifier?
+	 *				- We should return those patches and their classifier output. It should be in some kind
+						of structure that it can be sorted by the OverlapElimination! vector, unordered_map, unordered_set?
+						A wrapper-class around Patch? What do we do when we want to re-use Patch-data for different classifiers
+						and "attach" several outputs to one Patch? Implement like in the "before-merge"-Lib ?
+	 */
+	vector<shared_ptr<ClassifiedPatch>> detect(shared_ptr<VersionedImage> image);
 
 private:
+
+	/**
+	 * Classifies each image patch extracted by a sliding window approach.
+	 *
+	 * @return TODO
+	 */
+	vector<shared_ptr<ClassifiedPatch>> detect() const;
+
 	shared_ptr<ProbabilisticClassifier> classifier;	///< The classifier that is used to evaluate every step of the sliding window.
-	shared_ptr<FilteringFeatureTransformer> patchTransformer;	///< First filters the patches extracted from the pyramids and then transforms them to feature vectors.
+	shared_ptr<PyramidFeatureExtractor> featureExtractor;	///< The image pyramid based feature extractor.
 	int stepSizeX;	///< The step-size in pixels which the detector should move forward in x direction in every step. Default 1.
 	int stepSizeY;	///< The step-size in pixels which the detector should move forward in y direction in every step. Default 1.
 

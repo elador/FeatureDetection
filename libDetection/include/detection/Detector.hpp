@@ -22,11 +22,15 @@ using std::pair;
 namespace imageprocessing {		// Forward-declarations from another namespace
 	class Patch;
 	class ImagePyramid;
+	class VersionedImage;
 }
 using imageprocessing::Patch;	// TODO ... is there a better way of doing this? Just include the header...?
 using imageprocessing::ImagePyramid;
+using imageprocessing::VersionedImage;
 
 namespace detection {
+
+class ClassifiedPatch;
 
 /**
  * Detector interface. TODO This has yet to be defined, this is only a rough and stupid draft!
@@ -50,7 +54,15 @@ public:
 	 * @param[in] image The image that the detector should run on.
 	 * @return Something probably.
 	 */
-	virtual vector<pair<shared_ptr<Patch>, pair<bool, double>>> detect(shared_ptr<ImagePyramid> imagePyramid) const = 0;
+	virtual vector<shared_ptr<ClassifiedPatch>> detect(const Mat& image) = 0;
+
+	/**
+	 * Detect on an image.
+	 *
+	 * @param[in] image The image that the detector should run on.
+	 * @return Something probably.
+	 */
+	virtual vector<shared_ptr<ClassifiedPatch>> detect(shared_ptr<VersionedImage> image) = 0;
 
 };
 

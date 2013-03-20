@@ -8,9 +8,6 @@
 #ifndef FEATUREEXTRACTOR_HPP_
 #define FEATUREEXTRACTOR_HPP_
 
-#include "imageprocessing/Patch.hpp"
-#include "imageprocessing/PatchExtractor.hpp"
-#include "imageprocessing/FeatureTransformer.hpp"
 #include "opencv2/core/core.hpp"
 #include <memory>
 
@@ -20,32 +17,22 @@ using std::shared_ptr;
 namespace imageprocessing {
 
 class VersionedImage;
+class Patch;
 
 /**
- * Feature extractor that constructs a feature vector given an image and a rectangular size.
+ * Feature extractor that constructs a feature vector given an image and a rectangular size specifying a patch.
  */
 class FeatureExtractor {
 public:
 
-	/**
-	 * Constructs a new feature extractor.
-	 *
-	 * @param[in] extractor The patch extractor.
-	 * @param[in] transformer The feature transformer.
-	 */
-	explicit FeatureExtractor(shared_ptr<PatchExtractor> extractor, shared_ptr<FeatureTransformer> transformer) :
-		extractor(extractor), transformer(transformer) {}
-
-	~FeatureExtractor() {}
+	virtual ~FeatureExtractor() {}
 
 	/**
 	 * Forces an update of this feature extractor, so subsequent extracted features are based on the new image.
 	 *
 	 * @param[in] image The new source image of extracted patches.
 	 */
-	void update(const Mat& image) {
-		extractor->update(image);
-	}
+	virtual void update(const Mat& image) = 0;
 
 	/**
 	 * May update this feature extractor depending on the version number of the given image. If updated, the
@@ -53,9 +40,7 @@ public:
 	 *
 	 * @param[in] image The new source image of extracted patches.
 	 */
-	void update(shared_ptr<VersionedImage> image) {
-		extractor->update(image);
-	}
+	virtual void update(shared_ptr<VersionedImage> image) = 0;
 
 	/**
 	 * Extracts the feature vector at a certain location (patch) of the current image.
@@ -66,18 +51,7 @@ public:
 	 * @param[in] height The height of the patch.
 	 * @return A pointer to the patch (with its feature vector) that might be empty if the patch could not be created.
 	 */
-	shared_ptr<Patch> extract(int x, int y, int width, int height) {
-		shared_ptr<Patch> patch = extractor->extract(x, y, width, height);
-		if (!patch)
-			return patch;
-		transformer->transform(patch->getData());
-		return patch;
-	}
-
-private:
-
-	shared_ptr<PatchExtractor> extractor;       ///< The patch extractor.
-	shared_ptr<FeatureTransformer> transformer; ///< The feature transformer.
+	virtual shared_ptr<Patch> extract(int x, int y, int width, int height) const = 0;
 };
 
 } /* namespace imageprocessing */

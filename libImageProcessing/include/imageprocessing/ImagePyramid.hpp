@@ -109,14 +109,14 @@ public:
 	void update(shared_ptr<VersionedImage> image);
 
 	/**
-	 * Adds a new image filter that is applied to the original image after the currently existing image filters.
+	 * Adds a new filter that is applied to the original image after the currently existing image filters.
 	 *
 	 * @param[in] filter The new image filter.
 	 */
 	void addImageFilter(shared_ptr<ImageFilter> filter);
 
 	/**
-	 * Adds a new image filter that is applied to the down-scaled images after the currently existing layer filters.
+	 * Adds a new filter that is applied to the down-scaled images after the currently existing layer filters.
 	 *
 	 * @param[in] filter The new image filter.
 	 */

@@ -30,6 +30,13 @@ HistEq64Filter::~HistEq64Filter() {
 Mat HistEq64Filter::applyTo(const Mat& image, Mat& filtered) {
 	//cv::equalizeHist(image, filtered);
 	stretchFactor = 255.0f/(float)(image.cols*image.rows);
+	filtered.create(image.rows, image.cols, CV_8U);
+	int rows = image.rows;
+	int cols = image.cols;
+	if (image.isContinuous() && filtered.isContinuous()) {
+		cols *= rows;
+		rows = 1;
+	}
 	//fp->data = new unsigned char[filter_size_x*filter_size_y];
 	// DO THIS ONCE PER PATCH: //
 
@@ -44,14 +51,15 @@ Mat HistEq64Filter::applyTo(const Mat& image, Mat& filtered) {
 										// patch-height/2                         patch-width/2
 	//int start_orig = (patch_cy_py-(10))*this_pyramid->w + (patch_cx_py-(10)); // w=rowsize // 10 would be logical (or 9), but I only get the same results as matthias when I use 11 ???? (some image-errors then, but quite logical, considering 10-11=-1)
 	//int start_orig = (fp->c.y_py-(filter_size_y/2))*pyr->w + (fp->c.x_py-(filter_size_x/2));
-	int start_orig = 0;
-	int startcoord = start_orig;
-	int index=0;    // patch-height, det_filtersize_y
-	for (int z=0; z<image.rows; z++) {		// could be made with modulo and 1 for loop 0-399 but this is supposed to be faster
+	//int start_orig = 0;
+	//int startcoord = start_orig;
+	//int index=0;    // patch-height, det_filtersize_y
+	for (int z=0; z<rows; z++) {		// could be made with modulo and 1 for loop 0-399 but this is supposed to be faster
 					 // patch-width, det_filtersize_x
-		for(int i=0; i<image.cols; i++) {
-			pdf_bins[LUTbin[image.data[startcoord]]]=pdf_bins[LUTbin[image.data[startcoord]]]+1;	// TODO I should not use image.data here! Use .at<>(i,j) !
-			startcoord++;
+		const uchar* originalValues = image.ptr<uchar>(z);
+		for(int i=0; i<cols; i++) {
+			pdf_bins[LUTbin[originalValues[i]]]=pdf_bins[LUTbin[originalValues[i]]]+1;	// TODO I should not use image.data here! Use .at<>(i,j) !
+			//startcoord++;
 		}									// patch-width
 		//startcoord=startcoord+(pyr->w-filter_size_x);
 	}
@@ -77,12 +85,14 @@ Mat HistEq64Filter::applyTo(const Mat& image, Mat& filtered) {
 	}
 	//printf("HistEq64 - Fill the patch with data.\n");
 	// equalize the patch with the help of the LUT:
-	index=0;    // patch-height, det_filtersize_y
-	for (int z=0; z<image.rows; z++) {		// could be made with modulo and 1 for loop 0-399 but this is supposed to be faster
+	//index=0;    // patch-height, det_filtersize_y
+	for (int z=0; z<rows; z++) {		// could be made with modulo and 1 for loop 0-399 but this is supposed to be faster
 					 // patch-width, det_filtersize_x
-		for(int i=0; i<image.cols; i++) { // TODO change 400 to dynamic val
+		const uchar* originalValues = image.ptr<uchar>(z);
+		uchar* filteredValues = filtered.ptr<uchar>(z);
+		for(int i=0; i<cols; i++) {
 			//patch_to_equalize[index] = this_pyramid->data[startcoord]; // original
-			filtered.data[index] = (unsigned char)floor(LUTeq[image.data[start_orig]]+0.5);
+			filteredValues[i] = (uchar)floor(LUTeq[originalValues[i]]+0.5);
 			/*if(LUTeq[this_pyramid->data[start_orig]] > 255) {
 				printf("hq error 1...\n");
 			}*/
@@ -97,8 +107,8 @@ Mat HistEq64Filter::applyTo(const Mat& image, Mat& filtered) {
 			/*if((unsigned char)floor(LUTeq[this_pyramid->data[start_orig]]+0.5) > 255) {
 				printf("hq error 3...\n");
 			}*/
-			start_orig++;
-			index++;
+			//start_orig++;
+			//index++;
 		}									// patch-width
 		//start_orig=start_orig+(pyr->w-filter_size_x);
 	}

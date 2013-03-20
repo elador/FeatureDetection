@@ -6,18 +6,18 @@
  */
 
 #include "FaceTracking.h"
+#include "logging/LoggerFactory.hpp"
+#include "logging/ConsoleAppender.hpp"
 #include "imageio/VideoImageSource.h"
 #include "imageio/KinectImageSource.h"
 #include "imageio/DirectoryImageSource.h"
 #include "imageio/VideoImageSink.h"
 #include "imageprocessing/ImagePyramid.hpp"
-#include "imageprocessing/PyramidPatchExtractor.hpp"
-#include "imageprocessing/IdentityFeatureTransformer.hpp"
-#include "imageprocessing/FilteringFeatureTransformer.hpp"
+#include "imageprocessing/FeatureExtractor.hpp"
+#include "imageprocessing/PyramidFeatureExtractor.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
 #include "imageprocessing/HistEq64Filter.hpp"
-#include "imageprocessing/FeatureExtractor.hpp"
 #include "classification/WvmClassifier.hpp"
 #include "classification/SvmClassifier.hpp"
 #include "classification/ProbabilisticWvmClassifier.hpp"
@@ -33,8 +33,9 @@
 #include "condensation/WeightedMeanPositionExtractor.h"
 #include "condensation/Rectangle.h"
 #include "condensation/Sample.h"
-#include <boost/optional.hpp>
-#include <boost/program_options.hpp>
+#include "boost/optional.hpp"
+#include "boost/program_options.hpp"
+#include "boost/lexical_cast.hpp"
 #include <vector>
 #include <iostream>
 #ifdef WIN32
@@ -43,8 +44,10 @@
 	#include <sys/time.h>
 #endif
 
+using namespace logging;
 using namespace imageprocessing;
 using namespace classification;
+using boost::lexical_cast;
 using std::move;
 
 namespace po = boost::program_options;
@@ -68,11 +71,9 @@ void FaceTracking::initTracking() {
 	// create measurement model
 	shared_ptr<ImagePyramid> pyramid = make_shared<ImagePyramid>(20.0 / 480.0, 20.0 / 80.0, 0.85);
 	pyramid->addImageFilter(make_shared<GrayscaleFilter>());
-	shared_ptr<PatchExtractor> patchExtractor = make_shared<PyramidPatchExtractor>(pyramid, 20, 20);
-	shared_ptr<FilteringFeatureTransformer> featureTransformer = make_shared<FilteringFeatureTransformer>(make_shared<IdentityFeatureTransformer>());
-	//featureTransformer->add(make_shared<HistogramEqualizationFilter>());
-	featureTransformer->add(make_shared<HistEq64Filter>());
-	shared_ptr<FeatureExtractor> featureExtractor = make_shared<FeatureExtractor>(patchExtractor, featureTransformer);
+	shared_ptr<PyramidFeatureExtractor> featureExtractor = make_shared<PyramidFeatureExtractor>(pyramid, 20, 20);
+	//featureExtractor->add(make_shared<HistogramEqualizationFilter>());
+	featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
 	string svmConfigFile1 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat";
 	string svmConfigFile2 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat";
 	shared_ptr<ProbabilisticWvmClassifier> wvm = ProbabilisticWvmClassifier::loadMatlab(svmConfigFile1, svmConfigFile2);
@@ -156,6 +157,8 @@ void FaceTracking::drawDebug(cv::Mat& image) {
 }
 
 void FaceTracking::run() {
+	Logger logger = Loggers->getLogger("root");
+	logger.addAppender(make_shared<ConsoleAppender>(loglevel::INFO));
 	running = true;
 	paused = false;
 
@@ -208,6 +211,9 @@ void FaceTracking::run() {
 			std::cout << "frame: " << frames << "; time: "
 					<< iterationTimeMilliseconds << " ms (" << iterationFps << " fps); detection: "
 					<< detectionTimeMilliseconds << " ms (" << detectionFps << " fps)" << std::endl;
+			logger.info("frame: " + lexical_cast<string>(frames) + "; time: "
+					+ lexical_cast<string>(iterationTimeMilliseconds) + " ms (" + lexical_cast<string>(static_cast<int>(iterationFps)) + " fps); detection: "
+					+ lexical_cast<string>(detectionTimeMilliseconds) + " ms (" + lexical_cast<string>(static_cast<int>(detectionFps)) + " fps)");
 
 			int delay = paused ? 0 : 5;
 			char c = (char)cv::waitKey(delay);
