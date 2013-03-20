@@ -7,6 +7,8 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 # find dependencies
 FIND_PACKAGE(Boost REQUIRED)
 FIND_PACKAGE(OpenCV REQUIRED core)
+MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
+MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
 # source and header files
 SET(HEADERS
@@ -55,6 +57,7 @@ include_directories( ${ImageProcessing_SOURCE_DIR}/include )
 include_directories( ${Classification_SOURCE_DIR}/include )
 include_directories( ${Detection_SOURCE_DIR}/include )
 include_directories( ${Boost_INCLUDE_DIRS} )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
