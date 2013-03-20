@@ -12,6 +12,7 @@
 #include <sstream>
 #include <iomanip>
 #include <chrono>
+#include <cstdint>
 
 using std::ios_base;
 using std::ostringstream;
@@ -44,9 +45,9 @@ void FileAppender::log(const loglevel logLevel, const string loggerName, const s
 string FileAppender::getCurrentTime()
 {
 	system_clock::time_point now = system_clock::now();
-	duration<int, std::ratio<1>> seconds = duration_cast<duration<int, std::ratio<1>>>(now.time_since_epoch());
-	duration<int, std::milli> milliseconds = duration_cast<duration<int, std::milli>>(now.time_since_epoch());
-	duration<int, std::milli> msec = milliseconds - seconds;
+	duration<int64_t, std::ratio<1>> seconds = duration_cast<duration<int64_t, std::ratio<1>>>(now.time_since_epoch());
+	duration<int64_t, std::milli> milliseconds = duration_cast<duration<int64_t, std::milli>>(now.time_since_epoch());
+	duration<int64_t, std::milli> msec = milliseconds - seconds;
 
 	std::time_t t_now = system_clock::to_time_t(now);
 	struct tm* tm_now = std::localtime(&t_now);
