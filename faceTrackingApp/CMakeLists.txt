@@ -19,6 +19,10 @@ IF(WIN32)
 	FIND_PACKAGE(KinectSDK REQUIRED)
 	INCLUDE_DIRECTORIES(${KinectSDK_INCLUDE_DIR})
 	SET(KINECT_LIBNAME ${KinectSDK_LIBRARIES})
+	
+	# Fix for VS2012 that has _VARIADIC_MAX set to 5 (the C++11 standard requires a value
+	# of 10). Don't set too high because it increases compiler memory usage / compile-time.
+	add_definitions( -D_VARIADIC_MAX=6 )
 ELSE()
 	SET(KINECT_LIBNAME "")
 ENDIF()
