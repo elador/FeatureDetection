@@ -1,24 +1,5 @@
-# Ignore MS Visual Studio 2010 build files
-#*.tlog
-#*.exe.*
-#*.lastbuildstate
-#*_manifest.rc
-#*.cache
-
-# Compile/build files
-#*.log
-#*.exe
-#*.lib
-#*.obj
-
-# More VS stuff
-#*.ilk
-#*.pdb
-#*.pch
-#*.idb
-
-# Ignore MS Visual Studio 2010 ipch files/folder
-#*.ipch
+# Ignore the user-specific initial_cache file
+initial_cache.cmake
 
 # Ignore Eclipse project files
 .project
