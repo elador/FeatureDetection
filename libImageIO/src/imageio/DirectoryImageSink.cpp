@@ -5,7 +5,7 @@
  *      Author: poschmann
  */
 
-#include "imageio/DirectoryImageSink.h"
+#include "imageio/DirectoryImageSink.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.

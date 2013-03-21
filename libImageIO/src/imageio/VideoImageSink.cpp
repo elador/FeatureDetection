@@ -5,7 +5,7 @@
  *      Author: poschmann
  */
 
-#include "imageio/VideoImageSink.h"
+#include "imageio/VideoImageSink.hpp"
 #include <iostream>
 
 using cv::Size;

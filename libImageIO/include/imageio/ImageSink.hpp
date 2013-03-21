@@ -1,12 +1,12 @@
 /*
- * ImageSink.h
+ * ImageSink.hpp
  *
  *  Created on: 18.12.2012
  *      Author: poschmann
  */
 
-#ifndef IMAGESINK_H_
-#define IMAGESINK_H_
+#ifndef IMAGESINK_HPP_
+#define IMAGESINK_HPP_
 
 #include "opencv2/core/core.hpp"
 
@@ -31,4 +31,4 @@ public:
 };
 
 } /* namespace imageio */
-#endif /* IMAGESINK_H_ */
+#endif /* IMAGESINK_HPP_ */

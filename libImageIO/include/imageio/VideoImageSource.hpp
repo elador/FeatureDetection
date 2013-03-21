@@ -1,14 +1,14 @@
 /*
- * VideoImageSource.h
+ * VideoImageSource.hpp
  *
  *  Created on: 20.08.2012
  *      Author: poschmann
  */
 
-#ifndef VIDEOIMAGESOURCE_H_
-#define VIDEOIMAGESOURCE_H_
+#ifndef VIDEOIMAGESOURCE_HPP_
+#define VIDEOIMAGESOURCE_HPP_
 
-#include "ImageSource.h"
+#include "ImageSource.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
 using cv::VideoCapture;
@@ -45,4 +45,4 @@ private:
 };
 
 } /* namespace imageio */
-#endif /* VIDEOIMAGESOURCE_H_ */
+#endif /* VIDEOIMAGESOURCE_HPP_ */

@@ -6,10 +6,10 @@
  */
 
 #include "AdaptiveTracking.h"
-#include "imageio/VideoImageSource.h"
-#include "imageio/KinectImageSource.h"
-#include "imageio/DirectoryImageSource.h"
-#include "imageio/VideoImageSink.h"
+#include "imageio/VideoImageSource.hpp"
+#include "imageio/KinectImageSource.hpp"
+#include "imageio/DirectoryImageSource.hpp"
+#include "imageio/VideoImageSink.hpp"
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/FeatureExtractor.hpp"
 #include "imageprocessing/PyramidFeatureExtractor.hpp"

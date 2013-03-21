@@ -1,14 +1,14 @@
 /*
- * VideoImageSink.h
+ * VideoImageSink.hpp
  *
  *  Created on: 18.12.2012
  *      Author: poschmann
  */
 
-#ifndef VIDEOIMAGESINK_H_
-#define VIDEOIMAGESINK_H_
+#ifndef VIDEOIMAGESINK_HPP_
+#define VIDEOIMAGESINK_HPP_
 
-#include "imageio/ImageSink.h"
+#include "imageio/ImageSink.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
 using cv::VideoWriter;
@@ -43,4 +43,4 @@ private:
 };
 
 } /* namespace imageio */
-#endif /* VIDEOIMAGESINK_H_ */
+#endif /* VIDEOIMAGESINK_HPP_ */

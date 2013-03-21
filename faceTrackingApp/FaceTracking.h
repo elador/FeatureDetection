@@ -8,8 +8,8 @@
 #ifndef FACETRACKING_H_
 #define FACETRACKING_H_
 
-#include "imageio/ImageSource.h"
-#include "imageio/ImageSink.h"
+#include "imageio/ImageSource.hpp"
+#include "imageio/ImageSink.hpp"
 #include "condensation/CondensationTracker.h"
 #include "condensation/MeasurementModel.h"
 #include "condensation/SimpleTransitionModel.h"

@@ -5,7 +5,7 @@
  *      Author: poschmann
  */
 
-#include "imageio/VideoImageSource.h"
+#include "imageio/VideoImageSource.hpp"
 #include <iostream>
 
 namespace imageio {

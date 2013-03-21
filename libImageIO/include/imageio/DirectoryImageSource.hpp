@@ -1,14 +1,14 @@
 /*
- * DirectoryImageSource.h
+ * DirectoryImageSource.hpp
  *
  *  Created on: 20.08.2012
  *      Author: poschmann
  */
 
-#ifndef DIRECTORYIMAGESOURCE_H_
-#define DIRECTORYIMAGESOURCE_H_
+#ifndef DIRECTORYIMAGESOURCE_HPP_
+#define DIRECTORYIMAGESOURCE_HPP_
 
-#include "ImageSource.h"
+#include "ImageSource.hpp"
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
@@ -46,4 +46,4 @@ private:
 };
 
 } /* namespace imageio */
-#endif /* DIRECTORYIMAGESOURCE_H_ */
+#endif /* DIRECTORYIMAGESOURCE_HPP_ */

@@ -5,7 +5,7 @@
  *      Author: poschmann
  */
 
-#include "imageio/DirectoryImageSource.h"
+#include "imageio/DirectoryImageSource.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include <iostream>
 

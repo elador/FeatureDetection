@@ -8,8 +8,8 @@
 #ifndef ADAPTIVETRACKING_H_
 #define ADAPTIVETRACKING_H_
 
-#include "imageio/ImageSource.h"
-#include "imageio/ImageSink.h"
+#include "imageio/ImageSource.hpp"
+#include "imageio/ImageSink.hpp"
 #include "condensation/AdaptiveCondensationTracker.h"
 #include "condensation/AdaptiveMeasurementModel.h"
 #include "condensation/MeasurementModel.h"

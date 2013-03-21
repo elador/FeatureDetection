@@ -1,12 +1,12 @@
 /*
- * ImageSource.h
+ * ImageSource.hpp
  *
  *  Created on: 20.08.2012
  *      Author: poschmann
  */
 
-#ifndef IMAGESOURCE_H_
-#define IMAGESOURCE_H_
+#ifndef IMAGESOURCE_HPP_
+#define IMAGESOURCE_HPP_
 
 #include "opencv2/core/core.hpp"
 
@@ -31,4 +31,4 @@ public:
 };
 
 } /* namespace imageio */
-#endif /* IMAGESOURCE_H_ */
+#endif /* IMAGESOURCE_HPP_ */

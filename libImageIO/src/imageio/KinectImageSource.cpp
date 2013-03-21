@@ -5,7 +5,7 @@
  *      Author: Patrik Huber
  */
 
-#include "imageio/KinectImageSource.h"
+#include "imageio/KinectImageSource.hpp"
 #include <iostream>
 
 namespace imageio {

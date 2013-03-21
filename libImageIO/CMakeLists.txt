@@ -19,13 +19,13 @@ ENDIF()
 
 # source and header files
 SET(HEADERS
-	include/imageio/DirectoryImageSink.h
-	include/imageio/DirectoryImageSource.h
-	include/imageio/ImageSink.h
-	include/imageio/ImageSource.h
-	include/imageio/KinectImageSource.h
-	include/imageio/VideoImageSink.h
-	include/imageio/VideoImageSource.h
+	include/imageio/DirectoryImageSink.hpp
+	include/imageio/DirectoryImageSource.hpp
+	include/imageio/ImageSink.hpp
+	include/imageio/ImageSource.hpp
+	include/imageio/KinectImageSource.hpp
+	include/imageio/VideoImageSink.hpp
+	include/imageio/VideoImageSource.hpp
 )
 SET(SOURCE
 	src/imageio/DirectoryImageSink.cpp

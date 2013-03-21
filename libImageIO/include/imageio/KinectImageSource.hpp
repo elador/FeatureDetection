@@ -1,14 +1,14 @@
 /*
- * KinectImageSource.h
+ * KinectImageSource.hpp
  *
  *  Created on: 07.10.2012
  *      Author: Patrik Huber
  */
 
-#ifndef KINECTIMAGESOURCE_H_
-#define KINECTIMAGESOURCE_H_
+#ifndef KINECTIMAGESOURCE_HPP_
+#define KINECTIMAGESOURCE_HPP_
 
-#include "ImageSource.h"
+#include "ImageSource.hpp"
 #ifdef WIN32
 	#include <windows.h>
 	#include <NuiApi.h>
@@ -47,4 +47,4 @@ private:
 
 } /* namespace imageio */
 
-#endif /* KINECTIMAGESOURCE_H_ */
+#endif /* KINECTIMAGESOURCE_HPP_ */

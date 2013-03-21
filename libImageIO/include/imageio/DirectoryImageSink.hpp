@@ -1,14 +1,14 @@
 /*
- * DirectoryImageSink.h
+ * DirectoryImageSink.hpp
  *
  *  Created on: 18.12.2012
  *      Author: poschmann
  */
 
-#ifndef DIRECTORYIMAGESINK_H_
-#define DIRECTORYIMAGESINK_H_
+#ifndef DIRECTORYIMAGESINK_HPP_
+#define DIRECTORYIMAGESINK_HPP_
 
-#include "imageio/ImageSink.h"
+#include "imageio/ImageSink.hpp"
 
 using std::string;
 
@@ -40,4 +40,4 @@ private:
 };
 
 } /* namespace imageio */
-#endif /* DIRECTORYIMAGESINK_H_ */
+#endif /* DIRECTORYIMAGESINK_HPP_ */
