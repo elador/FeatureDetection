@@ -21,7 +21,7 @@ class Patch {
 public:
 
 	/**
-	 * Constructs a new empty patch. All values will be zero and the data will be an empty.
+	 * Constructs a new empty patch. All values will be zero and the data will be empty.
 	 */
 	Patch() :
 			x(0), y(0), width(0), height(0), data() {}
@@ -35,7 +35,7 @@ public:
 	 * @param[in] height The original height.
 	 * @param[in] data The patch data (might be an image patch or a feature vector).
 	 */
-	explicit Patch(int x, int y, int width, int height, Mat data) :
+	explicit Patch(int x, int y, int width, int height, const Mat& data) :
 			x(x), y(y), width(width), height(height), data(data) {}
 
 	/**

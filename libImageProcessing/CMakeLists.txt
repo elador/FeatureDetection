@@ -11,6 +11,7 @@ MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
 # source and header files
 SET(HEADERS
+	include/imageprocessing/CachingFeatureExtractor.hpp
 	include/imageprocessing/ConversionFilter.hpp
 	include/imageprocessing/FeatureExtractor.hpp
 	include/imageprocessing/FilteringFeatureExtractor.hpp
@@ -32,6 +33,7 @@ SET(HEADERS
 	
 )
 SET(SOURCE
+	src/imageprocessing/CachingFeatureExtractor.cpp
 	src/imageprocessing/ConversionFilter.cpp
 	src/imageprocessing/GrayscaleFilter.cpp
 	src/imageprocessing/HistEq64Filter.cpp
