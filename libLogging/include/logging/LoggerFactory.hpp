@@ -41,12 +41,20 @@ public:
 	static LoggerFactory* Instance();
 
 	/**
-	 * Returns the specified logger. If it is not found, creates a new logger that logs to the console.
+	 * Returns the specified logger. If it is not found, creates a new logger that logs nothing.
 	 *
 	 * @param[in] name The name of the logger.
-	 * @return The specified logger or a new one that logs to the console if not yet created.
+	 * @return The specified logger or a new one that logs nothing, if not yet created.
 	 */
 	Logger& getLogger(const string name);
+
+	/**
+	 * Extracts the file basename and returns the logger for the file or a new logger with no logging if it hasn't been created yet.
+	 *
+	 * @param[in] name The file name or full file path.
+	 * @return The specified logger or a new one if not yet created.
+	 */
+	Logger& getLoggerFor(const string fileName);
 
 	/**
 	 * Loads all the loggers and their configuration from a config file. TODO!

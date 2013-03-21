@@ -7,8 +7,10 @@
 
 #include "logging/LoggerFactory.hpp"
 #include <utility>
+#include <sstream>
 
 using std::pair;
+using std::ostringstream;
 
 namespace logging {
 
@@ -43,6 +45,15 @@ Logger& LoggerFactory::getLogger(const string name)
 		return ret.first->second;
 	}
 	// Note: For an empty logger with default constructor, we could just do this here: return loggers[name];
+}
+
+Logger& LoggerFactory::getLoggerFor(const string fileName)
+{
+	ostringstream basename;
+	int lastSlash = fileName.find_last_of("/\\");
+	int lastDot = fileName.find_last_of(".");
+	basename << fileName.substr(lastSlash + 1, lastDot - lastSlash - 1);
+	return getLogger(basename.str());
 }
 
 } /* namespace logging */

@@ -76,6 +76,11 @@ int main(int argc, char *argv[])
 	Loggers->getLogger("classification").addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
 
 	root.info("Starting tests...");
+
+	cout << __FILE__ << endl;
+	Logger asdf = Loggers->getLoggerFor(__FILE__);
+	asdf.addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
+	asdf.debug("hi");
 	
 	Mat fvp = cv::imread("C:/Users/Patrik/Documents/GitHub/patchpos.png");
 	Mat fvn = cv::imread("C:/Users/Patrik/Documents/GitHub/patchneg.png");
