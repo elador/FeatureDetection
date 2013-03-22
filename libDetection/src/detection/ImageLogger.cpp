@@ -1,17 +1,16 @@
-#include "stdafx.h"
-#include "SLogger.h"
+/*
+ * ImageLogger.cpp
+ *
+ *  Created on: 22.03.2013
+ *      Author: Patrik Huber
+ */
 
-#include "FdPatch.h"
-#include "FdImage.h"
-#include "Pyramid.h"
+#include "detection/ImageLogger.hpp"
 
-#include <iostream>
-#include <iomanip>
-
-
-SLogger::SLogger(void)
+namespace detection {
+/*
+ImageLogger::ImageLogger()
 {
-	this->imgLogBasepath = "out\\";
 
 	// TODO: Make the color change with the certainty. c=... See old lib fd_patch.h drawCircle(...)
 	// int c=max(0,(min(255,(int)(255* (certainty-max_col[0])/(-max_col[0]+max_col[1])))));
@@ -25,6 +24,7 @@ SLogger::SLogger(void)
 	/*std::array<bool, 9> tmp		= {	false, true, false,
 										false, true, true,
 										false, false, false };*/	// TODO: Change this back to std::array later!!!
+/*
 	bool tmp[]					= {	false, true, false,
 									false, true, true,
 									false, false, false };
@@ -169,33 +169,23 @@ SLogger::SLogger(void)
 }
 
 
-SLogger::~SLogger(void)
+ImageLogger::~ImageLogger(void)
 {
 }
 
-SLogger* SLogger::Instance(void)
+ImageLogger* ImageLogger::Instance(void)
 {
-	static SLogger instance;
+	static ImageLogger instance;
 	return &instance;
 }
 
-void SLogger::setVerboseLevelText(int level)
-{
-	this->verboseLevelText = level;
-}
-
-int SLogger::getVerboseLevelText(void)
-{
-	return this->verboseLevelText;
-}
-
-void SLogger::setVerboseLevelImages(int level)
+void ImageLogger::setVerboseLevelImages(int level)
 {
 	this->verboseLevelImages = level;
 }
 
 
-void SLogger::LogImgInputGray(const cv::Mat *img, std::string filename)
+void ImageLogger::LogImgInputGray(const cv::Mat *img, std::string filename)
 {
 	if(this->global.img.writeImgInputGray) {
 		size_t idx;
@@ -206,7 +196,7 @@ void SLogger::LogImgInputGray(const cv::Mat *img, std::string filename)
 	}
 }
 
-void SLogger::LogImgInputRGB(const cv::Mat *img, std::string filename)
+void ImageLogger::LogImgInputRGB(const cv::Mat *img, std::string filename)
 {
 	if(this->global.img.writeImgInputRGB) {
 		size_t idx;
@@ -217,7 +207,7 @@ void SLogger::LogImgInputRGB(const cv::Mat *img, std::string filename)
 	}
 }
 
-void SLogger::LogImgPyramid(const Pyramid* pyr, std::string filename, int pyrIdx)
+void ImageLogger::LogImgPyramid(const Pyramid* pyr, std::string filename, int pyrIdx)
 {
 	if(this->global.img.writeImgPyramids) {
 		size_t idx;
@@ -228,7 +218,7 @@ void SLogger::LogImgPyramid(const Pyramid* pyr, std::string filename, int pyrIdx
 	}
 }
 
-void SLogger::LogImgDetectorCandidates(const FdImage* img, std::vector<FdPatch*> candidates, std::string detectorIdForCertaintyColor, std::string filenameAppend)
+void ImageLogger::LogImgDetectorCandidates(const FdImage* img, std::vector<FdPatch*> candidates, std::string detectorIdForCertaintyColor, std::string filenameAppend)
 {
 	if((this->global.img.writeDetectorCandidates==true) || this->verboseLevelImages>=2) {
 		if(filenameAppend=="") {
@@ -257,7 +247,7 @@ void SLogger::LogImgDetectorCandidates(const FdImage* img, std::vector<FdPatch*>
 	}
 }
 
-void SLogger::LogImgCircleDetectorCandidates( const FdImage* img, cv::vector<cv::Vec3f> circles, std::string detectorId)
+void ImageLogger::LogImgCircleDetectorCandidates( const FdImage* img, cv::vector<cv::Vec3f> circles, std::string detectorId)
 {
 	if((this->global.img.writeDetectorCandidates==true) || this->verboseLevelImages>=2) {
 		/*if(filenameAppend=="") {
@@ -265,6 +255,7 @@ void SLogger::LogImgCircleDetectorCandidates( const FdImage* img, cv::vector<cv:
 		} else {
 			filenameAppend = detectorIdForCertaintyColor + "_" + filenameAppend;
 		}*/
+/*
 		std::string filenameAppend = detectorId;
 		size_t idx;
 		idx = img->filename.find_last_of("/\\");
@@ -286,7 +277,7 @@ void SLogger::LogImgCircleDetectorCandidates( const FdImage* img, cv::vector<cv:
 	}
 }
 
-void SLogger::LogImgDetectorProbabilityMap(const cv::Mat* probMap, const std::string filename, const std::string detectorId, std::string filenameAppend)
+void ImageLogger::LogImgDetectorProbabilityMap(const cv::Mat* probMap, const std::string filename, const std::string detectorId, std::string filenameAppend)
 {
 	if((this->global.img.writeDetectorProbabilityMaps==true) || this->verboseLevelImages>=2) {
 		if(filenameAppend=="") {
@@ -309,7 +300,7 @@ void SLogger::LogImgDetectorProbabilityMap(const cv::Mat* probMap, const std::st
 	}
 }
 
-void SLogger::LogImgDetectorFinal(const FdImage* img, std::vector<FdPatch*> candidates, std::string detectorIdForCertaintyColor, std::string filenameAppend)
+void ImageLogger::LogImgDetectorFinal(const FdImage* img, std::vector<FdPatch*> candidates, std::string detectorIdForCertaintyColor, std::string filenameAppend)
 {
 	if((this->global.img.writeDetectorCandidates==true) || this->verboseLevelImages>=1) {
 		if(filenameAppend=="") {
@@ -330,7 +321,7 @@ void SLogger::LogImgDetectorFinal(const FdImage* img, std::vector<FdPatch*> cand
 	}
 }
 
-void SLogger::LogImgDetectorFinal(const FdImage* img, std::vector<std::pair<std::string, std::vector<FdPatch*> > > candidates, std::string detectorIdForCertaintyColor, std::string filenameAppend)
+void ImageLogger::LogImgDetectorFinal(const FdImage* img, std::vector<std::pair<std::string, std::vector<FdPatch*> > > candidates, std::string detectorIdForCertaintyColor, std::string filenameAppend)
 {
 	if((this->global.img.writeDetectorCandidates==true) || this->verboseLevelImages>=1) {
 		if(filenameAppend=="") {
@@ -353,7 +344,7 @@ void SLogger::LogImgDetectorFinal(const FdImage* img, std::vector<std::pair<std:
 	}
 }
 
-void SLogger::LogImgRegressor(const FdImage* img, std::vector<FdPatch*> candidates, std::string regressorIdForFoutAngleColor, std::string filenameAppend)
+void ImageLogger::LogImgRegressor(const FdImage* img, std::vector<FdPatch*> candidates, std::string regressorIdForFoutAngleColor, std::string filenameAppend)
 {
 	if((this->global.img.writeRegressor==true) || this->verboseLevelImages>=1) {
 		if(filenameAppend=="") {
@@ -385,7 +376,7 @@ void SLogger::LogImgRegressor(const FdImage* img, std::vector<FdPatch*> candidat
 	}
 }
 
-void SLogger::LogImgRegressorPyramids(const FdImage* img, std::vector<FdPatch*> candidates, std::string regressorIdForFoutAngleColor, std::string filenameAppend)
+void ImageLogger::LogImgRegressorPyramids(const FdImage* img, std::vector<FdPatch*> candidates, std::string regressorIdForFoutAngleColor, std::string filenameAppend)
 {
 	if((this->global.img.writeRegressorPyramids==true) || this->verboseLevelImages>=2) {
 		if(filenameAppend=="") {
@@ -422,7 +413,7 @@ void SLogger::LogImgRegressorPyramids(const FdImage* img, std::vector<FdPatch*> 
 	}
 }
 
-void SLogger::drawBoxesWithCertainty(cv::Mat rgbimg, std::vector<FdPatch*> patches, std::string identifierForColor)
+void ImageLogger::drawBoxesWithCertainty(cv::Mat rgbimg, std::vector<FdPatch*> patches, std::string identifierForColor)
 {
 	std::vector<FdPatch*>::iterator pit = patches.begin();
 	for(; pit != patches.end(); pit++) {
@@ -430,7 +421,7 @@ void SLogger::drawBoxesWithCertainty(cv::Mat rgbimg, std::vector<FdPatch*> patch
 	}
 }
 
-void SLogger::drawBoxesWithAngleColor(cv::Mat rgbimg, std::vector<FdPatch*> patches, std::string identifierForColor)
+void ImageLogger::drawBoxesWithAngleColor(cv::Mat rgbimg, std::vector<FdPatch*> patches, std::string identifierForColor)
 {
 	cv::Scalar color;
 	double yaw;
@@ -465,7 +456,7 @@ void SLogger::drawBoxesWithAngleColor(cv::Mat rgbimg, std::vector<FdPatch*> patc
 	}
 }
 
-void SLogger::drawCenterpointsWithAngleColor(cv::Mat rgbimg, std::vector<FdPatch*> patches, std::string identifierForColor, int scale)
+void ImageLogger::drawCenterpointsWithAngleColor(cv::Mat rgbimg, std::vector<FdPatch*> patches, std::string identifierForColor, int scale)
 {
 	cv::Scalar color;
 	double yaw;
@@ -502,7 +493,7 @@ void SLogger::drawCenterpointsWithAngleColor(cv::Mat rgbimg, std::vector<FdPatch
 	}
 }
 
-void SLogger::drawFoutAsText(cv::Mat rgbimg, std::vector<FdPatch*> patches, std::string identifierForFout)
+void ImageLogger::drawFoutAsText(cv::Mat rgbimg, std::vector<FdPatch*> patches, std::string identifierForFout)
 {
 	std::ostringstream text;
 	int fontFace = cv::FONT_HERSHEY_PLAIN;
@@ -517,7 +508,7 @@ void SLogger::drawFoutAsText(cv::Mat rgbimg, std::vector<FdPatch*> patches, std:
 
 }
 
-void SLogger::drawAllScaleBoxes(cv::Mat rgbimg, const PyramidMap* pyramids, std::string detectorId, int det_filtersize_x, int det_filtersize_y)
+void ImageLogger::drawAllScaleBoxes(cv::Mat rgbimg, const PyramidMap* pyramids, std::string detectorId, int det_filtersize_x, int det_filtersize_y)
 {
 	for(PyramidMap::const_iterator it = pyramids->begin(); it != pyramids->end(); ++it) {	// loop over all pyramids
 		std::set<std::string>::const_iterator sit = it->second->detectorIds.find(detectorId);
@@ -529,20 +520,20 @@ void SLogger::drawAllScaleBoxes(cv::Mat rgbimg, const PyramidMap* pyramids, std:
 	}
 }
 
-void SLogger::drawScaleBox(cv::Mat rgbimg, int w, int h)
+void ImageLogger::drawScaleBox(cv::Mat rgbimg, int w, int h)
 {
 	cv::Scalar color = cv::Scalar(175, 175, 175);	//cv::Scalar(b, g, r);
 	cv::rectangle(rgbimg, cv::Point(0, 0), cv::Point(w-1, h-1), color);
 }
 
-void SLogger::drawFfpSymbols( cv::Mat image, std::pair<std::string, std::vector<FdPatch*> > candidates )
+void ImageLogger::drawFfpSymbols( cv::Mat image, std::pair<std::string, std::vector<FdPatch*> > candidates )
 {
 	for(unsigned int i=0; i<candidates.second.size(); ++i) {
 		drawFfpSymbol(image, candidates.first, candidates.second[i]);
 	}
 }
 
-void SLogger::drawFfpSymbol( cv::Mat image, std::string ffpName, FdPatch* patch )
+void ImageLogger::drawFfpSymbol( cv::Mat image, std::string ffpName, FdPatch* patch )
 {
 	landmarkData thisLm = landmarksData.find(ffpName)->second;
 	cv::Point2i realFfpCenter(patch->c.x+patch->w_inFullImg*thisLm.displacementFactorW, patch->c.y+patch->h_inFullImg*thisLm.displacementFactorH);
@@ -560,14 +551,14 @@ void SLogger::drawFfpSymbol( cv::Mat image, std::string ffpName, FdPatch* patch 
 
 }
 
-void SLogger::drawFfpsSmallSquare( cv::Mat img, std::vector<std::pair<std::string, cv::Point2f> > points )
+void ImageLogger::drawFfpsSmallSquare( cv::Mat img, std::vector<std::pair<std::string, cv::Point2f> > points )
 {
 	for (unsigned int i=0; i<points.size(); ++i) {
 		drawFfpSmallSquare(img, points[i]);
 	}
 }
 
-void SLogger::drawFfpSmallSquare( cv::Mat img, std::pair<std::string, cv::Point2f> point )
+void ImageLogger::drawFfpSmallSquare( cv::Mat img, std::pair<std::string, cv::Point2f> point )
 {
 	cv::rectangle(img, cv::Point(cvRound(point.second.x-2.0f), cvRound(point.second.y-2.0f)), cv::Point(cvRound(point.second.x+2.0f), cvRound(point.second.y+2.0f)), cv::Scalar(255, 0, 0));
 }
@@ -607,27 +598,4 @@ void SLogger::drawSinglePatchYawAngleColor(cv::Mat rgbimg, FdPatch patch)
 }
 */
 
-/* old, but maybe useful later
-void SLogger::drawBoxesAndSaveOrDontSave(cv::Mat rgbimg, std::vector<FdPatch*> patches, std::string identifierForColor, bool allocateNew, std::string filename)
-{
-	cv::Mat outimg;
-	if(allocateNew == true) {
-		outimg = rgbimg.clone();	// leave input image intact
-	} else {
-		outimg = rgbimg;	// doesnt copy
-	}
-	std::vector<FdPatch*>::iterator pit = patches.begin();
-	for(; pit != patches.end(); pit++) {
-			cv::rectangle(outimg, cv::Point((*pit)->c.x-(*pit)->w_inFullImg/2, (*pit)->c.y-(*pit)->h_inFullImg/2), cv::Point((*pit)->c.x+(*pit)->w_inFullImg/2, (*pit)->c.y+(*pit)->h_inFullImg/2), cv::Scalar(0, 0, (float)255*(*pit)->certainty[identifierForColor]));
-	}
-
-	if(allocateNew == true && filename.empty()) {
-		//doesnt make sense to allocate new img and then not save it. It will be gone.
-	} else if(allocateNew == true && !filename.empty()) {
-		cv::imwrite(filename, outimg);
-	} else if(allocateNew == false && filename.empty()) {
-		//i just write the boxes into the image, can be used/saved later
-	} else {
-		cv::imwrite(filename, outimg);
-	}
-} */
+} /* namespace detection */

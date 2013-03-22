@@ -23,10 +23,12 @@ SET(HEADERS
 	include/detection/Detector.hpp
 	include/detection/SlidingWindowDetector.hpp
 	include/detection/OverlapElimination.hpp
+	include/detection/ImageLogger.hpp
 )
 SET(SOURCE
 	src/detection/SlidingWindowDetector.cpp
 	src/detection/OverlapElimination.cpp
+	src/detection/ImageLogger.cpp
 )
 
 include_directories( "include" )
