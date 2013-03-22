@@ -6,15 +6,30 @@
  */
 
 #include "detection/OverlapElimination.hpp"
+#include "detection/ClassifiedPatch.hpp"
+#include "logging/LoggerFactory.hpp"
+
+#include "boost/iterator/indirect_iterator.hpp"
+#include "boost/lexical_cast.hpp"
+#include <iostream>	// TODO remove the cout's here and replace with logger/exceptions.
+#include <string>
+#include <functional>
+
+using logging::Logger;
+using logging::LoggerFactory;
+using boost::make_indirect_iterator;
+using boost::lexical_cast;
+using std::string;
+using std::sort;
+using std::greater;
+using std::min;
+using std::max;
+using std::abs;
 
 namespace detection {
 
-OverlapElimination::OverlapElimination(void)
+OverlapElimination::OverlapElimination(float dist, float ratio) : dist(dist), ratio(ratio)
 {
-	maxNumFaces = 0;
-	doOE = 1;	// only before SVM
-	dist = 5.0f;	//5px
-	ratio = -1.0f;	//no ratio
 }
 
 
@@ -26,32 +41,77 @@ OverlapElimination::OverlapElimination(void)
 //   The max. distance of the center coord. is smaller as thresholds[0] and 
 //	 the ratio of the obj. width is smaller as thresholds[1].
 //	 The distance is measured in pixel if thresholds[0]>1 else rel. to patch width.
-std::vector<FdPatch*> OverlapElimination::eliminate(std::vector<FdPatch*> &patchvec, std::string detectorIdForSorting)
+vector<shared_ptr<ClassifiedPatch>> OverlapElimination::eliminate(vector<shared_ptr<ClassifiedPatch>> &classifiedPatches)
 {
 
-	if(this->doOE > 1) {
-		std::cout << "[OverlapElimination] I am sorry, FD.doesPPOverlapElimination > 1 is not yet implemented. I'm going to set it to 1 and continue with this." << std::endl;
-		this->doOE = 1;
-	}
-
-	//std::vector<FdPatch*> newcand;
-	std::vector<FdPatch*> candidates = patchvec;
+	vector<shared_ptr<ClassifiedPatch>> candidates = classifiedPatches;
 	if (candidates.size() == 0)
 		return candidates;
 
-//	std::vector<FdPatch*>::iterator it2;
-//	std::vector<FdPatch*>::iterator it;
+	Logger log = Loggers->getLogger("detection");
 
-	//CFdPatchMap::iterator tmp;
-	float dist=this->dist;
-	float ratio=((this->ratio>0.0f) && (this->ratio<=1.0f))? this->ratio:0.0f;
+	float dist = this->dist;
+	float ratio = ((this->ratio > 0.0f) && (this->ratio <= 1.0f))? this->ratio : 0.0f;
 	float d;
 
-	//std::vector<FdPatch*>::iterator itr;
-	//for (itr = patchvec.begin(); itr != patchvec.end(); ++itr ) {
-	//	std::cout << "Hi!";
-	//}
-/*	bool dontIncIt = false;
+	// Note: This is the simplified, slightly different OE from Andreas.
+	//       It produces a little bit different results than the old OE from
+	//       MR, but it's okay. A reimplementation of the MR OE is below - see
+	//       the notes there.
+	
+	sort(make_indirect_iterator(candidates.begin()), make_indirect_iterator(candidates.end()), greater<ClassifiedPatch>());
+	 
+	// Commented-out is the code from Andreas, which might be a nice extension in the future.
+	//int K = 9999; // how many to keep, 1-X
+	//int L = 1; // (level_span>0) ? level_span : 1;
+	//float R = 1; // (radius>0) ? radius*radius : 25.f;
+
+     //for (int acc=0; acc<candidates.size() && acc < K; ++acc)
+     for (vector<shared_ptr<ClassifiedPatch>>::iterator accepted = candidates.begin(); accepted != candidates.end(); accepted++)
+     {
+         //for (int pro=acc+1; pro<candidates.size(); )
+         for (vector<shared_ptr<ClassifiedPatch>>::iterator proband = accepted+1; proband!= candidates.end(); )
+         {
+			 if (dist <= 1.0) {
+				 d = dist*max((*accepted)->getPatch()->getWidth(), (*proband)->getPatch()->getWidth());
+			 } else {
+				 d = dist;
+			 }
+             //if ( abs(candidates[acc].s-candidates[pro].s)<L && sq_dist(candidates[acc],candidates[pro])<R )
+             if ( (abs((*accepted)->getPatch()->getX() - (*proband)->getPatch()->getX()) < d)
+			   && (abs((*accepted)->getPatch()->getY() - (*proband)->getPatch()->getY()) < d)
+			   && ( ((float)min((*accepted)->getPatch()->getWidth(), (*proband)->getPatch()->getWidth()) / (float)max((*accepted)->getPatch()->getWidth(), (*proband)->getPatch()->getWidth()) ) > ratio) )
+             {
+                 //candidates.erase((candidates.begin()+pro));
+                 proband = candidates.erase(proband);
+             } else {
+                 //++pro;
+                 proband++;
+             }
+         }
+         //if (!(--K>0))
+         //{
+         //    candidates.erase(++accepted,candidates.end());
+         //    break;
+         //}
+     }
+     //if (K<candidates.size())
+     //{
+     //    candidates.erase((candidates.begin()+K),candidates.end());
+     //}
+
+	 log.debug("OverlapElimination reduced the candidate patches from " + lexical_cast<string>(classifiedPatches.size()) + " to " + lexical_cast<string>(candidates.size()) + ".");
+
+	 return candidates;
+
+	// The following is a reimplementation of the OE code from MR. It was compiling before
+	// the "refact" and should be working. It can be tested in the last software version
+	// before the refact. However, there might have been some problem with it (or maybe just
+	// similar results), so I chose to use the simpler OE above.
+	/*	
+	std::vector<FdPatch*>::iterator it2;
+	std::vector<FdPatch*>::iterator it;
+	bool dontIncIt = false;
 	bool dontIncIt2 = false;
 	it = candidates.begin();
 	//int outer=-1;
@@ -98,169 +158,8 @@ std::vector<FdPatch*> OverlapElimination::eliminate(std::vector<FdPatch*> &patch
 			++it;
 		}
 	}
-
-	std::vector<FdPatch*> candidates_of_OE1 = candidates;
-	candidates.clear();
-	candidates = patchvec;
-*/	
-/*============================================================================*/
-
-		//FdPatch::SortByCertainty bla;
-		//bla.detectorType = "DetectorWVM";
-	
-	std::sort(candidates.begin(), candidates.end(), FdPatch::SortByCertainty(detectorIdForSorting));
-	 
-     //int K = 9999;// how many to keep, 1-X
-     //int L = 1; //(level_span>0) ? level_span : 1;
-     //float R = 1; //(radius>0) ? radius*radius : 25.f;
-
-     //for (int acc=0; acc<candidates.size() && acc < K; ++acc)
-     for (std::vector<FdPatch*>::iterator accepted = candidates.begin(); accepted != candidates.end(); accepted++)
-     {
-         //for (int pro=acc+1; pro<candidates.size(); )
-         for (std::vector<FdPatch*>::iterator proband = accepted+1; proband!= candidates.end(); )
-         {
-			 if (dist<=1.0) d=dist*std::max((*accepted)->w_inFullImg,(*proband)->w_inFullImg); else d=dist;
-             //if ( abs(candidates[acc].s-candidates[pro].s)<L && sq_dist(candidates[acc],candidates[pro])<R )
-             if (  (abs((*accepted)->c.x-(*proband)->c.x) < d) && (abs((*accepted)->c.y-(*proband)->c.y) < d) && (((float)std::min((*accepted)->w_inFullImg,(*proband)->w_inFullImg)/(float)std::max((*accepted)->w_inFullImg,(*proband)->w_inFullImg)) > ratio) )
-             {
-                 //candidates.erase((candidates.begin()+pro));
-                 proband = candidates.erase(proband);
-             }
-             else
-             {
-                 //++pro;
-                 proband++;
-             }
-         }
-         //if (!(--K>0))
-         //{
-         //    candidates.erase(++accepted,candidates.end());
-         //    break;
-         //}
-     }
-     //if (K<candidates.size())
-     //{
-     //    candidates.erase((candidates.begin()+K),candidates.end());
-     //}
-
-     //std::cout << "\t\tto:" << candidates.size() << "\n" << std::flush; }
-
-	return candidates; //candidates_of_OE1;// candidates;
-}
-
-
-
-std::vector<FdPatch*> OverlapElimination::expNumFpElimination(std::vector<FdPatch*> &patchvec, std::string detectorIdForSorting)
-{
-	if(Logger->getVerboseLevelText()>=2) {
-		std::cout << "[OverlapElimination] Running expNumFpElimination, eliminating to the " << this->expected_num_faces[1] << " patches with highest probability." << std::endl;
-	}
-	if(patchvec.size() > this->expected_num_faces[1])
-	{
-		std::vector<FdPatch*> candidates;
-		
-		std::sort(patchvec.begin(), patchvec.end(), FdPatch::SortByCertainty(detectorIdForSorting));
-		
-		for(int i=0; i < this->expected_num_faces[1]; i++) {
-			candidates.push_back(patchvec[i]);
-		}
-		return candidates;
-
-	} else {
-		return patchvec;
-	}
-
+	// The candidates of this OE are now in "candidates".
+	*/
 }
 
 } /* namespace detection */
-
-/*
-std::vector<unsigned int> CFdDetectImg::pp_overlap_elimination(CFdPatchMap& faces, float thresholds[2], int cache, bool collect_removed=true) const {
-
-	std::vector<unsigned int> removedFaces;
-	
-	if (faces.size() == 0)
-		return removedFaces;
-
-	CFdPatchMap::iterator it2;
-	CFdPatchMap::iterator it = faces.begin();
-	CFdPatchMap::iterator end = faces.end();
-	CFdPatchMap::iterator end_it = faces.end();
-	--end_it;
-	bool reset_cache;
-	int c, cc;
-	CFdPatchMap::iterator *ca;
-	ca = new CFdPatchMap::iterator[cache+1];
-
-	for (c=0;c<=cache;c++) ca[c]=NULL;
-	reset_cache=false;
-	float dist=thresholds[0], ratio=((thresholds[1]>0.0f) && (thresholds[1]<=1.0f))? thresholds[1]:0.0f, d;
-	cache--;
-	for (;it < end_it; ++it) {
-		//it2 = it; ++it2;
-		for (it2 = it+1; it2 < end; ++it2) {
-			if (dist<=1.0) d=dist*max(it->w,it2->w); else d=dist;
-			if ( (abs(it->c.x-it2->c.x) < d) && (abs(it->c.y-it2->c.y) < d) && (((float)min(it->w,it2->w)/(float)max(it->w,it2->w)) > ratio) ) {
-				//printf("ca(%d): ",cache); for (cc=0;cc<=cache;cc++) if(ca[cc]==NULL)  printf("[%d].(N,0,0,0,0)) ",cc); else { box3=ca[cc]->box(); printf("[%d].(%d,%d,%d,%1.2f) ",cc,box3.left,box3.top,box3.right,ca[cc]->certainty);} printf("\n");
-				//printf("it:(%d,%d,%d,%1.2f), it2:(%d,%d,%d,%1.2f), inters:%1.1f\n",
-				//	box.left,box.top,box.right,it->certainty,box2.left,box2.top,box2.right,it2->certainty,(float)intersect_area/min(box_area,box2_area));
-
-				// there is some overlapping between it2 and it
-				//look if better than another in the cache
-				c=0; while ( (c<cache) && (ca[c]!=NULL) && (it2->certainty <= ca[c]->certainty) ) c++;
-				if (c>=cache) {
-					// cache full and it_cur worth then last -> if worth than it_current too
-					if (it2->certainty <= it->certainty) {
-						//...kill it						   //cache full, it2 worth than last and worth than it
-						if (collect_removed) removedFaces.push_back(it2->sampleID);
-						faces.erase(it2);
-					}  else {
-						//kill it_current and reset_cache		   //cache full, it2 worth than last but better than it
-						if (collect_removed) removedFaces.push_back(it->sampleID);
-						faces.erase(it);
-						reset_cache=true;
-						break;
-					}
-				}  else {
-					// cache not full
-					if (ca[c]==NULL) {
-						//cache not full and worth then last -> put at the end of the cache
-						ca[c]=it2;
-					} else {
-						//cache was not full and it_cur better then last -> push all one down and sort in,
-						cc=cache; while (cc>c)  { if (ca[cc-1]!=NULL) ca[cc]=ca[cc-1]; cc--;  }
-						ca[c]=it2;
-					}
-
-					//...but if cache now full kill last or it_current
-					if (ca[cache]!=NULL)	{
-						if (ca[cache]->certainty <= it->certainty) {
-							//kill last							   //cache full, it2 better than last and last worth than it
-							if (collect_removed) removedFaces.push_back(ca[cache]->sampleID);
-							faces.erase(ca[cache]);
-							ca[cache]=NULL;
-						} else {
-							//kill it_current and reset_cache	   //cache full, it2 better than last and last better than it
-							if (collect_removed) removedFaces.push_back(it->sampleID);
-							faces.erase(it);
-							reset_cache=true;
-							break;
-						}
-					}
-				}
-			}
-		}
-		if ( (it2==end) || reset_cache ) {
-			//if (it2==end) printf("was last it2\n");
-			//if (reset_cache) printf("kill it and reset_cache\n");
-			//reset_cache
-			
-			reset_cache=false;
-			for (c=0;c<=cache;c++)	ca[c]=NULL;
-		}
-	}
-	delete[] ca;
-	return removedFaces;
-}
-*/

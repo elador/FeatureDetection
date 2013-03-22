@@ -49,6 +49,7 @@
 
 #include "detection/SlidingWindowDetector.hpp"
 #include "detection/ClassifiedPatch.hpp"
+#include "detection/OverlapElimination.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -196,6 +197,7 @@ int main(int argc, char *argv[])
 	//Logger->global.img.writeDetectorCandidates = true;	// Write images of all 5 stages
 
 	shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.001--with-outnew02HQ64SVM.mat");
+	shared_ptr<ProbabilisticSvmClassifier> psvm = ProbabilisticSvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
 
 	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(0.09, 0.25, 0.9);	// (0.09, 0.25, 0.9) is nearly the same as old 90, 9, 0.9
 	pyr->addImageFilter(make_shared<GrayscaleFilter>());
@@ -204,6 +206,9 @@ int main(int argc, char *argv[])
 
 	shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm, featureExtractor);
 
+	shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(5.0f, 0.0f);
+
+	psvm->getSvm()->setThreshold(-1.2f);
 	Mat img;
 	for(unsigned int i=0; i< filenames.size(); i++) {
 		img = cv::imread(filenames[i]);
@@ -211,18 +216,46 @@ int main(int argc, char *argv[])
 		// update pyr etc...? done in detector?
 		vector<shared_ptr<ClassifiedPatch>> resultingPatches = det->detect(img);
 		//Logger->LogImgDetectorFinal(myimg, casc->candidates, casc->svm->getIdentifier(), "Final");
-		Mat rgbimg = img.clone();
+		Mat imgWvm = img.clone();
 		for(auto pit = resultingPatches.begin(); pit != resultingPatches.end(); pit++) {
 			shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
 			shared_ptr<Patch> patch = classifiedPatch->getPatch();
-			cv::rectangle(rgbimg, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
+			cv::rectangle(imgWvm, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
 		}
-		cv::namedWindow("final", CV_WINDOW_AUTOSIZE); cv::imshow("final", rgbimg);
+		cv::namedWindow("wvm", CV_WINDOW_AUTOSIZE); cv::imshow("wvm", imgWvm);
 		
-		sort(make_indirect_iterator(resultingPatches.begin()), make_indirect_iterator(resultingPatches.end()), greater<ClassifiedPatch>());
-		Mat finalimg = img.clone();
-		cv::rectangle(finalimg, cv::Point(resultingPatches[0]->getPatch()->getX() - resultingPatches[0]->getPatch()->getWidth()/2, resultingPatches[0]->getPatch()->getY() - resultingPatches[0]->getPatch()->getHeight()/2), cv::Point(resultingPatches[0]->getPatch()->getX() + resultingPatches[0]->getPatch()->getWidth()/2, resultingPatches[0]->getPatch()->getY() + resultingPatches[0]->getPatch()->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((resultingPatches[0]->getProbability())/1.0)   ));
-		cv::namedWindow("final1", CV_WINDOW_AUTOSIZE); cv::imshow("final1", finalimg);
+		resultingPatches = oe->eliminate(resultingPatches);
+		Mat imgWvmOe = img.clone();
+		for(auto pit = resultingPatches.begin(); pit != resultingPatches.end(); pit++) {
+			shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
+			shared_ptr<Patch> patch = classifiedPatch->getPatch();
+			cv::rectangle(imgWvmOe, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
+		}
+		cv::namedWindow("wvmoe", CV_WINDOW_AUTOSIZE); cv::imshow("wvmoe", imgWvmOe);
+
+		vector<shared_ptr<ClassifiedPatch>> svmPatches;
+		for(auto &patch : resultingPatches) {
+			svmPatches.push_back(make_shared<ClassifiedPatch>(patch->getPatch(), psvm->classify(patch->getPatch()->getData())));
+		}
+
+		vector<shared_ptr<ClassifiedPatch>> svmPatchesPositive;
+		Mat imgSvm = img.clone();
+		for(auto pit = svmPatches.begin(); pit != svmPatches.end(); pit++) {
+			shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
+			shared_ptr<Patch> patch = classifiedPatch->getPatch();
+			if(classifiedPatch->isPositive()) {
+				cv::rectangle(imgSvm, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
+				svmPatchesPositive.push_back(classifiedPatch);
+			}
+		}
+		cv::namedWindow("svm", CV_WINDOW_AUTOSIZE); cv::imshow("svm", imgSvm);
+
+		sort(make_indirect_iterator(svmPatches.begin()), make_indirect_iterator(svmPatches.end()), greater<ClassifiedPatch>());
+
+		Mat imgSvmEnd = img.clone();
+		cv::rectangle(imgSvmEnd, cv::Point(svmPatches[0]->getPatch()->getX() - svmPatches[0]->getPatch()->getWidth()/2, svmPatches[0]->getPatch()->getY() - svmPatches[0]->getPatch()->getHeight()/2), cv::Point(svmPatches[0]->getPatch()->getX() + svmPatches[0]->getPatch()->getWidth()/2, svmPatches[0]->getPatch()->getY() + svmPatches[0]->getPatch()->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((svmPatches[0]->getProbability())/1.0)   ));
+		cv::namedWindow("svmEnd", CV_WINDOW_AUTOSIZE); cv::imshow("svmEnd", imgSvmEnd);
+
 		cv::waitKey();
 
 		TOT++;
@@ -238,9 +271,9 @@ int main(int argc, char *argv[])
 				int gt_h = rects[i].height;
 				int gt_cx = rects[i].x+gt_w/2;
 				int gt_cy = rects[i].y+gt_h/2;
-				if (abs(gt_cx - resultingPatches[0]->getPatch()->getX()) < DETECT_MAX_DIST_X*(float)gt_w &&
-					abs(gt_cy - resultingPatches[0]->getPatch()->getY()) < DETECT_MAX_DIST_Y*(float)gt_w &&
-					abs(gt_w - resultingPatches[0]->getPatch()->getWidth()) < DETECT_MAX_DIFF_W*(float)gt_w       ) {
+				if (abs(gt_cx - svmPatches[0]->getPatch()->getX()) < DETECT_MAX_DIST_X*(float)gt_w &&
+					abs(gt_cy - svmPatches[0]->getPatch()->getY()) < DETECT_MAX_DIST_Y*(float)gt_w &&
+					abs(gt_w - svmPatches[0]->getPatch()->getWidth()) < DETECT_MAX_DIFF_W*(float)gt_w       ) {
 				
 					std::cout << "[ffpDetectApp] TACC (1/1): " << filenames[i] << std::endl;
 					TACC++;
