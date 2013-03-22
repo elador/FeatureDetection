@@ -49,11 +49,9 @@ Logger& LoggerFactory::getLogger(const string name)
 
 Logger& LoggerFactory::getLoggerFor(const string fileName)
 {
-	ostringstream basename;
 	int lastSlash = fileName.find_last_of("/\\");
 	int lastDot = fileName.find_last_of(".");
-	basename << fileName.substr(lastSlash + 1, lastDot - lastSlash - 1);
-	return getLogger(basename.str());
+	return getLogger(fileName.substr(lastSlash + 1, lastDot - lastSlash - 1));
 }
 
 } /* namespace logging */
