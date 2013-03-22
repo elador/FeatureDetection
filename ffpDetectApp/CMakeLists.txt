@@ -17,7 +17,6 @@ IF(MATLAB_FOUND)
 ELSE(MATLAB_FOUND)
   MESSAGE(FATAL_ERROR "Matlab not found")
 ENDIF(MATLAB_FOUND)
-INCLUDE_DIRECTORIES(${MATLAB_INCLUDE_DIR})
 
 #Boost:
 FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED) # others (e.g.): system filesystem
@@ -26,24 +25,25 @@ if(Boost_FOUND)
 ELSE(Boost_FOUND)
   MESSAGE(FATAL_ERROR "Boost not found")
 ENDIF()
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 
 #Source and header files:
 SET(SOURCE
 	ffpDetectApp.cpp
-	stdafx.cpp
 )
 
 SET(HEADERS
-	stdafx.h
-	targetver.h
 )
 
-#Make the library
 ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
 
-MESSAGE(STATUS "Adding includes and lib: ${libFeatureDetection_SOURCE_DIR}")
-include_directories( ${libFeatureDetection_SOURCE_DIR} )
+INCLUDE_DIRECTORIES( ${MATLAB_INCLUDE_DIR} )
+include_directories( ${Boost_INCLUDE_DIRS} )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+include_directories( ${Logging_SOURCE_DIR}/include )
+include_directories( ${ImageIO_SOURCE_DIR}/include )
+include_directories( ${ImageProcessing_SOURCE_DIR}/include )
+include_directories( ${Classification_SOURCE_DIR}/include )
+include_directories( ${Detection_SOURCE_DIR}/include )
+
 #Make the app depend on the libraries
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} libFeatureDetection ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )
-#MESSAGE(STATUS "Boost libs inc: ${Boost_LIBRARIES}")
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} Logging ImageIO ${KINECT_LIBNAME} ImageProcessing Classification Detection )
