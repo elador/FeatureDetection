@@ -51,6 +51,9 @@
 #include "detection/ClassifiedPatch.hpp"
 #include "detection/OverlapElimination.hpp"
 
+#include "imageio/LandmarksHelper.hpp"
+#include "imageio/FaceBoxLandmark.hpp"
+
 #include "logging/LoggerFactory.hpp"
 
 
@@ -59,6 +62,7 @@ using namespace std;
 using namespace imageprocessing;
 using namespace detection;
 using namespace classification;
+using namespace imageio;
 using logging::Logger;
 using logging::LoggerFactory;
 using logging::loglevel;
@@ -82,10 +86,9 @@ int main(int argc, char *argv[])
 	int verbose_level_images;
     bool useFileList = false;
 	bool useImgs = false;
-	std::string fn_fileList;
-	std::vector<std::string> filenames; // Create vector to hold the filenames
-	std::vector<cv::Rect> rects;			// Create vector to hold the groundtruth (if there is any).
-										// Format (old): l t r b. OpenCV: ??
+	string fn_fileList;
+	vector<std::string> filenames;
+	vector<FaceBoxLandmark> groundtruthFaceBoxes;
 	
 	try {
         po::options_description desc("Allowed options");
@@ -148,53 +151,37 @@ int main(int argc, char *argv[])
 	const float DETECT_MAX_DIST_Y = 0.33f;
 	const float DETECT_MAX_DIFF_W = 0.33f;
 
-	//std::string fn_fileList = "D:\\CloudStation\\libFD_patrik2011\\data\\firstrun\\theRealWorld_png.lst";
-	//std::string fn_fileList = "H:\\featuredetection\\data\\lfw\\lfw-b_NAS.lst";
-	//std::string fn_fileList = "H:\\featuredetection\\data\\feret_m2\\feret-frontal_m2_NAS.lst";
-	
 	if(useFileList) {
-		std::ifstream fileList;
+		ifstream fileList;
 		fileList.open(fn_fileList.c_str(), std::ios::in);
 		if (!fileList.is_open()) {
 			std::cout << "[ffpDetectApp] Error opening file list!" << std::endl;
 			return 0;
 		}
-		std::string line;
-		while( fileList.good() ) {
-			std::getline(fileList, line);
+		string line;
+		while(fileList.good()) {
+			getline(fileList, line);
 			if(line=="") {
 				continue;
 			}
-      		std::string buf; // Have a buffer string
-			int l=0, r=0, b=0, t=0;
-			std::stringstream ss(line); // Insert the string into a stream
-			//while (ss >> buf)
+      		string buf;
+			stringstream ss(line);
 			ss >> buf;	
-			filenames.push_back(buf);
-			ss >> l;
-			ss >> t;
-			ss >> r;
-			ss >> b;
-			//if(!(l==0 && t==0 && r==0 && b==0))
-			rects.push_back(cv::Rect(l, t, r-l, b-t));	// GT available or 0 0 0 0
-			buf.clear();
-			l=t=r=b=0;
+			filenames.push_back(buf);	// Insert the image filename
+			groundtruthFaceBoxes.push_back(LandmarksHelper::readFromLstLine(line));	// Insert the groundtruth facebox
 		}
 		fileList.close();
 	}
 	// Else useImgs==true: filesnames are already in "filenames", and no groundtruth available!
 
 	// All filesnames now in "filenames", either way
-	// All groundtruth now in "rects" IF available (read from .lst)
+	// All groundtruth now in "groundtruthFaceBoxes" IF available (read from .lst)
 
 	int TOT = 0;
 	int TACC = 0;
 	int FACC = 0;
 	int NOCAND = 0;
 	int DONTKNOW = 0;
-
-	//Logger->setVerboseLevelImages(verbose_level_images);
-	//Logger->global.img.writeDetectorCandidates = true;	// Write images of all 5 stages
 
 	shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.001--with-outnew02HQ64SVM.mat");
 	shared_ptr<ProbabilisticSvmClassifier> psvm = ProbabilisticSvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
@@ -205,17 +192,16 @@ int main(int argc, char *argv[])
 	featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
 
 	shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm, featureExtractor);
-
 	shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(5.0f, 0.0f);
-
 	psvm->getSvm()->setThreshold(-1.2f);
+
 	Mat img;
 	for(unsigned int i=0; i< filenames.size(); i++) {
 		img = cv::imread(filenames[i]);
 		cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
-		// update pyr etc...? done in detector?
+
 		vector<shared_ptr<ClassifiedPatch>> resultingPatches = det->detect(img);
-		//Logger->LogImgDetectorFinal(myimg, casc->candidates, casc->svm->getIdentifier(), "Final");
+
 		Mat imgWvm = img.clone();
 		for(auto pit = resultingPatches.begin(); pit != resultingPatches.end(); pit++) {
 			shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
@@ -256,21 +242,22 @@ int main(int argc, char *argv[])
 		cv::rectangle(imgSvmEnd, cv::Point(svmPatches[0]->getPatch()->getX() - svmPatches[0]->getPatch()->getWidth()/2, svmPatches[0]->getPatch()->getY() - svmPatches[0]->getPatch()->getHeight()/2), cv::Point(svmPatches[0]->getPatch()->getX() + svmPatches[0]->getPatch()->getWidth()/2, svmPatches[0]->getPatch()->getY() + svmPatches[0]->getPatch()->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((svmPatches[0]->getProbability())/1.0)   ));
 		cv::namedWindow("svmEnd", CV_WINDOW_AUTOSIZE); cv::imshow("svmEnd", imgSvmEnd);
 
-		cv::waitKey();
+		//cv::waitKey();
 
 		TOT++;
 		if(resultingPatches.size()<1) {
 			std::cout << "[ffpDetectApp] No face-candidates at all found:  " << filenames[i] << std::endl;
 			NOCAND++;
 		} else {
-			if(rects[i]==Rect(0, 0, 0, 0)) {//no groundtruth
+			if(groundtruthFaceBoxes[i].getPosition()==Vec3f(0.0f, 0.0f, 0.0f)) { //no groundtruth
 				std::cout << "[ffpDetectApp] No ground-truth available, not counting anything: " << filenames[i] << std::endl;
 				++DONTKNOW;
-			} else {//we have groundtruth
-				int gt_w = rects[i].width;
-				int gt_h = rects[i].height;
-				int gt_cx = rects[i].x+gt_w/2;
-				int gt_cy = rects[i].y+gt_h/2;
+			} else { //we have groundtruth
+				int gt_w = groundtruthFaceBoxes[i].getWidth();
+				int gt_h = groundtruthFaceBoxes[i].getHeight();
+				int gt_cx = groundtruthFaceBoxes[i].getPosition()[0];
+				int gt_cy = groundtruthFaceBoxes[i].getPosition()[1];
+				// TODO implement a isClose, isDetected... or something like that function
 				if (abs(gt_cx - svmPatches[0]->getPatch()->getX()) < DETECT_MAX_DIST_X*(float)gt_w &&
 					abs(gt_cy - svmPatches[0]->getPatch()->getY()) < DETECT_MAX_DIST_Y*(float)gt_w &&
 					abs(gt_w - svmPatches[0]->getPatch()->getWidth()) < DETECT_MAX_DIFF_W*(float)gt_w       ) {
@@ -281,7 +268,7 @@ int main(int argc, char *argv[])
 					std::cout << "[ffpDetectApp] Face not found, wrong position:  " << filenames[i] << std::endl;
 					FACC++;
 				}
-			}//end no groundtruth
+			} // end no groundtruth
 		}
 
 		std::cout << std::endl;

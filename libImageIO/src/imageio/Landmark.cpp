@@ -9,11 +9,25 @@
 
 namespace imageio {
 
-Landmark::Landmark() {
+Landmark::Landmark(string name, Vec3f position, bool visibility) : name(name), position(position), visibility(visibility)
+{
 }
 
 Landmark::~Landmark() {}
 
+bool Landmark::isVisible() const
+{
+	return visibility;
+}
 
+string Landmark::getName() const
+{
+	return name;
+}
+
+Vec3f Landmark::getPosition() const
+{
+	return position;
+}
 
 } /* namespace imageio */

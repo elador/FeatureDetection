@@ -9,25 +9,57 @@
 #ifndef LANDMARK_HPP_
 #define LANDMARK_HPP_
 
+#include "opencv2/core/core.hpp"
+#include <string>
+
+using cv::Vec3f;
+using std::string;
+
 namespace imageio {
 
 /**
- * TODO.
+ * Represents a landmark in 2D or 3D. This can be a detected point
+ * in an image, or vertex coordinates in a 3D model.
  */
 class Landmark {
 public:
 
 	/**
-	 * Constructs a new directory image source.
+	 * Constructs a new Landmark of given name.
 	 *
-	 * @param[in] directory The directory containing image files.
+	 * @param[in] name The name of the landmark.
+	 * @param[in] position The 2D or 3D coordinates of the landmark.
+	 * @param[in] visibility A flag if the landmark is currently visible.
 	 */
-	Landmark();
-
+	explicit Landmark(string name, Vec3f position=Vec3f(0.0f, 0.0f, 0.0f), bool visibility=true);
+	
 	~Landmark();
 
-private:
+	/**
+	 * Returns if the landmark is currently visible.
+	 *
+	 * @return True if the landmark is currently visible.
+	 */
+	bool isVisible() const;
 
+	/**
+	 * Returns the name of the landmark.
+	 *
+	 * @return The name of the landmark.
+	 */
+	string getName() const;
+
+	/**
+	 * Returns the 2D or 3D coordinates of the landmark.
+	 *
+	 * @return The 2D or 3D coordinates of the landmark.
+	 */
+	Vec3f getPosition() const;
+
+private:
+	string name;		///< The name and identifier of the landmark.
+	Vec3f position;		///< The 2D or 3D position of the landmark.
+	bool visibility;	///< Flag if the landmark is currently visible.
 };
 
 } /* namespace imageio */

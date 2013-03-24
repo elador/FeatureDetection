@@ -38,9 +38,8 @@ private:
 
 #ifdef WIN32
 	INuiSensor * m_pNuiSensor;	///< The kinect capture device.
-	NUI_IMAGE_FRAME imageFrame; ///< The current frame.!
-
-	HANDLE                  m_pColorStreamHandle; ///< The handle to the Kinect color stream we're grabbing from
+	NUI_IMAGE_FRAME imageFrame; ///< The current frame.
+	HANDLE m_pColorStreamHandle; ///< The handle to the Kinect color stream we're grabbing from.
 #endif
 
 };
