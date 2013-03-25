@@ -43,7 +43,7 @@
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
 #include "imageprocessing/Patch.hpp"
-#include "imageprocessing/PyramidFeatureExtractor.hpp"
+#include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
 #include "imageprocessing/HistEq64Filter.hpp"
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
 
@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
 
 	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(0.09, 0.25, 0.9);	// (0.09, 0.25, 0.9) is nearly the same as old 90, 9, 0.9
 	pyr->addImageFilter(make_shared<GrayscaleFilter>());
-	shared_ptr<PyramidFeatureExtractor> featureExtractor = make_shared<PyramidFeatureExtractor>(pyr, 20, 20);
+	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(pyr, 20, 20);
 	featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
 
 	shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm, featureExtractor);

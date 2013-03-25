@@ -7,6 +7,7 @@
 
 #include "imageio/LandmarksCollection.hpp"
 #include "imageio/Landmark.hpp"
+#include <stdexcept>
 
 namespace imageio {
 
