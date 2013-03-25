@@ -10,51 +10,25 @@
 #define PYRAMIDFEATUREEXTRACTOR_HPP_
 
 #include "imageprocessing/FeatureExtractor.hpp"
-#include "imageprocessing/ImagePyramid.hpp"
-#include "imageprocessing/ImagePyramidLayer.hpp"
 #include <vector>
 
 using cv::Rect;
+using cv::Size;
 using std::vector;
 
 namespace imageprocessing {
 
-class ImageFilter;
-class MultipleImageFilter;
-
 /**
- * Feature extractor whose features are patches of a constant size extracted from an image pyramid. Does only consider
- * the given width when extracting single patches, as this extractor assumes the given aspect ratio to be the same as
- * the one given at construction, so the extracted patches will not be scaled to fit.
+ * Feature extractor whose features are patches of a constant size extracted from an image pyramid.
  */
 class PyramidFeatureExtractor : public FeatureExtractor {
 public:
 
-	/**
-	 * Constructs a new pyramid based feature extractor.
-	 *
-	 * @param[in] pyramid The image pyramid.
-	 * @param[in] width The width of the image data of the extracted patches.
-	 * @param[in] height The height of the image data of the extracted patches.
-	 */
-	PyramidFeatureExtractor(shared_ptr<ImagePyramid> pyramid, int width, int height);
+	virtual ~PyramidFeatureExtractor() {}
 
-	~PyramidFeatureExtractor();
+	virtual void update(const Mat& image) = 0;
 
-	/**
-	 * Adds a new filter that is applied to the patches.
-	 *
-	 * @param[in] filter The new patch filter.
-	 */
-	void addPatchFilter(shared_ptr<ImageFilter> filter);
-
-	void update(const Mat& image) {
-		pyramid->update(image);
-	}
-
-	void update(shared_ptr<VersionedImage> image) {
-		pyramid->update(image);
-	}
+	virtual void update(shared_ptr<VersionedImage> image) = 0;
 
 	/**
 	 * Extracts a patch from the corresponding image pyramid.
@@ -65,53 +39,68 @@ public:
 	 * @param[in] height The height of the patch in the original image.
 	 * @return The extracted patch or an empty pointer in case the patch could not be extracted.
 	 */
-	shared_ptr<Patch> extract(int x, int y, int width, int height) const;
+	virtual shared_ptr<Patch> extract(int x, int y, int width, int height) const = 0;
 
 	/**
 	 * Extracts several patches from the layers of the corresponding image pyramid.
-	 * TODO iterator instead of vector?
 	 *
 	 * @param[in] stepX The step size in x-direction in pixels (will be the same absolute value in all pyramid layers).
 	 * @param[in] stepY The step size in y-direction in pixels (will be the same absolute value in all pyramid layers).
 	 * @param[in] roi The region of interest inside the original image (region will be scaled accordingly to the layers).
 	 * @param[in] firstLayer The index of the first layer to extract patches from.
-	 * @param[in] lastLayer The index of the first layer to extract patches from.
+	 * @param[in] lastLayer The index of the last layer to extract patches from.
 	 * @return The extracted patches.
 	 */
-	vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(), int firstLayer = -1, int lastLayer = -1) const;
+	virtual vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(), int firstLayer = -1, int lastLayer = -1) const = 0;
 
 	/**
-	 * Determines the index of the pyramid layer that approximately contains patches of the given size. Only the width
-	 * will be considered.
+	 * Extracts a single patch from a layer of the corresponding image pyramid.
+	 *
+	 * @param[in] layer The index of the layer.
+	 * @param[in] x The x-coordinate of the patch center inside the layer.
+	 * @param[in] y The y-coordinate of the patch center inside the layer.
+	 * @return The extracted patch or an empty pointer in case the patch could not be extracted.
+	 */
+	virtual shared_ptr<Patch> extract(int layer, int x, int y) const = 0;
+
+	/**
+	 * Given a region of interest around patches (patches are completely within the region), compute a region of
+	 * interest of the center points of the patches. The given region will be shrunk by half of the patch width
+	 * or height on all four sides.
+	 *
+	 * @param[in] The region of interest of patches that are completely within that region.
+	 * @return The region of interest of the same patches, so (at least) their center points are within that region.
+	 */
+	virtual Rect getCenterRoi(const Rect& roi) const = 0;
+
+	/**
+	 * Determines the index of the pyramid layer that approximately contains patches of the given size.
 	 *
 	 * @param[in] width The width of the patches.
 	 * @param[in] height The height of the patches.
 	 * @return The index of the pyramid layer or -1 if there is no layer with an appropriate patch size.
 	 */
-	int getLayerIndex(int width, int height) const {
-		const shared_ptr<ImagePyramidLayer> layer = getLayer(width, height);
-		return layer ? layer->getIndex() : -1;
-	}
-
-private:
+	virtual int getLayerIndex(int width, int height) const  = 0;
 
 	/**
-	 * Determines the pyramid layer that approximately contains patches of the given size. Only the width
-	 * will be considered.
-	 *
-	 * @param[in] width The width of the patches.
-	 * @param[in] height The height of the patches.
-	 * @return The pyramid layer or an empty pointer if there is no layer with an appropriate patch size.
+	 * @return The minimum scale factor (the scale factor of the smallest scaled (last) image is bigger or equal).
 	 */
-	const shared_ptr<ImagePyramidLayer> getLayer(int width, int height) const {
-		double scaleFactor = static_cast<double>(patchWidth) / static_cast<double>(width);
-		return pyramid->getLayer(scaleFactor);
-	}
+	virtual double getMinScaleFactor() const = 0;
 
-	shared_ptr<ImagePyramid> pyramid; ///< The image pyramid.
-	int patchWidth;  ///< The width of the image data of the extracted patches.
-	int patchHeight; ///< The height of the image data of the extracted patches.
-	shared_ptr<MultipleImageFilter> patchFilter; ///< Filter that is applied to the patches.
+	/**
+	 * @return The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
+	 */
+	virtual double getMaxScaleFactor() const = 0;
+
+	/**
+	 * @return The incremental scale factor between two layers of the pyramid.
+	 */
+	virtual double getIncrementalScaleFactor() const = 0;
+
+	/**
+	 * @return The size of the original image.
+	 */
+	virtual Size getImageSize() const = 0;
 };
 
 } /* namespace imageprocessing */

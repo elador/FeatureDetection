@@ -12,9 +12,12 @@ MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 # source and header files
 SET(HEADERS
 	include/imageprocessing/CachingFeatureExtractor.hpp
+	include/imageprocessing/CachingPyramidFeatureExtractor.hpp
 	include/imageprocessing/ConversionFilter.hpp
+	include/imageprocessing/DirectPyramidFeatureExtractor.hpp
 	include/imageprocessing/FeatureExtractor.hpp
 	include/imageprocessing/FilteringFeatureExtractor.hpp
+	include/imageprocessing/FilteringPyramidFeatureExtractor.hpp
 	include/imageprocessing/GrayscaleFilter.hpp
 	include/imageprocessing/HistogramEqualizationFilter.hpp
 	include/imageprocessing/HistEq64Filter.hpp
@@ -34,7 +37,9 @@ SET(HEADERS
 )
 SET(SOURCE
 	src/imageprocessing/CachingFeatureExtractor.cpp
+	src/imageprocessing/CachingPyramidFeatureExtractor.cpp
 	src/imageprocessing/ConversionFilter.cpp
+	src/imageprocessing/DirectPyramidFeatureExtractor.cpp
 	src/imageprocessing/GrayscaleFilter.cpp
 	src/imageprocessing/HistEq64Filter.cpp
 	src/imageprocessing/HistogramEqualizationFilter.cpp
@@ -42,7 +47,6 @@ SET(SOURCE
 	src/imageprocessing/ImagePyramidLayer.cpp
 	src/imageprocessing/IntegralImageFilter.cpp
 	src/imageprocessing/MultipleImageFilter.cpp
-	src/imageprocessing/PyramidFeatureExtractor.cpp
 	src/imageprocessing/ResizingFilter.cpp
 	src/imageprocessing/WhiteningFilter.cpp
 	src/imageprocessing/ZeroMeanUnitVarianceFilter.cpp

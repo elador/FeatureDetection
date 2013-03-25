@@ -14,7 +14,7 @@
 #include "imageio/VideoImageSink.hpp"
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/FeatureExtractor.hpp"
-#include "imageprocessing/PyramidFeatureExtractor.hpp"
+#include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
 #include "imageprocessing/HistEq64Filter.hpp"
@@ -71,7 +71,7 @@ void FaceTracking::initTracking() {
 	// create measurement model
 	shared_ptr<ImagePyramid> pyramid = make_shared<ImagePyramid>(20.0 / 480.0, 20.0 / 80.0, 0.85);
 	pyramid->addImageFilter(make_shared<GrayscaleFilter>());
-	shared_ptr<PyramidFeatureExtractor> featureExtractor = make_shared<PyramidFeatureExtractor>(pyramid, 20, 20);
+	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(pyramid, 20, 20);
 	//featureExtractor->add(make_shared<HistogramEqualizationFilter>());
 	featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
 	string svmConfigFile1 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat";

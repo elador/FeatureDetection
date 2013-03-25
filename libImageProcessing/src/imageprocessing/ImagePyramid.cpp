@@ -72,7 +72,7 @@ void ImagePyramid::update() {
 			double scaleFactor = 1;
 			Mat previousScaledImage;
 			for (int i = 0; ; ++i, scaleFactor *= incrementalScaleFactor) {
-				if (scaleFactor > maxScaleFactor)	// This goes into an endless loop if the user specifies a scale-factor with which it is impossible to produce the desired pyramids. We could add a check for this here, but I (Patrik) think we could also leave it this way because every 'if' costs runtime performance.
+				if (scaleFactor > maxScaleFactor)
 					continue;
 				if (scaleFactor < minScaleFactor)
 					break;
@@ -149,12 +149,25 @@ void ImagePyramid::addLayerFilter(shared_ptr<ImageFilter> filter) {
 	layerFilter->add(filter);
 }
 
-const shared_ptr<ImagePyramidLayer> ImagePyramid::getLayer(double scaleFactor) const {
-	double power = log(scaleFactor) / log(incrementalScaleFactor);
-	int index = cvRound(power) - firstLayer;
+Size ImagePyramid::getImageSize() const {
+	if (sourceImage)
+		return Size(sourceImage->getData().cols, sourceImage->getData().rows);
+	else if (sourcePyramid)
+		return sourcePyramid->getImageSize();
+	else
+		return Size();
+}
+
+const shared_ptr<ImagePyramidLayer> ImagePyramid::getLayer(int index) const {
+	index -= firstLayer;
 	if (index < 0 || index >= (int)layers.size())
 		return NULL;
 	return layers[index];
+}
+
+const shared_ptr<ImagePyramidLayer> ImagePyramid::getLayer(double scaleFactor) const {
+	double power = log(scaleFactor) / log(incrementalScaleFactor);
+	return getLayer(cvRound(power));
 }
 
 } /* namespace imageprocessing */

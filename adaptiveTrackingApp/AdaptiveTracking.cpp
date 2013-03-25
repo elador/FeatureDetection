@@ -12,7 +12,7 @@
 #include "imageio/VideoImageSink.hpp"
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/FeatureExtractor.hpp"
-#include "imageprocessing/PyramidFeatureExtractor.hpp"
+#include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
 #include "imageprocessing/FilteringFeatureExtractor.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
 #include "imageprocessing/HistEq64Filter.hpp"
@@ -73,7 +73,7 @@ void AdaptiveTracking::initTracking() {
 	// create feature extractors
 	shared_ptr<ImagePyramid> pyramid = make_shared<ImagePyramid>(20.0 / 480.0, 20.0 / 80.0, 0.85);
 	pyramid->addImageFilter(make_shared<GrayscaleFilter>());
-	shared_ptr<PyramidFeatureExtractor> patchExtractor = make_shared<PyramidFeatureExtractor>(pyramid, 20, 20);
+	shared_ptr<PyramidFeatureExtractor> patchExtractor = make_shared<DirectPyramidFeatureExtractor>(pyramid, 20, 20);
 
 	shared_ptr<FilteringFeatureExtractor> featureExtractor1 = make_shared<FilteringFeatureExtractor>(patchExtractor);
 	featureExtractor1->addPatchFilter(make_shared<HistEq64Filter>());

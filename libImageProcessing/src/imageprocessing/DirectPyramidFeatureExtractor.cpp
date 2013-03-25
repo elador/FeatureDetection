@@ -1,11 +1,11 @@
 /*
- * PyramidFeatureExtractor.cpp
+ * DirectPyramidFeatureExtractor.cpp
  *
- *  Created on: 18.02.2013
+ *  Created on: 22.03.2013
  *      Author: poschmann
  */
 
-#include "imageprocessing/PyramidFeatureExtractor.hpp"
+#include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
 #include "imageprocessing/Patch.hpp"
 #include "imageprocessing/MultipleImageFilter.hpp"
 
@@ -14,17 +14,17 @@ using std::make_shared;
 
 namespace imageprocessing {
 
-PyramidFeatureExtractor::PyramidFeatureExtractor(shared_ptr<ImagePyramid> pyramid, int width, int height) :
+DirectPyramidFeatureExtractor::DirectPyramidFeatureExtractor(shared_ptr<ImagePyramid> pyramid, int width, int height) :
 		pyramid(pyramid), patchWidth(width), patchHeight(height), patchFilter(make_shared<MultipleImageFilter>()) {}
 
-PyramidFeatureExtractor::~PyramidFeatureExtractor() {}
+DirectPyramidFeatureExtractor::~DirectPyramidFeatureExtractor() {}
 
-void PyramidFeatureExtractor::addPatchFilter(shared_ptr<ImageFilter> filter) {
+void DirectPyramidFeatureExtractor::addPatchFilter(shared_ptr<ImageFilter> filter) {
 	patchFilter->add(filter);
 }
 
-shared_ptr<Patch> PyramidFeatureExtractor::extract(int x, int y, int width, int height) const {
-	const shared_ptr<ImagePyramidLayer> layer = getLayer(width, height);
+shared_ptr<Patch> DirectPyramidFeatureExtractor::extract(int x, int y, int width, int height) const {
+	const shared_ptr<ImagePyramidLayer> layer = getLayer(width);
 	if (!layer)
 		return shared_ptr<Patch>();
 	const Mat& image = layer->getScaledImage();
@@ -45,8 +45,12 @@ shared_ptr<Patch> PyramidFeatureExtractor::extract(int x, int y, int width, int 
 	return make_shared<Patch>(originalX, originalY, originalWidth, originalHeight, patchFilter->applyTo(data));
 }
 
-vector<shared_ptr<Patch>> PyramidFeatureExtractor::extract(int stepX, int stepY, Rect roi, int firstLayer, int lastLayer) const {
-	Rect empty;
+vector<shared_ptr<Patch>> DirectPyramidFeatureExtractor::extract(int stepX, int stepY, Rect roi, int firstLayer, int lastLayer) const {
+	if (roi.x == 0 && roi.y == 0 && roi.width == 0 && roi.height == 0) {
+		Size size = getImageSize();
+		roi.width = size.width;
+		roi.height = size.height;
+	}
 	vector<shared_ptr<Patch>> patches;
 	const vector<shared_ptr<ImagePyramidLayer>>& layers = pyramid->getLayers();
 	if (firstLayer < 0)
@@ -63,21 +67,18 @@ vector<shared_ptr<Patch>> PyramidFeatureExtractor::extract(int stepX, int stepY,
 		int originalWidth = layer->getOriginal(patchWidth);
 		int originalHeight = layer->getOriginal(patchHeight);
 		const Mat& image = layer->getScaledImage();
-		Point roiBegin(0, 0);
-		Point roiEnd(image.cols, image.rows);
-		if (roi != empty) {
-			roiBegin.x = layer->getScaled(roi.x);
-			roiBegin.y = layer->getScaled(roi.y);
-			roiEnd.x = layer->getScaled(roi.x + roi.width);
-			roiEnd.y = layer->getScaled(roi.y + roi.height);
-		}
 
+		Point roiBegin(layer->getScaled(roi.x), layer->getScaled(roi.y));
+		Point roiEnd(layer->getScaled(roi.x + roi.width), layer->getScaled(roi.y + roi.height));
+		Rect centerRoi = getCenterRoi(Rect(roiBegin, roiEnd));
+		Point centerRoiBegin = centerRoi.tl();
+		Point centerRoiEnd = centerRoi.br();
+		Point center(centerRoiBegin.x, centerRoiBegin.y);
 		Rect patchBounds(roiBegin.x, roiBegin.y, patchWidth, patchHeight);
-		Point center(patchBounds.x + patchWidth / 2, patchBounds.y + patchHeight / 2);
-		while (patchBounds.y + patchBounds.height <= roiEnd.y) {
+		while (center.y <= centerRoiEnd.y) {
 			patchBounds.x = roiBegin.x;
-			center.x = patchBounds.x + patchWidth / 2;
-			while (patchBounds.x + patchBounds.width <= roiEnd.x) {
+			center.x = centerRoiBegin.x;
+			while (center.x <= centerRoiEnd.x) {
 				Mat data(image, patchBounds);
 				int originalX = layer->getOriginal(center.x);
 				int originalY = layer->getOriginal(center.y);
@@ -90,6 +91,24 @@ vector<shared_ptr<Patch>> PyramidFeatureExtractor::extract(int stepX, int stepY,
 		}
 	}
 	return patches;
+}
+
+shared_ptr<Patch> DirectPyramidFeatureExtractor::extract(int layerIndex, int x, int y) const {
+	shared_ptr<ImagePyramidLayer> layer = pyramid->getLayer(layerIndex);
+	if (!layer)
+		return shared_ptr<Patch>();
+	const Mat& image = layer->getScaledImage();
+	Rect patchBounds(x - patchWidth / 2, y - patchHeight / 2, patchWidth, patchHeight);
+	if (patchBounds.x < 0 || patchBounds.y < 0
+			|| patchBounds.x + patchBounds.width >= image.cols
+			|| patchBounds.y + patchBounds.height >= image.rows)
+		return shared_ptr<Patch>();
+	int originalX = layer->getOriginal(x);
+	int originalY = layer->getOriginal(y);
+	int originalWidth = layer->getOriginal(patchWidth);
+	int originalHeight = layer->getOriginal(patchHeight);
+	Mat data(image, patchBounds);
+	return make_shared<Patch>(originalX, originalY, originalWidth, originalHeight, patchFilter->applyTo(data));
 }
 
 } /* namespace imageprocessing */

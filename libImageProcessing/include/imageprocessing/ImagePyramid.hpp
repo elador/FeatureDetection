@@ -15,6 +15,7 @@
 #include <memory>
 
 using cv::Mat;
+using cv::Size;
 using std::vector;
 using std::shared_ptr;
 
@@ -123,6 +124,14 @@ public:
 	void addLayerFilter(shared_ptr<ImageFilter> filter);
 
 	/**
+	 * Determines the pyramid layer with the given index.
+	 *
+	 * @param[in] index The index of the pyramid layer.
+	 * @return The pointer to a pyramid layer that may be empty if there is no layer with the given index.
+	 */
+	const shared_ptr<ImagePyramidLayer> getLayer(int index) const;
+
+	/**
 	 * Determines the pyramid layer that is closest to the given scale factor.
 	 *
 	 * @param[in] scaleFactor The approximate scale factor of the layer.
@@ -136,6 +145,32 @@ public:
 	const vector<shared_ptr<ImagePyramidLayer>>& getLayers() const {
 		return layers;
 	}
+
+	/**
+	 * @return The minimum scale factor (the scale factor of the smallest scaled (last) image is bigger or equal).
+	 */
+	double getMinScaleFactor() const {
+		return minScaleFactor;
+	}
+
+	/**
+	 * @return The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
+	 */
+	double getMaxScaleFactor() const {
+		return maxScaleFactor;
+	}
+
+	/**
+	 * @return The incremental scale factor between two layers of the pyramid.
+	 */
+	double getIncrementalScaleFactor() const {
+		return incrementalScaleFactor;
+	}
+
+	/**
+	 * @return The size of the original image.
+	 */
+	Size getImageSize() const;
 
 private:
 
