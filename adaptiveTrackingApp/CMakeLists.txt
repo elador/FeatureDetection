@@ -30,11 +30,9 @@ ENDIF()
 # source and header files
 SET(HEADERS
 	AdaptiveTracking.h
-	wingettimeofday.h
 )
 SET(SOURCE
 	AdaptiveTracking.cpp
-	wingettimeofday.cpp
 )
 
 # add dependencies

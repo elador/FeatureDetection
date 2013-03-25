@@ -42,14 +42,12 @@
 #include <boost/program_options.hpp>
 #include <vector>
 #include <iostream>
-#ifdef WIN32
-	#include "wingettimeofday.h"
-#else
-	#include <sys/time.h>
-#endif
+#include <chrono>
 
 using namespace imageprocessing;
 using namespace classification;
+using namespace std::chrono;
+using std::milli;
 using std::move;
 
 namespace po = boost::program_options;
@@ -201,16 +199,15 @@ void AdaptiveTracking::run() {
 	cv::Scalar green(0, 255, 0); // blue, green, red
 	cv::Scalar red(0, 0, 255); // blue, green, red
 
-	timeval start, detStart, detEnd, frameStart, frameEnd;
-	float allIterationTimeSeconds = 0, allDetectionTimeSeconds = 0;
-
+	duration<double> allIterationTime;
+	duration<double> allCondensationTime;
 	int frames = 0;
-	gettimeofday(&start, 0);
+	steady_clock::time_point start = steady_clock::now();
 	std::cout.precision(2);
 
 	while (running) {
 		frames++;
-		gettimeofday(&frameStart, 0);
+		steady_clock::time_point frameStart = steady_clock::now();
 		frame = imageSource->get();
 
 		if (frame.empty()) {
@@ -222,9 +219,9 @@ void AdaptiveTracking::run() {
 				first = false;
 				image.create(frame.rows, frame.cols, frame.type());
 			}
-			gettimeofday(&detStart, 0);
+			steady_clock::time_point condensationStart = steady_clock::now();
 			boost::optional<condensation::Rectangle> face = tracker->process(frame);
-			gettimeofday(&detEnd, 0);
+			steady_clock::time_point condensationEnd = steady_clock::now();
 			image = frame;
 			drawDebug(image);
 			cv::Scalar& color = tracker->wasUsingAdaptiveModel() ? green : red;
@@ -234,17 +231,16 @@ void AdaptiveTracking::run() {
 			imshow(videoWindowName, image);
 			if (imageSink.get() != 0)
 				imageSink->add(image);
-			gettimeofday(&frameEnd, 0);
+			steady_clock::time_point frameEnd = steady_clock::now();
 
-			int iterationTimeMilliseconds = 1000 * (frameEnd.tv_sec - frameStart.tv_sec) + (frameEnd.tv_usec - frameStart.tv_usec) / 1000;
-			int detectionTimeMilliseconds = 1000 * (detEnd.tv_sec - detStart.tv_sec) + (detEnd.tv_usec - detStart.tv_usec) / 1000;
-			allIterationTimeSeconds += 0.001 * iterationTimeMilliseconds;
-			allDetectionTimeSeconds += 0.001 * detectionTimeMilliseconds;
-			float iterationFps = frames / allIterationTimeSeconds;
-			float detectionFps = frames / allDetectionTimeSeconds;
-			std::cout << "frame: " << frames << "; time: "
-					<< iterationTimeMilliseconds << " ms (" << iterationFps << " fps); detection: "
-					<< detectionTimeMilliseconds << " ms (" << detectionFps << " fps)" << std::endl;
+			duration<int, milli> iterationTime = duration_cast<duration<int, milli>>(frameEnd - frameStart);
+			duration<int, milli> condensationTime = duration_cast<duration<int, milli>>(condensationEnd - condensationStart);
+			allIterationTime += iterationTime;
+			allCondensationTime += condensationTime;
+			float iterationFps = frames / allIterationTime.count();
+			float condensationFps = frames / allCondensationTime.count();
+			std::cout << frames << " frame: " << iterationTime.count() << " ms (" << iterationFps << " fps);"
+					<< " condensation: " << condensationTime.count() << " ms (" << condensationFps << " fps)" << std::endl;
 
 			int delay = paused ? 0 : 5;
 			char c = (char)cv::waitKey(delay);
