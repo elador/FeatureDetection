@@ -119,7 +119,7 @@ public:
 	/**
 	 * Adds a new filter that is applied to the down-scaled images after the currently existing layer filters.
 	 *
-	 * @param[in] filter The new image filter.
+	 * @param[in] filter The new layer filter.
 	 */
 	void addLayerFilter(shared_ptr<ImageFilter> filter);
 

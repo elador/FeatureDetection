@@ -17,7 +17,19 @@ namespace imageprocessing {
 DirectPyramidFeatureExtractor::DirectPyramidFeatureExtractor(shared_ptr<ImagePyramid> pyramid, int width, int height) :
 		pyramid(pyramid), patchWidth(width), patchHeight(height), patchFilter(make_shared<MultipleImageFilter>()) {}
 
+DirectPyramidFeatureExtractor::DirectPyramidFeatureExtractor(int width, int height, int minWidth, int maxWidth, double incrementalScaleFactor) :
+		pyramid(make_shared<ImagePyramid>(static_cast<double>(width) / maxWidth, static_cast<double>(width) / minWidth, incrementalScaleFactor)),
+		patchWidth(width), patchHeight(height), patchFilter(make_shared<MultipleImageFilter>()) {}
+
 DirectPyramidFeatureExtractor::~DirectPyramidFeatureExtractor() {}
+
+void DirectPyramidFeatureExtractor::addImageFilter(shared_ptr<ImageFilter> filter) {
+	pyramid->addImageFilter(filter);
+}
+
+void DirectPyramidFeatureExtractor::addLayerFilter(shared_ptr<ImageFilter> filter) {
+	pyramid->addLayerFilter(filter);
+}
 
 void DirectPyramidFeatureExtractor::addPatchFilter(shared_ptr<ImageFilter> filter) {
 	patchFilter->add(filter);

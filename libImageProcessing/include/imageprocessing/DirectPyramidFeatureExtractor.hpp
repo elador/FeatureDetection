@@ -30,7 +30,7 @@ class DirectPyramidFeatureExtractor : public PyramidFeatureExtractor {
 public:
 
 	/**
-	 * Constructs a new direct pyramid based feature extractor.
+	 * Constructs a new direct pyramid feature extractor that is based on an image pyramid.
 	 *
 	 * @param[in] pyramid The image pyramid.
 	 * @param[in] width The width of the image data of the extracted patches.
@@ -38,7 +38,32 @@ public:
 	 */
 	DirectPyramidFeatureExtractor(shared_ptr<ImagePyramid> pyramid, int width, int height);
 
+	/**
+	 * Constructs a new direct pyramid feature extractor that internally builds its own image pyramid.
+	 *
+	 * @param[in] width The width of the image data of the extracted patches.
+	 * @param[in] height The height of the image data of the extracted patches.
+	 * @param[in] minWidth The width of the smallest patches that will be extracted.
+	 * @param[in] maxWidth The width of the biggest patches that will be extracted.
+	 * @param[in] incrementalScaleFactor The incremental scale factor between two layers of the pyramid.
+	 */
+	DirectPyramidFeatureExtractor(int width, int height, int minWidth, int maxWidth, double incrementalScaleFactor = 0.85);
+
 	~DirectPyramidFeatureExtractor();
+
+	/**
+	 * Adds an image filter to the image pyramid that is applied to the original image.
+	 *
+	 * @param[in] filter The new image filter.
+	 */
+	void addImageFilter(shared_ptr<ImageFilter> filter);
+
+	/**
+	 * Adds an image filter to the image pyramid that is applied to the down-scaled images.
+	 *
+	 * @param[in] filter The new layer filter.
+	 */
+	void addLayerFilter(shared_ptr<ImageFilter> filter);
 
 	/**
 	 * Adds a new filter that is applied to the patches.
@@ -142,6 +167,20 @@ public:
 	 */
 	Size getImageSize() const {
 		return pyramid->getImageSize();
+	}
+
+	/**
+	 * @return The image pyramid.
+	 */
+	shared_ptr<ImagePyramid> getPyramid() {
+		return pyramid;
+	}
+
+	/**
+	 * @return The image pyramid.
+	 */
+	const shared_ptr<ImagePyramid> getPyramid() const {
+		return pyramid;
 	}
 
 private:

@@ -16,7 +16,6 @@
 #include "imageprocessing/FeatureExtractor.hpp"
 #include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
-#include "imageprocessing/HistogramEqualizationFilter.hpp"
 #include "imageprocessing/HistEq64Filter.hpp"
 #include "classification/WvmClassifier.hpp"
 #include "classification/SvmClassifier.hpp"
@@ -69,17 +68,13 @@ FaceTracking::~FaceTracking() {}
 
 void FaceTracking::initTracking() {
 	// create measurement model
-	shared_ptr<ImagePyramid> pyramid = make_shared<ImagePyramid>(20.0 / 480.0, 20.0 / 80.0, 0.85);
-	pyramid->addImageFilter(make_shared<GrayscaleFilter>());
-	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(pyramid, 20, 20);
-	//featureExtractor->add(make_shared<HistogramEqualizationFilter>());
+	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(20, 20, 80, 480, 0.85);
+	featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 	featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
 	string svmConfigFile1 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat";
 	string svmConfigFile2 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat";
 	shared_ptr<ProbabilisticWvmClassifier> wvm = ProbabilisticWvmClassifier::loadMatlab(svmConfigFile1, svmConfigFile2);
 	shared_ptr<ProbabilisticSvmClassifier> svm = ProbabilisticSvmClassifier::loadMatlab(svmConfigFile1, svmConfigFile2);
-//	wvm->getWvm()->setLimitReliability(3.2f);
-//	svm->getSvm()->setLimitReliability(3.2f);
 	measurementModel = make_shared<WvmSvmModel>(featureExtractor, wvm, svm);
 
 	// create tracker
