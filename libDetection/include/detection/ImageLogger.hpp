@@ -1,85 +1,35 @@
+/*
+ * ImageLogger.hpp
+ *
+ *  Created on: 22.03.2013
+ *      Author: Patrik Huber
+ */
 #pragma once
 
-#include <vector>
-#include <string>
-//#include <array>
+#ifndef IMAGELOGGER_HPP_
+#define IMAGELOGGER_HPP_
 
 #include "opencv2/core/core.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/highgui/highgui.hpp"
+#include <string>
+#include <vector>
 
-class FdImage;
-class Pyramid;
-class FdPatch;
-typedef std::map<int, Pyramid*> PyramidMap;
+using cv::Mat;
+using std::string;
+using std::vector;
 
-#define Logger SLogger::Instance()
+namespace detection {
 
-class SLogger
+/**
+ * TODO.
+ * Note: I put this in libLogging first. Maybe this belongs more into libImageIO? It's not really logging, more like image-helpers.
+ *       ==> I put it in libDetection for now, until it is clear what this becomes!
+ */
+class ImageLogger
 {
-private:
-	SLogger(void);
-	~SLogger(void);
-	SLogger(const SLogger &);
-	SLogger& operator=(const SLogger &);
 
-public:
-	static SLogger* Instance(void);
-
-
-private:
-
-	struct imgparams {					// Overwrites the default log levels if set
-		bool writeImgInputGray;
-		bool writeImgInputRGB;
-		bool writeImgPyramids;
-		bool writeDetectorCandidates;	// Writes each detector's candidates (face-box) into a separate image.
-		bool writeDetectorProbabilityMaps;	// Writes each detector's probability map, if one was generated.
-		bool writeRegressor;			// Writes an image (face-box with angle color) of the regression output.
-		bool writeRegressorPyramids;	// Writes an image for each pyramid, drawing the angle as colored center-points.
-		bool drawRegressorFoutAsText;	// Requires writeRegressor to be true (of course). Additionally draws the fout-value as text.
-		bool drawScales;				// Draw the scale (box-width) into output images.
-	};
-
-	struct textparams {				// Overwrites the default log levels if set
-		bool outputFullStartup;		// Output all starting messages.
-		bool outputPyramidCreation;	// todo
-	};
-
-
-	struct params {
-		textparams text;
-		imgparams img;
-	};
-	
-	class FdPatchLogInfo {
-	public:
-		//wvm_info, svm_info.. then, a map of those for each detector
-	private:
-		//pointer to patch
-	};
-	//public... vector<FdPatchLogInfo>;
-
-	int verboseLevelText;
-	int verboseLevelImages;
-
-	std::string imgLogBasepath;
-
-public:
-
-	void setVerboseLevelText(int);
-	int getVerboseLevelText(void);
-	void setVerboseLevelImages(int);
-
-	/* Verbose-level Images:
-		0: Don't even write a single image
-		1: Write one single output image with the final result
-		2: Output each detector's images and stages (eg 5 images for FD-cascade)
-		3: Write an output image for each scale, for each detector
-	*/
 	/* Img-logging functions */
 	/* Use these functions if you write e.g. your own Cascade / ERT! */
-	void LogImgInputGray(const cv::Mat*, std::string);	// only if writeInputGray
+/*	void LogImgInputGray(const cv::Mat*, std::string);	// only if writeInputGray
 	void LogImgInputRGB(const cv::Mat*, std::string);	// only if writeInputRGB
 	void LogImgPyramid(const Pyramid*, std::string, int); // only if writeImgPyramids
 	void LogImgDetectorCandidates(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");	// if writeDetectorCandidates || verboseLevelImages>=2
@@ -90,14 +40,10 @@ public:
 	void LogImgRegressorPyramids(const FdImage*, std::vector<FdPatch*>, std::string, std::string="");	// if writeRegressorPyramids || verboseLevelImages>=2
 																										// outputs an image of the regressor for each scale
 	void LogImgCircleDetectorCandidates(const FdImage*, cv::vector<cv::Vec3f>, std::string);			// if writeDetectorCandidates || verboseLevelImages>=2
-
-	params global;	// global settings
-
-	std::map<std::string, params> detectorParams;	// detector specific settings. If it exists, use it instead of the global settings. If it doesnt exist, use global settings.
-
+*/
 	/* Helper routines to draw stuff into images */
 	/* They probably should be "private", but sometimes its nice to have them directly available... (or put them in a Utils-lib?) */
-	void drawBoxesWithCertainty(cv::Mat, std::vector<FdPatch*>, std::string);		// Draw FD-boxes with certainty in color.
+/*	void drawBoxesWithCertainty(cv::Mat, std::vector<FdPatch*>, std::string);		// Draw FD-boxes with certainty in color.
 	void drawBoxesWithAngleColor(cv::Mat, std::vector<FdPatch*>, std::string);		// A nice color gradient for fout-values from -90 to +90.
 	void drawCenterpointsWithAngleColor(cv::Mat, std::vector<FdPatch*>, std::string, int);	// Draw the centerpoints of the patches from ONE scale in a nice color gradient for fout-values from -90 to +90. 
 	void drawFoutAsText(cv::Mat, std::vector<FdPatch*>, std::string);				// Draws the fout-values as a small text besides the FD-box.
@@ -109,17 +55,6 @@ public:
 	void drawFfpsSmallSquare(cv::Mat, std::vector<std::pair<std::string, cv::Point2f> >);	// Loops through all given Ffps and draws a box around them
 	void drawFfpSmallSquare(cv::Mat, std::pair<std::string, cv::Point2f>);					// Draws a bot around one Ffp
 
-	/* Verbose-level Text:
-		0: Don't even print a single line of text!
-		1: Output only very few print outputs (like final results if available)
-			On startup, only print final messages.
-		2: A bit more text, e.g. let each detector print a bit
-			On startup, output all.
-		3: Write much more, like full creation of pyramids, ...
-		4: Output really everything, like doubly-classified patches, etc.
-
-		// Todo: structure more logically, like per img?
-	*/
 
 	struct landmarkData {	// Todo: The optimal place for this would be in the config-file of each detector!
 		cv::Scalar bgrColor;
@@ -129,12 +64,8 @@ public:
 		float displacementFactorW;
 	};
 	std::map<std::string, landmarkData> landmarksData;	// All infos regarding all landmarks: name, color and symbol.
-
-	
-	/* Old stuff below! */
-	//void drawSinglePatchYawAngleColor(cv::Mat, FdPatch);	// draws a bounding box around a single e.g. 20x20 patch with the yaw angle color.
-	//bool useIndividualFolderForEachDetector;
-	//bool useSettingsFromMatConfig;
-
+*/
 };
 
+} /* namespace detection */
+#endif /* IMAGELOGGER_HPP_ */

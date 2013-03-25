@@ -3,6 +3,8 @@ PROJECT( ${PROJECT_NAME} )
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 # G++ needs a compiler flag to use the (experimental) C++11 support
+# TODO: This should go into initial_cache.cmake! We require C++11 anyway.
+#       In addition, it doesn't interfere with the compilation on windows, but is not necessary there.
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-std=c++11 HAS_CXX11_FLAG)
 if (HAS_CXX11_FLAG)
@@ -23,7 +25,7 @@ add_subdirectory(libConfigParser)		# Supplies methods to load our config files.
 add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
 add_subdirectory(adaptiveTrackingApp)	# Adaptive tracking app.
 #add_subdirectory(headTrackingApp)		#
-#add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe).
+add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe).
 #add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature point detection app.
 
 #add_subdirectory(libRender)				# A tiny software renderer to render lists of 3D vertices

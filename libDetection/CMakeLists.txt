@@ -5,7 +5,14 @@ SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # find dependencies
-#FIND_PACKAGE(Boost REQUIRED)
+# Boost:
+FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED) # others (e.g.): system filesystem
+if(Boost_FOUND)
+  MESSAGE(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
+ELSE(Boost_FOUND)
+  MESSAGE(FATAL_ERROR "Boost not found")
+ENDIF()
+# OpenCV:
 FIND_PACKAGE(OpenCV REQUIRED core)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
@@ -15,11 +22,13 @@ SET(HEADERS
 	include/detection/ClassifiedPatch.hpp
 	include/detection/Detector.hpp
 	include/detection/SlidingWindowDetector.hpp
-	#include/detection/OverlapElimination.hpp
+	include/detection/OverlapElimination.hpp
+	include/detection/ImageLogger.hpp
 )
 SET(SOURCE
 	src/detection/SlidingWindowDetector.cpp
-	#src/detection/OverlapElimination.cpp
+	src/detection/OverlapElimination.cpp
+	src/detection/ImageLogger.cpp
 )
 
 include_directories( "include" )
@@ -27,8 +36,9 @@ include_directories( "include" )
 # add dependencies
 include_directories( ${Classification_SOURCE_DIR}/include )
 include_directories( ${ImageProcessing_SOURCE_DIR}/include )
+include_directories( ${Logging_SOURCE_DIR}/include )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
-#include_directories( ${Boost_INCLUDE_DIRS} )
+include_directories( ${Boost_INCLUDE_DIRS} )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )

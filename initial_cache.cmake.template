@@ -8,7 +8,10 @@
 #set( MATLAB_ROOT     "C:/Program Files/MATLAB/R2012b/"    CACHE STRING "Matlab search location" ) #Note: Win: This path should be given without "/extern"
 #set( MATLAB_ROOT     "/home/poschmann/workspaces/RTL/dependencies/matlab2"    CACHE STRING "Matlab search location" ) # Linux
 
-#set( HDF5_ROOT "C:\\Program Files\\HDF5" CACHE STRING "HDF5 search location" ) # Windows
+# HDF5 still causes some trouble on windows. Need to figure out the proper way.
+#set( HDF5_ROOT "C:/Program Files/HDF_Group/HDF5/1.8.10/" CACHE STRING "HDF5 search location" ) # Windows
+##set( HDF5_ROOT "C:/Program Files/HDF_Group/HDF5/1.8.10/cmake/hdf5" CACHE STRING "HDF5 search location" ) # Windows
+#set( HDF5_ROOT_DIR_HINT "C:\\Program Files\\HDF_Group\\HDF5\\1.8.10\\" CACHE STRING "HDF5 search location" ) # Windows
 
 # Mechanism via ConfigLIB.cmake in lib dir
 # ==============================

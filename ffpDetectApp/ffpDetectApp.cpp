@@ -1,22 +1,72 @@
-// ffpDetectApp.cpp : Defines the entry point for the console application.
-//
+/*
+ * ffpDetectApp.cpp
+ *
+ *  Created on: 22.03.2013
+ *      Author: Patrik Huber
+ */
 
-#include "stdafx.h"
+// For memory leak debugging: http://msdn.microsoft.com/en-us/library/x98tx3cf(v=VS.100).aspx
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
 
-//#include "DetectorSVM.h"
-//#include "DetectorWVM.h"
-#include "CascadeWvmSvm.h"
-#include "CascadeWvmOeSvmOe.h"
-//#include "RegressorSVR.h"
+#ifdef WIN32
+	#include <crtdbg.h>
+#endif
 
-#include "SLogger.h"
+#ifdef _DEBUG
+	#ifndef DBG_NEW
+		#define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
+		#define new DBG_NEW
+	#endif
+#endif  // _DEBUG
 
-#include "CascadeERT.h"
-#include "FdImage.h"
-#include "FdPatch.h"
+#include <iostream>
+#include <fstream>
+
+#include "opencv2/core/core.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
+
+#ifdef WIN32
+	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
+	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
+#endif
+#include "boost/program_options.hpp"
+#include "boost/iterator/indirect_iterator.hpp"
+
+#include "classification/RbfKernel.hpp"
+#include "classification/SvmClassifier.hpp"
+#include "classification/WvmClassifier.hpp"
+#include "classification/ProbabilisticWvmClassifier.hpp"
+#include "classification/ProbabilisticSvmClassifier.hpp"
+
+#include "imageprocessing/ImagePyramid.hpp"
+#include "imageprocessing/GrayscaleFilter.hpp"
+#include "imageprocessing/Patch.hpp"
+#include "imageprocessing/PyramidFeatureExtractor.hpp"
+#include "imageprocessing/HistEq64Filter.hpp"
+#include "imageprocessing/HistogramEqualizationFilter.hpp"
+
+#include "detection/SlidingWindowDetector.hpp"
+#include "detection/ClassifiedPatch.hpp"
+#include "detection/OverlapElimination.hpp"
+
+#include "imageio/LandmarksHelper.hpp"
+#include "imageio/FaceBoxLandmark.hpp"
+
+#include "logging/LoggerFactory.hpp"
+
 
 namespace po = boost::program_options;
 using namespace std;
+using namespace imageprocessing;
+using namespace detection;
+using namespace classification;
+using namespace imageio;
+using logging::Logger;
+using logging::LoggerFactory;
+using logging::loglevel;
+using boost::make_indirect_iterator;
 
 template<class T>
 ostream& operator<<(ostream& os, const vector<T>& v)
@@ -25,8 +75,7 @@ ostream& operator<<(ostream& os, const vector<T>& v)
     return os;
 }
 
-//int _tmain(int argc, _TCHAR* argv[])	// VS10
-int main(int argc, char *argv[])		// Peter
+int main(int argc, char *argv[])
 {
 	#ifdef WIN32
 	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF ); // dump leaks at return
@@ -37,9 +86,9 @@ int main(int argc, char *argv[])		// Peter
 	int verbose_level_images;
     bool useFileList = false;
 	bool useImgs = false;
-	std::string fn_fileList;
-	std::vector<std::string> filenames; // Create vector to hold the filenames
-	std::vector<Rect> rects;			// Create vector to hold the groundtruth (if there is any)
+	string fn_fileList;
+	vector<std::string> filenames;
+	vector<FaceBoxLandmark> groundtruthFaceBoxes;
 	
 	try {
         po::options_description desc("Allowed options");
@@ -98,52 +147,35 @@ int main(int argc, char *argv[])		// Peter
 		return 1;
 	}
 
-	std::string fn_detFrontal = "C:\\Users\\Patrik\\Documents\\GitHub\\config\\cfg\\ffpDetectApp\\fd_config_ffd_fd.mat";
-	
-	FdImage *myimg;
-
 	const float DETECT_MAX_DIST_X = 0.33f;
 	const float DETECT_MAX_DIST_Y = 0.33f;
 	const float DETECT_MAX_DIFF_W = 0.33f;
 
-	//std::string fn_fileList = "D:\\CloudStation\\libFD_patrik2011\\data\\firstrun\\theRealWorld_png.lst";
-	//std::string fn_fileList = "H:\\featuredetection\\data\\lfw\\lfw-b_NAS.lst";
-	//std::string fn_fileList = "H:\\featuredetection\\data\\feret_m2\\feret-frontal_m2_NAS.lst";
-	
 	if(useFileList) {
-		std::ifstream fileList;
+		ifstream fileList;
 		fileList.open(fn_fileList.c_str(), std::ios::in);
 		if (!fileList.is_open()) {
 			std::cout << "[ffpDetectApp] Error opening file list!" << std::endl;
 			return 0;
 		}
-		std::string line;
-		while( fileList.good() ) {
-			std::getline(fileList, line);
+		string line;
+		while(fileList.good()) {
+			getline(fileList, line);
 			if(line=="") {
 				continue;
 			}
-      		std::string buf; // Have a buffer string
-			int l=0, r=0, b=0, t=0;
-			std::stringstream ss(line); // Insert the string into a stream
-			//while (ss >> buf)
+      		string buf;
+			stringstream ss(line);
 			ss >> buf;	
-			filenames.push_back(buf);
-			ss >> l;
-			ss >> t;
-			ss >> r;
-			ss >> b;
-			//if(!(l==0 && t==0 && r==0 && b==0))
-			rects.push_back(Rect(l, t, r, b));	// GT available or 0 0 0 0
-			buf.clear();
-			l=t=r=b=0;
+			filenames.push_back(buf);	// Insert the image filename
+			groundtruthFaceBoxes.push_back(LandmarksHelper::readFromLstLine(line));	// Insert the groundtruth facebox
 		}
 		fileList.close();
 	}
 	// Else useImgs==true: filesnames are already in "filenames", and no groundtruth available!
 
 	// All filesnames now in "filenames", either way
-	// All groundtruth now in "rects" IF available (read from .lst)
+	// All groundtruth now in "groundtruthFaceBoxes" IF available (read from .lst)
 
 	int TOT = 0;
 	int TACC = 0;
@@ -151,37 +183,84 @@ int main(int argc, char *argv[])		// Peter
 	int NOCAND = 0;
 	int DONTKNOW = 0;
 
-	Logger->setVerboseLevelText(verbose_level_text);
-	Logger->setVerboseLevelImages(verbose_level_images);
-	Logger->global.img.writeDetectorCandidates = true;	// Write images of all 5 stages
+	shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.001--with-outnew02HQ64SVM.mat");
+	shared_ptr<ProbabilisticSvmClassifier> psvm = ProbabilisticSvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
 
-	CascadeWvmOeSvmOe* casc = new CascadeWvmOeSvmOe(fn_detFrontal);
-	casc->wvm->setCalculateProbabilityOfAllPatches(false);	// only to demonstrate.
-	casc->wvm->setLimitReliabilityFilter(0.0f);
-	casc->wvm->setNumUsedFilters(280);
+	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(0.09, 0.25, 0.9);	// (0.09, 0.25, 0.9) is nearly the same as old 90, 9, 0.9
+	pyr->addImageFilter(make_shared<GrayscaleFilter>());
+	shared_ptr<PyramidFeatureExtractor> featureExtractor = make_shared<PyramidFeatureExtractor>(pyr, 20, 20);
+	featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
 
+	shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm, featureExtractor);
+	shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(5.0f, 0.0f);
+	psvm->getSvm()->setThreshold(-1.2f);
+
+	Mat img;
 	for(unsigned int i=0; i< filenames.size(); i++) {
-		myimg = new FdImage();
-		myimg->load(filenames[i]);
-		casc->initForImage(myimg);
-		casc->detectOnImage(myimg);
-		Logger->LogImgDetectorFinal(myimg, casc->candidates, casc->svm->getIdentifier(), "Final");
+		img = cv::imread(filenames[i]);
+		cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
+
+		vector<shared_ptr<ClassifiedPatch>> resultingPatches = det->detect(img);
+
+		Mat imgWvm = img.clone();
+		for(auto pit = resultingPatches.begin(); pit != resultingPatches.end(); pit++) {
+			shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
+			shared_ptr<Patch> patch = classifiedPatch->getPatch();
+			cv::rectangle(imgWvm, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
+		}
+		cv::namedWindow("wvm", CV_WINDOW_AUTOSIZE); cv::imshow("wvm", imgWvm);
+		
+		resultingPatches = oe->eliminate(resultingPatches);
+		Mat imgWvmOe = img.clone();
+		for(auto pit = resultingPatches.begin(); pit != resultingPatches.end(); pit++) {
+			shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
+			shared_ptr<Patch> patch = classifiedPatch->getPatch();
+			cv::rectangle(imgWvmOe, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
+		}
+		cv::namedWindow("wvmoe", CV_WINDOW_AUTOSIZE); cv::imshow("wvmoe", imgWvmOe);
+
+		vector<shared_ptr<ClassifiedPatch>> svmPatches;
+		for(auto &patch : resultingPatches) {
+			svmPatches.push_back(make_shared<ClassifiedPatch>(patch->getPatch(), psvm->classify(patch->getPatch()->getData())));
+		}
+
+		vector<shared_ptr<ClassifiedPatch>> svmPatchesPositive;
+		Mat imgSvm = img.clone();
+		for(auto pit = svmPatches.begin(); pit != svmPatches.end(); pit++) {
+			shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
+			shared_ptr<Patch> patch = classifiedPatch->getPatch();
+			if(classifiedPatch->isPositive()) {
+				cv::rectangle(imgSvm, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
+				svmPatchesPositive.push_back(classifiedPatch);
+			}
+		}
+		cv::namedWindow("svm", CV_WINDOW_AUTOSIZE); cv::imshow("svm", imgSvm);
+
+		sort(make_indirect_iterator(svmPatches.begin()), make_indirect_iterator(svmPatches.end()), greater<ClassifiedPatch>());
+
+		Mat imgSvmEnd = img.clone();
+		cv::rectangle(imgSvmEnd, cv::Point(svmPatches[0]->getPatch()->getX() - svmPatches[0]->getPatch()->getWidth()/2, svmPatches[0]->getPatch()->getY() - svmPatches[0]->getPatch()->getHeight()/2), cv::Point(svmPatches[0]->getPatch()->getX() + svmPatches[0]->getPatch()->getWidth()/2, svmPatches[0]->getPatch()->getY() + svmPatches[0]->getPatch()->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((svmPatches[0]->getProbability())/1.0)   ));
+		cv::namedWindow("svmEnd", CV_WINDOW_AUTOSIZE); cv::imshow("svmEnd", imgSvmEnd);
+
+		//cv::waitKey();
+
 		TOT++;
-		if(casc->candidates.size()<1) {
+		if(resultingPatches.size()<1) {
 			std::cout << "[ffpDetectApp] No face-candidates at all found:  " << filenames[i] << std::endl;
 			NOCAND++;
 		} else {
-			if(rects[i]==Rect(0, 0, 0, 0)) {//no groundtruth
+			if(groundtruthFaceBoxes[i].getPosition()==Vec3f(0.0f, 0.0f, 0.0f)) { //no groundtruth
 				std::cout << "[ffpDetectApp] No ground-truth available, not counting anything: " << filenames[i] << std::endl;
 				++DONTKNOW;
-			} else {//we have groundtruth
-				int gt_w = abs(rects[i].right-rects[i].left);
-				int gt_h = abs(rects[i].top-rects[i].bottom);
-				int gt_cx = rects[i].left+gt_w/2;
-				int gt_cy = rects[i].top+gt_h/2;
-				if (abs(gt_cx - casc->candidates[0]->c.x) < DETECT_MAX_DIST_X*(float)gt_w &&
-					abs(gt_cy - casc->candidates[0]->c.y) < DETECT_MAX_DIST_Y*(float)gt_w &&
-					abs(gt_w - casc->candidates[0]->w_inFullImg) < DETECT_MAX_DIFF_W*(float)gt_w       ) {
+			} else { //we have groundtruth
+				int gt_w = groundtruthFaceBoxes[i].getWidth();
+				int gt_h = groundtruthFaceBoxes[i].getHeight();
+				int gt_cx = groundtruthFaceBoxes[i].getPosition()[0];
+				int gt_cy = groundtruthFaceBoxes[i].getPosition()[1];
+				// TODO implement a isClose, isDetected... or something like that function
+				if (abs(gt_cx - svmPatches[0]->getPatch()->getX()) < DETECT_MAX_DIST_X*(float)gt_w &&
+					abs(gt_cy - svmPatches[0]->getPatch()->getY()) < DETECT_MAX_DIST_Y*(float)gt_w &&
+					abs(gt_w - svmPatches[0]->getPatch()->getWidth()) < DETECT_MAX_DIFF_W*(float)gt_w       ) {
 				
 					std::cout << "[ffpDetectApp] TACC (1/1): " << filenames[i] << std::endl;
 					TACC++;
@@ -189,7 +268,7 @@ int main(int argc, char *argv[])		// Peter
 					std::cout << "[ffpDetectApp] Face not found, wrong position:  " << filenames[i] << std::endl;
 					FACC++;
 				}
-			}//end no groundtruth
+			} // end no groundtruth
 		}
 
 		std::cout << std::endl;
@@ -201,7 +280,6 @@ int main(int argc, char *argv[])		// Peter
 		std::cout << "[ffpDetectApp] DONTKNOW:  " << DONTKNOW << std::endl;
 		std::cout << "[ffpDetectApp] -------------------------------------" << std::endl;
 
-		delete myimg;
 	}
 
 	std::cout << std::endl;
@@ -214,8 +292,6 @@ int main(int argc, char *argv[])		// Peter
 	std::cout << "[ffpDetectApp] DONTKNOW:  " << DONTKNOW << std::endl;
 	std::cout << "[ffpDetectApp] =====================================" << std::endl;
 	
-	delete casc;
-
 	return 0;
 }
 
@@ -245,17 +321,6 @@ int main(int argc, char *argv[])		// Peter
 // @MR: Warum "-b" ? ComparisonRegr.xlsx 6grad systemat. fehler da ML +3.3, MR -3.3
 
 
-/*	Possible workflows:
-		- standard: det->load(), det->initForImg(), det->extract(), det->detect_on_img()...
-		- standard: det->load(), det->initForImg(), det->detect_on_patchvec()...
-		- det->load(), det->detect_on_patchvec()... TODO: TEST THIS!
-		- det->load(), det->classify but I have to supply a valid patch! (my responsibility) TEST THIS
-
-
-*/
-
-
-
 /* 
 /	Todo:
 	* .lst: #=comment, ignore line
@@ -274,17 +339,6 @@ int main(int argc, char *argv[])		// Peter
 	 * erasing from the beginning of a vector is a slow operation, because at each step, all the elements of the vector have to be shifted down one place. Better would be to loop over the vector freeing everything (then clear() the vector. (or use a list, ...?) Improve speed of OE
 	 * i++ --> ++i (faster)
 */
-
-/*
-*setIdentifier() has to be done before initForImage, else the detector doesnt get registered in the pyramid. Also doesnt draw scales then.
-Problematic if I skip initForImage for a detector?
-
-*/
-
-
-
-
-
 
 
 		/*cv::Mat color_img, color_hsv;

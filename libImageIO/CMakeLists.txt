@@ -26,6 +26,10 @@ SET(HEADERS
 	include/imageio/KinectImageSource.hpp
 	include/imageio/VideoImageSink.hpp
 	include/imageio/VideoImageSource.hpp
+	include/imageio/Landmark.hpp
+	include/imageio/FaceBoxLandmark.hpp
+	include/imageio/LandmarksCollection.hpp
+	include/imageio/LandmarksHelper.hpp
 )
 SET(SOURCE
 	src/imageio/DirectoryImageSink.cpp
@@ -33,6 +37,9 @@ SET(SOURCE
 	src/imageio/KinectImageSource.cpp
 	src/imageio/VideoImageSink.cpp
 	src/imageio/VideoImageSource.cpp
+	src/imageio/Landmark.cpp
+	src/imageio/FaceBoxLandmark.cpp
+	src/imageio/LandmarksCollection.cpp
 )
 
 include_directories( "include" )

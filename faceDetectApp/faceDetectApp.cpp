@@ -20,8 +20,7 @@ ostream& operator<<(ostream& os, const vector<T>& v)
     return os;
 }
 
-//int _tmain(int argc, _TCHAR* argv[])	// VS10
-int main(int argc, char *argv[])		// Peter
+int main(int argc, char *argv[])
 {
 	#ifdef WIN32
 	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF ); // dump leaks at return
@@ -92,9 +91,6 @@ int main(int argc, char *argv[])		// Peter
 		return 1;
 	}
 
-	//std::string fn_detFrontal = "C:\\Users\\Patrik\\Documents\\GitHub\\config\\cfg\\faceDetectApp\\fd_config_ffd_fd.mat";
-	//std::string fn_detFrontal = "C:\\Users\\Patrik\\Documents\\GitHub\\config\\fdetection\\fd_config_ffd_le.mat";
-	
 	FdImage *myimg;
 	
 	if(useFileList) {
