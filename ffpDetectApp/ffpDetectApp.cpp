@@ -22,6 +22,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <chrono>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -197,9 +198,12 @@ int main(int argc, char *argv[])
 
 	Mat img;
 	for(unsigned int i=0; i< filenames.size(); i++) {
+
 		img = cv::imread(filenames[i]);
 		cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
 
+		std::chrono::time_point<std::chrono::system_clock> start, end;
+		start = std::chrono::system_clock::now();
 		vector<shared_ptr<ClassifiedPatch>> resultingPatches = det->detect(img);
 
 		Mat imgWvm = img.clone();
@@ -242,7 +246,17 @@ int main(int argc, char *argv[])
 		cv::rectangle(imgSvmEnd, cv::Point(svmPatches[0]->getPatch()->getX() - svmPatches[0]->getPatch()->getWidth()/2, svmPatches[0]->getPatch()->getY() - svmPatches[0]->getPatch()->getHeight()/2), cv::Point(svmPatches[0]->getPatch()->getX() + svmPatches[0]->getPatch()->getWidth()/2, svmPatches[0]->getPatch()->getY() + svmPatches[0]->getPatch()->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((svmPatches[0]->getProbability())/1.0)   ));
 		cv::namedWindow("svmEnd", CV_WINDOW_AUTOSIZE); cv::imshow("svmEnd", imgSvmEnd);
 
-		//cv::waitKey();
+		end = std::chrono::system_clock::now();
+
+		int elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(end-start).count();
+		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
+		std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+
+		std::cout << "finished computation at " << std::ctime(&end_time)
+			<< "elapsed time: " << elapsed_seconds << "s, " << elapsed_mseconds << "ms\n";
+
+
+		cv::waitKey(30);
 
 		TOT++;
 		if(resultingPatches.size()<1) {
