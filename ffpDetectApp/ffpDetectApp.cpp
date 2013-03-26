@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 	shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadMatlab(wvmClassifierFile, wvmThresholdsFile);
 	shared_ptr<ProbabilisticSvmClassifier> psvm = ProbabilisticSvmClassifier::loadMatlab(svmClassifierFile, svmLogisticParametersFile);
 
-	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(pt.get<float>("imagePyramid.minScaleFactor", 0.09f), pt.get<float>("imagePyramid.maxScaleFactor", 0.25f), pt.get<float>("imagePyramid.incrementalScaleFactor", 0.9f));	// (0.09, 0.25, 0.9) is nearly the same as old 90, 9, 0.9
+	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(pt.get<float>("detection.imagePyramid.minScaleFactor", 0.09f), pt.get<float>("detection.imagePyramid.maxScaleFactor", 0.25f), pt.get<float>("detection.imagePyramid.incrementalScaleFactor", 0.9f));	// (0.09, 0.25, 0.9) is nearly the same as old 90, 9, 0.9
 	pyr->addImageFilter(make_shared<GrayscaleFilter>());
 	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(pyr, 20, 20);
 	featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
