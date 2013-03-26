@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	const float DETECT_MAX_DIST_X = 0.33f;
+	const float DETECT_MAX_DIST_X = 0.33f;	// --> Config
 	const float DETECT_MAX_DIST_Y = 0.33f;
 	const float DETECT_MAX_DIFF_W = 0.33f;
 
