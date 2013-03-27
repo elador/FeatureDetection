@@ -4,7 +4,7 @@
  *  Created on: 23.03.2013
  *      Author: Patrik Huber
  */
-#pragma once;
+#pragma once
 
 #ifndef LANDMARKSHELPER_HPP_
 #define LANDMARKSHELPER_HPP_

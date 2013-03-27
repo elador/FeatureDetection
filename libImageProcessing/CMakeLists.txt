@@ -27,7 +27,6 @@ SET(HEADERS
 	include/imageprocessing/IntegralImageFilter.hpp
 	include/imageprocessing/MultipleImageFilter.hpp
 	include/imageprocessing/Patch.hpp
-	include/imageprocessing/PatchExtractor.hpp
 	include/imageprocessing/PyramidFeatureExtractor.hpp
 	include/imageprocessing/ResizingFilter.hpp
 	include/imageprocessing/VersionedImage.hpp
