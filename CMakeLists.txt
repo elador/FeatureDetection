@@ -20,7 +20,6 @@ add_subdirectory(libClassification)		# Classification and regression library
 add_subdirectory(libDetection)			# Sliding-window detection, Skin detection
 add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 #add_subdirectory(libShapeModels)		# Head/face specific things; 2D/3D models; Combining feature points
-add_subdirectory(libConfigParser)		# Supplies methods to load our config files.
 
 add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
 add_subdirectory(adaptiveTrackingApp)	# Adaptive tracking app.

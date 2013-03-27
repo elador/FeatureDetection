@@ -9,6 +9,9 @@
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 
+/*	// There's a bug in boost/optional.hpp that prevents us from using the debug-crt with it
+	// in debug mode in windows. It works in release mode, but as we need debugging, let's
+	// disable the windows-memory debugging for now.
 #ifdef WIN32
 	#include <crtdbg.h>
 #endif
@@ -19,6 +22,7 @@
 		#define new DBG_NEW
 	#endif
 #endif  // _DEBUG
+*/
 
 #include <iostream>
 #include <fstream>
@@ -34,6 +38,8 @@
 #endif
 #include "boost/program_options.hpp"
 #include "boost/iterator/indirect_iterator.hpp"
+#include "boost/property_tree/ptree.hpp"
+#include "boost/property_tree/info_parser.hpp"
 
 #include "classification/RbfKernel.hpp"
 #include "classification/SvmClassifier.hpp"
@@ -68,6 +74,8 @@ using logging::Logger;
 using logging::LoggerFactory;
 using logging::loglevel;
 using boost::make_indirect_iterator;
+using boost::property_tree::ptree;
+using boost::property_tree::info_parser::read_info;
 
 template<class T>
 ostream& operator<<(ostream& os, const vector<T>& v)
@@ -148,7 +156,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	const float DETECT_MAX_DIST_X = 0.33f;
+	const float DETECT_MAX_DIST_X = 0.33f;	// --> Config
 	const float DETECT_MAX_DIST_Y = 0.33f;
 	const float DETECT_MAX_DIFF_W = 0.33f;
 
@@ -184,17 +192,33 @@ int main(int argc, char *argv[])
 	int NOCAND = 0;
 	int DONTKNOW = 0;
 
-	shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.001--with-outnew02HQ64SVM.mat");
-	shared_ptr<ProbabilisticSvmClassifier> psvm = ProbabilisticSvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
+	ptree pt;
+	read_info("C:\\Users\\Patrik\\Documents\\GitHub\\ffpDetectApp.cfg", pt);		
+	string wvmClassifierFile = pt.get<string>("detection.wvm.classifierFile");
+	string wvmThresholdsFile = pt.get<string>("detection.wvm.thresholdsFile");
+	string svmClassifierFile = pt.get<string>("detection.svm.classifierFile");
+	string svmLogisticParametersFile = pt.get<string>("detection.svm.logisticParametersFile");
 
-	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(0.09, 0.25, 0.9);	// (0.09, 0.25, 0.9) is nearly the same as old 90, 9, 0.9
+	float svmThreshold = pt.get<float>("detection.svm.threshold", -1.2f);	// If the key doesn't exist in the config, set it to -1.2 (default value).
+
+	/* Note: We could change/write/add something to the config with
+	pt.put("detection.svm.threshold", -0.5f);
+	If the value already exists, it gets overwritten, if not, it gets created.
+	Save it with:
+	write_info("C:\\Users\\Patrik\\Documents\\GitHub\\ffpDetectApp.cfg", pt);
+	*/
+
+	shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadMatlab(wvmClassifierFile, wvmThresholdsFile);
+	shared_ptr<ProbabilisticSvmClassifier> psvm = ProbabilisticSvmClassifier::loadMatlab(svmClassifierFile, svmLogisticParametersFile);
+
+	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(pt.get<float>("detection.imagePyramid.minScaleFactor", 0.09f), pt.get<float>("detection.imagePyramid.maxScaleFactor", 0.25f), pt.get<float>("detection.imagePyramid.incrementalScaleFactor", 0.9f));	// (0.09, 0.25, 0.9) is nearly the same as old 90, 9, 0.9
 	pyr->addImageFilter(make_shared<GrayscaleFilter>());
 	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(pyr, 20, 20);
 	featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
 
 	shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm, featureExtractor);
-	shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(5.0f, 0.0f);
-	psvm->getSvm()->setThreshold(-1.2f);
+	shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(pt.get<float>("detection.overlapElimination.dist", 5.0f), pt.get<float>("detection.overlapElimination.ratio", 0.0f));
+	psvm->getSvm()->setThreshold(svmThreshold);
 
 	Mat img;
 	for(unsigned int i=0; i< filenames.size(); i++) {
