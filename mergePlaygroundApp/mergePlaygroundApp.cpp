@@ -39,8 +39,6 @@
 #include "logging/LoggerFactory.hpp"
 #include "logging/FileAppender.hpp"
 
-#include "configparser/ConfigParser.hpp"
-
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"

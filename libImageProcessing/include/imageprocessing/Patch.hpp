@@ -11,6 +11,7 @@
 #include "opencv2/core/core.hpp"
 
 using cv::Mat;
+using cv::Rect;
 
 namespace imageprocessing {
 
@@ -46,6 +47,14 @@ public:
 	Patch(const Patch& other) :
 			x(other.x), y(other.y), width(other.width), height(other.height), data(other.data.clone()) {}
 
+	/**
+	 * Move constructor.
+	 *
+	 * @param[in] other The patch that should be moved.
+	 */
+	Patch(Patch&& other) :
+			x(other.x), y(other.y), width(other.width), height(other.height), data(other.data) {}
+
 	~Patch() {}
 
 	/**
@@ -60,6 +69,38 @@ public:
 		height = other.height;
 		data = other.data.clone();
 		return *this;
+	}
+
+	/**
+	 * Move assignment operator.
+	 *
+	 * @param[in] other The patch whose data should be move assigned to this one.
+	 */
+	Patch& operator=(const Patch&& other) {
+		x = other.x;
+		y = other.y;
+		width = other.width;
+		height = other.height;
+		data = other.data;
+		return *this;
+	}
+
+	/**
+	 * Determines whether this patch is equal to another one (without considering the data). Will compare the
+	 * center coordinates (x and y) and size (width and height).
+	 *
+	 * @param[in] other The other patch.
+	 * @return True if this patch is equal to the other one, false otherwise.
+	 */
+	bool operator==(const Patch& other) const {
+		return x == other.x && y == other.y && width == other.width && height == other.height;
+	}
+
+	/**
+	 * @return The bounding rectangle of this patch.
+	 */
+	Rect getBounds() const {
+		return Rect(x - width / 2, y - height / 2, width, height);
 	}
 
 	/**
@@ -117,6 +158,21 @@ public:
 	const Mat& getData() const {
 		return data;
 	}
+
+	/**
+	 * Hash function for patches. Will only consider the center coordinates (x and y) and size (width and height).
+	 */
+	struct hash: std::unary_function<Patch, size_t> {
+		size_t operator()(const Patch& patch) const {
+			size_t prime = 31;
+			size_t hash = 1;
+			hash = prime * hash + std::hash<int>()(patch.x);
+			hash = prime * hash + std::hash<int>()(patch.y);
+			hash = prime * hash + std::hash<int>()(patch.width);
+			hash = prime * hash + std::hash<int>()(patch.height);
+			return hash;
+		}
+	};
 
 private:
 

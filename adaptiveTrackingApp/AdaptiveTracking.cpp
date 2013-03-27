@@ -122,11 +122,11 @@ void AdaptiveTracking::initTracking() {
 void AdaptiveTracking::initGui() {
 	drawSamples = true;
 
-	cvNamedWindow(controlWindowName.c_str(), CV_WINDOW_AUTOSIZE);
-	cvMoveWindow(controlWindowName.c_str(), 750, 50);
-
 	cvNamedWindow(videoWindowName.c_str(), CV_WINDOW_AUTOSIZE);
 	cvMoveWindow(videoWindowName.c_str(), 50, 50);
+
+	cvNamedWindow(controlWindowName.c_str(), CV_WINDOW_AUTOSIZE);
+	cvMoveWindow(controlWindowName.c_str(), 900, 50);
 
 	cv::createTrackbar("Adaptive", controlWindowName, NULL, 1, adaptiveChanged, this);
 	cv::setTrackbarPos("Adaptive", controlWindowName, tracker->isUsingAdaptiveModel() ? 1 : 0);
@@ -238,8 +238,8 @@ void AdaptiveTracking::run() {
 				imageSink->add(image);
 			steady_clock::time_point frameEnd = steady_clock::now();
 
-			duration<int, milli> iterationTime = duration_cast<duration<int, milli>>(frameEnd - frameStart);
-			duration<int, milli> condensationTime = duration_cast<duration<int, milli>>(condensationEnd - condensationStart);
+			milliseconds iterationTime = duration_cast<milliseconds>(frameEnd - frameStart);
+			milliseconds condensationTime = duration_cast<milliseconds>(condensationEnd - condensationStart);
 			allIterationTime += iterationTime;
 			allCondensationTime += condensationTime;
 			float iterationFps = frames / allIterationTime.count();
