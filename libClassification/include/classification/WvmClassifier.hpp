@@ -57,10 +57,11 @@ public:
 	/**
 	 * Creates a new WVM classifier from the parameters given in some Matlab file.
 	 *
-	 * @param[in] classifierFilename TODO
-	 * @param[in] thresholdsFilename TODO
+	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
+	 * @param[in] thresholdsFilename The name of the file containing the thresholds of the filter levels.
+	 * @return The newly created WVM classifier.
 	 */
-	static shared_ptr<WvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this.
+	static shared_ptr<WvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename);
 
 	int getNumUsedFilters(void);
 	void setNumUsedFilters(int);			 ///< Change the number of currently used wavelet-vectors

@@ -47,7 +47,7 @@ void SvmClassifier::setSvmParameters(vector<Mat> supportVectors, vector<float> c
 	this->bias = bias;
 }
 
-shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFilename, const string& thresholdsFilename)
+shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFilename)
 {
 	Logger logger = Loggers->getLogger("classification");
 	logger.info("Loading SVM classifier from matlab file: " + classifierFilename);

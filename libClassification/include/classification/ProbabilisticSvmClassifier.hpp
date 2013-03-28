@@ -72,10 +72,11 @@ public:
 	 * parameters from the matlab file, then passes the loading to the underlying SVM which loads the vectors and thresholds
 	 * from the matlab file.
 	 *
-	 * @param[in] classifierFilename TODO
-	 * @param[in] thresholdsFilename TODO
+	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
+	 * @param[in] logisticFilename The name of the file containing the logistic function's parameters.
+	 * @return The newly created probabilistic SVM classifier.
 	 */
-	static shared_ptr<ProbabilisticSvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this.
+	static shared_ptr<ProbabilisticSvmClassifier> loadMatlab(const string& classifierFilename, const string& logisticFilename);
 
 private:
 

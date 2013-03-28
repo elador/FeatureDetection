@@ -60,10 +60,11 @@ public:
 	 * parameters from the matlab file, then passes the loading to the underlying WVM which loads the vectors and thresholds
 	 * from the matlab file.
 	 *
-	 * @param[in] classifierFilename TODO
-	 * @param[in] thresholdsFilename TODO
+	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
+	 * @param[in] thresholdsFilename The name of the file containing the thresholds of the filter levels and the logistic function's parameters.
+	 * @return The newly created probabilistic WVM classifier.
 	 */
-	static shared_ptr<ProbabilisticWvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this.
+	static shared_ptr<ProbabilisticWvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename);
 
 private:
 

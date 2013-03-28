@@ -66,10 +66,10 @@ public:
 	/**
 	 * Creates a new SVM classifier from the parameters given in some Matlab file.
 	 *
-	 * @param[in] classifierFilename TODO
-	 * @param[in] thresholdsFilename TODO
+	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
+	 * @return The newly created SVM classifier.
 	 */
-	static shared_ptr<SvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename); // TODO: Re-work this.
+	static shared_ptr<SvmClassifier> loadMatlab(const string& classifierFilename);
 
 private:
 

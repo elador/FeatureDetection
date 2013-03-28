@@ -36,16 +36,16 @@ void ProbabilisticSvmClassifier::setLogisticParameters(double logisticA, double 
 	this->logisticB = logisticB;
 }
 
-shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadMatlab(const string& classifierFilename, const string& thresholdsFilename)
+shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadMatlab(const string& classifierFilename, const string& logisticFilename)
 {
 	// Load sigmoid stuff:
 	double logisticA = 0;
 	double logisticB = 0;
 	MATFile *pmatfile;
 	mxArray *pmxarray; // =mat
-	pmatfile = matOpen(thresholdsFilename.c_str(), "r");
+	pmatfile = matOpen(logisticFilename.c_str(), "r");
 	if (pmatfile == 0) {
-		throw runtime_error("ProbabilisticSvmClassifier: Unable to open the thresholds file to read the sigmoid parameters (wrong format?):" + thresholdsFilename);
+		throw runtime_error("ProbabilisticSvmClassifier: Unable to open the logistic file to read the logistic parameters (wrong format?):" + logisticFilename);
 	} else {
 		//read posterior_wrvm parameter for probabilistic WRVM output
 		//TODO 2012: is there a case (when svm+wvm from same trainingdata) when there exists only a posterior_svm, and I should use this here?
@@ -72,7 +72,7 @@ shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadMatlab(co
 	}
 
 	// Load the detector and thresholds:
-	shared_ptr<SvmClassifier> svm = SvmClassifier::loadMatlab(classifierFilename, thresholdsFilename);
+	shared_ptr<SvmClassifier> svm = SvmClassifier::loadMatlab(classifierFilename);
 	return make_shared<ProbabilisticSvmClassifier>(svm, logisticA, logisticB);
 }
 
