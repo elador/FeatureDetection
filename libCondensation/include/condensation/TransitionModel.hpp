@@ -1,12 +1,12 @@
 /*
- * TransitionModel.h
+ * TransitionModel.hpp
  *
  *  Created on: 10.07.2012
  *      Author: poschmann
  */
 
-#ifndef TRANSITIONMODEL_H_
-#define TRANSITIONMODEL_H_
+#ifndef TRANSITIONMODEL_HPP_
+#define TRANSITIONMODEL_HPP_
 
 #include <vector>
 
@@ -34,4 +34,4 @@ public:
 };
 
 } /* namespace condensation */
-#endif /* TRANSITIONMODEL_H_ */
+#endif /* TRANSITIONMODEL_HPP_ */

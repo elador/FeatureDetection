@@ -29,7 +29,7 @@ ENDIF()
 
 # source and header files
 SET(HEADERS
-	AdaptiveTracking.h
+	AdaptiveTracking.hpp
 )
 SET(SOURCE
 	AdaptiveTracking.cpp

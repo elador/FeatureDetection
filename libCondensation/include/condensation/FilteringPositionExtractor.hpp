@@ -1,14 +1,14 @@
 /*
- * FilteringPositionExtractor.h
+ * FilteringPositionExtractor.hpp
  *
  *  Created on: 27.07.2012
  *      Author: poschmann
  */
 
-#ifndef FILTERINGPOSITIONEXTRACTOR_H_
-#define FILTERINGPOSITIONEXTRACTOR_H_
+#ifndef FILTERINGPOSITIONEXTRACTOR_HPP_
+#define FILTERINGPOSITIONEXTRACTOR_HPP_
 
-#include "condensation/PositionExtractor.h"
+#include "condensation/PositionExtractor.hpp"
 #include <memory>
 
 using std::shared_ptr;
@@ -38,4 +38,4 @@ private:
 };
 
 } /* namespace condensation */
-#endif /* FILTERINGPOSITIONEXTRACTOR_H_ */
+#endif /* FILTERINGPOSITIONEXTRACTOR_HPP_ */

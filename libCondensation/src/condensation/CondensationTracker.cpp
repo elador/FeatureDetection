@@ -5,12 +5,11 @@
  *      Author: poschmann
  */
 
-#include "condensation/Rectangle.h"
-#include "condensation/Sample.h"
-#include "condensation/CondensationTracker.h"
-#include "condensation/Sampler.h"
-#include "condensation/MeasurementModel.h"
-#include "condensation/PositionExtractor.h"
+#include "condensation/Sample.hpp"
+#include "condensation/CondensationTracker.hpp"
+#include "condensation/Sampler.hpp"
+#include "condensation/MeasurementModel.hpp"
+#include "condensation/PositionExtractor.hpp"
 #include "imageprocessing/VersionedImage.hpp"
 
 using std::make_shared;
@@ -34,7 +33,7 @@ CondensationTracker::CondensationTracker(shared_ptr<Sampler> sampler,
 
 CondensationTracker::~CondensationTracker() {}
 
-optional<Rectangle> CondensationTracker::process(const Mat& imageData) {
+optional<Rect> CondensationTracker::process(const Mat& imageData) {
 	image->setData(imageData);
 	oldSamples = samples;
 	sampler->sample(oldSamples, offset, image->getData(), samples);
@@ -54,8 +53,8 @@ optional<Rectangle> CondensationTracker::process(const Mat& imageData) {
 	oldPosition = position;
 	// return position
 	if (position)
-		return optional<Rectangle>(position->getBounds());
-	return optional<Rectangle>();
+		return optional<Rect>(position->getBounds());
+	return optional<Rect>();
 }
 
 } /* namespace condensation */

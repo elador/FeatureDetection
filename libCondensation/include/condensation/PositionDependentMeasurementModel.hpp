@@ -1,15 +1,15 @@
 /*
- * PositionDependentMeasurementModel.h
+ * PositionDependentMeasurementModel.hpp
  *
  *  Created on: 20.09.2012
  *      Author: poschmann
  */
 
-#ifndef POSITIONDEPENDENTMEASUREMENTMODEL_H_
-#define POSITIONDEPENDENTMEASUREMENTMODEL_H_
+#ifndef POSITIONDEPENDENTMEASUREMENTMODEL_HPP_
+#define POSITIONDEPENDENTMEASUREMENTMODEL_HPP_
 
 #include "condensation/SingleClassifierModel.hpp"
-#include "condensation/AdaptiveMeasurementModel.h"
+#include "condensation/AdaptiveMeasurementModel.hpp"
 #include "opencv2/core/core.hpp"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int.hpp"
@@ -102,4 +102,4 @@ private:
 };
 
 } /* namespace condensation */
-#endif /* POSITIONDEPENDENTMEASUREMENTMODEL_H_ */
+#endif /* POSITIONDEPENDENTMEASUREMENTMODEL_HPP_ */

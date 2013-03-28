@@ -1,15 +1,15 @@
 /*
- * DensityPositionExtractor.h
+ * DensityPositionExtractor.hpp
  *
  *  Created on: 19.07.2012
  *      Author: poschmann
  */
 
-#ifndef DENSITYPOSITIONEXTRACTOR_H_
-#define DENSITYPOSITIONEXTRACTOR_H_
+#ifndef DENSITYPOSITIONEXTRACTOR_HPP_
+#define DENSITYPOSITIONEXTRACTOR_HPP_
 
-#include "condensation/PositionExtractor.h"
-#include "condensation/Sample.h"
+#include "condensation/PositionExtractor.hpp"
+#include "condensation/Sample.hpp"
 #include <algorithm>
 #include <cmath>
 
@@ -74,4 +74,4 @@ private:
 };
 
 } /* namespace condensation */
-#endif /* DENSITYPOSITIONEXTRACTOR_H_ */
+#endif /* DENSITYPOSITIONEXTRACTOR_HPP_ */

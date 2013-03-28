@@ -5,8 +5,8 @@
  *      Author: poschmann
  */
 
-#include "condensation/FilteringPositionExtractor.h"
-#include "condensation/Sample.h"
+#include "condensation/FilteringPositionExtractor.hpp"
+#include "condensation/Sample.hpp"
 
 namespace condensation {
 

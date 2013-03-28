@@ -8,7 +8,7 @@
 #ifndef SINGLECLASSIFIERMODEL_HPP_
 #define SINGLECLASSIFIERMODEL_HPP_
 
-#include "condensation/MeasurementModel.h"
+#include "condensation/MeasurementModel.hpp"
 
 namespace imageprocessing {
 class FeatureExtractor;

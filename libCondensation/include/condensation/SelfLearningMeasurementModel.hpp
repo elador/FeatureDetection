@@ -1,14 +1,14 @@
 /*
- * SelfLearningMeasurementModel.h
+ * SelfLearningMeasurementModel.hpp
  *
  *  Created on: 31.07.2012
  *      Author: poschmann
  */
 
-#ifndef SELFLEARNINGMEASUREMENTMODEL_H_
-#define SELFLEARNINGMEASUREMENTMODEL_H_
+#ifndef SELFLEARNINGMEASUREMENTMODEL_HPP_
+#define SELFLEARNINGMEASUREMENTMODEL_HPP_
 
-#include "condensation/AdaptiveMeasurementModel.h"
+#include "condensation/AdaptiveMeasurementModel.hpp"
 #include "opencv2/core/core.hpp"
 #include <string>
 #include <utility>
@@ -95,4 +95,4 @@ private:
 };
 
 } /* namespace condensation */
-#endif /* SELFLEARNINGMEASUREMENTMODEL_H_ */
+#endif /* SELFLEARNINGMEASUREMENTMODEL_HPP_ */

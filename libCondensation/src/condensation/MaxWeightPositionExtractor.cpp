@@ -5,8 +5,8 @@
  *      Author: poschmann
  */
 
-#include "condensation/MaxWeightPositionExtractor.h"
-#include "condensation/Sample.h"
+#include "condensation/MaxWeightPositionExtractor.hpp"
+#include "condensation/Sample.hpp"
 
 namespace condensation {
 

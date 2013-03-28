@@ -1,14 +1,14 @@
 /*
- * WvmSvmModel.h
+ * WvmSvmModel.hpp
  *
  *  Created on: 25.07.2012
  *      Author: poschmann
  */
 
-#ifndef WVMSVMMODEL_H_
-#define WVMSVMMODEL_H_
+#ifndef WVMSVMMODEL_HPP_
+#define WVMSVMMODEL_HPP_
 
-#include "condensation/MeasurementModel.h"
+#include "condensation/MeasurementModel.hpp"
 #include <memory>
 #include <string>
 
@@ -61,4 +61,4 @@ private:
 };
 
 } /* namespace condensation */
-#endif /* WVMSVMMODEL_H_ */
+#endif /* WVMSVMMODEL_HPP_ */

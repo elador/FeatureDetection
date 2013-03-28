@@ -1,14 +1,14 @@
 /*
- * PositionExtractor.h
+ * PositionExtractor.hpp
  *
  *  Created on: 19.07.2012
  *      Author: poschmann
  */
 
-#ifndef POSITIONEXTRACTOR_H_
-#define POSITIONEXTRACTOR_H_
+#ifndef POSITIONEXTRACTOR_HPP_
+#define POSITIONEXTRACTOR_HPP_
 
-#include "condensation/Sample.h"
+#include "condensation/Sample.hpp"
 #include "boost/optional.hpp"
 #include <vector>
 
@@ -35,4 +35,4 @@ public:
 };
 
 } /* namespace condensation */
-#endif /* POSITIONEXTRACTOR_H_ */
+#endif /* POSITIONEXTRACTOR_HPP_ */

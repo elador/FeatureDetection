@@ -1,21 +1,21 @@
 /*
- * AdaptiveTracking.h
+ * AdaptiveTracking.hpp
  *
  *  Created on: 19.07.2012
  *      Author: poschmann
  */
 
-#ifndef ADAPTIVETRACKING_H_
-#define ADAPTIVETRACKING_H_
+#ifndef ADAPTIVETRACKING_HPP_
+#define ADAPTIVETRACKING_HPP_
 
 #include "imageio/ImageSource.hpp"
 #include "imageio/ImageSink.hpp"
-#include "condensation/AdaptiveCondensationTracker.h"
-#include "condensation/AdaptiveMeasurementModel.h"
-#include "condensation/MeasurementModel.h"
-#include "condensation/SimpleTransitionModel.h"
-#include "condensation/ResamplingSampler.h"
-#include "condensation/GridSampler.h"
+#include "condensation/AdaptiveCondensationTracker.hpp"
+#include "condensation/AdaptiveMeasurementModel.hpp"
+#include "condensation/MeasurementModel.hpp"
+#include "condensation/SimpleTransitionModel.hpp"
+#include "condensation/ResamplingSampler.hpp"
+#include "condensation/GridSampler.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include <memory>
 #include <string>
@@ -73,4 +73,4 @@ private:
 	shared_ptr<GridSampler> gridSampler;
 };
 
-#endif /* ADAPTIVETRACKING_H_ */
+#endif /* ADAPTIVETRACKING_HPP_ */

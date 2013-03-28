@@ -1,12 +1,12 @@
 /*
- * Sampler.h
+ * Sampler.hpp
  *
  *  Created on: 15.08.2012
  *      Author: poschmann
  */
 
-#ifndef SAMPLER_H_
-#define SAMPLER_H_
+#ifndef SAMPLER_HPP_
+#define SAMPLER_HPP_
 
 #include "opencv2/core/core.hpp"
 #include <vector>
@@ -39,4 +39,4 @@ public:
 };
 
 } /* namespace condensation */
-#endif /* SAMPLER_H_ */
+#endif /* SAMPLER_HPP_ */

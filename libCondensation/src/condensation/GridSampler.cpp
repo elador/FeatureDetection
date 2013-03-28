@@ -5,8 +5,8 @@
  *      Author: poschmann
  */
 
-#include "condensation/GridSampler.h"
-#include "condensation/Sample.h"
+#include "condensation/GridSampler.hpp"
+#include "condensation/Sample.hpp"
 #include <algorithm>
 
 using std::min;

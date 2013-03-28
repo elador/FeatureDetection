@@ -5,8 +5,8 @@
  *      Author: poschmann
  */
 
-#include "condensation/SelfLearningMeasurementModel.h"
-#include "condensation/Sample.h"
+#include "condensation/SelfLearningMeasurementModel.hpp"
+#include "condensation/Sample.hpp"
 #include "imageprocessing/Patch.hpp"
 #include "imageprocessing/FeatureExtractor.hpp"
 #include "classification/TrainableProbabilisticClassifier.hpp"

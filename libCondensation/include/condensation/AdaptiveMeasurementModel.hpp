@@ -1,14 +1,14 @@
 /*
- * AdaptiveMeasurementModel.h
+ * AdaptiveMeasurementModel.hpp
  *
  *  Created on: 20.09.2012
  *      Author: poschmann
  */
 
-#ifndef ADAPTIVEMEASUREMENTMODEL_H_
-#define ADAPTIVEMEASUREMENTMODEL_H_
+#ifndef ADAPTIVEMEASUREMENTMODEL_HPP_
+#define ADAPTIVEMEASUREMENTMODEL_HPP_
 
-#include "condensation/MeasurementModel.h"
+#include "condensation/MeasurementModel.hpp"
 
 namespace condensation {
 
@@ -51,4 +51,4 @@ public:
 };
 
 } /* namespace condensation */
-#endif /* ADAPTIVEMEASUREMENTMODEL_H_ */
+#endif /* ADAPTIVEMEASUREMENTMODEL_HPP_ */

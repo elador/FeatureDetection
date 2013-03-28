@@ -5,8 +5,8 @@
  *      Author: poschmann
  */
 
-#include "condensation/WvmSvmModel.h"
-#include "condensation/Sample.h"
+#include "condensation/WvmSvmModel.hpp"
+#include "condensation/Sample.hpp"
 #include "imageprocessing/Patch.hpp"
 #include "imageprocessing/FeatureExtractor.hpp"
 #include "classification/ProbabilisticWvmClassifier.hpp"

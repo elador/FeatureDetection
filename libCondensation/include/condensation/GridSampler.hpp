@@ -1,14 +1,14 @@
 /*
- * GridSampler.h
+ * GridSampler.hpp
  *
  *  Created on: 15.08.2012
  *      Author: poschmann
  */
 
-#ifndef GRIDSAMPLER_H_
-#define GRIDSAMPLER_H_
+#ifndef GRIDSAMPLER_HPP_
+#define GRIDSAMPLER_HPP_
 
-#include "condensation/Sampler.h"
+#include "condensation/Sampler.hpp"
 
 namespace condensation {
 
@@ -42,4 +42,4 @@ private:
 };
 
 } /* namespace condensation */
-#endif /* GRIDSAMPLER_H_ */
+#endif /* GRIDSAMPLER_HPP_ */

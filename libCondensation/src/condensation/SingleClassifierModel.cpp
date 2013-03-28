@@ -6,7 +6,7 @@
  */
 
 #include "condensation/SingleClassifierModel.hpp"
-#include "condensation/Sample.h"
+#include "condensation/Sample.hpp"
 #include "imageprocessing/Patch.hpp"
 #include "imageprocessing/FeatureExtractor.hpp"
 #include "classification/ProbabilisticClassifier.hpp"

@@ -12,28 +12,27 @@ MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
 # source and header files
 SET(HEADERS
-	include/condensation/AdaptiveCondensationTracker.h
-	include/condensation/AdaptiveMeasurementModel.h
-	include/condensation/CondensationTracker.h
-	include/condensation/DensityPositionExtractor.h
-	include/condensation/FilteringPositionExtractor.h
-	include/condensation/GridSampler.h
-	include/condensation/LowVarianceSampling.h
-	include/condensation/MaxWeightPositionExtractor.h
-	include/condensation/MeasurementModel.h
-	include/condensation/PositionDependentMeasurementModel.h
-	include/condensation/PositionExtractor.h
-	include/condensation/Rectangle.h
-	include/condensation/ResamplingAlgorithm.h
-	include/condensation/ResamplingSampler.h
-	include/condensation/Sample.h
-	include/condensation/Sampler.h
-	include/condensation/SelfLearningMeasurementModel.h
-	include/condensation/SimpleTransitionModel.h
+	include/condensation/AdaptiveCondensationTracker.hpp
+	include/condensation/AdaptiveMeasurementModel.hpp
+	include/condensation/CondensationTracker.hpp
+	include/condensation/DensityPositionExtractor.hpp
+	include/condensation/FilteringPositionExtractor.hpp
+	include/condensation/GridSampler.hpp
+	include/condensation/LowVarianceSampling.hpp
+	include/condensation/MaxWeightPositionExtractor.hpp
+	include/condensation/MeasurementModel.hpp
+	include/condensation/PositionDependentMeasurementModel.hpp
+	include/condensation/PositionExtractor.hpp
+	include/condensation/ResamplingAlgorithm.hpp
+	include/condensation/ResamplingSampler.hpp
+	include/condensation/Sample.hpp
+	include/condensation/Sampler.hpp
+	include/condensation/SelfLearningMeasurementModel.hpp
+	include/condensation/SimpleTransitionModel.hpp
 	include/condensation/SingleClassifierModel.hpp
-	include/condensation/TransitionModel.h
-	include/condensation/WeightedMeanPositionExtractor.h
-	include/condensation/WvmSvmModel.h
+	include/condensation/TransitionModel.hpp
+	include/condensation/WeightedMeanPositionExtractor.hpp
+	include/condensation/WvmSvmModel.hpp
 )
 SET(SOURCE
 	src/condensation/AdaptiveCondensationTracker.cpp

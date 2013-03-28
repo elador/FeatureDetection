@@ -1,14 +1,14 @@
 /*
- * LowVarianceSampling.h
+ * LowVarianceSampling.hpp
  *
  *  Created on: 29.06.2012
  *      Author: poschmann
  */
 
-#ifndef LOWVARIANCESAMPLING_H_
-#define LOWVARIANCESAMPLING_H_
+#ifndef LOWVARIANCESAMPLING_HPP_
+#define LOWVARIANCESAMPLING_HPP_
 
-#include "condensation/ResamplingAlgorithm.h"
+#include "condensation/ResamplingAlgorithm.hpp"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_01.hpp"
 
@@ -44,4 +44,4 @@ private:
 };
 
 } /* namespace condensation */
-#endif /* LOWVARIANCESAMPLING_H_ */
+#endif /* LOWVARIANCESAMPLING_HPP_ */

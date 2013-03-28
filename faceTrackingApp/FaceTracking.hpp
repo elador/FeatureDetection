@@ -1,20 +1,20 @@
 /*
- * FaceTracking.h
+ * FaceTracking.hpp
  *
  *  Created on: 19.07.2012
  *      Author: poschmann
  */
 
-#ifndef FACETRACKING_H_
-#define FACETRACKING_H_
+#ifndef FACETRACKING_HPP_
+#define FACETRACKING_HPP_
 
 #include "imageio/ImageSource.hpp"
 #include "imageio/ImageSink.hpp"
-#include "condensation/CondensationTracker.h"
-#include "condensation/MeasurementModel.h"
-#include "condensation/SimpleTransitionModel.h"
-#include "condensation/ResamplingSampler.h"
-#include "condensation/GridSampler.h"
+#include "condensation/CondensationTracker.hpp"
+#include "condensation/MeasurementModel.hpp"
+#include "condensation/SimpleTransitionModel.hpp"
+#include "condensation/ResamplingSampler.hpp"
+#include "condensation/GridSampler.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include <memory>
 #include <string>
@@ -68,4 +68,4 @@ private:
 	shared_ptr<GridSampler> gridSampler;
 };
 
-#endif /* FACETRACKING_H_ */
+#endif /* FACETRACKING_HPP_ */

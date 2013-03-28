@@ -5,7 +5,7 @@
  *      Author: poschmann
  */
 
-#include "AdaptiveTracking.h"
+#include "AdaptiveTracking.hpp"
 #include "imageio/VideoImageSource.hpp"
 #include "imageio/KinectImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
@@ -27,17 +27,16 @@
 #include "classification/TrainableProbabilisticTwoStageClassifier.hpp"
 #include "classification/FixedSizeTrainableSvmClassifier.hpp"
 #include "classification/FixedTrainableProbabilisticSvmClassifier.hpp"
-#include "condensation/ResamplingSampler.h"
-#include "condensation/GridSampler.h"
-#include "condensation/LowVarianceSampling.h"
-#include "condensation/SimpleTransitionModel.h"
-#include "condensation/WvmSvmModel.h"
-#include "condensation/SelfLearningMeasurementModel.h"
-#include "condensation/PositionDependentMeasurementModel.h"
-#include "condensation/FilteringPositionExtractor.h"
-#include "condensation/WeightedMeanPositionExtractor.h"
-#include "condensation/Rectangle.h"
-#include "condensation/Sample.h"
+#include "condensation/ResamplingSampler.hpp"
+#include "condensation/GridSampler.hpp"
+#include "condensation/LowVarianceSampling.hpp"
+#include "condensation/SimpleTransitionModel.hpp"
+#include "condensation/WvmSvmModel.hpp"
+#include "condensation/SelfLearningMeasurementModel.hpp"
+#include "condensation/PositionDependentMeasurementModel.hpp"
+#include "condensation/FilteringPositionExtractor.hpp"
+#include "condensation/WeightedMeanPositionExtractor.hpp"
+#include "condensation/Sample.hpp"
 #include <boost/optional.hpp>
 #include <boost/program_options.hpp>
 #include <vector>
@@ -225,14 +224,13 @@ void AdaptiveTracking::run() {
 				image.create(frame.rows, frame.cols, frame.type());
 			}
 			steady_clock::time_point condensationStart = steady_clock::now();
-			boost::optional<condensation::Rectangle> face = tracker->process(frame);
+			boost::optional<Rect> face = tracker->process(frame);
 			steady_clock::time_point condensationEnd = steady_clock::now();
 			image = frame;
 			drawDebug(image);
 			cv::Scalar& color = tracker->wasUsingAdaptiveModel() ? green : red;
 			if (face)
-				cv::rectangle(image, cv::Point(face->getX(), face->getY()),
-						cv::Point(face->getX() + face->getWidth(), face->getY() + face->getHeight()), color);
+				cv::rectangle(image, *face, color);
 			imshow(videoWindowName, image);
 			if (imageSink.get() != 0)
 				imageSink->add(image);

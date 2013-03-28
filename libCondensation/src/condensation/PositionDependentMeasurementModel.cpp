@@ -5,8 +5,8 @@
  *      Author: poschmann
  */
 
-#include "condensation/PositionDependentMeasurementModel.h"
-#include "condensation/Sample.h"
+#include "condensation/PositionDependentMeasurementModel.hpp"
+#include "condensation/Sample.hpp"
 #include "imageprocessing/Patch.hpp"
 #include "imageprocessing/FeatureExtractor.hpp"
 #include "imageprocessing/VersionedImage.hpp"

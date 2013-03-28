@@ -5,8 +5,8 @@
  *      Author: poschmann
  */
 
-#include "condensation/SimpleTransitionModel.h"
-#include "condensation/Sample.h"
+#include "condensation/SimpleTransitionModel.hpp"
+#include "condensation/Sample.hpp"
 #include <ctime>
 #include <cmath>
 

@@ -5,8 +5,8 @@
  *      Author: poschmann
  */
 
-#include "condensation/WeightedMeanPositionExtractor.h"
-#include "condensation/Sample.h"
+#include "condensation/WeightedMeanPositionExtractor.hpp"
+#include "condensation/Sample.hpp"
 
 namespace condensation {
 

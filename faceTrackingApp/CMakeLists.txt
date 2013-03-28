@@ -29,7 +29,7 @@ ENDIF()
 
 # source and header files
 SET(HEADERS
-	FaceTracking.h
+	FaceTracking.hpp
 )
 SET(SOURCE
 	FaceTracking.cpp

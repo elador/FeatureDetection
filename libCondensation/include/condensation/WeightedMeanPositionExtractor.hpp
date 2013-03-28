@@ -1,14 +1,14 @@
 /*
- * WeightedMeanPositionExtractor.h
+ * WeightedMeanPositionExtractor.hpp
  *
  *  Created on: 19.07.2012
  *      Author: poschmann
  */
 
-#ifndef WEIGHTEDMEANPOSITIONEXTRACTOR_H_
-#define WEIGHTEDMEANPOSITIONEXTRACTOR_H_
+#ifndef WEIGHTEDMEANPOSITIONEXTRACTOR_HPP_
+#define WEIGHTEDMEANPOSITIONEXTRACTOR_HPP_
 
-#include "condensation/PositionExtractor.h"
+#include "condensation/PositionExtractor.hpp"
 
 namespace condensation {
 
@@ -29,4 +29,4 @@ public:
 };
 
 } /* namespace condensation */
-#endif /* WEIGHTEDMEANPOSITIONEXTRACTOR_H_ */
+#endif /* WEIGHTEDMEANPOSITIONEXTRACTOR_HPP_ */

@@ -1,20 +1,21 @@
 /*
- * AdaptiveCondensationTracker.h
+ * AdaptiveCondensationTracker.hpp
  *
  *  Created on: 20.09.2012
  *      Author: poschmann
  */
 
-#ifndef ADAPTIVECONDENSATIONTRACKER_H_
-#define ADAPTIVECONDENSATIONTRACKER_H_
+#ifndef ADAPTIVECONDENSATIONTRACKER_HPP_
+#define ADAPTIVECONDENSATIONTRACKER_HPP_
 
-#include "condensation/Sample.h"
+#include "condensation/Sample.hpp"
 #include "opencv2/core/core.hpp"
 #include "boost/optional.hpp"
 #include <memory>
 #include <vector>
 
 using cv::Mat;
+using cv::Rect;
 using boost::optional;
 using std::vector;
 using std::shared_ptr;
@@ -26,7 +27,6 @@ using imageprocessing::VersionedImage;
 
 namespace condensation {
 
-class Rectangle;
 class Sampler;
 class MeasurementModel;
 class AdaptiveMeasurementModel;
@@ -57,7 +57,7 @@ public:
 	 * @param[in] image The next image.
 	 * @return The bounding box around the most probable object position if there is an object.
 	 */
-	optional<Rectangle> process(const Mat& image);
+	optional<Rect> process(const Mat& image);
 
 	/**
 	 * @return The current samples.
@@ -117,4 +117,4 @@ private:
 };
 
 } /* namespace condensation */
-#endif /* ADAPTIVECONDENSATIONTRACKER_H_ */
+#endif /* ADAPTIVECONDENSATIONTRACKER_HPP_ */

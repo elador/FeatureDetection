@@ -1,14 +1,14 @@
 /*
- * MaxWeightPositionExtractor.h
+ * MaxWeightPositionExtractor.hpp
  *
  *  Created on: 25.07.2012
  *      Author: poschmann
  */
 
-#ifndef MAXWEIGHTPOSITIONEXTRACTOR_H_
-#define MAXWEIGHTPOSITIONEXTRACTOR_H_
+#ifndef MAXWEIGHTPOSITIONEXTRACTOR_HPP_
+#define MAXWEIGHTPOSITIONEXTRACTOR_HPP_
 
-#include "condensation/PositionExtractor.h"
+#include "condensation/PositionExtractor.hpp"
 
 namespace condensation {
 
@@ -29,4 +29,4 @@ public:
 };
 
 } /* namespace condensation */
-#endif /* MAXWEIGHTPOSITIONEXTRACTOR_H_ */
+#endif /* MAXWEIGHTPOSITIONEXTRACTOR_HPP_ */

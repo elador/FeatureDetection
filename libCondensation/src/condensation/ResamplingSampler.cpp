@@ -5,10 +5,10 @@
  *      Author: poschmann
  */
 
-#include "condensation/ResamplingSampler.h"
-#include "condensation/Sample.h"
-#include "condensation/ResamplingAlgorithm.h"
-#include "condensation/TransitionModel.h"
+#include "condensation/ResamplingSampler.hpp"
+#include "condensation/Sample.hpp"
+#include "condensation/ResamplingAlgorithm.hpp"
+#include "condensation/TransitionModel.hpp"
 #include <algorithm>
 #include <ctime>
 

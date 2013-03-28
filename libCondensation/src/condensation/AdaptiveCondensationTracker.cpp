@@ -5,13 +5,12 @@
  *      Author: poschmann
  */
 
-#include "condensation/AdaptiveCondensationTracker.h"
-#include "condensation/Rectangle.h"
-#include "condensation/Sample.h"
-#include "condensation/Sampler.h"
-#include "condensation/MeasurementModel.h"
-#include "condensation/AdaptiveMeasurementModel.h"
-#include "condensation/PositionExtractor.h"
+#include "condensation/AdaptiveCondensationTracker.hpp"
+#include "condensation/Sample.hpp"
+#include "condensation/Sampler.hpp"
+#include "condensation/MeasurementModel.hpp"
+#include "condensation/AdaptiveMeasurementModel.hpp"
+#include "condensation/PositionExtractor.hpp"
 #include "imageprocessing/VersionedImage.hpp"
 
 using std::make_shared;
@@ -39,7 +38,7 @@ AdaptiveCondensationTracker::AdaptiveCondensationTracker(shared_ptr<Sampler> sam
 
 AdaptiveCondensationTracker::~AdaptiveCondensationTracker() {}
 
-optional<Rectangle> AdaptiveCondensationTracker::process(const Mat& imageData) {
+optional<Rect> AdaptiveCondensationTracker::process(const Mat& imageData) {
 	image->setData(imageData);
 	oldSamples = samples;
 	sampler->sample(oldSamples, offset, image->getData(), samples);
@@ -72,8 +71,8 @@ optional<Rectangle> AdaptiveCondensationTracker::process(const Mat& imageData) {
 	}
 	// return position
 	if (position)
-		return optional<Rectangle>(position->getBounds());
-	return optional<Rectangle>();
+		return optional<Rect>(position->getBounds());
+	return optional<Rect>();
 }
 
 void AdaptiveCondensationTracker::setUseAdaptiveModel(bool useAdaptive) {

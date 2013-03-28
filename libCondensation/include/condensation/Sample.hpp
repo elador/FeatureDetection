@@ -1,14 +1,16 @@
 /*
- * Sample.h
+ * Sample.hpp
  *
  *  Created on: 27.06.2012
  *      Author: poschmann
  */
 
-#ifndef SAMPLE_H_
-#define SAMPLE_H_
+#ifndef SAMPLE_HPP_
+#define SAMPLE_HPP_
 
-#include "condensation/Rectangle.h"
+#include "opencv2/core/core.hpp"
+
+using cv::Rect;
 
 namespace condensation {
 
@@ -35,11 +37,11 @@ public:
 	~Sample() {}
 
 	/**
-	 * @return The square bounding box representing the sample.
+	 * @return The square bounding box representing this sample.
 	 */
-	Rectangle getBounds() const {
+	Rect getBounds() const {
 		int halfSize = size / 2;
-		return Rectangle(x - halfSize, y - halfSize, size, size);
+		return Rect(x - halfSize, y - halfSize, size, size);
 	}
 
 	/**
@@ -173,4 +175,4 @@ private:
 };
 
 } /* namespace condensation */
-#endif /* SAMPLE_H_ */
+#endif /* SAMPLE_HPP_ */

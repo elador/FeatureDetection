@@ -5,7 +5,7 @@
  *      Author: poschmann
  */
 
-#include "FaceTracking.h"
+#include "FaceTracking.hpp"
 #include "logging/LoggerFactory.hpp"
 #include "logging/ConsoleAppender.hpp"
 #include "imageio/VideoImageSource.hpp"
@@ -21,17 +21,16 @@
 #include "classification/SvmClassifier.hpp"
 #include "classification/ProbabilisticWvmClassifier.hpp"
 #include "classification/ProbabilisticSvmClassifier.hpp"
-#include "condensation/ResamplingSampler.h"
-#include "condensation/GridSampler.h"
-#include "condensation/LowVarianceSampling.h"
-#include "condensation/SimpleTransitionModel.h"
-#include "condensation/WvmSvmModel.h"
-#include "condensation/SelfLearningMeasurementModel.h"
-#include "condensation/PositionDependentMeasurementModel.h"
-#include "condensation/FilteringPositionExtractor.h"
-#include "condensation/WeightedMeanPositionExtractor.h"
-#include "condensation/Rectangle.h"
-#include "condensation/Sample.h"
+#include "condensation/ResamplingSampler.hpp"
+#include "condensation/GridSampler.hpp"
+#include "condensation/LowVarianceSampling.hpp"
+#include "condensation/SimpleTransitionModel.hpp"
+#include "condensation/WvmSvmModel.hpp"
+#include "condensation/SelfLearningMeasurementModel.hpp"
+#include "condensation/PositionDependentMeasurementModel.hpp"
+#include "condensation/FilteringPositionExtractor.hpp"
+#include "condensation/WeightedMeanPositionExtractor.hpp"
+#include "condensation/Sample.hpp"
 #include "boost/optional.hpp"
 #include "boost/program_options.hpp"
 #include "boost/lexical_cast.hpp"
@@ -186,13 +185,12 @@ void FaceTracking::run() {
 				image.create(frame.rows, frame.cols, frame.type());
 			}
 			steady_clock::time_point condensationStart = steady_clock::now();
-			boost::optional<condensation::Rectangle> face = tracker->process(frame);
+			boost::optional<Rect> face = tracker->process(frame);
 			steady_clock::time_point condensationEnd = steady_clock::now();
 			image = frame;
 			drawDebug(image);
 			if (face) {
-				cv::rectangle(image, cv::Point(face->getX(), face->getY()),
-						cv::Point(face->getX() + face->getWidth(), face->getY() + face->getHeight()), red);
+				cv::rectangle(image, *face, red);
 			}
 			imshow(videoWindowName, image);
 			if (imageSink.get() != 0)

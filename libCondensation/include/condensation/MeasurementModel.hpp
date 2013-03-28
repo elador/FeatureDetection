@@ -1,12 +1,12 @@
 /*
- * MeasurementModel.h
+ * MeasurementModel.hpp
  *
  *  Created on: 12.07.2012
  *      Author: poschmann
  */
 
-#ifndef MEASUREMENTMODEL_H_
-#define MEASUREMENTMODEL_H_
+#ifndef MEASUREMENTMODEL_HPP_
+#define MEASUREMENTMODEL_HPP_
 
 #include <vector>
 #include <memory>
@@ -41,4 +41,4 @@ public:
 };
 
 } /* namespace condensation */
-#endif /* MEASUREMENTMODEL_H_ */
+#endif /* MEASUREMENTMODEL_HPP_ */

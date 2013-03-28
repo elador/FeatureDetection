@@ -1,14 +1,14 @@
 /*
- * SimpleTransitionModel.h
+ * SimpleTransitionModel.hpp
  *
  *  Created on: 10.07.2012
  *      Author: poschmann
  */
 
-#ifndef SIMPLETRANSITIONMODEL_H_
-#define SIMPLETRANSITIONMODEL_H_
+#ifndef SIMPLETRANSITIONMODEL_HPP_
+#define SIMPLETRANSITIONMODEL_HPP_
 
-#include "condensation/TransitionModel.h"
+#include "condensation/TransitionModel.hpp"
 #include "boost/random/normal_distribution.hpp"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/variate_generator.hpp"
@@ -52,4 +52,4 @@ private:
 };
 
 } /* namespace condensation */
-#endif /* SIMPLETRANSITIONMODEL_H_ */
+#endif /* SIMPLETRANSITIONMODEL_HPP_ */

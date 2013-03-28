@@ -1,14 +1,14 @@
 /*
- * ResamplingSampler.h
+ * ResamplingSampler.hpp
  *
  *  Created on: 15.08.2012
  *      Author: poschmann
  */
 
-#ifndef RESAMPLINGSAMPLER_H_
-#define RESAMPLINGSAMPLER_H_
+#ifndef RESAMPLINGSAMPLER_HPP_
+#define RESAMPLINGSAMPLER_HPP_
 
-#include "condensation/Sampler.h"
+#include "condensation/Sampler.hpp"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int.hpp"
 #include <memory>
@@ -105,4 +105,4 @@ private:
 };
 
 } /* namespace condensation */
-#endif /* RESAMPLINGSAMPLER_H_ */
+#endif /* RESAMPLINGSAMPLER_HPP_ */

@@ -5,8 +5,8 @@
  *      Author: poschmann
  */
 
-#include "condensation/LowVarianceSampling.h"
-#include "condensation/Sample.h"
+#include "condensation/LowVarianceSampling.hpp"
+#include "condensation/Sample.hpp"
 
 #include <ctime>
 

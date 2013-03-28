@@ -5,8 +5,7 @@
  *      Author: poschmann
  */
 
-#include "condensation/DensityPositionExtractor.h"
-#include "condensation/Rectangle.h"
+#include "condensation/DensityPositionExtractor.hpp"
 #include <iostream>
 
 namespace condensation {

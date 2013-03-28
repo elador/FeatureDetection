@@ -1,12 +1,12 @@
 /*
- * ResamplingAlgorithm.h
+ * ResamplingAlgorithm.hpp
  *
  *  Created on: 29.06.2012
  *      Author: poschmann
  */
 
-#ifndef RESAMPLINGALGORITHM_H_
-#define RESAMPLINGALGORITHM_H_
+#ifndef RESAMPLINGALGORITHM_HPP_
+#define RESAMPLINGALGORITHM_HPP_
 
 #include <vector>
 
@@ -35,4 +35,4 @@ public:
 };
 
 } /* namespace condensation */
-#endif /* RESAMPLINGALGORITHM_H_ */
+#endif /* RESAMPLINGALGORITHM_HPP_ */
