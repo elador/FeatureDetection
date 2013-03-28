@@ -37,8 +37,9 @@
 #include "condensation/FilteringPositionExtractor.hpp"
 #include "condensation/WeightedMeanPositionExtractor.hpp"
 #include "condensation/Sample.hpp"
-#include <boost/optional.hpp>
-#include <boost/program_options.hpp>
+#include "boost/program_options.hpp"
+#include "boost/property_tree/info_parser.hpp"
+#include "boost/optional.hpp"
 #include <vector>
 #include <iostream>
 #include <chrono>
@@ -46,6 +47,7 @@
 using namespace imageprocessing;
 using namespace classification;
 using namespace std::chrono;
+using boost::property_tree::info_parser::read_info;
 using std::milli;
 using std::move;
 
@@ -54,64 +56,109 @@ namespace po = boost::program_options;
 const string AdaptiveTracking::videoWindowName = "Image";
 const string AdaptiveTracking::controlWindowName = "Controls";
 
-AdaptiveTracking::AdaptiveTracking(unique_ptr<ImageSource> imageSource, unique_ptr<ImageSink> imageSink,
-		string svmConfigFile, string negativesFile) :
-				svmConfigFile(svmConfigFile),
-				negativesFile(negativesFile),
-				imageSource(move(imageSource)),
-				imageSink(move(imageSink)) {
-	initTracking();
+AdaptiveTracking::AdaptiveTracking(unique_ptr<ImageSource> imageSource, unique_ptr<ImageSink> imageSink, ptree config) :
+		imageSource(move(imageSource)), imageSink(move(imageSink)) {
+	initTracking(config);
 	initGui();
 }
 
 AdaptiveTracking::~AdaptiveTracking() {}
 
-void AdaptiveTracking::initTracking() {
+shared_ptr<Kernel> AdaptiveTracking::createKernel(ptree config) {
+	if (config.get_value<string>() == "rbf") {
+		return make_shared<RbfKernel>(config.get<double>("gamma"));
+	} else if (config.get_value<string>() == "poly") {
+		return make_shared<PolynomialKernel>(
+				config.get<double>("alpha"), config.get<double>("constant"), config.get<double>("degree"));
+	} else {
+		throw invalid_argument("AdaptiveTracking: invalid kernel type: " + config.get_value<string>());
+	}
+}
+
+shared_ptr<TrainableSvmClassifier> AdaptiveTracking::createTrainableSvm(shared_ptr<Kernel> kernel, ptree config) {
+	shared_ptr<TrainableSvmClassifier> trainableSvm;
+	if (config.get_value<string>() == "fixedsize") {
+		trainableSvm = make_shared<FixedSizeTrainableSvmClassifier>(kernel, config.get<double>("constraintsViolationCosts"),
+				config.get<unsigned int>("positiveExamples"), config.get<unsigned int>("negativeExamples"), config.get<unsigned int>("minPositiveExamples"));
+	} else if (config.get_value<string>() == "framebased") {
+		trainableSvm = make_shared<FrameBasedTrainableSvmClassifier>(kernel, config.get<double>("constraintsViolationCosts"),
+				config.get<int>("frameLength"), config.get<float>("minAvgSamples"));
+	} else {
+		throw invalid_argument("AdaptiveTracking: invalid training type: " + config.get_value<string>());
+	}
+	optional<ptree&> negativesConfig = config.get_child_optional("staticNegatives");
+	if (negativesConfig && negativesConfig->get_value<bool>()) {
+		trainableSvm->loadStaticNegatives(negativesConfig->get<string>("filename"),
+				negativesConfig->get<int>("amount"), negativesConfig->get<double>("scale"));
+	}
+	return trainableSvm;
+}
+
+shared_ptr<TrainableProbabilisticClassifier> AdaptiveTracking::createClassifier(
+		shared_ptr<TrainableSvmClassifier> trainableSvm, ptree config) {
+	if (config.get_value<string>() == "default")
+		return make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm);
+	else if (config.get_value<string>() == "fixed")
+		return make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm);
+	else
+		throw invalid_argument("AdaptiveTracking: invalid classifier type: " + config.get_value<string>());
+}
+
+void AdaptiveTracking::initTracking(ptree config) {
 	// create feature extractors
-	shared_ptr<DirectPyramidFeatureExtractor> patchExtractor = make_shared<DirectPyramidFeatureExtractor>(20, 20, 80, 480, 0.85);
+	shared_ptr<DirectPyramidFeatureExtractor> patchExtractor = make_shared<DirectPyramidFeatureExtractor>(
+			config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"),
+			config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"),
+			config.get<double>("pyramid.scaleFactor"));
 	patchExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 
-	shared_ptr<FilteringFeatureExtractor> featureExtractor1 = make_shared<FilteringFeatureExtractor>(patchExtractor);
-	featureExtractor1->addPatchFilter(make_shared<HistEq64Filter>());
+	shared_ptr<FilteringFeatureExtractor> staticFeatureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
+	staticFeatureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
 
-	shared_ptr<FilteringFeatureExtractor> featureExtractor2 = make_shared<FilteringFeatureExtractor>(patchExtractor);
-//	featureExtractor2->addPatchFilter(make_shared<WhiteningFilter>());
-	featureExtractor2->addPatchFilter(make_shared<HistogramEqualizationFilter>());
-//	featureExtractor2->addPatchFilter(make_shared<ZeroMeanUnitVarianceFilter>());
+	shared_ptr<FilteringFeatureExtractor> adaptiveFeatureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
+	if (config.get<string>("feature.adaptive") == "histeq") {
+		adaptiveFeatureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
+	} else if (config.get<string>("feature.adaptive") == "whi") {
+		adaptiveFeatureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
+		adaptiveFeatureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
+		adaptiveFeatureExtractor->addPatchFilter(make_shared<ZeroMeanUnitVarianceFilter>());
+	} else {
+		throw invalid_argument("AdaptiveTracking: invalid feature type: " + config.get<string>("feature.adaptive"));
+	}
 
 	// create static measurement model
-	string svmConfigFile1 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat";
-	//string svmConfigFile1 = "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat";
-	string svmConfigFile2 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.0001--with-outnew02HQ64SVM.mat";
-	//string svmConfigFile2 = "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat";
-	shared_ptr<ProbabilisticWvmClassifier> wvm = ProbabilisticWvmClassifier::loadMatlab(svmConfigFile1, svmConfigFile2);
-	shared_ptr<ProbabilisticSvmClassifier> svm = ProbabilisticSvmClassifier::loadMatlab(svmConfigFile1, svmConfigFile2);
-	staticMeasurementModel = make_shared<WvmSvmModel>(featureExtractor1, wvm, svm);
+	string classifierFile = config.get<string>("measurement.static.classifier.configFile");
+	string thresholdsFile = config.get<string>("measurement.static.classifier.thresholdsFile");
+	shared_ptr<ProbabilisticWvmClassifier> wvm = ProbabilisticWvmClassifier::loadMatlab(classifierFile, thresholdsFile);
+	shared_ptr<ProbabilisticSvmClassifier> svm = ProbabilisticSvmClassifier::loadMatlab(classifierFile, thresholdsFile);
+	staticMeasurementModel = make_shared<WvmSvmModel>(staticFeatureExtractor, wvm, svm);
 
 	// create adaptive measurement model
-	shared_ptr<Kernel> kernel = make_shared<RbfKernel>(0.05 / (255 * 255)); // 0..255 features
-//	shared_ptr<Kernel> kernel = make_shared<RbfKernel>(0.05); // 0..1 features
-//	shared_ptr<Kernel> kernel = make_shared<RbfKernel>(0.002); // WHI features
-//	shared_ptr<Kernel> kernel = make_shared<PolynomialKernel>(0.05, 0, 2); // sub-optimal alpha
-//	shared_ptr<TrainableSvmClassifier> trainableSvm = make_shared<FrameBasedTrainableSvmClassifier>(kernel, 1, 5, 4);
-	shared_ptr<TrainableSvmClassifier> trainableSvm = make_shared<FixedSizeTrainableSvmClassifier>(kernel, 1, 10, 50, 3);
-//	trainableSvm->loadStaticNegatives(negativesFile, 200, 1); // scale 1 / 255 possible when training data scaled to 0..1
-//	shared_ptr<TrainableProbabilisticClassifier> classifier = make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm);
-	shared_ptr<TrainableProbabilisticClassifier> classifier = make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm);
-//	shared_ptr<TrainableProbabilisticClassifier> classifier = make_shared<TrainableProbabilisticTwoStageClassifier>(
-//			wvm, make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm));
-
-//	adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(featureExtractor2, classifier, 0.85, 0.05);
-//	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor2, classifier, 0.05, 0.5, true, true, 0);
-	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor2, classifier, 3, 40, 0.0f, 0.5f, false, false, 10);
+	shared_ptr<Kernel> kernel = createKernel(config.get_child("measurement.adaptive.classifier.kernel"));
+	shared_ptr<TrainableSvmClassifier> trainableSvm = createTrainableSvm(kernel, config.get_child("measurement.adaptive.classifier.training"));
+	shared_ptr<TrainableProbabilisticClassifier> classifier = createClassifier(trainableSvm, config.get_child("measurement.adaptive.classifier.probabilistic"));
+	optional<bool> withWvm = config.get_optional<bool>("measurement.adaptive.classifier.withWvm");
+	if (withWvm && *withWvm)
+		classifier = make_shared<TrainableProbabilisticTwoStageClassifier>(wvm, classifier);
+	if (config.get<string>("measurement.adaptive") == "selfLearning") {
+		adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(adaptiveFeatureExtractor, classifier,
+				config.get<double>("measurement.adaptive.positiveThreshold"), config.get<double>("measurement.adaptive.negativeThreshold"));
+	} else if (config.get<string>("measurement.adaptive") == "positionDependent") {
+		adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(adaptiveFeatureExtractor, classifier,
+				config.get<int>("measurement.adaptive.startFrameCount"), config.get<int>("measurement.adaptive.stopFrameCount"),
+				config.get<float>("measurement.adaptive.positiveOffsetFactor"), config.get<float>("measurement.adaptive.negativeOffsetFactor"),
+				config.get<bool>("measurement.adaptive.sampleNegativesAroundTarget"), config.get<bool>("measurement.adaptive.sampleFalsePositives"),
+				config.get<unsigned int>("measurement.adaptive.randomNegatives"));
+	} else {
+		throw invalid_argument("AdaptiveTracking: invalid adaptive measurement model type: " + config.get<string>("measurement.adaptive"));
+	}
 
 	// create tracker
-	unsigned int count = 800;
-	double randomRate = 0.35;
-	transitionModel = make_shared<SimpleTransitionModel>(0.2);
-	resamplingSampler = make_shared<ResamplingSampler>(count, randomRate, make_shared<LowVarianceSampling>(),
-			transitionModel, 0.1666, 1.0);
-	gridSampler = make_shared<GridSampler>(0.1666, 1.0, 1 / 0.85, 0.1);
+	transitionModel = make_shared<SimpleTransitionModel>(config.get<double>("transition.scatter"));
+	resamplingSampler = make_shared<ResamplingSampler>(
+			config.get<unsigned int>("resampling.particleCount"), config.get<double>("resampling.randomRate"), make_shared<LowVarianceSampling>(),
+			transitionModel, config.get<double>("resampling.minSize"), config.get<double>("resampling.maxSize"));
+	gridSampler = make_shared<GridSampler>(0.1666, 1.0, 1 / 0.85, 0.1); // TODO put grid data into config
 	tracker = unique_ptr<AdaptiveCondensationTracker>(new AdaptiveCondensationTracker(
 			resamplingSampler, staticMeasurementModel, adaptiveMeasurementModel,
 			make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>())));
@@ -266,7 +313,7 @@ int main(int argc, char *argv[]) {
 	int deviceId, kinectId;
 	string filename, directory;
 	bool useCamera = false, useKinect = false, useFile = false, useDirectory = false;
-	string svmConfigFile, negativeRtlPatches;
+	string configFile;
 	string outputFile;
 	int outputFps = -1;
 
@@ -280,8 +327,7 @@ int main(int argc, char *argv[]) {
 			("directory,i", po::value< string >(&directory), "Use a directory as input")
 			("device,d", po::value<int>(&deviceId)->implicit_value(0), "A camera device ID for use with the OpenCV camera driver")
 			("kinect,k", po::value<int>(&kinectId)->implicit_value(0), "Windows only: Use a Kinect as camera. Optionally specify a device ID.")
-			("config,c", po::value< string >(&svmConfigFile)->default_value("fd_config_fft_fd.mat","fd_config_fft_fd.mat"), "The filename to the config file that contains the SVM and WVM classifiers.")
-			("nonfaces,n", po::value< string >(&negativeRtlPatches)->default_value("nonfaces_1000","nonfaces_1000"), "Filename to a file containing the static negative training examples for the real-time learning SVM.")
+			("config,c", po::value< string >(&configFile)->default_value("default.cfg","default.cfg"), "The filename to the config file.")
 			("output,o", po::value< string >(&outputFile)->default_value("","none"), "Filename to a video file for storing the image data.")
 			("output-fps,r", po::value<int>(&outputFps)->default_value(-1), "The framerate of the output video.")
 			;
@@ -346,7 +392,9 @@ int main(int argc, char *argv[]) {
 		imageSink.reset(new VideoImageSink(outputFile, outputFps));
 	}
 
-	unique_ptr<AdaptiveTracking> tracker(new AdaptiveTracking(move(imageSource), move(imageSink), svmConfigFile, negativeRtlPatches));
+	ptree config;
+	read_info(configFile, config);
+	unique_ptr<AdaptiveTracking> tracker(new AdaptiveTracking(move(imageSource), move(imageSink), config.get_child("tracking")));
 	tracker->run();
 	return 0;
 }

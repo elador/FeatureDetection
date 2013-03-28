@@ -13,7 +13,7 @@ namespace classification {
 FrameBasedTrainableSvmClassifier::FrameBasedTrainableSvmClassifier(shared_ptr<Kernel> kernel,
 		double constraintsViolationCosts, int frameLength, float minAvgSamples) :
 				TrainableSvmClassifier(kernel, constraintsViolationCosts), frameLength(frameLength), minAvgSamples(minAvgSamples),
-				positiveExamples(), negativeExamples(), oldestEntry(0) {}
+				positiveExamples(frameLength), negativeExamples(frameLength), oldestEntry(0) {}
 
 FrameBasedTrainableSvmClassifier::~FrameBasedTrainableSvmClassifier() {}
 
