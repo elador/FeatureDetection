@@ -30,6 +30,7 @@ SET(HEADERS
 	include/condensation/Sampler.h
 	include/condensation/SelfLearningMeasurementModel.h
 	include/condensation/SimpleTransitionModel.h
+	include/condensation/SingleClassifierModel.hpp
 	include/condensation/TransitionModel.h
 	include/condensation/WeightedMeanPositionExtractor.h
 	include/condensation/WvmSvmModel.h
@@ -46,6 +47,7 @@ SET(SOURCE
 	src/condensation/ResamplingSampler.cpp
 	src/condensation/SelfLearningMeasurementModel.cpp
 	src/condensation/SimpleTransitionModel.cpp
+	src/condensation/SingleClassifierModel.cpp
 	src/condensation/WeightedMeanPositionExtractor.cpp
 	src/condensation/WvmSvmModel.cpp
 )

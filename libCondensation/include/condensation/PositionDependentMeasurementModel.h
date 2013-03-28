@@ -8,6 +8,7 @@
 #ifndef POSITIONDEPENDENTMEASUREMENTMODEL_H_
 #define POSITIONDEPENDENTMEASUREMENTMODEL_H_
 
+#include "condensation/SingleClassifierModel.hpp"
 #include "condensation/AdaptiveMeasurementModel.h"
 #include "opencv2/core/core.hpp"
 #include "boost/random/mersenne_twister.hpp"
@@ -15,11 +16,6 @@
 #include <string>
 
 using cv::Mat;
-
-namespace imageprocessing {
-class FeatureExtractor;
-}
-using imageprocessing::FeatureExtractor;
 
 namespace classification {
 class TrainableProbabilisticClassifier;
@@ -33,13 +29,13 @@ namespace condensation {
  * for negative samples and positively evaluated samples at positions other than the target as additional negative
  * samples.
  */
-class PositionDependentMeasurementModel : public AdaptiveMeasurementModel {
+class PositionDependentMeasurementModel : public SingleClassifierModel, public AdaptiveMeasurementModel {
 public:
 
 	/**
 	 * Constructs a new position dependent measurement model.
 	 *
-	 * @param[in] featureExtractor The feature extractor used with the dynamic SVM.
+	 * @param[in] featureExtractor The feature extractor.
 	 * @param[in] classifier The classifier that will be re-trained.
 	 * @param[in] startFrameCount The amount of subsequent frames with detections that leads to being usable.
 	 * @param[in] stopFrameCount The amount of subsequent frames without any detection that leads to not being usable again.
@@ -56,7 +52,9 @@ public:
 
 	~PositionDependentMeasurementModel();
 
-	void evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples);
+	void evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples) {
+		SingleClassifierModel::evaluate(image, samples);
+	}
 
 	bool isUsable() {
 		return usable;
@@ -89,8 +87,7 @@ private:
 	boost::mt19937 generator;          ///< Random number generator.
 	boost::uniform_int<> distribution; ///< Uniform integer distribution.
 
-	shared_ptr<FeatureExtractor> featureExtractor;           ///< The feature extractor used with the dynamic SVM.
-	shared_ptr<TrainableProbabilisticClassifier> classifier; ///< The classifier that will be re-trained.
+	shared_ptr<TrainableProbabilisticClassifier> classifier; ///< The classifier.
 
 	bool usable;         ///< Flag that indicates whether this model may be used for evaluation.
 	int frameCount;      ///< Count of frames without detections if usable, count of frames with detections otherwise.

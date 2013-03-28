@@ -11,14 +11,9 @@
 #include "imageprocessing/FeatureExtractor.hpp"
 #include "imageprocessing/VersionedImage.hpp"
 #include "classification/TrainableProbabilisticClassifier.hpp"
-#include <unordered_map>
-#include <utility>
 
 using imageprocessing::Patch;
 using imageprocessing::FeatureExtractor;
-using std::make_shared;
-using std::unordered_map;
-using std::pair;
 
 namespace condensation {
 
@@ -26,7 +21,7 @@ PositionDependentMeasurementModel::PositionDependentMeasurementModel(shared_ptr<
 		shared_ptr<TrainableProbabilisticClassifier> classifier, int startFrameCount, int stopFrameCount,
 		float positiveOffsetFactor, float negativeOffsetFactor,
 		bool sampleNegativesAroundTarget, bool sampleFalsePositives, unsigned int randomNegatives) :
-				featureExtractor(featureExtractor),
+				SingleClassifierModel(featureExtractor, classifier),
 				classifier(classifier),
 				usable(false),
 				frameCount(0),
@@ -39,31 +34,6 @@ PositionDependentMeasurementModel::PositionDependentMeasurementModel(shared_ptr<
 				randomNegatives(randomNegatives) {}
 
 PositionDependentMeasurementModel::~PositionDependentMeasurementModel() {}
-
-void PositionDependentMeasurementModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples) {
-	featureExtractor->update(image);
-	// TODO das folgende macht nur dann sinn, wenn featureExtractor bereits duplikate erkennt und schonmal extrahiertes rausgibt
-	// TODO ClassifiedPatch?
-	unordered_map<shared_ptr<Patch>, pair<bool, double>> results;
-	for (auto sample = samples.begin(); sample != samples.end(); ++sample) {
-		sample->setObject(false);
-		shared_ptr<Patch> patch = featureExtractor->extract(sample->getX(), sample->getY(), sample->getSize(), sample->getSize());
-		if (!patch) {
-			sample->setWeight(0);
-		} else {
-			pair<bool, double> result;
-			auto resIt = results.find(patch);
-			if (resIt == results.end()) {
-				result = classifier->classify(patch->getData());
-				results.insert(make_pair(patch, result));
-			} else {
-				result = resIt->second;
-			}
-			sample->setObject(result.first);
-			sample->setWeight(result.second);
-		}
-	}
-}
 
 void PositionDependentMeasurementModel::reset() {
 	classifier->reset();

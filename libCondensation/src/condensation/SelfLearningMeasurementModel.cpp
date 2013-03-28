@@ -15,12 +15,11 @@
 #include <unordered_map>
 #include <algorithm>
 #include <functional>
-#include <iostream> // TODO
+
 using imageprocessing::Patch;
 using imageprocessing::FeatureExtractor;
 using boost::make_indirect_iterator;
 using std::unordered_map;
-using std::make_pair;
 using std::make_shared;
 using std::sort;
 using std::greater;
@@ -43,8 +42,6 @@ void SelfLearningMeasurementModel::evaluate(shared_ptr<VersionedImage> image, ve
 	positiveTrainingExamples.clear();
 	negativeTrainingExamples.clear();
 	featureExtractor->update(image);
-	// TODO das folgende macht nur dann sinn, wenn featureExtractor bereits duplikate erkennt und schonmal extrahiertes rausgibt
-	// TODO ClassifiedPatch?
 	unordered_map<shared_ptr<Patch>, pair<bool, double>> results;
 	for (auto sample = samples.begin(); sample != samples.end(); ++sample) {
 		sample->setObject(false);
@@ -56,7 +53,7 @@ void SelfLearningMeasurementModel::evaluate(shared_ptr<VersionedImage> image, ve
 			auto resIt = results.find(patch);
 			if (resIt == results.end()) {
 				result = classifier->classify(patch->getData());
-				results.insert(make_pair(patch, result));
+				results.emplace(patch, result);
 			} else {
 				result = resIt->second;
 			}

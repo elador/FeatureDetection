@@ -36,9 +36,6 @@ WvmSvmModel::~WvmSvmModel() {}
 
 void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples) {
 	featureExtractor->update(image);
-	// TODO das folgende macht nur dann sinn, wenn featureExtractor bereits duplikate erkennt und schonmal extrahiertes rausgibt
-	// TODO oder eigene hash-methode bereitstellen, die auf patch arbeitet (x, y, w, h) -> duplikate werden erst hier erkannt
-	// TODO ClassifiedPatch?
 	unordered_map<shared_ptr<Patch>, pair<bool, double>> results;
 	vector<shared_ptr<ClassifiedPatch>> remainingPatches;
 	unordered_map<shared_ptr<Patch>, vector<Sample*>> patch2samples;
@@ -55,7 +52,7 @@ void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& sam
 				result = wvm->classify(patch->getData());
 				if (result.first)
 					remainingPatches.push_back(make_shared<ClassifiedPatch>(patch, result));
-				results.insert(make_pair(patch, result));
+				results.emplace(patch, result);
 			} else {
 				result = resIt->second;
 			}
