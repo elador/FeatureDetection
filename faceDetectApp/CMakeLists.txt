@@ -32,33 +32,37 @@ ENDIF()
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 
 #HDF5:
-MESSAGE(STATUS "HDF5_ROOT: ${HDF5_ROOT}")
-SET( CMAKE_MODULE_PATH ${HDF5_ROOT}/cmake/hdf5 )
-MESSAGE(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
-FIND_PACKAGE( HDF5 REQUIRED COMPONENTS C CXX ) # Maybe: FIND_PACKAGE (HDF5 REQURIED), and then, further up, PROJECT (HDF5MyApp C CXX) ? (according to hdf5 docu)
+#MESSAGE(STATUS "HDF5_ROOT: ${HDF5_ROOT}")
+#SET( CMAKE_MODULE_PATH ${HDF5_ROOT}/cmake/hdf5 )
+#MESSAGE(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+#FIND_PACKAGE( HDF5 REQUIRED COMPONENTS C CXX ) # Maybe: FIND_PACKAGE (HDF5 REQURIED), and then, further up, PROJECT (HDF5MyApp C CXX) ? (according to hdf5 docu)
 
 
 #Source and header files:
 SET(SOURCE
 	faceDetectApp.cpp
-	stdafx.cpp
 )
 
 SET(HEADERS
-	stdafx.h
-	targetver.h
 )
 
 #Make the library
 ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
 
-MESSAGE(STATUS "Adding includes and lib: ${libFeatureDetection_SOURCE_DIR}")
-include_directories( ${libFeatureDetection_SOURCE_DIR} )
+INCLUDE_DIRECTORIES( ${MATLAB_INCLUDE_DIR} )
+include_directories( ${Boost_INCLUDE_DIRS} )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+include_directories( ${Logging_SOURCE_DIR}/include )
+include_directories( ${ImageIO_SOURCE_DIR}/include )
+include_directories( ${ImageProcessing_SOURCE_DIR}/include )
+include_directories( ${Classification_SOURCE_DIR}/include )
+include_directories( ${Detection_SOURCE_DIR}/include )
+
 #Make the app depend on the libraries
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} libFeatureDetection ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${HDF5_LIBRARIES} )
-MESSAGE(STATUS "HDF5_CXX_LIBRARIES: ${HDF5_CXX_LIBRARIES}")
-MESSAGE(STATUS "HDF5_C_LIBRARIES: ${HDF5_C_LIBRARIES}")
-MESSAGE(STATUS "HDF5_LIBRARIES: ${HDF5_LIBRARIES}")
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} Logging ImageIO ${KINECT_LIBNAME} ImageProcessing Classification Detection ) # ${HDF5_LIBRARIES}
+#MESSAGE(STATUS "HDF5_CXX_LIBRARIES: ${HDF5_CXX_LIBRARIES}")
+#MESSAGE(STATUS "HDF5_C_LIBRARIES: ${HDF5_C_LIBRARIES}")
+#MESSAGE(STATUS "HDF5_LIBRARIES: ${HDF5_LIBRARIES}")
 
 MESSAGE(STATUS "Finished configuring ${SUBPROJECT_NAME}")
 MESSAGE(STATUS "===============================")

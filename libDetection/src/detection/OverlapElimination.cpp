@@ -61,7 +61,7 @@ vector<shared_ptr<ClassifiedPatch>> OverlapElimination::eliminate(vector<shared_
 	
 	sort(make_indirect_iterator(candidates.begin()), make_indirect_iterator(candidates.end()), greater<ClassifiedPatch>());
 	 
-	// Commented-out is the code from Andreas, which might be a nice extension in the future.
+	// Commented-out is the code from Andreas. It might be a nice extension in the future.
 	//int K = 9999; // how many to keep, 1-X
 	//int L = 1; // (level_span>0) ? level_span : 1;
 	//float R = 1; // (radius>0) ? radius*radius : 25.f;

@@ -61,7 +61,7 @@ shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadMatlab(co
 	pmatfile = matOpen(thresholdsFilename.c_str(), "r");
 	if (pmatfile == 0) {
 		std::cout << "[DetWVM] : Unable to open the file (wrong format?):" << std::endl << thresholdsFilename << std::endl;
-		exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);	// TODO Exceptions/Logger, like in non-probabilistic file
 	} 
 
 	//printf("fd_ReadDetector(): read posterior_svm parameter for probabilistic SVM output\n");

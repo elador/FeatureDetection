@@ -9,6 +9,10 @@
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 
+#ifdef WIN32
+	#include <SDKDDKVer.h>
+#endif
+
 /*	// There's a bug in boost/optional.hpp that prevents us from using the debug-crt with it
 	// in debug mode in windows. It works in release mode, but as we need debugging, let's
 	// disable the windows-memory debugging for now.
@@ -225,7 +229,7 @@ int main(int argc, char *argv[])
 
 		img = cv::imread(filenames[i]);
 		cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
-
+		cvMoveWindow("src", 0, 0);
 		std::chrono::time_point<std::chrono::system_clock> start, end;
 		start = std::chrono::system_clock::now();
 		vector<shared_ptr<ClassifiedPatch>> resultingPatches = det->detect(img);
@@ -237,7 +241,8 @@ int main(int argc, char *argv[])
 			cv::rectangle(imgWvm, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
 		}
 		cv::namedWindow("wvm", CV_WINDOW_AUTOSIZE); cv::imshow("wvm", imgWvm);
-		
+		cvMoveWindow("wvm", 0, 0);
+
 		resultingPatches = oe->eliminate(resultingPatches);
 		Mat imgWvmOe = img.clone();
 		for(auto pit = resultingPatches.begin(); pit != resultingPatches.end(); pit++) {
@@ -246,6 +251,7 @@ int main(int argc, char *argv[])
 			cv::rectangle(imgWvmOe, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
 		}
 		cv::namedWindow("wvmoe", CV_WINDOW_AUTOSIZE); cv::imshow("wvmoe", imgWvmOe);
+		cvMoveWindow("wvmoe", 550, 0);
 
 		vector<shared_ptr<ClassifiedPatch>> svmPatches;
 		for(auto &patch : resultingPatches) {
@@ -263,12 +269,14 @@ int main(int argc, char *argv[])
 			}
 		}
 		cv::namedWindow("svm", CV_WINDOW_AUTOSIZE); cv::imshow("svm", imgSvm);
+		cvMoveWindow("svm", 0, 500);
 
 		sort(make_indirect_iterator(svmPatches.begin()), make_indirect_iterator(svmPatches.end()), greater<ClassifiedPatch>());
 
 		Mat imgSvmEnd = img.clone();
 		cv::rectangle(imgSvmEnd, cv::Point(svmPatches[0]->getPatch()->getX() - svmPatches[0]->getPatch()->getWidth()/2, svmPatches[0]->getPatch()->getY() - svmPatches[0]->getPatch()->getHeight()/2), cv::Point(svmPatches[0]->getPatch()->getX() + svmPatches[0]->getPatch()->getWidth()/2, svmPatches[0]->getPatch()->getY() + svmPatches[0]->getPatch()->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((svmPatches[0]->getProbability())/1.0)   ));
 		cv::namedWindow("svmEnd", CV_WINDOW_AUTOSIZE); cv::imshow("svmEnd", imgSvmEnd);
+		cvMoveWindow("svmEnd", 550, 500);
 
 		end = std::chrono::system_clock::now();
 
@@ -278,7 +286,6 @@ int main(int argc, char *argv[])
 
 		std::cout << "finished computation at " << std::ctime(&end_time)
 			<< "elapsed time: " << elapsed_seconds << "s, " << elapsed_mseconds << "ms\n";
-
 
 		cv::waitKey(30);
 
