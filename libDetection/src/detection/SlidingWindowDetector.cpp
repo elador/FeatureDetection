@@ -29,13 +29,13 @@ SlidingWindowDetector::SlidingWindowDetector( shared_ptr<ProbabilisticClassifier
 
 }
 
-vector<shared_ptr<ClassifiedPatch>> SlidingWindowDetector::detect( const Mat& image )
+vector<shared_ptr<ClassifiedPatch>> SlidingWindowDetector::detect(const Mat& image)
 {
 	featureExtractor->update(image);
 	return detect();
 }
 
-vector<shared_ptr<ClassifiedPatch>> SlidingWindowDetector::detect( shared_ptr<VersionedImage> image )
+vector<shared_ptr<ClassifiedPatch>> SlidingWindowDetector::detect(shared_ptr<VersionedImage> image)
 {
 	featureExtractor->update(image);
 	return detect();

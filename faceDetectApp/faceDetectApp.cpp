@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 	/* END */
 	
 	ptree pt;
-	read_info("C:\\Users\\Patrik\\Documents\\GitHub\\ffpDetectApp.cfg", pt);		
+	read_info("C:\\Users\\Patrik\\Documents\\GitHub\\faceDetectApp.cfg", pt);		
 	string wvmClassifierFile = pt.get<string>("detection.wvm.classifierFile");
 	string wvmThresholdsFile = pt.get<string>("detection.wvm.thresholdsFile");
 	string svmClassifierFile = pt.get<string>("detection.svm.classifierFile");
@@ -222,7 +222,9 @@ int main(int argc, char *argv[])
 		cvMoveWindow("src", 0, 0);
 		std::chrono::time_point<std::chrono::system_clock> start, end;
 		start = std::chrono::system_clock::now();
+
 		vector<shared_ptr<ClassifiedPatch>> resultingPatches = det->detect(img);
+
 
 		Mat imgWvm = img.clone();
 		for(auto pit = resultingPatches.begin(); pit != resultingPatches.end(); pit++) {

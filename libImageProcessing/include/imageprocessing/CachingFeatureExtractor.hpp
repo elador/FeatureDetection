@@ -71,7 +71,7 @@ public:
 	 * SHARING - all callers share the patches with each other (see each others changes)
 	 * COPYING - each caller gets its own copy of the patches
 	 * INPUT_COPYING - first caller gets its own patches, subsequent callers share patches
-	 * OUTOUT_COPYING - cache shares patches of first caller, subsequent callers get copies of that patch
+	 * OUTPUT_COPYING - cache shares patches of first caller, subsequent callers get copies of that patch
 	 */
 	enum Strategy { SHARING, COPYING, INPUT_COPYING, OUTPUT_COPYING };
 

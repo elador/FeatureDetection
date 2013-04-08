@@ -100,6 +100,7 @@ int main(int argc, char *argv[])
     bool useFileList = false;
 	bool useImgs = false;
 	string fn_fileList;
+	string configFilename;
 	vector<std::string> filenames;
 	vector<FaceBoxLandmark> groundtruthFaceBoxes;
 	
@@ -113,6 +114,8 @@ int main(int argc, char *argv[])
                   "enable image-verbosity (optionally specify level)")
             ("file-list,f", po::value< string >(), 
                   "a .lst file to process")
+			("config,c", po::value< string >(), 
+				  "path to a config (.cfg) file")
             ("input-file,i", po::value< vector<string> >(), "input image")
         ;
 
@@ -141,6 +144,11 @@ int main(int argc, char *argv[])
 			useImgs = true;
 			filenames = vm["input-file"].as< vector<string> >();
         }
+		if (vm.count("config"))
+		{
+			cout << "[ffpDetectApp] Using config: " << vm["config"].as< string >() << "\n";
+			configFilename = vm["config"].as< string >();
+		}
         if (vm.count("verbose-text")) {
             cout << "[ffpDetectApp] Verbose level for text: " << vm["verbose-text"].as<int>() << "\n";
         }
@@ -197,7 +205,7 @@ int main(int argc, char *argv[])
 	int DONTKNOW = 0;
 
 	ptree pt;
-	read_info("C:\\Users\\Patrik\\Documents\\GitHub\\ffpDetectApp.cfg", pt);		
+	read_info(configFilename, pt);		
 	string wvmClassifierFile = pt.get<string>("detection.wvm.classifierFile");
 	string wvmThresholdsFile = pt.get<string>("detection.wvm.thresholdsFile");
 	string svmClassifierFile = pt.get<string>("detection.svm.classifierFile");
