@@ -47,4 +47,4 @@ include_directories( ${Condensation_SOURCE_DIR}/include )
 
 # make executable
 ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Logging ImageIO ${KINECT_LIBNAME} ImageProcessing Classification Detection Condensation ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection Condensation ImageIO ${KINECT_LIBNAME} ImageProcessing Classification Logging ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} )

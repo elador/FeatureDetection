@@ -25,11 +25,11 @@ add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target)
 add_subdirectory(adaptiveTrackingApp)	# Adaptive tracking app.
 #add_subdirectory(headTrackingApp)		#
 add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe).
-add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature point detection app.
+#add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature point detection app.
 
 #add_subdirectory(libRender)				# A tiny software renderer to render lists of 3D vertices
 #add_subdirectory(renderTestApp)			# Test app for libRender
 
 #add_subdirectory(trackerAppERT)		# kind of deprecated, was only a test. But can use this to see how to make a real-time tracker.
 
-add_subdirectory(mergePlaygroundApp)	# Test-app for the refactored/merged code
+#add_subdirectory(mergePlaygroundApp)	# Test-app for the refactored/merged code
