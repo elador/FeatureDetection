@@ -5,8 +5,8 @@ SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # find dependencies
-FIND_PACKAGE(Boost COMPONENTS random system filesystem program_options REQUIRED)
-FIND_PACKAGE(OpenCV REQUIRED core imgproc highgui)
+FIND_PACKAGE(Boost 1.48.0 COMPONENTS random system filesystem program_options REQUIRED)
+FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core imgproc highgui)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 # Matlab

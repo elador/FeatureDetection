@@ -4,13 +4,13 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
-FIND_PACKAGE( OpenCV REQUIRED core imgproc highgui )
+FIND_PACKAGE( OpenCV 2.3.1 REQUIRED core imgproc highgui )
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
 SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
 FIND_PACKAGE( MATLAB REQUIRED )
-FIND_PACKAGE( Boost COMPONENTS program_options REQUIRED ) # others (e.g.): system filesystem
+FIND_PACKAGE( Boost 1.48.0 COMPONENTS program_options REQUIRED ) # others (e.g.): system filesystem
 
 #Source and header files:
 SET(SOURCE

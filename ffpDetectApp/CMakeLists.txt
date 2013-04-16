@@ -5,7 +5,7 @@ SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 #OpenCV:
-FIND_PACKAGE( OpenCV REQUIRED core imgproc highgui)
+FIND_PACKAGE( OpenCV 2.3.1 REQUIRED core imgproc highgui)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
@@ -19,7 +19,7 @@ ELSE(MATLAB_FOUND)
 ENDIF(MATLAB_FOUND)
 
 #Boost:
-FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED) # others (e.g.): system filesystem
+FIND_PACKAGE(Boost 1.48.0 COMPONENTS program_options REQUIRED) # others (e.g.): system filesystem
 if(Boost_FOUND)
   MESSAGE(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
 ELSE(Boost_FOUND)

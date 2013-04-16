@@ -6,14 +6,14 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # find dependencies
 # Boost:
-FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED) # others (e.g.): system filesystem
+FIND_PACKAGE(Boost 1.48.0 COMPONENTS program_options REQUIRED) # others (e.g.): system filesystem
 if(Boost_FOUND)
   MESSAGE(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
 ELSE(Boost_FOUND)
   MESSAGE(FATAL_ERROR "Boost not found")
 ENDIF()
 # OpenCV:
-FIND_PACKAGE(OpenCV REQUIRED core)
+FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
