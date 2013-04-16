@@ -10,8 +10,10 @@
 #define PROBABILISTICWVMCLASSIFIER_HPP_
 
 #include "classification/ProbabilisticClassifier.hpp"
+#include "boost/property_tree/ptree.hpp"
 #include <memory>
 
+using boost::property_tree::ptree;
 using std::shared_ptr;
 using std::string;
 
