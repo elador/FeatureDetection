@@ -10,6 +10,7 @@
 #define PYRAMIDFEATUREEXTRACTOR_HPP_
 
 #include "imageprocessing/FeatureExtractor.hpp"
+//#include "imageprocessing/ImagePyramid.hpp"
 #include <vector>
 
 using cv::Rect;
@@ -17,6 +18,8 @@ using cv::Size;
 using std::vector;
 
 namespace imageprocessing {
+
+//class ImagePyramid;	// Added by Patrik. See TODO at the bottom of file. Actually, if we keep this, I think we should really include the header here and not forward-declare (as there is no .cpp-file that includes the header).
 
 /**
  * Feature extractor whose features are patches of a constant size extracted from an image pyramid.
@@ -101,6 +104,16 @@ public:
 	 * @return The size of the original image.
 	 */
 	virtual Size getImageSize() const = 0;
+
+	/** TODO @Peter: Any reason for this getter to not be in the interface here?
+	 * @return The image pyramid.
+	 */
+	//virtual shared_ptr<ImagePyramid> getPyramid() = 0;	// We're going to try it a different way first
+
+	/** TODO @Peter: Any reason for this getter to not be in the interface here?
+	 * @return The image pyramid.
+	 */
+	//virtual const shared_ptr<ImagePyramid> getPyramid() const = 0; // We're going to try it a different way first
 };
 
 } /* namespace imageprocessing */

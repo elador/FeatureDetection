@@ -23,7 +23,7 @@ using std::make_shared;
 
 namespace detection {
 
-SlidingWindowDetector::SlidingWindowDetector( shared_ptr<ProbabilisticClassifier> classifier, shared_ptr<PyramidFeatureExtractor> featureExtractor, int stepSizeX, int stepSizeY ) :
+SlidingWindowDetector::SlidingWindowDetector(shared_ptr<ProbabilisticClassifier> classifier, shared_ptr<PyramidFeatureExtractor> featureExtractor, int stepSizeX, int stepSizeY) :
 		classifier(classifier), featureExtractor(featureExtractor), stepSizeX(stepSizeX), stepSizeY(stepSizeY)
 {
 
@@ -53,6 +53,15 @@ vector<shared_ptr<ClassifiedPatch>> SlidingWindowDetector::detect() const
 	}
 
 	return classifiedPatches;
+}
+
+vector<Mat> SlidingWindowDetector::calculateProbabilityMaps(const Mat& image)
+{
+	//for(auto currentPyramidLayer : featureExtractor->getPyramid()->getLayers()) {
+		//Mat tmp = currentPyramidLayer->getScaledImage();
+	//}
+	vector<Mat> tmp;
+	return tmp;
 }
 
 } /* namespace detection */

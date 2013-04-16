@@ -31,6 +31,7 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include <unordered_map>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -86,6 +87,55 @@ ostream& operator<<(ostream& os, const vector<T>& v)
     copy(v.begin(), v.end(), ostream_iterator<T>(cout, " ")); 
     return os;
 }
+
+/**
+ * Takes a list of classified patches and creates a single probability map of face region locations.
+ *
+ * Note/TODO: We could increase the probability of a region when nearby patches (in x/y and scale)
+ *            also say it's a face. But that might be very difficult with this current approach.
+ * 
+ * @param[in] width The width of the original image where the classifier was run.
+ * @param[in] height The height of the original image where the classifier was run.
+ * @return A probability map for face regions with float values between 0 and 1.
+ */
+Mat getFaceRegionProbabilityMapFromPatchlist(vector<shared_ptr<ClassifiedPatch>> patches, int width, int height)
+{
+	Mat faceRegionProbabilityMap(height, width, CV_32FC1, cv::Scalar(0.0f));
+	
+	for (auto patch : patches) {
+		const unsigned int pw = patch->getPatch()->getBounds().width;
+		const unsigned int ph = patch->getPatch()->getBounds().height;
+		const unsigned int px = patch->getPatch()->getBounds().x;
+		const unsigned int py = patch->getPatch()->getBounds().y;
+		for (unsigned int currX = px; currX < px+pw-1; ++currX) {	// Note: I'm not exactly sure why the "-1" is necessary,
+			for (unsigned int currY = py; currY < py+ph-1; ++currY) { // but without it, it goes beyond the image bounds
+				if (patch->getProbability() > faceRegionProbabilityMap.at<float>(currY, currX)) {
+					faceRegionProbabilityMap.at<float>(currY, currX) = patch->getProbability();
+				}
+			}
+		}
+	}
+
+	return faceRegionProbabilityMap;
+}
+
+void drawFaceBoxes(Mat image, vector<shared_ptr<ClassifiedPatch>> patches)
+{
+	for(auto pit = patches.begin(); pit != patches.end(); pit++) {
+		shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
+		shared_ptr<Patch> patch = classifiedPatch->getPatch();
+		cv::rectangle(image, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
+	}
+}
+
+void drawWindow(Mat image, string windowName, int windowX, int windowY)
+{
+	cv::namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+	cv::imshow(windowName, image);
+	cvMoveWindow(windowName.c_str(), windowX, windowY);
+	cv::waitKey(30);
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -185,34 +235,36 @@ int main(int argc, char *argv[])
 	/* Testing ground */
 
 	/* END */
+
+	Loggers->getLogger("classification").addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
 	
 	ptree pt;
 	read_info("C:\\Users\\Patrik\\Documents\\GitHub\\faceDetectApp.cfg", pt);		
-	string wvmClassifierFile = pt.get<string>("detection.wvm.classifierFile");
-	string wvmThresholdsFile = pt.get<string>("detection.wvm.thresholdsFile");
-	string svmClassifierFile = pt.get<string>("detection.svm.classifierFile");
-	string svmLogisticParametersFile = pt.get<string>("detection.svm.logisticParametersFile");
 
-	float svmThreshold = pt.get<float>("detection.svm.threshold", -1.2f);	// If the key doesn't exist in the config, set it to -1.2 (default value).
+	ptree ptClassifiers = pt.get_child("classifiers");
+	unordered_multimap<string, shared_ptr<ProbabilisticClassifier>> classifiers;
+	for_each(begin(ptClassifiers), end(ptClassifiers), [&classifiers](ptree::value_type kv) {
+		// TODO: 1) error handling if a key doesn't exist
+		//		 2) make more dynamic, search for wvm or svm and add respective to map
+		string classifierFile = kv.second.get<string>("wvm.classifierFile");
+		string thresholdsFile = kv.second.get<string>("wvm.thresholdsFile");
+		classifiers.insert(make_pair(kv.first + ".wvm", ProbabilisticWvmClassifier::loadMatlab(classifierFile, thresholdsFile)));		
+	});
 
-	/* Note: We could change/write/add something to the config with
-	pt.put("detection.svm.threshold", -0.5f);
-	If the value already exists, it gets overwritten, if not, it gets created.
-	Save it with:
-	write_info("C:\\Users\\Patrik\\Documents\\GitHub\\ffpDetectApp.cfg", pt);
-	*/
-
-	shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadMatlab(wvmClassifierFile, wvmThresholdsFile);
-	shared_ptr<ProbabilisticSvmClassifier> psvm = ProbabilisticSvmClassifier::loadMatlab(svmClassifierFile, svmLogisticParametersFile);
-
-	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(pt.get<float>("detection.imagePyramid.minScaleFactor", 0.09f), pt.get<float>("detection.imagePyramid.maxScaleFactor", 0.25f), pt.get<float>("detection.imagePyramid.incrementalScaleFactor", 0.9f));	// (0.09, 0.25, 0.9) is nearly the same as old 90, 9, 0.9
+	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(pt.get<float>("imagePyramid.minScaleFactor", 0.09f), pt.get<float>("imagePyramid.maxScaleFactor", 0.25f), pt.get<float>("imagePyramid.incrementalScaleFactor", 0.9f));	// (0.09, 0.25, 0.9) is nearly the same as old 90, 9, 0.9
 	pyr->addImageFilter(make_shared<GrayscaleFilter>());
 	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(pyr, 20, 20);
 	featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
 
-	shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm, featureExtractor);
-	shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(pt.get<float>("detection.overlapElimination.dist", 5.0f), pt.get<float>("detection.overlapElimination.ratio", 0.0f));
-	psvm->getSvm()->setThreshold(svmThreshold);
+	// TODO: Better: include this in the loading above. e.g. create ProbabilisticWvmClassifier::load(ptree), which
+	// loads ProbabilisticWvmClassifier::loadMatlab and sets the parameters.
+	shared_ptr<ProbabilisticWvmClassifier> test = dynamic_pointer_cast<ProbabilisticWvmClassifier>(classifiers.find("faceFrontal.wvm")->second);
+	test->getWvm()->setNumUsedFilters(280);
+
+	unordered_multimap<string, shared_ptr<SlidingWindowDetector>> detectors;
+	for(auto classifier : classifiers) {
+		detectors.insert(make_pair(classifier.first, make_shared<SlidingWindowDetector>(classifier.second, featureExtractor)));
+	}
 
 	Mat img;
 
@@ -223,17 +275,38 @@ int main(int argc, char *argv[])
 		std::chrono::time_point<std::chrono::system_clock> start, end;
 		start = std::chrono::system_clock::now();
 
-		vector<shared_ptr<ClassifiedPatch>> resultingPatches = det->detect(img);
+		int det=0;
+		for(auto detector : detectors) {
+			vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img);
+			Mat imgDet = img.clone();
+			drawFaceBoxes(imgDet, resultingPatches);
+			if(det==0) {
+				drawWindow(imgDet, detector.first, 0, 0);
+			} else if(det==1) {
+				drawWindow(imgDet, detector.first, 500, 0);
+			} else if(det==2) {
+				drawWindow(imgDet, detector.first, 0, 500);
+			} else if(det==3) {
+				drawWindow(imgDet, detector.first, 500, 500);
+			}
 
+			
 
-		Mat imgWvm = img.clone();
-		for(auto pit = resultingPatches.begin(); pit != resultingPatches.end(); pit++) {
-			shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
-			shared_ptr<Patch> patch = classifiedPatch->getPatch();
-			cv::rectangle(imgWvm, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
+			/*Mat faceRegionProbabilityMap = getFaceRegionProbabilityMapFromPatchlist(resultingPatches, img.cols, img.rows);
+			faceRegionProbabilityMap *= 255.0f;
+			faceRegionProbabilityMap.convertTo(faceRegionProbabilityMap, CV_8UC1);
+			cv::namedWindow("pr", CV_WINDOW_AUTOSIZE); cv::imshow("pr", faceRegionProbabilityMap);
+			cvMoveWindow("pr", 512, 0);
+			cv::waitKey(0);
+			*/
+			++det;
 		}
-		cv::namedWindow("wvm", CV_WINDOW_AUTOSIZE); cv::imshow("wvm", imgWvm);
-		cvMoveWindow("wvm", 0, 0);
+		cv::waitKey(0);
+		
+		end = std::chrono::system_clock::now();
+		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
+		std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+		std::cout << "Elapsed time: " << elapsed_mseconds << "ms\n";
 	}
 
 	return 0;

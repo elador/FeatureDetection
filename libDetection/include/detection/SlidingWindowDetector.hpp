@@ -66,6 +66,14 @@ public:
 	 */
 	vector<shared_ptr<ClassifiedPatch>> detect(shared_ptr<VersionedImage> image);
 
+	/**
+	 * Processes the image in a sliding window fashion and return a probability map for each scale.
+	 *
+	 * @param[in] image The image to process.
+	 * @return A probability map for each scale.
+	 */
+	vector<Mat> calculateProbabilityMaps(const Mat& image);
+
 private:
 
 	/**
