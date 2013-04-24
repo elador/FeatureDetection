@@ -5,7 +5,7 @@ SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # find dependencies
-FIND_PACKAGE(Boost 1.48.0 COMPONENTS filesystem REQUIRED)
+FIND_PACKAGE(Boost 1.48.0 COMPONENTS filesystem REQUIRED)	# Patrik: I think we need 'system' too, if the app doesn't link to it, ImageIO fails to link.
 FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")

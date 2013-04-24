@@ -152,6 +152,7 @@ private:
 		}
 		fPos[2] = 0;
 		int vertexNumber = boost::lexical_cast<int>(fVertexNumber);
+		name = didToTlmsName(vertexNumber);
 		return Landmark(name, fPos, true);
 	}
 
@@ -163,42 +164,42 @@ private:
 			didLmMapping.insert(make_pair( 610, "left.eye.corner_outer"));
 			didLmMapping.insert(make_pair( 114, "center.nose.tip"));
 			//didLmMapping.insert(make_pair(  35, "center.chin.tip"));	// I think the .did Chin-tip is about 1cm farther up
-			didLmMapping.insert(make_pair( 181, "right.eye.corner_inner")); // TODO double-check
-			didLmMapping.insert(make_pair(1125, ""));
-			didLmMapping.insert(make_pair(1180, ""));
-			didLmMapping.insert(make_pair( 614, ""));
-			didLmMapping.insert(make_pair(2368, ""));
-			didLmMapping.insert(make_pair(2425, ""));
-			didLmMapping.insert(make_pair( 438, ""));
-			didLmMapping.insert(make_pair( 398, ""));
-			didLmMapping.insert(make_pair( 812, ""));
-			didLmMapping.insert(make_pair( 329, ""));
-			didLmMapping.insert(make_pair( 423, ""));
-			didLmMapping.insert(make_pair( 442, ""));
-			didLmMapping.insert(make_pair( 411, ""));
-			didLmMapping.insert(make_pair( 225, ""));
-			didLmMapping.insert(make_pair( 157, ""));
-			didLmMapping.insert(make_pair( 233, ""));
-			didLmMapping.insert(make_pair(  79, ""));
-			didLmMapping.insert(make_pair( 658, ""));
-			didLmMapping.insert(make_pair( 590, ""));
-			didLmMapping.insert(make_pair( 666, ""));
-			didLmMapping.insert(make_pair( 516, ""));
-			didLmMapping.insert(make_pair( 332, ""));
-			didLmMapping.insert(make_pair( 295, ""));
-			didLmMapping.insert(make_pair( 379, ""));
-			didLmMapping.insert(make_pair( 270, ""));
-			didLmMapping.insert(make_pair( 440, ""));
-			didLmMapping.insert(make_pair( 314, ""));
-			didLmMapping.insert(make_pair( 416, ""));
-			didLmMapping.insert(make_pair( 404, ""));
-			didLmMapping.insert(make_pair( 263, ""));
-			didLmMapping.insert(make_pair( 735, ""));
-			didLmMapping.insert(make_pair( 828, ""));
-			didLmMapping.insert(make_pair( 817, ""));
-			didLmMapping.insert(make_pair( 692, ""));
-			didLmMapping.insert(make_pair( 359, ""));
-			didLmMapping.insert(make_pair( 776, ""));
+			didLmMapping.insert(make_pair( 181, "right.eye.corner_inner"));
+			didLmMapping.insert(make_pair(1125, "right.eye.top"));	// Should check that in model
+			didLmMapping.insert(make_pair(1180, "right.eye.bottom"));
+			didLmMapping.insert(make_pair( 614, "left.eye.corner_inner"));
+			didLmMapping.insert(make_pair(2368, "left.eye.top"));
+			didLmMapping.insert(make_pair(2425, "left.eye.bottom"));
+			//didLmMapping.insert(make_pair( 438, ""));
+			didLmMapping.insert(make_pair( 398, "right.lips.corner"));
+			didLmMapping.insert(make_pair( 812, "left.lips.corner"));
+			didLmMapping.insert(make_pair( 329, "center.lips.upper.outer"));
+			didLmMapping.insert(make_pair( 423, "center.lips.upper.inner"));
+			didLmMapping.insert(make_pair( 442, "center.lips.lower.inner"));
+			didLmMapping.insert(make_pair( 411, "center.lips.lower.outer"));
+			didLmMapping.insert(make_pair( 225, "right.eyebrow.bend.lower"));
+			didLmMapping.insert(make_pair( 157, "right.eyebrow.inner_lower"));
+			//didLmMapping.insert(make_pair( 233, ""));
+			//didLmMapping.insert(make_pair(  79, "")); // Some nose-LM, look up in gravis pics
+			didLmMapping.insert(make_pair( 658, "left.eyebrow.bend.lower"));
+			didLmMapping.insert(make_pair( 590, "left.eyebrow.inner_lower"));
+			//didLmMapping.insert(make_pair( 666, ""));
+			//didLmMapping.insert(make_pair( 516, "")); // Some nose-LM, look up in gravis pics
+			//didLmMapping.insert(make_pair( 332, ""));
+			//didLmMapping.insert(make_pair( 295, ""));
+			//didLmMapping.insert(make_pair( 379, ""));
+			//didLmMapping.insert(make_pair( 270, "")); // Maybe center.nose.attachement_to_philtrum?
+			//didLmMapping.insert(make_pair( 440, ""));
+			//didLmMapping.insert(make_pair( 314, ""));
+			//didLmMapping.insert(make_pair( 416, ""));
+			//didLmMapping.insert(make_pair( 404, ""));
+			//didLmMapping.insert(make_pair( 263, ""));
+			//didLmMapping.insert(make_pair( 735, ""));
+			//didLmMapping.insert(make_pair( 828, ""));
+			//didLmMapping.insert(make_pair( 817, ""));
+			//didLmMapping.insert(make_pair( 692, ""));
+			//didLmMapping.insert(make_pair( 359, "")); // Right ear-jaw junction (...)
+			//didLmMapping.insert(make_pair( 776, "")); // Left ear-jaw junction (...)
 		}
 	}
 

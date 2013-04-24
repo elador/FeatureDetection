@@ -73,10 +73,10 @@ public:
 	 * parameters, then passes the loading to the underlying WVM which loads the vectors and thresholds
 	 * from the matlab file.
 	 *
-	 * @param[in] config The subtree containing the config information for this classifier.
+	 * @param[in] subtree The subtree containing the config information for this classifier.
 	 * @return The newly created probabilistic WVM classifier.
 	 */
-	static shared_ptr<ProbabilisticWvmClassifier> loadConfig(/*TODO const */ptree config);
+	static shared_ptr<ProbabilisticWvmClassifier> loadConfig(const ptree& subtree);
 
 
 private:
