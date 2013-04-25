@@ -1,11 +1,11 @@
 /*
- * DirectoryImageSource.cpp
+ * FileImageSource.hpp
  *
- *  Created on: 20.08.2012
- *      Author: poschmann
+ *  Created on: 24.04.2013
+ *      Author: Patrik Huber
  */
 
-#include "imageio/DirectoryImageSource.hpp"
+#include "imageio/FileImageSource.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include <iostream>
 
@@ -18,7 +18,7 @@ using std::sort;
 
 namespace imageio {
 
-DirectoryImageSource::DirectoryImageSource(string directory) : files(), index(0) {
+FileImageSource::FileImageSource(string directory) : files(), index(0) {
 	path path(directory);
 	if (!exists(path))
 		std::cerr << "directory '" << directory << "' does not exist" << std::endl;
@@ -34,9 +34,9 @@ DirectoryImageSource::DirectoryImageSource(string directory) : files(), index(0)
 	sort(files.begin(), files.end());
 }
 
-DirectoryImageSource::~DirectoryImageSource() {}
+FileImageSource::~FileImageSource() {}
 
-const Mat DirectoryImageSource::get() {
+const Mat FileImageSource::get() {
 	if (index >= files.size())
 		return Mat();
 	return imread(files[index++].string(), 1);

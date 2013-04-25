@@ -1,12 +1,12 @@
 /*
- * DirectoryImageSource.hpp
+ * FileListImageSource.hpp
  *
- *  Created on: 20.08.2012
- *      Author: poschmann
+ *  Created on: 24.04.2013
+ *      Author: Patrik Huber
  */
 
-#ifndef DIRECTORYIMAGESOURCE_HPP_
-#define DIRECTORYIMAGESOURCE_HPP_
+#ifndef FILELISTIMAGESOURCE_HPP_
+#define FILELISTIMAGESOURCE_HPP_
 
 #include "ImageSource.hpp"
 #ifdef WIN32
@@ -25,7 +25,7 @@ namespace imageio {
 /**
  * Image source that takes the images of a directory.
  */
-class DirectoryImageSource : public ImageSource {
+class FileListImageSource : public ImageSource {
 public:
 
 	/**
@@ -33,9 +33,9 @@ public:
 	 *
 	 * @param[in] directory The directory containing image files.
 	 */
-	DirectoryImageSource(string directory);
+	FileListImageSource(string directory);
 
-	virtual ~DirectoryImageSource();
+	virtual ~FileListImageSource();
 
 	const Mat get();
 
@@ -46,4 +46,4 @@ private:
 };
 
 } /* namespace imageio */
-#endif /* DIRECTORYIMAGESOURCE_HPP_ */
+#endif /* FILELISTIMAGESOURCE_HPP_ */
