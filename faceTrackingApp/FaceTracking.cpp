@@ -17,6 +17,11 @@
 #include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
 #include "imageprocessing/HistEq64Filter.hpp"
+#include "imageprocessing/WhiteningFilter.hpp"
+#include "imageprocessing/HistogramEqualizationFilter.hpp"
+#include "imageprocessing/ZeroMeanUnitVarianceFilter.hpp"
+#include "imageprocessing/ReshapingFilter.hpp"
+#include "imageprocessing/ConversionFilter.hpp"
 #include "classification/WvmClassifier.hpp"
 #include "classification/SvmClassifier.hpp"
 #include "classification/ProbabilisticWvmClassifier.hpp"
@@ -26,8 +31,7 @@
 #include "condensation/LowVarianceSampling.hpp"
 #include "condensation/SimpleTransitionModel.hpp"
 #include "condensation/WvmSvmModel.hpp"
-#include "condensation/SelfLearningMeasurementModel.hpp"
-#include "condensation/PositionDependentMeasurementModel.hpp"
+#include "condensation/SingleClassifierModel.hpp"
 #include "condensation/FilteringPositionExtractor.hpp"
 #include "condensation/WeightedMeanPositionExtractor.hpp"
 #include "condensation/Sample.hpp"
@@ -75,6 +79,26 @@ void FaceTracking::initTracking() {
 	shared_ptr<ProbabilisticWvmClassifier> wvm = ProbabilisticWvmClassifier::loadMatlab(svmConfigFile1, svmConfigFile2);
 	shared_ptr<ProbabilisticSvmClassifier> svm = ProbabilisticSvmClassifier::loadMatlab(svmConfigFile1, svmConfigFile2);
 	measurementModel = make_shared<WvmSvmModel>(featureExtractor, wvm, svm);
+
+//	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(31, 31, 80, 480, 0.85);
+//	featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+//	featureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
+//	featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
+//	featureExtractor->addPatchFilter(make_shared<ZeroMeanUnitVarianceFilter>());
+//	featureExtractor->addPatchFilter(make_shared<ReshapingFilter>(1));
+//	string svmConfigFile = "/home/poschmann/projects/ffd/whi-head-svm/discGrayscaleWhi";
+//	shared_ptr<ProbabilisticSvmClassifier> svm = make_shared<ProbabilisticSvmClassifier>(SvmClassifier::loadText(svmConfigFile));
+//	svm->getSvm()->setThreshold(600);
+//	measurementModel = make_shared<SingleClassifierModel>(featureExtractor, svm);
+
+//	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(31, 31, 80, 480, 0.85);
+//	featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+//	featureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0/255.0));
+//	featureExtractor->addPatchFilter(make_shared<ReshapingFilter>(1));
+//	string svmConfigFile = "/home/poschmann/projects/ffd/whi-head-svm/discGrayscale";
+//	shared_ptr<ProbabilisticSvmClassifier> svm = make_shared<ProbabilisticSvmClassifier>(SvmClassifier::loadText(svmConfigFile));
+//	svm->getSvm()->setThreshold(0);
+//	measurementModel = make_shared<SingleClassifierModel>(featureExtractor, svm);
 
 	// create tracker
 	unsigned int count = 800;

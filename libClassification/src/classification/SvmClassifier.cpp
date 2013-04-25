@@ -11,6 +11,7 @@
 #include "logging/LoggerFactory.hpp"
 #include "mat.h"
 #include <stdexcept>
+#include <fstream>
 
 using logging::Logger;
 using logging::LoggerFactory;
@@ -128,6 +129,85 @@ shared_ptr<SvmClassifier> SvmClassifier::loadMatlab(const string& classifierFile
 	if (matClose(pmatfile) != 0) {
 		logger.warn("SvmClassifier: Could not close file " + classifierFilename);
 		// TODO What is this? An error? Info? Throw an exception?
+	}
+
+	logger.info("SVM successfully read.");
+
+	return svm;
+}
+
+shared_ptr<SvmClassifier> SvmClassifier::loadText(const string& classifierFilename)
+{
+	Logger logger = Loggers->getLogger("classification");
+	logger.info("Loading SVM classifier from text file: " + classifierFilename);
+
+	std::ifstream file(classifierFilename.c_str());
+	if (!file.is_open())
+		throw runtime_error("SvmClassifier: Invalid classifier file");
+
+	string line;
+	if (!std::getline(file, line))
+		throw runtime_error("SvmClassifier: Invalid classifier file");
+
+	// read kernel parameters
+	shared_ptr<Kernel> kernel;
+	std::istringstream lineStream(line);
+	if (lineStream.good() && !lineStream.fail()) {
+		string kernelType;
+		lineStream >> kernelType;
+		if (kernelType != "FullPolynomial")
+			throw runtime_error("SvmClassifier: Invalid kernel type: " + kernelType);
+		int degree;
+		double constant, scale;
+		lineStream >> degree >> constant >> scale;
+		kernel.reset(new PolynomialKernel(scale, constant, degree));
+	}
+
+	shared_ptr<SvmClassifier> svm = make_shared<SvmClassifier>(kernel);
+
+	int svCount;
+	if (!std::getline(file, line))
+		throw runtime_error("SvmClassifier: Invalid classifier file");
+	std::sscanf(line.c_str(), "Number of SV : %d", &svCount);
+
+	int dimensionCount;
+	if (!std::getline(file, line))
+		throw runtime_error("SvmClassifier: Invalid classifier file");
+	std::sscanf(line.c_str(), "Dim of SV : %d", &dimensionCount);
+
+	float bias;
+	if (!std::getline(file, line))
+		throw runtime_error("SvmClassifier: Invalid classifier file");
+	std::sscanf(line.c_str(), "B0 : %f", &bias);
+	svm->bias = bias;
+
+	// coefficients
+	svm->coefficients.resize(svCount);
+	for (int i = 0; i < svCount; ++i) {
+		float alpha;
+		int index;
+		if (!std::getline(file, line))
+			throw runtime_error("SvmClassifier: Invalid classifier file");
+		std::sscanf(line.c_str(), "alphas[%d]=%f", &index, &alpha);
+		svm->coefficients[index] = alpha;
+	}
+
+	// read line containing "Support vectors: "
+	if (!std::getline(file, line))
+		throw runtime_error("SvmClassifier: Invalid classifier file");
+	// read support vectors
+	svm->supportVectors.reserve(svCount);
+	for (int i = 0; i < svCount; ++i) {
+		Mat vector(1, dimensionCount, CV_32F);
+		if (!std::getline(file, line))
+			throw runtime_error("SvmClassifier: Invalid classifier file");
+		std::istringstream lineStream(line);
+		if (!lineStream.good() || lineStream.fail())
+			throw runtime_error("SvmClassifier: Invalid classifier file");
+		float* values = vector.ptr<float>(0);
+		for (int j = 0; j < dimensionCount; ++j)
+			lineStream >> values[j];
+		svm->supportVectors.push_back(vector);
 	}
 
 	logger.info("SVM successfully read.");

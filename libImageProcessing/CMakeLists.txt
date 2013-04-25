@@ -28,6 +28,7 @@ SET(HEADERS
 	include/imageprocessing/MultipleImageFilter.hpp
 	include/imageprocessing/Patch.hpp
 	include/imageprocessing/PyramidFeatureExtractor.hpp
+	include/imageprocessing/ReshapingFilter.hpp
 	include/imageprocessing/ResizingFilter.hpp
 	include/imageprocessing/VersionedImage.hpp
 	include/imageprocessing/WhiteningFilter.hpp
@@ -46,6 +47,7 @@ SET(SOURCE
 	src/imageprocessing/ImagePyramidLayer.cpp
 	src/imageprocessing/IntegralImageFilter.cpp
 	src/imageprocessing/MultipleImageFilter.cpp
+	src/imageprocessing/ReshapingFilter.cpp
 	src/imageprocessing/ResizingFilter.cpp
 	src/imageprocessing/WhiteningFilter.cpp
 	src/imageprocessing/ZeroMeanUnitVarianceFilter.cpp
