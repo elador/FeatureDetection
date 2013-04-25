@@ -23,7 +23,7 @@ ENDIF(MATLAB_FOUND)
 INCLUDE_DIRECTORIES(${MATLAB_INCLUDE_DIR})
 
 #Boost:
-FIND_PACKAGE(Boost 1.48.0 COMPONENTS program_options REQUIRED) # others (e.g.): system filesystem
+FIND_PACKAGE(Boost 1.48.0 COMPONENTS program_options filesystem system REQUIRED) # others (e.g.): system filesystem
 if(Boost_FOUND)
   MESSAGE(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
 ELSE(Boost_FOUND)

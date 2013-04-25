@@ -93,4 +93,9 @@ shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadMatlab(co
 	return make_shared<ProbabilisticWvmClassifier>(wvm, logisticA, logisticB);
 }
 
+shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadConfig(const ptree& subtree)
+{
+	return loadMatlab(subtree.get<string>("classifierFile"), subtree.get<string>("thresholdsFile"));
+}
+
 } /* namespace classification */

@@ -65,6 +65,7 @@
 
 #include "imageio/LandmarksHelper.hpp"
 #include "imageio/FaceBoxLandmark.hpp"
+#include "imageio/DirectoryImageSource.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -109,12 +110,23 @@ Mat getFaceRegionProbabilityMapFromPatchlist(vector<shared_ptr<ClassifiedPatch>>
 		const unsigned int py = patch->getPatch()->getBounds().y;
 		for (unsigned int currX = px; currX < px+pw-1; ++currX) {	// Note: I'm not exactly sure why the "-1" is necessary,
 			for (unsigned int currY = py; currY < py+ph-1; ++currY) { // but without it, it goes beyond the image bounds
+
+				if(currX>=faceRegionProbabilityMap.cols) {
+					cv::imwrite("TEST.png", patch->getPatch()->getData());
+				}
+
 				if (patch->getProbability() > faceRegionProbabilityMap.at<float>(currY, currX)) {
 					faceRegionProbabilityMap.at<float>(currY, currX) = patch->getProbability();
 				}
 			}
 		}
 	}
+	/* Idea for improvement:
+		Create a probability map for each scale first (the centers, not the region).
+		Then, weight each point with the surrounding 8 (or more, or also in scale-dir)
+		detections. This is a re-weighting of the probabilities. Then calculate the new
+		face-region-probMap. (or do/combine this directly?)
+	*/
 
 	return faceRegionProbabilityMap;
 }
@@ -148,7 +160,9 @@ int main(int argc, char *argv[])
 	int verbose_level_images;
 	bool useFileList = false;
 	bool useImgs = false;
+	bool useDirectory = false;
 	string fn_fileList;
+	string directory;
 	vector<std::string> filenames;
 	vector<FaceBoxLandmark> groundtruthFaceBoxes;
 	
@@ -160,9 +174,10 @@ int main(int argc, char *argv[])
                   "enable text-verbosity (optionally specify level)")
             ("verbose-images,w", po::value<int>(&verbose_level_images)->implicit_value(2)->default_value(1,"minimal image output"),
                   "enable image-verbosity (optionally specify level)")
-            ("file-list,f", po::value< string >(), 
+            ("file-list,f", po::value<string>(), 
                   "a .lst file to process")
-            ("input-file,i", po::value< vector<string> >(), "input image")
+            ("input-file,i", po::value<vector<string>>(), "input image")
+			("input-directory,d", po::value<string>(), "input directory")
         ;
 
         po::positional_options_description p;
@@ -190,6 +205,12 @@ int main(int argc, char *argv[])
 			useImgs = true;
 			filenames = vm["input-file"].as< vector<string> >();
         }
+		if (vm.count("input-directory"))
+		{
+			cout << "[ffpDetectApp] Using input images: " << vm["input-directory"].as<string>() << "\n";
+			useDirectory = true;
+			directory = vm["input-directory"].as<string>();
+		}
         if (vm.count("verbose-text")) {
             cout << "[ffpDetectApp] Verbose level for text: " << vm["verbose-text"].as<int>() << "\n";
         }
@@ -201,11 +222,18 @@ int main(int argc, char *argv[])
         cout << e.what() << "\n";
         return 1;
     }
-	if(useFileList==true && useImgs==true) {
-		cout << "[ffpDetectApp] Error: Please either specify a file-list OR an input-file, not both!" << endl;
-		return 1;
-	} else if(useFileList==false && useImgs==false) {
-		cout << "[ffpDetectApp] Error: Please either specify a file-list or an input-file to run the program!" << endl;
+	int numInputs = 0;
+	if(useFileList==true) {
+		numInputs++;
+	}
+	if(useImgs==true) {
+		numInputs++;
+	}
+	if(useDirectory==true) {
+		numInputs++;
+	}
+	if(numInputs!=1) {
+		cout << "[ffpDetectApp] Error: Please either specify a file-list, an input-file or a directory (and only one of them) to run the program!" << endl;
 		return 1;
 	}
 
@@ -230,6 +258,11 @@ int main(int argc, char *argv[])
 		}
 		fileList.close();
 	}
+	shared_ptr<DirectoryImageSource> imagesFromDirectory;
+	if(useDirectory) {
+		imagesFromDirectory = make_shared<DirectoryImageSource>(directory);
+		filenames.resize(20);
+	}
 	// Else useImgs==true: filesnames are already in "filenames", and no groundtruth available!
 
 	/* Testing ground */
@@ -245,10 +278,10 @@ int main(int argc, char *argv[])
 	unordered_multimap<string, shared_ptr<ProbabilisticClassifier>> classifiers;
 	for_each(begin(ptClassifiers), end(ptClassifiers), [&classifiers](ptree::value_type kv) {
 		// TODO: 1) error handling if a key doesn't exist
-		//		 2) make more dynamic, search for wvm or svm and add respective to map
-		string classifierFile = kv.second.get<string>("wvm.classifierFile");
-		string thresholdsFile = kv.second.get<string>("wvm.thresholdsFile");
-		classifiers.insert(make_pair(kv.first + ".wvm", ProbabilisticWvmClassifier::loadMatlab(classifierFile, thresholdsFile)));		
+		//		 2) make more dynamic, search for wvm or svm and add respective to map, or even just check if it's a WVM
+		//				This would require another for_each and check if kv.first is 'wvm' or a .get...?
+		ptree wvm = kv.second.get_child("wvm");	// TODO add error checking
+		classifiers.insert(make_pair(kv.first + ".wvm", ProbabilisticWvmClassifier::loadConfig(wvm)));
 	});
 
 	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(pt.get<float>("imagePyramid.minScaleFactor", 0.09f), pt.get<float>("imagePyramid.maxScaleFactor", 0.25f), pt.get<float>("imagePyramid.incrementalScaleFactor", 0.9f));	// (0.09, 0.25, 0.9) is nearly the same as old 90, 9, 0.9
@@ -258,8 +291,8 @@ int main(int argc, char *argv[])
 
 	// TODO: Better: include this in the loading above. e.g. create ProbabilisticWvmClassifier::load(ptree), which
 	// loads ProbabilisticWvmClassifier::loadMatlab and sets the parameters.
-	shared_ptr<ProbabilisticWvmClassifier> test = dynamic_pointer_cast<ProbabilisticWvmClassifier>(classifiers.find("faceFrontal.wvm")->second);
-	test->getWvm()->setNumUsedFilters(280);
+	//shared_ptr<ProbabilisticWvmClassifier> test = dynamic_pointer_cast<ProbabilisticWvmClassifier>(classifiers.find("faceFrontal.wvm")->second);
+	//test->getWvm()->setNumUsedFilters(280);
 
 	unordered_multimap<string, shared_ptr<SlidingWindowDetector>> detectors;
 	for(auto classifier : classifiers) {
@@ -269,13 +302,18 @@ int main(int argc, char *argv[])
 	Mat img;
 
 	for(unsigned int i=0; i< filenames.size(); i++) {
-		img = cv::imread(filenames[i]);
+		if(useDirectory) {
+			img = imagesFromDirectory->get();
+		} else {
+			img = cv::imread(filenames[i]);
+		}
 		cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
 		cvMoveWindow("src", 0, 0);
 		std::chrono::time_point<std::chrono::system_clock> start, end;
 		start = std::chrono::system_clock::now();
 
 		int det=0;
+		vector<Mat> regionProbMaps;
 		for(auto detector : detectors) {
 			vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img);
 			Mat imgDet = img.clone();
@@ -290,18 +328,19 @@ int main(int argc, char *argv[])
 				drawWindow(imgDet, detector.first, 500, 500);
 			}
 
-			
+			Mat faceRegionProbabilityMap = getFaceRegionProbabilityMapFromPatchlist(resultingPatches, img.cols, img.rows);
+			regionProbMaps.push_back(faceRegionProbabilityMap);
 
-			/*Mat faceRegionProbabilityMap = getFaceRegionProbabilityMapFromPatchlist(resultingPatches, img.cols, img.rows);
-			faceRegionProbabilityMap *= 255.0f;
-			faceRegionProbabilityMap.convertTo(faceRegionProbabilityMap, CV_8UC1);
-			cv::namedWindow("pr", CV_WINDOW_AUTOSIZE); cv::imshow("pr", faceRegionProbabilityMap);
-			cvMoveWindow("pr", 512, 0);
-			cv::waitKey(0);
-			*/
 			++det;
 		}
+
+		Mat wholeFaceRegionProbabilityMap = 0.33*regionProbMaps[0]+0.33*regionProbMaps[1]+0.33*regionProbMaps[2];
+		wholeFaceRegionProbabilityMap *= 255.0f;
+		wholeFaceRegionProbabilityMap.convertTo(wholeFaceRegionProbabilityMap, CV_8UC1);
+		cv::namedWindow("pr", CV_WINDOW_AUTOSIZE); cv::imshow("pr", wholeFaceRegionProbabilityMap);
+		cvMoveWindow("pr", 500, 500);
 		cv::waitKey(0);
+
 		
 		end = std::chrono::system_clock::now();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
