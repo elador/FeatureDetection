@@ -307,7 +307,6 @@ void AdaptiveTracking::stop() {
 }
 
 int main(int argc, char *argv[]) {
-	// TODO svmConfigFile will be ignored by now
 	int verboseLevelText;
 	int verboseLevelImages;
 	int deviceId, kinectId;
@@ -337,7 +336,7 @@ int main(int argc, char *argv[]) {
 		po::notify(vm);
 
 		if (vm.count("help")) {
-			std::cout << "Usage: faceTrackingApp [options]" << std::endl;
+			std::cout << "Usage: adaptiveTrackingApp [options]" << std::endl;
 			std::cout << desc;
 			return 0;
 		}

@@ -24,7 +24,10 @@ Mat ZeroMeanUnitVarianceFilter::applyTo(const Mat& image, Mat& filtered) {
 	Scalar mean, deviation;
 	meanStdDev(image, mean, deviation);
 	image.convertTo(filtered, CV_32F);
-	filtered = (filtered - mean) / deviation[0];
+	if (deviation[0] == 0)
+		filtered = Scalar(0);
+	else
+		filtered = (filtered - mean) / deviation[0];
 	return filtered;
 }
 

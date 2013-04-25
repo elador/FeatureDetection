@@ -71,6 +71,14 @@ public:
 	 */
 	static shared_ptr<SvmClassifier> loadMatlab(const string& classifierFilename);
 
+	/**
+	 * Creates a new SVM classifier from the parameters given in some text file.
+	 *
+	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
+	 * @return The newly created SVM classifier.
+	 */
+	static shared_ptr<SvmClassifier> loadText(const string& classifierFilename);
+
 private:
 
 	vector<Mat> supportVectors; ///< The support vectors.

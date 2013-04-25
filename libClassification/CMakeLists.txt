@@ -21,8 +21,6 @@ ENDIF(MATLAB_FOUND)
 
 # source and header files
 SET(HEADERS
-#	include/classification/RegressorSVR.h
-#	include/classification/RegressorWVR.h
 	include/classification/TrainableProbabilisticTwoStageClassifier.hpp
 	include/classification/ProbabilisticTwoStageClassifier.hpp
 	include/classification/WvmClassifier.hpp
@@ -48,8 +46,6 @@ SET(HEADERS
 	include/svm.h
 )
 SET(SOURCE
-#	src/classification/RegressorSVR.cpp
-#	src/classification/RegressorWVR.cpp
 	src/classification/ProbabilisticTwoStageClassifier.cpp
 	src/classification/WvmClassifier.cpp
 	src/classification/IImg.cpp
