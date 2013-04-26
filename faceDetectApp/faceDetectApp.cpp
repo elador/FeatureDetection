@@ -66,6 +66,8 @@
 #include "imageio/LandmarksHelper.hpp"
 #include "imageio/FaceBoxLandmark.hpp"
 #include "imageio/DirectoryImageSource.hpp"
+#include "imageio/FileImageSource.hpp"
+#include "imageio/RepeatingFileImageSource.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -164,6 +166,7 @@ int main(int argc, char *argv[])
 	string fn_fileList;
 	string directory;
 	vector<std::string> filenames;
+	shared_ptr<ImageSource> imageSource;
 	vector<FaceBoxLandmark> groundtruthFaceBoxes;
 	
 	try {
@@ -258,21 +261,27 @@ int main(int argc, char *argv[])
 		}
 		fileList.close();
 	}
-	shared_ptr<DirectoryImageSource> imagesFromDirectory;
-	if(useDirectory) {
-		imagesFromDirectory = make_shared<DirectoryImageSource>(directory);
-		filenames.resize(20);
-	}
+
 	// Else useImgs==true: filesnames are already in "filenames", and no groundtruth available!
 
 	/* Testing ground */
-
+	if(useFileList==true) {
+		
+	}
+	if(useImgs==true) {
+		//imageSource = make_shared<FileImageSource>(filenames);
+		imageSource = make_shared<RepeatingFileImageSource>("C:\\Users\\Patrik\\GitHub\\data\\firstrun\\ws_8.png");
+	}
+	if(useDirectory==true) {
+		imageSource = make_shared<DirectoryImageSource>(directory);
+	}
+	
 	/* END */
 
 	Loggers->getLogger("classification").addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
 	
 	ptree pt;
-	read_info("C:\\Users\\Patrik\\Documents\\GitHub\\faceDetectApp.cfg", pt);		
+	read_info("C:\\Users\\Patrik\\GitHub\\faceDetectApp.cfg", pt);		// TODO add check if file exists/throw
 
 	ptree ptClassifiers = pt.get_child("classifiers");
 	unordered_multimap<string, shared_ptr<ProbabilisticClassifier>> classifiers;
@@ -301,12 +310,8 @@ int main(int argc, char *argv[])
 
 	Mat img;
 
-	for(unsigned int i=0; i< filenames.size(); i++) {
-		if(useDirectory) {
-			img = imagesFromDirectory->get();
-		} else {
-			img = cv::imread(filenames[i]);
-		}
+	while ((img = imageSource->get()).rows != 0) { // TODO Can we check against !=Mat() somehow? or .empty?
+
 		cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
 		cvMoveWindow("src", 0, 0);
 		std::chrono::time_point<std::chrono::system_clock> start, end;
@@ -333,14 +338,14 @@ int main(int argc, char *argv[])
 
 			++det;
 		}
-
+		/*
 		Mat wholeFaceRegionProbabilityMap = 0.33*regionProbMaps[0]+0.33*regionProbMaps[1]+0.33*regionProbMaps[2];
 		wholeFaceRegionProbabilityMap *= 255.0f;
 		wholeFaceRegionProbabilityMap.convertTo(wholeFaceRegionProbabilityMap, CV_8UC1);
 		cv::namedWindow("pr", CV_WINDOW_AUTOSIZE); cv::imshow("pr", wholeFaceRegionProbabilityMap);
 		cvMoveWindow("pr", 500, 500);
 		cv::waitKey(0);
-
+		*/
 		
 		end = std::chrono::system_clock::now();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
@@ -352,3 +357,23 @@ int main(int argc, char *argv[])
 }
 
 	// My cmdline-arguments: -f C:\Users\Patrik\Documents\GitHub\data\firstrun\theRealWorld_png2.lst
+
+
+/* TODOs:
+Hmm, was hältst du von einer FileImageSource und FileListImageSource ?
+Bin grad am überlegen, wie ichs unter einen Hut krieg, sowohl von Ordnern, Bildern wie auch einer Bilder-Liste laden zu können
+[15:30:44] Patrik: Das nächste problem wird dann, dass ich die Bilder gerne auch mit Landmarks (also gelabelter groundtruth) laden möchte, manchmal, falls vorhanden.
+Frage mich grad wie wir das mit den *ImageSource's kombinieren könnten.
+[16:10:44] ex-ratt: jo, sowas schwirrte mir auch mal im kopf herum - ground-truth-daten mitladen
+[16:11:32] ex-ratt: habe mir aber bisher keine weiteren gedanken gemacht, wollte das aber irgendwie in die image-sources mit reinkriegen bzw. spezielle abgeleitete image-sources basteln, die diese zusatzinfo beinhalten
+[16:12:44] Patrik: Jop... ok joa das klingt sehr gut, falls du dich da nicht in den nächsten tagen dran machst, werd ich es tun!
+
+Nochn comment zum oberen: Evtl sollten wir die DirectoryImageSource erweitern, dass sie nur images in der liste hält, die von opencv geladen werden, oft hat man in datenbanken-bilder-dirs auch readme's, oder (Hallo Windows!) Thumbs.db files.
+[16:13:07] ex-ratt: jo, da gibts bestimmt file-filters oder sowas
+[16:13:22] ex-ratt: bastel erstmal was, ich schau dann mal drüber
+[16:13:28] Patrik: Ok :)
+[16:14:32] ex-ratt: es gibt eine FaceBoxLandmark
+[16:15:00] ex-ratt: aber ich könnte mir vorstellen, dass sowas auch für nicht-gesichter sinn macht
+[16:15:23] Patrik: Genau, siehe die klasse Landmark. die FaceBoxLandmark war dann ein wenig "gehacke", weil ich da auch die breite brauch..
+[16:16:50] Patrik: Hm, evtl schmeissen wir width/height in die Landmark-klasse, und setzen das einfach 0 wenns nicht benötigt wird, dann fällt ne extra klasse für die face-box weg
+*/

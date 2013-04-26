@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 	Mat img;
 	for(unsigned int i=0; i< filenames.size(); i++) {
 
-		img = cv::imread(filenames[i]);
+		img = cv::imread(filenames[i]);		// TODO: Add a check if the file really exists. But we should use ImageSource soon anyway.
 		cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
 		cvMoveWindow("src", 0, 0);
 		std::chrono::time_point<std::chrono::system_clock> start, end;
