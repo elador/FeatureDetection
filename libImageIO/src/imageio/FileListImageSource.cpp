@@ -1,5 +1,5 @@
 /*
- * FileListImageSource.hpp
+ * FileListImageSource.cpp
  *
  *  Created on: 24.04.2013
  *      Author: Patrik Huber

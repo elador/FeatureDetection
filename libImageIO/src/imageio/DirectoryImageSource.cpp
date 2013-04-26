@@ -7,7 +7,7 @@
 
 #include "imageio/DirectoryImageSource.hpp"
 #include "opencv2/highgui/highgui.hpp"
-#include <iostream>
+#include <stdexcept>
 
 using cv::imread;
 using boost::filesystem::exists;
@@ -15,15 +15,16 @@ using boost::filesystem::is_directory;
 using boost::filesystem::directory_iterator;
 using std::copy;
 using std::sort;
+using std::runtime_error;
 
 namespace imageio {
 
 DirectoryImageSource::DirectoryImageSource(string directory) : files(), index(0) {
 	path path(directory);
 	if (!exists(path))
-		std::cerr << "directory '" << directory << "' does not exist" << std::endl;
+		throw runtime_error("DirectoryImageSource: Directory '" + directory + "' does not exist.");
 	if (!is_directory(path))
-		std::cerr << "'" << directory << "' is no directory" << std::endl;
+		throw runtime_error("DirectoryImageSource: '" + directory + "' is not a directory.");
 	copy(directory_iterator(path), directory_iterator(), back_inserter(files));
 	/* TODO: Only copy valid images that opencv can handle. Those are:
 		Built-in: bmp, portable image formats (pbm, pgm, ppm), Sun raster (sr, ras).

@@ -1,36 +1,48 @@
 /*
- * FileImageSource.hpp
+ * FileImageSource.cpp
  *
- *  Created on: 24.04.2013
+ *  Created on: 26.04.2013
  *      Author: Patrik Huber
  */
 
 #include "imageio/FileImageSource.hpp"
 #include "opencv2/highgui/highgui.hpp"
-#include <iostream>
+#include <stdexcept>
 
 using cv::imread;
 using boost::filesystem::exists;
-using boost::filesystem::is_directory;
-using boost::filesystem::directory_iterator;
-using std::copy;
 using std::sort;
+using std::runtime_error;
 
 namespace imageio {
 
-FileImageSource::FileImageSource(string directory) : files(), index(0) {
-	path path(directory);
+FileImageSource::FileImageSource(string filePath) : files(), index(0) {
+	path path(filePath);
 	if (!exists(path))
-		std::cerr << "directory '" << directory << "' does not exist" << std::endl;
-	if (!is_directory(path))
-		std::cerr << "'" << directory << "' is no directory" << std::endl;
-	copy(directory_iterator(path), directory_iterator(), back_inserter(files));
+		throw runtime_error("FileImageSource: File '" + filePath + "' does not exist.");
 	/* TODO: Only copy valid images that opencv can handle. Those are:
 		Built-in: bmp, portable image formats (pbm, pgm, ppm), Sun raster (sr, ras).
 		With plugins, present by default: JPEG (jpeg, jpg, jpe), JPEG 2000 (jp2 (=Jasper)), 
 										  TIFF files (tiff, tif), png.
 		If specified: OpenEXR.
 	*/
+	files.push_back(path);
+}
+
+FileImageSource::FileImageSource(vector<string> filePaths) : files(), index(0) {
+
+	/* TODO: Only copy valid images that opencv can handle. Those are:
+		Built-in: bmp, portable image formats (pbm, pgm, ppm), Sun raster (sr, ras).
+		With plugins, present by default: JPEG (jpeg, jpg, jpe), JPEG 2000 (jp2 (=Jasper)), 
+										  TIFF files (tiff, tif), png.
+		If specified: OpenEXR.
+	*/
+	for (auto file : filePaths) {
+		path path(file);
+		if (!exists(path))
+			throw runtime_error("FileImageSource: File '" + file + "' does not exist.");
+		files.push_back(path);
+	}
 	sort(files.begin(), files.end());
 }
 

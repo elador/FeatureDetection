@@ -22,6 +22,7 @@ SET(HEADERS
 	include/imageio/DirectoryImageSink.hpp
 	include/imageio/DirectoryImageSource.hpp
 	include/imageio/FileImageSource.hpp
+	include/imageio/RepeatingFileImageSource.hpp
 	include/imageio/FileListImageSource.hpp
 	include/imageio/ImageSink.hpp
 	include/imageio/ImageSource.hpp
@@ -37,6 +38,7 @@ SET(SOURCE
 	src/imageio/DirectoryImageSink.cpp
 	src/imageio/DirectoryImageSource.cpp
 	src/imageio/FileImageSource.cpp
+	src/imageio/RepeatingFileImageSource.cpp
 	src/imageio/FileListImageSource.cpp
 	src/imageio/KinectImageSource.cpp
 	src/imageio/VideoImageSink.cpp

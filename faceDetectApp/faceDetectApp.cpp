@@ -66,6 +66,8 @@
 #include "imageio/LandmarksHelper.hpp"
 #include "imageio/FaceBoxLandmark.hpp"
 #include "imageio/DirectoryImageSource.hpp"
+#include "imageio/FileImageSource.hpp"
+#include "imageio/RepeatingFileImageSource.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -164,6 +166,7 @@ int main(int argc, char *argv[])
 	string fn_fileList;
 	string directory;
 	vector<std::string> filenames;
+	shared_ptr<ImageSource> imageSource;
 	vector<FaceBoxLandmark> groundtruthFaceBoxes;
 	
 	try {
@@ -258,21 +261,27 @@ int main(int argc, char *argv[])
 		}
 		fileList.close();
 	}
-	shared_ptr<DirectoryImageSource> imagesFromDirectory;
-	if(useDirectory) {
-		imagesFromDirectory = make_shared<DirectoryImageSource>(directory);
-		filenames.resize(20);
-	}
+
 	// Else useImgs==true: filesnames are already in "filenames", and no groundtruth available!
 
 	/* Testing ground */
-
+	if(useFileList==true) {
+		
+	}
+	if(useImgs==true) {
+		//imageSource = make_shared<FileImageSource>(filenames);
+		imageSource = make_shared<RepeatingFileImageSource>("C:\\Users\\Patrik\\GitHub\\data\\firstrun\\ws_8.png");
+	}
+	if(useDirectory==true) {
+		imageSource = make_shared<DirectoryImageSource>(directory);
+	}
+	
 	/* END */
 
 	Loggers->getLogger("classification").addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
 	
 	ptree pt;
-	read_info("C:\\Users\\Patrik\\Documents\\GitHub\\faceDetectApp.cfg", pt);		
+	read_info("C:\\Users\\Patrik\\GitHub\\faceDetectApp.cfg", pt);		// TODO add check if file exists/throw
 
 	ptree ptClassifiers = pt.get_child("classifiers");
 	unordered_multimap<string, shared_ptr<ProbabilisticClassifier>> classifiers;
@@ -301,12 +310,8 @@ int main(int argc, char *argv[])
 
 	Mat img;
 
-	for(unsigned int i=0; i< filenames.size(); i++) {
-		if(useDirectory) {
-			img = imagesFromDirectory->get();
-		} else {
-			img = cv::imread(filenames[i]);
-		}
+	while ((img = imageSource->get()).rows != 0) { // TODO Can we check against !=Mat() somehow? or .empty?
+
 		cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
 		cvMoveWindow("src", 0, 0);
 		std::chrono::time_point<std::chrono::system_clock> start, end;
@@ -333,14 +338,14 @@ int main(int argc, char *argv[])
 
 			++det;
 		}
-
+		/*
 		Mat wholeFaceRegionProbabilityMap = 0.33*regionProbMaps[0]+0.33*regionProbMaps[1]+0.33*regionProbMaps[2];
 		wholeFaceRegionProbabilityMap *= 255.0f;
 		wholeFaceRegionProbabilityMap.convertTo(wholeFaceRegionProbabilityMap, CV_8UC1);
 		cv::namedWindow("pr", CV_WINDOW_AUTOSIZE); cv::imshow("pr", wholeFaceRegionProbabilityMap);
 		cvMoveWindow("pr", 500, 500);
 		cv::waitKey(0);
-
+		*/
 		
 		end = std::chrono::system_clock::now();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();

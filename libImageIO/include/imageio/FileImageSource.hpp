@@ -1,7 +1,7 @@
 /*
  * FileImageSource.hpp
  *
- *  Created on: 24.04.2013
+ *  Created on: 26.04.2013
  *      Author: Patrik Huber
  */
 
@@ -23,17 +23,24 @@ using std::string;
 namespace imageio {
 
 /**
- * Image source that takes the images of a directory.
+ * Image source that takes a single image or a vector of images.
  */
 class FileImageSource : public ImageSource {
 public:
 
 	/**
-	 * Constructs a new directory image source.
+	 * Constructs a new file image source from a single file.
 	 *
-	 * @param[in] directory The directory containing image files.
+	 * @param[in] filePath The path and filename of the image.
 	 */
-	FileImageSource(string directory);
+	FileImageSource(string filePath);
+
+	/**
+	 * Constructs a new file image source from a vector of files.
+	 *
+	 * @param[in] filePaths A vector with all the filenames.
+	 */
+	FileImageSource(vector<string> filePaths);
 
 	virtual ~FileImageSource();
 
