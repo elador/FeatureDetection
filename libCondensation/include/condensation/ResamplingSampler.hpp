@@ -34,11 +34,11 @@ public:
 	 * @param[in] randomRate The percentage of samples that should be equally distributed.
 	 * @param[in] resamplingAlgorithm The resampling algorithm.
 	 * @param[in] transitionModel The transition model.
-	 * @param[in] minSize The minimum size of a sample relative to the width or height of the image (whatever is smaller).
-	 * @param[in] maxSize The maximum size of a sample relative to the width or height of the image (whatever is smaller).
+	 * @param[in] minSize The minimum size of a sample.
+	 * @param[in] maxSize The maximum size of a sample.
 	 */
 	ResamplingSampler(unsigned int count, double randomRate, shared_ptr<ResamplingAlgorithm> resamplingAlgorithm,
-			shared_ptr<TransitionModel> transitionModel, float minSize = 0.1, float maxSize = 0.8);
+			shared_ptr<TransitionModel> transitionModel, int minSize, int maxSize);
 
 	~ResamplingSampler();
 
@@ -97,8 +97,8 @@ private:
 	shared_ptr<ResamplingAlgorithm> resamplingAlgorithm; ///< The resampling algorithm.
 	shared_ptr<TransitionModel> transitionModel;         ///< The transition model.
 
-	float minSize; ///< The minimum size of a sample relative to the width or height of the image (whatever is smaller).
-	float maxSize; ///< The maximum size of a sample relative to the width or height of the image (whatever is smaller).
+	int minSize; ///< The minimum size of a sample.
+	int maxSize; ///< The maximum size of a sample.
 
 	boost::mt19937 generator;          ///< Random number generator.
 	boost::uniform_int<> distribution; ///< Uniform integer distribution.

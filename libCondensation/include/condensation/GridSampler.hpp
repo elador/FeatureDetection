@@ -21,12 +21,12 @@ public:
 	/**
 	 * Constructs a new grid sampler.
 	 *
-	 * @param[in] minSize The minimum size of a sample relative to the width or height of the image (whatever is smaller).
-	 * @param[in] maxSize The maximum size of a sample relative to the width or height of the image (whatever is smaller).
+	 * @param[in] minSize The minimum size of a sample.
+	 * @param[in] maxSize The maximum size of a sample.
 	 * @param[in] sizeScale The scale factor of the size (beginning from the minimum size). Has to be greater than one.
 	 * @param[in] stepSize The step size relative to the sample size.
 	 */
-	GridSampler(float minSize, float maxSize, float sizeScale, float stepSize);
+	GridSampler(int minSize, int maxSize, float sizeScale, float stepSize);
 
 	~GridSampler();
 
@@ -35,8 +35,8 @@ public:
 
 private:
 
-	float minSize;   ///< The minimum size of a sample relative to the width or height of the image (whatever is smaller).
-	float maxSize;   ///< The maximum size of a sample relative to the width or height of the image (whatever is smaller).
+	int minSize;     ///< The minimum size of a sample.
+	int maxSize;     ///< The maximum size of a sample.
 	float sizeScale; ///< The scale factor of the size (beginning from the minimum size).
 	float stepSize;  ///< The step size relative to the sample size.
 };

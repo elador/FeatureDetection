@@ -8,18 +8,24 @@
 #include "condensation/GridSampler.hpp"
 #include "condensation/Sample.hpp"
 #include <algorithm>
+#include <stdexcept>
 
 using std::min;
 using std::max;
+using std::invalid_argument;
 
 namespace condensation {
 
-GridSampler::GridSampler(float minSize, float maxSize, float sizeScale, float stepSize) :
+GridSampler::GridSampler(int minSize, int maxSize, float sizeScale, float stepSize) :
 		minSize(minSize), maxSize(maxSize), sizeScale(sizeScale), stepSize(stepSize) {
-	minSize = min(1.0f, max(0.0f, minSize));
-	maxSize = min(1.0f, max(0.0f, maxSize));
-	sizeScale = max(1.05f, sizeScale);
-	stepSize = max(0.0f, stepSize);
+	if (minSize < 1)
+		throw invalid_argument("GridSampler: the minimum size must be greater than zero");
+	if (maxSize < minSize)
+		throw invalid_argument("GridSampler: the maximum size must not be smaller than the minimum size");
+	if (sizeScale <= 1)
+		throw invalid_argument("GridSampler: The scale factor of the size must be greater than one");
+	if (sizeScale <= 0)
+		throw invalid_argument("GridSampler: The step size must be greater than zero");
 }
 
 GridSampler::~GridSampler() {}
@@ -27,8 +33,6 @@ GridSampler::~GridSampler() {}
 void GridSampler::sample(const vector<Sample>& samples, const vector<double>& offset,
 			const Mat& image, vector<Sample>& newSamples) {
 	newSamples.clear();
-	int minSize = (int)(this->minSize * min(image.cols, image.rows));
-	int maxSize = (int)(this->maxSize * min(image.cols, image.rows));
 	Sample newSample;
 	for (int size = minSize; size <= maxSize; size *= sizeScale) {
 		newSample.setSize(size);

@@ -105,8 +105,8 @@ void FaceTracking::initTracking() {
 	double randomRate = 0.35;
 	transitionModel = make_shared<SimpleTransitionModel>(0.2);
 	resamplingSampler = make_shared<ResamplingSampler>(count, randomRate, make_shared<LowVarianceSampling>(),
-			transitionModel, 0.1666, 0.8);
-	gridSampler = make_shared<GridSampler>(0.1666, 0.8, 1 / 0.85, 0.1);
+			transitionModel, 80, 480);
+	gridSampler = make_shared<GridSampler>(80, 480, 1 / 0.85, 0.1);
 	tracker = unique_ptr<CondensationTracker>(new CondensationTracker(
 			resamplingSampler, measurementModel, make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>())));
 }
