@@ -68,6 +68,7 @@
 #include "imageio/DirectoryImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
 #include "imageio/RepeatingFileImageSource.hpp"
+#include "imageio/FileListImageSource.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -163,11 +164,10 @@ int main(int argc, char *argv[])
 	bool useFileList = false;
 	bool useImgs = false;
 	bool useDirectory = false;
-	string fn_fileList;
-	string directory;
-	vector<std::string> filenames;
+	string inputFilelist;
+	string inputDirectory;
+	vector<std::string> inputFilenames;
 	shared_ptr<ImageSource> imageSource;
-	vector<FaceBoxLandmark> groundtruthFaceBoxes;
 	
 	try {
         po::options_description desc("Allowed options");
@@ -177,14 +177,13 @@ int main(int argc, char *argv[])
                   "enable text-verbosity (optionally specify level)")
             ("verbose-images,w", po::value<int>(&verbose_level_images)->implicit_value(2)->default_value(1,"minimal image output"),
                   "enable image-verbosity (optionally specify level)")
-            ("file-list,f", po::value<string>(), 
-                  "a .lst file to process")
-            ("input-file,i", po::value<vector<string>>(), "input image")
-			("input-directory,d", po::value<string>(), "input directory")
+            ("input-list,l", po::value<string>(), "input from a file containing a list of images")
+            ("input-file,f", po::value<vector<string>>(), "input one or several images")
+			("input-dir,d", po::value<string>(), "input all images inside the directory")
         ;
 
         po::positional_options_description p;
-        p.add("input-file", -1);
+        p.add("input-file", -1);	// allow one or several -f directives
         
         po::variables_map vm;
         po::store(po::command_line_parser(argc, argv).
@@ -192,91 +191,58 @@ int main(int argc, char *argv[])
         po::notify(vm);
     
         if (vm.count("help")) {
-            cout << "[ffpDetectApp] Usage: options_description [options]\n";
+            cout << "[faceDetectApp] Usage: options_description [options]\n";
             cout << desc;
             return 0;
         }
-        if (vm.count("file-list"))
+        if (vm.count("input-list"))
         {
-            cout << "[ffpDetectApp] Using file-list as input: " << vm["file-list"].as< string >() << "\n";
+            cout << "[faceDetectApp] Using file-list as input: " << vm["input-list"].as<string>() << "\n";
 			useFileList = true;
-			fn_fileList = vm["file-list"].as<string>();
+			inputFilelist = vm["input-list"].as<string>();
         }
         if (vm.count("input-file"))
         {
-            cout << "[ffpDetectApp] Using input images: " << vm["input-file"].as< vector<string> >() << "\n";
+            cout << "[faceDetectApp] Using input images: " << vm["input-file"].as<vector<string>>() << "\n";
 			useImgs = true;
-			filenames = vm["input-file"].as< vector<string> >();
+			inputFilenames = vm["input-file"].as< vector<string> >();
         }
-		if (vm.count("input-directory"))
+		if (vm.count("input-dir"))
 		{
-			cout << "[ffpDetectApp] Using input images: " << vm["input-directory"].as<string>() << "\n";
+			cout << "[faceDetectApp] Using input images: " << vm["input-dir"].as<string>() << "\n";
 			useDirectory = true;
-			directory = vm["input-directory"].as<string>();
+			inputDirectory = vm["input-dir"].as<string>();
 		}
         if (vm.count("verbose-text")) {
-            cout << "[ffpDetectApp] Verbose level for text: " << vm["verbose-text"].as<int>() << "\n";
+            cout << "[faceDetectApp] Verbose level for text: " << vm["verbose-text"].as<int>() << "\n";
         }
         if (vm.count("verbose-images")) {
-            cout << "[ffpDetectApp] Verbose level for images: " << vm["verbose-images"].as<int>() << "\n";
+            cout << "[faceDetectApp] Verbose level for images: " << vm["verbose-images"].as<int>() << "\n";
         }
     }
     catch(std::exception& e) {
         cout << e.what() << "\n";
         return 1;
     }
+
 	int numInputs = 0;
 	if(useFileList==true) {
 		numInputs++;
+		imageSource = make_shared<FileListImageSource>(inputFilelist);
 	}
 	if(useImgs==true) {
 		numInputs++;
+		imageSource = make_shared<FileImageSource>(inputFilenames);
+		//imageSource = make_shared<RepeatingFileImageSource>("C:\\Users\\Patrik\\GitHub\\data\\firstrun\\ws_8.png");
 	}
 	if(useDirectory==true) {
 		numInputs++;
+		imageSource = make_shared<DirectoryImageSource>(inputDirectory);
 	}
 	if(numInputs!=1) {
-		cout << "[ffpDetectApp] Error: Please either specify a file-list, an input-file or a directory (and only one of them) to run the program!" << endl;
+		cout << "[faceDetectApp] Error: Please either specify a file-list, an input-file or a directory (and only one of them) to run the program!" << endl;
 		return 1;
 	}
-
-	if(useFileList) {
-		std::ifstream fileList;
-		fileList.open(fn_fileList.c_str(), std::ios::in);
-		if (!fileList.is_open()) {
-			std::cout << "[ffpDetectApp] Error opening file list!" << std::endl;
-			return 0;
-		}
-		string line;
-		while(fileList.good()) {
-			getline(fileList, line);
-			if(line=="") {
-				continue;
-			}
-			string buf;
-			stringstream ss(line);
-			ss >> buf;	
-			filenames.push_back(buf);	// Insert the image filename
-			groundtruthFaceBoxes.push_back(LandmarksHelper::readFromLstLine(line));	// Insert the groundtruth facebox
-		}
-		fileList.close();
-	}
-
-	// Else useImgs==true: filesnames are already in "filenames", and no groundtruth available!
-
-	/* Testing ground */
-	if(useFileList==true) {
-		
-	}
-	if(useImgs==true) {
-		//imageSource = make_shared<FileImageSource>(filenames);
-		imageSource = make_shared<RepeatingFileImageSource>("C:\\Users\\Patrik\\GitHub\\data\\firstrun\\ws_8.png");
-	}
-	if(useDirectory==true) {
-		imageSource = make_shared<DirectoryImageSource>(directory);
-	}
-	
-	/* END */
 
 	Loggers->getLogger("classification").addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
 	

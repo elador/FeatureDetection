@@ -23,17 +23,18 @@ using std::string;
 namespace imageio {
 
 /**
- * Image source that takes the images of a directory.
+ * Image source that reads a text file containing an image filename on each line
+ * and creates and image source from it.
  */
 class FileListImageSource : public ImageSource {
 public:
 
 	/**
-	 * Constructs a new directory image source.
+	 * Constructs a new file-list image source.
 	 *
-	 * @param[in] directory The directory containing image files.
+	 * @param[in] filelist A text-file containing a list of files.
 	 */
-	FileListImageSource(string directory);
+	FileListImageSource(string filelist);
 
 	virtual ~FileListImageSource();
 
