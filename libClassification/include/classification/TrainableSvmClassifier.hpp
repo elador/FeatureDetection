@@ -224,10 +224,8 @@ private:
 
 	/**
 	 * Changes the parameters of this SVM by training using libSVM.
-	 *
-	 * @return True if the training was successful, false otherwise.
 	 */
-	bool train();
+	void train();
 
 	/**
 	 * Creates the libSVM problem containing the training data.

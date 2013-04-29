@@ -9,11 +9,14 @@
 #include "imageprocessing/ImagePyramidLayer.hpp"
 #include "imageprocessing/VersionedImage.hpp"
 #include "imageprocessing/MultipleImageFilter.hpp"
+#include "logging/LoggerFactory.hpp"
+#include "logging/Logger.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 
+using logging::LoggerFactory;
 using cv::Size;
 using cv::resize;
 using std::string; // TODO nur für createException
@@ -116,8 +119,7 @@ void ImagePyramid::update() {
 			version = sourcePyramid->getVersion();
 		}
 	} else { // neither source pyramid nor source image are set, therefore the other parameters are missing, too
-		// TODO exception? oder ignore? oder noch besser: logging!
-		std::cerr << "ImagePyramid: could not update because there is no source (image or pyramid)" << std::endl;
+		Loggers->getLogger("ImageProcessing").warn("ImagePyramid: could not update because there is no source (image or pyramid)");
 	}
 }
 

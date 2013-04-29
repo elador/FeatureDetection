@@ -48,7 +48,6 @@ void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& sam
 			pair<bool, double> result;
 			auto resIt = results.find(patch);
 			if (resIt == results.end()) {
-				// TODO iimg-filter anwenden?
 				result = wvm->classify(patch->getData());
 				if (result.first)
 					remainingPatches.push_back(make_shared<ClassifiedPatch>(patch, result));

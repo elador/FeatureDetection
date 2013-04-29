@@ -13,10 +13,12 @@
 namespace imageprocessing {
 
 /**
- * Image filter that transforms the image to an integral image.
+ * Image filter that transforms the image to an integral image. Each pixel of the resulting integral image contains
+ * the sum over all the pixel values above and to the left. Therefore, the first row and first column will contain
+ * zeroes and the integral image will by larger than the input image by one row and column.
  *
- * The output image will have the same size as the input image and be of type CV_32F. The row and columns of
- * zeroes are not contained within the integral image.
+ * If the desired type of the integral image is negative, then it will be chosen automatically. If the input image
+ * is of type CV_8U, it will be CV_32S, otherwise it will be CV_64F (according to the code of OpenCV 2.4.3).
  */
 class IntegralImageFilter : public ImageFilter {
 public:
@@ -24,9 +26,9 @@ public:
 	/**
 	 * Constructs a new integral image filter.
 	 *
-	 * @param[in] squared Flag that indicates whether the pixel values should be squared before summing up.
+	 * @param[in] type The type (depth) of the filtered images. If negative, the type is chosen automatically.
 	 */
-	IntegralImageFilter(bool squared);
+	explicit IntegralImageFilter(int type);
 
 	~IntegralImageFilter();
 
@@ -38,7 +40,7 @@ public:
 
 private:
 
-	bool squared; ///< Flag that indicates whether the pixel values should be squared before summing up.
+	int type; ///< The type (depth) of the filtered images. If negative, the type is chosen automatically.
 };
 
 } /* namespace imageprocessing */

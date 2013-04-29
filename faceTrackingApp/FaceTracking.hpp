@@ -30,7 +30,7 @@ using std::make_shared;
 class FaceTracking {
 public:
 
-	FaceTracking(unique_ptr<ImageSource> imageSource, unique_ptr<ImageSink> imageSink, string svmConfigFile, string negativesFile);
+	FaceTracking(unique_ptr<ImageSource> imageSource, unique_ptr<ImageSink> imageSink);
 	virtual ~FaceTracking();
 
 	void run();
@@ -50,9 +50,6 @@ private:
 
 	static const string videoWindowName;
 	static const string controlWindowName;
-
-	const string svmConfigFile;
-	const string negativesFile;
 
 	unique_ptr<ImageSource> imageSource;
 	unique_ptr<ImageSink> imageSink;

@@ -48,8 +48,8 @@ boost::optional<Sample> DensityPositionExtractor::extract(const vector<Sample>& 
 		++i;
 	} while (i < 100 && point.getX() != oldPoint.getX() && point.getY() != oldPoint.getY() && point.getSize() != oldPoint.getSize());
 	if (i >= 100)// TODO logging
-		std::cerr << "too many iterations: (" << point.getX() << ", " << point.getY() << ", " << point.getSize() << ") <> ("
-				<< oldPoint.getX() << ", " << oldPoint.getY() << ", " << oldPoint.getSize() << ")" << std::endl;
+		std::cerr << "DensityPositionExtractor: too many iterations: (" << point.getX() << ", " << point.getY() << ", "
+				<< point.getSize() << ") <> (" << oldPoint.getX() << ", " << oldPoint.getY() << ", " << oldPoint.getSize() << ")" << std::endl;
 	point.setWeight(computeDensity(samples, point));
 	return optional<Sample>(point);
 }

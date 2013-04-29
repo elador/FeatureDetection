@@ -6,6 +6,9 @@
  */
 
 #include "AdaptiveTracking.hpp"
+#include "logging/LoggerFactory.hpp"
+#include "logging/Logger.hpp"
+#include "logging/ConsoleAppender.hpp"
 #include "imageio/VideoImageSource.hpp"
 #include "imageio/KinectImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
@@ -43,13 +46,16 @@
 #include <vector>
 #include <iostream>
 #include <chrono>
+#include <sstream>
 
+using namespace logging;
 using namespace imageprocessing;
 using namespace classification;
 using namespace std::chrono;
 using boost::property_tree::info_parser::read_info;
 using std::milli;
 using std::move;
+using std::ostringstream;
 
 namespace po = boost::program_options;
 
@@ -243,6 +249,7 @@ void AdaptiveTracking::drawDebug(cv::Mat& image) {
 }
 
 void AdaptiveTracking::run() {
+	Logger& log = Loggers->getLogger("app");
 	running = true;
 	paused = false;
 
@@ -254,7 +261,6 @@ void AdaptiveTracking::run() {
 	duration<double> allIterationTime;
 	duration<double> allCondensationTime;
 	int frames = 0;
-	steady_clock::time_point start = steady_clock::now();
 	std::cout.precision(2);
 
 	while (running) {
@@ -290,8 +296,12 @@ void AdaptiveTracking::run() {
 			allCondensationTime += condensationTime;
 			float iterationFps = frames / allIterationTime.count();
 			float condensationFps = frames / allCondensationTime.count();
-			std::cout << frames << " frame: " << iterationTime.count() << " ms (" << iterationFps << " fps);"
-					<< " condensation: " << condensationTime.count() << " ms (" << condensationFps << " fps)" << std::endl;
+
+			ostringstream text;
+			text.precision(2);
+			text << frames << " frame: " << iterationTime.count() << " ms (" << iterationFps << " fps);"
+					<< " condensation: " << condensationTime.count() << " ms (" << condensationFps << " fps)";
+			log.info(text.str());
 
 			int delay = paused ? 0 : 5;
 			char c = (char)cv::waitKey(delay);
@@ -369,9 +379,7 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	// TODO new logging stuff
-//	Logger->setVerboseLevelText(verboseLevelText);
-//	Logger->setVerboseLevelImages(verboseLevelImages);
+	Loggers->getLogger("app").addAppender(make_shared<ConsoleAppender>(loglevel::INFO));
 
 	unique_ptr<ImageSource> imageSource;
 	if (useCamera)

@@ -160,8 +160,6 @@ void PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 		reset();
 		frameCount = 0;
 	} else {
-		// TODO das könnte quark sein - retraining nicht nötig (und abfrage im training auch wegmachen)
-		// TODO nur FrameBasedTraining hätte das gebraucht, aber über nutzung entscheidet am ende das measurement model
 		const vector<Mat> empty;
 		usable = classifier->retrain(empty, empty);
 	}

@@ -54,7 +54,10 @@ SET(SOURCE
 )
 
 include_directories( "include" )
+
+# add dependencies
 include_directories( ${OpenCV_INCLUDE_DIRS} )
+include_directories( ${Logging_SOURCE_DIR}/include )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )

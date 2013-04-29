@@ -13,7 +13,7 @@
 namespace classification {
 
 /**
- * Trainable SVM classifier that uses the latest examples for training. TODO FrameBased == quark ?!
+ * Trainable SVM classifier that uses the latest examples for training.
  */
 class FrameBasedTrainableSvmClassifier : public TrainableSvmClassifier {
 public:

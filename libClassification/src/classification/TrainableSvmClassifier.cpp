@@ -122,7 +122,7 @@ unique_ptr<struct svm_node[], NodeDeleter> TrainableSvmClassifier::createNode(co
 }
 
 double TrainableSvmClassifier::computeSvmOutput(const struct svm_node *x) {
-	double* dec_values = new double[1]; // TODO einfluss, wenn das zwischengespeichert wird?
+	double* dec_values = new double[1];
 	svm_predict_values(model.get(), x, dec_values);
 	double svmOutput = dec_values[0];
 	delete[] dec_values;
@@ -133,12 +133,13 @@ bool TrainableSvmClassifier::retrain(const vector<Mat>& newPositiveExamples, con
 	if (!newPositiveExamples.empty())
 		dimensions = newPositiveExamples[0].total();
 	if (newPositiveExamples.empty() && newNegativeExamples.empty()) // no new training data available -> no new training necessary
-		return usable;// TODO die abfrage nur dann sinnvoll, wenn dieser fall erwartet wird (eigentlich müsste ich in, wenn kein objekt gefunden wurde, gar nicht erst retrain aufrufen -> classifier sollte dann nach möglichkeit eh nix machen)
+		return usable;
 	addExamples(newPositiveExamples, newNegativeExamples);
-	if (isRetrainingReasonable())
-		usable = train();
+	if (isRetrainingReasonable()) {
+		train();
+		usable = true;
+	}
 	return usable;
-//	return isRetrainingReasonable() && train(); TODO raus
 }
 
 void TrainableSvmClassifier::reset() {
@@ -146,18 +147,15 @@ void TrainableSvmClassifier::reset() {
 	clearExamples();
 }
 
-bool TrainableSvmClassifier::train() {
+void TrainableSvmClassifier::train() {
 	param->weight[0] = getPositiveCount();
 	param->weight[1] = getNegativeCount() + staticNegativeExamples.size();
 	problem = move(createProblem());
 	const char* message = svm_check_parameter(problem.get(), param.get());
-	if (message != 0) {// TODO exception? just logging? wenn exception, dann kann rückgabewert weg
-		std::cerr << "invalid SVM parameters: " << message << std::endl;
-		return false;
-	}
+	if (message != 0)
+		throw invalid_argument(string("invalid SVM parameters: ") + message);
 	model.reset(svm_train(problem.get(), param.get()));
 	updateSvmParameters();
-	return true;
 }
 
 unique_ptr<struct svm_problem, ProblemDeleter> TrainableSvmClassifier::createProblem() {
@@ -205,7 +203,8 @@ Mat TrainableSvmClassifier::getSupportVector(const struct svm_node *node) {
 
 template<class T>
 void TrainableSvmClassifier::fillNode(struct svm_node *node, unsigned int size, const Mat& vector) {
-	// TODO has to be continuous
+	if (!vector.isContinuous())
+		throw invalid_argument("TrainableSvmClassifier: vector has to be continuous");
 	const T* values = vector.ptr<T>(0);
 	for (unsigned int i = 0; i < size; ++i) {
 		node[i].index = i;
