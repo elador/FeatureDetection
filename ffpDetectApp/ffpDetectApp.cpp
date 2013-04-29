@@ -63,7 +63,7 @@
 #include "detection/OverlapElimination.hpp"
 
 #include "imageio/LandmarksHelper.hpp"
-#include "imageio/FaceBoxLandmark.hpp"
+#include "imageio/Landmark.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 	string fn_fileList;
 	string configFilename;
 	vector<std::string> filenames;
-	vector<FaceBoxLandmark> groundtruthFaceBoxes;
+	vector<Landmark> groundtruthFaceBoxes;
 	
 	try {
         po::options_description desc("Allowed options");
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 			stringstream ss(line);
 			ss >> buf;	
 			filenames.push_back(buf);	// Insert the image filename
-			groundtruthFaceBoxes.push_back(LandmarksHelper::readFromLstLine(line));	// Insert the groundtruth facebox
+			//TODO CURRENTLY BROKEN groundtruthFaceBoxes.push_back(LandmarksHelper::readFromLstLine(line));	// Insert the groundtruth facebox
 		}
 		fileList.close();
 	}
@@ -302,12 +302,13 @@ int main(int argc, char *argv[])
 			std::cout << "[ffpDetectApp] No face-candidates at all found:  " << filenames[i] << std::endl;
 			NOCAND++;
 		} else {
+			// TODO Check if the LM exists or it will crash! Currently broken!
 			if(groundtruthFaceBoxes[i].getPosition()==Vec3f(0.0f, 0.0f, 0.0f)) { //no groundtruth
 				std::cout << "[ffpDetectApp] No ground-truth available, not counting anything: " << filenames[i] << std::endl;
 				++DONTKNOW;
 			} else { //we have groundtruth
-				int gt_w = groundtruthFaceBoxes[i].getWidth();
-				int gt_h = groundtruthFaceBoxes[i].getHeight();
+				int gt_w = groundtruthFaceBoxes[i].getSize().width;
+				int gt_h = groundtruthFaceBoxes[i].getSize().height;
 				int gt_cx = groundtruthFaceBoxes[i].getPosition()[0];
 				int gt_cy = groundtruthFaceBoxes[i].getPosition()[1];
 				// TODO implement a isClose, isDetected... or something like that function

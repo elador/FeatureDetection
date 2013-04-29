@@ -16,7 +16,7 @@ using std::runtime_error;
 
 namespace imageio {
 
-FileImageSource::FileImageSource(string filePath) : files(), index(0) {
+FileImageSource::FileImageSource(string filePath) {
 	path path(filePath);
 	if (!exists(path))
 		throw runtime_error("FileImageSource: File '" + filePath + "' does not exist.");
@@ -29,7 +29,7 @@ FileImageSource::FileImageSource(string filePath) : files(), index(0) {
 	files.push_back(path);
 }
 
-FileImageSource::FileImageSource(vector<string> filePaths) : files(), index(0) {
+FileImageSource::FileImageSource(vector<string> filePaths) {
 
 	/* TODO: Only copy valid images that opencv can handle. Those are:
 		Built-in: bmp, portable image formats (pbm, pgm, ppm), Sun raster (sr, ras).
@@ -52,6 +52,11 @@ const Mat FileImageSource::get() {
 	if (index >= files.size())
 		return Mat();
 	return imread(files[index++].string(), 1);
+}
+
+const path FileImageSource::getPathOfNextImage()
+{
+	return path();
 }
 
 } /* namespace imageio */

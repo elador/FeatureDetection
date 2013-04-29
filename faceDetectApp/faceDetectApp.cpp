@@ -64,11 +64,14 @@
 #include "detection/OverlapElimination.hpp"
 
 #include "imageio/LandmarksHelper.hpp"
-#include "imageio/FaceBoxLandmark.hpp"
+#include "imageio/LandmarkSource.hpp"
+#include "imageio/LabeledImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
 #include "imageio/RepeatingFileImageSource.hpp"
 #include "imageio/FileListImageSource.hpp"
+#include "imageio/LandmarkFileLoader.hpp"
+#include "imageio/DidLandmarkFormatParser.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -232,8 +235,11 @@ int main(int argc, char *argv[])
 	}
 	if(useImgs==true) {
 		numInputs++;
-		imageSource = make_shared<FileImageSource>(inputFilenames);
+		//imageSource = make_shared<FileImageSource>(inputFilenames);
 		//imageSource = make_shared<RepeatingFileImageSource>("C:\\Users\\Patrik\\GitHub\\data\\firstrun\\ws_8.png");
+		shared_ptr<FilebasedImageSource> fileImgSrc = make_shared<FileImageSource>(inputFilenames);
+		shared_ptr<LandmarkSource> lmSrc = make_shared<LandmarkSource>(LandmarkFileLoader::loadOnePerImage(fileImgSrc, make_shared<DidLandmarkFormatParser>()));
+		shared_ptr<ImageSource> tmp = make_shared<LabeledImageSource>(fileImgSrc, lmSrc);
 	}
 	if(useDirectory==true) {
 		numInputs++;

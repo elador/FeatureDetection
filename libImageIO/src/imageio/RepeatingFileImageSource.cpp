@@ -15,8 +15,8 @@ using std::runtime_error;
 
 namespace imageio {
 
-RepeatingFileImageSource::RepeatingFileImageSource(string filePath) : file() {
-	file = path(filePath);
+RepeatingFileImageSource::RepeatingFileImageSource(string filePath) {
+	path file = path(filePath);
 	if (!exists(file))
 		throw runtime_error("RepeatingFileImageSource: File '" + filePath + "' does not exist.");
 
@@ -27,12 +27,18 @@ RepeatingFileImageSource::RepeatingFileImageSource(string filePath) : file() {
 		If specified: OpenEXR.
 	*/
 	image = imread(file.string(), 1);	// TODO: Look up what the "1" is
+	files.push_back(path(filePath));
 }
 
 RepeatingFileImageSource::~RepeatingFileImageSource() {}
 
 const Mat RepeatingFileImageSource::get() {
 	return image;
+}
+
+const path RepeatingFileImageSource::getPathOfNextImage()
+{
+	return path();
 }
 
 } /* namespace imageio */

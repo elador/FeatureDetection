@@ -19,7 +19,7 @@ using std::runtime_error;
 
 namespace imageio {
 
-FileListImageSource::FileListImageSource(string filelist) : files(), index(0) {
+FileListImageSource::FileListImageSource(string filelist) {
 	path path(filelist);
 	if (!exists(path))
 		throw runtime_error("File '" + filelist + "' does not exist");
@@ -58,6 +58,11 @@ const Mat FileListImageSource::get() {
 	if (index >= files.size())
 		return Mat();
 	return imread(files[index++].string(), 1);
+}
+
+const path FileListImageSource::getPathOfNextImage()
+{
+	return path();
 }
 
 } /* namespace imageio */

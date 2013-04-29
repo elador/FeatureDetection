@@ -1,5 +1,5 @@
 /*
- * LandmarksCollection.hpp
+ * LandmarkCollection.hpp
  *
  *  Created on: 23.03.2013
  *      Author: Patrik Huber
@@ -9,8 +9,10 @@
 #ifndef LANDMARKSCOLLECTION_HPP_
 #define LANDMARKSCOLLECTION_HPP_
 
+#include "imageio/Landmark.hpp"
 #include "opencv2/core/core.hpp"
 #include <string>
+#include <vector>
 
 using cv::Vec3f;
 using std::string;
@@ -18,22 +20,22 @@ using std::vector;
 
 namespace imageio {
 
-class Landmark;
+//class Landmark;
 
 /**
  * A collection of landmarks, i.e. all landmarks given in a
  * landmarks-file for a certain image.
  */
-class LandmarksCollection {
+class LandmarkCollection {
 public:
 
 	/**
 	 * Constructs a new landmark collection.
 	 *
 	 */
-	LandmarksCollection();
+	LandmarkCollection();
 
-	~LandmarksCollection();
+	~LandmarkCollection();
 
 	void insert(const Landmark& landmark);
 
