@@ -5,7 +5,8 @@ SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # find dependencies
-FIND_PACKAGE(Boost 1.48.0 COMPONENTS filesystem REQUIRED)	# Patrik: I think we need 'system' too, if the app doesn't link to it, ImageIO fails to link.
+#FIND_PACKAGE(Boost 1.48.0 COMPONENTS filesystem REQUIRED)	# Patrik: I think we need 'system' too, if the app doesn't link to it, ImageIO fails to link.
+FIND_PACKAGE(Boost 1.48.0 REQUIRED) # We only want the headers in the lib?
 FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
@@ -19,27 +20,43 @@ ENDIF()
 
 # source and header files
 SET(HEADERS
-	include/imageio/DirectoryImageSink.hpp
-	include/imageio/DirectoryImageSource.hpp
-	include/imageio/ImageSink.hpp
 	include/imageio/ImageSource.hpp
-	include/imageio/KinectImageSource.hpp
-	include/imageio/VideoImageSink.hpp
+	include/imageio/FilebasedImageSource.hpp
+	include/imageio/FileImageSource.hpp
+	include/imageio/RepeatingFileImageSource.hpp
+	include/imageio/FileListImageSource.hpp
+	include/imageio/DirectoryImageSource.hpp
 	include/imageio/VideoImageSource.hpp
+	include/imageio/KinectImageSource.hpp
+	include/imageio/LabeledImageSource.hpp
+	include/imageio/ImageSink.hpp
+	include/imageio/DirectoryImageSink.hpp
+	include/imageio/VideoImageSink.hpp
 	include/imageio/Landmark.hpp
-	include/imageio/FaceBoxLandmark.hpp
-	include/imageio/LandmarksCollection.hpp
+	include/imageio/LandmarkCollection.hpp
+	include/imageio/LandmarkSource.hpp
+	include/imageio/LandmarkFileLoader.hpp
+	include/imageio/LandmarkFormatParser.hpp
+	include/imageio/DidLandmarkFormatParser.hpp
+	include/imageio/TlmsLandmarkFormatParser.hpp
 	include/imageio/LandmarksHelper.hpp
 )
 SET(SOURCE
-	src/imageio/DirectoryImageSink.cpp
+	src/imageio/FileImageSource.cpp
+	src/imageio/RepeatingFileImageSource.cpp
+	src/imageio/FileListImageSource.cpp
 	src/imageio/DirectoryImageSource.cpp
-	src/imageio/KinectImageSource.cpp
-	src/imageio/VideoImageSink.cpp
 	src/imageio/VideoImageSource.cpp
+	src/imageio/KinectImageSource.cpp
+	src/imageio/LabeledImageSource.cpp
+	src/imageio/DirectoryImageSink.cpp
+	src/imageio/VideoImageSink.cpp
 	src/imageio/Landmark.cpp
-	src/imageio/FaceBoxLandmark.cpp
-	src/imageio/LandmarksCollection.cpp
+	src/imageio/LandmarkCollection.cpp
+	src/imageio/LandmarkSource.cpp
+	src/imageio/LandmarkFileLoader.cpp
+	src/imageio/DidLandmarkFormatParser.cpp
+	src/imageio/TlmsLandmarkFormatParser.cpp
 )
 
 include_directories( "include" )

@@ -1,12 +1,12 @@
 /*
- * DirectoryImageSource.hpp
+ * FileListImageSource.hpp
  *
- *  Created on: 20.08.2012
- *      Author: poschmann
+ *  Created on: 24.04.2013
+ *      Author: Patrik Huber
  */
 
-#ifndef DIRECTORYIMAGESOURCE_HPP_
-#define DIRECTORYIMAGESOURCE_HPP_
+#ifndef FILELISTIMAGESOURCE_HPP_
+#define FILELISTIMAGESOURCE_HPP_
 
 #include "imageio/FilebasedImageSource.hpp"
 #ifdef WIN32
@@ -23,25 +23,28 @@ using std::string;
 namespace imageio {
 
 /**
- * Image source that takes the images of a directory.
+ * Image source that reads a text file containing an image filename on each line
+ * and creates and image source from it.
  */
-class DirectoryImageSource : public FilebasedImageSource {
+class FileListImageSource : public FilebasedImageSource {
 public:
 
 	/**
-	 * Constructs a new directory image source.
+	 * Constructs a new file-list image source.
 	 *
-	 * @param[in] directory The directory containing image files.
+	 * @param[in] filelist A text-file containing a list of files.
 	 */
-	DirectoryImageSource(string directory);
+	FileListImageSource(string filelist);
 
-	virtual ~DirectoryImageSource();
+	virtual ~FileListImageSource();
 
 	const Mat get();
 
 	const path getPathOfNextImage();
 
+private:
+
 };
 
 } /* namespace imageio */
-#endif /* DIRECTORYIMAGESOURCE_HPP_ */
+#endif /* FILELISTIMAGESOURCE_HPP_ */
