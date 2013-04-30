@@ -7,7 +7,7 @@
 
 #include "imageio/LandmarkFileLoader.hpp"
 #include "imageio/LandmarkCollection.hpp"
-#include "imageio/FilebasedImageSource.hpp"
+#include "imageio/ImageSource.hpp"
 #include "imageio/LandmarkFormatParser.hpp"
 #include "boost/algorithm/string.hpp"
 #include <stdexcept>
@@ -34,7 +34,7 @@ LandmarkFileLoader::~LandmarkFileLoader()
 
 
 
-map<path, LandmarkCollection> LandmarkFileLoader::loadOnePerImage(shared_ptr<FilebasedImageSource> imageSource, shared_ptr<LandmarkFormatParser> landmarkFormatParser)
+map<path, LandmarkCollection> LandmarkFileLoader::loadOnePerImage(shared_ptr<ImageSource> imageSource, shared_ptr<LandmarkFormatParser> landmarkFormatParser)
 {
 	// Note: What if the landmarks are in another dir... :-)
 	map<path, LandmarkCollection> lmcollMap;

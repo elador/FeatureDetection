@@ -19,7 +19,7 @@ using std::runtime_error;
 
 namespace imageio {
 
-FileListImageSource::FileListImageSource(string filelist) {
+FileListImageSource::FileListImageSource(string filelist) : files(), index(0) {
 	path path(filelist);
 	if (!exists(path))
 		throw runtime_error("File '" + filelist + "' does not exist");

@@ -23,7 +23,7 @@ namespace imageio {
 
 LabeledImageSource::LabeledImageSource(shared_ptr<ImageSource> imageSource, shared_ptr<LandmarkSource> landmarkSource) : lastRetrievedImage(), imageSource(imageSource), landmarkSource(landmarkSource)
 {
-
+	 //: files(), index(0) ?
 }
 
 LabeledImageSource::~LabeledImageSource() {}

@@ -21,7 +21,6 @@ ENDIF()
 # source and header files
 SET(HEADERS
 	include/imageio/ImageSource.hpp
-	include/imageio/FilebasedImageSource.hpp
 	include/imageio/FileImageSource.hpp
 	include/imageio/RepeatingFileImageSource.hpp
 	include/imageio/FileListImageSource.hpp

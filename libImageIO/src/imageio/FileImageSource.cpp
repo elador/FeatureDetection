@@ -16,7 +16,7 @@ using std::runtime_error;
 
 namespace imageio {
 
-FileImageSource::FileImageSource(string filePath) {
+FileImageSource::FileImageSource(string filePath) : files(), index(0) {
 	path path(filePath);
 	if (!exists(path))
 		throw runtime_error("FileImageSource: File '" + filePath + "' does not exist.");

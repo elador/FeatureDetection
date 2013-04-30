@@ -8,7 +8,8 @@
 #ifndef LABELEDIMAGESOURCE_HPP_
 #define LABELEDIMAGESOURCE_HPP_
 
-#include "imageio/FilebasedImageSource.hpp"
+#include "imageio/ImageSource.hpp"
+
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
@@ -38,7 +39,7 @@ class LandmarkSource;
  *       It would maybe also be nice if we could just create an empty LandmarkSource at start, and then,
  *       at some time in the program, add the LandmarkSource from somewhere (e.g. user-specified).
  */
-class LabeledImageSource : public FilebasedImageSource {
+class LabeledImageSource : public ImageSource {
 public:
 
 	/**
@@ -77,6 +78,9 @@ private:
 	shared_ptr<ImageSource> imageSource; ///< The underlying image source.
 	shared_ptr<LandmarkSource> landmarkSource; ///< The underlying landmark source.
 
+private:
+	vector<path> files; ///< The files of the given directory, ordered by name.
+	unsigned int index; ///< The index of the next file.
 };
 
 } /* namespace imageio */
