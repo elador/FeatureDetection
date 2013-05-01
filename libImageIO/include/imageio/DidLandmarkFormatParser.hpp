@@ -9,6 +9,11 @@
 #define DIDLANDMARKFORMATPARSER_HPP_
 
 #include "imageio/LandmarkFormatParser.hpp"
+#ifdef WIN32
+	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
+	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
+#endif
+#include "boost/filesystem.hpp"
 #include "imageio/LandmarkCollection.hpp"
 #include <vector>
 #include <string>
@@ -35,7 +40,7 @@ public:
 	 * @param[in] landmarkData One or several lines from a landmarks file for one image.
 	 * @return All the landmarks that are present in the input (TODO in tlms format).
 	 */
-	const LandmarkCollection read(vector<string> landmarkData);
+	const map<path, LandmarkCollection> read(path landmarkFilePath);
 
 private:
 	map<int, string> didLmMapping;	///< Contains a mapping from the .did Surrey 3DMM to tlms landmark names

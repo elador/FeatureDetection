@@ -9,6 +9,7 @@
 #include "imageio/Landmark.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/algorithm/string.hpp"
+#include "boost/filesystem.hpp"
 #include <stdexcept>
 #include <utility>
 #include <fstream>
@@ -19,6 +20,7 @@ using std::runtime_error;
 using std::make_pair;
 using boost::algorithm::trim;
 using boost::algorithm::starts_with;
+using boost::filesystem::path;
 using std::ifstream;
 using std::stringstream;
 
@@ -26,13 +28,10 @@ namespace imageio {
 
 TlmsLandmarkFormatParser::~TlmsLandmarkFormatParser() {}
 
-const LandmarkCollection TlmsLandmarkFormatParser::read(vector<string> landmarkData)
+const map<path, LandmarkCollection> TlmsLandmarkFormatParser::read(path landmarkFilePath)
 {
-	LandmarkCollection lmcoll;
-	for (auto line : landmarkData) {
-		// TODO: Add checking of #, //, ... (see readFromTlmsFile(...) below).
-		lmcoll.insert(readFromTlmsLine(line));
-	}
+	map<path, LandmarkCollection> lmcoll;
+	lmcoll.insert(make_pair(landmarkFilePath, readFromTlmsFile(landmarkFilePath.string())));
 	return lmcoll;
 }
 

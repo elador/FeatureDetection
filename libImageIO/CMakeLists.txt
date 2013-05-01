@@ -34,7 +34,7 @@ SET(HEADERS
 	include/imageio/Landmark.hpp
 	include/imageio/LandmarkCollection.hpp
 	include/imageio/LandmarkSource.hpp
-	include/imageio/LandmarkFileLoader.hpp
+	include/imageio/LandmarkFileGatherer.hpp
 	include/imageio/LandmarkFormatParser.hpp
 	include/imageio/DidLandmarkFormatParser.hpp
 	include/imageio/TlmsLandmarkFormatParser.hpp
@@ -53,7 +53,7 @@ SET(SOURCE
 	src/imageio/Landmark.cpp
 	src/imageio/LandmarkCollection.cpp
 	src/imageio/LandmarkSource.cpp
-	src/imageio/LandmarkFileLoader.cpp
+	src/imageio/LandmarkFileGatherer.cpp
 	src/imageio/DidLandmarkFormatParser.cpp
 	src/imageio/TlmsLandmarkFormatParser.cpp
 )

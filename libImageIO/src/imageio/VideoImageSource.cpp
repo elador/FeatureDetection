@@ -30,20 +30,20 @@ VideoImageSource::~VideoImageSource() {
 }
 
 const Mat VideoImageSource::get() {
-	capture >> frame;
+	next();
 	return frame;
 }
 
 const bool VideoImageSource::next()
 {
+	capture >> frame;
+	++frameCounter;	// We'll overflow after 2 years at 60fps... guess that's not a problem?
 	return true; // TODO: How can we find out here if we've reached the end of a video file?
 }
 
 const Mat VideoImageSource::getImage()
 {
 	return frame;	// TODO: What about the very first frame? We should initialize frame in the constructor.
-					// TODO: This is currently flawed. A call to next() with a subsequent call to getImage()
-					//       should return the next frame, not always the same!
 }
 
 const path VideoImageSource::getName()
@@ -54,7 +54,7 @@ const path VideoImageSource::getName()
 const vector<path> VideoImageSource::getNames()
 {
 	vector<path> tmp;
-	tmp.push_back( path(lexical_cast<string>(frameCounter)));
+	tmp.push_back(path(lexical_cast<string>(frameCounter)));
 	return tmp;
 }
 

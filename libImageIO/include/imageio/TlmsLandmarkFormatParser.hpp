@@ -35,7 +35,7 @@ public:
 	 * @param[in] landmarkData One or several lines from a landmarks file for one image.
 	 * @return All the landmarks that are present in the input (TODO in tlms format).
 	 */
-	const LandmarkCollection read(vector<string> landmarkData);
+	const map<path, LandmarkCollection> read(path landmarkFilePath);
 
 private:
 	

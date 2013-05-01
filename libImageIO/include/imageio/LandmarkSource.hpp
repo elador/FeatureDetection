@@ -14,16 +14,18 @@
 #endif
 #include "boost/filesystem.hpp"
 #include <map>
+#include <vector>
 #include <memory>
 
 using boost::filesystem::path;
 using std::map;
+using std::vector;
 using std::shared_ptr;
 
 namespace imageio {
 
 class LandmarkCollection;
-class LandmarkFileLoader;
+class LandmarkFormatParser;
 
 /**
  * Source of labeled image landmarks.
@@ -39,7 +41,7 @@ public:
 	 *
 	 * @param[in] directory The directory containing image files.
 	 */
-	LandmarkSource(map<path, LandmarkCollection> landmarkCollections);
+	LandmarkSource(vector<path> landmarkFiles, shared_ptr<LandmarkFormatParser> fileParser);
 	
 	~LandmarkSource();
 

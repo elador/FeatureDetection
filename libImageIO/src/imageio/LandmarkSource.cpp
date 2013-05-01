@@ -7,7 +7,7 @@
 
 #include "imageio/LandmarkSource.hpp"
 #include "imageio/LandmarkCollection.hpp"
-#include "imageio/LandmarkFileLoader.hpp"
+#include "imageio/LandmarkFormatParser.hpp"
 #include <stdexcept>
 
 using boost::filesystem::exists;
@@ -16,11 +16,16 @@ using boost::filesystem::directory_iterator;
 using std::copy;
 using std::sort;
 using std::runtime_error;
+using std::make_pair;
 
 namespace imageio {
 
-LandmarkSource::LandmarkSource(map<path, LandmarkCollection> landmarkCollections) : landmarkCollections(landmarkCollections) {
-	 //landmarkCollections = landmarkFileLoader->load();
+LandmarkSource::LandmarkSource(vector<path> landmarkFiles, shared_ptr<LandmarkFormatParser> fileParser) {
+	 for (const auto& file : landmarkFiles) {
+		 map<path, LandmarkCollection> lms = fileParser->read(file);
+		 // Todo think about what path to add
+		 landmarkCollections.insert(begin(lms), end(lms));
+	 }
 }
 
 LandmarkSource::~LandmarkSource() {}

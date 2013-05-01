@@ -1,12 +1,12 @@
 /*
- * LandmarkFileLoader.hpp
+ * LandmarkFileGatherer.hpp
  *
  *  Created on: 28.04.2013
  *      Author: Patrik Huber
  */
 
-#ifndef LANDMARKFILELOADER_HPP_
-#define LANDMARKFILELOADER_HPP_
+#ifndef LANDMARKFILEGATHERER_HPP_
+#define LANDMARKFILEGATHERER_HPP_
 
 #include "imageio/ImageSource.hpp"
 #ifdef WIN32
@@ -16,12 +16,24 @@
 #include "boost/filesystem.hpp"
 #include <map>
 #include <memory>
+#include <string>
 
 using boost::filesystem::path;
 using std::map;
 using std::shared_ptr;
+using std::string;
 
 namespace imageio {
+
+/**
+ * Represents the different possible methods for gathering landmark files.
+ */
+enum class GatherMethod { // Case inconsistent with "loglevels"
+	SEPARATE_FILES,		// ...
+	ONE_FILE_PER_IMAGE_SAME_DIR,	// ...
+	ONE_FILE_PER_IMAGE_DIFFERENT_DIRS // ...
+	// Todo: separate SAME_DIR / DIFFERENT_DIRS, assign powers of 2 and use logical operators?
+};
 
 class LandmarkCollection;
 class FilebasedImageSource;
@@ -31,15 +43,15 @@ class LandmarkFormatParser;
  * Provides different means of loading landmark collections
  * from files.
  */
-class LandmarkFileLoader {
+class LandmarkFileGatherer {
 public:
 
-	LandmarkFileLoader();
+	LandmarkFileGatherer();
 
-	virtual ~LandmarkFileLoader();
+	virtual ~LandmarkFileGatherer();
 
 	/**
-	 * Loads one landmark-file per image. Looks 
+	 * Loads landmark-files
 	 *
 	 * Note: If these loaders get too many, we could encapsulate them into separate classes, and pass them to the constructor to LandmarkSource.
 	 *       e.g. SingleFileLandmarkLoader, {Directory|MultipleFiles}LandmarkLoader, ...
@@ -59,12 +71,14 @@ public:
 	 * TODO: To pass the imageSource here is probably ugly, because the LabeledImageSource we
 	 *       create in our code already knows the ImageSource!
 	 *
-	 * @param[in] ... ...
-	 * @return todo
+	 * @param[in] imageSource An ImageSource, needed for knowing the filenames to load.
+	 * @param[in] fileFxtension The file extension of the landmark files to load.
+	 * @param[in] gatherMethod The method with which to gather the landmark files.
+	 * @return A vector of all paths to the landmark files.
 	 */
-	static map<path, LandmarkCollection> loadOnePerImage(shared_ptr<ImageSource> imageSource, shared_ptr<LandmarkFormatParser> landmarkFormatParser);
+	static vector<path> gather(shared_ptr<ImageSource> imageSource, string fileExtension, GatherMethod gatherMethod);
 
 };
 
 } /* namespace imageio */
-#endif /* LANDMARKFILELOADER_HPP_ */
+#endif /* LANDMARKFILEGATHERER_HPP_ */
