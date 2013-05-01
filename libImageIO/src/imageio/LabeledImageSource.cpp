@@ -21,27 +21,38 @@ using std::runtime_error;
 
 namespace imageio {
 
-LabeledImageSource::LabeledImageSource(shared_ptr<ImageSource> imageSource, shared_ptr<LandmarkSource> landmarkSource) : lastRetrievedImage(), imageSource(imageSource), landmarkSource(landmarkSource)
+LabeledImageSource::LabeledImageSource(shared_ptr<ImageSource> imageSource, shared_ptr<LandmarkSource> landmarkSource) : imageSource(imageSource), landmarkSource(landmarkSource)
 {
-	 //: files(), index(0) ?
 }
 
 LabeledImageSource::~LabeledImageSource() {}
 
+const bool LabeledImageSource::next()
+{
+	return imageSource->next();
+}
+
 const Mat LabeledImageSource::get() {
-	// save the path of current img
 	return imageSource->get();
 }
 
-const LandmarkCollection LabeledImageSource::getLandmarks() {
-	return landmarkSource->get(lastRetrievedImage);
-}
-
-const path LabeledImageSource::getPathOfNextImage()
+const Mat LabeledImageSource::getImage()
 {
-	return path();
+	return imageSource->getImage();
 }
 
-// retrieve the label, if it has one
+const path LabeledImageSource::getName()
+{
+	return imageSource->getName();
+}
+
+const vector<path> LabeledImageSource::getNames()
+{
+	return imageSource->getNames();
+}
+
+const LandmarkCollection LabeledImageSource::getLandmarks() {
+	return landmarkSource->get(imageSource->getName());
+}
 
 } /* namespace imageio */

@@ -8,7 +8,7 @@
 #ifndef KINECTIMAGESOURCE_HPP_
 #define KINECTIMAGESOURCE_HPP_
 
-#include "ImageSource.hpp"
+#include "imageio/ImageSource.hpp"
 #ifdef WIN32
 	#include <windows.h>
 	#include <NuiApi.h>
@@ -31,7 +31,15 @@ public:
 
 	virtual ~KinectImageSource();
 
+	const bool next();
+
 	const Mat get();
+
+	const Mat getImage();
+
+	const path getName();
+
+	const vector<path> getNames();
 
 private:
 	Mat frame; ///< The current frame.

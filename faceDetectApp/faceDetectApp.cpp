@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
 		numInputs++;
 		//imageSource = make_shared<FileImageSource>(inputFilenames);
 		//imageSource = make_shared<RepeatingFileImageSource>("C:\\Users\\Patrik\\GitHub\\data\\firstrun\\ws_8.png");
-		shared_ptr<FilebasedImageSource> fileImgSrc = make_shared<FileImageSource>(inputFilenames);
+		shared_ptr<ImageSource> fileImgSrc = make_shared<FileImageSource>(inputFilenames);
 		shared_ptr<LandmarkSource> lmSrc = make_shared<LandmarkSource>(LandmarkFileLoader::loadOnePerImage(fileImgSrc, make_shared<DidLandmarkFormatParser>()));
 		shared_ptr<ImageSource> tmp = make_shared<LabeledImageSource>(fileImgSrc, lmSrc);
 	}

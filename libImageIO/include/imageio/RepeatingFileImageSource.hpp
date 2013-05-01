@@ -8,6 +8,7 @@
 #ifndef REPEATINGFILEIMAGESOURCE_HPP_
 #define REPEATINGFILEIMAGESOURCE_HPP_
 
+#include "imageio/ImageSource.hpp"
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
@@ -26,7 +27,7 @@ namespace imageio {
 /**
  * Image source that takes a single image and repeatedly outputs it.
  */
-class RepeatingFileImageSource {
+class RepeatingFileImageSource : public ImageSource {
 public:
 
 	/**
@@ -38,14 +39,18 @@ public:
 
 	virtual ~RepeatingFileImageSource();
 
+	const bool next();
+
 	const Mat get();
 
-	const path getPathOfNextImage();
+	const Mat getImage();
+
+	const path getName();
+
+	const vector<path> getNames();
 
 private:
-	vector<path> files; ///< The files of the given directory, ordered by name.
-	unsigned int index; ///< The index of the next file.
-
+	path file; ///< The path to the file that is output repeatedly.
 	Mat image; ///< The image. As it's only one image, we pre-load it.
 };
 

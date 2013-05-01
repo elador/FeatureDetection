@@ -62,6 +62,14 @@ public:
 	 */
 	const Mat get();
 
+	const bool next();
+
+	const Mat getImage();
+
+	const path getName();
+
+	const vector<path> getNames();
+
 	/**
 	 * Retrieves the landmarks of the image that was last retrieved with get().
 	 *
@@ -69,18 +77,11 @@ public:
 	 */
 	const LandmarkCollection getLandmarks();
 
-	const path getPathOfNextImage(); // Hmm that's somehow ugly, not really needed here is it...
-
 private:
 
-	path lastRetrievedImage; ///< The image retrieved by the last get() call.
-	
 	shared_ptr<ImageSource> imageSource; ///< The underlying image source.
 	shared_ptr<LandmarkSource> landmarkSource; ///< The underlying landmark source.
 
-private:
-	vector<path> files; ///< The files of the given directory, ordered by name.
-	unsigned int index; ///< The index of the next file.
 };
 
 } /* namespace imageio */

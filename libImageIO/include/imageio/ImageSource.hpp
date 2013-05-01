@@ -2,7 +2,7 @@
  * ImageSource.hpp
  *
  *  Created on: 20.08.2012
- *      Author: poschmann
+ *      Author: poschmann, Patrik Huber
  */
 
 #ifndef IMAGESOURCE_HPP_
@@ -31,21 +31,41 @@ public:
 	virtual ~ImageSource() {}
 
 	/**
-	 * Retrieves a single image.
+	 * Moves the image source forward to the next image.
+	 *
+	 * @return True if the image source contains a next image, false otherwise.
+	 */
+	virtual const bool next() = 0;
+
+	/**
+	 * Retrieves the current image and moves the image source forward to
+	 * the next image.
 	 *
 	 * @return The image (that may be empty if no data could be retrieved).
 	 */
 	virtual const Mat get() = 0;
 
 	/**
-	 * Get the path of the current image that is returned by the next
-	 * call to ImageSource::get().
+	 * Retrieves the current image.
 	 *
-	 * @return The path to the image.
+	 * @return The image (that may be empty if no data could be retrieved).
 	 */
-	//virtual const path getPathOfNextImage() = 0;
+	virtual const Mat getImage() = 0;
 
-	//const vector<path> getPaths() { return files; }; // ...
+	/**
+	 * Retrieves the name of the current image. That could be the
+	 * path to the image or the current frame number.
+	 *
+	 * @return The name of the current image (that may be empty if no data could be retrieved).
+	 */
+	virtual const path getName() = 0;
+
+	/**
+	 * Retrieves the list of image names currently in the image source.
+	 *
+	 * @return The image (that may be empty if no data could be retrieved)...
+	 */
+	virtual const vector<path> getNames() = 0;
 
 };
 

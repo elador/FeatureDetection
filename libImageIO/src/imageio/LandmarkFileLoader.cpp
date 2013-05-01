@@ -32,14 +32,12 @@ LandmarkFileLoader::~LandmarkFileLoader()
 
 }
 
-
-
 map<path, LandmarkCollection> LandmarkFileLoader::loadOnePerImage(shared_ptr<ImageSource> imageSource, shared_ptr<LandmarkFormatParser> landmarkFormatParser)
 {
 	// Note: What if the landmarks are in another dir... :-)
 	map<path, LandmarkCollection> lmcollMap;
 	// loop over all images in imageSource
-	for (const auto& filepath : imageSource->getPaths()) {
+	for (const auto& filepath : imageSource->getNames()) {
 		// we have the image filepath now, how do we get to the image? E.g. what's the ending of the filename we're looking for? Depends on the landmarkFormatParser...
 		vector<string> lines;
 		// BIG TODO for now: replace ending (after .) by .did

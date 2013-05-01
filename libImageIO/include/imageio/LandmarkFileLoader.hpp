@@ -8,7 +8,7 @@
 #ifndef LANDMARKFILELOADER_HPP_
 #define LANDMARKFILELOADER_HPP_
 
-#include "ImageSource.hpp"
+#include "imageio/ImageSource.hpp"
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
@@ -62,7 +62,7 @@ public:
 	 * @param[in] ... ...
 	 * @return todo
 	 */
-	static map<path, LandmarkCollection> loadOnePerImage(shared_ptr<FilebasedImageSource> imageSource, shared_ptr<LandmarkFormatParser> landmarkFormatParser);
+	static map<path, LandmarkCollection> loadOnePerImage(shared_ptr<ImageSource> imageSource, shared_ptr<LandmarkFormatParser> landmarkFormatParser);
 
 };
 

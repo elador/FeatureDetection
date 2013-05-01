@@ -104,7 +104,8 @@ const cv::Mat KinectImageSource::get() {
 
 	if (FAILED(hr))
 	{
-		return frame;	// Hmm, really? We've failed. return frame then?
+		//return frame;	// Hmm, really? We've failed. return frame then?
+		return Mat();
 	}
 
 	INuiFrameTexture * pTexture = imageFrame.pFrameTexture;
@@ -141,6 +142,48 @@ const cv::Mat KinectImageSource::get() {
 #else
 	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
 	return frame;
+#endif
+}
+
+const bool KinectImageSource::next()
+{
+#ifdef WIN32
+	return true;	// There should always be a next frame in the Kinect. If not, get() will fail.
+#else
+	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
+	return false;
+#endif
+}
+
+const Mat KinectImageSource::getImage()
+{
+#ifdef WIN32
+	return frame;	// TODO: What about the very first frame? We should initialize frame in the constructor.
+					// TODO: This is currently flawed. A call to next() with a subsequent call to getImage()
+					//       should return the next frame, not always the same!
+#else
+	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
+	return Mat();
+#endif
+}
+
+const path KinectImageSource::getName()
+{
+#ifdef WIN32
+	return path();
+#else
+	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
+	return path();
+#endif
+}
+
+const vector<path> KinectImageSource::getNames()
+{
+#ifdef WIN32
+	return vector<path>();
+#else
+	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
+	return vector<path>();
 #endif
 }
 

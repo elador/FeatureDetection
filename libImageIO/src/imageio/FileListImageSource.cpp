@@ -54,15 +54,36 @@ FileListImageSource::FileListImageSource(string filelist) : files(), index(0) {
 
 FileListImageSource::~FileListImageSource() {}
 
+const bool FileListImageSource::next()
+{
+	if (index >= files.size()) {
+		index++;
+		return true;
+	}
+	return false;
+}
+
 const Mat FileListImageSource::get() {
 	if (index >= files.size())
 		return Mat();
-	return imread(files[index++].string(), 1);
+	return imread(files[index++].string(), 1);	// output the current image and then increment index
 }
 
-const path FileListImageSource::getPathOfNextImage()
+const Mat FileListImageSource::getImage()
 {
-	return path();
+	if (index >= files.size())
+		return Mat();
+	return imread(files[index].string(), 1);
+}
+
+const path FileListImageSource::getName()
+{
+	return files[index];
+}
+
+const vector<path> FileListImageSource::getNames()
+{
+	return files;
 }
 
 } /* namespace imageio */

@@ -37,15 +37,36 @@ DirectoryImageSource::DirectoryImageSource(string directory) : files(), index(0)
 
 DirectoryImageSource::~DirectoryImageSource() {}
 
+const bool DirectoryImageSource::next()
+{
+	if (index >= files.size()) {
+		index++;
+		return true;
+	}
+	return false;
+}
+
 const Mat DirectoryImageSource::get() {
 	if (index >= files.size())
 		return Mat();
-	return imread(files[index++].string(), 1);
+	return imread(files[index++].string(), 1);	// output the current image and then increment index
 }
 
-const path DirectoryImageSource::getPathOfNextImage()
+const Mat DirectoryImageSource::getImage()
 {
-	return path();
+	if (index >= files.size())
+		return Mat();
+	return imread(files[index].string(), 1);
+}
+
+const path DirectoryImageSource::getName()
+{
+	return files[index];
+}
+
+const vector<path> DirectoryImageSource::getNames()
+{
+	return files;
 }
 
 } /* namespace imageio */

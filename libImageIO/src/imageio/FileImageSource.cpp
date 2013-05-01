@@ -48,15 +48,36 @@ FileImageSource::FileImageSource(vector<string> filePaths) {
 
 FileImageSource::~FileImageSource() {}
 
+const bool FileImageSource::next()
+{
+	if (index >= files.size()) {
+		index++;
+		return true;
+	}
+	return false;
+}
+
 const Mat FileImageSource::get() {
 	if (index >= files.size())
 		return Mat();
-	return imread(files[index++].string(), 1);
+	return imread(files[index++].string(), 1);	// output the current image and then increment index
 }
 
-const path FileImageSource::getPathOfNextImage()
+const Mat FileImageSource::getImage()
 {
-	return path();
+	if (index >= files.size())
+		return Mat();
+	return imread(files[index].string(), 1);
+}
+
+const path FileImageSource::getName()
+{
+	return files[index];
+}
+
+const vector<path> FileImageSource::getNames()
+{
+	return files;
 }
 
 } /* namespace imageio */

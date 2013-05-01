@@ -8,6 +8,7 @@
 #ifndef DIRECTORYIMAGESOURCE_HPP_
 #define DIRECTORYIMAGESOURCE_HPP_
 
+#include "imageio/ImageSource.hpp"
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
@@ -26,7 +27,7 @@ namespace imageio {
 /**
  * Image source that takes the images of a directory.
  */
-class DirectoryImageSource {
+class DirectoryImageSource : public ImageSource {
 public:
 
 	/**
@@ -38,9 +39,15 @@ public:
 
 	virtual ~DirectoryImageSource();
 
+	const bool next();
+
 	const Mat get();
 
-	const path getPathOfNextImage();
+	const Mat getImage();
+
+	const path getName();
+
+	const vector<path> getNames();
 
 private:
 	vector<path> files; ///< The files of the given directory, ordered by name.

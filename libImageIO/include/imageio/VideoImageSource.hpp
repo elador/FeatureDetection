@@ -8,7 +8,7 @@
 #ifndef VIDEOIMAGESOURCE_HPP_
 #define VIDEOIMAGESOURCE_HPP_
 
-#include "ImageSource.hpp"
+#include "imageio/ImageSource.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
 using cv::VideoCapture;
@@ -37,11 +37,20 @@ public:
 
 	virtual ~VideoImageSource();
 
+	const bool next();
+
 	const Mat get();
+
+	const Mat getImage();
+
+	const path getName();
+
+	const vector<path> getNames();
 
 private:
 	VideoCapture capture; ///< The video capture.
 	Mat frame;            ///< The current frame.
+	unsigned long frameCounter; ///< The current frame number since the capture was started.
 };
 
 } /* namespace imageio */
