@@ -15,12 +15,12 @@ using std::string;
 
 namespace imageio {
 
-VideoImageSource::VideoImageSource(int device) : capture(device), frame() {
+VideoImageSource::VideoImageSource(int device) : capture(device), frame(), frameCounter(0) {
 	if (!capture.isOpened())
 		std::cerr << "Could not open stream from device " << device << std::endl;
 }
 
-VideoImageSource::VideoImageSource(std::string video) : capture(video), frame() {
+VideoImageSource::VideoImageSource(string video) : capture(video), frame(), frameCounter(0) {
 	if (!capture.isOpened())
 		std::cerr << "Could not open video file '" << video << "'" << std::endl;
 }
@@ -30,8 +30,11 @@ VideoImageSource::~VideoImageSource() {
 }
 
 const Mat VideoImageSource::get() {
-	next();
-	return frame;
+	if (next()) {
+		return frame;
+	} else {
+		return Mat();
+	}
 }
 
 const bool VideoImageSource::next()
@@ -43,7 +46,7 @@ const bool VideoImageSource::next()
 
 const Mat VideoImageSource::getImage() const
 {
-	return frame;	// TODO: What about the very first frame? We should initialize frame in the constructor.
+	return frame;
 }
 
 const path VideoImageSource::getName() const

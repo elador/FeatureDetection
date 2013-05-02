@@ -10,7 +10,7 @@
 
 namespace imageio {
 
-KinectImageSource::KinectImageSource(int device) {
+KinectImageSource::KinectImageSource(int device) : frame() {
 
 #ifdef WIN32
 	m_pColorStreamHandle = INVALID_HANDLE_VALUE;
@@ -95,7 +95,7 @@ KinectImageSource::~KinectImageSource() {
 #endif
 }
 
-const cv::Mat KinectImageSource::get() {
+const bool KinectImageSource::next() {
 
 #ifdef WIN32
 	// Attempt to get the color frame
@@ -104,8 +104,7 @@ const cv::Mat KinectImageSource::get() {
 
 	if (FAILED(hr))
 	{
-		//return frame;	// Hmm, really? We've failed. return frame then?
-		return Mat();
+		return false;
 	}
 
 	INuiFrameTexture * pTexture = imageFrame.pFrameTexture;
@@ -138,30 +137,30 @@ const cv::Mat KinectImageSource::get() {
 	// Release the frame
 	m_pNuiSensor->NuiImageStreamReleaseFrame(m_pColorStreamHandle, &imageFrame);
 
-	return frame;
-#else
-	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
-	return frame;
-#endif
-}
-
-const bool KinectImageSource::next()
-{
-#ifdef WIN32
-	return true;	// There should always be a next frame in the Kinect. If not, get() will fail.
+	return true;
 #else
 	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
 	return false;
 #endif
 }
 
+const cv::Mat KinectImageSource::get()
+{
+#ifdef WIN32
+	if(next())
+		return frame;
+	else
+		return cv::Mat();
+#else
+	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
+	return return cv::Mat();
+#endif
+}
+
 const Mat KinectImageSource::getImage() const
 {
 #ifdef WIN32
-	return frame;	// TODO: What about the very first frame? We should initialize frame in the constructor.
-					// TODO: This is currently flawed. A call to next() with a subsequent call to getImage()
-					//       should return the next frame, not always the same!
-					//		 See VideoImageSource on how to implement this!
+	return frame;
 #else
 	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
 	return Mat();
