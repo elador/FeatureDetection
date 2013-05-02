@@ -1,5 +1,5 @@
 /*
- * LandmarksHelper.hpp
+ * LandmarksHelper.hpp DEPRECATED
  *
  *  Created on: 23.03.2013
  *      Author: Patrik Huber

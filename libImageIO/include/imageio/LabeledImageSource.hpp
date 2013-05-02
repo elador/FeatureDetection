@@ -9,7 +9,6 @@
 #define LABELEDIMAGESOURCE_HPP_
 
 #include "imageio/ImageSource.hpp"
-
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
@@ -28,15 +27,7 @@ class LandmarkSource;
 /**
  * Image source that takes the images of an ImageSource and a LandmarkSource.
  *
- * Note: Maybe it doesn't make sense that LabeledImageSource inherits from FilebasedImageSource,
- *       because e.g. that means that it has to implement  its base-class function 
- *       getPathOfNextImage(), and that is conceptually a bit strange. (?) Only inheriting 
- *       from ImageSource doesn't make sense either because LabeledImageSource actually is a
- *       file-based source. Is there any downside of not inheriting from *ImageSource at all?
- *       What makes most sense?
- *       Maybe don't inherit but add a getImageSource() here, so we can still use it as an ImageSource?
- *
- *       It would maybe also be nice if we could just create an empty LandmarkSource at start, and then,
+ * Note: It might be nice if we could just create an empty LandmarkSource at start, and then,
  *       at some time in the program, add the LandmarkSource from somewhere (e.g. user-specified).
  */
 class LabeledImageSource : public ImageSource {

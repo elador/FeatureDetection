@@ -34,12 +34,11 @@ class LandmarkSource {
 public:
 
 	/**
-	 * Constructs a new landmark source.
+	 * Constructs a new landmark source from a list of landmark files and a
+	 * parser to read the landmark files.
 	 *
-	 * Todo: Maybe we want to take a shared_ptr<LandmarkFileLoader> landmarkFileLoader
-	 *       but then LandmarkFileLoader gets more complicated.
-	 *
-	 * @param[in] directory The directory containing image files.
+	 * @param[in] landmarkFiles A list of paths to landmark files.
+	 * @param[in] fileParser A parser to read the file format.
 	 */
 	LandmarkSource(vector<path> landmarkFiles, shared_ptr<LandmarkFormatParser> fileParser);
 	
