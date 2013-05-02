@@ -33,7 +33,7 @@ LandmarkFileGatherer::~LandmarkFileGatherer()
 {
 }
 
-vector<path> LandmarkFileGatherer::gather(shared_ptr<ImageSource> imageSource, string fileExtension, GatherMethod gatherMethod, vector<path> additionalPaths)
+vector<path> LandmarkFileGatherer::gather(const shared_ptr<const ImageSource> imageSource, const string fileExtension, const GatherMethod gatherMethod, const vector<path> additionalPaths)
 {
 	Logger logger = Loggers->getLogger("imageio");
 

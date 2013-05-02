@@ -43,11 +43,11 @@ public:
 
 	const Mat get();
 
-	const Mat getImage();
+	const Mat getImage() const;
 
-	const path getName();
+	const path getName() const;
 
-	const vector<path> getNames();
+	const vector<path> getNames() const;
 
 private:
 	vector<path> files; ///< The files of the given directory, ordered by name.

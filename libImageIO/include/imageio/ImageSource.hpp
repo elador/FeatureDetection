@@ -50,7 +50,7 @@ public:
 	 *
 	 * @return The image (that may be empty if no data could be retrieved).
 	 */
-	virtual const Mat getImage() = 0;
+	virtual const Mat getImage() const = 0;
 
 	/**
 	 * Retrieves the name of the current image. That could be the
@@ -58,14 +58,14 @@ public:
 	 *
 	 * @return The name of the current image (that may be empty if no data could be retrieved).
 	 */
-	virtual const path getName() = 0;	// Q: We could make this protected?
+	virtual const path getName() const = 0;	// Q: We could make this protected?
 
 	/**
 	 * Retrieves the list of image names currently in the image source.
 	 *
 	 * @return The image (that may be empty if no data could be retrieved)...
 	 */
-	virtual const vector<path> getNames() = 0;	// Q: We could make this protected?
+	virtual const vector<path> getNames() const = 0;	// Q: We could make this protected?
 
 };
 

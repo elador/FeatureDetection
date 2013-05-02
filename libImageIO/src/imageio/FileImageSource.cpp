@@ -63,19 +63,19 @@ const Mat FileImageSource::get() {
 	return imread(files[index++].string(), 1);	// output the current image and then increment index
 }
 
-const Mat FileImageSource::getImage()
+const Mat FileImageSource::getImage() const
 {
 	if (index >= files.size())
 		return Mat();
 	return imread(files[index].string(), 1);
 }
 
-const path FileImageSource::getName()
+const path FileImageSource::getName() const
 {
 	return files[index];
 }
 
-const vector<path> FileImageSource::getNames()
+const vector<path> FileImageSource::getNames() const
 {
 	return files;
 }

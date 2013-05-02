@@ -155,19 +155,20 @@ const bool KinectImageSource::next()
 #endif
 }
 
-const Mat KinectImageSource::getImage()
+const Mat KinectImageSource::getImage() const
 {
 #ifdef WIN32
 	return frame;	// TODO: What about the very first frame? We should initialize frame in the constructor.
 					// TODO: This is currently flawed. A call to next() with a subsequent call to getImage()
 					//       should return the next frame, not always the same!
+					//		 See VideoImageSource on how to implement this!
 #else
 	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
 	return Mat();
 #endif
 }
 
-const path KinectImageSource::getName()
+const path KinectImageSource::getName() const
 {
 #ifdef WIN32
 	return path();
@@ -177,7 +178,7 @@ const path KinectImageSource::getName()
 #endif
 }
 
-const vector<path> KinectImageSource::getNames()
+const vector<path> KinectImageSource::getNames() const
 {
 #ifdef WIN32
 	return vector<path>();

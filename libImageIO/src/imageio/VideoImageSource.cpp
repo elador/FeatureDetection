@@ -41,17 +41,17 @@ const bool VideoImageSource::next()
 	return true; // TODO: How can we find out here if we've reached the end of a video file?
 }
 
-const Mat VideoImageSource::getImage()
+const Mat VideoImageSource::getImage() const
 {
 	return frame;	// TODO: What about the very first frame? We should initialize frame in the constructor.
 }
 
-const path VideoImageSource::getName()
+const path VideoImageSource::getName() const
 {
 	return path(lexical_cast<string>(frameCounter));
 }
 
-const vector<path> VideoImageSource::getNames()
+const vector<path> VideoImageSource::getNames() const
 {
 	vector<path> tmp;
 	tmp.push_back(path(lexical_cast<string>(frameCounter)));

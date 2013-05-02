@@ -64,11 +64,11 @@ public:
 
 	const bool next();
 
-	const Mat getImage();
+	const Mat getImage() const;
 
-	const path getName();
+	const path getName() const;
 
-	const vector<path> getNames();
+	const vector<path> getNames() const;
 
 	/**
 	 * Retrieves the landmarks of the image that was last retrieved with get().

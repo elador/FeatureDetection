@@ -23,6 +23,7 @@ namespace imageio {
 
 LabeledImageSource::LabeledImageSource(shared_ptr<ImageSource> imageSource, shared_ptr<LandmarkSource> landmarkSource) : imageSource(imageSource), landmarkSource(landmarkSource)
 {
+	std::cout << "TODO";
 }
 
 LabeledImageSource::~LabeledImageSource() {}
@@ -36,17 +37,17 @@ const Mat LabeledImageSource::get() {
 	return imageSource->get();
 }
 
-const Mat LabeledImageSource::getImage()
+const Mat LabeledImageSource::getImage() const
 {
 	return imageSource->getImage();
 }
 
-const path LabeledImageSource::getName()
+const path LabeledImageSource::getName() const
 {
 	return imageSource->getName();
 }
 
-const vector<path> LabeledImageSource::getNames()
+const vector<path> LabeledImageSource::getNames() const
 {
 	return imageSource->getNames();
 }

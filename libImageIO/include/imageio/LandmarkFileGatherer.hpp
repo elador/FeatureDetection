@@ -78,7 +78,7 @@ public:
 	 * @param[in] additionalPaths One or more additional paths to files or directories, depending on the type of GatherMethod. Default: empty vector.
 	 * @return A vector containing the full paths to all the landmark files gathered.
 	 */
-	static vector<path> gather(shared_ptr<ImageSource> imageSource, string fileExtension, GatherMethod gatherMethod, vector<path> additionalPaths=vector<path>());
+	static vector<path> gather(const shared_ptr<const ImageSource> imageSource, const string fileExtension, const GatherMethod gatherMethod, const vector<path> additionalPaths=vector<path>());
 
 };
 
