@@ -121,8 +121,10 @@ Mat getFaceRegionProbabilityMapFromPatchlist(vector<shared_ptr<ClassifiedPatch>>
 					cv::imwrite("TEST.png", patch->getPatch()->getData());
 				}
 
-				if (patch->getProbability() > faceRegionProbabilityMap.at<float>(currY, currX)) {
-					faceRegionProbabilityMap.at<float>(currY, currX) = patch->getProbability();
+				if(currX < faceRegionProbabilityMap.cols && currY < faceRegionProbabilityMap.rows) { // Note: This is a temporary check, as long as we
+					if (patch->getProbability() > faceRegionProbabilityMap.at<float>(currY, currX)) { // haven't fixed that up/downscaling rounding problem
+						faceRegionProbabilityMap.at<float>(currY, currX) = patch->getProbability();   // that patches can be outside the original image.
+					}
 				}
 			}
 		}
@@ -234,7 +236,11 @@ int main(int argc, char *argv[])
 	int numInputs = 0;
 	if(useFileList==true) {
 		numInputs++;
-		imageSource = make_shared<FileListImageSource>(inputFilelist);
+		shared_ptr<ImageSource> fileImgSrc = make_shared<FileListImageSource>(inputFilelist);
+		shared_ptr<DidLandmarkFormatParser> didParser= make_shared<DidLandmarkFormatParser>();
+		vector<path> landmarkDir; landmarkDir.push_back(path("C:\\Users\\Patrik\\Github\\data\\labels\\xm2vts\\guosheng\\"));
+		shared_ptr<LandmarkSource> lmSrc = make_shared<LandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
+		imageSource = make_shared<LabeledImageSource>(fileImgSrc, lmSrc);
 	}
 	if(useImgs==true) {
 		numInputs++;

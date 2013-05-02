@@ -47,7 +47,9 @@ LandmarkCollection DidLandmarkFormatParser::readFromDidFile(const string& filena
 		if ( !strLine.empty() && !starts_with(strLine, "#") && !starts_with(strLine, "//") )
 		{
 			Landmark lm = readFromDidLine(strLine);
-			listLM.insert(lm);
+			if (!lm.getName().empty()) {	// Todo: That's not so nice, do this differently.
+				listLM.insert(lm);
+			}
 		}
 	}
 	return listLM;
@@ -65,7 +67,11 @@ Landmark DidLandmarkFormatParser::readFromDidLine(const string& line) {
 	fPos[2] = 0;
 	int vertexNumber = boost::lexical_cast<int>(fVertexNumber);
 	name = didToTlmsName(vertexNumber);
-	return Landmark(name, fPos, cv::Size2f(), true);
+	if (!name.empty()) {
+		return Landmark(name, fPos, cv::Size2f(), true);
+	} else {
+		return Landmark("");	// Todo: That's not so nice, do this differently.
+	}
 }
 
 string DidLandmarkFormatParser::didToTlmsName(int didVertexId) {
@@ -111,7 +117,11 @@ string DidLandmarkFormatParser::didToTlmsName(int didVertexId) {
 		//didLmMapping.insert(make_pair( 359, "")); // Right ear-jaw junction (...)
 		//didLmMapping.insert(make_pair( 776, "")); // Left ear-jaw junction (...)
 	}
-	return didLmMapping.at(didVertexId); // Todo: Use [] instead of at? Error-checking?
+	const auto tlmsName = didLmMapping.find(didVertexId);
+	if(tlmsName != didLmMapping.end())
+		return tlmsName->second;
+	else
+		return string("");	// Todo: That's not so nice, do this differently.
 }
 
 
