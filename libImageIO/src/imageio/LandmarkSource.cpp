@@ -23,7 +23,6 @@ namespace imageio {
 LandmarkSource::LandmarkSource(vector<path> landmarkFiles, shared_ptr<LandmarkFormatParser> fileParser) {
 	 for (const auto& file : landmarkFiles) {
 		 map<path, LandmarkCollection> lms = fileParser->read(file);
-		 // Todo think about what path to add
 		 landmarkCollections.insert(begin(lms), end(lms));
 	 }
 }

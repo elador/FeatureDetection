@@ -23,7 +23,6 @@ namespace imageio {
 
 LabeledImageSource::LabeledImageSource(shared_ptr<ImageSource> imageSource, shared_ptr<LandmarkSource> landmarkSource) : imageSource(imageSource), landmarkSource(landmarkSource)
 {
-	std::cout << "TODO";
 }
 
 LabeledImageSource::~LabeledImageSource() {}

@@ -29,7 +29,7 @@ FileImageSource::FileImageSource(string filePath) : files(), index(0) {
 	files.push_back(path);
 }
 
-FileImageSource::FileImageSource(vector<string> filePaths) {
+FileImageSource::FileImageSource(vector<string> filePaths) : files(), index(0) {
 
 	/* TODO: Only copy valid images that opencv can handle. Those are:
 		Built-in: bmp, portable image formats (pbm, pgm, ppm), Sun raster (sr, ras).

@@ -26,8 +26,8 @@ using std::map;
 namespace imageio {
 
 /**
- * Takes one or several lines from a landmarks file for one image as 
- * input and returns a LandmarkCollection (TODO in tlms format) with all the landmarks found.
+ * Takes the path to a .did file as input and returns a map with one entry containing
+ * a LandmarkCollection (TODO in tlms format) with all the landmarks found.
  */
 class DidLandmarkFormatParser : public LandmarkFormatParser {
 public:
@@ -37,8 +37,9 @@ public:
 	/**
 	 * Reads the landmark data for one single image and returns all its landmarks (TODO in tlms format).
 	 *
-	 * @param[in] landmarkData One or several lines from a landmarks file for one image.
-	 * @return All the landmarks that are present in the input (TODO in tlms format).
+	 * @param[in] landmarkFilePath A path to a .did file.
+	 * @return A map with one entry containing the basename of the file and
+	 *         all the landmarks that are present (TODO in tlms format).
 	 */
 	const map<path, LandmarkCollection> read(path landmarkFilePath);
 

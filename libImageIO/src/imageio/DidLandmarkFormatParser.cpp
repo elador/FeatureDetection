@@ -31,7 +31,7 @@ DidLandmarkFormatParser::~DidLandmarkFormatParser() {}
 const map<path, LandmarkCollection> DidLandmarkFormatParser::read(path landmarkFilePath)
 {
 	map<path, LandmarkCollection> lmcoll;
-	lmcoll.insert(make_pair(landmarkFilePath, readFromDidFile(landmarkFilePath.string())));
+	lmcoll.insert(make_pair(landmarkFilePath.stem(), readFromDidFile(landmarkFilePath.string())));
 	return lmcoll;
 }
 

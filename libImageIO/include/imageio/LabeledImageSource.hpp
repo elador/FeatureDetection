@@ -43,7 +43,7 @@ class LabeledImageSource : public ImageSource {
 public:
 
 	/**
-	 * Constructs a new labeled image source.
+	 * Constructs a new labeled image source from a given ImageSource and LandmarkSource.
 	 *
 	 * @param[in] imageSource The image source to use.
 	 * @param[in] landmarkSource The landmark source to use.
@@ -78,7 +78,6 @@ public:
 	const LandmarkCollection getLandmarks();
 
 private:
-
 	shared_ptr<ImageSource> imageSource; ///< The underlying image source.
 	shared_ptr<LandmarkSource> landmarkSource; ///< The underlying landmark source.
 

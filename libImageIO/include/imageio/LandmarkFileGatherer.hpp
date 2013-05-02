@@ -41,8 +41,8 @@ class FilebasedImageSource;
 class LandmarkFormatParser;
 
 /**
- * Provides different means of loading landmark collections
- * from files.
+ * Provides different means of gathering a list of landmark-files
+ * from different files and/or directories.
  */
 class LandmarkFileGatherer {
 public:
@@ -52,25 +52,16 @@ public:
 	virtual ~LandmarkFileGatherer();
 
 	/**
-	 * Loads landmark-files
+	 * Gathers a list of landmark-files from different files and/or directories,
+	 * depending on the input parameters.
 	 *
-	 * Note: If these loaders get too many, we could encapsulate them into separate classes, and pass them to the constructor to LandmarkSource.
-	 *       e.g. SingleFileLandmarkLoader, {Directory|MultipleFiles}LandmarkLoader, ...
-	 *       We should distinguish between loading from WHERE (1 file, directory, ...) and loading WHAT FORMAT (.tlms, .did, ...), although 
-	 *       that is sometimes coupled (e.g. .lst is always 1 file). But maybe that's not a problem - what scenarios do we have?
-	 *         - Loading from 1 file (.lst, .xml), all lm's in there
-	 *         - Loading multiple files, 1 lm file per image
-	 *               * we can have multiple formats, .tlms, .did, ...
+	 * Note: Do we want to load all landmark-files at the start, or just load each one
+	 *       when LandmarkSource::get(path) is called? Advantage of the latter would be
+	 *       that we already know the path. Disadvantage: Maybe more complicated in the
+	 *       case we load all landmarks from one image? And we should not do at run-time
+	 *		 what we can do at load-time.
 	 *
-	 * Note2: Do we want to load all landmark-files at the start, or just load each one
-	 *        when LandmarkSource::get(path) is called? Advantage of the latter would be
-	 *        that we already know the path. Disadvantage: Maybe more complicated in the
-	 *        case we load all landmarks from one image?
-	 *
-	 *        Add a FilebasedImageSource::getFilepaths()?
-	 *
-	 * TODO: To pass the imageSource here is probably ugly, because the LabeledImageSource we
-	 *       create in our code already knows the ImageSource!
+	 * Todo: ImageSource could also be an optional parameter (only needed for GatherMethod::ONE_FILE_PER_IMAGE_*)
 	 *
 	 * @param[in] imageSource An ImageSource, needed for knowing the filenames to load.
 	 * @param[in] fileFxtension The file extension of the landmark files to load. TODO add doku: with or without the dot? (.tlms or tlms?)
