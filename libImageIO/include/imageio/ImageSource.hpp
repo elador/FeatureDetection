@@ -58,14 +58,14 @@ public:
 	 *
 	 * @return The name of the current image (that may be empty if no data could be retrieved).
 	 */
-	virtual const path getName() = 0;
+	virtual const path getName() = 0;	// Q: We could make this protected?
 
 	/**
 	 * Retrieves the list of image names currently in the image source.
 	 *
 	 * @return The image (that may be empty if no data could be retrieved)...
 	 */
-	virtual const vector<path> getNames() = 0;
+	virtual const vector<path> getNames() = 0;	// Q: We could make this protected?
 
 };
 

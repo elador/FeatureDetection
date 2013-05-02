@@ -72,11 +72,12 @@ public:
 	 *       create in our code already knows the ImageSource!
 	 *
 	 * @param[in] imageSource An ImageSource, needed for knowing the filenames to load.
-	 * @param[in] fileFxtension The file extension of the landmark files to load.
+	 * @param[in] fileFxtension The file extension of the landmark files to load. TODO add doku: with or without the dot? (.tlms or tlms?)
 	 * @param[in] gatherMethod The method with which to gather the landmark files.
-	 * @return A vector of all paths to the landmark files.
+	 * @param[in] additionalPaths One or more additional paths to files or directories, depending on the type of GatherMethod. Default: empty vector.
+	 * @return A vector containing the full paths to all the landmark files gathered.
 	 */
-	static vector<path> gather(shared_ptr<ImageSource> imageSource, string fileExtension, GatherMethod gatherMethod);
+	static vector<path> gather(shared_ptr<ImageSource> imageSource, string fileExtension, GatherMethod gatherMethod, vector<path> additionalPaths=vector<path>());
 
 };
 
