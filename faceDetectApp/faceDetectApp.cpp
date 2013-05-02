@@ -242,8 +242,8 @@ int main(int argc, char *argv[])
 		//imageSource = make_shared<RepeatingFileImageSource>("C:\\Users\\Patrik\\GitHub\\data\\firstrun\\ws_8.png");
 		shared_ptr<ImageSource> fileImgSrc = make_shared<FileImageSource>(inputFilenames);
 		shared_ptr<DidLandmarkFormatParser> didParser= make_shared<DidLandmarkFormatParser>();
-		vector<path> landmarkDir; landmarkDir.push_back(path("C:\\something\\bla"));
-		shared_ptr<LandmarkSource> lmSrc = make_shared<LandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
+		vector<path> landmarkDir; landmarkDir.push_back(path("C:\\something\\bla.txt"));
+		shared_ptr<LandmarkSource> lmSrc = make_shared<LandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::SEPARATE_FILES, landmarkDir), didParser);
 		shared_ptr<ImageSource> tmp = make_shared<LabeledImageSource>(fileImgSrc, lmSrc);
 	}
 	if(useDirectory==true) {

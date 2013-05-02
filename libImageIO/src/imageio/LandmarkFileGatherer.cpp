@@ -54,7 +54,7 @@ vector<path> LandmarkFileGatherer::gather(const shared_ptr<const ImageSource> im
 	}
 	else if (gatherMethod == GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS)
 	{
-		if (additionalPaths.size() == 0) {
+		if (additionalPaths.empty()) {
 			logger.warn("GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS was specified, but no additional paths were provided. Using GatherMethod::ONE_FILE_PER_IMAGE_SAME_DIR.");
 			return gather(imageSource, fileExtension, GatherMethod::ONE_FILE_PER_IMAGE_SAME_DIR);
 		}
@@ -92,17 +92,21 @@ vector<path> LandmarkFileGatherer::gather(const shared_ptr<const ImageSource> im
 	}
 	else if (gatherMethod == GatherMethod::SEPARATE_FILES)
 	{
-
+		if (additionalPaths.empty()) {
+			logger.warn("GatherMethod::SEPARATE_FILES was specified, but no additional files were provided. Unable to find any landmarks files.");
+			return paths;
+		}
+		for (const auto& additionalPath : additionalPaths) {
+			if (is_regular_file(additionalPath)) {
+				paths.push_back(additionalPath);
+			} else {
+				logger.warn("Filename for landmarks provided, but could not find file: " + additionalPath.string());
+			}
+		}
+		if (paths.empty()) {
+			logger.warn("Filenames for gathering landmarks were provided, but could not find any of the files.");
+		}
 	}
-	//path basename = currentImagePath.stem();
-	//path directory = currentImagePath.parent_path();
-
-	
-	
-/*		int endingIdx = filepath.string().find_last_of(".");
-		string pathAndBasename = filepath.string().substr(0, endingIdx);
-		string lmFilename = pathAndBasename + ".did";*/
-
 
 	return paths;
 }
