@@ -51,10 +51,46 @@ vector<path> LandmarkFileGatherer::gather(shared_ptr<ImageSource> imageSource, s
 			}
 			paths.push_back(landmarkFile);
 		}
-	} else if (gatherMethod == GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS)
+	}
+	else if (gatherMethod == GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS)
 	{
+		if (additionalPaths.size() == 0) {
+			logger.warn("GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS was specified, but no additional paths were provided. Using GatherMethod::ONE_FILE_PER_IMAGE_SAME_DIR.");
+			return gather(imageSource, fileExtension, GatherMethod::ONE_FILE_PER_IMAGE_SAME_DIR);
+		}
+		vector<path> imagePaths = imageSource->getNames();
+		for (const auto& currentImagePath : imagePaths) {
+			
+			bool landmarkFileFound = false;
+			// 1. Look in the directory where the image is.
+			path landmarkFile = currentImagePath;
+			landmarkFile.replace_extension(fileExtension);
+			if (is_regular_file(landmarkFile)) {
+				paths.push_back(landmarkFile);
+				landmarkFileFound = true;
+			}
 
-	} else if (gatherMethod == GatherMethod::SEPARATE_FILES)
+			// 2. Look in all directories specified in additionalPaths.
+			if(!landmarkFileFound) {
+				path imageBasename = currentImagePath.stem();
+				for (const auto& additionalPath : additionalPaths) {
+					landmarkFile = additionalPath;
+					landmarkFile /= imageBasename;
+					landmarkFile.replace_extension(path(fileExtension));
+					if (is_regular_file(landmarkFile)) {
+						paths.push_back(landmarkFile);
+						landmarkFileFound = true;
+						break;
+					}				
+				}
+			}
+
+			if(!landmarkFileFound) {
+				logger.warn("Could not find a landmark-file for image: " + currentImagePath.string() + " in the image directory as well as in any of the specified directories.");
+			}
+		}
+	}
+	else if (gatherMethod == GatherMethod::SEPARATE_FILES)
 	{
 
 	}
