@@ -11,10 +11,14 @@
 
 #include "opencv2/core/core.hpp"
 #include <string>
+#include <array>
+#include <map>
 
 using cv::Vec3f;
 using cv::Size2f;
 using std::string;
+using std::array;
+using std::map;
 
 namespace imageio {
 
@@ -73,6 +77,22 @@ private:
 	bool visibility;	///< Flag if the landmark is currently visible.
 	// maybe add a bool isRepresentedInModel later or something like that
 };
+
+
+/**
+ * Represents a landmark in 2D or 3D. This can be a detected point
+ * in an image, or vertex coordinates in a 3D model.
+ */
+class LandmarkSymbols {
+
+public:
+	static array<bool, 9> get(string landmarkName);
+	static void getColor();
+
+private:
+	static map<string, array<bool, 9>> symbolMap;
+}
+
 
 } /* namespace imageio */
 #endif /* LANDMARK_HPP_ */
