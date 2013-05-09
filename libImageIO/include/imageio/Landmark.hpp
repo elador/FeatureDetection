@@ -91,7 +91,7 @@ public:
 
 private:
 	static map<string, array<bool, 9>> symbolMap;
-}
+};
 
 
 } /* namespace imageio */

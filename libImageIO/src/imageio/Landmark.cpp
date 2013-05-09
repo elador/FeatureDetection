@@ -45,62 +45,62 @@ array<bool, 9> LandmarkSymbols::get(string landmarkName)
 		array<bool, 9> reye_c		= {	false, true, false,
 										false, true, true,
 										false, false, false };
-		symbolMap.insert(make_pair("reye_c", reye_c));	// Use an initializer list as soon as msvc supports it...
+		symbolMap.insert(make_pair("right.eye.pupil.center", reye_c));	// Use an initializer list as soon as msvc supports it...
 
 		array<bool, 9> leye_c	= {	false, true, false,
 									true, true, false,
 									false, false, false };
-		symbolMap.insert(make_pair("reye_c", leye_c));
+		symbolMap.insert(make_pair("left.eye.pupil.center", leye_c));
 
 		array<bool, 9> nose_tip	= {	false, false, false,
 									false, true, false,
 									true, false, true };
-		symbolMap.insert(make_pair("reye_c", nose_tip));
+		symbolMap.insert(make_pair("center.nose.tip", nose_tip));
 
 		array<bool, 9> mouth_rc	= {	false, false, true,
 									false, true, false,
 									false, false, true };
-		symbolMap.insert(make_pair("reye_c", mouth_rc));
+		symbolMap.insert(make_pair("right.lips.corner", mouth_rc));
 
 		array<bool, 9> mouth_lc	= {	true, false, false,
 									false, true, false,
 									true, false, false };
-		symbolMap.insert(make_pair("reye_c", mouth_lc));
+		symbolMap.insert(make_pair("left.lips.corner", mouth_lc));
 
 		array<bool, 9> reye_oc	= {	false, true, false,
 									false, true, true,
 									false, true, false };
-		symbolMap.insert(make_pair("reye_c", reye_oc));
+		symbolMap.insert(make_pair("right.eye.corner_outer", reye_oc));
 
 		array<bool, 9> leye_oc	= {	false, true, false,
 									true, true, false,
 									false, true, false };
-		symbolMap.insert(make_pair("reye_c", leye_oc));
+		symbolMap.insert(make_pair("left.eye.corner_outer", leye_oc));
 
 		array<bool, 9> mouth_ulb	= {	false, false, false,
 										true, true, true,
 										false, true, false };
-		symbolMap.insert(make_pair("reye_c", mouth_ulb));
+		symbolMap.insert(make_pair("center.lips.upper.inner", mouth_ulb));
 
 		array<bool, 9> nosetrill_r	= {	true, false, false,
 										true, true, true,
 										false, false, false };
-		symbolMap.insert(make_pair("reye_c", nosetrill_r));
+		symbolMap.insert(make_pair("right.nose.wing.tip", nosetrill_r));
 
 		array<bool, 9> nosetrill_l	= {	false, false, true,
 										true, true, true,
 										false, false, false };
-		symbolMap.insert(make_pair("reye_c", nosetrill_l));
+		symbolMap.insert(make_pair("left.nose.wing.tip", nosetrill_l));
 
 		array<bool, 9> rear_DONTKNOW	= {	false, true, true,
 											false, true, false,
 											false, true, true };
-		symbolMap.insert(make_pair("reye_c", rear_DONTKNOW));
+		symbolMap.insert(make_pair("right.ear.DONTKNOW", rear_DONTKNOW)); // right.ear.(antihelix.tip | lobule.center | lobule.attachement)
 
 		array<bool, 9> lear_DONTKNOW	= {	true, true, false,
 											false, true, false,
 											true, true, false };
-		symbolMap.insert(make_pair("reye_c", lear_DONTKNOW));
+		symbolMap.insert(make_pair("left.ear.DONTKNOW", lear_DONTKNOW));
 
 	}
 	const auto symbol = symbolMap.find(landmarkName);
@@ -111,6 +111,11 @@ array<bool, 9> LandmarkSymbols::get(string landmarkName)
 		return unknownLmSymbol;
 	}
 	return symbol->second;
+}
+
+void LandmarkSymbols::getColor()
+{
+
 }
 
 } /* namespace imageio */

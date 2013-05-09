@@ -8,6 +8,7 @@
 #include "imageio/FileListImageSource.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include <stdexcept>
+#include <fstream>
 
 using cv::imread;
 using boost::filesystem::exists;
