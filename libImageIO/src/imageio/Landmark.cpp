@@ -38,6 +38,7 @@ Size2f Landmark::getSize() const
 	return size;
 }
 
+map<string, array<bool, 9>> LandmarkSymbols::symbolMap;
 
 array<bool, 9> LandmarkSymbols::get(string landmarkName)
 {
