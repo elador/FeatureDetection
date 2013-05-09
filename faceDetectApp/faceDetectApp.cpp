@@ -279,8 +279,6 @@ int main(int argc, char *argv[])
 	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(pyr, 20, 20);
 	featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
 
-	// TODO: Better: include this in the loading above. e.g. create ProbabilisticWvmClassifier::load(ptree), which
-	// loads ProbabilisticWvmClassifier::loadMatlab and sets the parameters.
 	//shared_ptr<ProbabilisticWvmClassifier> test = dynamic_pointer_cast<ProbabilisticWvmClassifier>(classifiers.find("faceFrontal.wvm")->second);
 	//test->getWvm()->setNumUsedFilters(280);
 

@@ -81,7 +81,7 @@ array<bool, 9> LandmarkSymbols::get(string landmarkName)
 		array<bool, 9> mouth_ulb	= {	false, false, false,
 										true, true, true,
 										false, true, false };
-		symbolMap.insert(make_pair("center.lips.upper.inner", mouth_ulb));
+		symbolMap.insert(make_pair("center.lips.upper.outer", mouth_ulb));
 
 		array<bool, 9> nosetrill_r	= {	true, false, false,
 										true, true, true,
