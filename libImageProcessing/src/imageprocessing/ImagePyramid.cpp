@@ -163,7 +163,7 @@ Size ImagePyramid::getImageSize() const {
 const shared_ptr<ImagePyramidLayer> ImagePyramid::getLayer(int index) const {
 	index -= firstLayer;
 	if (index < 0 || index >= (int)layers.size())
-		return NULL;
+		return nullptr;
 	return layers[index];
 }
 

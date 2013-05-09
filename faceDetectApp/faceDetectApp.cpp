@@ -319,14 +319,18 @@ int main(int argc, char *argv[])
 
 			++det;
 		}
-		/*
-		Mat wholeFaceRegionProbabilityMap = 0.33*regionProbMaps[0]+0.33*regionProbMaps[1]+0.33*regionProbMaps[2];
+		
+		Mat wholeFaceRegionProbabilityMap = Mat::zeros(regionProbMaps[0].rows, regionProbMaps[0].cols, CV_32FC1);
+		for (const auto& map : regionProbMaps) {
+			wholeFaceRegionProbabilityMap += map;
+		}
+		wholeFaceRegionProbabilityMap /= (float)regionProbMaps.size();
 		wholeFaceRegionProbabilityMap *= 255.0f;
 		wholeFaceRegionProbabilityMap.convertTo(wholeFaceRegionProbabilityMap, CV_8UC1);
 		cv::namedWindow("pr", CV_WINDOW_AUTOSIZE); cv::imshow("pr", wholeFaceRegionProbabilityMap);
-		cvMoveWindow("pr", 500, 500);
+		cvMoveWindow("pr", 1000, 500);
 		cv::waitKey(0);
-		*/
+		
 		
 		end = std::chrono::system_clock::now();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
