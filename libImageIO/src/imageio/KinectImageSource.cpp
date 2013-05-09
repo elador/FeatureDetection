@@ -153,7 +153,7 @@ const cv::Mat KinectImageSource::get()
 		return cv::Mat();
 #else
 	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
-	return return cv::Mat();
+	return cv::Mat();
 #endif
 }
 
