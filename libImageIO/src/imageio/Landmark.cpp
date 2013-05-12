@@ -38,6 +38,25 @@ Size2f Landmark::getSize() const
 	return size;
 }
 
+void Landmark::draw(Mat image) const
+{
+	//cv::Point2i realFfpCenter(patch->c.x+patch->w_inFullImg*thisLm.displacementFactorW, patch->c.y+patch->h_inFullImg*thisLm.displacementFactorH);
+	array<bool, 9> symbol = LandmarkSymbols::get(name);
+	cv::Scalar color = LandmarkSymbols::getColor(name);
+	unsigned int pos = 0;
+	for (int currRow = position[1]-1; currRow<=position[1]+1; ++currRow) {
+		for (int currCol = position[0]-1; currCol<=position[0]+1; ++currCol) {
+			if(symbol[pos]==true) {
+				image.at<cv::Vec3b>(currRow,currCol)[0] = (uchar)cvRound(255.0f * color.val[0]);
+				image.at<cv::Vec3b>(currRow,currCol)[1] = (uchar)cvRound(255.0f * color.val[1]);
+				image.at<cv::Vec3b>(currRow,currCol)[2] = (uchar)cvRound(255.0f * color.val[2]);
+			}
+			++pos;
+		}
+	}
+
+}
+
 map<string, array<bool, 9>> LandmarkSymbols::symbolMap;
 
 array<bool, 9> LandmarkSymbols::get(string landmarkName)
@@ -114,9 +133,9 @@ array<bool, 9> LandmarkSymbols::get(string landmarkName)
 	return symbol->second;
 }
 
-void LandmarkSymbols::getColor()
+cv::Scalar LandmarkSymbols::getColor(string landmarkName)
 {
-
+	return cv::Scalar(0.0f, 0.0f, 0.0f);
 }
 
 } /* namespace imageio */

@@ -148,6 +148,12 @@ void drawFaceBoxes(Mat image, vector<shared_ptr<ClassifiedPatch>> patches)
 	}
 }
 
+void drawSccales()
+{
+
+}
+
+
 void drawWindow(Mat image, string windowName, int windowX, int windowY)
 {
 	cv::namedWindow(windowName, CV_WINDOW_AUTOSIZE);

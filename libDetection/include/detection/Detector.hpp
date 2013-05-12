@@ -52,7 +52,7 @@ public:
 	 * Detect on an image.
 	 *
 	 * @param[in] image The image that the detector should run on.
-	 * @return Something probably.
+	 * @return A list of the patches that were positively classified by the detector.
 	 */
 	virtual vector<shared_ptr<ClassifiedPatch>> detect(const Mat& image) = 0;
 
@@ -60,7 +60,7 @@ public:
 	 * Detect on an image.
 	 *
 	 * @param[in] image The image that the detector should run on.
-	 * @return Something probably.
+	 * @return A list of the patches that were positively classified by the detector.
 	 */
 	virtual vector<shared_ptr<ClassifiedPatch>> detect(shared_ptr<VersionedImage> image) = 0;
 

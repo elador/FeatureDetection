@@ -105,7 +105,7 @@ public:
 	 *
 	 * @param[in] image The image into which this landmark is drawn.
 	 */
-	void draw(const Mat image) const;
+	void draw(Mat image) const;
 
 private:
 	string name;		///< The name and identifier of the landmark.
@@ -124,7 +124,7 @@ class LandmarkSymbols {
 
 public:
 	static array<bool, 9> get(string landmarkName);
-	static void getColor();
+	static cv::Scalar getColor(string landmarkName);
 
 private:
 	static map<string, array<bool, 9>> symbolMap;
