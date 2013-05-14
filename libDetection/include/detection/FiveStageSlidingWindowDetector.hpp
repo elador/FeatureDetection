@@ -65,7 +65,7 @@ private:
 
 	shared_ptr<SlidingWindowDetector> slidingWindowDetector;	///< The SlidingWindowDetector that is used as the first stage of this detector.
 	shared_ptr<OverlapElimination> overlapElimination;	///< The ...
-	shared_ptr<ProbabilisticClassifier> probabilisticClassifier;	///< The strong classifier used for the remaining patches in stage 3.
+	shared_ptr<ProbabilisticClassifier> strongClassifier;	///< The strong classifier used for the remaining patches in stage 3.
 
 };
 

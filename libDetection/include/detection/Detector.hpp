@@ -13,6 +13,7 @@
 #include <vector>
 #include <memory>
 #include <utility>
+#include <string>
 
 using cv::Mat;
 using std::vector;
@@ -63,6 +64,9 @@ public:
 	 * @return A list of the patches that were positively classified by the detector.
 	 */
 	virtual vector<shared_ptr<ClassifiedPatch>> detect(shared_ptr<VersionedImage> image) = 0;
+
+public: // make private if it accomplishes what I want
+	std::string landmark;
 
 };
 

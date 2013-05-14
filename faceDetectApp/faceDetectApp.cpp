@@ -62,7 +62,9 @@
 #include "detection/SlidingWindowDetector.hpp"
 #include "detection/ClassifiedPatch.hpp"
 #include "detection/OverlapElimination.hpp"
+#include "detection/FiveStageSlidingWindowDetector.hpp"
 
+#include "imageio/Landmark.hpp"
 #include "imageio/LandmarksHelper.hpp"
 #include "imageio/LandmarkSource.hpp"
 #include "imageio/LabeledImageSource.hpp"
@@ -162,6 +164,12 @@ void drawWindow(Mat image, string windowName, int windowX, int windowY)
 	cv::waitKey(30);
 }
 
+static shared_ptr<ImagePyramid> loadImgPyrFromConfigSubtree(const ptree& subtree)
+{
+	return make_shared<ImagePyramid>(subtree.get<float>("minScaleFactor", 0.09f), subtree.get<float>("maxScaleFactor", 0.25f), subtree.get<float>("incrementalScaleFactor", 0.9f));
+	// (0.09, 0.25, 0.9) is nearly the same as old 90, 9, 0.9
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -238,6 +246,7 @@ int main(int argc, char *argv[])
 
 	Loggers->getLogger("classification").addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
+	Loggers->getLogger("detection").addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
 
 	int numInputs = 0;
 	if(useFileList==true) {
@@ -268,30 +277,48 @@ int main(int argc, char *argv[])
 	}
 
 	ptree pt;
-	read_info("C:\\Users\\Patrik\\GitHub\\faceDetectApp.cfg", pt);		// TODO add check if file exists/throw
+	read_info("C:\\Users\\Patrik\\Documents\\GitHub\\faceDetectApp.cfg", pt);		// TODO add check if file exists/throw
 
-	ptree ptClassifiers = pt.get_child("classifiers");
-	unordered_multimap<string, shared_ptr<ProbabilisticClassifier>> classifiers;
-	for_each(begin(ptClassifiers), end(ptClassifiers), [&classifiers](ptree::value_type kv) {
+	ptree ptDetectors = pt.get_child("detectors");
+	unordered_map<string, shared_ptr<Detector>> faceDetectors;
+	unordered_map<string, shared_ptr<Detector>> featureDetectors;
+	for_each(begin(ptDetectors), end(ptDetectors), [&faceDetectors, &featureDetectors](ptree::value_type kv) {
 		// TODO: 1) error handling if a key doesn't exist
 		//		 2) make more dynamic, search for wvm or svm and add respective to map, or even just check if it's a WVM
 		//				This would require another for_each and check if kv.first is 'wvm' or a .get...?
 		ptree wvm = kv.second.get_child("wvm");	// TODO add error checking
-		classifiers.insert(make_pair(kv.first + ".wvm", ProbabilisticWvmClassifier::loadConfig(wvm)));
-	});
+		ptree svm = kv.second.get_child("svm");	// TODO add error checking
+		ptree imgpyr = kv.second.get_child("imagePyramid");	// TODO add error checking
+		ptree oeCfg = kv.second.get_child("overlapElimination");	// TODO add error checking. get_child throws when child doesn't exist.
+		string landmarkName = kv.second.get<string>("landmark");
 
-	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(pt.get<float>("imagePyramid.minScaleFactor", 0.09f), pt.get<float>("imagePyramid.maxScaleFactor", 0.25f), pt.get<float>("imagePyramid.incrementalScaleFactor", 0.9f));	// (0.09, 0.25, 0.9) is nearly the same as old 90, 9, 0.9
-	pyr->addImageFilter(make_shared<GrayscaleFilter>());
-	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(pyr, 20, 20);
-	featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
+		shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadConfig(wvm);
+		shared_ptr<ProbabilisticSvmClassifier> psvm = ProbabilisticSvmClassifier::loadConfig(svm);
+
+		//pwvm->getWvm()->setLimitReliabilityFilter(-0.5f);
+		psvm->getSvm()->setThreshold(-0.5f);	// TODO read this from the config
+
+		shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(oeCfg.get<float>("dist", 5.0f), oeCfg.get<float>("ratio", 0.0f));
+		shared_ptr<ImagePyramid> imgPyr = loadImgPyrFromConfigSubtree(imgpyr);
+		
+		imgPyr->addImageFilter(make_shared<GrayscaleFilter>());
+		int test = imgpyr.get<int>("patchWidth");
+		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(imgPyr, imgpyr.get<int>("patchWidth"), imgpyr.get<int>("patchHeight"));
+		featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
+
+		shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm, featureExtractor);
+		
+		shared_ptr<FiveStageSlidingWindowDetector> fsd = make_shared<FiveStageSlidingWindowDetector>(det, oe, psvm);
+		fsd->landmark = landmarkName;
+		if (landmarkName == "face")	{
+			faceDetectors.insert(make_pair(kv.first, fsd));
+		} else {
+			featureDetectors.insert(make_pair(kv.first, fsd));
+		}
+	});
 
 	//shared_ptr<ProbabilisticWvmClassifier> test = dynamic_pointer_cast<ProbabilisticWvmClassifier>(classifiers.find("faceFrontal.wvm")->second);
 	//test->getWvm()->setNumUsedFilters(280);
-
-	unordered_multimap<string, shared_ptr<SlidingWindowDetector>> detectors;
-	for(auto classifier : classifiers) {
-		detectors.insert(make_pair(classifier.first, make_shared<SlidingWindowDetector>(classifier.second, featureExtractor)));
-	}
 
 	Mat img;
 
@@ -304,8 +331,9 @@ int main(int argc, char *argv[])
 
 		int det=0;
 		vector<Mat> regionProbMaps;
-		for(auto detector : detectors) {
+		for(auto detector : faceDetectors) {
 			vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img);
+
 			Mat imgDet = img.clone();
 			drawFaceBoxes(imgDet, resultingPatches);
 			if(det==0) {
@@ -321,6 +349,7 @@ int main(int argc, char *argv[])
 			Mat faceRegionProbabilityMap = getFaceRegionProbabilityMapFromPatchlist(resultingPatches, img.cols, img.rows);
 			regionProbMaps.push_back(faceRegionProbabilityMap);
 
+			//cv::waitKey(0);
 			++det;
 		}
 		
@@ -333,13 +362,37 @@ int main(int argc, char *argv[])
 		wholeFaceRegionProbabilityMap.convertTo(wholeFaceRegionProbabilityMap, CV_8UC1);
 		cv::namedWindow("pr", CV_WINDOW_AUTOSIZE); cv::imshow("pr", wholeFaceRegionProbabilityMap);
 		cvMoveWindow("pr", 1000, 500);
-		cv::waitKey(0);
-		
-		
+		//cv::waitKey(0);
+
 		end = std::chrono::system_clock::now();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
 		std::time_t end_time = std::chrono::system_clock::to_time_t(end);
 		std::cout << "Elapsed time: " << elapsed_mseconds << "ms\n";
+
+		// Do the FFD now:
+		threshold(wholeFaceRegionProbabilityMap, wholeFaceRegionProbabilityMap, 185, 255, 0);
+		map<string, vector<shared_ptr<ClassifiedPatch>>> allFeaturePatches;
+		for(auto detector : featureDetectors) {
+			// TODO loop only over wholeFaceRegionProbabilityMap==1
+			vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img);
+
+
+			allFeaturePatches.insert(make_pair(detector.second->landmark, resultingPatches)); // be careful if we want to use detector.first (its name) or detector.second->landmark
+		}
+		Mat ffdResultImg = img.clone();
+		for (const auto& features : allFeaturePatches) {
+			for (const auto& patch : features.second) {
+				// patch to landmark
+				// add a function in libDetection, either ClassifiedPatch.getLandmark or Helper...::ClassifPatchToLandmark(...)
+				Landmark lm(features.first, Vec3f(patch->getPatch()->getX(), patch->getPatch()->getY(), 0.0f), Size2f(patch->getPatch()->getWidth(), patch->getPatch()->getHeight()), true);
+				lm.draw(ffdResultImg);
+			}
+			Mat tmp = img.clone();
+			drawFaceBoxes(tmp, features.second);
+			
+		}
+		cv::waitKey(0);
+
 	}
 
 	return 0;

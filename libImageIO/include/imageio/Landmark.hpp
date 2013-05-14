@@ -128,6 +128,7 @@ public:
 
 private:
 	static map<string, array<bool, 9>> symbolMap;
+	static map<string, cv::Scalar> colorMap;
 };
 
 

@@ -78,7 +78,6 @@ public:
 	 */
 	static shared_ptr<ProbabilisticWvmClassifier> loadConfig(const ptree& subtree);
 
-
 private:
 
 	shared_ptr<WvmClassifier> wvm; ///< The actual WVM.

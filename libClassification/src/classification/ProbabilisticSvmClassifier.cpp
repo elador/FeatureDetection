@@ -76,4 +76,9 @@ shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadMatlab(co
 	return make_shared<ProbabilisticSvmClassifier>(svm, logisticA, logisticB);
 }
 
+shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadConfig(const ptree& subtree)
+{
+	return loadMatlab(subtree.get<string>("classifierFile"), subtree.get<string>("thresholdsFile"));
+}
+
 } /* namespace classification */
