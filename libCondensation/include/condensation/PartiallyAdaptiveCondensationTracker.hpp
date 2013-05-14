@@ -1,12 +1,12 @@
 /*
- * AdaptiveCondensationTracker.hpp
+ * PartiallyAdaptiveCondensationTracker.hpp
  *
  *  Created on: 20.09.2012
  *      Author: poschmann
  */
 
-#ifndef ADAPTIVECONDENSATIONTRACKER_HPP_
-#define ADAPTIVECONDENSATIONTRACKER_HPP_
+#ifndef PARTIALLYADAPTIVECONDENSATIONTRACKER_HPP_
+#define PARTIALLYADAPTIVECONDENSATIONTRACKER_HPP_
 
 #include "condensation/Sample.hpp"
 #include "opencv2/core/core.hpp"
@@ -33,23 +33,29 @@ class AdaptiveMeasurementModel;
 class PositionExtractor;
 
 /**
- * Condensation tracker that adapts to the appearance of the tracked object over time.
+ * Condensation tracker that tries to adapt to the appearance of the tracked object over time.
+ *
+ * This condensation tracker makes use of two measurement models: a static one and an adaptive one. The
+ * tracking starts with the static measurement model, while the adaptive one gets trained with the position
+ * of the tracked object. If the adaptive model is usable, the static model gets replaced. If the object
+ * disappears for a certain amount of time (or is simply not found for some reason), the static measurement
+ * model may be used again.
  */
-class AdaptiveCondensationTracker {
+class PartiallyAdaptiveCondensationTracker {
 public:
 
 	/**
-	 * Constructs a new adaptive condensation tracker.
+	 * Constructs a new partially adaptive condensation tracker.
 	 *
 	 * @param[in] sampler The sampler.
 	 * @param[in] initialMeasurementModel The initial static measurement model.
 	 * @param[in] measurementModel The adaptive measurement model.
 	 * @param[in] extractor The position extractor.
 	 */
-	AdaptiveCondensationTracker(shared_ptr<Sampler> sampler, shared_ptr<MeasurementModel> initialMeasurementModel,
+	PartiallyAdaptiveCondensationTracker(shared_ptr<Sampler> sampler, shared_ptr<MeasurementModel> initialMeasurementModel,
 			shared_ptr<AdaptiveMeasurementModel> measurementModel, shared_ptr<PositionExtractor> extractor);
 
-	~AdaptiveCondensationTracker();
+	~PartiallyAdaptiveCondensationTracker();
 
 	/**
 	 * Processes the next image and returns the most probable object position.
@@ -117,4 +123,4 @@ private:
 };
 
 } /* namespace condensation */
-#endif /* ADAPTIVECONDENSATIONTRACKER_HPP_ */
+#endif /* PARTIALLYADAPTIVECONDENSATIONTRACKER_HPP_ */

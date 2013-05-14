@@ -166,7 +166,7 @@ void AdaptiveTracking::initTracking(ptree config) {
 			transitionModel, config.get<double>("resampling.minSize"), config.get<double>("resampling.maxSize"));
 	gridSampler = make_shared<GridSampler>(config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"),
 			1 / config.get<double>("pyramid.scaleFactor"), 0.1);
-	tracker = unique_ptr<AdaptiveCondensationTracker>(new AdaptiveCondensationTracker(
+	tracker = unique_ptr<PartiallyAdaptiveCondensationTracker>(new PartiallyAdaptiveCondensationTracker(
 			resamplingSampler, staticMeasurementModel, adaptiveMeasurementModel,
 			make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>())));
 //	tracker->setUseAdaptiveModel(false);

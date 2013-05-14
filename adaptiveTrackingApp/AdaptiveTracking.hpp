@@ -13,7 +13,7 @@
 #include "classification/Kernel.hpp"
 #include "classification/TrainableSvmClassifier.hpp"
 #include "classification/TrainableProbabilisticClassifier.hpp"
-#include "condensation/AdaptiveCondensationTracker.hpp"
+#include "condensation/PartiallyAdaptiveCondensationTracker.hpp"
 #include "condensation/AdaptiveMeasurementModel.hpp"
 #include "condensation/MeasurementModel.hpp"
 #include "condensation/SimpleTransitionModel.hpp"
@@ -71,7 +71,7 @@ private:
 	bool paused;
 	bool drawSamples;
 
-	unique_ptr<AdaptiveCondensationTracker> tracker;
+	unique_ptr<PartiallyAdaptiveCondensationTracker> tracker;
 	shared_ptr<MeasurementModel> staticMeasurementModel;
 	shared_ptr<AdaptiveMeasurementModel> adaptiveMeasurementModel;
 	shared_ptr<SimpleTransitionModel> transitionModel;

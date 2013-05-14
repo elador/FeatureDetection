@@ -1,11 +1,11 @@
 /*
- * AdaptiveCondensationTracker.cpp
+ * PartiallyAdaptiveCondensationTracker.cpp
  *
  *  Created on: 20.09.2012
  *      Author: poschmann
  */
 
-#include "condensation/AdaptiveCondensationTracker.hpp"
+#include "condensation/PartiallyAdaptiveCondensationTracker.hpp"
 #include "condensation/Sample.hpp"
 #include "condensation/Sampler.hpp"
 #include "condensation/MeasurementModel.hpp"
@@ -17,7 +17,7 @@ using std::make_shared;
 
 namespace condensation {
 
-AdaptiveCondensationTracker::AdaptiveCondensationTracker(shared_ptr<Sampler> sampler,
+PartiallyAdaptiveCondensationTracker::PartiallyAdaptiveCondensationTracker(shared_ptr<Sampler> sampler,
 		shared_ptr<MeasurementModel> initialMeasurementModel, shared_ptr<AdaptiveMeasurementModel> measurementModel,
 		shared_ptr<PositionExtractor> extractor) :
 				samples(),
@@ -36,9 +36,9 @@ AdaptiveCondensationTracker::AdaptiveCondensationTracker(shared_ptr<Sampler> sam
 	offset.push_back(0);
 }
 
-AdaptiveCondensationTracker::~AdaptiveCondensationTracker() {}
+PartiallyAdaptiveCondensationTracker::~PartiallyAdaptiveCondensationTracker() {}
 
-optional<Rect> AdaptiveCondensationTracker::process(const Mat& imageData) {
+optional<Rect> PartiallyAdaptiveCondensationTracker::process(const Mat& imageData) {
 	image->setData(imageData);
 	oldSamples = samples;
 	sampler->sample(oldSamples, offset, image->getData(), samples);
@@ -75,7 +75,7 @@ optional<Rect> AdaptiveCondensationTracker::process(const Mat& imageData) {
 	return optional<Rect>();
 }
 
-void AdaptiveCondensationTracker::setUseAdaptiveModel(bool useAdaptive) {
+void PartiallyAdaptiveCondensationTracker::setUseAdaptiveModel(bool useAdaptive) {
 	useAdaptiveModel = useAdaptive;
 	if (!useAdaptive)
 		measurementModel->reset();

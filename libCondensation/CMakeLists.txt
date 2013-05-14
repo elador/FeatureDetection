@@ -12,15 +12,14 @@ MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
 # source and header files
 SET(HEADERS
-	include/condensation/AdaptiveCondensationTracker.hpp
 	include/condensation/AdaptiveMeasurementModel.hpp
 	include/condensation/CondensationTracker.hpp
-	include/condensation/DensityPositionExtractor.hpp
 	include/condensation/FilteringPositionExtractor.hpp
 	include/condensation/GridSampler.hpp
 	include/condensation/LowVarianceSampling.hpp
 	include/condensation/MaxWeightPositionExtractor.hpp
 	include/condensation/MeasurementModel.hpp
+	include/condensation/PartiallyAdaptiveCondensationTracker.hpp
 	include/condensation/PositionDependentMeasurementModel.hpp
 	include/condensation/PositionExtractor.hpp
 	include/condensation/ResamplingAlgorithm.hpp
@@ -35,13 +34,12 @@ SET(HEADERS
 	include/condensation/WvmSvmModel.hpp
 )
 SET(SOURCE
-	src/condensation/AdaptiveCondensationTracker.cpp
 	src/condensation/CondensationTracker.cpp
-	src/condensation/DensityPositionExtractor.cpp
 	src/condensation/FilteringPositionExtractor.cpp
 	src/condensation/GridSampler.cpp
 	src/condensation/LowVarianceSampling.cpp
 	src/condensation/MaxWeightPositionExtractor.cpp
+	src/condensation/PartiallyAdaptiveCondensationTracker.cpp
 	src/condensation/PositionDependentMeasurementModel.cpp
 	src/condensation/ResamplingSampler.cpp
 	src/condensation/SelfLearningMeasurementModel.cpp
