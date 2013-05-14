@@ -1,11 +1,11 @@
 /*
- * AdaptiveTracking.cpp
+ * PartiallyAdaptiveTracking.cpp
  *
  *  Created on: 19.07.2012
  *      Author: poschmann
  */
 
-#include "AdaptiveTracking.hpp"
+#include "PartiallyAdaptiveTracking.hpp"
 #include "logging/LoggerFactory.hpp"
 #include "logging/Logger.hpp"
 #include "logging/ConsoleAppender.hpp"
@@ -59,18 +59,18 @@ using std::ostringstream;
 
 namespace po = boost::program_options;
 
-const string AdaptiveTracking::videoWindowName = "Image";
-const string AdaptiveTracking::controlWindowName = "Controls";
+const string PartiallyAdaptiveTracking::videoWindowName = "Image";
+const string PartiallyAdaptiveTracking::controlWindowName = "Controls";
 
-AdaptiveTracking::AdaptiveTracking(unique_ptr<ImageSource> imageSource, unique_ptr<ImageSink> imageSink, ptree config) :
+PartiallyAdaptiveTracking::PartiallyAdaptiveTracking(unique_ptr<ImageSource> imageSource, unique_ptr<ImageSink> imageSink, ptree config) :
 		imageSource(move(imageSource)), imageSink(move(imageSink)) {
 	initTracking(config);
 	initGui();
 }
 
-AdaptiveTracking::~AdaptiveTracking() {}
+PartiallyAdaptiveTracking::~PartiallyAdaptiveTracking() {}
 
-shared_ptr<Kernel> AdaptiveTracking::createKernel(ptree config) {
+shared_ptr<Kernel> PartiallyAdaptiveTracking::createKernel(ptree config) {
 	if (config.get_value<string>() == "rbf") {
 		return make_shared<RbfKernel>(config.get<double>("gamma"));
 	} else if (config.get_value<string>() == "poly") {
@@ -81,7 +81,7 @@ shared_ptr<Kernel> AdaptiveTracking::createKernel(ptree config) {
 	}
 }
 
-shared_ptr<TrainableSvmClassifier> AdaptiveTracking::createTrainableSvm(shared_ptr<Kernel> kernel, ptree config) {
+shared_ptr<TrainableSvmClassifier> PartiallyAdaptiveTracking::createTrainableSvm(shared_ptr<Kernel> kernel, ptree config) {
 	shared_ptr<TrainableSvmClassifier> trainableSvm;
 	if (config.get_value<string>() == "fixedsize") {
 		trainableSvm = make_shared<FixedSizeTrainableSvmClassifier>(kernel, config.get<double>("constraintsViolationCosts"),
@@ -100,7 +100,7 @@ shared_ptr<TrainableSvmClassifier> AdaptiveTracking::createTrainableSvm(shared_p
 	return trainableSvm;
 }
 
-shared_ptr<TrainableProbabilisticClassifier> AdaptiveTracking::createClassifier(
+shared_ptr<TrainableProbabilisticClassifier> PartiallyAdaptiveTracking::createClassifier(
 		shared_ptr<TrainableSvmClassifier> trainableSvm, ptree config) {
 	if (config.get_value<string>() == "default")
 		return make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm);
@@ -110,7 +110,7 @@ shared_ptr<TrainableProbabilisticClassifier> AdaptiveTracking::createClassifier(
 		throw invalid_argument("AdaptiveTracking: invalid classifier type: " + config.get_value<string>());
 }
 
-void AdaptiveTracking::initTracking(ptree config) {
+void PartiallyAdaptiveTracking::initTracking(ptree config) {
 	// create feature extractors
 	shared_ptr<DirectPyramidFeatureExtractor> patchExtractor = make_shared<DirectPyramidFeatureExtractor>(
 			config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"),
@@ -172,7 +172,7 @@ void AdaptiveTracking::initTracking(ptree config) {
 //	tracker->setUseAdaptiveModel(false);
 }
 
-void AdaptiveTracking::initGui() {
+void PartiallyAdaptiveTracking::initGui() {
 	drawSamples = true;
 
 	cvNamedWindow(videoWindowName.c_str(), CV_WINDOW_AUTOSIZE);
@@ -200,40 +200,40 @@ void AdaptiveTracking::initGui() {
 	cv::setTrackbarPos("Draw samples", controlWindowName, drawSamples ? 1 : 0);
 }
 
-void AdaptiveTracking::adaptiveChanged(int state, void* userdata) {
-	AdaptiveTracking *tracking = (AdaptiveTracking*)userdata;
+void PartiallyAdaptiveTracking::adaptiveChanged(int state, void* userdata) {
+	PartiallyAdaptiveTracking *tracking = (PartiallyAdaptiveTracking*)userdata;
 	tracking->tracker->setUseAdaptiveModel(state == 1);
 }
 
-void AdaptiveTracking::samplerChanged(int state, void* userdata) {
-	AdaptiveTracking *tracking = (AdaptiveTracking*)userdata;
+void PartiallyAdaptiveTracking::samplerChanged(int state, void* userdata) {
+	PartiallyAdaptiveTracking *tracking = (PartiallyAdaptiveTracking*)userdata;
 	if (state == 0)
 		tracking->tracker->setSampler(tracking->gridSampler);
 	else
 		tracking->tracker->setSampler(tracking->resamplingSampler);
 }
 
-void AdaptiveTracking::sampleCountChanged(int state, void* userdata) {
-	AdaptiveTracking *tracking = (AdaptiveTracking*)userdata;
+void PartiallyAdaptiveTracking::sampleCountChanged(int state, void* userdata) {
+	PartiallyAdaptiveTracking *tracking = (PartiallyAdaptiveTracking*)userdata;
 	tracking->resamplingSampler->setCount(state);
 }
 
-void AdaptiveTracking::randomRateChanged(int state, void* userdata) {
-	AdaptiveTracking *tracking = (AdaptiveTracking*)userdata;
+void PartiallyAdaptiveTracking::randomRateChanged(int state, void* userdata) {
+	PartiallyAdaptiveTracking *tracking = (PartiallyAdaptiveTracking*)userdata;
 	tracking->resamplingSampler->setRandomRate(0.01 * state);
 }
 
-void AdaptiveTracking::scatterChanged(int state, void* userdata) {
-	AdaptiveTracking *tracking = (AdaptiveTracking*)userdata;
+void PartiallyAdaptiveTracking::scatterChanged(int state, void* userdata) {
+	PartiallyAdaptiveTracking *tracking = (PartiallyAdaptiveTracking*)userdata;
 	tracking->transitionModel->setScatter(0.01 * state);
 }
 
-void AdaptiveTracking::drawSamplesChanged(int state, void* userdata) {
-	AdaptiveTracking *tracking = (AdaptiveTracking*)userdata;
+void PartiallyAdaptiveTracking::drawSamplesChanged(int state, void* userdata) {
+	PartiallyAdaptiveTracking *tracking = (PartiallyAdaptiveTracking*)userdata;
 	tracking->drawSamples = (state == 1);
 }
 
-void AdaptiveTracking::drawDebug(cv::Mat& image) {
+void PartiallyAdaptiveTracking::drawDebug(cv::Mat& image) {
 	cv::Scalar black(0, 0, 0); // blue, green, red
 	cv::Scalar red(0, 0, 255); // blue, green, red
 	cv::Scalar green(0, 255, 0); // blue, green, red
@@ -248,7 +248,7 @@ void AdaptiveTracking::drawDebug(cv::Mat& image) {
 	cv::circle(image, cv::Point(10, 10), 5, svmIndicatorColor, -1);
 }
 
-void AdaptiveTracking::run() {
+void PartiallyAdaptiveTracking::run() {
 	Logger& log = Loggers->getLogger("app");
 	running = true;
 	paused = false;
@@ -313,7 +313,7 @@ void AdaptiveTracking::run() {
 	}
 }
 
-void AdaptiveTracking::stop() {
+void PartiallyAdaptiveTracking::stop() {
 	running = false;
 }
 
@@ -402,7 +402,7 @@ int main(int argc, char *argv[]) {
 
 	ptree config;
 	read_info(configFile, config);
-	unique_ptr<AdaptiveTracking> tracker(new AdaptiveTracking(move(imageSource), move(imageSink), config.get_child("tracking")));
+	unique_ptr<PartiallyAdaptiveTracking> tracker(new PartiallyAdaptiveTracking(move(imageSource), move(imageSink), config.get_child("tracking")));
 	tracker->run();
 	return 0;
 }

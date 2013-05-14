@@ -1,12 +1,12 @@
 /*
- * AdaptiveTracking.hpp
+ * PartiallyAdaptiveTracking.hpp
  *
  *  Created on: 19.07.2012
  *      Author: poschmann
  */
 
-#ifndef ADAPTIVETRACKING_HPP_
-#define ADAPTIVETRACKING_HPP_
+#ifndef PARTIALLYADAPTIVETRACKING_HPP_
+#define PARTIALLYADAPTIVETRACKING_HPP_
 
 #include "imageio/ImageSource.hpp"
 #include "imageio/ImageSink.hpp"
@@ -36,11 +36,11 @@ using std::unique_ptr;
 using std::shared_ptr;
 using std::make_shared;
 
-class AdaptiveTracking {
+class PartiallyAdaptiveTracking {
 public:
 
-	AdaptiveTracking(unique_ptr<ImageSource> imageSource, unique_ptr<ImageSink> imageSink, ptree config);
-	virtual ~AdaptiveTracking();
+	PartiallyAdaptiveTracking(unique_ptr<ImageSource> imageSource, unique_ptr<ImageSink> imageSink, ptree config);
+	virtual ~PartiallyAdaptiveTracking();
 
 	void run();
 	void stop();
@@ -79,4 +79,4 @@ private:
 	shared_ptr<GridSampler> gridSampler;
 };
 
-#endif /* ADAPTIVETRACKING_HPP_ */
+#endif /* PARTIALLYADAPTIVETRACKING_HPP_ */

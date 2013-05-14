@@ -1,4 +1,4 @@
-SET( SUBPROJECT_NAME adaptiveTrackingApp )	# my own variable, not cmake's
+SET( SUBPROJECT_NAME partiallyAdaptiveTrackingApp ) # my own variable, not cmake's
 PROJECT( ${SUBPROJECT_NAME} )
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
@@ -29,10 +29,10 @@ ENDIF()
 
 # source and header files
 SET(HEADERS
-	AdaptiveTracking.hpp
+	PartiallyAdaptiveTracking.hpp
 )
 SET(SOURCE
-	AdaptiveTracking.cpp
+	PartiallyAdaptiveTracking.cpp
 )
 
 # add dependencies

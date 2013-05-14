@@ -22,7 +22,7 @@ add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 #add_subdirectory(libShapeModels)		# Head/face specific things; 2D/3D models; Combining feature points
 
 add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
-add_subdirectory(adaptiveTrackingApp)	# Adaptive tracking app.
+add_subdirectory(partiallyAdaptiveTrackingApp)	# Old adaptive tracking app.
 #add_subdirectory(headTrackingApp)		#
 add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe).
 add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature point detection app.
