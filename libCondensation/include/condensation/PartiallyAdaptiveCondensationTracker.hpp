@@ -66,6 +66,13 @@ public:
 	optional<Rect> process(const Mat& image);
 
 	/**
+	 * @return The estimated state.
+	 */
+	optional<Sample> getState() {
+		return state;
+	}
+
+	/**
 	 * @return The current samples.
 	 */
 	inline const vector<Sample>& getSamples() const {
@@ -109,9 +116,8 @@ private:
 
 	vector<Sample> samples;    ///< The current samples.
 	vector<Sample> oldSamples; ///< The previous samples.
+	optional<Sample> state;    ///< The estimated state.
 
-	optional<Sample> oldPosition; ///< The previous position.
-	vector<double> offset;        ///< The movement of the tracked object's center of the previous time step.
 	bool useAdaptiveModel;        ///< Flag that indicates whether the adaptive measurement model should be used.
 	bool usedAdaptiveModel;       ///< Flag that indicates whether the adaptive measurement model was used.
 

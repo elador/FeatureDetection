@@ -30,12 +30,10 @@ public:
 	 * Creates new samples.
 	 *
 	 * @param[in] samples The vector containing the samples of the previous time step.
-	 * @param[in] offset The movement of the tracked object's center of the previous time step.
 	 * @param[in] image The new image.
 	 * @param[in,out] newSamples The vector to insert the new samples into.
 	 */
-	virtual void sample(const vector<Sample>& samples, const vector<double>& offset, const Mat& image,
-			vector<Sample>& newSamples) = 0;
+	virtual void sample(const vector<Sample>& samples, const Mat& image, vector<Sample>& newSamples) = 0;
 };
 
 } /* namespace condensation */

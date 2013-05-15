@@ -36,13 +36,12 @@ ResamplingSampler::ResamplingSampler(unsigned int count, double randomRate,
 
 ResamplingSampler::~ResamplingSampler() {}
 
-void ResamplingSampler::sample(const vector<Sample>& samples, const vector<double>& offset, const Mat& image,
-		vector<Sample>& newSamples) {
+void ResamplingSampler::sample(const vector<Sample>& samples, const Mat& image, vector<Sample>& newSamples) {
 	unsigned int count = this->count;
 	resamplingAlgorithm->resample(samples, (int)((1 - randomRate) * count), newSamples);
 	// predict the samples
 	for (auto sample = newSamples.begin(); sample != newSamples.end(); ++sample) {
-		transitionModel->predict(*sample, offset);
+		transitionModel->predict(*sample);
 		if (!isValid(*sample, image))
 			sampleValid(*sample, image);
 	}
@@ -69,6 +68,9 @@ void ResamplingSampler::sampleValid(Sample& sample, const Mat& image) {
 	sample.setSize(size);
 	sample.setX(distribution(generator, image.cols - size) + halfSize);
 	sample.setY(distribution(generator, image.rows - size) + halfSize);
+	sample.setVx(0);
+	sample.setVy(0);
+	sample.setVSize(0);
 }
 
 } /* namespace condensation */

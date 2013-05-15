@@ -58,9 +58,16 @@ public:
 	optional<Rect> process(const Mat& image);
 
 	/**
+	 * @return The estimated state.
+	 */
+	optional<Sample> getState() {
+		return state;
+	}
+
+	/**
 	 * @return The current samples.
 	 */
-	inline const std::vector<Sample>& getSamples() const {
+	inline const vector<Sample>& getSamples() const {
 		return samples;
 	}
 
@@ -82,9 +89,7 @@ private:
 
 	vector<Sample> samples;    ///< The current samples.
 	vector<Sample> oldSamples; ///< The previous samples.
-
-	optional<Sample> oldPosition; ///< The previous position.
-	vector<double> offset;        ///< The movement of the tracked object's center of the previous time step.
+	optional<Sample> state;    ///< The estimated state.
 
 	shared_ptr<VersionedImage> image;              ///< The image used for evaluation.
 	shared_ptr<Sampler> sampler;                   ///< The sampler.

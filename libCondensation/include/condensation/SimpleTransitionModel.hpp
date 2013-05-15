@@ -16,7 +16,7 @@
 namespace condensation {
 
 /**
- * Transition model that linearly moves the samples and diffuses them.
+ * Simple transition model that diffuses position and velocity.
  */
 class SimpleTransitionModel : public TransitionModel {
 public:
@@ -24,30 +24,46 @@ public:
 	/**
 	 * Constructs a new simple transition model.
 	 *
-	 * @param[in] The scatter that controls the diffusion.
+	 * @param[in] positionScatter The scatter that controls the diffusion of the position.
+	 * @param[in] velocityScatter The scatter that controls the diffusion of the velocity.
 	 */
-	explicit SimpleTransitionModel(double scatter = 0.25);
+	explicit SimpleTransitionModel(double positionScatter = 0.05, double velocityScatter = 0.1);
 
 	~SimpleTransitionModel();
 
-	void predict(Sample& sample, const vector<double>& offset);
+	void predict(Sample& sample);
 
 	/**
-	 * @return The scatter that controls the diffusion.
+	 * @return The scatter that controls the diffusion of the position.
 	 */
-	inline double getScatter() {
-		return scatter;
+	double getPositionScatter() {
+		return positionScatter;
 	}
 
 	/**
-	 * @param[in] The new scatter that controls the diffusion.
+	 * @param[in] The new scatter that controls the diffusion of the position.
 	 */
-	inline void setScatter(double scatter) {
-		this->scatter = scatter;
+	void setPositionScatter(double scatter) {
+		this->positionScatter = scatter;
+	}
+
+	/**
+	 * @return The scatter that controls the diffusion of the velocity.
+	 */
+	double getVelocityScatter() {
+		return velocityScatter;
+	}
+
+	/**
+	 * @param[in] The new scatter that controls the diffusion of the velocity.
+	 */
+	void setVelocityScatter(double scatter) {
+		this->velocityScatter = scatter;
 	}
 
 private:
-	double scatter; ///< The scatter that controls the diffusion.
+	double positionScatter = 0.1; ///< The scatter that controls the diffusion of the position.
+	double velocityScatter = 0.1; ///< The scatter that controls the diffusion of the velocity.
 	boost::variate_generator<boost::mt19937, boost::normal_distribution<> > generator; ///< Random number generator.
 };
 

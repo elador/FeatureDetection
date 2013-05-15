@@ -101,7 +101,7 @@ void FaceTracking::initTracking() {
 	// create tracker
 	unsigned int count = 800;
 	double randomRate = 0.35;
-	transitionModel = make_shared<SimpleTransitionModel>(0.2);
+	transitionModel = make_shared<SimpleTransitionModel>(0.07, 0.1);
 	resamplingSampler = make_shared<ResamplingSampler>(count, randomRate, make_shared<LowVarianceSampling>(),
 			transitionModel, 80, 480);
 	gridSampler = make_shared<GridSampler>(80, 480, 1 / 0.85, 0.1);
@@ -127,8 +127,11 @@ void FaceTracking::initGui() {
 	cv::createTrackbar("Random Rate", controlWindowName, NULL, 100, randomRateChanged, this);
 	cv::setTrackbarPos("Random Rate", controlWindowName, 100 * resamplingSampler->getRandomRate());
 
-	cv::createTrackbar("Scatter * 100", controlWindowName, NULL, 100, scatterChanged, this);
-	cv::setTrackbarPos("Scatter * 100", controlWindowName, 100 * transitionModel->getScatter());
+	cv::createTrackbar("Position Scatter * 100", controlWindowName, NULL, 100, positionScatterChanged, this);
+	cv::setTrackbarPos("Position Scatter * 100", controlWindowName, 100 * transitionModel->getPositionScatter());
+
+	cv::createTrackbar("Velocity Scatter * 100", controlWindowName, NULL, 100, velocityScatterChanged, this);
+	cv::setTrackbarPos("Velocity Scatter * 100", controlWindowName, 100 * transitionModel->getVelocityScatter());
 
 	cv::createTrackbar("Draw samples", controlWindowName, NULL, 1, drawSamplesChanged, this);
 	cv::setTrackbarPos("Draw samples", controlWindowName, drawSamples ? 1 : 0);
@@ -152,9 +155,14 @@ void FaceTracking::randomRateChanged(int state, void* userdata) {
 	tracking->resamplingSampler->setRandomRate(0.01 * state);
 }
 
-void FaceTracking::scatterChanged(int state, void* userdata) {
+void FaceTracking::positionScatterChanged(int state, void* userdata) {
 	FaceTracking *tracking = (FaceTracking*)userdata;
-	tracking->transitionModel->setScatter(0.01 * state);
+	tracking->transitionModel->setPositionScatter(0.01 * state);
+}
+
+void FaceTracking::velocityScatterChanged(int state, void* userdata) {
+	FaceTracking *tracking = (FaceTracking*)userdata;
+	tracking->transitionModel->setVelocityScatter(0.01 * state);
 }
 
 void FaceTracking::drawSamplesChanged(int state, void* userdata) {
@@ -168,7 +176,7 @@ void FaceTracking::drawDebug(cv::Mat& image) {
 	if (drawSamples) {
 		const std::vector<Sample> samples = tracker->getSamples();
 		for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample) {
-			cv::Scalar color = sample->isObject() ? cv::Scalar(0, 0, sample->getWeight() * 255) : black;
+			const cv::Scalar& color = sample->isObject() ? cv::Scalar(0, 0, sample->getWeight() * 255) : black;
 			cv::circle(image, cv::Point(sample->getX(), sample->getY()), 3, color);
 		}
 	}
@@ -188,8 +196,6 @@ void FaceTracking::run() {
 	duration<double> allIterationTime;
 	duration<double> allCondensationTime;
 	int frames = 0;
-	steady_clock::time_point start = steady_clock::now();
-	std::cout.precision(2);
 
 	while (running) {
 		frames++;
@@ -228,7 +234,8 @@ void FaceTracking::run() {
 			ostringstream text;
 			text.precision(2);
 			text << frames << " frame: " << iterationTime.count() << " ms (" << iterationFps << " fps);"
-					<< " condensation: " << condensationTime.count() << " ms (" << condensationFps << " fps)";
+					<< " condensation: " << condensationTime.count() << " ms (" << condensationFps << " fps);"
+					<< " face " << (face ? "found" : "not found");
 			log.info(text.str());
 
 			int delay = paused ? 0 : 5;

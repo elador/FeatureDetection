@@ -22,26 +22,21 @@ PartiallyAdaptiveCondensationTracker::PartiallyAdaptiveCondensationTracker(share
 		shared_ptr<PositionExtractor> extractor) :
 				samples(),
 				oldSamples(),
-				oldPosition(),
-				offset(3),
+				state(),
 				useAdaptiveModel(true),
 				usedAdaptiveModel(false),
 				image(make_shared<VersionedImage>()),
 				sampler(sampler),
 				initialMeasurementModel(initialMeasurementModel),
 				measurementModel(measurementModel),
-				extractor(extractor) {
-	offset.push_back(0);
-	offset.push_back(0);
-	offset.push_back(0);
-}
+				extractor(extractor) {}
 
 PartiallyAdaptiveCondensationTracker::~PartiallyAdaptiveCondensationTracker() {}
 
 optional<Rect> PartiallyAdaptiveCondensationTracker::process(const Mat& imageData) {
 	image->setData(imageData);
 	oldSamples = samples;
-	sampler->sample(oldSamples, offset, image->getData(), samples);
+	sampler->sample(oldSamples, image->getData(), samples);
 	// evaluate samples and extract position
 	if (useAdaptiveModel && measurementModel->isUsable()) {
 		measurementModel->evaluate(image, samples);
@@ -50,28 +45,17 @@ optional<Rect> PartiallyAdaptiveCondensationTracker::process(const Mat& imageDat
 		initialMeasurementModel->evaluate(image, samples);
 		usedAdaptiveModel = false;
 	}
-	optional<Sample> position = extractor->extract(samples);
-	// update offset
-	if (oldPosition && position) {
-		offset[0] = position->getX() - oldPosition->getX();
-		offset[1] = position->getY() - oldPosition->getY();
-		offset[2] = position->getSize() - oldPosition->getSize();
-	} else {
-		offset[0] = 0;
-		offset[1] = 0;
-		offset[2] = 0;
-	}
-	oldPosition = position;
+	state = extractor->extract(samples);
 	// update model
 	if (useAdaptiveModel) {
-		if (position)
-			measurementModel->adapt(image, samples, *position);
+		if (state)
+			measurementModel->adapt(image, samples, *state);
 		else
 			measurementModel->adapt(image, samples);
 	}
 	// return position
-	if (position)
-		return optional<Rect>(position->getBounds());
+	if (state)
+		return optional<Rect>(state->getBounds());
 	return optional<Rect>();
 }
 

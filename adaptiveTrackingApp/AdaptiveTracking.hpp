@@ -1,19 +1,20 @@
 /*
- * PartiallyAdaptiveTracking.hpp
+ * AdaptiveTracking.hpp
  *
- *  Created on: 19.07.2012
+ *  Created on: 14.05.2013
  *      Author: poschmann
  */
 
-#ifndef PARTIALLYADAPTIVETRACKING_HPP_
-#define PARTIALLYADAPTIVETRACKING_HPP_
+#ifndef ADAPTIVETRACKING_HPP_
+#define ADAPTIVETRACKING_HPP_
 
 #include "imageio/ImageSource.hpp"
 #include "imageio/ImageSink.hpp"
 #include "classification/Kernel.hpp"
 #include "classification/TrainableSvmClassifier.hpp"
 #include "classification/TrainableProbabilisticClassifier.hpp"
-#include "condensation/PartiallyAdaptiveCondensationTracker.hpp"
+#include "condensation/CondensationTracker.hpp"
+#include "condensation/AdaptiveCondensationTracker.hpp"
 #include "condensation/AdaptiveMeasurementModel.hpp"
 #include "condensation/MeasurementModel.hpp"
 #include "condensation/SimpleTransitionModel.hpp"
@@ -36,11 +37,11 @@ using std::unique_ptr;
 using std::shared_ptr;
 using std::make_shared;
 
-class PartiallyAdaptiveTracking {
+class AdaptiveTracking {
 public:
 
-	PartiallyAdaptiveTracking(unique_ptr<ImageSource> imageSource, unique_ptr<ImageSink> imageSink, ptree config);
-	virtual ~PartiallyAdaptiveTracking();
+	AdaptiveTracking(unique_ptr<ImageSource> imageSource, unique_ptr<ImageSink> imageSink, ptree config);
+	virtual ~AdaptiveTracking();
 
 	void run();
 	void stop();
@@ -48,11 +49,14 @@ public:
 private:
 
 	static void adaptiveChanged(int state, void* userdata);
-	static void samplerChanged(int state, void* userdata);
-	static void sampleCountChanged(int state, void* userdata);
-	static void randomRateChanged(int state, void* userdata);
 	static void positionScatterChanged(int state, void* userdata);
 	static void velocityScatterChanged(int state, void* userdata);
+	static void initialSamplerChanged(int state, void* userdata);
+	static void initialSampleCountChanged(int state, void* userdata);
+	static void initialRandomRateChanged(int state, void* userdata);
+	static void adaptiveSamplerChanged(int state, void* userdata);
+	static void adaptiveSampleCountChanged(int state, void* userdata);
+	static void adaptiveRandomRateChanged(int state, void* userdata);
 	static void drawSamplesChanged(int state, void* userdata);
 
 	shared_ptr<Kernel> createKernel(ptree config);
@@ -60,7 +64,7 @@ private:
 	shared_ptr<TrainableProbabilisticClassifier> createClassifier(shared_ptr<TrainableSvmClassifier> trainableSvm, ptree config);
 	void initTracking(ptree config);
 	void initGui();
-	void drawDebug(Mat& image);
+	void drawDebug(Mat& image, bool usedAdaptive);
 
 	static const string videoWindowName;
 	static const string controlWindowName;
@@ -70,14 +74,18 @@ private:
 
 	bool running;
 	bool paused;
+	bool useAdaptive;
+	bool adaptiveUsable;
 	bool drawSamples;
 
-	unique_ptr<PartiallyAdaptiveCondensationTracker> tracker;
+	unique_ptr<CondensationTracker> initialTracker;
+	unique_ptr<AdaptiveCondensationTracker> adaptiveTracker;
 	shared_ptr<MeasurementModel> staticMeasurementModel;
 	shared_ptr<AdaptiveMeasurementModel> adaptiveMeasurementModel;
 	shared_ptr<SimpleTransitionModel> transitionModel;
-	shared_ptr<ResamplingSampler> resamplingSampler;
+	shared_ptr<ResamplingSampler> initialResamplingSampler;
+	shared_ptr<ResamplingSampler> adaptiveResamplingSampler;
 	shared_ptr<GridSampler> gridSampler;
 };
 
-#endif /* PARTIALLYADAPTIVETRACKING_HPP_ */
+#endif /* ADAPTIVETRACKING_HPP_ */

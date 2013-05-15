@@ -30,8 +30,7 @@ GridSampler::GridSampler(int minSize, int maxSize, float sizeScale, float stepSi
 
 GridSampler::~GridSampler() {}
 
-void GridSampler::sample(const vector<Sample>& samples, const vector<double>& offset,
-			const Mat& image, vector<Sample>& newSamples) {
+void GridSampler::sample(const vector<Sample>& samples, const Mat& image, vector<Sample>& newSamples) {
 	newSamples.clear();
 	Sample newSample;
 	for (int size = minSize; size <= maxSize; size *= sizeScale) {

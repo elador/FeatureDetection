@@ -42,8 +42,7 @@ public:
 
 	~ResamplingSampler();
 
-	void sample(const vector<Sample>& samples, const vector<double>& offset, const Mat& image,
-			vector<Sample>& newSamples);
+	void sample(const vector<Sample>& samples, const Mat& image, vector<Sample>& newSamples);
 
 	/**
 	 * @return The number of samples.
