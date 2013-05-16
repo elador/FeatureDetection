@@ -34,7 +34,7 @@ public:
 	/**
 	 * @return The required amount of positive training examples for the training to be reasonable.
 	 */
-	int getRequiredPositiveCount() const;
+	unsigned int getRequiredPositiveCount() const;
 
 protected:
 

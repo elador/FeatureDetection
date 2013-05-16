@@ -44,6 +44,8 @@ shared_ptr<Patch> CachingFeatureExtractor::extract(int x, int y, int width, int 
 		return extractInputCopying(x, y, width, height);
 	case OUTPUT_COPYING:
 		return extractOutputCopying(x, y, width, height);
+	default: // should never be reached
+		return extractor->extract(x, y, width, height);
 	}
 }
 

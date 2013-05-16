@@ -53,7 +53,7 @@ void CachingPyramidFeatureExtractor::update(shared_ptr<VersionedImage> image) {
 shared_ptr<Patch> CachingPyramidFeatureExtractor::extract(int x, int y, int width, int height) const {
 	int layerIndex = getLayerIndex(width, height);
 	int index = layerIndex - firstCacheIndex;
-	if (index < 0 || index >= cache.size())
+	if (index < 0 || static_cast<unsigned int>(index) >= cache.size())
 		return shared_ptr<Patch>();
 	CacheLayer& layer = cache[index];
 	switch (strategy) {
@@ -65,6 +65,8 @@ shared_ptr<Patch> CachingPyramidFeatureExtractor::extract(int x, int y, int widt
 		return extractInputCopying(layer, layer.getScaled(x), layer.getScaled(y));
 	case OUTPUT_COPYING:
 		return extractOutputCopying(layer, layer.getScaled(x), layer.getScaled(y));
+	default: // should never be reached
+		return extractor->extract(layerIndex, x, y);
 	}
 }
 
@@ -117,7 +119,7 @@ vector<shared_ptr<Patch>> CachingPyramidFeatureExtractor::extract(int stepX, int
 
 shared_ptr<Patch> CachingPyramidFeatureExtractor::extract(int layerIndex, int x, int y) const {
 	int index = layerIndex - firstCacheIndex;
-	if (index < 0 || index >= cache.size())
+	if (index < 0 || static_cast<unsigned int>(index) >= cache.size())
 		return shared_ptr<Patch>();
 	CacheLayer& layer = cache[index];
 	switch (strategy) {
@@ -129,6 +131,8 @@ shared_ptr<Patch> CachingPyramidFeatureExtractor::extract(int layerIndex, int x,
 		return extractInputCopying(layer, x, y);
 	case OUTPUT_COPYING:
 		return extractOutputCopying(layer, x, y);
+	default: // should never be reached
+		return extractor->extract(layerIndex, x, y);
 	}
 }
 

@@ -17,8 +17,8 @@ FrameBasedTrainableSvmClassifier::FrameBasedTrainableSvmClassifier(shared_ptr<Ke
 
 FrameBasedTrainableSvmClassifier::~FrameBasedTrainableSvmClassifier() {}
 
-int FrameBasedTrainableSvmClassifier::getRequiredPositiveCount() const {
-	return static_cast<int>(ceil(minAvgSamples * static_cast<float>(frameLength)));
+unsigned int FrameBasedTrainableSvmClassifier::getRequiredPositiveCount() const {
+	return static_cast<unsigned int>(ceil(minAvgSamples * static_cast<float>(frameLength)));
 }
 
 unsigned int FrameBasedTrainableSvmClassifier::getPositiveCount() const {
