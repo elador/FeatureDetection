@@ -108,4 +108,9 @@ vector<Mat> FiveStageSlidingWindowDetector::calculateProbabilityMaps(const Mat& 
 	return tmp;
 }
 
+const shared_ptr<PyramidFeatureExtractor> FiveStageSlidingWindowDetector::getPyramidFeatureExtractor() const
+{
+	return slidingWindowDetector->getPyramidFeatureExtractor();
+}
+
 } /* namespace detection */

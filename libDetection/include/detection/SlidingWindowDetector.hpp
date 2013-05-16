@@ -74,6 +74,11 @@ public:
 	 */
 	vector<Mat> calculateProbabilityMaps(const Mat& image);
 
+
+	const shared_ptr<PyramidFeatureExtractor> getPyramidFeatureExtractor() const {
+		return featureExtractor;
+	}
+
 private:
 
 	/**

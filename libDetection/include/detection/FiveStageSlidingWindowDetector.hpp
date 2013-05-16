@@ -61,6 +61,8 @@ public:
 	 */
 	vector<Mat> calculateProbabilityMaps(const Mat& image);
 
+	const shared_ptr<PyramidFeatureExtractor> getPyramidFeatureExtractor() const;
+
 private:
 
 	shared_ptr<SlidingWindowDetector> slidingWindowDetector;	///< The SlidingWindowDetector that is used as the first stage of this detector.

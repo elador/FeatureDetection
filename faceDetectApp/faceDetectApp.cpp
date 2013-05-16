@@ -150,9 +150,10 @@ void drawFaceBoxes(Mat image, vector<shared_ptr<ClassifiedPatch>> patches)
 	}
 }
 
-void drawSccales()
+void drawScales(Mat image, int px, int py, float minScale, float maxScale)
 {
-
+	cv::rectangle(image, cv::Point(0, 0), cv::Point((1.0f/minScale)*px, (1.0f/minScale)*py), cv::Scalar(50, 50, 50));
+	cv::rectangle(image, cv::Point(0, 0), cv::Point((1.0f/maxScale)*px, (1.0f/maxScale)*py), cv::Scalar(50, 50, 50));
 }
 
 
@@ -276,12 +277,29 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	Mat i1 = cv::imread("C:\\Users\\Patrik\\Github\\ICVSS2013_Poster\\png_out\\0_FaceFrontal_probMap.png");
+	Mat i2 = cv::imread("C:\\Users\\Patrik\\Github\\ICVSS2013_Poster\\png_out\\0_FaceLeftProfile_probMap.png");
+	Mat i3 = cv::imread("C:\\Users\\Patrik\\Github\\ICVSS2013_Poster\\png_out\\0_FaceRightProfile_probMap.png");
+
+	//i1.convertTo(i1, CV_32FC1);
+	//i2.convertTo(i2, CV_32FC1);
+	//i3.convertTo(i3, CV_32FC1);
+
+	Mat tot = 0.3f*i1+0.3f*i2+0.3f*i3;
+	//tot = tot/3;
+
+	//tot *= 255.0f;
+	//tot.convertTo(tot, CV_8UC1);
+	cv::imwrite("C:\\Users\\Patrik\\Github\\ICVSS2013_Poster\\png_out\\newAllProbMap.png", tot);
+	threshold(tot, tot, 80, 255, 0);
+	cv::imwrite("C:\\Users\\Patrik\\Github\\ICVSS2013_Poster\\png_out\\newAllProbMapThrs.png", tot);
+
 	ptree pt;
-	read_info("C:\\Users\\Patrik\\Documents\\GitHub\\faceDetectApp.cfg", pt);		// TODO add check if file exists/throw
+	read_info("C:\\Users\\Patrik\\GitHub\\faceDetectApp.cfg", pt);		// TODO add check if file exists/throw
 
 	ptree ptDetectors = pt.get_child("detectors");
-	unordered_map<string, shared_ptr<Detector>> faceDetectors;
-	unordered_map<string, shared_ptr<Detector>> featureDetectors;
+	unordered_map<string, shared_ptr<FiveStageSlidingWindowDetector>> faceDetectors;
+	unordered_map<string, shared_ptr<FiveStageSlidingWindowDetector>> featureDetectors;
 	for_each(begin(ptDetectors), end(ptDetectors), [&faceDetectors, &featureDetectors](ptree::value_type kv) {
 		// TODO: 1) error handling if a key doesn't exist
 		//		 2) make more dynamic, search for wvm or svm and add respective to map, or even just check if it's a WVM
@@ -296,7 +314,7 @@ int main(int argc, char *argv[])
 		shared_ptr<ProbabilisticSvmClassifier> psvm = ProbabilisticSvmClassifier::loadConfig(svm);
 
 		//pwvm->getWvm()->setLimitReliabilityFilter(-0.5f);
-		psvm->getSvm()->setThreshold(-0.5f);	// TODO read this from the config
+		psvm->getSvm()->setThreshold(-1.0f);	// TODO read this from the config
 
 		shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(oeCfg.get<float>("dist", 5.0f), oeCfg.get<float>("ratio", 0.0f));
 		shared_ptr<ImagePyramid> imgPyr = loadImgPyrFromConfigSubtree(imgpyr);
@@ -321,13 +339,15 @@ int main(int argc, char *argv[])
 	//test->getWvm()->setNumUsedFilters(280);
 
 	Mat img;
-
+	unsigned int piccnt = 0;
 	while ((img = imageSource->get()).rows != 0) { // TODO Can we check against !=Mat() somehow? or .empty?
 
 		cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
 		cvMoveWindow("src", 0, 0);
 		std::chrono::time_point<std::chrono::system_clock> start, end;
 		start = std::chrono::system_clock::now();
+
+		imwrite("C:\\Users\\Patrik\\Github\\ICVSS2013_Poster\\png_out\\" + boost::lexical_cast<string>(piccnt) + "_input.png", img);
 
 		int det=0;
 		vector<Mat> regionProbMaps;
@@ -349,6 +369,11 @@ int main(int argc, char *argv[])
 			Mat faceRegionProbabilityMap = getFaceRegionProbabilityMapFromPatchlist(resultingPatches, img.cols, img.rows);
 			regionProbMaps.push_back(faceRegionProbabilityMap);
 
+			Mat probMapForSave = faceRegionProbabilityMap.clone();
+			probMapForSave *= 255.0f;
+			probMapForSave.convertTo(probMapForSave, CV_8UC1);
+			imwrite("C:\\Users\\Patrik\\Github\\ICVSS2013_Poster\\png_out\\" + boost::lexical_cast<string>(piccnt) + "_" + detector.first + "_" + "probMap.png", probMapForSave);
+
 			//cv::waitKey(0);
 			++det;
 		}
@@ -363,6 +388,7 @@ int main(int argc, char *argv[])
 		cv::namedWindow("pr", CV_WINDOW_AUTOSIZE); cv::imshow("pr", wholeFaceRegionProbabilityMap);
 		cvMoveWindow("pr", 1000, 500);
 		//cv::waitKey(0);
+		imwrite("C:\\Users\\Patrik\\Github\\ICVSS2013_Poster\\png_out\\" + boost::lexical_cast<string>(piccnt) + "_" + "combinedProbMap.png", wholeFaceRegionProbabilityMap);
 
 		end = std::chrono::system_clock::now();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
@@ -370,16 +396,21 @@ int main(int argc, char *argv[])
 		std::cout << "Elapsed time: " << elapsed_mseconds << "ms\n";
 
 		// Do the FFD now:
-		threshold(wholeFaceRegionProbabilityMap, wholeFaceRegionProbabilityMap, 185, 255, 0);
+		threshold(wholeFaceRegionProbabilityMap, wholeFaceRegionProbabilityMap, 175, 255, 0);
+		imwrite("C:\\Users\\Patrik\\Github\\ICVSS2013_Poster\\png_out\\" + boost::lexical_cast<string>(piccnt) + "_" + "combinedProbMapThresh175.png", wholeFaceRegionProbabilityMap);
+
 		map<string, vector<shared_ptr<ClassifiedPatch>>> allFeaturePatches;
+		Mat ffdResultImg = img.clone();
 		for(auto detector : featureDetectors) {
 			// TODO loop only over wholeFaceRegionProbabilityMap==1
 			vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img);
 
+			shared_ptr<PyramidFeatureExtractor> pfe = detector.second->getPyramidFeatureExtractor();
 
+			drawScales(ffdResultImg, 20, 20, pfe->getMinScaleFactor(), pfe->getMaxScaleFactor());
 			allFeaturePatches.insert(make_pair(detector.second->landmark, resultingPatches)); // be careful if we want to use detector.first (its name) or detector.second->landmark
 		}
-		Mat ffdResultImg = img.clone();
+		//Mat ffdResultImg = img.clone();
 		for (const auto& features : allFeaturePatches) {
 			for (const auto& patch : features.second) {
 				// patch to landmark
@@ -391,10 +422,10 @@ int main(int argc, char *argv[])
 			drawFaceBoxes(tmp, features.second);
 			
 		}
-		cv::waitKey(0);
-
+		imwrite("C:\\Users\\Patrik\\Github\\ICVSS2013_Poster\\png_out\\" + boost::lexical_cast<string>(piccnt) + "_allFfdSymbols.png", ffdResultImg);
+		//cv::waitKey(0);
+		++piccnt;
 	}
-
 	return 0;
 }
 

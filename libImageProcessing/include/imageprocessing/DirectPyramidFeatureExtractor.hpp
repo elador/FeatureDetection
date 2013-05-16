@@ -183,6 +183,20 @@ public:
 		return pyramid;
 	}
 
+	/**
+	 * @return The width of the patches that this feature extractor extracts.
+	 */
+	const int getPatchWidth() const {
+		return patchWidth;
+	}
+
+	/**
+	 * @return The height of the patches that this feature extractor extracts.
+	 */
+	const int getPatchHeight() const {
+		return patchHeight;
+	}
+
 private:
 
 	/**
