@@ -1,12 +1,12 @@
 /*
- * LandmarkSource.hpp
+ * DefaultLandmarkSource.hpp
  *
  *  Created on: 27.04.2013
  *      Author: Patrik Huber
  */
 
-#ifndef LANDMARKSOURCE_HPP_
-#define LANDMARKSOURCE_HPP_
+#ifndef DEFAULTLANDMARKSOURCE_HPP_
+#define DEFAULTLANDMARKSOURCE_HPP_
 
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
@@ -28,9 +28,9 @@ class LandmarkCollection;
 class LandmarkFormatParser;
 
 /**
- * Source of labeled image landmarks.
+ * Default landmark source taking a list of landmark files and a parser for those files.
  */
-class LandmarkSource {
+class DefaultLandmarkSource {
 public:
 
 	/**
@@ -40,9 +40,9 @@ public:
 	 * @param[in] landmarkFiles A list of paths to landmark files.
 	 * @param[in] fileParser A parser to read the file format.
 	 */
-	LandmarkSource(vector<path> landmarkFiles, shared_ptr<LandmarkFormatParser> fileParser);
+	DefaultLandmarkSource(vector<path> landmarkFiles, shared_ptr<LandmarkFormatParser> fileParser);
 	
-	~LandmarkSource();
+	~DefaultLandmarkSource();
 
 	/**
 	 * Retrieves the labels for a given image.
@@ -59,4 +59,4 @@ private:
 };
 
 } /* namespace imageio */
-#endif /* LANDMARKSOURCE_HPP_ */
+#endif /* DEFAULTLANDMARKSOURCE_HPP_ */

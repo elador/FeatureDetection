@@ -33,7 +33,7 @@ SET(HEADERS
 	include/imageio/VideoImageSink.hpp
 	include/imageio/Landmark.hpp
 	include/imageio/LandmarkCollection.hpp
-	include/imageio/LandmarkSource.hpp
+	include/imageio/DefaultLandmarkSource.hpp
 	include/imageio/LandmarkFileGatherer.hpp
 	include/imageio/LandmarkFormatParser.hpp
 	include/imageio/DidLandmarkFormatParser.hpp
@@ -52,7 +52,7 @@ SET(SOURCE
 	src/imageio/VideoImageSink.cpp
 	src/imageio/Landmark.cpp
 	src/imageio/LandmarkCollection.cpp
-	src/imageio/LandmarkSource.cpp
+	src/imageio/DefaultLandmarkSource.cpp
 	src/imageio/LandmarkFileGatherer.cpp
 	src/imageio/DidLandmarkFormatParser.cpp
 	src/imageio/TlmsLandmarkFormatParser.cpp

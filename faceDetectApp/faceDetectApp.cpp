@@ -64,7 +64,7 @@
 #include "detection/OverlapElimination.hpp"
 
 #include "imageio/LandmarksHelper.hpp"
-#include "imageio/LandmarkSource.hpp"
+#include "imageio/DefaultLandmarkSource.hpp"
 #include "imageio/LabeledImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
 		shared_ptr<ImageSource> fileImgSrc = make_shared<FileListImageSource>(inputFilelist);
 		shared_ptr<DidLandmarkFormatParser> didParser= make_shared<DidLandmarkFormatParser>();
 		vector<path> landmarkDir; landmarkDir.push_back(path("C:\\Users\\Patrik\\Github\\data\\labels\\xm2vts\\guosheng\\"));
-		shared_ptr<LandmarkSource> lmSrc = make_shared<LandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
+		shared_ptr<DefaultLandmarkSource> lmSrc = make_shared<DefaultLandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
 		imageSource = make_shared<LabeledImageSource>(fileImgSrc, lmSrc);
 	}
 	if(useImgs==true) {
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
 		shared_ptr<ImageSource> fileImgSrc = make_shared<FileImageSource>(inputFilenames);
 		shared_ptr<DidLandmarkFormatParser> didParser= make_shared<DidLandmarkFormatParser>();
 		vector<path> landmarkDir; landmarkDir.push_back(path("C:\\Users\\Patrik\\Github\\data\\labels\\xm2vts\\guosheng\\"));
-		shared_ptr<LandmarkSource> lmSrc = make_shared<LandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
+		shared_ptr<DefaultLandmarkSource> lmSrc = make_shared<DefaultLandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
 		imageSource = make_shared<LabeledImageSource>(fileImgSrc, lmSrc);
 	}
 	if(useDirectory==true) {
@@ -345,20 +345,20 @@ int main(int argc, char *argv[])
 
 
 /* TODOs:
-Hmm, was hältst du von einer FileImageSource und FileListImageSource ?
-Bin grad am überlegen, wie ichs unter einen Hut krieg, sowohl von Ordnern, Bildern wie auch einer Bilder-Liste laden zu können
-[15:30:44] Patrik: Das nächste problem wird dann, dass ich die Bilder gerne auch mit Landmarks (also gelabelter groundtruth) laden möchte, manchmal, falls vorhanden.
-Frage mich grad wie wir das mit den *ImageSource's kombinieren könnten.
+Hmm, was hÃ¤ltst du von einer FileImageSource und FileListImageSource ?
+Bin grad am Ã¼berlegen, wie ichs unter einen Hut krieg, sowohl von Ordnern, Bildern wie auch einer Bilder-Liste laden zu kÃ¶nnen
+[15:30:44] Patrik: Das nÃ¤chste problem wird dann, dass ich die Bilder gerne auch mit Landmarks (also gelabelter groundtruth) laden mÃ¶chte, manchmal, falls vorhanden.
+Frage mich grad wie wir das mit den *ImageSource's kombinieren kÃ¶nnten.
 [16:10:44] ex-ratt: jo, sowas schwirrte mir auch mal im kopf herum - ground-truth-daten mitladen
 [16:11:32] ex-ratt: habe mir aber bisher keine weiteren gedanken gemacht, wollte das aber irgendwie in die image-sources mit reinkriegen bzw. spezielle abgeleitete image-sources basteln, die diese zusatzinfo beinhalten
-[16:12:44] Patrik: Jop... ok joa das klingt sehr gut, falls du dich da nicht in den nächsten tagen dran machst, werd ich es tun!
+[16:12:44] Patrik: Jop... ok joa das klingt sehr gut, falls du dich da nicht in den nÃ¤chsten tagen dran machst, werd ich es tun!
 
-Nochn comment zum oberen: Evtl sollten wir die DirectoryImageSource erweitern, dass sie nur images in der liste hält, die von opencv geladen werden, oft hat man in datenbanken-bilder-dirs auch readme's, oder (Hallo Windows!) Thumbs.db files.
+Nochn comment zum oberen: Evtl sollten wir die DirectoryImageSource erweitern, dass sie nur images in der liste hÃ¤lt, die von opencv geladen werden, oft hat man in datenbanken-bilder-dirs auch readme's, oder (Hallo Windows!) Thumbs.db files.
 [16:13:07] ex-ratt: jo, da gibts bestimmt file-filters oder sowas
-[16:13:22] ex-ratt: bastel erstmal was, ich schau dann mal drüber
+[16:13:22] ex-ratt: bastel erstmal was, ich schau dann mal drÃ¼ber
 [16:13:28] Patrik: Ok :)
 [16:14:32] ex-ratt: es gibt eine FaceBoxLandmark
-[16:15:00] ex-ratt: aber ich könnte mir vorstellen, dass sowas auch für nicht-gesichter sinn macht
+[16:15:00] ex-ratt: aber ich kÃ¶nnte mir vorstellen, dass sowas auch fÃ¼r nicht-gesichter sinn macht
 [16:15:23] Patrik: Genau, siehe die klasse Landmark. die FaceBoxLandmark war dann ein wenig "gehacke", weil ich da auch die breite brauch..
-[16:16:50] Patrik: Hm, evtl schmeissen wir width/height in die Landmark-klasse, und setzen das einfach 0 wenns nicht benötigt wird, dann fällt ne extra klasse für die face-box weg
+[16:16:50] Patrik: Hm, evtl schmeissen wir width/height in die Landmark-klasse, und setzen das einfach 0 wenns nicht benÃ¶tigt wird, dann fÃ¤llt ne extra klasse fÃ¼r die face-box weg
 */

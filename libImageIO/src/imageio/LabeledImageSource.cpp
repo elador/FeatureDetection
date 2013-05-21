@@ -6,7 +6,7 @@
  */
 
 #include "imageio/LandmarkCollection.hpp"
-#include "imageio/LandmarkSource.hpp"
+#include "imageio/DefaultLandmarkSource.hpp"
 #include "imageio/LabeledImageSource.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include <stdexcept>
@@ -21,7 +21,7 @@ using std::runtime_error;
 
 namespace imageio {
 
-LabeledImageSource::LabeledImageSource(shared_ptr<ImageSource> imageSource, shared_ptr<LandmarkSource> landmarkSource) : imageSource(imageSource), landmarkSource(landmarkSource)
+LabeledImageSource::LabeledImageSource(shared_ptr<ImageSource> imageSource, shared_ptr<DefaultLandmarkSource> landmarkSource) : imageSource(imageSource), landmarkSource(landmarkSource)
 {
 }
 

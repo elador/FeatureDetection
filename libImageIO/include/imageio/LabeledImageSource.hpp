@@ -22,7 +22,7 @@ using std::shared_ptr;
 namespace imageio {
 
 class LandmarkCollection;
-class LandmarkSource;
+class DefaultLandmarkSource;
 
 /**
  * Image source that takes the images of an ImageSource and a LandmarkSource.
@@ -39,7 +39,7 @@ public:
 	 * @param[in] imageSource The image source to use.
 	 * @param[in] landmarkSource The landmark source to use.
 	 */
-	LabeledImageSource(shared_ptr<ImageSource> imageSource, shared_ptr<LandmarkSource> landmarkSource);
+	LabeledImageSource(shared_ptr<ImageSource> imageSource, shared_ptr<DefaultLandmarkSource> landmarkSource);
 
 	virtual ~LabeledImageSource();
 
@@ -70,7 +70,7 @@ public:
 
 private:
 	shared_ptr<ImageSource> imageSource; ///< The underlying image source.
-	shared_ptr<LandmarkSource> landmarkSource; ///< The underlying landmark source.
+	shared_ptr<DefaultLandmarkSource> landmarkSource; ///< The underlying landmark source.
 
 };
 
