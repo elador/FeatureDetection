@@ -78,7 +78,7 @@ vector<shared_ptr<ClassifiedPatch>> FiveStageSlidingWindowDetector::detect(const
 	cvMoveWindow("svm", 0, 500);
 
 	//sort(make_indirect_iterator(svmPatches.begin()), make_indirect_iterator(svmPatches.end()), greater<ClassifiedPatch>());
-	typedef decltype(svmPatches.front()) iter;
+	typedef shared_ptr<ClassifiedPatch> iter;
 	sort(svmPatches.begin(), svmPatches.end(), [](iter a, iter b) { return *a > *b; });
 
 	Mat imgSvmEnd = image.clone();

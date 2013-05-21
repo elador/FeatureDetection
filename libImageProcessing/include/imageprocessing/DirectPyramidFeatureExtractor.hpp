@@ -184,16 +184,16 @@ public:
 	}
 
 	/**
-	 * @return The width of the patches that this feature extractor extracts.
+	 * @return The width of the image data of the extracted patches.
 	 */
-	const int getPatchWidth() const {
+	int getPatchWidth() const {
 		return patchWidth;
 	}
 
 	/**
-	 * @return The height of the patches that this feature extractor extracts.
+	 * @return The height of the image data of the extracted patches.
 	 */
-	const int getPatchHeight() const {
+	int getPatchHeight() const {
 		return patchHeight;
 	}
 
