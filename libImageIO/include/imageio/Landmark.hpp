@@ -16,6 +16,7 @@
 
 using cv::Vec3f;
 using cv::Size2f;
+using cv::Mat;
 using std::string;
 using std::array;
 using std::map;
@@ -69,6 +70,42 @@ public:
 	 */
 	Size2f getSize() const;
 
+	/**
+	 * Compares this landmark against another one and returns true if they
+	 * are within a small epsilon value.
+	 *
+	 * Note: |x-y|<=eps doesn't seem to be something good to do according to google but
+	 *       it should suffice for our purpose.
+	 *
+	 * @param[in] landmark A landmark to compare this landmark to.
+	 * @return True if the two landmarks are equal, false otherwise.
+	 */
+	bool isEqual(const Landmark& landmark) const;
+
+	/**
+	 * Compares this landmark against another one and returns true if they are
+	 * close to each other. 
+	 * If the landmark possesses only a position, and no size, the second parameter
+	 * specifies an absolute distance to compare against.
+	 * If the landmark possesses a size (width/height), the second parameter
+	 * specifies a ratio (between 0 and 1) by which the two landmarks must overlap
+	 * to still be considered close.
+	 *
+	 * @param[in] landmark A landmark to compare this landmark to.
+	 * @param[in] similarity A value in pixels or a ratio, depending if the
+	 *            landmark has a size.
+	 * @return True if the two landmarks are close, false otherwise.
+	 */
+	bool isClose(const Landmark& landmark, const float similarity) const;
+
+	/**
+	 * Draws this landmark at its position in the image. Its corresponding
+	 * symbol is used if found in the LandmarkSymbols map - if not, a default
+	 * symbol is drawn.
+	 *
+	 * @param[in] image The image into which this landmark is drawn.
+	 */
+	void draw(Mat image) const;
 
 private:
 	string name;		///< The name and identifier of the landmark.
@@ -87,10 +124,11 @@ class LandmarkSymbols {
 
 public:
 	static array<bool, 9> get(string landmarkName);
-	static void getColor();
+	static cv::Scalar getColor(string landmarkName);
 
 private:
 	static map<string, array<bool, 9>> symbolMap;
+	static map<string, cv::Scalar> colorMap;
 };
 
 

@@ -23,11 +23,13 @@ SET(HEADERS
 	include/detection/Detector.hpp
 	include/detection/SlidingWindowDetector.hpp
 	include/detection/OverlapElimination.hpp
+	include/detection/FiveStageSlidingWindowDetector.hpp
 	include/detection/ImageLogger.hpp
 )
 SET(SOURCE
 	src/detection/SlidingWindowDetector.cpp
 	src/detection/OverlapElimination.cpp
+	src/detection/FiveStageSlidingWindowDetector.cpp
 	src/detection/ImageLogger.cpp
 )
 
