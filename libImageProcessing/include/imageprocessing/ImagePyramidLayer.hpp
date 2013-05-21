@@ -11,6 +11,7 @@
 #include "opencv2/core/core.hpp"
 
 using cv::Mat;
+using cv::Size;
 
 namespace imageprocessing {
 
@@ -49,6 +50,13 @@ public:
 	 */
 	int getOriginal(int value) const {
 		return cvRound(value / scaleFactor);
+	}
+
+	/**
+	 * @return The size of this layer (size of the scaled image).
+	 */
+	Size getSize() const {
+		return Size(scaledImage.cols, scaledImage.rows);
 	}
 
 	/**

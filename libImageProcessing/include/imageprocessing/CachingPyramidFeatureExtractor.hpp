@@ -154,6 +154,14 @@ public:
 		return extractor->getImageSize();
 	}
 
+	vector<Size> getLayerSizes() const {
+		return extractor->getLayerSizes();
+	}
+
+	vector<Size> getPatchSizes() const {
+		return extractor->getPatchSizes();
+	}
+
 private:
 
 	/**

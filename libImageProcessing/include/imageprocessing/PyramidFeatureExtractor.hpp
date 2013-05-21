@@ -105,6 +105,20 @@ public:
 	 */
 	virtual Size getImageSize() const = 0;
 
+	/**
+	 * Determines the size of the scaled image of each pyramid layer.
+	 *
+	 * @return The sizes of the pyramid layer's scaled images, beginning from the largest layer.
+	 */
+	virtual vector<Size> getLayerSizes() const = 0;
+
+	/**
+	 * Determines the size of the patch of each pyramid layer when scaled to the original image.
+	 *
+	 * @return The sizes of the pyramid layer's patches, beginning from the smallest patch (largest layer).
+	 */
+	virtual vector<Size> getPatchSizes() const = 0;
+
 	/** TODO @Peter: Any reason for this getter to not be in the interface here?
 	 * @return The image pyramid.
 	 */

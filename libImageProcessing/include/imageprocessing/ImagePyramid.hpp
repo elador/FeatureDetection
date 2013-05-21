@@ -140,6 +140,13 @@ public:
 	const shared_ptr<ImagePyramidLayer> getLayer(double scaleFactor) const;
 
 	/**
+	 * Determines the size of the scaled image of each pyramid layer.
+	 *
+	 * @return The sizes of the pyramid layer's scaled images, beginning from the largest layer.
+	 */
+	vector<Size> getLayerSizes() const;
+
+	/**
 	 * @return A reference to the pyramid layers.
 	 */
 	const vector<shared_ptr<ImagePyramidLayer>>& getLayers() const {

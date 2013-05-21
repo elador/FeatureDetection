@@ -141,33 +141,27 @@ public:
 		return layer ? layer->getIndex() : -1;
 	}
 
-	/**
-	 * @return The minimum scale factor (the scale factor of the smallest scaled (last) image is bigger or equal).
-	 */
 	double getMinScaleFactor() const {
 		return pyramid->getMinScaleFactor();
 	}
 
-	/**
-	 * @return The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
-	 */
 	double getMaxScaleFactor() const {
 		return pyramid->getMaxScaleFactor();
 	}
 
-	/**
-	 * @return The incremental scale factor between two layers of the pyramid.
-	 */
 	double getIncrementalScaleFactor() const {
 		return pyramid->getIncrementalScaleFactor();
 	}
 
-	/**
-	 * @return The size of the original image.
-	 */
 	Size getImageSize() const {
 		return pyramid->getImageSize();
 	}
+
+	vector<Size> getLayerSizes() const {
+		return pyramid->getLayerSizes();
+	}
+
+	vector<Size> getPatchSizes() const;
 
 	/**
 	 * @return The image pyramid.

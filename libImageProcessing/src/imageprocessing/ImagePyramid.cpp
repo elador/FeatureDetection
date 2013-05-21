@@ -12,6 +12,7 @@
 #include "logging/LoggerFactory.hpp"
 #include "logging/Logger.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
+#include "boost/iterator/indirect_iterator.hpp"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -19,6 +20,7 @@
 using logging::LoggerFactory;
 using cv::Size;
 using cv::resize;
+using boost::make_indirect_iterator;
 using std::string; // TODO nur für createException
 using std::ostringstream; // TODO nur für createException
 using std::make_shared;
@@ -105,8 +107,7 @@ void ImagePyramid::update() {
 			incrementalScaleFactor = sourcePyramid->incrementalScaleFactor;
 			layers.clear();
 			const vector<shared_ptr<ImagePyramidLayer>>& sourceLayers = sourcePyramid->layers;
-			for (auto layIt = sourceLayers.begin(); layIt != sourceLayers.end(); ++layIt) {
-				shared_ptr<ImagePyramidLayer> layer = *layIt;
+			for (auto layer = make_indirect_iterator(layers.begin()); layer != make_indirect_iterator(layers.end()); ++layer) {
 				if (layer->getScaleFactor() > maxScaleFactor)
 					continue;
 				if (layer->getScaleFactor() < minScaleFactor)
@@ -170,6 +171,14 @@ const shared_ptr<ImagePyramidLayer> ImagePyramid::getLayer(int index) const {
 const shared_ptr<ImagePyramidLayer> ImagePyramid::getLayer(double scaleFactor) const {
 	double power = log(scaleFactor) / log(incrementalScaleFactor);
 	return getLayer(cvRound(power));
+}
+
+vector<Size> ImagePyramid::getLayerSizes() const {
+	vector<Size> sizes;
+	sizes.resize(layers.size());
+	for (auto layer = make_indirect_iterator(layers.begin()); layer != make_indirect_iterator(layers.end()); ++layer)
+		sizes.push_back(layer->getSize());
+	return sizes;
 }
 
 } /* namespace imageprocessing */
