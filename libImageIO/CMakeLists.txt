@@ -27,13 +27,15 @@ SET(HEADERS
 	include/imageio/DirectoryImageSource.hpp
 	include/imageio/VideoImageSource.hpp
 	include/imageio/KinectImageSource.hpp
-	include/imageio/LabeledImageSource.hpp
+	include/imageio/NamedLabeledImageSource.hpp
 	include/imageio/ImageSink.hpp
 	include/imageio/DirectoryImageSink.hpp
 	include/imageio/VideoImageSink.hpp
 	include/imageio/Landmark.hpp
 	include/imageio/LandmarkCollection.hpp
-	include/imageio/DefaultLandmarkSource.hpp
+	include/imageio/OrderedLandmarkSource.hpp
+	include/imageio/NamedLandmarkSource.hpp
+	include/imageio/DefaultNamedLandmarkSource.hpp
 	include/imageio/LandmarkFileGatherer.hpp
 	include/imageio/LandmarkFormatParser.hpp
 	include/imageio/DidLandmarkFormatParser.hpp
@@ -47,12 +49,12 @@ SET(SOURCE
 	src/imageio/DirectoryImageSource.cpp
 	src/imageio/VideoImageSource.cpp
 	src/imageio/KinectImageSource.cpp
-	src/imageio/LabeledImageSource.cpp
+	src/imageio/NamedLabeledImageSource.cpp
 	src/imageio/DirectoryImageSink.cpp
 	src/imageio/VideoImageSink.cpp
 	src/imageio/Landmark.cpp
 	src/imageio/LandmarkCollection.cpp
-	src/imageio/DefaultLandmarkSource.cpp
+	src/imageio/DefaultNamedLandmarkSource.cpp
 	src/imageio/LandmarkFileGatherer.cpp
 	src/imageio/DidLandmarkFormatParser.cpp
 	src/imageio/TlmsLandmarkFormatParser.cpp

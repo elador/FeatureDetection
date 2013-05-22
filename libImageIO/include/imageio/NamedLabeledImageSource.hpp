@@ -1,12 +1,12 @@
 /*
- * LabeledImageSource.hpp
+ * NamedLabeledImageSource.hpp
  *
  *  Created on: 27.04.2013
  *      Author: Patrik Huber
  */
 
-#ifndef LABELEDIMAGESOURCE_HPP_
-#define LABELEDIMAGESOURCE_HPP_
+#ifndef NAMEDLABELEDIMAGESOURCE_HPP_
+#define NAMEDLABELEDIMAGESOURCE_HPP_
 
 #include "imageio/ImageSource.hpp"
 #ifdef WIN32
@@ -22,35 +22,27 @@ using std::shared_ptr;
 namespace imageio {
 
 class LandmarkCollection;
-class DefaultLandmarkSource;
+class NamedLandmarkSource;
 
 /**
- * Image source that takes the images of an ImageSource and a LandmarkSource.
+ * Image source with associated landmarks that are retrieved using the image names.
  *
  * Note: It might be nice if we could just create an empty LandmarkSource at start, and then,
  *       at some time in the program, add the LandmarkSource from somewhere (e.g. user-specified).
  */
-class LabeledImageSource : public ImageSource {
+class NamedLabeledImageSource : public ImageSource {
 public:
 
 	/**
-	 * Constructs a new labeled image source from a given ImageSource and LandmarkSource.
+	 * Constructs a new named labeled image source from a given ImageSource and NamedLandmarkSource.
 	 *
 	 * @param[in] imageSource The image source to use.
 	 * @param[in] landmarkSource The landmark source to use.
 	 */
-	LabeledImageSource(shared_ptr<ImageSource> imageSource, shared_ptr<DefaultLandmarkSource> landmarkSource);
+	NamedLabeledImageSource(shared_ptr<ImageSource> imageSource, shared_ptr<NamedLandmarkSource> landmarkSource);
 
-	virtual ~LabeledImageSource();
+	virtual ~NamedLabeledImageSource();
 
-	/**
-	 * Retrieves the image of the underlying image source.
-	 *
-	 * In addition, saves the path of the retrieved image to be
-	 * able to output the labels for it if getLandmarks() is called.
-	 *
-	 * @return The image (that may be empty if no data could be retrieved).
-	 */
 	const Mat get();
 
 	const bool next();
@@ -70,9 +62,9 @@ public:
 
 private:
 	shared_ptr<ImageSource> imageSource; ///< The underlying image source.
-	shared_ptr<DefaultLandmarkSource> landmarkSource; ///< The underlying landmark source.
+	shared_ptr<NamedLandmarkSource> landmarkSource; ///< The underlying landmark source.
 
 };
 
 } /* namespace imageio */
-#endif /* LABELEDIMAGESOURCE_HPP_ */
+#endif /* NAMEDLABELEDIMAGESOURCE_HPP_ */

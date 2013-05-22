@@ -66,8 +66,8 @@
 
 #include "imageio/Landmark.hpp"
 #include "imageio/LandmarksHelper.hpp"
-#include "imageio/DefaultLandmarkSource.hpp"
-#include "imageio/LabeledImageSource.hpp"
+#include "imageio/DefaultNamedLandmarkSource.hpp"
+#include "imageio/NamedLabeledImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
 #include "imageio/RepeatingFileImageSource.hpp"
@@ -255,8 +255,8 @@ int main(int argc, char *argv[])
 		shared_ptr<ImageSource> fileImgSrc = make_shared<FileListImageSource>(inputFilelist);
 		shared_ptr<DidLandmarkFormatParser> didParser= make_shared<DidLandmarkFormatParser>();
 		vector<path> landmarkDir; landmarkDir.push_back(path("C:\\Users\\Patrik\\Github\\data\\labels\\xm2vts\\guosheng\\"));
-		shared_ptr<DefaultLandmarkSource> lmSrc = make_shared<DefaultLandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
-		imageSource = make_shared<LabeledImageSource>(fileImgSrc, lmSrc);
+		shared_ptr<DefaultNamedLandmarkSource> lmSrc = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
+		imageSource = make_shared<NamedLabeledImageSource>(fileImgSrc, lmSrc);
 	}
 	if(useImgs==true) {
 		numInputs++;
@@ -265,8 +265,8 @@ int main(int argc, char *argv[])
 		shared_ptr<ImageSource> fileImgSrc = make_shared<FileImageSource>(inputFilenames);
 		shared_ptr<DidLandmarkFormatParser> didParser= make_shared<DidLandmarkFormatParser>();
 		vector<path> landmarkDir; landmarkDir.push_back(path("C:\\Users\\Patrik\\Github\\data\\labels\\xm2vts\\guosheng\\"));
-		shared_ptr<DefaultLandmarkSource> lmSrc = make_shared<DefaultLandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
-		imageSource = make_shared<LabeledImageSource>(fileImgSrc, lmSrc);
+		shared_ptr<DefaultNamedLandmarkSource> lmSrc = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
+		imageSource = make_shared<NamedLabeledImageSource>(fileImgSrc, lmSrc);
 	}
 	if(useDirectory==true) {
 		numInputs++;

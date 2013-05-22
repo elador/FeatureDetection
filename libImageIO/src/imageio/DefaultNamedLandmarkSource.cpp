@@ -1,11 +1,11 @@
 /*
- * DefaultLandmarkSource.cpp
+ * DefaultNamedLandmarkSource.cpp
  *
  *  Created on: 28.04.2013
  *      Author: Patrik Huber
  */
 
-#include "imageio/DefaultLandmarkSource.hpp"
+#include "imageio/DefaultNamedLandmarkSource.hpp"
 #include "imageio/LandmarkCollection.hpp"
 #include "imageio/LandmarkFormatParser.hpp"
 #include <stdexcept>
@@ -20,16 +20,16 @@ using std::make_pair;
 
 namespace imageio {
 
-DefaultLandmarkSource::DefaultLandmarkSource(vector<path> landmarkFiles, shared_ptr<LandmarkFormatParser> fileParser) {
+DefaultNamedLandmarkSource::DefaultNamedLandmarkSource(vector<path> landmarkFiles, shared_ptr<LandmarkFormatParser> fileParser) {
 	 for (const auto& file : landmarkFiles) {
 		 map<path, LandmarkCollection> lms = fileParser->read(file);
 		 landmarkCollections.insert(begin(lms), end(lms));
 	 }
 }
 
-DefaultLandmarkSource::~DefaultLandmarkSource() {}
+DefaultNamedLandmarkSource::~DefaultNamedLandmarkSource() {}
 
-const LandmarkCollection DefaultLandmarkSource::get(path imagePath) {
+const LandmarkCollection DefaultNamedLandmarkSource::get(path imagePath) {
 	// Todo: .at throws an out_of_range exception when the element is not found.
 	//       [] inserts a new, empty element if not found. Think about what we want.
 	return landmarkCollections.at(imagePath);
