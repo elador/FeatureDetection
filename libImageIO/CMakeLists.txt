@@ -41,6 +41,8 @@ SET(HEADERS
 	include/imageio/OrderedLandmarkSource.hpp
 	include/imageio/EmptyLandmarkSource.hpp
 	include/imageio/BobotLandmarkSource.hpp
+	include/imageio/OrderedLandmarkSink.hpp
+	include/imageio/BobotLandmarkSink.hpp
 	include/imageio/LandmarkFileGatherer.hpp
 	include/imageio/LandmarkFormatParser.hpp
 	include/imageio/DidLandmarkFormatParser.hpp
@@ -63,6 +65,7 @@ SET(SOURCE
 	src/imageio/LandmarkCollection.cpp
 	src/imageio/DefaultNamedLandmarkSource.cpp
 	src/imageio/BobotLandmarkSource.cpp
+	src/imageio/BobotLandmarkSink.cpp
 	src/imageio/LandmarkFileGatherer.cpp
 	src/imageio/DidLandmarkFormatParser.cpp
 	src/imageio/TlmsLandmarkFormatParser.cpp

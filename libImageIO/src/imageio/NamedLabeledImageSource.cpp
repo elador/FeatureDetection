@@ -21,7 +21,8 @@ using std::runtime_error;
 
 namespace imageio {
 
-NamedLabeledImageSource::NamedLabeledImageSource(shared_ptr<ImageSource> imageSource, shared_ptr<NamedLandmarkSource> landmarkSource) : imageSource(imageSource), landmarkSource(landmarkSource)
+NamedLabeledImageSource::NamedLabeledImageSource(shared_ptr<ImageSource> imageSource, shared_ptr<NamedLandmarkSource> landmarkSource) :
+		LabeledImageSource(imageSource->getSourceName()), imageSource(imageSource), landmarkSource(landmarkSource)
 {
 }
 

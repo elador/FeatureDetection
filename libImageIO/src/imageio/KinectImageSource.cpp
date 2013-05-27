@@ -6,11 +6,14 @@
  */
 
 #include "imageio/KinectImageSource.hpp"
+#include "boost/lexical_cast.hpp"
 #include <iostream>
+
+using boost::lexical_cast;
 
 namespace imageio {
 
-KinectImageSource::KinectImageSource(int device) : frame() {
+KinectImageSource::KinectImageSource(int device) : ImageSource(lexical_cast<string>(device)), frame() {
 
 #ifdef WIN32
 	m_pColorStreamHandle = INVALID_HANDLE_VALUE;

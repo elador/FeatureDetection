@@ -19,7 +19,7 @@ using std::runtime_error;
 
 namespace imageio {
 
-DirectoryImageSource::DirectoryImageSource(const string& directory) : files(), index(-1) {
+DirectoryImageSource::DirectoryImageSource(const string& directory) : ImageSource(directory), files(), index(-1) {
 	path dirpath(directory);
 	if (!exists(dirpath))
 		throw runtime_error("DirectoryImageSource: Directory '" + directory + "' does not exist.");

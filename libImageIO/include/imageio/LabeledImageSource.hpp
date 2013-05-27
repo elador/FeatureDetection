@@ -20,6 +20,13 @@ class LandmarkCollection;
 class LabeledImageSource : public ImageSource {
 public:
 
+	/**
+	 * Constructs a new labeled image source.
+	 *
+	 * @param[in] name The name of this image source.
+	 */
+	LabeledImageSource(const string& name) : ImageSource(name) {}
+
 	virtual ~LabeledImageSource() {}
 
 	virtual const bool next() = 0;

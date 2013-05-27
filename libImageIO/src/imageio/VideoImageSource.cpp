@@ -15,12 +15,12 @@ using std::string;
 
 namespace imageio {
 
-VideoImageSource::VideoImageSource(int device) : capture(device), frame(), frameCounter(0) {
+VideoImageSource::VideoImageSource(int device) : ImageSource(lexical_cast<string>(device)), capture(device), frame(), frameCounter(0) {
 	if (!capture.isOpened())
 		std::cerr << "Could not open stream from device " << device << std::endl;
 }
 
-VideoImageSource::VideoImageSource(string video) : capture(video), frame(), frameCounter(0) {
+VideoImageSource::VideoImageSource(string video) : ImageSource(video), capture(video), frame(), frameCounter(0) {
 	if (!capture.isOpened())
 		std::cerr << "Could not open video file '" << video << "'" << std::endl;
 }

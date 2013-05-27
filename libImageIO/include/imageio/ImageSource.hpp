@@ -14,10 +14,12 @@
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
 #include "boost/filesystem.hpp"
+#include <string>
 #include <vector>
 
 using cv::Mat;
 using boost::filesystem::path;
+using std::string;
 using std::vector;
 
 namespace imageio {
@@ -28,7 +30,23 @@ namespace imageio {
 class ImageSource {
 public:
 
+	/**
+	 * Constructs a new image source.
+	 *
+	 * @param[in] name The name of this image source.
+	 */
+	ImageSource(const string& name) : name(name) {}
+
 	virtual ~ImageSource() {}
+
+	/**
+	 * Determines the name of this image source. Examples of possible names are the video file, image directory or device number.
+	 *
+	 * @return The name of this image source.
+	 */
+	const string& getSourceName() const {
+		return name;
+	}
 
 	/**
 	 * Retrieves the next image. The result is the same as calling next(), followed by getImage().
@@ -70,6 +88,9 @@ public:
 	 */
 	virtual vector<path> getNames() const = 0;	// Q: We could make this protected?
 
+private:
+
+	const string name; ///< The name of this image source.
 };
 
 } /* namespace imageio */

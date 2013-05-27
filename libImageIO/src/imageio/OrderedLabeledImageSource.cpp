@@ -13,7 +13,7 @@ namespace imageio {
 
 OrderedLabeledImageSource::OrderedLabeledImageSource(
 		shared_ptr<ImageSource> imageSource, shared_ptr<OrderedLandmarkSource> landmarkSource) :
-				imageSource(imageSource), landmarkSource(landmarkSource) {}
+				LabeledImageSource(imageSource->getSourceName()), imageSource(imageSource), landmarkSource(landmarkSource) {}
 
 OrderedLabeledImageSource::~OrderedLabeledImageSource() {}
 
