@@ -44,6 +44,7 @@ SET(SOURCE
 )
 
 SET(HEADERS
+	faceRecogTestApp.hpp
 )
 
 #Make the library

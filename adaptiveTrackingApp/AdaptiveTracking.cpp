@@ -5,6 +5,9 @@
  *      Author: poschmann
  */
 
+#define NOMINMAX	// This specifies that windows.h does not #define it's min/max macros. But it's
+					// pretty strange that we don't have this problem at other occurences of std::min/max?
+
 #include "AdaptiveTracking.hpp"
 #include "logging/LoggerFactory.hpp"
 #include "logging/Logger.hpp"
@@ -52,6 +55,7 @@
 #include <iostream>
 #include <chrono>
 #include <sstream>
+#include <algorithm>
 
 using namespace logging;
 using namespace classification;

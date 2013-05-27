@@ -5,6 +5,8 @@ SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # find dependencies
+FIND_PACKAGE(Boost 1.48.0 REQUIRED) # We only need the headers
+
 FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core imgproc)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
@@ -57,6 +59,7 @@ include_directories( "include" )
 
 # add dependencies
 include_directories( ${OpenCV_INCLUDE_DIRS} )
+include_directories( ${Boost_INCLUDE_DIRS} )
 include_directories( ${Logging_SOURCE_DIR}/include )
 
 # make library

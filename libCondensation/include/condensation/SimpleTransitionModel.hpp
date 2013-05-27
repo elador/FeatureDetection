@@ -62,8 +62,8 @@ public:
 	}
 
 private:
-	double positionScatter = 0.1; ///< The scatter that controls the diffusion of the position.
-	double velocityScatter = 0.1; ///< The scatter that controls the diffusion of the velocity.
+	double positionScatter; ///< The scatter that controls the diffusion of the position.
+	double velocityScatter; ///< The scatter that controls the diffusion of the velocity.
 	boost::variate_generator<boost::mt19937, boost::normal_distribution<> > generator; ///< Random number generator.
 };
 
