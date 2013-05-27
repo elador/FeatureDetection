@@ -10,6 +10,7 @@
 
 #include "imageio/ImageSource.hpp"
 #ifdef WIN32
+	#define NOMINMAX	// This specifies that windows.h does not #define it's min/max macros.
 	#include <windows.h>
 	#include <NuiApi.h>
 #endif
