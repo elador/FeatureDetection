@@ -185,10 +185,35 @@ public:
 	}
 
 	/**
+	 * @param[in] width The new width of the image data of the extracted patches.
+	 */
+	void setPatchWidth(int width) {
+		patchWidth = width;
+	}
+
+	/**
 	 * @return The height of the image data of the extracted patches.
 	 */
 	int getPatchHeight() const {
 		return patchHeight;
+	}
+
+	/**
+	 * @param[in] height The new height of the image data of the extracted patches.
+	 */
+	void setPatchHeight(int height) {
+		patchHeight = height;
+	}
+
+	/**
+	 * Changes the size of the image data of the extracted patches.
+	 *
+	 * @param[in] width The new width of the image data of the extracted patches.
+	 * @param[in] height The new height of the image data of the extracted patches.
+	 */
+	void setPatchSize(int width, int height) {
+		patchWidth = width;
+		patchHeight = height;
 	}
 
 private:
@@ -205,8 +230,8 @@ private:
 	}
 
 	shared_ptr<ImagePyramid> pyramid; ///< The image pyramid.
-	const int patchWidth;  ///< The width of the image data of the extracted patches.
-	const int patchHeight; ///< The height of the image data of the extracted patches.
+	int patchWidth;  ///< The width of the image data of the extracted patches.
+	int patchHeight; ///< The height of the image data of the extracted patches.
 	shared_ptr<MultipleImageFilter> patchFilter; ///< Filter that is applied to the patches.
 };
 

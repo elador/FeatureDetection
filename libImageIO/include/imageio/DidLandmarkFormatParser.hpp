@@ -9,19 +9,22 @@
 #define DIDLANDMARKFORMATPARSER_HPP_
 
 #include "imageio/LandmarkFormatParser.hpp"
+#include "imageio/LandmarkCollection.hpp"
+#include "imageio/ModelLandmark.hpp"
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
 #include "boost/filesystem.hpp"
-#include "imageio/LandmarkCollection.hpp"
 #include <vector>
 #include <string>
 #include <map>
+#include <memory>
 
 using std::vector;
 using std::string;
 using std::map;
+using std::shared_ptr;
 
 namespace imageio {
 
@@ -60,7 +63,7 @@ private:
 	 * @param[in] line The line with the landmark information to parse.
 	 * @return A Landmark object.
 	 */
-	Landmark readFromDidLine(const string& line);
+	shared_ptr<ModelLandmark> readFromDidLine(const string& line);
 	
 	string didToTlmsName(int didVertexId);
 };

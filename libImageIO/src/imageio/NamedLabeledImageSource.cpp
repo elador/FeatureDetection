@@ -32,26 +32,22 @@ const bool NamedLabeledImageSource::next()
 	return imageSource->next();
 }
 
-const Mat NamedLabeledImageSource::get() {
-	return imageSource->get();
-}
-
 const Mat NamedLabeledImageSource::getImage() const
 {
 	return imageSource->getImage();
 }
 
-const path NamedLabeledImageSource::getName() const
+path NamedLabeledImageSource::getName() const
 {
 	return imageSource->getName();
 }
 
-const vector<path> NamedLabeledImageSource::getNames() const
+vector<path> NamedLabeledImageSource::getNames() const
 {
 	return imageSource->getNames();
 }
 
-const LandmarkCollection NamedLabeledImageSource::getLandmarks() {
+const LandmarkCollection& NamedLabeledImageSource::getLandmarks() const {
 	return landmarkSource->get(imageSource->getName());
 }
 

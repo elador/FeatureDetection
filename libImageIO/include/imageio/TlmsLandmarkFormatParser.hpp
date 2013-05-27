@@ -10,13 +10,16 @@
 
 #include "imageio/LandmarkFormatParser.hpp"
 #include "imageio/LandmarkCollection.hpp"
+#include "imageio/ModelLandmark.hpp"
 #include <vector>
 #include <string>
 #include <map>
+#include <memory>
 
 using std::vector;
 using std::string;
 using std::map;
+using std::shared_ptr;
 
 namespace imageio {
 
@@ -53,7 +56,7 @@ private:
 	 * @param[in] line The line with the landmark information to parse.
 	 * @return A Landmark object.
 	 */
-	Landmark readFromTlmsLine(const string& line);
+	shared_ptr<ModelLandmark> readFromTlmsLine(const string& line);
 	
 };
 

@@ -29,19 +29,10 @@ VideoImageSource::~VideoImageSource() {
 	capture.release();
 }
 
-const Mat VideoImageSource::get() {
-	if (next()) {
-		return frame;
-	} else {
-		return Mat();
-	}
-}
-
 const bool VideoImageSource::next()
 {
-	capture >> frame;
 	++frameCounter;	// We'll overflow after 2 years at 60fps... guess that's not a problem?
-	return true; // TODO: How can we find out here if we've reached the end of a video file?
+	return capture.read(frame);
 }
 
 const Mat VideoImageSource::getImage() const
@@ -49,12 +40,12 @@ const Mat VideoImageSource::getImage() const
 	return frame;
 }
 
-const path VideoImageSource::getName() const
+path VideoImageSource::getName() const
 {
 	return path(lexical_cast<string>(frameCounter));
 }
 
-const vector<path> VideoImageSource::getNames() const
+vector<path> VideoImageSource::getNames() const
 {
 	vector<path> tmp;
 	tmp.push_back(path(lexical_cast<string>(frameCounter)));

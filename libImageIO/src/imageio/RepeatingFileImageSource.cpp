@@ -37,21 +37,17 @@ const bool RepeatingFileImageSource::next()
 	return true;
 }
 
-const Mat RepeatingFileImageSource::get() {
-	return image;
-}
-
 const Mat RepeatingFileImageSource::getImage() const
 {
 	return image;
 }
 
-const path RepeatingFileImageSource::getName() const
+path RepeatingFileImageSource::getName() const
 {
 	return file;
 }
 
-const vector<path> RepeatingFileImageSource::getNames() const
+vector<path> RepeatingFileImageSource::getNames() const
 {
 	vector<path> tmp;
 	tmp.push_back(file);

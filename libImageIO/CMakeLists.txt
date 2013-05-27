@@ -28,14 +28,19 @@ SET(HEADERS
 	include/imageio/VideoImageSource.hpp
 	include/imageio/KinectImageSource.hpp
 	include/imageio/NamedLabeledImageSource.hpp
+	include/imageio/OrderedLabeledImageSource.hpp
 	include/imageio/ImageSink.hpp
 	include/imageio/DirectoryImageSink.hpp
 	include/imageio/VideoImageSink.hpp
 	include/imageio/Landmark.hpp
+	include/imageio/ModelLandmark.hpp
+	include/imageio/RectLandmark.hpp
 	include/imageio/LandmarkCollection.hpp
-	include/imageio/OrderedLandmarkSource.hpp
 	include/imageio/NamedLandmarkSource.hpp
 	include/imageio/DefaultNamedLandmarkSource.hpp
+	include/imageio/OrderedLandmarkSource.hpp
+	include/imageio/EmptyLandmarkSource.hpp
+	include/imageio/BobotLandmarkSource.hpp
 	include/imageio/LandmarkFileGatherer.hpp
 	include/imageio/LandmarkFormatParser.hpp
 	include/imageio/DidLandmarkFormatParser.hpp
@@ -50,11 +55,14 @@ SET(SOURCE
 	src/imageio/VideoImageSource.cpp
 	src/imageio/KinectImageSource.cpp
 	src/imageio/NamedLabeledImageSource.cpp
+	src/imageio/OrderedLabeledImageSource.cpp
 	src/imageio/DirectoryImageSink.cpp
 	src/imageio/VideoImageSink.cpp
-	src/imageio/Landmark.cpp
+	src/imageio/ModelLandmark.cpp
+	src/imageio/RectLandmark.cpp
 	src/imageio/LandmarkCollection.cpp
 	src/imageio/DefaultNamedLandmarkSource.cpp
+	src/imageio/BobotLandmarkSource.cpp
 	src/imageio/LandmarkFileGatherer.cpp
 	src/imageio/DidLandmarkFormatParser.cpp
 	src/imageio/TlmsLandmarkFormatParser.cpp

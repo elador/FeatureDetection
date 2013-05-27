@@ -1,61 +1,67 @@
 /*
- * Landmark.cpp
+ * ModelLandmark.cpp
  *
  *  Created on: 22.03.2013
  *      Author: Patrik Huber
  */
 
-#include "imageio/Landmark.hpp"
-#include "opencv2/core/core.hpp"
-#include <utility>
+#include "imageio/ModelLandmark.hpp"
 
 using std::make_pair;
 
 namespace imageio {
 
-Landmark::Landmark(string name, Vec3f position, Size2f size, bool visibility) : name(name), position(position), size(size), visibility(visibility)
+ModelLandmark::ModelLandmark(const string& name) :
+		Landmark(MODEL, name, false), position(0, 0, 0) {}
+
+ModelLandmark::ModelLandmark(const string& name, float x, float y, float z) :
+		Landmark(MODEL, name, true), position(x, y, z) {}
+
+ModelLandmark::ModelLandmark(const string& name, const Vec2f& position) :
+		Landmark(MODEL, name, true), position(position[0], position[1], 0) {}
+
+ModelLandmark::ModelLandmark(const string& name, const Vec3f& position) :
+		Landmark(MODEL, name, true), position(position) {}
+
+ModelLandmark::ModelLandmark(const string& name, const Vec3f& position, bool visible) :
+		Landmark(MODEL, name, visible), position(position) {}
+
+ModelLandmark::~ModelLandmark() {}
+
+bool ModelLandmark::isEqual(const Landmark& landmark) const
 {
+	if (landmark.getType() != MODEL)
+		return false;
+	// TODO implement this function
+	return false;
 }
 
-Landmark::~Landmark() {}
-
-bool Landmark::isVisible() const
+bool ModelLandmark::isClose(const Landmark& landmark, const float similarity) const
 {
-	return visibility;
+	if (landmark.getType() != MODEL)
+		return false;
+	// TODO implement this function
+	return false;
 }
 
-string Landmark::getName() const
+void ModelLandmark::draw(Mat& image, const Scalar& color, float width) const
 {
-	return name;
-}
-
-Vec3f Landmark::getPosition() const
-{
-	return position;
-}
-
-Size2f Landmark::getSize() const
-{
-	return size;
-}
-
-void Landmark::draw(Mat image) const
-{
-	//cv::Point2i realFfpCenter(patch->c.x+patch->w_inFullImg*thisLm.displacementFactorW, patch->c.y+patch->h_inFullImg*thisLm.displacementFactorH);
-	array<bool, 9> symbol = LandmarkSymbols::get(name);
-	cv::Scalar color = LandmarkSymbols::getColor(name);
-	unsigned int pos = 0;
-	for (int currRow = cvRound(position[1])-1; currRow<=cvRound(position[1])+1; ++currRow) {
-		for (int currCol = cvRound(position[0])-1; currCol<=cvRound(position[0])+1; ++currCol) {
-			if(symbol[pos]==true) {
-				image.at<cv::Vec3b>(currRow,currCol)[0] = (uchar)cvRound(255.0f * color.val[0]);
-				image.at<cv::Vec3b>(currRow,currCol)[1] = (uchar)cvRound(255.0f * color.val[1]);
-				image.at<cv::Vec3b>(currRow,currCol)[2] = (uchar)cvRound(255.0f * color.val[2]);
+	if (isVisible()) {
+		//cv::Point2i realFfpCenter(patch->c.x+patch->w_inFullImg*thisLm.displacementFactorW, patch->c.y+patch->h_inFullImg*thisLm.displacementFactorH);
+		array<bool, 9> symbol = LandmarkSymbols::get(getName());
+		Scalar color = LandmarkSymbols::getColor(getName());
+		unsigned int pos = 0;
+		for (int currRow = cvRound(position[1])-1; currRow<=cvRound(position[1])+1; ++currRow) {
+			for (int currCol = cvRound(position[0])-1; currCol<=cvRound(position[0])+1; ++currCol) {
+				if(symbol[pos]==true) {
+					image.at<cv::Vec3b>(currRow,currCol)[0] = (uchar)cvRound(255.0f * color.val[0]);
+					image.at<cv::Vec3b>(currRow,currCol)[1] = (uchar)cvRound(255.0f * color.val[1]);
+					image.at<cv::Vec3b>(currRow,currCol)[2] = (uchar)cvRound(255.0f * color.val[2]);
+				}
+				++pos;
 			}
-			++pos;
 		}
 	}
-
 }
 
 map<string, array<bool, 9>> LandmarkSymbols::symbolMap;

@@ -45,7 +45,7 @@ public:
 	
 	~DefaultNamedLandmarkSource();
 
-	const LandmarkCollection get(path imagePath);
+	const LandmarkCollection& get(const path& imagePath);
 
 private:
 	map<path, LandmarkCollection> landmarkCollections; ///< Holds all the landmarks for all images.

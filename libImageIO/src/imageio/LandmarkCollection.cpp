@@ -6,8 +6,9 @@
  */
 
 #include "imageio/LandmarkCollection.hpp"
-#include "imageio/Landmark.hpp"
 #include <stdexcept>
+
+using std::move;
 
 namespace imageio {
 
@@ -19,15 +20,26 @@ LandmarkCollection::~LandmarkCollection()
 {
 }
 
-void LandmarkCollection::insert(const Landmark& landmark)
+void LandmarkCollection::clear()
 {
-	if (landmark.getName().empty())
-		throw std::runtime_error("landmark must have a name");
-	if (hasLandmark(landmark.getName()))
-		throw std::runtime_error("landmark name already in use");
+	landmarks.clear();
+	landmarksMap.clear();
+}
+
+void LandmarkCollection::insert(shared_ptr<Landmark> landmark)
+{
+	if (landmark->getName().empty())
+		throw std::invalid_argument("landmark must have a name");
+	if (hasLandmark(landmark->getName()))
+		throw std::invalid_argument("landmark name already in use");
 
 	landmarks.push_back(landmark);
-	landmarksMap.insert(make_pair(landmark.getName(), landmarks.size()-1 ));
+	landmarksMap.insert(make_pair(landmark->getName(), landmarks.size() - 1));
+}
+
+bool LandmarkCollection::isEmpty() const
+{
+	return landmarks.empty();
 }
 
 bool LandmarkCollection::hasLandmark(const string& name) const
@@ -35,14 +47,21 @@ bool LandmarkCollection::hasLandmark(const string& name) const
 	return landmarksMap.find(name) != landmarksMap.end();
 }
 
-Landmark LandmarkCollection::getLandmark(const string& name) const
+const Landmark& LandmarkCollection::getLandmark(const string& name) const
 {
 	if (!hasLandmark(name))
-		throw std::runtime_error("landmark is not in list");
-	return landmarks.at(landmarksMap.find(name)->second);
+		throw std::invalid_argument("there is no landmark with name '" + name + "'");
+	return *landmarks.at(landmarksMap.find(name)->second);
 }
 
-const vector<Landmark>& LandmarkCollection::getLandmarksList() const
+const Landmark& LandmarkCollection::getLandmark() const
+{
+	if (isEmpty())
+		throw std::invalid_argument("there is no landmark within the collection");
+	return *landmarks.front();
+}
+
+const vector<shared_ptr<Landmark>>& LandmarkCollection::getLandmarks() const
 {
 	return landmarks;
 }

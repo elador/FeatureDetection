@@ -6,7 +6,6 @@
  */
 
 #include "imageio/TlmsLandmarkFormatParser.hpp"
-#include "imageio/Landmark.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/algorithm/string.hpp"
 #include "boost/filesystem.hpp"
@@ -23,6 +22,7 @@ using boost::algorithm::starts_with;
 using boost::filesystem::path;
 using std::ifstream;
 using std::stringstream;
+using std::make_shared;
 
 namespace imageio {
 
@@ -46,14 +46,14 @@ LandmarkCollection TlmsLandmarkFormatParser::readFromTlmsFile(const string& file
 		// allow comments
 		if ( !strLine.empty() && !starts_with(strLine, "#") && !starts_with(strLine, "//") )
 		{
-			Landmark lm = readFromTlmsLine(strLine);
+			shared_ptr<ModelLandmark> lm = readFromTlmsLine(strLine);
 			listLM.insert(lm);
 		}
 	}
 	return listLM;
 }
 
-Landmark TlmsLandmarkFormatParser::readFromTlmsLine(const string& line) {
+shared_ptr<ModelLandmark> TlmsLandmarkFormatParser::readFromTlmsLine(const string& line) {
 	stringstream sstrLine(line);
 	string name;
 	Vec3f fPos(0.0f, 0.0f, 0.0f);
@@ -65,7 +65,7 @@ Landmark TlmsLandmarkFormatParser::readFromTlmsLine(const string& line) {
 	if ( !(sstrLine >> fPos[2]) )
 		fPos[2] = 0;
 
-	return Landmark(name, fPos, cv::Size2f(), bVisible > 0);
+	return make_shared<ModelLandmark>(name, fPos, bVisible > 0);
 }
 
 } /* namespace imageio */

@@ -19,7 +19,7 @@ using std::runtime_error;
 
 namespace imageio {
 
-DirectoryImageSource::DirectoryImageSource(string directory) : files(), index(0) {
+DirectoryImageSource::DirectoryImageSource(const string& directory) : files(), index(-1) {
 	path dirpath(directory);
 	if (!exists(dirpath))
 		throw runtime_error("DirectoryImageSource: Directory '" + directory + "' does not exist.");
@@ -39,32 +39,25 @@ DirectoryImageSource::~DirectoryImageSource() {}
 
 const bool DirectoryImageSource::next()
 {
-	if (index >= files.size()) {
-		index++;
-		return true;
-	}
-	return false;
-}
-
-const Mat DirectoryImageSource::get() {
-	if (index >= files.size())
-		return Mat();
-	return imread(files[index++].string(), 1);	// output the current image and then increment index
+	index++;
+	return index < files.size();
 }
 
 const Mat DirectoryImageSource::getImage() const
 {
-	if (index >= files.size())
+	if (index < 0 || index >= files.size())
 		return Mat();
 	return imread(files[index].string(), 1);
 }
 
-const path DirectoryImageSource::getName() const
+path DirectoryImageSource::getName() const
 {
+	if (index < 0 || index >= files.size())
+		return path();
 	return files[index];
 }
 
-const vector<path> DirectoryImageSource::getNames() const
+vector<path> DirectoryImageSource::getNames() const
 {
 	return files;
 }

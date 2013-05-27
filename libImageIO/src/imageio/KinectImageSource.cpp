@@ -144,19 +144,6 @@ const bool KinectImageSource::next() {
 #endif
 }
 
-const cv::Mat KinectImageSource::get()
-{
-#ifdef WIN32
-	if(next())
-		return frame;
-	else
-		return cv::Mat();
-#else
-	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
-	return cv::Mat();
-#endif
-}
-
 const Mat KinectImageSource::getImage() const
 {
 #ifdef WIN32
@@ -167,7 +154,7 @@ const Mat KinectImageSource::getImage() const
 #endif
 }
 
-const path KinectImageSource::getName() const
+path KinectImageSource::getName() const
 {
 #ifdef WIN32
 	return path();
@@ -177,7 +164,7 @@ const path KinectImageSource::getName() const
 #endif
 }
 
-const vector<path> KinectImageSource::getNames() const
+vector<path> KinectImageSource::getNames() const
 {
 #ifdef WIN32
 	return vector<path>();

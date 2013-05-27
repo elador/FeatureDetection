@@ -41,13 +41,11 @@ public:
 
 	const bool next();
 
-	const Mat get();
-
 	const Mat getImage() const;
 
-	const path getName() const;
+	path getName() const;
 
-	const vector<path> getNames() const;
+	vector<path> getNames() const;
 
 private:
 	path file; ///< The path to the file that is output repeatedly.

@@ -35,26 +35,24 @@ public:
 	 *
 	 * @param[in] filePath The path and filename of the image.
 	 */
-	FileImageSource(string filePath);
+	explicit FileImageSource(const string& filePath);
 
 	/**
 	 * Constructs a new file image source from a vector of files.
 	 *
 	 * @param[in] filePaths A vector with all the filenames.
 	 */
-	FileImageSource(vector<string> filePaths);
+	explicit FileImageSource(vector<string> filePaths);
 
-	virtual ~FileImageSource();
+	~FileImageSource();
 
 	const bool next();
 
-	const Mat get();
-
 	const Mat getImage() const;
 
-	const path getName() const;
+	path getName() const;
 
-	const vector<path> getNames() const;
+	vector<path> getNames() const;
 
 private:
 	vector<path> files; ///< The files of the given directory, ordered by name.

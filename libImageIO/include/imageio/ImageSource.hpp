@@ -31,19 +31,22 @@ public:
 	virtual ~ImageSource() {}
 
 	/**
-	 * Moves the image source forward to the next image.
-	 *
-	 * @return True if the image source contains a next image, false otherwise.
-	 */
-	virtual const bool next() = 0;
-
-	/**
-	 * Retrieves the current image and moves the image source forward to
-	 * the next image.
+	 * Retrieves the next image. The result is the same as calling next(), followed by getImage().
 	 *
 	 * @return The image (that may be empty if no data could be retrieved).
 	 */
-	virtual const Mat get() = 0;
+	const Mat get() {
+		if (!next())
+			return Mat();
+		return getImage();
+	}
+
+	/**
+	 * Proceeds to the next image of this source.
+	 *
+	 * @return True if successful (so there was another image), false otherwise.
+	 */
+	virtual const bool next() = 0;
 
 	/**
 	 * Retrieves the current image.
@@ -58,14 +61,14 @@ public:
 	 *
 	 * @return The name of the current image (that may be empty if no data could be retrieved).
 	 */
-	virtual const path getName() const = 0;	// Q: We could make this protected?
+	virtual path getName() const = 0;	// Q: We could make this protected?
 
 	/**
 	 * Retrieves the list of image names currently in the image source.
 	 *
 	 * @return The image (that may be empty if no data could be retrieved)...
 	 */
-	virtual const vector<path> getNames() const = 0;	// Q: We could make this protected?
+	virtual vector<path> getNames() const = 0;	// Q: We could make this protected?
 
 };
 

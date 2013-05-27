@@ -8,7 +8,7 @@
 #ifndef NAMEDLABELEDIMAGESOURCE_HPP_
 #define NAMEDLABELEDIMAGESOURCE_HPP_
 
-#include "imageio/ImageSource.hpp"
+#include "imageio/LabeledImageSource.hpp"
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
@@ -21,7 +21,6 @@ using std::shared_ptr;
 
 namespace imageio {
 
-class LandmarkCollection;
 class NamedLandmarkSource;
 
 /**
@@ -30,7 +29,7 @@ class NamedLandmarkSource;
  * Note: It might be nice if we could just create an empty LandmarkSource at start, and then,
  *       at some time in the program, add the LandmarkSource from somewhere (e.g. user-specified).
  */
-class NamedLabeledImageSource : public ImageSource {
+class NamedLabeledImageSource : public LabeledImageSource {
 public:
 
 	/**
@@ -43,22 +42,15 @@ public:
 
 	virtual ~NamedLabeledImageSource();
 
-	const Mat get();
-
 	const bool next();
 
 	const Mat getImage() const;
 
-	const path getName() const;
+	path getName() const;
 
-	const vector<path> getNames() const;
+	vector<path> getNames() const;
 
-	/**
-	 * Retrieves the landmarks of the image that was last retrieved with get().
-	 *
-	 * @return The landmarks of the current image (that may be empty if no data could be retrieved).
-	 */
-	const LandmarkCollection getLandmarks();
+	const LandmarkCollection& getLandmarks() const;
 
 private:
 	shared_ptr<ImageSource> imageSource; ///< The underlying image source.

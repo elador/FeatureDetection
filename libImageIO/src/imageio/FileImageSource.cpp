@@ -16,7 +16,7 @@ using std::runtime_error;
 
 namespace imageio {
 
-FileImageSource::FileImageSource(string filePath) : files(), index(0) {
+FileImageSource::FileImageSource(const string& filePath) : files(), index(-1) {
 	path path(filePath);
 	if (!exists(path))
 		throw runtime_error("FileImageSource: File '" + filePath + "' does not exist.");
@@ -50,32 +50,25 @@ FileImageSource::~FileImageSource() {}
 
 const bool FileImageSource::next()
 {
-	if (index >= files.size()) {
-		index++;
-		return true;
-	}
-	return false;
-}
-
-const Mat FileImageSource::get() {
-	if (index >= files.size())
-		return Mat();
-	return imread(files[index++].string(), 1);	// output the current image and then increment index
+	index++;
+	return index < files.size();
 }
 
 const Mat FileImageSource::getImage() const
 {
-	if (index >= files.size())
+	if (index < 0 || index >= files.size())
 		return Mat();
 	return imread(files[index].string(), 1);
 }
 
-const path FileImageSource::getName() const
+path FileImageSource::getName() const
 {
+	if (index < 0 || index >= files.size())
+		return path();
 	return files[index];
 }
 
-const vector<path> FileImageSource::getNames() const
+vector<path> FileImageSource::getNames() const
 {
 	return files;
 }

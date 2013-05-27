@@ -303,14 +303,14 @@ int main(int argc, char *argv[])
 			NOCAND++;
 		} else {
 			// TODO Check if the LM exists or it will crash! Currently broken!
-			if(groundtruthFaceBoxes[i].getPosition()==Vec3f(0.0f, 0.0f, 0.0f)) { //no groundtruth
+			if(groundtruthFaceBoxes[i].getPosition3D()==Vec3f(0.0f, 0.0f, 0.0f)) { //no groundtruth
 				std::cout << "[ffpDetectApp] No ground-truth available, not counting anything: " << filenames[i] << std::endl;
 				++DONTKNOW;
 			} else { //we have groundtruth
-				int gt_w = groundtruthFaceBoxes[i].getSize().width;
-				int gt_h = groundtruthFaceBoxes[i].getSize().height;
-				int gt_cx = groundtruthFaceBoxes[i].getPosition()[0];
-				int gt_cy = groundtruthFaceBoxes[i].getPosition()[1];
+				int gt_w = groundtruthFaceBoxes[i].getWidth();
+				int gt_h = groundtruthFaceBoxes[i].getHeight();
+				int gt_cx = groundtruthFaceBoxes[i].getX();
+				int gt_cy = groundtruthFaceBoxes[i].getY();
 				// TODO implement a isClose, isDetected... or something like that function
 				if (abs(gt_cx - svmPatches[0]->getPatch()->getX()) < DETECT_MAX_DIST_X*(float)gt_w &&
 					abs(gt_cy - svmPatches[0]->getPatch()->getY()) < DETECT_MAX_DIST_Y*(float)gt_w &&

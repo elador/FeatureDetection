@@ -6,7 +6,6 @@
  */
 
 #include "imageio/DidLandmarkFormatParser.hpp"
-#include "imageio/Landmark.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/algorithm/string.hpp"
 #include "boost/filesystem.hpp"
@@ -23,6 +22,7 @@ using boost::algorithm::starts_with;
 using boost::filesystem::path;
 using std::ifstream;
 using std::stringstream;
+using std::make_shared;
 
 namespace imageio {
 
@@ -46,8 +46,8 @@ LandmarkCollection DidLandmarkFormatParser::readFromDidFile(const string& filena
 		// allow comments
 		if ( !strLine.empty() && !starts_with(strLine, "#") && !starts_with(strLine, "//") )
 		{
-			Landmark lm = readFromDidLine(strLine);
-			if (!lm.getName().empty()) {	// Todo: That's not so nice, do this differently.
+			shared_ptr<ModelLandmark> lm = readFromDidLine(strLine);
+			if (!lm->getName().empty()) {	// Todo: That's not so nice, do this differently.
 				listLM.insert(lm);
 			}
 		}
@@ -55,7 +55,7 @@ LandmarkCollection DidLandmarkFormatParser::readFromDidFile(const string& filena
 	return listLM;
 }
 
-Landmark DidLandmarkFormatParser::readFromDidLine(const string& line) {
+shared_ptr<ModelLandmark> DidLandmarkFormatParser::readFromDidLine(const string& line) {
 	stringstream sstrLine(line);
 	string name;
 	Vec3f fPos(0.0f, 0.0f, 0.0f);
@@ -68,9 +68,9 @@ Landmark DidLandmarkFormatParser::readFromDidLine(const string& line) {
 	int vertexNumber = boost::lexical_cast<int>(fVertexNumber);
 	name = didToTlmsName(vertexNumber);
 	if (!name.empty()) {
-		return Landmark(name, fPos, cv::Size2f(), true);
+		return make_shared<ModelLandmark>(name, fPos, true);
 	} else {
-		return Landmark("");	// Todo: That's not so nice, do this differently.
+		return make_shared<ModelLandmark>("");	// Todo: That's not so nice, do this differently.
 	}
 }
 

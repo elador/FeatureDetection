@@ -65,6 +65,7 @@
 #include "detection/FiveStageSlidingWindowDetector.hpp"
 
 #include "imageio/Landmark.hpp"
+#include "imageio/RectLandmark.hpp"
 #include "imageio/LandmarksHelper.hpp"
 #include "imageio/DefaultNamedLandmarkSource.hpp"
 #include "imageio/NamedLabeledImageSource.hpp"
@@ -415,7 +416,10 @@ int main(int argc, char *argv[])
 			for (const auto& patch : features.second) {
 				// patch to landmark
 				// add a function in libDetection, either ClassifiedPatch.getLandmark or Helper...::ClassifPatchToLandmark(...)
-				Landmark lm(features.first, Vec3f(patch->getPatch()->getX(), patch->getPatch()->getY(), 0.0f), Size2f(patch->getPatch()->getWidth(), patch->getPatch()->getHeight()), true);
+                // Anmerkung von peter: Patch.getLandmark bzw. Helper...::PatchToLandmark(...) wäre sinnvoller, als ClassifiedPatch
+				// Anmerkung von peter: libDetection/libImageProcessing hat bisher keine Abhängigkeit von libImageIO, aber Patch.getLandmark/ClassifiedPatch.getLandmark würde dazu führen
+				// Anmerkung von peter: (ebenso umgekehrt, wenn der Helper in libImageIO läge - die Abhängigkeit (von libImageProcessing) wäre dann sogar sehr unschön)
+				RectLandmark lm(features.first, patch->getPatch()->getX(), patch->getPatch()->getY(), patch->getPatch()->getWidth(), patch->getPatch()->getHeight());
 				lm.draw(ffdResultImg);
 			}
 			Mat tmp = img.clone();

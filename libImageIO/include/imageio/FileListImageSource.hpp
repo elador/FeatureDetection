@@ -36,19 +36,17 @@ public:
 	 *
 	 * @param[in] filelist A text-file containing a list of files.
 	 */
-	FileListImageSource(string filelist);
+	explicit FileListImageSource(const string& filelist);
 
-	virtual ~FileListImageSource();
+	~FileListImageSource();
 
 	const bool next();
 
-	const Mat get();
-
 	const Mat getImage() const;
 
-	const path getName() const;
+	path getName() const;
 
-	const vector<path> getNames() const;
+	vector<path> getNames() const;
 
 private:
 	vector<path> files; ///< The files of the given directory, ordered by name.
