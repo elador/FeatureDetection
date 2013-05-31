@@ -36,4 +36,4 @@ add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature poin
 
 #add_subdirectory(mergePlaygroundApp)	# Test-app for the refactored/merged code
 
-#add_subdirectory(faceRecogTestApp)		# App for doing face recognition tests with a gallery and probe images
+add_subdirectory(faceRecogTestApp)		# App for doing face recognition tests with a gallery and probe images
