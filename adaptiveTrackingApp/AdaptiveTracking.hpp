@@ -11,6 +11,7 @@
 #include "imageio/LabeledImageSource.hpp"
 #include "imageio/ImageSink.hpp"
 #include "imageio/LandmarkCollection.hpp"
+#include "imageprocessing/FeatureExtractor.hpp"
 #include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
 #include "classification/Kernel.hpp"
 #include "classification/TrainableSvmClassifier.hpp"
@@ -67,6 +68,8 @@ private:
 
 	static void onMouse(int event, int x, int y, int, void* userdata);
 
+	shared_ptr<FeatureExtractor> createFeatureExtractor(shared_ptr<DirectPyramidFeatureExtractor> patchExtractor, ptree config);
+	shared_ptr<FeatureExtractor> wrapFeatureExtractor(shared_ptr<FeatureExtractor> featureExtractor, float scaleFactor);
 	shared_ptr<Kernel> createKernel(ptree config);
 	shared_ptr<TrainableSvmClassifier> createTrainableSvm(shared_ptr<Kernel> kernel, ptree config);
 	shared_ptr<TrainableProbabilisticClassifier> createClassifier(shared_ptr<TrainableSvmClassifier> trainableSvm, ptree config);

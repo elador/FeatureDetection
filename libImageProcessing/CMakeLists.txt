@@ -20,6 +20,8 @@ SET(HEADERS
 	include/imageprocessing/FeatureExtractor.hpp
 	include/imageprocessing/FilteringFeatureExtractor.hpp
 	include/imageprocessing/FilteringPyramidFeatureExtractor.hpp
+	include/imageprocessing/GradientFilter.hpp
+	include/imageprocessing/GradientHistogramFilter.hpp
 	include/imageprocessing/GrayscaleFilter.hpp
 	include/imageprocessing/HistogramEqualizationFilter.hpp
 	include/imageprocessing/HistEq64Filter.hpp
@@ -28,7 +30,9 @@ SET(HEADERS
 	include/imageprocessing/ImagePyramidLayer.hpp
 	include/imageprocessing/IntegralImageFilter.hpp
 	include/imageprocessing/MultipleImageFilter.hpp
+	include/imageprocessing/OverlappingHistogramFeatureExtractor.hpp
 	include/imageprocessing/Patch.hpp
+	include/imageprocessing/PatchResizingFeatureExtractor.hpp
 	include/imageprocessing/PyramidFeatureExtractor.hpp
 	include/imageprocessing/ReshapingFilter.hpp
 	include/imageprocessing/ResizingFilter.hpp
@@ -42,6 +46,8 @@ SET(SOURCE
 	src/imageprocessing/CachingPyramidFeatureExtractor.cpp
 	src/imageprocessing/ConversionFilter.cpp
 	src/imageprocessing/DirectPyramidFeatureExtractor.cpp
+	src/imageprocessing/GradientFilter.cpp
+	src/imageprocessing/GradientHistogramFilter.cpp
 	src/imageprocessing/GrayscaleFilter.cpp
 	src/imageprocessing/HistEq64Filter.cpp
 	src/imageprocessing/HistogramEqualizationFilter.cpp
@@ -49,6 +55,7 @@ SET(SOURCE
 	src/imageprocessing/ImagePyramidLayer.cpp
 	src/imageprocessing/IntegralImageFilter.cpp
 	src/imageprocessing/MultipleImageFilter.cpp
+	src/imageprocessing/OverlappingHistogramFeatureExtractor.cpp
 	src/imageprocessing/ReshapingFilter.cpp
 	src/imageprocessing/ResizingFilter.cpp
 	src/imageprocessing/WhiteningFilter.cpp

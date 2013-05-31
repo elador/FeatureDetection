@@ -18,14 +18,17 @@
 #include "imageio/OrderedLabeledImageSource.hpp"
 #include "imageio/VideoImageSink.hpp"
 #include "imageio/Landmark.hpp"
-#include "imageprocessing/ImagePyramid.hpp"
-#include "imageprocessing/FeatureExtractor.hpp"
-#include "imageprocessing/FilteringFeatureExtractor.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
 #include "imageprocessing/HistEq64Filter.hpp"
 #include "imageprocessing/WhiteningFilter.hpp"
 #include "imageprocessing/ZeroMeanUnitVarianceFilter.hpp"
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
+#include "imageprocessing/GradientFilter.hpp"
+#include "imageprocessing/GradientHistogramFilter.hpp"
+#include "imageprocessing/ImagePyramid.hpp"
+#include "imageprocessing/FilteringFeatureExtractor.hpp"
+#include "imageprocessing/PatchResizingFeatureExtractor.hpp"
+#include "imageprocessing/OverlappingHistogramFeatureExtractor.hpp"
 #include "classification/ProbabilisticWvmClassifier.hpp"
 #include "classification/ProbabilisticSvmClassifier.hpp"
 #include "classification/RbfKernel.hpp"
@@ -77,6 +80,48 @@ AdaptiveTracking::AdaptiveTracking(unique_ptr<LabeledImageSource> imageSource, u
 
 AdaptiveTracking::~AdaptiveTracking() {}
 
+shared_ptr<FeatureExtractor> AdaptiveTracking::createFeatureExtractor(
+		shared_ptr<DirectPyramidFeatureExtractor> patchExtractor, ptree config) {
+	float scaleFactor = config.get<float>("scale");
+	if (config.get_value<string>() == "histeq") {
+		shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
+		featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
+		return wrapFeatureExtractor(featureExtractor, scaleFactor);
+	} else if (config.get_value<string>() == "whi") {
+		shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
+		featureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
+		featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
+		featureExtractor->addPatchFilter(make_shared<ZeroMeanUnitVarianceFilter>());
+		return wrapFeatureExtractor(featureExtractor, scaleFactor);
+	} else if (config.get_value<string>() == "hog") {
+		patchExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
+		patchExtractor->addLayerFilter(make_shared<GradientHistogramFilter>(config.get<int>("bins"), config.get<bool>("signed")));
+		OverlappingHistogramFeatureExtractor::Normalization normalization;
+		if (config.get<string>("normalization") == "none")
+			normalization = OverlappingHistogramFeatureExtractor::Normalization::NONE;
+		else if (config.get<string>("normalization") == "l2norm")
+			normalization = OverlappingHistogramFeatureExtractor::Normalization::L2NORM;
+		else if (config.get<string>("normalization") == "l2hys")
+			normalization = OverlappingHistogramFeatureExtractor::Normalization::L2HYS;
+		else if (config.get<string>("normalization") == "l1norm")
+			normalization = OverlappingHistogramFeatureExtractor::Normalization::L1NORM;
+		else if (config.get<string>("normalization") == "l1sqrt")
+			normalization = OverlappingHistogramFeatureExtractor::Normalization::L1SQRT;
+		else
+			throw invalid_argument("AdaptiveTracking: invalid normalization method: " + config.get<string>("normalization"));
+		return wrapFeatureExtractor(make_shared<OverlappingHistogramFeatureExtractor>(patchExtractor,
+				config.get<int>("bins"), config.get<int>("cellSize"), config.get<int>("blockSize"), normalization), scaleFactor);
+	} else {
+		throw invalid_argument("AdaptiveTracking: invalid feature type: " + config.get<string>("feature"));
+	}
+}
+
+shared_ptr<FeatureExtractor> AdaptiveTracking::wrapFeatureExtractor(shared_ptr<FeatureExtractor> featureExtractor, float scaleFactor) {
+	if (scaleFactor == 1.0)
+		return featureExtractor;
+	return make_shared<PatchResizingFeatureExtractor>(featureExtractor, scaleFactor);
+}
+
 shared_ptr<Kernel> AdaptiveTracking::createKernel(ptree config) {
 	if (config.get_value<string>() == "rbf") {
 		return make_shared<RbfKernel>(config.get<double>("gamma"));
@@ -118,26 +163,15 @@ shared_ptr<TrainableProbabilisticClassifier> AdaptiveTracking::createClassifier(
 }
 
 void AdaptiveTracking::initTracking(ptree config) {
-	// create feature extractors
+	// create patch extractor
 	patchExtractor = make_shared<DirectPyramidFeatureExtractor>(
 			config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"),
 			config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"),
 			config.get<double>("pyramid.scaleFactor"));
 	patchExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 
-	// create feature extractor for adaptive measurement model
-	shared_ptr<FilteringFeatureExtractor> adaptiveFeatureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
-	if (config.get<string>("adaptive.feature") == "histeq") {
-		adaptiveFeatureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
-	} else if (config.get<string>("adaptive.feature") == "whi") {
-		adaptiveFeatureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
-		adaptiveFeatureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
-		adaptiveFeatureExtractor->addPatchFilter(make_shared<ZeroMeanUnitVarianceFilter>());
-	} else {
-		throw invalid_argument("AdaptiveTracking: invalid feature type: " + config.get<string>("adaptive.feature"));
-	}
-
 	// create adaptive measurement model
+	shared_ptr<FeatureExtractor> adaptiveFeatureExtractor = createFeatureExtractor(patchExtractor, config.get_child("adaptive.feature"));
 	shared_ptr<Kernel> kernel = createKernel(config.get_child("adaptive.measurement.classifier.kernel"));
 	shared_ptr<TrainableSvmClassifier> trainableSvm = createTrainableSvm(kernel, config.get_child("adaptive.measurement.classifier.training"));
 	shared_ptr<TrainableProbabilisticClassifier> classifier = createClassifier(trainableSvm, config.get_child("adaptive.measurement.classifier.probabilistic"));

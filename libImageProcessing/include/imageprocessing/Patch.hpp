@@ -111,10 +111,24 @@ public:
 	}
 
 	/**
+	 * @param[in] x The new original x-coordinate of the center of this patch.
+	 */
+	void setX(int x) {
+		this->x = x;
+	}
+
+	/**
 	 * @return The original y-coordinate of the center of this patch.
 	 */
 	int getY() const {
 		return y;
+	}
+
+	/**
+	 * @param[in] y The new original y-coordinate of the center of this patch.
+	 */
+	void setY(int y) {
+		this->y = y;
 	}
 
 	/**
@@ -125,10 +139,24 @@ public:
 	}
 
 	/**
+	 * @param[in] width The new original width.
+	 */
+	void setWidth(int width) {
+		this->width = width;
+	}
+
+	/**
 	 * @return The original height.
 	 */
 	int getHeight() const {
 		return height;
+	}
+
+	/**
+	 * @param[in] height The new original height.
+	 */
+	void setHeight(int height) {
+		this->height = height;
 	}
 
 	/**
