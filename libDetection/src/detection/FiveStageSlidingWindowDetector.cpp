@@ -8,6 +8,7 @@
 #include "detection/FiveStageSlidingWindowDetector.hpp"
 #include "detection/ClassifiedPatch.hpp"
 #include "logging/LoggerFactory.hpp"
+#include "imagelogging/ImageLoggerFactory.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "boost/iterator/indirect_iterator.hpp"
 #include <algorithm>
@@ -15,6 +16,8 @@
 
 using logging::Logger;
 using logging::LoggerFactory;
+using imagelogging::ImageLogger;
+using imagelogging::ImageLoggerFactory;
 using boost::make_indirect_iterator;
 using std::sort;
 using std::greater;
@@ -33,13 +36,28 @@ FiveStageSlidingWindowDetector::FiveStageSlidingWindowDetector(shared_ptr<Slidin
  * But an image logger would make things so much more natural. Prefer this.
  */
 
+#include <functional>
+using std::function;
+using std::bind;
+
+void drawBoxes(Mat image, vector<shared_ptr<ClassifiedPatch>> patches)
+{
+	for(const auto& cpatch : patches) {
+		shared_ptr<Patch> patch = cpatch->getPatch();
+		cv::rectangle(image, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((cpatch->getProbability())/1.0)   ));
+	}
+}
+
+
 vector<shared_ptr<ClassifiedPatch>> FiveStageSlidingWindowDetector::detect(const Mat& image)
 {
 	vector<shared_ptr<ClassifiedPatch>> classifiedPatches;
 
 	Logger logger = Loggers->getLogger("detection");
+	ImageLogger imageLogger = ImageLoggers->getLogger("detection");
 
 	classifiedPatches = slidingWindowDetector->detect(image);
+	imageLogger.info(image, bind(drawBoxes, image, classifiedPatches), "suff");
 
 	Mat imgWvm = image.clone();
 	for(auto pit = classifiedPatches.begin(); pit != classifiedPatches.end(); pit++) {

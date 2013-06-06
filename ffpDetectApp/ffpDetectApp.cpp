@@ -31,6 +31,8 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include <memory>
+#include <unordered_map>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -44,12 +46,19 @@
 #include "boost/iterator/indirect_iterator.hpp"
 #include "boost/property_tree/ptree.hpp"
 #include "boost/property_tree/info_parser.hpp"
+#include "boost/algorithm/string.hpp"
+#include "boost/lexical_cast.hpp"
 
 #include "classification/RbfKernel.hpp"
 #include "classification/SvmClassifier.hpp"
 #include "classification/WvmClassifier.hpp"
 #include "classification/ProbabilisticWvmClassifier.hpp"
 #include "classification/ProbabilisticSvmClassifier.hpp"
+
+#include "imageio/ImageSource.hpp"
+#include "imageio/FileImageSource.hpp"
+#include "imageio/FileListImageSource.hpp"
+#include "imageio/DirectoryImageSource.hpp"
 
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
@@ -61,12 +70,11 @@
 #include "detection/SlidingWindowDetector.hpp"
 #include "detection/ClassifiedPatch.hpp"
 #include "detection/OverlapElimination.hpp"
-
-#include "imageio/LandmarksHelper.hpp"
-#include "imageio/Landmark.hpp"
+#include "detection/FiveStageSlidingWindowDetector.hpp"
 
 #include "logging/LoggerFactory.hpp"
-
+#include "imagelogging/ImageLoggerFactory.hpp"
+#include "imagelogging/ImageFileWriter.hpp"
 
 namespace po = boost::program_options;
 using namespace std;
@@ -77,9 +85,14 @@ using namespace imageio;
 using logging::Logger;
 using logging::LoggerFactory;
 using logging::loglevel;
+using imagelogging::ImageLogger;
+using imagelogging::ImageLoggerFactory;
 using boost::make_indirect_iterator;
 using boost::property_tree::ptree;
 using boost::property_tree::info_parser::read_info;
+using boost::filesystem::path;
+using boost::lexical_cast;
+
 
 template<class T>
 ostream& operator<<(ostream& os, const vector<T>& v)
@@ -95,108 +108,165 @@ int main(int argc, char *argv[])
 	//_CrtSetBreakAlloc(287);
 	#endif
 	
-	int verbose_level_text;
-	int verbose_level_images;
-    bool useFileList = false;
+	string verboseLevelConsole;
+	bool useFileList = false;
 	bool useImgs = false;
-	string fn_fileList;
-	string configFilename;
-	vector<std::string> filenames;
-	vector<Landmark> groundtruthFaceBoxes;
-	
+	bool useDirectory = false;
+	path inputFilelist;
+	path inputDirectory;
+	vector<path> inputFilenames;
+	path configFilename;
+	shared_ptr<ImageSource> imageSource;
+	path outputPicsDir;
+
 	try {
         po::options_description desc("Allowed options");
         desc.add_options()
-            ("help,h", "produce help message")
-            ("verbose-text,v", po::value<int>(&verbose_level_text)->implicit_value(2)->default_value(1,"minimal text output"),
-                  "enable text-verbosity (optionally specify level)")
-            ("verbose-images,w", po::value<int>(&verbose_level_images)->implicit_value(2)->default_value(1,"minimal image output"),
-                  "enable image-verbosity (optionally specify level)")
-            ("file-list,f", po::value< string >(), 
-                  "a .lst file to process")
-			("config,c", po::value< string >(), 
-				  "path to a config (.cfg) file")
-            ("input-file,i", po::value< vector<string> >(), "input image")
+            ("help,h",
+				"produce help message")
+            ("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
+                  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
+			("config,c", po::value<path>()->required(), 
+				"path to a config (.cfg) file")
+			("input-list,l", po::value<path>(), 
+				"input from a file containing a list of images")
+			("input-file,f", po::value<vector<path>>(),
+				"input one or several images")
+			("input-dir,d", po::value<path>(),
+				"input all images inside the directory")
+			("output-dir,o", po::value<path>(),
+				"output directory for the result images")
         ;
 
         po::positional_options_description p;
         p.add("input-file", -1);
         
         po::variables_map vm;
-        po::store(po::command_line_parser(argc, argv).
-                  options(desc).positional(p).run(), vm);
+        po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
         po::notify(vm);
     
         if (vm.count("help")) {
-            cout << "[ffpDetectApp] Usage: options_description [options]\n";
+            cout << "Usage: ffpDetectApp [options]\n";
             cout << desc;
-            return 0;
+            return EXIT_SUCCESS;
         }
-        if (vm.count("file-list"))
-        {
-            cout << "[ffpDetectApp] Using file-list as input: " << vm["file-list"].as< string >() << "\n";
+		if (vm.count("verbose")) {
+			verboseLevelConsole = vm["verbose"].as<string>();
+		}
+		if (vm.count("input-list"))
+		{
 			useFileList = true;
-			fn_fileList = vm["file-list"].as<string>();
-        }
-        if (vm.count("input-file"))
-        {
-            cout << "[ffpDetectApp] Using input images: " << vm["input-file"].as< vector<string> >() << "\n";
+			inputFilelist = vm["input-list"].as<path>();
+		}
+		if (vm.count("input-file"))
+		{
 			useImgs = true;
-			filenames = vm["input-file"].as< vector<string> >();
-        }
+			inputFilenames = vm["input-file"].as<vector<path>>();
+		}
+		if (vm.count("input-dir"))
+		{
+			useDirectory = true;
+			inputDirectory = vm["input-dir"].as<path>();
+		}
 		if (vm.count("config"))
 		{
-			cout << "[ffpDetectApp] Using config: " << vm["config"].as< string >() << "\n";
-			configFilename = vm["config"].as< string >();
+			configFilename = vm["config"].as<path>();
 		}
-        if (vm.count("verbose-text")) {
-            cout << "[ffpDetectApp] Verbose level for text: " << vm["verbose-text"].as<int>() << "\n";
-        }
-        if (vm.count("verbose-images")) {
-            cout << "[ffpDetectApp] Verbose level for images: " << vm["verbose-images"].as<int>() << "\n";
-        }
+		if (vm.count("output-dir"))
+		{
+			outputPicsDir = vm["output-dir"].as<path>();
+		}
+    } catch(std::exception& e) {
+        cout << e.what() << endl;
+        return EXIT_FAILURE;
     }
-    catch(std::exception& e) {
-        cout << e.what() << "\n";
-        return 1;
-    }
-	if(useFileList==true && useImgs==true) {
-		cout << "[ffpDetectApp] Error: Please either specify a file-list OR an input-file, not both!" << endl;
-		return 1;
-	} else if(useFileList==false && useImgs==false) {
-		cout << "[ffpDetectApp] Error: Please either specify a file-list or an input-file to run the program!" << endl;
-		return 1;
+
+	loglevel logLevel;
+	if(boost::iequals(verboseLevelConsole, "PANIC")) logLevel = loglevel::PANIC;
+	else if(boost::iequals(verboseLevelConsole, "ERROR")) logLevel = loglevel::ERROR;
+	else if(boost::iequals(verboseLevelConsole, "WARN")) logLevel = loglevel::WARN;
+	else if(boost::iequals(verboseLevelConsole, "INFO")) logLevel = loglevel::INFO;
+	else if(boost::iequals(verboseLevelConsole, "DEBUG")) logLevel = loglevel::DEBUG;
+	else if(boost::iequals(verboseLevelConsole, "TRACE")) logLevel = loglevel::TRACE;
+	else {
+		cout << "Error: Invalid loglevel." << endl;
+		return EXIT_FAILURE;
+	}
+	
+	Loggers->getLogger("classification").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("imageprocessing").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("detection").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("ffpDetectApp").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Logger appLogger = Loggers->getLogger("ffpDetectApp");
+
+	appLogger.debug("Verbose level for console output: " + logging::loglevelToString(logLevel));
+	appLogger.debug("Using config: " + configFilename.string());
+	appLogger.debug("Using output directory: " + outputPicsDir.string());
+	if(outputPicsDir.empty()) {
+		appLogger.info("Output directory not set. Writing images into current directory.");
 	}
 
-	const float DETECT_MAX_DIST_X = 0.33f;	// --> Config
+	ImageLoggers->getLogger("detection").addAppender(make_shared<imagelogging::ImageFileWriter>(imagelogging::loglevel::INFO, outputPicsDir));
+
+	int numInputs = 0;
+	if(useFileList==true) {
+		numInputs++;
+		appLogger.info("Using file-list as input: " + inputFilelist.string());
+		shared_ptr<ImageSource> fileListImgSrc;
+		try {
+			fileListImgSrc = make_shared<FileListImageSource>(inputFilelist.string());
+		} catch(const std::runtime_error& e) {
+			appLogger.error(e.what());
+			return EXIT_FAILURE;
+		}
+		//shared_ptr<DidLandmarkFormatParser> didParser= make_shared<DidLandmarkFormatParser>();
+		//vector<path> landmarkDir; landmarkDir.push_back(path("C:\\Users\\Patrik\\Github\\data\\labels\\xm2vts\\guosheng\\"));
+		//shared_ptr<DefaultNamedLandmarkSource> lmSrc = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
+		//imageSource = make_shared<NamedLabeledImageSource>(fileImgSrc, lmSrc);
+		imageSource = fileListImgSrc;
+	}
+	if(useImgs==true) {
+		numInputs++;
+		//imageSource = make_shared<FileImageSource>(inputFilenames);
+		//imageSource = make_shared<RepeatingFileImageSource>("C:\\Users\\Patrik\\GitHub\\data\\firstrun\\ws_8.png");
+		appLogger.info("Using input images: ");
+		vector<string> inputFilenamesStrings;	// Hack until we use vector<path> (?)
+		for (const auto& fn : inputFilenames) {
+			appLogger.info(fn.string());
+			inputFilenamesStrings.push_back(fn.string());
+		}
+		shared_ptr<ImageSource> fileImgSrc;
+		try {
+			fileImgSrc = make_shared<FileImageSource>(inputFilenamesStrings);
+		} catch(const std::runtime_error& e) {
+			appLogger.error(e.what());
+			return EXIT_FAILURE;
+		}
+		//shared_ptr<DidLandmarkFormatParser> didParser= make_shared<DidLandmarkFormatParser>();
+		//vector<path> landmarkDir; landmarkDir.push_back(path("C:\\Users\\Patrik\\Github\\data\\labels\\xm2vts\\guosheng\\"));
+		//shared_ptr<DefaultNamedLandmarkSource> lmSrc = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
+		//imageSource = make_shared<NamedLabeledImageSource>(fileImgSrc, lmSrc);
+		imageSource = fileImgSrc;
+	}
+	if(useDirectory==true) {
+		numInputs++;
+		appLogger.info("Using input images from directory: " + inputDirectory.string());
+		try {
+			imageSource = make_shared<DirectoryImageSource>(inputDirectory.string());
+		} catch(const std::runtime_error& e) {
+			appLogger.error(e.what());
+			return EXIT_FAILURE;
+		}
+	}
+	if(numInputs!=1) {
+		appLogger.error("Please either specify a file-list (-l), an input-file (-f) or a directory (-d) (and only one of them) to run the program!");
+		return EXIT_FAILURE;
+	}
+
+	const float DETECT_MAX_DIST_X = 0.33f;	// --> Config / Landmarks
 	const float DETECT_MAX_DIST_Y = 0.33f;
 	const float DETECT_MAX_DIFF_W = 0.33f;
-
-	if(useFileList) {
-		ifstream fileList;
-		fileList.open(fn_fileList.c_str(), std::ios::in);
-		if (!fileList.is_open()) {
-			std::cout << "[ffpDetectApp] Error opening file list!" << std::endl;
-			return 0;
-		}
-		string line;
-		while(fileList.good()) {
-			getline(fileList, line);
-			if(line=="") {
-				continue;
-			}
-      		string buf;
-			stringstream ss(line);
-			ss >> buf;	
-			filenames.push_back(buf);	// Insert the image filename
-			//TODO CURRENTLY BROKEN groundtruthFaceBoxes.push_back(LandmarksHelper::readFromLstLine(line));	// Insert the groundtruth facebox
-		}
-		fileList.close();
-	}
-	// Else useImgs==true: filesnames are already in "filenames", and no groundtruth available!
-
-	// All filesnames now in "filenames", either way
-	// All groundtruth now in "groundtruthFaceBoxes" IF available (read from .lst)
 
 	int TOT = 0;
 	int TACC = 0;
@@ -205,13 +275,73 @@ int main(int argc, char *argv[])
 	int DONTKNOW = 0;
 
 	ptree pt;
-	read_info(configFilename, pt);		
-	string wvmClassifierFile = pt.get<string>("detection.wvm.classifierFile");
-	string wvmThresholdsFile = pt.get<string>("detection.wvm.thresholdsFile");
-	string svmClassifierFile = pt.get<string>("detection.svm.classifierFile");
-	string svmLogisticParametersFile = pt.get<string>("detection.svm.logisticParametersFile");
+	try {
+		read_info(configFilename.string(), pt);
+	} catch(const boost::property_tree::ptree_error& error) {
+		appLogger.error(error.what());
+		return EXIT_FAILURE;
+	}
 
-	float svmThreshold = pt.get<float>("detection.svm.threshold", -1.2f);	// If the key doesn't exist in the config, set it to -1.2 (default value).
+	unordered_map<string, shared_ptr<FiveStageSlidingWindowDetector>> faceDetectors;
+	unordered_map<string, shared_ptr<FiveStageSlidingWindowDetector>> featureDetectors;
+
+	try {
+		ptree ptDetectors = pt.get_child("detectors");
+		for_each(begin(ptDetectors), end(ptDetectors), [&faceDetectors, &featureDetectors](ptree::value_type kv) {
+			// TODO: 1) error handling if a key doesn't exist
+			//		 2) make more dynamic, search for wvm or svm and add respective to map, or even just check if it's a WVM
+			//				This would require another for_each and check if kv.first is 'wvm' or a .get...?
+			ptree wvm = kv.second.get_child("wvm");	// TODO add error checking
+			ptree svm = kv.second.get_child("svm");	// TODO add error checking
+			ptree imgpyr = kv.second.get_child("pyramid");	// TODO add error checking
+			ptree oeCfg = kv.second.get_child("overlapElimination");	// TODO add error checking. get_child throws when child doesn't exist.
+			string landmarkName = kv.second.get<string>("landmark");
+
+			shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadConfig(wvm);
+			shared_ptr<ProbabilisticSvmClassifier> psvm = ProbabilisticSvmClassifier::loadConfig(svm);
+
+			//pwvm->getWvm()->setLimitReliabilityFilter(-0.5f);
+			//psvm->getSvm()->setThreshold(-1.0f);	// TODO read this from the config
+
+			shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(oeCfg.get<float>("dist", 5.0f), oeCfg.get<float>("ratio", 0.0f));
+			
+			// This:
+			shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f), imgpyr.get<float>("incrementalScaleFactor", 0.9f));
+			imgPyr->addImageFilter(make_shared<GrayscaleFilter>());
+			shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(imgPyr, imgpyr.get<int>("patch.width"), imgpyr.get<int>("patch.height"));
+			// Or:
+			//shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"), config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"), config.get<double>("pyramid.scaleFactor"));
+			//featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+
+			featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
+
+			shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm, featureExtractor);
+
+			shared_ptr<FiveStageSlidingWindowDetector> fsd = make_shared<FiveStageSlidingWindowDetector>(det, oe, psvm);
+			fsd->landmark = landmarkName;
+			if (landmarkName == "face")	{
+				faceDetectors.insert(make_pair(kv.first, fsd));
+			} else {
+				featureDetectors.insert(make_pair(kv.first, fsd));
+			}
+		});
+	} catch(const boost::property_tree::ptree_error& error) {
+		appLogger.error(error.what());
+		return EXIT_FAILURE;
+	} catch (const invalid_argument& error) {
+		appLogger.error(error.what());
+		return EXIT_FAILURE;
+	} catch (const runtime_error& error) {
+		appLogger.error(error.what());
+		return EXIT_FAILURE;
+	}
+
+	// lm-loading
+	// output-dir
+	// load ffd/ROI
+	// relative bilder-pfad aus filelist
+	// our libs: add library dependencies (eg to boost) in add_library ?
+	// -f file.png fails?
 
 	/* Note: We could change/write/add something to the config with
 	pt.put("detection.svm.threshold", -0.5f);
@@ -220,71 +350,66 @@ int main(int argc, char *argv[])
 	write_info("C:\\Users\\Patrik\\Documents\\GitHub\\ffpDetectApp.cfg", pt);
 	*/
 
-	shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadMatlab(wvmClassifierFile, wvmThresholdsFile);
-	shared_ptr<ProbabilisticSvmClassifier> psvm = ProbabilisticSvmClassifier::loadMatlab(svmClassifierFile, svmLogisticParametersFile);
-
-	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(pt.get<float>("detection.imagePyramid.minScaleFactor", 0.09f), pt.get<float>("detection.imagePyramid.maxScaleFactor", 0.25f), pt.get<float>("detection.imagePyramid.incrementalScaleFactor", 0.9f));	// (0.09, 0.25, 0.9) is nearly the same as old 90, 9, 0.9
-	pyr->addImageFilter(make_shared<GrayscaleFilter>());
-	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(pyr, 20, 20);
-	featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
-
-	shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm, featureExtractor);
-	shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(pt.get<float>("detection.overlapElimination.dist", 5.0f), pt.get<float>("detection.overlapElimination.ratio", 0.0f));
-	psvm->getSvm()->setThreshold(svmThreshold);
-
+	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img;
-	for(unsigned int i=0; i< filenames.size(); i++) {
+	while(imageSource->next()) {
 
-		img = cv::imread(filenames[i]);		// TODO: Add a check if the file really exists. But we should use ImageSource soon anyway.
-		cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
-		cvMoveWindow("src", 0, 0);
-		std::chrono::time_point<std::chrono::system_clock> start, end;
+		img = imageSource->getImage();
 		start = std::chrono::system_clock::now();
-		vector<shared_ptr<ClassifiedPatch>> resultingPatches = det->detect(img);
+		
+		for(auto detector : faceDetectors) {
 
-		Mat imgWvm = img.clone();
-		for(auto pit = resultingPatches.begin(); pit != resultingPatches.end(); pit++) {
-			shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
-			shared_ptr<Patch> patch = classifiedPatch->getPatch();
-			cv::rectangle(imgWvm, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
-		}
-		cv::namedWindow("wvm", CV_WINDOW_AUTOSIZE); cv::imshow("wvm", imgWvm);
-		cvMoveWindow("wvm", 0, 0);
+			// The original image
+			ImageLoggers->getLogger("detection").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
+			vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img);
 
-		resultingPatches = oe->eliminate(resultingPatches);
-		Mat imgWvmOe = img.clone();
-		for(auto pit = resultingPatches.begin(); pit != resultingPatches.end(); pit++) {
-			shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
-			shared_ptr<Patch> patch = classifiedPatch->getPatch();
-			cv::rectangle(imgWvmOe, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
-		}
-		cv::namedWindow("wvmoe", CV_WINDOW_AUTOSIZE); cv::imshow("wvmoe", imgWvmOe);
-		cvMoveWindow("wvmoe", 550, 0);
+			/*
+			// WVM stage
+			vector<shared_ptr<ClassifiedPatch>> resultingPatches = det->detect(img);
+			Mat imgWvm = img.clone();
+			drawFaceBoxes(imgWvm, resultingPatches);
+			cv::imwrite(path("").string() + "_wvm.png", imgWvm);
 
-		vector<shared_ptr<ClassifiedPatch>> svmPatches;
-		for(auto &patch : resultingPatches) {
-			svmPatches.push_back(make_shared<ClassifiedPatch>(patch->getPatch(), psvm->classify(patch->getPatch()->getData())));
-		}
+			function <void ()> f = bind(drawFaceBoxes, img, resultingPatches);
+			logtest("test", img, f);
 
-		vector<shared_ptr<ClassifiedPatch>> svmPatchesPositive;
-		Mat imgSvm = img.clone();
-		for(auto pit = svmPatches.begin(); pit != svmPatches.end(); pit++) {
-			shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
-			shared_ptr<Patch> patch = classifiedPatch->getPatch();
-			if(classifiedPatch->isPositive()) {
-				cv::rectangle(imgSvm, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
-				svmPatchesPositive.push_back(classifiedPatch);
+			// WVM OE stage
+			resultingPatches = oe->eliminate(resultingPatches);
+			Mat imgWvmOe = img.clone();
+			drawFaceBoxes(imgWvmOe, resultingPatches);
+			cv::imwrite(path("").string() + "_wvmoe.png", imgWvmOe);
+
+			// SVM stage
+			vector<shared_ptr<ClassifiedPatch>> svmPatches;
+			for(const auto& patch : resultingPatches) {
+				svmPatches.push_back(make_shared<ClassifiedPatch>(patch->getPatch(), psvm->classify(patch->getPatch()->getData())));
 			}
-		}
-		cv::namedWindow("svm", CV_WINDOW_AUTOSIZE); cv::imshow("svm", imgSvm);
-		cvMoveWindow("svm", 0, 500);
+			Mat imgSvmAll = img.clone();
+			drawFaceBoxes(imgSvmAll, svmPatches);
+			cv::imwrite(path("").string() + "_svmall.png", imgSvmAll);
 
-		sort(make_indirect_iterator(svmPatches.begin()), make_indirect_iterator(svmPatches.end()), greater<ClassifiedPatch>());
+			// Only the positive SVM patches
+			vector<shared_ptr<ClassifiedPatch>> svmPatchesPositive;
+			for(const auto& patch : svmPatches) {
+				if(patch->isPositive()) {
+					svmPatchesPositive.push_back(patch);
+				}
+			}
+			Mat imgSvmPos = img.clone();
+			drawFaceBoxes(imgSvmPos, svmPatchesPositive);
+			cv::imwrite(path("").string() + "_svmpos.png", imgSvmPos);
 
-		Mat imgSvmEnd = img.clone();
-		cv::rectangle(imgSvmEnd, cv::Point(svmPatches[0]->getPatch()->getX() - svmPatches[0]->getPatch()->getWidth()/2, svmPatches[0]->getPatch()->getY() - svmPatches[0]->getPatch()->getHeight()/2), cv::Point(svmPatches[0]->getPatch()->getX() + svmPatches[0]->getPatch()->getWidth()/2, svmPatches[0]->getPatch()->getY() + svmPatches[0]->getPatch()->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((svmPatches[0]->getProbability())/1.0)   ));
-		cv::namedWindow("svmEnd", CV_WINDOW_AUTOSIZE); cv::imshow("svmEnd", imgSvmEnd);
-		cvMoveWindow("svmEnd", 550, 500);
+			// The highest one of all the positively classified SVM patches
+			Mat imgSvmMaxPos = img.clone();
+			if(svmPatchesPositive.size()>0) {
+				sort(make_indirect_iterator(svmPatchesPositive.begin()), make_indirect_iterator(svmPatchesPositive.end()), greater<ClassifiedPatch>()); // Careful, this invalidates all copies of svmPatchesPositive!
+				vector<shared_ptr<ClassifiedPatch>> svmPatchesMaxPositive;
+				svmPatchesMaxPositive.push_back(svmPatchesPositive[0]);
+				drawFaceBoxes(imgSvmMaxPos, svmPatchesMaxPositive);
+			}
+			cv::imwrite(path("").string() + "_svmmaxpos.png", imgSvmMaxPos);
+			*/
+		} // end for each face detector
 
 		end = std::chrono::system_clock::now();
 
@@ -292,22 +417,22 @@ int main(int argc, char *argv[])
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
 		std::time_t end_time = std::chrono::system_clock::to_time_t(end);
 
-		std::cout << "finished computation at " << std::ctime(&end_time)
-			<< "elapsed time: " << elapsed_seconds << "s, " << elapsed_mseconds << "ms\n";
-
-		cv::waitKey(30);
+		stringstream ss;
+		ss << std::ctime(&end_time);
+		appLogger.info("finished computation at " + ss.str() + "elapsed time: " + lexical_cast<string>(elapsed_seconds) + "s, " + lexical_cast<string>(elapsed_mseconds) + "ms\n");
 
 		TOT++;
+		vector<string> resultingPatches;
 		if(resultingPatches.size()<1) {
-			std::cout << "[ffpDetectApp] No face-candidates at all found:  " << filenames[i] << std::endl;
+			//std::cout << "[ffpDetectApp] No face-candidates at all found:  " << filenames[i] << std::endl;
 			NOCAND++;
 		} else {
 			// TODO Check if the LM exists or it will crash! Currently broken!
-			if(groundtruthFaceBoxes[i].getPosition3D()==Vec3f(0.0f, 0.0f, 0.0f)) { //no groundtruth
-				std::cout << "[ffpDetectApp] No ground-truth available, not counting anything: " << filenames[i] << std::endl;
+			if(false) { //no groundtruth
+				//std::cout << "[ffpDetectApp] No ground-truth available, not counting anything: " << filenames[i] << std::endl;
 				++DONTKNOW;
 			} else { //we have groundtruth
-				int gt_w = groundtruthFaceBoxes[i].getWidth();
+				/*int gt_w = groundtruthFaceBoxes[i].getWidth();
 				int gt_h = groundtruthFaceBoxes[i].getHeight();
 				int gt_cx = groundtruthFaceBoxes[i].getX();
 				int gt_cy = groundtruthFaceBoxes[i].getY();
@@ -321,7 +446,7 @@ int main(int argc, char *argv[])
 				} else {
 					std::cout << "[ffpDetectApp] Face not found, wrong position:  " << filenames[i] << std::endl;
 					FACC++;
-				}
+				}*/
 			} // end no groundtruth
 		}
 

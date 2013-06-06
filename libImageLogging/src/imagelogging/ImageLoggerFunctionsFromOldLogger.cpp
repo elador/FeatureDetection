@@ -5,9 +5,9 @@
  *      Author: Patrik Huber
  */
 
-#include "detection/ImageLogger.hpp"
+#include "imagelogging/ImageLoggerFunctionsFromOldLogger.hpp"
 
-namespace detection {
+namespace imagelogging {
 /*
 ImageLogger::ImageLogger()
 {
