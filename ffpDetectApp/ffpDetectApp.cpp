@@ -109,6 +109,7 @@ int main(int argc, char *argv[])
 	#endif
 	
 	string verboseLevelConsole;
+	string verboseLevelImages;
 	bool useFileList = false;
 	bool useImgs = false;
 	bool useDirectory = false;
@@ -126,6 +127,8 @@ int main(int argc, char *argv[])
 				"produce help message")
             ("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
                   "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
+			("verbose-images,w", po::value<string>(&verboseLevelImages)->implicit_value("INTERMEDIATE")->default_value("FINAL","write images with FINAL loglevel or below."),
+				  "specify the verbosity of the console output: FINAL, INTERMEDIATE, INFO, DEBUG or TRACE")
 			("config,c", po::value<path>()->required(), 
 				"path to a config (.cfg) file")
 			("input-list,l", po::value<path>(), 
@@ -152,6 +155,9 @@ int main(int argc, char *argv[])
         }
 		if (vm.count("verbose")) {
 			verboseLevelConsole = vm["verbose"].as<string>();
+		}
+		if (vm.count("verbose-images")) {
+			verboseLevelImages = vm["verbose-images"].as<string>();
 		}
 		if (vm.count("input-list"))
 		{
@@ -192,6 +198,16 @@ int main(int argc, char *argv[])
 		cout << "Error: Invalid loglevel." << endl;
 		return EXIT_FAILURE;
 	}
+	imagelogging::loglevel imageLogLevel;
+	if(boost::iequals(verboseLevelImages, "FINAL")) imageLogLevel = imagelogging::loglevel::FINAL;
+	else if(boost::iequals(verboseLevelImages, "INTERMEDIATE")) imageLogLevel = imagelogging::loglevel::INTERMEDIATE;
+	else if(boost::iequals(verboseLevelImages, "INFO")) imageLogLevel = imagelogging::loglevel::INFO;
+	else if(boost::iequals(verboseLevelImages, "DEBUG")) imageLogLevel = imagelogging::loglevel::DEBUG;
+	else if(boost::iequals(verboseLevelImages, "TRACE")) imageLogLevel = imagelogging::loglevel::TRACE;
+	else {
+		cout << "Error: Invalid image loglevel." << endl;
+		return EXIT_FAILURE;
+	}
 	
 	Loggers->getLogger("classification").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
@@ -201,13 +217,14 @@ int main(int argc, char *argv[])
 	Logger appLogger = Loggers->getLogger("ffpDetectApp");
 
 	appLogger.debug("Verbose level for console output: " + logging::loglevelToString(logLevel));
+	appLogger.debug("Verbose level for image output: " + imagelogging::loglevelToString(imageLogLevel));
 	appLogger.debug("Using config: " + configFilename.string());
 	appLogger.debug("Using output directory: " + outputPicsDir.string());
 	if(outputPicsDir.empty()) {
 		appLogger.info("Output directory not set. Writing images into current directory.");
 	}
 
-	ImageLoggers->getLogger("detection").addAppender(make_shared<imagelogging::ImageFileWriter>(imagelogging::loglevel::INFO, outputPicsDir));
+	ImageLoggers->getLogger("detection").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir));
 
 	int numInputs = 0;
 	if(useFileList==true) {
@@ -342,6 +359,10 @@ int main(int argc, char *argv[])
 	// relative bilder-pfad aus filelist
 	// our libs: add library dependencies (eg to boost) in add_library ?
 	// -f file.png fails?
+	// log (text) what is going on. Eg detecting on image... bla... Svm reduced from x to y...
+	//       where to put this? as deep as possible? (eg just there where the variable needed (eg filename, 
+	//       detector-name is still visible). I think for OE there's already something in it.
+	// move drawBoxes(...) somewhere else
 
 	/* Note: We could change/write/add something to the config with
 	pt.put("detection.svm.threshold", -0.5f);
@@ -359,56 +380,9 @@ int main(int argc, char *argv[])
 		
 		for(auto detector : faceDetectors) {
 
-			// The original image
 			ImageLoggers->getLogger("detection").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
 			vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img);
 
-			/*
-			// WVM stage
-			vector<shared_ptr<ClassifiedPatch>> resultingPatches = det->detect(img);
-			Mat imgWvm = img.clone();
-			drawFaceBoxes(imgWvm, resultingPatches);
-			cv::imwrite(path("").string() + "_wvm.png", imgWvm);
-
-			function <void ()> f = bind(drawFaceBoxes, img, resultingPatches);
-			logtest("test", img, f);
-
-			// WVM OE stage
-			resultingPatches = oe->eliminate(resultingPatches);
-			Mat imgWvmOe = img.clone();
-			drawFaceBoxes(imgWvmOe, resultingPatches);
-			cv::imwrite(path("").string() + "_wvmoe.png", imgWvmOe);
-
-			// SVM stage
-			vector<shared_ptr<ClassifiedPatch>> svmPatches;
-			for(const auto& patch : resultingPatches) {
-				svmPatches.push_back(make_shared<ClassifiedPatch>(patch->getPatch(), psvm->classify(patch->getPatch()->getData())));
-			}
-			Mat imgSvmAll = img.clone();
-			drawFaceBoxes(imgSvmAll, svmPatches);
-			cv::imwrite(path("").string() + "_svmall.png", imgSvmAll);
-
-			// Only the positive SVM patches
-			vector<shared_ptr<ClassifiedPatch>> svmPatchesPositive;
-			for(const auto& patch : svmPatches) {
-				if(patch->isPositive()) {
-					svmPatchesPositive.push_back(patch);
-				}
-			}
-			Mat imgSvmPos = img.clone();
-			drawFaceBoxes(imgSvmPos, svmPatchesPositive);
-			cv::imwrite(path("").string() + "_svmpos.png", imgSvmPos);
-
-			// The highest one of all the positively classified SVM patches
-			Mat imgSvmMaxPos = img.clone();
-			if(svmPatchesPositive.size()>0) {
-				sort(make_indirect_iterator(svmPatchesPositive.begin()), make_indirect_iterator(svmPatchesPositive.end()), greater<ClassifiedPatch>()); // Careful, this invalidates all copies of svmPatchesPositive!
-				vector<shared_ptr<ClassifiedPatch>> svmPatchesMaxPositive;
-				svmPatchesMaxPositive.push_back(svmPatchesPositive[0]);
-				drawFaceBoxes(imgSvmMaxPos, svmPatchesMaxPositive);
-			}
-			cv::imwrite(path("").string() + "_svmmaxpos.png", imgSvmMaxPos);
-			*/
 		} // end for each face detector
 
 		end = std::chrono::system_clock::now();

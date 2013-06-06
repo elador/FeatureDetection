@@ -56,54 +56,46 @@ vector<shared_ptr<ClassifiedPatch>> FiveStageSlidingWindowDetector::detect(const
 	Logger logger = Loggers->getLogger("detection");
 	ImageLogger imageLogger = ImageLoggers->getLogger("detection");
 
+	// Log the original image?
+	
+	// WVM stage
 	classifiedPatches = slidingWindowDetector->detect(image);
-	imageLogger.info(image, bind(drawBoxes, image, classifiedPatches), "suff");
-
 	Mat imgWvm = image.clone();
-	for(auto pit = classifiedPatches.begin(); pit != classifiedPatches.end(); pit++) {
-		shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
-		shared_ptr<Patch> patch = classifiedPatch->getPatch();
-		cv::rectangle(imgWvm, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
-	}
-	cv::namedWindow("wvm", CV_WINDOW_AUTOSIZE); cv::imshow("wvm", imgWvm);
-	cvMoveWindow("wvm", 0, 0);
+	imageLogger.intermediate(imgWvm, bind(drawBoxes, imgWvm, classifiedPatches), "01wvm");
 
+	// WVM OE stage
 	classifiedPatches = overlapElimination->eliminate(classifiedPatches);
 	Mat imgWvmOe = image.clone();
-	for(auto pit = classifiedPatches.begin(); pit != classifiedPatches.end(); pit++) {
-		shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
-		shared_ptr<Patch> patch = classifiedPatch->getPatch();
-		cv::rectangle(imgWvmOe, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
-	}
-	cv::namedWindow("wvmoe", CV_WINDOW_AUTOSIZE); cv::imshow("wvmoe", imgWvmOe);
-	cvMoveWindow("wvmoe", 550, 0);
+	imageLogger.intermediate(imgWvmOe, bind(drawBoxes, imgWvmOe, classifiedPatches), "02oe");
 
+	// SVM stage
 	vector<shared_ptr<ClassifiedPatch>> svmPatches;
-	for(auto &patch : classifiedPatches) {
+	for(const auto &patch : classifiedPatches) {
 		svmPatches.push_back(make_shared<ClassifiedPatch>(patch->getPatch(), strongClassifier->classify(patch->getPatch()->getData())));
 	}
+	Mat imgSvmAll = image.clone();
+	imageLogger.intermediate(imgSvmAll, bind(drawBoxes, imgSvmAll, svmPatches), "03svmall");
 
+	// Only the positive SVM patches
 	vector<shared_ptr<ClassifiedPatch>> svmPatchesPositive;
-	Mat imgSvm = image.clone();
-	for(auto classifiedPatch : svmPatches) {
-		shared_ptr<Patch> patch = classifiedPatch->getPatch();
+	for(const auto& classifiedPatch : svmPatches) {
 		if(classifiedPatch->isPositive()) {
-			cv::rectangle(imgSvm, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
 			svmPatchesPositive.push_back(classifiedPatch);
 		}
 	}
-	cv::namedWindow("svm", CV_WINDOW_AUTOSIZE); cv::imshow("svm", imgSvm);
-	cvMoveWindow("svm", 0, 500);
+	Mat imgSvmPos = image.clone();
+	imageLogger.intermediate(imgSvmPos, bind(drawBoxes, imgSvmPos, svmPatchesPositive), "03svmpos");
 
+	// The highest one of all the positively classified SVM patches
 	//sort(make_indirect_iterator(svmPatches.begin()), make_indirect_iterator(svmPatches.end()), greater<ClassifiedPatch>());
-	typedef shared_ptr<ClassifiedPatch> iter;
-	sort(svmPatches.begin(), svmPatches.end(), [](iter a, iter b) { return *a > *b; });
-
-	Mat imgSvmEnd = image.clone();
-	cv::rectangle(imgSvmEnd, cv::Point(svmPatches[0]->getPatch()->getX() - svmPatches[0]->getPatch()->getWidth()/2, svmPatches[0]->getPatch()->getY() - svmPatches[0]->getPatch()->getHeight()/2), cv::Point(svmPatches[0]->getPatch()->getX() + svmPatches[0]->getPatch()->getWidth()/2, svmPatches[0]->getPatch()->getY() + svmPatches[0]->getPatch()->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((svmPatches[0]->getProbability())/1.0)   ));
-	cv::namedWindow("svmMostProbable", CV_WINDOW_AUTOSIZE); cv::imshow("svmMostProbable", imgSvmEnd);
-	cvMoveWindow("svmMostProbable", 550, 500);
-
+	sort(svmPatchesPositive.begin(), svmPatchesPositive.end(), [](shared_ptr<ClassifiedPatch> a, shared_ptr<ClassifiedPatch> b) { return *a > *b; });
+	vector<shared_ptr<ClassifiedPatch>> svmPatchesMaxPositive;
+	if(svmPatchesPositive.size()>0) {	
+		svmPatchesMaxPositive.push_back(svmPatchesPositive[0]);
+	}
+	Mat imgSvmMaxPos = image.clone();
+	imageLogger.final(imgSvmMaxPos, bind(drawBoxes, imgSvmMaxPos, svmPatchesMaxPositive), "04svmmaxpos");
+	
 	return svmPatchesPositive;
 	//return svmPatches;
 }

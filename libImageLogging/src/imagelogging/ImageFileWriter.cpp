@@ -31,6 +31,7 @@ ImageFileWriter::ImageFileWriter(loglevel logLevel, path directory) : Appender(l
 	if(!boost::filesystem::exists(directory)) {
 		try {
 			boost::filesystem::create_directory(directory);
+			// TODO use text-logging, output dir-creation
 		} catch(const boost::filesystem::filesystem_error& e) {
 			std::cout << "Error!" << std::endl; // TODO use text-logging
 		}
@@ -58,7 +59,8 @@ void ImageFileWriter::log(const loglevel logLevel, const string loggerName, cons
 			//std::cout << e.what() << std::endl; // imwrite already outputs the error, which is not that nice
 			exit(EXIT_FAILURE);	// Could also be a "warning" and we could continue. But we most likely REALLY want to write the image.
 			// Todo: Use text-logger.
-		} 
+		}
+		// TODO logger.out("Wrote image ...");
 	}
 }
 
