@@ -9,7 +9,7 @@
 #ifndef IMAGELOGGER_HPP_
 #define IMAGELOGGER_HPP_
 
-#include "imagelogging/loglevels.hpp"
+#include "imagelogging/imageloglevels.hpp"
 #include "opencv2/core/core.hpp"
 #include <string>
 #include <vector>
@@ -83,21 +83,14 @@ public:
 	 *
 	 * @param[in] logMessage The message to be logged.
 	 */
-	void warn(Mat image, function<void ()> functionToApply, const string filename);
+	void intermediate(Mat image, function<void ()> functionToApply, const string filename);
 
 	/**
 	 * Logs a message with log-level ERROR to all appenders (e.g. the console or a file).
 	 *
 	 * @param[in] logMessage The message to be logged.
 	 */
-	void error(Mat image, function<void ()> functionToApply, const string filename);
-
-	/**
-	 * Logs a message with log-level PANIC to all appenders (e.g. the console or a file).
-	 *
-	 * @param[in] logMessage The message to be logged.
-	 */
-	void panic(Mat image, function<void ()> functionToApply, const string filename);
+	void final(Mat image, function<void ()> functionToApply, const string filename);
 
 private:
 	vector<shared_ptr<Appender>> appenders;

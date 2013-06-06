@@ -10,7 +10,7 @@
 #define IMAGELOGGERFACTORY_HPP_
 
 #include "imagelogging/ImageLogger.hpp" // We wouldn't need this include, we could use a forward declaration. But this way, our libs/apps only have to include one file to use the logger.
-#include "imagelogging/loglevels.hpp" // Same as for ImageLogger.hpp.
+#include "imagelogging/imageloglevels.hpp" // Same as for ImageLogger.hpp.
 
 #include <map>
 #include <string>

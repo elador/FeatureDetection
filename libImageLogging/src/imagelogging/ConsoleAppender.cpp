@@ -6,7 +6,7 @@
  */
 
 #include "imagelogging/ConsoleAppender.hpp"
-#include "imagelogging/loglevels.hpp"
+#include "imagelogging/imageloglevels.hpp"
 #include <iostream>
 #include <sstream>
 #include <iomanip>

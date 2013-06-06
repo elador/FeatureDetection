@@ -10,7 +10,7 @@
 #define CONSOLEAPPENDER_HPP_
 
 #include "imagelogging/Appender.hpp"
-#include "imagelogging/loglevels.hpp"
+#include "imagelogging/imageloglevels.hpp"
 
 namespace imagelogging {
 

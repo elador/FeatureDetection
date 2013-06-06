@@ -6,7 +6,7 @@
  */
 
 #include "imagelogging/ImageFileWriter.hpp"
-#include "imagelogging/loglevels.hpp"
+#include "imagelogging/imageloglevels.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "boost/filesystem.hpp"
 #include <ios>

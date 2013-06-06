@@ -9,7 +9,7 @@
 #ifndef IAPPENDER_HPP_	// TODO change/rename
 #define IAPPENDER_HPP_
 
-#include "imagelogging/loglevels.hpp"
+#include "imagelogging/imageloglevels.hpp"
 #include "opencv2/core/core.hpp"
 #include <string>
 #include <functional>

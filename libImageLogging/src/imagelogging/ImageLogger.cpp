@@ -41,19 +41,14 @@ void ImageLogger::info(Mat image, function<void ()> functionToApply, const strin
 	log(loglevel::INFO, image, functionToApply, filenameSuffix);
 }
 
-void ImageLogger::warn(Mat image, function<void ()> functionToApply, const string filenameSuffix)
+void ImageLogger::intermediate(Mat image, function<void ()> functionToApply, const string filenameSuffix)
 {
-	log(loglevel::WARN, image, functionToApply, filenameSuffix);
+	log(loglevel::INTERMEDIATE, image, functionToApply, filenameSuffix);
 }
 
-void ImageLogger::error(Mat image, function<void ()> functionToApply, const string filenameSuffix)
+void ImageLogger::final(Mat image, function<void ()> functionToApply, const string filenameSuffix)
 {
-	log(loglevel::ERROR, image, functionToApply, filenameSuffix);
-}
-
-void ImageLogger::panic(Mat image, function<void ()> functionToApply, const string filenameSuffix)
-{
-	log(loglevel::PANIC, image, functionToApply, filenameSuffix);
+	log(loglevel::FINAL, image, functionToApply, filenameSuffix);
 }
 
 void ImageLogger::setCurrentImageName(string imageName)
