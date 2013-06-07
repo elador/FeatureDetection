@@ -277,24 +277,7 @@ int main(int argc, char *argv[])
 		cout << "[faceDetectApp] Error: Please either specify a file-list, an input-file or a directory (and only one of them) to run the program!" << endl;
 		return 1;
 	}
-
-	Mat i1 = cv::imread("C:\\Users\\Patrik\\Github\\ICVSS2013_Poster\\png_out\\0_FaceFrontal_probMap.png");
-	Mat i2 = cv::imread("C:\\Users\\Patrik\\Github\\ICVSS2013_Poster\\png_out\\0_FaceLeftProfile_probMap.png");
-	Mat i3 = cv::imread("C:\\Users\\Patrik\\Github\\ICVSS2013_Poster\\png_out\\0_FaceRightProfile_probMap.png");
-
-	//i1.convertTo(i1, CV_32FC1);
-	//i2.convertTo(i2, CV_32FC1);
-	//i3.convertTo(i3, CV_32FC1);
-
-	Mat tot = 0.3f*i1+0.3f*i2+0.3f*i3;
-	//tot = tot/3;
-
-	//tot *= 255.0f;
-	//tot.convertTo(tot, CV_8UC1);
-	cv::imwrite("C:\\Users\\Patrik\\Github\\ICVSS2013_Poster\\png_out\\newAllProbMap.png", tot);
-	threshold(tot, tot, 80, 255, 0);
-	cv::imwrite("C:\\Users\\Patrik\\Github\\ICVSS2013_Poster\\png_out\\newAllProbMapThrs.png", tot);
-
+	
 	ptree pt;
 	read_info("C:\\Users\\Patrik\\GitHub\\faceDetectApp.cfg", pt);		// TODO add check if file exists/throw
 
@@ -347,8 +330,6 @@ int main(int argc, char *argv[])
 		cvMoveWindow("src", 0, 0);
 		std::chrono::time_point<std::chrono::system_clock> start, end;
 		start = std::chrono::system_clock::now();
-
-		imwrite("C:\\Users\\Patrik\\Github\\ICVSS2013_Poster\\png_out\\" + boost::lexical_cast<string>(piccnt) + "_input.png", img);
 
 		int det=0;
 		vector<Mat> regionProbMaps;

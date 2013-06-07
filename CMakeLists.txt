@@ -11,7 +11,8 @@ if (HAS_CXX11_FLAG)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
-add_subdirectory(libLogging)			# Text- and Image logging
+add_subdirectory(libLogging)			# Text logging
+add_subdirectory(libImageLogging)		# Image logging
 
 add_subdirectory(libImageIO)			# Input-library for cameras, Kinect and hard-drive images.
 add_subdirectory(libImageProcessing)	# Image pyramids, patch extraction, feature transformation

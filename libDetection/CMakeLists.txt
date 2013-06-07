@@ -24,13 +24,11 @@ SET(HEADERS
 	include/detection/SlidingWindowDetector.hpp
 	include/detection/OverlapElimination.hpp
 	include/detection/FiveStageSlidingWindowDetector.hpp
-	include/detection/ImageLogger.hpp
 )
 SET(SOURCE
 	src/detection/SlidingWindowDetector.cpp
 	src/detection/OverlapElimination.cpp
 	src/detection/FiveStageSlidingWindowDetector.cpp
-	src/detection/ImageLogger.cpp
 )
 
 include_directories( "include" )
@@ -39,6 +37,7 @@ include_directories( "include" )
 include_directories( ${Classification_SOURCE_DIR}/include )
 include_directories( ${ImageProcessing_SOURCE_DIR}/include )
 include_directories( ${Logging_SOURCE_DIR}/include )
+include_directories( ${ImageLogging_SOURCE_DIR}/include )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( ${Boost_INCLUDE_DIRS} )
 

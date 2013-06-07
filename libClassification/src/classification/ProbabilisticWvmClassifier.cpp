@@ -10,9 +10,12 @@
 
 #include "mat.h"
 #include <iostream>
+#include <stdexcept>
 
 using std::make_pair;
 using std::make_shared;
+using std::invalid_argument;
+using std::runtime_error;
 
 namespace classification {
 
@@ -60,8 +63,7 @@ shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadMatlab(co
 	mxArray *pmxarray; // =mat
 	pmatfile = matOpen(thresholdsFilename.c_str(), "r");
 	if (pmatfile == 0) {
-		std::cout << "[DetWVM] : Unable to open the file (wrong format?):" << std::endl << thresholdsFilename << std::endl;
-		exit(EXIT_FAILURE);	// TODO Exceptions/Logger, like in non-probabilistic file
+		throw invalid_argument("ProbabilisticWvmClassifier: Unable to open the file: " + thresholdsFilename);
 	} 
 
 	//printf("fd_ReadDetector(): read posterior_svm parameter for probabilistic SVM output\n");
@@ -69,16 +71,14 @@ shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadMatlab(co
 	//TODO is there a case (when svm+wvm from same trainingdata) when there exists only a posterior_svm, and I should use this here?
 	pmxarray = matGetVariable(pmatfile, "posterior_wrvm");
 	if (pmxarray == 0) {
-		std::cout << "[DetWVM] WARNING: Unable to find the vector posterior_wrvm, disable prob. SVM output;" << std::endl;
-		// TODO prob. output cannot be disabled in the new version of this lib -> throw exception or log info message or something
-		logisticA = logisticB = 0;
+		throw runtime_error("Unable to find the vector posterior_wrvm. If you don't want probabilistic output, don't use a probabilistic classifier.");
+		//logisticA = logisticB = 0; // TODO: Does it make sense to continue?
 	} else {
 		double* matdata = mxGetPr(pmxarray);
 		const mwSize *dim = mxGetDimensions(pmxarray);
 		if (dim[1] != 2) {
-			std::cout << "[DetWVM] WARNING: Size of vector posterior_wrvm !=2, disable prob. WRVM output;" << std::endl;
-			// TODO same as previous TODO
-			logisticA = logisticB = 0;
+			throw runtime_error("Size of vector posterior_wrvm !=2. If you don't want probabilistic output, don't use a probabilistic classifier.");
+			//logisticA = logisticB = 0; // TODO: Does it make sense to continue?
 		} else {
 			logisticB = matdata[0];
 			logisticA = matdata[1];
