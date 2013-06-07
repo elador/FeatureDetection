@@ -69,6 +69,7 @@ private:
 	static void onMouse(int event, int x, int y, int, void* userdata);
 
 	shared_ptr<FeatureExtractor> createFeatureExtractor(shared_ptr<DirectPyramidFeatureExtractor> patchExtractor, ptree config);
+	shared_ptr<FeatureExtractor> createHistogramFeatureExtractor(shared_ptr<DirectPyramidFeatureExtractor> patchExtractor, unsigned int bins, ptree config);
 	shared_ptr<FeatureExtractor> wrapFeatureExtractor(shared_ptr<FeatureExtractor> featureExtractor, float scaleFactor);
 	shared_ptr<Kernel> createKernel(ptree config);
 	shared_ptr<TrainableSvmClassifier> createTrainableSvm(shared_ptr<Kernel> kernel, ptree config);

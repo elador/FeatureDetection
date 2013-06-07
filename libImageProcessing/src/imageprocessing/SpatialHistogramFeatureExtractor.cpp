@@ -1,11 +1,11 @@
 /*
- * OverlappingHistogramFeatureExtractor.cpp
+ * SpatialHistogramFeatureExtractor.cpp
  *
  *  Created on: 30.05.2013
  *      Author: poschmann
  */
 
-#include "imageprocessing/OverlappingHistogramFeatureExtractor.hpp"
+#include "imageprocessing/SpatialHistogramFeatureExtractor.hpp"
 #include "imageprocessing/Patch.hpp"
 #include <vector>
 #include <stdexcept>
@@ -16,38 +16,38 @@ using std::runtime_error;
 
 namespace imageprocessing {
 
-OverlappingHistogramFeatureExtractor::OverlappingHistogramFeatureExtractor(shared_ptr<FeatureExtractor> extractor,
+SpatialHistogramFeatureExtractor::SpatialHistogramFeatureExtractor(shared_ptr<FeatureExtractor> extractor,
 		unsigned int bins, int cellSize, int blockSize, Normalization normalization) :
+				HistogramFeatureExtractor(normalization),
 				extractor(extractor),
 				bins(bins),
 				cellWidth(cellSize),
 				cellHeight(cellSize),
 				blockWidth(blockSize),
-				blockHeight(blockSize),
-				normalization(normalization) {}
+				blockHeight(blockSize) {}
 
-OverlappingHistogramFeatureExtractor::OverlappingHistogramFeatureExtractor(
+SpatialHistogramFeatureExtractor::SpatialHistogramFeatureExtractor(
 		shared_ptr<FeatureExtractor> extractor, unsigned int bins,
 		int cellWidth, int cellHeight, int blockWidth, int blockHeight, Normalization normalization) :
+				HistogramFeatureExtractor(normalization),
 				extractor(extractor),
 				bins(bins),
 				cellWidth(cellWidth),
 				cellHeight(cellHeight),
 				blockWidth(blockWidth),
-				blockHeight(blockHeight),
-				normalization(normalization) {}
+				blockHeight(blockHeight) {}
 
-OverlappingHistogramFeatureExtractor::~OverlappingHistogramFeatureExtractor() {}
+SpatialHistogramFeatureExtractor::~SpatialHistogramFeatureExtractor() {}
 
-void OverlappingHistogramFeatureExtractor::update(const Mat& image) {
+void SpatialHistogramFeatureExtractor::update(const Mat& image) {
 	extractor->update(image);
 }
 
-void OverlappingHistogramFeatureExtractor::update(shared_ptr<VersionedImage> image) {
+void SpatialHistogramFeatureExtractor::update(shared_ptr<VersionedImage> image) {
 	extractor->update(image);
 }
 
-shared_ptr<Patch> OverlappingHistogramFeatureExtractor::extract(int x, int y, int width, int height) const {
+shared_ptr<Patch> SpatialHistogramFeatureExtractor::extract(int x, int y, int width, int height) const {
 	shared_ptr<Patch> patch = extractor->extract(x, y, width, height);
 	if (patch) {
 		bool combineHistograms = false;
@@ -95,7 +95,7 @@ shared_ptr<Patch> OverlappingHistogramFeatureExtractor::extract(int x, int y, in
 				}
 			}
 		} else {
-			throw runtime_error("OverlappingHistogramFeatureExtractor: Patch data must have one or two channels");
+			throw runtime_error("SpatialHistogramFeatureExtractor: Patch data must have one or two channels");
 		}
 
 		// create histograms of blocks
@@ -133,13 +133,7 @@ shared_ptr<Patch> OverlappingHistogramFeatureExtractor::extract(int x, int y, in
 					}
 				}
 
-				switch (normalization) {
-				case L2NORM: normalizeL2(blockHistogram); break;
-				case L2HYS:  normalizeL2Hys(blockHistogram); break;
-				case L1NORM: normalizeL1(blockHistogram); break;
-				case L1SQRT: normalizeL1Sqrt(blockHistogram); break;
-				case NONE:   break;
-				}
+				normalize(blockHistogram);
 			}
 		}
 		patchData.create(1, blockHistograms.size() * blockHistogramSize, CV_32F);
@@ -153,29 +147,6 @@ shared_ptr<Patch> OverlappingHistogramFeatureExtractor::extract(int x, int y, in
 		}
 	}
 	return patch;
-}
-
-const float OverlappingHistogramFeatureExtractor::eps = 1e-3;
-
-void OverlappingHistogramFeatureExtractor::normalizeL2(Mat& histogram) const {
-	float normSquared = cv::norm(histogram, cv::NORM_L2SQR);
-	histogram = histogram / sqrt(normSquared + eps * eps);
-}
-
-void OverlappingHistogramFeatureExtractor::normalizeL2Hys(Mat& histogram) const {
-	normalizeL2(histogram);
-	histogram = min(histogram, 0.2);
-	normalizeL2(histogram);
-}
-
-void OverlappingHistogramFeatureExtractor::normalizeL1(Mat& histogram) const {
-	float norm = cv::norm(histogram, cv::NORM_L1);
-	histogram = histogram / (norm + eps);
-}
-
-void OverlappingHistogramFeatureExtractor::normalizeL1Sqrt(Mat& histogram) const {
-	normalizeL1(histogram);
-	cv::sqrt(histogram, histogram);
 }
 
 } /* namespace imageprocessing */

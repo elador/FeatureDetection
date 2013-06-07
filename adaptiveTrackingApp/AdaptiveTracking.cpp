@@ -23,12 +23,15 @@
 #include "imageprocessing/WhiteningFilter.hpp"
 #include "imageprocessing/ZeroMeanUnitVarianceFilter.hpp"
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
+#include "imageprocessing/LbpFilter.hpp"
 #include "imageprocessing/GradientFilter.hpp"
+#include "imageprocessing/GradientMagnitudeFilter.hpp"
 #include "imageprocessing/GradientHistogramFilter.hpp"
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/FilteringFeatureExtractor.hpp"
 #include "imageprocessing/PatchResizingFeatureExtractor.hpp"
-#include "imageprocessing/OverlappingHistogramFeatureExtractor.hpp"
+#include "imageprocessing/SpatialHistogramFeatureExtractor.hpp"
+#include "imageprocessing/SpatialPyramidHistogramFeatureExtractor.hpp"
 #include "classification/ProbabilisticWvmClassifier.hpp"
 #include "classification/ProbabilisticSvmClassifier.hpp"
 #include "classification/RbfKernel.hpp"
@@ -96,24 +99,44 @@ shared_ptr<FeatureExtractor> AdaptiveTracking::createFeatureExtractor(
 	} else if (config.get_value<string>() == "hog") {
 		patchExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
 		patchExtractor->addLayerFilter(make_shared<GradientHistogramFilter>(config.get<int>("bins"), config.get<bool>("signed")));
-		OverlappingHistogramFeatureExtractor::Normalization normalization;
-		if (config.get<string>("normalization") == "none")
-			normalization = OverlappingHistogramFeatureExtractor::Normalization::NONE;
-		else if (config.get<string>("normalization") == "l2norm")
-			normalization = OverlappingHistogramFeatureExtractor::Normalization::L2NORM;
-		else if (config.get<string>("normalization") == "l2hys")
-			normalization = OverlappingHistogramFeatureExtractor::Normalization::L2HYS;
-		else if (config.get<string>("normalization") == "l1norm")
-			normalization = OverlappingHistogramFeatureExtractor::Normalization::L1NORM;
-		else if (config.get<string>("normalization") == "l1sqrt")
-			normalization = OverlappingHistogramFeatureExtractor::Normalization::L1SQRT;
-		else
-			throw invalid_argument("AdaptiveTracking: invalid normalization method: " + config.get<string>("normalization"));
-		return wrapFeatureExtractor(make_shared<OverlappingHistogramFeatureExtractor>(patchExtractor,
-				config.get<int>("bins"), config.get<int>("cellSize"), config.get<int>("blockSize"), normalization), scaleFactor);
+		return wrapFeatureExtractor(createHistogramFeatureExtractor(patchExtractor,
+				config.get<int>("bins"), config.get_child("histogram")), scaleFactor);
+	} else if (config.get_value<string>() == "lbp") {
+		patchExtractor->addLayerFilter(make_shared<LbpFilter>(config.get<bool>("uniform")));
+		return wrapFeatureExtractor(createHistogramFeatureExtractor(patchExtractor,
+				config.get<bool>("uniform") ? 59 : 256, config.get_child("histogram")), scaleFactor);
+	} else if (config.get_value<string>() == "glbp") {
+		patchExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
+		patchExtractor->addLayerFilter(make_shared<GradientMagnitudeFilter>());
+		patchExtractor->addLayerFilter(make_shared<LbpFilter>(config.get<bool>("uniform")));
+		return wrapFeatureExtractor(createHistogramFeatureExtractor(patchExtractor,
+				config.get<bool>("uniform") ? 59 : 256, config.get_child("histogram")), scaleFactor);
 	} else {
 		throw invalid_argument("AdaptiveTracking: invalid feature type: " + config.get<string>("feature"));
 	}
+}
+
+shared_ptr<FeatureExtractor> AdaptiveTracking::createHistogramFeatureExtractor(
+		shared_ptr<DirectPyramidFeatureExtractor> patchExtractor, unsigned int bins, ptree config) {
+	HistogramFeatureExtractor::Normalization normalization;
+	if (config.get<string>("normalization") == "none")
+		normalization = HistogramFeatureExtractor::Normalization::NONE;
+	else if (config.get<string>("normalization") == "l2norm")
+		normalization = HistogramFeatureExtractor::Normalization::L2NORM;
+	else if (config.get<string>("normalization") == "l2hys")
+		normalization = HistogramFeatureExtractor::Normalization::L2HYS;
+	else if (config.get<string>("normalization") == "l1norm")
+		normalization = HistogramFeatureExtractor::Normalization::L1NORM;
+	else if (config.get<string>("normalization") == "l1sqrt")
+		normalization = HistogramFeatureExtractor::Normalization::L1SQRT;
+	else
+		throw invalid_argument("AdaptiveTracking: invalid normalization method: " + config.get<string>("normalization"));
+	if (config.get_value<string>() == "spatial")
+		return make_shared<SpatialHistogramFeatureExtractor>(patchExtractor, bins, config.get<int>("cellSize"), config.get<int>("blockSize"), normalization);
+	else 	if (config.get_value<string>() == "pyramid")
+		return make_shared<SpatialPyramidHistogramFeatureExtractor>(patchExtractor, bins, config.get<int>("level"), normalization);
+	else
+		throw invalid_argument("AdaptiveTracking: invalid histogram type: " + config.get_value<string>());
 }
 
 shared_ptr<FeatureExtractor> AdaptiveTracking::wrapFeatureExtractor(shared_ptr<FeatureExtractor> featureExtractor, float scaleFactor) {

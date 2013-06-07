@@ -22,20 +22,24 @@ SET(HEADERS
 	include/imageprocessing/FilteringPyramidFeatureExtractor.hpp
 	include/imageprocessing/GradientFilter.hpp
 	include/imageprocessing/GradientHistogramFilter.hpp
+	include/imageprocessing/GradientMagnitudeFilter.hpp
 	include/imageprocessing/GrayscaleFilter.hpp
-	include/imageprocessing/HistogramEqualizationFilter.hpp
 	include/imageprocessing/HistEq64Filter.hpp
+	include/imageprocessing/HistogramEqualizationFilter.hpp
+	include/imageprocessing/HistogramFeatureExtractor.hpp
 	include/imageprocessing/ImageFilter.hpp
 	include/imageprocessing/ImagePyramid.hpp
 	include/imageprocessing/ImagePyramidLayer.hpp
 	include/imageprocessing/IntegralImageFilter.hpp
+	include/imageprocessing/LbpFilter.hpp
 	include/imageprocessing/MultipleImageFilter.hpp
-	include/imageprocessing/OverlappingHistogramFeatureExtractor.hpp
 	include/imageprocessing/Patch.hpp
 	include/imageprocessing/PatchResizingFeatureExtractor.hpp
 	include/imageprocessing/PyramidFeatureExtractor.hpp
 	include/imageprocessing/ReshapingFilter.hpp
 	include/imageprocessing/ResizingFilter.hpp
+	include/imageprocessing/SpatialHistogramFeatureExtractor.hpp
+	include/imageprocessing/SpatialPyramidHistogramFeatureExtractor.hpp
 	include/imageprocessing/VersionedImage.hpp
 	include/imageprocessing/WhiteningFilter.hpp
 	include/imageprocessing/ZeroMeanUnitVarianceFilter.hpp
@@ -48,16 +52,20 @@ SET(SOURCE
 	src/imageprocessing/DirectPyramidFeatureExtractor.cpp
 	src/imageprocessing/GradientFilter.cpp
 	src/imageprocessing/GradientHistogramFilter.cpp
+	src/imageprocessing/GradientMagnitudeFilter.cpp
 	src/imageprocessing/GrayscaleFilter.cpp
 	src/imageprocessing/HistEq64Filter.cpp
 	src/imageprocessing/HistogramEqualizationFilter.cpp
+	src/imageprocessing/HistogramFeatureExtractor.cpp
 	src/imageprocessing/ImagePyramid.cpp
 	src/imageprocessing/ImagePyramidLayer.cpp
 	src/imageprocessing/IntegralImageFilter.cpp
+	src/imageprocessing/LbpFilter.cpp
 	src/imageprocessing/MultipleImageFilter.cpp
-	src/imageprocessing/OverlappingHistogramFeatureExtractor.cpp
 	src/imageprocessing/ReshapingFilter.cpp
 	src/imageprocessing/ResizingFilter.cpp
+	src/imageprocessing/SpatialHistogramFeatureExtractor.cpp
+	src/imageprocessing/SpatialPyramidHistogramFeatureExtractor.cpp
 	src/imageprocessing/WhiteningFilter.cpp
 	src/imageprocessing/ZeroMeanUnitVarianceFilter.cpp
 )
