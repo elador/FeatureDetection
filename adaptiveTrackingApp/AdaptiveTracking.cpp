@@ -237,7 +237,7 @@ void AdaptiveTracking::initTracking(ptree config) {
 		// create static measurement model
 		shared_ptr<FilteringFeatureExtractor> staticFeatureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
 		staticFeatureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
-		string classifierFile = config.get<string>("initial.measurement.classifier.configFile");
+		string classifierFile = config.get<string>("initial.measurement.classifier.classifierFile");
 		string thresholdsFile = config.get<string>("initial.measurement.classifier.thresholdsFile");
 		shared_ptr<ProbabilisticWvmClassifier> wvm = ProbabilisticWvmClassifier::loadMatlab(classifierFile, thresholdsFile);
 		shared_ptr<ProbabilisticSvmClassifier> svm = ProbabilisticSvmClassifier::loadMatlab(classifierFile, thresholdsFile);
@@ -716,7 +716,12 @@ int main(int argc, char *argv[]) {
 	read_info(configFile, config);
 	if (useGroundTruth)
 		config.put("tracking.initial", "groundtruth");
-	unique_ptr<AdaptiveTracking> tracker(new AdaptiveTracking(move(labeledImageSource), move(imageSink), config.get_child("tracking")));
-	tracker->run();
+	try {
+		unique_ptr<AdaptiveTracking> tracker(new AdaptiveTracking(move(labeledImageSource), move(imageSink), config.get_child("tracking")));
+		tracker->run();
+	} catch (std::exception& exc) {
+		Loggers->getLogger("app").error(string("A wild exception occurred: ") + exc.what());
+		throw;
+	}
 	return 0;
 }
