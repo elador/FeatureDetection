@@ -17,25 +17,27 @@ using std::runtime_error;
 namespace imageprocessing {
 
 SpatialHistogramFeatureExtractor::SpatialHistogramFeatureExtractor(shared_ptr<FeatureExtractor> extractor,
-		unsigned int bins, int cellSize, int blockSize, Normalization normalization) :
+		unsigned int bins, int cellSize, int blockSize, bool combineHistograms, Normalization normalization) :
 				HistogramFeatureExtractor(normalization),
 				extractor(extractor),
 				bins(bins),
 				cellWidth(cellSize),
 				cellHeight(cellSize),
 				blockWidth(blockSize),
-				blockHeight(blockSize) {}
+				blockHeight(blockSize),
+				combineHistograms(combineHistograms) {}
 
 SpatialHistogramFeatureExtractor::SpatialHistogramFeatureExtractor(
 		shared_ptr<FeatureExtractor> extractor, unsigned int bins,
-		int cellWidth, int cellHeight, int blockWidth, int blockHeight, Normalization normalization) :
+		int cellWidth, int cellHeight, int blockWidth, int blockHeight, bool combineHistograms, Normalization normalization) :
 				HistogramFeatureExtractor(normalization),
 				extractor(extractor),
 				bins(bins),
 				cellWidth(cellWidth),
 				cellHeight(cellHeight),
 				blockWidth(blockWidth),
-				blockHeight(blockHeight) {}
+				blockHeight(blockHeight),
+				combineHistograms(combineHistograms) {}
 
 SpatialHistogramFeatureExtractor::~SpatialHistogramFeatureExtractor() {}
 
@@ -50,7 +52,6 @@ void SpatialHistogramFeatureExtractor::update(shared_ptr<VersionedImage> image) 
 shared_ptr<Patch> SpatialHistogramFeatureExtractor::extract(int x, int y, int width, int height) const {
 	shared_ptr<Patch> patch = extractor->extract(x, y, width, height);
 	if (patch) {
-		bool combineHistograms = false;
 		Mat& patchData = patch->getData();
 
 		// create histograms of cells

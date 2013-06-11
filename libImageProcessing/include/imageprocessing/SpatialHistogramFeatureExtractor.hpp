@@ -26,10 +26,11 @@ public:
 	 * @param[in] bins The amount of bins inside the histogram.
 	 * @param[in] cellSize The preferred width and height of the cells in pixels (actual size might deviate).
 	 * @param[in] blockSize The width and height of the blocks in cells.
+	 * @param[in] combinedHistograms Flag that indicates whether the histograms of the cells should be added up to form the block histogram.
 	 * @param[in] normalization The normalization method of the block histograms.
 	 */
 	SpatialHistogramFeatureExtractor(shared_ptr<FeatureExtractor> extractor, unsigned int bins,
-			int cellSize, int blockSize, Normalization normalization = L2NORM);
+			int cellSize, int blockSize, bool combineHistograms = true, Normalization normalization = L2NORM);
 
 	/**
 	 * Constructs a new spatial histogram feature extractor.
@@ -40,10 +41,11 @@ public:
 	 * @param[in] cellHeight The preferred height of the cells in pixels (actual height might deviate).
 	 * @param[in] blockWidth The width of the blocks in cells.
 	 * @param[in] blockHeight The height of the blocks in cells.
+	 * @param[in] combinedHistograms Flag that indicates whether the histograms of the cells should be added up to form the block histogram.
 	 * @param[in] normalization The normalization method of the block histograms.
 	 */
 	SpatialHistogramFeatureExtractor(shared_ptr<FeatureExtractor> extractor, unsigned int bins,
-			int cellWidth, int cellHeight, int blockWidth, int blockHeight, Normalization normalization = L2NORM);
+			int cellWidth, int cellHeight, int blockWidth, int blockHeight, bool combineHistograms = true, Normalization normalization = L2NORM);
 
 	~SpatialHistogramFeatureExtractor();
 
@@ -61,6 +63,7 @@ private:
 	int cellHeight;    ///< The preferred height of the cells in pixels (actual height might deviate).
 	int blockWidth;    ///< The width of the blocks in cells.
 	int blockHeight;   ///< The height of the blocks in cells.
+	bool combineHistograms; ///< Flag that indicates whether the histograms of the cells should be added up to form the block histogram.
 };
 
 } /* namespace imageprocessing */

@@ -101,6 +101,7 @@ private:
 
 	Initialization initialization;
 	shared_ptr<DirectPyramidFeatureExtractor> patchExtractor;
+	shared_ptr<FeatureExtractor> adaptiveFeatureExtractor;
 	unique_ptr<CondensationTracker> initialTracker;
 	unique_ptr<AdaptiveCondensationTracker> adaptiveTracker;
 	shared_ptr<MeasurementModel> staticMeasurementModel;

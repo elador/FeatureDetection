@@ -36,6 +36,7 @@
 #include "classification/ProbabilisticSvmClassifier.hpp"
 #include "classification/RbfKernel.hpp"
 #include "classification/PolynomialKernel.hpp"
+#include "classification/HikKernel.hpp"
 #include "classification/FrameBasedTrainableSvmClassifier.hpp"
 #include "classification/TrainableProbabilisticTwoStageClassifier.hpp"
 #include "classification/FixedSizeTrainableSvmClassifier.hpp"
@@ -98,7 +99,7 @@ shared_ptr<FeatureExtractor> AdaptiveTracking::createFeatureExtractor(
 		return wrapFeatureExtractor(featureExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "hog") {
 		patchExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
-		patchExtractor->addLayerFilter(make_shared<GradientHistogramFilter>(config.get<int>("bins"), config.get<bool>("signed")));
+		patchExtractor->addLayerFilter(make_shared<GradientHistogramFilter>(config.get<int>("bins"), config.get<bool>("signed"), config.get<float>("offset")));
 		return wrapFeatureExtractor(createHistogramFeatureExtractor(patchExtractor,
 				config.get<int>("bins"), config.get_child("histogram")), scaleFactor);
 	} else if (config.get_value<string>() == "lbp") {
@@ -132,7 +133,8 @@ shared_ptr<FeatureExtractor> AdaptiveTracking::createHistogramFeatureExtractor(
 	else
 		throw invalid_argument("AdaptiveTracking: invalid normalization method: " + config.get<string>("normalization"));
 	if (config.get_value<string>() == "spatial")
-		return make_shared<SpatialHistogramFeatureExtractor>(patchExtractor, bins, config.get<int>("cellSize"), config.get<int>("blockSize"), normalization);
+		return make_shared<SpatialHistogramFeatureExtractor>(patchExtractor, bins,
+				config.get<int>("cellSize"), config.get<int>("blockSize"), config.get<bool>("combine"), normalization);
 	else 	if (config.get_value<string>() == "pyramid")
 		return make_shared<SpatialPyramidHistogramFeatureExtractor>(patchExtractor, bins, config.get<int>("level"), normalization);
 	else
@@ -151,6 +153,8 @@ shared_ptr<Kernel> AdaptiveTracking::createKernel(ptree config) {
 	} else if (config.get_value<string>() == "poly") {
 		return make_shared<PolynomialKernel>(
 				config.get<double>("alpha"), config.get<double>("constant"), config.get<double>("degree"));
+	} else if (config.get_value<string>() == "hik") {
+		return make_shared<HikKernel>();
 	} else {
 		throw invalid_argument("AdaptiveTracking: invalid kernel type: " + config.get_value<string>());
 	}
@@ -194,7 +198,7 @@ void AdaptiveTracking::initTracking(ptree config) {
 	patchExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 
 	// create adaptive measurement model
-	shared_ptr<FeatureExtractor> adaptiveFeatureExtractor = createFeatureExtractor(patchExtractor, config.get_child("adaptive.feature"));
+	adaptiveFeatureExtractor = createFeatureExtractor(patchExtractor, config.get_child("adaptive.feature"));
 	shared_ptr<Kernel> kernel = createKernel(config.get_child("adaptive.measurement.classifier.kernel"));
 	shared_ptr<TrainableSvmClassifier> trainableSvm = createTrainableSvm(kernel, config.get_child("adaptive.measurement.classifier.training"));
 	shared_ptr<TrainableProbabilisticClassifier> classifier = createClassifier(trainableSvm, config.get_child("adaptive.measurement.classifier.probabilistic"));
@@ -710,6 +714,8 @@ int main(int argc, char *argv[]) {
 
 	ptree config;
 	read_info(configFile, config);
+	if (useGroundTruth)
+		config.put("tracking.initial", "groundtruth");
 	unique_ptr<AdaptiveTracking> tracker(new AdaptiveTracking(move(labeledImageSource), move(imageSink), config.get_child("tracking")));
 	tracker->run();
 	return 0;

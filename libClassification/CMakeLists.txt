@@ -43,6 +43,7 @@ SET(HEADERS
 	include/classification/LinearKernel.hpp
 	include/classification/RbfKernel.hpp
 	include/classification/PolynomialKernel.hpp
+	include/classification/HikKernel.hpp
 	include/svm.h
 )
 SET(SOURCE
