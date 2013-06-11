@@ -29,7 +29,7 @@ public:
 	 * @param[in] normalization The normalization method of the histograms.
 	 */
 	SpatialPyramidHistogramFeatureExtractor(shared_ptr<FeatureExtractor> extractor,
-			unsigned int bins, unsigned int level, Normalization normalization = L2NORM);
+			unsigned int bins, unsigned int level, Normalization normalization = NONE);
 
 	~SpatialPyramidHistogramFeatureExtractor();
 
