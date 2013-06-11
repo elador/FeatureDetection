@@ -45,7 +45,7 @@ void SelfLearningMeasurementModel::evaluate(shared_ptr<VersionedImage> image, ve
 	unordered_map<shared_ptr<Patch>, pair<bool, double>> results;
 	for (auto sample = samples.begin(); sample != samples.end(); ++sample) {
 		sample->setObject(false);
-		shared_ptr<Patch> patch = featureExtractor->extract(sample->getX(), sample->getY(), sample->getSize(), sample->getSize());
+		shared_ptr<Patch> patch = featureExtractor->extract(sample->getX(), sample->getY(), sample->getWidth(), sample->getHeight());
 		if (!patch) {
 			sample->setWeight(0);
 		} else {
@@ -124,7 +124,7 @@ vector<Mat> SelfLearningMeasurementModel::getFeatureVectors(vector<Sample>& samp
 	vector<Mat> trainingExamples;
 	trainingExamples.reserve(samples.size());
 	for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample) {
-		shared_ptr<Patch> patch = featureExtractor->extract(sample->getX(), sample->getY(), sample->getSize(), sample->getSize());
+		shared_ptr<Patch> patch = featureExtractor->extract(sample->getX(), sample->getY(), sample->getWidth(), sample->getHeight());
 		if (patch)
 			trainingExamples.push_back(patch->getData());
 	}

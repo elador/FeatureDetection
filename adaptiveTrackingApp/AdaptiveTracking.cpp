@@ -403,7 +403,7 @@ void AdaptiveTracking::drawBox(Mat& image) {
 
 void AdaptiveTracking::drawGroundTruth(Mat& image, const LandmarkCollection& landmarks) {
 	if (!landmarks.isEmpty())
-		landmarks.getLandmark().draw(image, cv::Scalar(255, 204, 102), 2);
+		landmarks.getLandmark().draw(image, cv::Scalar(255, 153, 102), 2);
 }
 
 void AdaptiveTracking::drawTarget(Mat& image, optional<Rect> target, optional<Sample> state, bool usedAdaptive) {
@@ -441,8 +441,7 @@ void AdaptiveTracking::onMouse(int event, int x, int y, int, void* userdata) {
 			float aspectRatio = static_cast<float>(position.height) / static_cast<float>(position.width);
 			double patchWidth = sqrt(dimension / aspectRatio);
 			double patchHeight = aspectRatio * patchWidth;
-			tracking->patchExtractor->setPatchWidth(cvRound(patchWidth));
-			tracking->patchExtractor->setPatchHeight(cvRound(patchHeight));
+			tracking->patchExtractor->setPatchSize(cvRound(patchWidth), cvRound(patchHeight));
 			log.info("Initialized patch size at " + lexical_cast<string>(tracking->patchExtractor->getPatchWidth())
 					+ " x " + lexical_cast<string>(tracking->patchExtractor->getPatchHeight()));
 
@@ -524,8 +523,7 @@ void AdaptiveTracking::run() {
 						float aspectRatio = landmark.getHeight() / landmark.getWidth();
 						double patchWidth = sqrt(dimension / aspectRatio);
 						double patchHeight = aspectRatio * patchWidth;
-						patchExtractor->setPatchWidth(cvRound(patchWidth));
-						patchExtractor->setPatchHeight(cvRound(patchHeight));
+						patchExtractor->setPatchSize(cvRound(patchWidth), cvRound(patchHeight));
 						log.info("Initialized patch size at " + lexical_cast<string>(patchExtractor->getPatchWidth())
 								+ " x " + lexical_cast<string>(patchExtractor->getPatchHeight()));
 					}

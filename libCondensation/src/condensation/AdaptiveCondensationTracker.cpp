@@ -35,6 +35,7 @@ AdaptiveCondensationTracker::~AdaptiveCondensationTracker() {}
 bool AdaptiveCondensationTracker::initialize(const Mat& imageData, const Rect& positionData) {
 	image->setData(imageData);
 	samples.clear();
+	Sample::setAspectRatio(positionData.width, positionData.height);
 	Sample position(positionData.x + positionData.width / 2, positionData.y + positionData.height / 2, positionData.width);
 	measurementModel->adapt(image, samples, position);
 	if (measurementModel->isUsable()) {

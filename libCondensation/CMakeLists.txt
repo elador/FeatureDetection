@@ -44,6 +44,7 @@ SET(SOURCE
 	src/condensation/PartiallyAdaptiveCondensationTracker.cpp
 	src/condensation/PositionDependentMeasurementModel.cpp
 	src/condensation/ResamplingSampler.cpp
+	src/condensation/Sample.cpp
 	src/condensation/SelfLearningMeasurementModel.cpp
 	src/condensation/SimpleTransitionModel.cpp
 	src/condensation/SingleClassifierModel.cpp

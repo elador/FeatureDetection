@@ -41,7 +41,7 @@ void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& sam
 	unordered_map<shared_ptr<Patch>, vector<Sample*>> patch2samples;
 	for (auto sample = samples.begin(); sample != samples.end(); ++sample) {
 		sample->setObject(false);
-		shared_ptr<Patch> patch = featureExtractor->extract(sample->getX(), sample->getY(), sample->getSize(), sample->getSize());
+		shared_ptr<Patch> patch = featureExtractor->extract(sample->getX(), sample->getY(), sample->getWidth(), sample->getHeight());
 		if (!patch) {
 			sample->setWeight(0);
 		} else {

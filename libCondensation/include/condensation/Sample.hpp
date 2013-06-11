@@ -16,6 +16,7 @@ namespace condensation {
 
 /**
  * Weighted sample representing a square image region with position and size (x, y, size) and according change (vx, vy, vsize).
+ * The size is supposed to be the width of the sample, whereas the height depends on the aspect ratio of all samples.
  */
 class Sample {
 public:
@@ -53,8 +54,7 @@ public:
 	 * @return The square bounding box representing this sample.
 	 */
 	Rect getBounds() const {
-		int halfSize = size / 2;
-		return Rect(x - halfSize, y - halfSize, size, size);
+		return Rect(x - getWidth() / 2, y - getHeight() / 2, getWidth(), getHeight());
 	}
 
 	/**
@@ -97,6 +97,20 @@ public:
 	 */
 	void setSize(int size) {
 		this->size = size;
+	}
+
+	/**
+	 * @return The width.
+	 */
+	int getWidth() const {
+		return size;
+	}
+
+	/**
+	 * @return The height.
+	 */
+	int getHeight() const {
+		return cvRound(Sample::aspectRatio * size);
 	}
 
 	/**
@@ -215,7 +229,29 @@ public:
 		}
 	};
 
+	/**
+	 * Changes the aspect ratio of all samples.
+	 *
+	 * @param[in] aspectRatio The new aspect ratio of all samples.
+	 */
+	static void setAspectRatio(double aspectRatio) {
+		Sample::aspectRatio = aspectRatio;
+	}
+
+	/**
+	 * Changes the aspect ratio of all samples to the ratio between the given width and height.
+	 *
+	 * @param[in] width The width to relate the given height to.
+	 * @param[in] height The height defining the aspect ratio relative to the width.
+	 */
+	static void setAspectRatio(int width, int height) {
+		setAspectRatio(static_cast<double>(height) / static_cast<double>(width));
+	}
+
+	static double aspectRatio; ///< The aspect ratio of all samples. Cannot be made private, because C++.
+
 private:
+
 	int x;         ///< The x coordinate of the center.
 	int y;         ///< The y coordinate of the center.
 	int size;      ///< The size.

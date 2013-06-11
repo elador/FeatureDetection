@@ -179,7 +179,7 @@ vector<Mat> PositionDependentMeasurementModel::getFeatureVectors(vector<Sample>&
 	vector<Mat> trainingExamples;
 	trainingExamples.reserve(samples.size());
 	for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample) {
-		shared_ptr<Patch> patch = featureExtractor->extract(sample->getX(), sample->getY(), sample->getSize(), sample->getSize());
+		shared_ptr<Patch> patch = featureExtractor->extract(sample->getX(), sample->getY(), sample->getWidth(), sample->getHeight());
 		if (patch)
 			trainingExamples.push_back(patch->getData());
 	}
