@@ -8,7 +8,7 @@
 #ifndef GRADIENTHISTOGRAMFILTER_HPP_
 #define GRADIENTHISTOGRAMFILTER_HPP_
 
-#include "imageprocessing/ImageFilter.hpp"
+#include "imageprocessing/HistogramFilter.hpp"
 #include <array>
 
 using cv::Vec2b;
@@ -22,7 +22,7 @@ namespace imageprocessing {
  * channel corresponds to the histogram bin (according to the gradient direction) and the second channel corresponds
  * to the weight (according to the magnitude of the gradient).
  */
-class GradientHistogramFilter : public ImageFilter {
+class GradientHistogramFilter : public HistogramFilter {
 public:
 
 	/**
@@ -32,7 +32,7 @@ public:
 	 * @param[in] signedGradients Flag that indicates whether signed gradients (direction from 0° to 360°) should be used.
 	 * @param[in] offset Lower boundary of the first bin.
 	 */
-	explicit GradientHistogramFilter(int bins, bool signedGradients = false, double offset = 0);
+	explicit GradientHistogramFilter(unsigned int bins, bool signedGradients = false, double offset = 0);
 
 	~GradientHistogramFilter();
 
@@ -42,8 +42,11 @@ public:
 
 	void applyInPlace(Mat& image);
 
+	unsigned int getBinCount() const;
+
 private:
 
+	unsigned int bins; ///< The amount of bins.
 	double offset; ///< Lower boundary of the first bin.
 	array<Vec2b, 256 * 256> binCodes; ///< The look-up tables of the bin codes, the gradient codes are used as the index.
 };

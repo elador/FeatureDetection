@@ -27,6 +27,7 @@ SET(HEADERS
 	include/imageprocessing/HistEq64Filter.hpp
 	include/imageprocessing/HistogramEqualizationFilter.hpp
 	include/imageprocessing/HistogramFeatureExtractor.hpp
+	include/imageprocessing/HistogramFilter.hpp
 	include/imageprocessing/ImageFilter.hpp
 	include/imageprocessing/ImagePyramid.hpp
 	include/imageprocessing/ImagePyramidLayer.hpp

@@ -13,6 +13,7 @@
 #include "imageio/LandmarkCollection.hpp"
 #include "imageprocessing/FeatureExtractor.hpp"
 #include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
+#include "imageprocessing/LbpFilter.hpp"
 #include "classification/Kernel.hpp"
 #include "classification/TrainableSvmClassifier.hpp"
 #include "classification/TrainableProbabilisticClassifier.hpp"
@@ -69,6 +70,7 @@ private:
 	static void onMouse(int event, int x, int y, int, void* userdata);
 
 	shared_ptr<FeatureExtractor> createFeatureExtractor(shared_ptr<DirectPyramidFeatureExtractor> patchExtractor, ptree config);
+	shared_ptr<LbpFilter> createLbpFilter(string lbpType);
 	shared_ptr<FeatureExtractor> createHistogramFeatureExtractor(shared_ptr<DirectPyramidFeatureExtractor> patchExtractor, unsigned int bins, ptree config);
 	shared_ptr<FeatureExtractor> wrapFeatureExtractor(shared_ptr<FeatureExtractor> featureExtractor, float scaleFactor);
 	shared_ptr<Kernel> createKernel(ptree config);

@@ -12,7 +12,8 @@ using std::invalid_argument;
 
 namespace imageprocessing {
 
-GradientHistogramFilter::GradientHistogramFilter(int bins, bool signedGradients, double offset) : offset(offset) {
+GradientHistogramFilter::GradientHistogramFilter(unsigned int bins, bool signedGradients, double offset) :
+		bins(bins), offset(offset) {
 	union {
 		ushort index;
 		struct {
@@ -48,6 +49,10 @@ GradientHistogramFilter::GradientHistogramFilter(int bins, bool signedGradients,
 }
 
 GradientHistogramFilter::~GradientHistogramFilter() {}
+
+unsigned int GradientHistogramFilter::getBinCount() const {
+	return bins;
+}
 
 Mat GradientHistogramFilter::applyTo(const Mat& image, Mat& filtered) {
 	if (image.type() != CV_8UC2)

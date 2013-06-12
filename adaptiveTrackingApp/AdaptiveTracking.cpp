@@ -23,7 +23,6 @@
 #include "imageprocessing/WhiteningFilter.hpp"
 #include "imageprocessing/ZeroMeanUnitVarianceFilter.hpp"
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
-#include "imageprocessing/LbpFilter.hpp"
 #include "imageprocessing/GradientFilter.hpp"
 #include "imageprocessing/GradientMagnitudeFilter.hpp"
 #include "imageprocessing/GradientHistogramFilter.hpp"
@@ -103,18 +102,35 @@ shared_ptr<FeatureExtractor> AdaptiveTracking::createFeatureExtractor(
 		return wrapFeatureExtractor(createHistogramFeatureExtractor(patchExtractor,
 				config.get<int>("bins"), config.get_child("histogram")), scaleFactor);
 	} else if (config.get_value<string>() == "lbp") {
-		patchExtractor->addLayerFilter(make_shared<LbpFilter>(config.get<bool>("uniform")));
+		shared_ptr<LbpFilter> lbpFilter = createLbpFilter(config.get<string>("lbptype"));
+		patchExtractor->addLayerFilter(lbpFilter);
 		return wrapFeatureExtractor(createHistogramFeatureExtractor(patchExtractor,
-				config.get<bool>("uniform") ? 59 : 256, config.get_child("histogram")), scaleFactor);
+				lbpFilter->getBinCount(), config.get_child("histogram")), scaleFactor);
 	} else if (config.get_value<string>() == "glbp") {
+		shared_ptr<LbpFilter> lbpFilter = createLbpFilter(config.get<string>("lbptype"));
 		patchExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
 		patchExtractor->addLayerFilter(make_shared<GradientMagnitudeFilter>());
-		patchExtractor->addLayerFilter(make_shared<LbpFilter>(config.get<bool>("uniform")));
+		patchExtractor->addLayerFilter(lbpFilter);
 		return wrapFeatureExtractor(createHistogramFeatureExtractor(patchExtractor,
-				config.get<bool>("uniform") ? 59 : 256, config.get_child("histogram")), scaleFactor);
+				lbpFilter->getBinCount(), config.get_child("histogram")), scaleFactor);
 	} else {
 		throw invalid_argument("AdaptiveTracking: invalid feature type: " + config.get<string>("feature"));
 	}
+}
+
+shared_ptr<LbpFilter> AdaptiveTracking::createLbpFilter(string lbpType) {
+	LbpFilter::Type type;
+	if (lbpType == "lbp8")
+		type = LbpFilter::Type::LBP8;
+	else if (lbpType == "lbp8uniform")
+		type = LbpFilter::Type::LBP8_UNIFORM;
+	else if (lbpType == "lbp4")
+		type = LbpFilter::Type::LBP4;
+	else if (lbpType == "lbp4rotated")
+		type = LbpFilter::Type::LBP4_ROTATED;
+	else
+		throw invalid_argument("AdaptiveTracking: invalid LBP type: " + lbpType);
+	return make_shared<LbpFilter>(type);
 }
 
 shared_ptr<FeatureExtractor> AdaptiveTracking::createHistogramFeatureExtractor(
