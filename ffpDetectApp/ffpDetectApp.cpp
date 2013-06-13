@@ -355,6 +355,7 @@ int main(int argc, char *argv[])
 
 	// lm-loading
 	// output-dir
+	// only one input switch -i, auto detect list, dir, ...
 	// load ffd/ROI
 	// relative bilder-pfad aus filelist
 	// our libs: add library dependencies (eg to boost) in add_library ?

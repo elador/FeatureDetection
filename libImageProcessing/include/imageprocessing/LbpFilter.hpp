@@ -64,8 +64,8 @@ private:
 	public:
 
 		Filter() {
-			anchor = { 1, 1 };
-			ksize = { 3, 3 };
+			anchor = cv::Point(1, 1);
+			ksize = cv::Size(3, 3);
 		}
 
 		~Filter() {}
