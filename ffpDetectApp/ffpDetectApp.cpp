@@ -355,11 +355,9 @@ int main(int argc, char *argv[])
 
 	// lm-loading
 	// output-dir
-	// only one input switch -i, auto detect list, dir, ...
 	// load ffd/ROI
 	// relative bilder-pfad aus filelist
 	// our libs: add library dependencies (eg to boost) in add_library ?
-	// -f file.png fails?
 	// log (text) what is going on. Eg detecting on image... bla... Svm reduced from x to y...
 	//       where to put this? as deep as possible? (eg just there where the variable needed (eg filename, 
 	//       detector-name is still visible). I think for OE there's already something in it.
@@ -394,7 +392,7 @@ int main(int argc, char *argv[])
 
 		stringstream ss;
 		ss << std::ctime(&end_time);
-		appLogger.info("finished computation at " + ss.str() + "elapsed time: " + lexical_cast<string>(elapsed_seconds) + "s, " + lexical_cast<string>(elapsed_mseconds) + "ms\n");
+		appLogger.info("finished computation at " + ss.str() + "elapsed time: " + lexical_cast<string>(elapsed_seconds) + "s or exactly " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
 
 		TOT++;
 		vector<string> resultingPatches;
