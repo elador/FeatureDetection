@@ -33,7 +33,7 @@ ImageFileWriter::ImageFileWriter(loglevel logLevel, path directory) : Appender(l
 			boost::filesystem::create_directory(directory);
 			// TODO use text-logging, output dir-creation
 		} catch(const boost::filesystem::filesystem_error& e) {
-			std::cout << "Error!" << std::endl; // TODO use text-logging
+			std::cout << "ImageFileWriter: Error while creating directory: " << e.what() << std::endl; // TODO use text-logging
 		}
 	}
 }
