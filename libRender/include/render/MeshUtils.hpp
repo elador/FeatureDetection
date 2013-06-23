@@ -10,7 +10,7 @@
 #ifndef MESHUTILS_HPP_
 #define MESHUTILS_HPP_
 
-#include <opencv2/core/core.hpp>
+#include "opencv2/core/core.hpp"
 
 #include "render/Mesh.hpp"
 
@@ -27,6 +27,7 @@ namespace render {
 			static Mesh createPlane(void);
 
 			static Mesh readFromHdf5(std::string filename);
+			static Mesh readFromScm(std::string filename);
 
 		};
 

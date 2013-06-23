@@ -25,15 +25,15 @@
 #include <iostream>
 #include <fstream>
 
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include "opencv2/core/core.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
 
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
-#include <boost/program_options.hpp>
+#include "boost/program_options.hpp"
 
 
 namespace po = boost::program_options;
@@ -89,10 +89,13 @@ int main(int argc, char *argv[])
 	render::Mesh cube = render::utils::MeshUtils::createCube();
 	render::Mesh plane = render::utils::MeshUtils::createPlane();
 
+	//render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("D:\\model2012_l6_rms.h5");
+	render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromScm("D:\\MorphModel\\ShpVtxModelBin.scm");
+
 	const float& aspect = 640.0f/480.0f;
 
 	//render::Renderer->camera.setFrustum(-0.25f*aspect, 0.25f*aspect, 0.25f, -0.25f, 0.5f, 500.0f);
-	render::Renderer->camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, 5.0f, 1000.0f);
+	render::Renderer->camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, 5.0f, 5000.0f);
 
 	// loop start
 	bool running = true;
@@ -129,15 +132,16 @@ int main(int argc, char *argv[])
 		plane.hasTexture = false;
 		render::Renderer->setMesh(&plane);	// The plane is the second object
 		cv::Mat wrld = viewProjTransform * render::utils::MatrixUtils::createScalingMatrix(15.0f, 1.0f, 15.0f);
-		std::cout << "MVP " << std::endl  << wrld << std::endl;
 		render::Renderer->setTransform(wrld);
 		//render::Renderer->setTexture(plane.texture);
 		render::Renderer->draw();
 		
-		render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("H:\\projects\\Software Renderer\\statismo_l4_head.h5");
+
 		render::Renderer->setMesh(&mmHeadL4);
 		cv::Mat headWorld = render::utils::MatrixUtils::createScalingMatrix(1.0f/70.0f, 1.0f/70.0f, 1.0f/70.0f);
-		render::Renderer->setTransform(viewProjTransform/* headWorld*/);
+		cv::Mat mvp_3dmm = viewProjTransform * headWorld;
+		std::cout << "MVP " << std::endl  << mvp_3dmm << std::endl;
+		render::Renderer->setTransform(mvp_3dmm);
 		render::Renderer->draw();
 		
 		render::Renderer->end();
@@ -145,8 +149,8 @@ int main(int argc, char *argv[])
 		cv::namedWindow("renderOutput");
 		cv::imshow("renderOutput", render::Renderer->getRendererImage());
 
-		float speed = 20.0f;
-		float mouseSpeed = 0.2f;
+		float speed = 5.0f;
+		float mouseSpeed = 0.15f;
 		cv::Vec3f eye = render::Renderer->camera.getEye();
 		float deltaTime = 1.0f;
 

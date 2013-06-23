@@ -3,13 +3,18 @@ PROJECT( ${PROJECT_NAME} )
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 # G++ needs a compiler flag to use the (experimental) C++11 support
-# TODO: This should go into initial_cache.cmake! We require C++11 anyway.
+# TODO: Should this go into initial_cache.cmake? We require C++11 anyway.
 #       In addition, it doesn't interfere with the compilation on windows, but is not necessary there.
+
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-std=c++11 HAS_CXX11_FLAG)
 if (HAS_CXX11_FLAG)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
+
+#IF(WIN32)
+#	option (WITH_KINECT_SDK "Use the Microsoft Kinect SDK" OFF)
+#ENDIF()
 
 add_subdirectory(libLogging)			# Text logging
 add_subdirectory(libImageLogging)		# Image logging

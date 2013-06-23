@@ -14,6 +14,7 @@
 
 #include <array>
 #include <iostream>
+#include <fstream>
 
 namespace render {
 	namespace utils {
@@ -119,7 +120,7 @@ Mesh MeshUtils::createCube(void)
 	cube.triangleList.push_back(render::Triangle(cube.vertex[20], cube.vertex[21], cube.vertex[22]));
 	cube.triangleList.push_back(render::Triangle(cube.vertex[20], cube.vertex[22], cube.vertex[23]));*/
 
-	cube.texture.createFromFile("data/crate.png");
+	cube.texture.createFromFile("D:/crate.jpg");
 	cube.hasTexture = true;
 
 	return cube;
@@ -158,7 +159,7 @@ Mesh MeshUtils::createPlane(void)
 	//plane.triangleList.push_back(render::Triangle(plane.vertex[0], plane.vertex[1], plane.vertex[2]));
 	//plane.triangleList.push_back(render::Triangle(plane.vertex[0], plane.vertex[2], plane.vertex[3]));
 
-	plane.texture.createFromFile("data/rocks.png");
+	plane.texture.createFromFile("D:/rocks.png");
 	plane.hasTexture = true;
 
 	return plane;
@@ -228,30 +229,174 @@ Mesh MeshUtils::readFromHdf5(std::string filename)
 			mesh.vertex[i].color = cv::Vec3f(matColor.at<float>(i, 2), matColor.at<float>(i, 1), matColor.at<float>(i, 0));	// order in hdf5: RGB. Order in OCV/vertex.color: BGR
 		}
 
-		// triangle list
-		// get the integer matrix
-		ds = fg.openDataSet( "./triangle-color-indices" );
-		//hsize_t dims[2];
-		ds.getSpace().getSimpleExtentDims(dims, NULL);
-		cv::Mat matTLC((int)dims[0], (int)dims[1], CV_32SC1);	// int
-		//matTLC.resize(dims[0], dims[1]);
-		ds.read( matTLC.data, H5::PredType::NATIVE_INT32);
-		ds.close();
-		
-		if ( matTLC.cols != 3 )
-			throw std::runtime_error("Reference reading failed, triangle-color-indices has not 3 indices per entry");
-
-		mesh.tci.resize( matTLC.rows );
-		for ( size_t i = 0; i < matTLC.rows; ++i ) {
-			mesh.tci[i][0] = matTLC.at<int>(i, 0);
-			mesh.tci[i][1] = matTLC.at<int>(i, 1);
-			mesh.tci[i][2] = matTLC.at<int>(i, 2);
+// 		// triangle list
+// 		// get the integer matrix
+// 		ds = fg.openDataSet( "./triangle-color-indices" );
+// 		//hsize_t dims[2];
+// 		ds.getSpace().getSimpleExtentDims(dims, NULL);
+// 		cv::Mat matTLC((int)dims[0], (int)dims[1], CV_32SC1);	// int
+// 		//matTLC.resize(dims[0], dims[1]);
+// 		ds.read( matTLC.data, H5::PredType::NATIVE_INT32);
+// 		ds.close();
+// 		
+// 		if ( matTLC.cols != 3 )
+// 			throw std::runtime_error("Reference reading failed, triangle-color-indices has not 3 indices per entry");
+// 
+// 		mesh.tci.resize( matTLC.rows );
+// 		for ( size_t i = 0; i < matTLC.rows; ++i ) {
+// 			mesh.tci[i][0] = matTLC.at<int>(i, 0);
+// 			mesh.tci[i][1] = matTLC.at<int>(i, 1);
+// 			mesh.tci[i][2] = matTLC.at<int>(i, 2);
+// 		}
+		mesh.tci.resize( matTL.rows );
+		for ( size_t i = 0; i < matTL.rows; ++i ) {
+			mesh.tci[i][0] = matTL.at<int>(i, 0);
+			mesh.tci[i][1] = matTL.at<int>(i, 1);
+			mesh.tci[i][2] = matTL.at<int>(i, 2);
 		}
 
 		fg.close();
 	//}
 
 	h5Model.close();
+
+	mesh.hasTexture = false;
+
+	return mesh; // pReference
+}
+
+Mesh MeshUtils::readFromScm(std::string filename)
+{
+	Mesh mesh;
+
+	// Shape:
+	unsigned int numVertices = 0;
+	unsigned int numTriangles = 0;
+	std::vector<unsigned int> triangles;
+	unsigned int numShapePcaCoeffs = 0;
+	unsigned int numShapeDims = 0;	// what's that?
+	std::vector<double> pcaBasisMatrixShp;	// numShapePcaCoeffs * numShapeDims
+	unsigned int numMean = 0; // what's that?
+	//std::vector<double> meanVertices;
+	unsigned int numEigenVals = 0;
+	std::vector<double> eigenVals;
+	
+	// Texture:
+	unsigned int numTexturePcaCoeffs = 0;
+	unsigned int numTextureDims = 0;
+	std::vector<double> pcaBasisMatrixTex;	// numTexturePcaCoeffs * numTextureDims
+	unsigned int numMeanTex = 0; // what's that?
+	//std::vector<double> meanVerticesTex; // color mean for each vertex of the mean
+	unsigned int numEigenValsTex = 0;
+	std::vector<double> eigenValsTex;
+
+	if(sizeof(unsigned int) != 4) {
+		std::cout << "Warning: We're reading 4 Bytes from the file but sizeof(unsigned int) != 4. Check the code/behaviour." << std::endl;
+	}
+	if(sizeof(double) != 8) {
+		std::cout << "Warning: We're reading 8 Bytes from the file but sizeof(double) != 8. Check the code/behaviour." << std::endl;
+	}
+
+	std::ifstream modelFile;
+	modelFile.open(filename, std::ios::binary);
+	if (!modelFile.is_open()) {
+		std::cout << "Could not open model file: " << filename << std::endl;
+		exit(EXIT_FAILURE); // Todo use the logger & stuff
+	}
+
+	// make a MM and load both the shape and color models (maybe in another function). For now, we only load the mesh & color info.
+
+	// 1 char = 1 byte. uint32=4bytes. float64=8bytes.
+
+	//READING SHAPE MODEL
+	// Read (reference?) num triangles and vertices
+	modelFile.read(reinterpret_cast<char*>(&numVertices), 4);
+	modelFile.read(reinterpret_cast<char*>(&numTriangles), 4);
+
+	//Read triangles
+	mesh.tvi.resize(numTriangles);
+	mesh.tci.resize(numTriangles);
+	unsigned int v0, v1, v2;
+	for (unsigned int i=0; i < numTriangles; ++i) {
+		v0 = v1 = v2 = 0;
+		modelFile.read(reinterpret_cast<char*>(&v0), 4);	// would be nice to pass a &vector and do it in one
+		modelFile.read(reinterpret_cast<char*>(&v1), 4);	// go, but didn't work. Maybe a cv::Mat would work?
+		modelFile.read(reinterpret_cast<char*>(&v2), 4);
+		mesh.tvi[i][0] = v0;
+		mesh.tvi[i][1] = v1;
+		mesh.tvi[i][2] = v2;	// do probably the same for tci
+		
+		mesh.tci[i][0] = v0;
+		mesh.tci[i][1] = v1;
+		mesh.tci[i][2] = v2;
+		
+	}
+	
+	//Read number of rows and columns of the shape projection matrix (pcaBasis)
+	modelFile.read(reinterpret_cast<char*>(&numShapePcaCoeffs), 4);
+	modelFile.read(reinterpret_cast<char*>(&numShapeDims), 4);
+
+	//Read shape projection matrix
+	for (unsigned int i=0; i < numShapePcaCoeffs*numShapeDims; ++i) {
+		double var = 0.0;
+		modelFile.read(reinterpret_cast<char*>(&var), 8);
+		pcaBasisMatrixShp.push_back(var);
+	} // TODO convert from column vec to matrix
+
+	//Read mean shape vector
+	modelFile.read(reinterpret_cast<char*>(&numMean), 4);
+	mesh.vertex.resize(numMean/3);
+	double vd0, vd1, vd2;
+	for (unsigned int i=0; i < numMean/3; ++i) {
+		vd0 = vd1 = vd2 = 0.0;
+		modelFile.read(reinterpret_cast<char*>(&vd0), 8);
+		modelFile.read(reinterpret_cast<char*>(&vd1), 8);
+		modelFile.read(reinterpret_cast<char*>(&vd2), 8);
+		//meanVertices.push_back(var);
+		mesh.vertex[i].position = cv::Vec4f(vd0, vd1, vd2, 1.0f);
+	}
+
+	//Read shape eigen values
+	modelFile.read(reinterpret_cast<char*>(&numEigenVals), 4);
+	for (unsigned int i=0; i < numEigenVals; ++i) {
+		double var = 0.0;
+		modelFile.read(reinterpret_cast<char*>(&var), 8);
+		eigenVals.push_back(var);
+	}
+
+	//READING TEXTURE MODEL
+	//Read number of rows and columns of projection matrix 
+	modelFile.read(reinterpret_cast<char*>(&numTexturePcaCoeffs), 4);
+	modelFile.read(reinterpret_cast<char*>(&numTextureDims), 4);
+	//Read texture projection matrix
+	for (unsigned int i=0; i < numTexturePcaCoeffs*numTextureDims; ++i) {
+		double var = 0.0;
+		modelFile.read(reinterpret_cast<char*>(&var), 8);
+		pcaBasisMatrixTex.push_back(var);
+	} // TODO convert from column vec to matrix
+
+	//Read mean texture vector
+	modelFile.read(reinterpret_cast<char*>(&numMeanTex), 4);
+	for (unsigned int i=0; i < numMeanTex/3; ++i) {
+		//double var = 0.0;
+		vd0 = vd1 = vd2 = 0.0;
+		modelFile.read(reinterpret_cast<char*>(&vd0), 8);
+		modelFile.read(reinterpret_cast<char*>(&vd1), 8);
+		modelFile.read(reinterpret_cast<char*>(&vd2), 8);
+		//meanVerticesTex.push_back(var);
+		mesh.vertex[i].color = cv::Vec3f(vd2, vd1, vd0);	// order in hdf5: RGB. Order in OCV/vertex.color: BGR
+
+	}
+
+	//Read shape eigen values
+	modelFile.read(reinterpret_cast<char*>(&numEigenValsTex), 4);
+	for (unsigned int i=0; i < numEigenValsTex; ++i) {
+		double var = 0.0;
+		modelFile.read(reinterpret_cast<char*>(&var), 8);
+		eigenValsTex.push_back(var);
+	}
+
+	modelFile.close();
 
 	mesh.hasTexture = false;
 
