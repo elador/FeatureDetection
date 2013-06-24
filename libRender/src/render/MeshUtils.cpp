@@ -10,7 +10,7 @@
 #include "render/MeshUtils.hpp"
 #include "render/Hdf5Utils.hpp"
 
-#include <opencv2/core/core.hpp>
+#include "opencv2/core/core.hpp"
 
 #include <array>
 #include <iostream>
@@ -265,8 +265,9 @@ Mesh MeshUtils::readFromHdf5(std::string filename)
 	return mesh; // pReference
 }
 
-Mesh MeshUtils::readFromScm(std::string filename)
+MorphableModel MeshUtils::readFromScm(std::string filename)
 {
+	MorphableModel mm;
 	Mesh mesh;
 
 	// Shape:
@@ -337,14 +338,21 @@ Mesh MeshUtils::readFromScm(std::string filename)
 	modelFile.read(reinterpret_cast<char*>(&numShapeDims), 4);
 
 	//Read shape projection matrix
-	for (unsigned int i=0; i < numShapePcaCoeffs*numShapeDims; ++i) {
-		double var = 0.0;
-		modelFile.read(reinterpret_cast<char*>(&var), 8);
-		pcaBasisMatrixShp.push_back(var);
-	} // TODO convert from column vec to matrix
+	mm.matPcaBasisShp = cv::Mat(numShapeDims, numShapePcaCoeffs, CV_64FC1);
+	// m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
+	std::cout << mm.matPcaBasisShp.rows << ", " << mm.matPcaBasisShp.cols << std::endl;
+	for (unsigned int col = 0; col < numShapePcaCoeffs; ++col) {
+		for (unsigned int row = 0; row < numShapeDims; ++row) {
+			double var = 0.0;
+			modelFile.read(reinterpret_cast<char*>(&var), 8);
+			mm.matPcaBasisShp.at<double>(row, col) = var;
+		}
+	}
 
 	//Read mean shape vector
 	modelFile.read(reinterpret_cast<char*>(&numMean), 4);
+	mm.matMeanShp = cv::Mat(numMean, 1, CV_64FC1);
+	unsigned int matCounter = 0;
 	mesh.vertex.resize(numMean/3);
 	double vd0, vd1, vd2;
 	for (unsigned int i=0; i < numMean/3; ++i) {
@@ -354,14 +362,23 @@ Mesh MeshUtils::readFromScm(std::string filename)
 		modelFile.read(reinterpret_cast<char*>(&vd2), 8);
 		//meanVertices.push_back(var);
 		mesh.vertex[i].position = cv::Vec4f(vd0, vd1, vd2, 1.0f);
+		
+		mm.matMeanShp.at<double>(matCounter, 0) = vd0;
+		++matCounter;
+		mm.matMeanShp.at<double>(matCounter, 0) = vd1;
+		++matCounter;
+		mm.matMeanShp.at<double>(matCounter, 0) = vd2;
+		++matCounter;
 	}
 
-	//Read shape eigen values
+	//Read shape eigenvalues
 	modelFile.read(reinterpret_cast<char*>(&numEigenVals), 4);
+	mm.matEigenvalsShp = cv::Mat(numEigenVals, 1, CV_64FC1);
 	for (unsigned int i=0; i < numEigenVals; ++i) {
 		double var = 0.0;
 		modelFile.read(reinterpret_cast<char*>(&var), 8);
 		eigenVals.push_back(var);
+		mm.matEigenvalsShp.at<double>(i, 0) = var;
 	}
 
 	//READING TEXTURE MODEL
@@ -369,14 +386,20 @@ Mesh MeshUtils::readFromScm(std::string filename)
 	modelFile.read(reinterpret_cast<char*>(&numTexturePcaCoeffs), 4);
 	modelFile.read(reinterpret_cast<char*>(&numTextureDims), 4);
 	//Read texture projection matrix
-	for (unsigned int i=0; i < numTexturePcaCoeffs*numTextureDims; ++i) {
-		double var = 0.0;
-		modelFile.read(reinterpret_cast<char*>(&var), 8);
-		pcaBasisMatrixTex.push_back(var);
-	} // TODO convert from column vec to matrix
+	mm.matPcaBasisTex = cv::Mat(numTextureDims, numTexturePcaCoeffs, CV_64FC1);
+	std::cout << mm.matPcaBasisTex.rows << ", " << mm.matPcaBasisTex.cols << std::endl;
+	for (unsigned int col = 0; col < numTexturePcaCoeffs; ++col) {
+		for (unsigned int row = 0; row < numTextureDims; ++row) {
+			double var = 0.0;
+			modelFile.read(reinterpret_cast<char*>(&var), 8);
+			mm.matPcaBasisTex.at<double>(row, col) = var;
+		}
+	}
 
 	//Read mean texture vector
 	modelFile.read(reinterpret_cast<char*>(&numMeanTex), 4);
+	mm.matMeanTex = cv::Mat(numMeanTex, 1, CV_64FC1);
+	matCounter = 0;
 	for (unsigned int i=0; i < numMeanTex/3; ++i) {
 		//double var = 0.0;
 		vd0 = vd1 = vd2 = 0.0;
@@ -386,21 +409,30 @@ Mesh MeshUtils::readFromScm(std::string filename)
 		//meanVerticesTex.push_back(var);
 		mesh.vertex[i].color = cv::Vec3f(vd2, vd1, vd0);	// order in hdf5: RGB. Order in OCV/vertex.color: BGR
 
+		mm.matMeanTex.at<double>(matCounter, 0) = vd0;
+		++matCounter;
+		mm.matMeanTex.at<double>(matCounter, 0) = vd1;
+		++matCounter;
+		mm.matMeanTex.at<double>(matCounter, 0) = vd2;
+		++matCounter;
 	}
 
-	//Read shape eigen values
+	//Read texture eigenvalues
 	modelFile.read(reinterpret_cast<char*>(&numEigenValsTex), 4);
+	mm.matEigenvalsTex = cv::Mat(numEigenValsTex, 1, CV_64FC1);
 	for (unsigned int i=0; i < numEigenValsTex; ++i) {
 		double var = 0.0;
 		modelFile.read(reinterpret_cast<char*>(&var), 8);
 		eigenValsTex.push_back(var);
+		mm.matEigenvalsTex.at<double>(i, 0) = var;
 	}
 
 	modelFile.close();
 
 	mesh.hasTexture = false;
 
-	return mesh; // pReference
+	mm.mesh = mesh;
+	return mm; // pReference
 }
 
 	} /* END namespace utils */

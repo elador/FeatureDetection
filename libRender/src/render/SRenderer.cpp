@@ -62,7 +62,7 @@ void SRenderer::setViewport(unsigned int screenWidth, unsigned int screenHeight)
 						  0.0f,							 0.0f,						1.0f,	0.0f,
 						  (float)screenWidth/2.0f,		 (float)screenHeight/2.0f,	0.0f,	1.0f);*/	//<-- original
 	this->windowTransform = (cv::Mat_<float>(4,4) << 
-		(float)screenWidth/2.0f,		0.0f,						0.0f,	(float)screenWidth/2.0f,
+		(float)screenWidth/2.0f,		0.0f,						0.0f,	(float)screenWidth/2.0f, // CG book says (screenWidth-1)/2.0f for second value?
 		0.0f,							(float)screenHeight/2.0f,	0.0f,	(float)screenHeight/2.0f,
 		0.0f,							0.0f,						1.0f,	0.0f,
 		0.0f,							0.0f,						0.0f,	1.0f);
@@ -87,13 +87,13 @@ cv::Mat SRenderer::constructProjTransform()
 	cv::Mat perspective = (cv::Mat_<float>(4,4) << 
 						camera.frustum.n,	0.0f,				0.0f,									0.0f,
 						0.0f,				camera.frustum.n,	0.0f,									0.0f,
-						0.0f,				0.0f,				camera.frustum.n + camera.frustum.f,	camera.frustum.n * camera.frustum.f,
-						0.0f,				0.0f,				-1.0f,									0.0f);
+						0.0f,				0.0f,				camera.frustum.n + camera.frustum.f,	camera.frustum.n * camera.frustum.f, // CG book has -f*n ?
+						0.0f,				0.0f,				-1.0f,	/* CG has +1 here */			0.0f);
 	
 	cv::Mat orthogonal = (cv::Mat_<float>(4,4) << 
 		2.0f / (camera.frustum.r - camera.frustum.l),	0.0f,											0.0f,											-(camera.frustum.r + camera.frustum.l) / (camera.frustum.r - camera.frustum.l),
 		0.0f,											2.0f / (camera.frustum.t - camera.frustum.b),	0.0f,											-(camera.frustum.t + camera.frustum.b) / (camera.frustum.t - camera.frustum.b),
-		0.0f,											0.0f,											-2.0f / (camera.frustum.f - camera.frustum.n),	-(camera.frustum.n + camera.frustum.f) / (camera.frustum.f - camera.frustum.n),
+		0.0f,											0.0f,											2.0f / (camera.frustum.n - camera.frustum.f),	-(camera.frustum.n + camera.frustum.f) / (camera.frustum.f - camera.frustum.n), // CG book has below (n-f) ?
 		0.0f,											0.0f,											0.0f,											1.0f);
 	
 	return orthogonal * perspective;

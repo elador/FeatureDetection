@@ -13,6 +13,7 @@
    #endif
 #endif  // _DEBUG
 
+#include "render/MorphableModel.hpp"
 #include "render/SRenderer.hpp"
 #include "render/Vertex.hpp"
 #include "render/Triangle.hpp"
@@ -90,7 +91,7 @@ int main(int argc, char *argv[])
 	render::Mesh plane = render::utils::MeshUtils::createPlane();
 
 	//render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("D:\\model2012_l6_rms.h5");
-	render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromScm("D:\\MorphModel\\ShpVtxModelBin.scm");
+	render::MorphableModel mmHeadL4 = render::utils::MeshUtils::readFromScm("D:\\MorphModel\\ShpVtxModelBin.scm");
 
 	const float& aspect = 640.0f/480.0f;
 
@@ -137,7 +138,7 @@ int main(int argc, char *argv[])
 		render::Renderer->draw();
 		
 
-		render::Renderer->setMesh(&mmHeadL4);
+		render::Renderer->setMesh(&mmHeadL4.mesh);
 		cv::Mat headWorld = render::utils::MatrixUtils::createScalingMatrix(1.0f/70.0f, 1.0f/70.0f, 1.0f/70.0f);
 		cv::Mat mvp_3dmm = viewProjTransform * headWorld;
 		std::cout << "MVP " << std::endl  << mvp_3dmm << std::endl;

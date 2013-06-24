@@ -4,6 +4,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
+MESSAGE(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
+
 #OpenCV:
 FIND_PACKAGE( OpenCV 2.3.1 REQUIRED core imgproc highgui)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
@@ -18,10 +20,13 @@ ELSE(Boost_FOUND)
 ENDIF()
 
 #HDF5: (needed for reading the Model)
-MESSAGE(STATUS "HDF5_ROOT: ${HDF5_ROOT}")
-SET( CMAKE_MODULE_PATH ${HDF5_ROOT}/cmake/hdf5 )
-MESSAGE(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
-FIND_PACKAGE( HDF5 REQUIRED COMPONENTS C CXX )
+#MESSAGE(STATUS "HDF5_ROOT: ${HDF5_ROOT}")
+#SET( CMAKE_MODULE_PATH ${HDF5_ROOT}/cmake/hdf5 )
+#MESSAGE(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+#FIND_PACKAGE( HDF5 REQUIRED COMPONENTS C CXX )
+#FIND_PACKAGE( HDF5 NAMES hdf5 )
+#SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+#FIND_PACKAGE( HDF5 NAMES hdf5 )
 
 #Source and header files:
 SET(SOURCE
@@ -34,6 +39,7 @@ SET(SOURCE
 	src/render/MatrixUtils.cpp
 	src/render/MeshUtils.cpp
 	src/render/Hdf5Utils.cpp
+	src/render/MorphableModel.cpp
 )
 
 SET(HEADERS
@@ -46,13 +52,13 @@ SET(HEADERS
 	include/render/MatrixUtils.hpp
 	include/render/MeshUtils.hpp
 	include/render/Hdf5Utils.hpp
+	include/render/MorphableModel.hpp
 )
 
 include_directories( "include" )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
-MESSAGE(STATUS "HDF5 include dir: ${HDF5_INCLUDE_DIRS}")
+INCLUDE_DIRECTORIES("C:\\Users\\Patrik\\Documents\\GitHub\\HDF5\\include\\hdf5\\")
 
 #Make the library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
