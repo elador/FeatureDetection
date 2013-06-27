@@ -13,8 +13,9 @@
 namespace imageprocessing {
 
 /**
- * Image filter that normalizes the pixel values to have zero mean and unit variance. The input
- * image must not have more than one channel. The filtered image is of type CV_32F.
+ * Image filter that normalizes the pixel values to have zero mean and unit variance.
+ * The input image must not have more than one channel and can be of any type. The
+ * filtered image is of type CV_32F.
  */
 class ZeroMeanUnitVarianceFilter : public ImageFilter {
 public:

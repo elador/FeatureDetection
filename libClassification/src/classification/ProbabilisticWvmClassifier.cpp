@@ -63,21 +63,19 @@ shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadMatlab(co
 	mxArray *pmxarray; // =mat
 	pmatfile = matOpen(thresholdsFilename.c_str(), "r");
 	if (pmatfile == 0) {
-		throw invalid_argument("ProbabilisticWvmClassifier: Unable to open the file: " + thresholdsFilename);
+		throw invalid_argument("ProbabilisticWvmClassifier: Unable to open the thresholds-file: " + thresholdsFilename);
 	} 
 
-	//printf("fd_ReadDetector(): read posterior_svm parameter for probabilistic SVM output\n");
-	//read posterior_wrvm parameter for probabilistic WRVM output
 	//TODO is there a case (when svm+wvm from same trainingdata) when there exists only a posterior_svm, and I should use this here?
 	pmxarray = matGetVariable(pmatfile, "posterior_wrvm");
 	if (pmxarray == 0) {
-		throw runtime_error("Unable to find the vector posterior_wrvm. If you don't want probabilistic output, don't use a probabilistic classifier.");
+		throw runtime_error("ProbabilisticWvmClassifier: Unable to find the vector posterior_wrvm. If you don't want probabilistic output, don't use a probabilistic classifier.");
 		//logisticA = logisticB = 0; // TODO: Does it make sense to continue?
 	} else {
 		double* matdata = mxGetPr(pmxarray);
 		const mwSize *dim = mxGetDimensions(pmxarray);
 		if (dim[1] != 2) {
-			throw runtime_error("Size of vector posterior_wrvm !=2. If you don't want probabilistic output, don't use a probabilistic classifier.");
+			throw runtime_error("ProbabilisticWvmClassifier: Size of vector posterior_wrvm !=2. If you don't want probabilistic output, don't use a probabilistic classifier.");
 			//logisticA = logisticB = 0; // TODO: Does it make sense to continue?
 		} else {
 			logisticB = matdata[0];
@@ -89,7 +87,6 @@ shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadMatlab(co
 
 	// Load the detector and thresholds:
 	shared_ptr<WvmClassifier> wvm = WvmClassifier::loadMatlab(classifierFilename, thresholdsFilename);
-
 	return make_shared<ProbabilisticWvmClassifier>(wvm, logisticA, logisticB);
 }
 

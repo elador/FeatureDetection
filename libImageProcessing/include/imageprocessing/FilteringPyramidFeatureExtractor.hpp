@@ -13,8 +13,12 @@
 #include "imageprocessing/Patch.hpp"
 #include "boost/iterator/indirect_iterator.hpp"
 
+#include <memory>
+#include <vector>
+
 using boost::indirect_iterator;
 using std::make_shared;
+using std::vector;
 
 namespace imageprocessing {
 
@@ -60,7 +64,7 @@ public:
 
 	vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(), int firstLayer = -1, int lastLayer = -1) const {
 		vector<shared_ptr<Patch>> patches = extractor->extract(stepX, stepY, roi, firstLayer, lastLayer);
-		for (auto patch = indirect_iterator(patches.begin()); patch != indirect_iterator(patches.end()); ++patch)
+		for (auto patch : patches)
 			patchFilter->applyInPlace(patch->getData());
 		return patches;
 	}
@@ -94,6 +98,14 @@ public:
 
 	Size getImageSize() const {
 		return extractor->getImageSize();
+	}
+
+	vector<Size> getLayerSizes() const {
+		return extractor->getLayerSizes();
+	}
+
+	vector<Size> getPatchSizes() const {
+		return extractor->getPatchSizes();
 	}
 
 private:

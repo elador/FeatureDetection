@@ -32,7 +32,9 @@ SET(HEADERS
 	include/classification/VectorMachineClassifier.hpp
 	include/classification/ProbabilisticWvmClassifier.hpp
 	include/classification/ProbabilisticSvmClassifier.hpp
+	include/classification/ProbabilisticRvmClassifier.hpp
 	include/classification/SvmClassifier.hpp
+	include/classification/RvmClassifier.hpp
 	include/classification/TrainableClassifier.hpp
 	include/classification/TrainableBinaryClassifier.hpp
 	include/classification/TrainableProbabilisticClassifier.hpp
@@ -53,8 +55,10 @@ SET(SOURCE
 	src/classification/WvmClassifier.cpp
 	src/classification/IImg.cpp
 	src/classification/SvmClassifier.cpp
+	src/classification/RvmClassifier.cpp
 	src/classification/VectorMachineClassifier.cpp
 	src/classification/ProbabilisticWvmClassifier.cpp
+	src/classification/ProbabilisticRvmClassifier.cpp
 	src/classification/ProbabilisticSvmClassifier.cpp
 	src/classification/TrainableSvmClassifier.cpp
 	src/classification/FrameBasedTrainableSvmClassifier.cpp

@@ -14,7 +14,7 @@ namespace imageprocessing {
 
 /**
  * Image filter that equalizes the histogram using OpenCV's equalizeHist function. The images must
- * be of type 8-bit single channel (CV_8U / CV_8UC1).
+ * be of type 8-bit single channel (CV_8U / CV_8UC1). The output image will be CV_8U as well.
  */
 class HistogramEqualizationFilter : public ImageFilter {
 public:

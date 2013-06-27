@@ -1,7 +1,7 @@
 /*
  * mergePlaygroundApp.cpp
  *
- *  Created on: 17.02.2013
+ *  Created on: 15.06.2013
  *      Author: Patrik Huber
  */
 
@@ -9,6 +9,13 @@
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 
+#ifdef WIN32
+	#include <SDKDDKVer.h>
+#endif
+
+/*	// There's a bug in boost/optional.hpp that prevents us from using the debug-crt with it
+	// in debug mode in windows. It works in release mode, but as we need debugging, let's
+	// disable the windows-memory debugging for now.
 #ifdef WIN32
 	#include <crtdbg.h>
 #endif
@@ -19,145 +26,592 @@
 		#define new DBG_NEW
 	#endif
 #endif  // _DEBUG
+*/
+
+#include <iostream>
+#include <fstream>
+#include <chrono>
+#include <memory>
+#include <unordered_map>
+
+#include "opencv2/core/core.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
+
+#ifdef WIN32
+	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
+	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
+#endif
+#include "boost/program_options.hpp"
+#include "boost/iterator/indirect_iterator.hpp"
+#include "boost/property_tree/ptree.hpp"
+#include "boost/property_tree/info_parser.hpp"
+#include "boost/algorithm/string.hpp"
+#include "boost/lexical_cast.hpp"
 
 #include "classification/RbfKernel.hpp"
 #include "classification/SvmClassifier.hpp"
 #include "classification/WvmClassifier.hpp"
 #include "classification/ProbabilisticWvmClassifier.hpp"
+#include "classification/ProbabilisticRvmClassifier.hpp"
 #include "classification/ProbabilisticSvmClassifier.hpp"
+
+#include "imageio/ImageSource.hpp"
+#include "imageio/FileImageSource.hpp"
+#include "imageio/FileListImageSource.hpp"
+#include "imageio/DirectoryImageSource.hpp"
 
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
+#include "imageprocessing/ReshapingFilter.hpp"
+#include "imageprocessing/ConversionFilter.hpp"
 #include "imageprocessing/Patch.hpp"
-#include "detection/SlidingWindowDetector.hpp"
-#include "detection/ClassifiedPatch.hpp"
-
 #include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
+#include "imageprocessing/FilteringPyramidFeatureExtractor.hpp"
+#include "imageprocessing/FilteringFeatureExtractor.hpp"
 #include "imageprocessing/HistEq64Filter.hpp"
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
+#include "imageprocessing/ZeroMeanUnitVarianceFilter.hpp"
+#include "imageprocessing/WhiteningFilter.hpp"
+
+#include "detection/SlidingWindowDetector.hpp"
+#include "detection/ClassifiedPatch.hpp"
+#include "detection/OverlapElimination.hpp"
+#include "detection/FiveStageSlidingWindowDetector.hpp"
 
 #include "logging/LoggerFactory.hpp"
-#include "logging/FileAppender.hpp"
+#include "imagelogging/ImageLoggerFactory.hpp"
+#include "imagelogging/ImageFileWriter.hpp"
 
-#include "opencv2/core/core.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "mat.h"
-#include <iostream>
-#include <sstream>
-
-#ifdef WIN32
-	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
-	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
-#endif							// We could also use add_definitions( -DBOOST_ALL_NO_LIB ) (+the other one) in the cmake file instead of here.
-
+namespace po = boost::program_options;
 using namespace std;
 using namespace imageprocessing;
 using namespace detection;
 using namespace classification;
+using namespace imageio;
 using logging::Logger;
 using logging::LoggerFactory;
 using logging::loglevel;
+using imagelogging::ImageLogger;
+using imagelogging::ImageLoggerFactory;
+using boost::make_indirect_iterator;
+using boost::property_tree::ptree;
+using boost::property_tree::info_parser::read_info;
+using boost::filesystem::path;
+using boost::lexical_cast;
+
+
+void drawBoxes(Mat image, vector<shared_ptr<ClassifiedPatch>> patches)
+{
+	for(const auto& cpatch : patches) {
+		shared_ptr<Patch> patch = cpatch->getPatch();
+		cv::rectangle(image, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((cpatch->getProbability())/1.0)   ));
+	}
+}
+
+template<class T>
+ostream& operator<<(ostream& os, const vector<T>& v)
+{
+    copy(v.begin(), v.end(), ostream_iterator<T>(cout, " ")); 
+    return os;
+}
 
 int main(int argc, char *argv[])
 {
 	#ifdef WIN32
 	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF ); // dump leaks at return
-	//_CrtSetBreakAlloc(22978);
+	//_CrtSetBreakAlloc(287);
 	#endif
 	
-	Logger root = Loggers->getLogger("root");
-	root.addAppender(make_shared<logging::FileAppender>(loglevel::TRACE, "C:\\Users\\Patrik\\Documents\\GitHub\\logfile.txt"));
-	root.addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
+	string verboseLevelConsole;
+	string verboseLevelImages;
+	bool useFileList = false;
+	bool useImgs = false;
+	bool useDirectory = false;
+	vector<path> inputPaths;
+	path inputFilelist;
+	path inputDirectory;
+	vector<path> inputFilenames;
+	path configFilename;
+	shared_ptr<ImageSource> imageSource;
+	path outputPicsDir;
 
-	Loggers->getLogger("classification").addAppender(make_shared<logging::FileAppender>(loglevel::TRACE, "C:\\Users\\Patrik\\Documents\\GitHub\\logfile.txt"));
-	Loggers->getLogger("classification").addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
+	try {
+        po::options_description desc("Allowed options");
+        desc.add_options()
+            ("help,h",
+				"produce help message")
+            ("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
+                  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
+			("verbose-images,w", po::value<string>(&verboseLevelImages)->implicit_value("INTERMEDIATE")->default_value("FINAL","write images with FINAL loglevel or below."),
+				  "specify the verbosity of the image output: FINAL, INTERMEDIATE, INFO, DEBUG or TRACE")
+			("config,c", po::value<path>()->required(), 
+				"path to a config (.cfg) file")
+			("input,i", po::value<vector<path>>()->required(), 
+				"input from one or more files, a directory, or a  .lst-file containing a list of images")
+			("output-dir,o", po::value<path>()->default_value("."),
+				"output directory for the result images")
+        ;
 
-	root.info("Starting tests...");
+        po::positional_options_description p;
+        p.add("input", -1);
+        
+        po::variables_map vm;
+        po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
+        po::notify(vm);
+    
+        if (vm.count("help")) {
+            cout << "Usage: ffpDetectApp [options]\n";
+            cout << desc;
+            return EXIT_SUCCESS;
+        }
+		if (vm.count("verbose")) {
+			verboseLevelConsole = vm["verbose"].as<string>();
+		}
+		if (vm.count("verbose-images")) {
+			verboseLevelImages = vm["verbose-images"].as<string>();
+		}
+		if (vm.count("input"))
+		{
+			inputPaths = vm["input"].as<vector<path>>();
+		}
+		if (vm.count("config"))
+		{
+			configFilename = vm["config"].as<path>();
+		}
+		if (vm.count("output-dir"))
+		{
+			outputPicsDir = vm["output-dir"].as<path>();
+		}
+    } catch(std::exception& e) {
+        cout << e.what() << endl;
+        return EXIT_FAILURE;
+    }
 
-	cout << __FILE__ << endl;
-	Logger asdf = Loggers->getLoggerFor(__FILE__);
-	asdf.addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
-	asdf.debug("hi");
+	loglevel logLevel;
+	if(boost::iequals(verboseLevelConsole, "PANIC")) logLevel = loglevel::PANIC;
+	else if(boost::iequals(verboseLevelConsole, "ERROR")) logLevel = loglevel::ERROR;
+	else if(boost::iequals(verboseLevelConsole, "WARN")) logLevel = loglevel::WARN;
+	else if(boost::iequals(verboseLevelConsole, "INFO")) logLevel = loglevel::INFO;
+	else if(boost::iequals(verboseLevelConsole, "DEBUG")) logLevel = loglevel::DEBUG;
+	else if(boost::iequals(verboseLevelConsole, "TRACE")) logLevel = loglevel::TRACE;
+	else {
+		cout << "Error: Invalid loglevel." << endl;
+		return EXIT_FAILURE;
+	}
+	imagelogging::loglevel imageLogLevel;
+	if(boost::iequals(verboseLevelImages, "FINAL")) imageLogLevel = imagelogging::loglevel::FINAL;
+	else if(boost::iequals(verboseLevelImages, "INTERMEDIATE")) imageLogLevel = imagelogging::loglevel::INTERMEDIATE;
+	else if(boost::iequals(verboseLevelImages, "INFO")) imageLogLevel = imagelogging::loglevel::INFO;
+	else if(boost::iequals(verboseLevelImages, "DEBUG")) imageLogLevel = imagelogging::loglevel::DEBUG;
+	else if(boost::iequals(verboseLevelImages, "TRACE")) imageLogLevel = imagelogging::loglevel::TRACE;
+	else {
+		cout << "Error: Invalid image loglevel." << endl;
+		return EXIT_FAILURE;
+	}
 	
-	Mat fvp = cv::imread("C:/Users/Patrik/Documents/GitHub/patchpos.png");
-	Mat fvn = cv::imread("C:/Users/Patrik/Documents/GitHub/patchneg.png");
+	Loggers->getLogger("classification").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("imageprocessing").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("detection").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("ffpDetectApp").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Logger appLogger = Loggers->getLogger("ffpDetectApp");
 
-	cv::cvtColor(fvp, fvp, CV_BGR2GRAY);
-	cv::cvtColor(fvn, fvn, CV_BGR2GRAY);
-	
-	shared_ptr<ProbabilisticSvmClassifier> svm;
-	try	{
-		svm = ProbabilisticSvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat");
-	} catch (std::invalid_argument& e) {
-		root.error(e.what());
+	appLogger.debug("Verbose level for console output: " + logging::loglevelToString(logLevel));
+	appLogger.debug("Verbose level for image output: " + imagelogging::loglevelToString(imageLogLevel));
+	appLogger.debug("Using config: " + configFilename.string());
+	appLogger.debug("Using output directory: " + outputPicsDir.string());
+	if(outputPicsDir.empty()) {
+		appLogger.info("Output directory not set. Writing images into current directory.");
 	}
 
-	shared_ptr<ProbabilisticWvmClassifier> wvm = ProbabilisticWvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.001--with-outnew02HQ64SVM.mat");
+	ImageLoggers->getLogger("detection").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir));
+	ImageLoggers->getLogger("mergePlaygroundApp").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir));
 
-	svm->getSvm()->setThreshold(-0.2f);
-	wvm->getWvm()->setLimitReliabilityFilter(-0.5f);
-	wvm->getWvm()->setNumUsedFilters(10);
-
-	imageprocessing::HistEq64Filter hq64;
-	//imageprocessing::HistogramEqualizationFilter hq64;
-	hq64.applyInPlace(fvp);
-	hq64.applyInPlace(fvn);
-
-	pair<bool, double> res = svm->classify(fvp);
-	pair<bool, double> res2 = svm->classify(fvn);
-
-	res = wvm->classify(fvp);
-	res2 = wvm->classify(fvn);
-
-	root.info("End tests.");
-
-	/*
-	Mat img = cv::imread("C:/Users/Patrik/Documents/GitHub/data/firstrun/ws_115.png");
-	cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
-
-	//configparser::ConfigParser cp = configparser::ConfigParser();
-	//cp.parse("D:\\FeatureDetection\\config\\facedet.txt");
-
-	shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.001--with-outnew02HQ64SVM.mat");
-	
-	shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(0.09, 0.25, 0.9);	// (0.09, 0.25, 0.9) is the same as old 90, 9, 0.9
-	pyr->addImageFilter(make_shared<GrayscaleFilter>());
-	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(pyr, 20, 20);
-	featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
-
-	shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm, featureExtractor);
-	vector<shared_ptr<ClassifiedPatch>> resultingPatches = det->detect(img);
-
-	Mat rgbimg = img.clone();
-	for(auto pit = resultingPatches.begin(); pit != resultingPatches.end(); pit++) {
-		shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
-		shared_ptr<Patch> patch = classifiedPatch->getPatch();
-		cv::rectangle(rgbimg, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
+	if(inputPaths.size() > 1) {
+		// We assume the user has given several, valid images
+		useImgs = true;
+		inputFilenames = inputPaths;
+	} else if (inputPaths.size() == 1) {
+		// We assume the user has given either an image, directory, or a .lst-file
+		if (inputPaths[0].extension().string() == ".lst") { // check for .lst first
+			useFileList = true;
+			inputFilelist = inputPaths[0];
+		} else if (boost::filesystem::is_directory(inputPaths[0])) { // check if it's a directory
+			useDirectory = true;
+			inputDirectory = inputPaths[0];
+		} else { // it must be an image
+			useImgs = true;
+			inputFilenames = inputPaths;
+		}
+	} else {
+		appLogger.error("Please either specify one or several files, a directory, or a .lst-file containing a list of images to run the program!");
+		return EXIT_FAILURE;
 	}
-	cv::namedWindow("final", CV_WINDOW_AUTOSIZE); cv::imshow("final", rgbimg);
-	cv::imwrite("wvm_newest2.png", rgbimg);
 
-	shared_ptr<ProbabilisticSvmClassifier> psvm = ProbabilisticSvmClassifier::loadMatlab("C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat", "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.001--with-outnew02HQ64SVM.mat");
 
-	vector<pair<shared_ptr<Patch>, pair<bool, double>>> resultingPatchesAfterSVM;
-	Mat svmimg = img.clone();
-	Mat svmimg2 = img.clone();
-	psvm->getSvm()->setThreshold(-1.2f);
-	for(auto pit = resultingPatches.begin(); pit != resultingPatches.end(); pit++) {
-		shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
-		shared_ptr<Patch> patch = classifiedPatch->getPatch();
-		pair<bool, double> res = psvm->classify(patch->getData());
-		cv::rectangle(svmimg2, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((res.second)/1.0)   ));
-		if(res.first)
-			cv::rectangle(svmimg, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((res.second)/1.0)   ));
+	if(useFileList==true) {
+		appLogger.info("Using file-list as input: " + inputFilelist.string());
+		shared_ptr<ImageSource> fileListImgSrc;
+		try {
+			fileListImgSrc = make_shared<FileListImageSource>(inputFilelist.string());
+		} catch(const std::runtime_error& e) {
+			appLogger.error(e.what());
+			return EXIT_FAILURE;
+		}
+		//shared_ptr<DidLandmarkFormatParser> didParser= make_shared<DidLandmarkFormatParser>();
+		//vector<path> landmarkDir; landmarkDir.push_back(path("C:\\Users\\Patrik\\Github\\data\\labels\\xm2vts\\guosheng\\"));
+		//shared_ptr<DefaultNamedLandmarkSource> lmSrc = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
+		//imageSource = make_shared<NamedLabeledImageSource>(fileImgSrc, lmSrc);
+		imageSource = fileListImgSrc;
 	}
-	cv::namedWindow("svm", CV_WINDOW_AUTOSIZE); cv::imshow("svm", svmimg);
-	imwrite("svm_after2_m1.2.png", svmimg);
-	cv::namedWindow("svmall", CV_WINDOW_AUTOSIZE); cv::imshow("svmall", svmimg2);
-	imwrite("svmall_after2_m1.2.png", svmimg2);
+	if(useImgs==true) {
+		//imageSource = make_shared<FileImageSource>(inputFilenames);
+		//imageSource = make_shared<RepeatingFileImageSource>("C:\\Users\\Patrik\\GitHub\\data\\firstrun\\ws_8.png");
+		appLogger.info("Using input images: ");
+		vector<string> inputFilenamesStrings;	// Hack until we use vector<path> (?)
+		for (const auto& fn : inputFilenames) {
+			appLogger.info(fn.string());
+			inputFilenamesStrings.push_back(fn.string());
+		}
+		shared_ptr<ImageSource> fileImgSrc;
+		try {
+			fileImgSrc = make_shared<FileImageSource>(inputFilenamesStrings);
+		} catch(const std::runtime_error& e) {
+			appLogger.error(e.what());
+			return EXIT_FAILURE;
+		}
+		//shared_ptr<DidLandmarkFormatParser> didParser= make_shared<DidLandmarkFormatParser>();
+		//vector<path> landmarkDir; landmarkDir.push_back(path("C:\\Users\\Patrik\\Github\\data\\labels\\xm2vts\\guosheng\\"));
+		//shared_ptr<DefaultNamedLandmarkSource> lmSrc = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
+		//imageSource = make_shared<NamedLabeledImageSource>(fileImgSrc, lmSrc);
+		imageSource = fileImgSrc;
+	}
+	if(useDirectory==true) {
+		appLogger.info("Using input images from directory: " + inputDirectory.string());
+		try {
+			imageSource = make_shared<DirectoryImageSource>(inputDirectory.string());
+		} catch(const std::runtime_error& e) {
+			appLogger.error(e.what());
+			return EXIT_FAILURE;
+		}
+	}
 
-	cv::waitKey(0);
+	const float DETECT_MAX_DIST_X = 0.33f;	// --> Config / Landmarks
+	const float DETECT_MAX_DIST_Y = 0.33f;
+	const float DETECT_MAX_DIFF_W = 0.33f;
+
+	int TOT = 0;
+	int TACC = 0;
+	int FACC = 0;
+	int NOCAND = 0;
+	int DONTKNOW = 0;
+
+	ptree pt;
+	try {
+		read_info(configFilename.string(), pt);
+	} catch(const boost::property_tree::ptree_error& error) {
+		appLogger.error(error.what());
+		return EXIT_FAILURE;
+	}
+
+	unordered_map<string, shared_ptr<Detector>> faceDetectors;
+	unordered_map<string, shared_ptr<Detector>> featureDetectors;
+
+	try {
+		ptree ptDetectors = pt.get_child("detectors");
+		for_each(begin(ptDetectors), end(ptDetectors), [&faceDetectors, &featureDetectors](ptree::value_type kv) {
+
+			string landmarkName = kv.second.get<string>("landmark");
+			string type = kv.second.get<string>("type");
+
+			if(type=="fiveStageCascade") {
+
+				ptree firstClassifierNode = kv.second.get_child("firstClassifier");
+				ptree secondClassifierNode = kv.second.get_child("secondClassifier");
+				ptree imgpyr = kv.second.get_child("pyramid");
+				ptree oeCfg = kv.second.get_child("overlapElimination");
+
+				shared_ptr<ProbabilisticWvmClassifier> firstClassifier = ProbabilisticWvmClassifier::loadConfig(firstClassifierNode);
+				shared_ptr<ProbabilisticSvmClassifier> secondClassifier = ProbabilisticSvmClassifier::loadConfig(secondClassifierNode);
+
+				//pwvm->getWvm()->setLimitReliabilityFilter(-0.5f);
+				//psvm->getSvm()->setThreshold(-1.0f);	// TODO read this from the config
+
+				shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(oeCfg.get<float>("dist", 5.0f), oeCfg.get<float>("ratio", 0.0f));
+
+				// This:
+				shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f), imgpyr.get<float>("incrementalScaleFactor", 0.9f));
+				imgPyr->addImageFilter(make_shared<GrayscaleFilter>());
+				shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(imgPyr, imgpyr.get<int>("patch.width"), imgpyr.get<int>("patch.height"));
+				// Or:
+				//shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"), config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"), config.get<double>("pyramid.scaleFactor"));
+				//featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+
+				featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
+
+				shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(firstClassifier, featureExtractor);
+
+				shared_ptr<FiveStageSlidingWindowDetector> fsd = make_shared<FiveStageSlidingWindowDetector>(det, oe, secondClassifier);
+				fsd->landmark = landmarkName;
+				if (landmarkName == "face")	{
+					faceDetectors.insert(make_pair(kv.first, fsd));
+				} else {
+					featureDetectors.insert(make_pair(kv.first, fsd));
+				}
+
+			} else if(type=="single") {
+
+				ptree classifierNode = kv.second.get_child("classifier");
+				ptree imgpyr = kv.second.get_child("pyramid");
+				ptree featurespace = kv.second.get_child("feature");
+
+				// One for all classifiers (with same pyramids):
+				// This:
+				shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f), imgpyr.get<float>("incrementalScaleFactor", 0.9f));
+				imgPyr->addImageFilter(make_shared<GrayscaleFilter>());
+				shared_ptr<DirectPyramidFeatureExtractor> patchExtractor = make_shared<DirectPyramidFeatureExtractor>(imgPyr, imgpyr.get<int>("patch.width"), imgpyr.get<int>("patch.height"));
+				// Or:
+				//shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"), config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"), config.get<double>("pyramid.scaleFactor"));
+				//featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+
+				// One for each classifiers, can make several, that share the same DirectPyramidFeatureExtractor
+				// The split in FilteringPyramidFeatureExtractor and DirectPyramidFeatureExtractor is theoretically not necessary here
+				// as we only have one classifier. But I guess we need it if we start sharing pyramids across several detectors.
+				auto featureExtractor = make_shared<FilteringPyramidFeatureExtractor>(patchExtractor);
+				if (featurespace.get_value<string>() == "histeq") {
+					//ared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
+					featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
+				} else if (featurespace.get_value<string>() == "whi") {
+					//shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
+					featureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
+					featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
+					featureExtractor->addPatchFilter(make_shared<ZeroMeanUnitVarianceFilter>());
+				} else if (featurespace.get_value<string>() == "hq64") {
+					//shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
+					featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
+				} else if (featurespace.get_value<string>() == "gray") {
+					//shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
+					// no patch filter
+				}
+
+				ptree patchFilterNodes = kv.second.get_child("patchFilter");
+				for (const auto& filterNode : patchFilterNodes) {
+					string filterType = filterNode.first;
+					if (filterType=="ReshapingFilter") {
+						int filterArgs = filterNode.second.get_value<int>();
+						featureExtractor->addPatchFilter(make_shared<ReshapingFilter>(filterArgs));
+					} else if (filterType=="ConversionFilter") {
+						string filterArgs = filterNode.second.get_value<string>();
+						stringstream ss(filterArgs);
+						int type;
+						ss >> type;
+						double scaling;
+						ss >> scaling;
+						featureExtractor->addPatchFilter(make_shared<ConversionFilter>(type, scaling));
+					}
+				}
+
+				string classifierType = classifierNode.get_value<string>();
+				shared_ptr<ProbabilisticClassifier> classifier;
+				if (classifierType == "pwvm") {
+					classifier = ProbabilisticWvmClassifier::loadConfig(classifierNode);
+				} else if (classifierType == "prvm") {
+					classifier = ProbabilisticRvmClassifier::loadConfig(classifierNode);
+				} if (classifierType == "psvm") {
+					classifier = ProbabilisticSvmClassifier::loadConfig(classifierNode);
+				} 
+				
+				//psvm->getSvm()->setThreshold(-1.0f);	// TODO read this from the config
+
+				shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(classifier, featureExtractor);
+
+				det->landmark = landmarkName;
+				if (landmarkName == "face")	{
+					faceDetectors.insert(make_pair(kv.first, det));
+				} else {
+					featureDetectors.insert(make_pair(kv.first, det));
+				}
+			}
+
+		});
+	} catch(const boost::property_tree::ptree_error& error) {
+		appLogger.error(error.what());
+		return EXIT_FAILURE;
+	} catch (const invalid_argument& error) {
+		appLogger.error(error.what());
+		return EXIT_FAILURE;
+	} catch (const runtime_error& error) {
+		appLogger.error(error.what());
+		return EXIT_FAILURE;
+	}
+
+	// lm-loading
+	// output-dir
+	// load ffd/ROI
+	// relative bilder-pfad aus filelist
+	// boost::po behaves strangely with -h and the required arguments (cannot show help without them) ?
+	// our libs: add library dependencies (eg to boost) in add_library ?
+	// log (text) what is going on. Eg detecting on image... bla... Svm reduced from x to y...
+	//       where to put this? as deep as possible? (eg just there where the variable needed (eg filename, 
+	//       detector-name is still visible). I think for OE there's already something in it.
+	// move drawBoxes(...) somewhere else
+	// in the config: firstStage/secondStage: What if they have different feature spaces (or patch-sizes). At the
+	//      moment, in 1 FiveStageDet., I believe there cannot be 2 different feature spaces. 
+	//      (the second classifier just gets a list of patches - theoretically, he could go extract them again?)
+	//      Should we make this all way more dynamic?
+
+	/* Note: We could change/write/add something to the config with
+	pt.put("detection.svm.threshold", -0.5f);
+	If the value already exists, it gets overwritten, if not, it gets created.
+	Save it with:
+	write_info("C:\\Users\\Patrik\\Documents\\GitHub\\ffpDetectApp.cfg", pt);
 	*/
+
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	Mat img;
+	while(imageSource->next()) {
+
+		img = imageSource->getImage();
+		start = std::chrono::system_clock::now();
+		
+		for(auto detector : faceDetectors) {
+
+			ImageLoggers->getLogger("detection").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
+			vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img);
+
+			ImageLoggers->getLogger("mergePlaygroundApp").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
+			ImageLogger imageLogger = ImageLoggers->getLogger("mergePlaygroundApp");
+			Mat imgWvm = img.clone();
+			imageLogger.intermediate(imgWvm, bind(drawBoxes, imgWvm, resultingPatches), "rvm_whi");
+
+
+		} // end for each face detector
+
+		end = std::chrono::system_clock::now();
+
+		int elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(end-start).count();
+		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
+		std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+
+		stringstream ss;
+		ss << std::ctime(&end_time);
+		appLogger.info("finished computation at " + ss.str() + "elapsed time: " + lexical_cast<string>(elapsed_seconds) + "s or exactly " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
+
+		TOT++;
+		vector<string> resultingPatches;
+		if(resultingPatches.size()<1) {
+			//std::cout << "[ffpDetectApp] No face-candidates at all found:  " << filenames[i] << std::endl;
+			NOCAND++;
+		} else {
+			// TODO Check if the LM exists or it will crash! Currently broken!
+			if(false) { //no groundtruth
+				//std::cout << "[ffpDetectApp] No ground-truth available, not counting anything: " << filenames[i] << std::endl;
+				++DONTKNOW;
+			} else { //we have groundtruth
+				/*int gt_w = groundtruthFaceBoxes[i].getWidth();
+				int gt_h = groundtruthFaceBoxes[i].getHeight();
+				int gt_cx = groundtruthFaceBoxes[i].getX();
+				int gt_cy = groundtruthFaceBoxes[i].getY();
+				// TODO implement a isClose, isDetected... or something like that function
+				if (abs(gt_cx - svmPatches[0]->getPatch()->getX()) < DETECT_MAX_DIST_X*(float)gt_w &&
+					abs(gt_cy - svmPatches[0]->getPatch()->getY()) < DETECT_MAX_DIST_Y*(float)gt_w &&
+					abs(gt_w - svmPatches[0]->getPatch()->getWidth()) < DETECT_MAX_DIFF_W*(float)gt_w       ) {
+				
+					std::cout << "[ffpDetectApp] TACC (1/1): " << filenames[i] << std::endl;
+					TACC++;
+				} else {
+					std::cout << "[ffpDetectApp] Face not found, wrong position:  " << filenames[i] << std::endl;
+					FACC++;
+				}*/
+			} // end no groundtruth
+		}
+
+		std::cout << std::endl;
+		std::cout << "[ffpDetectApp] -------------------------------------" << std::endl;
+		std::cout << "[ffpDetectApp] TOT:  " << TOT << std::endl;
+		std::cout << "[ffpDetectApp] TACC:  " << TACC << std::endl;
+		std::cout << "[ffpDetectApp] FACC:  " << FACC << std::endl;
+		std::cout << "[ffpDetectApp] NOCAND:  " << NOCAND << std::endl;
+		std::cout << "[ffpDetectApp] DONTKNOW:  " << DONTKNOW << std::endl;
+		std::cout << "[ffpDetectApp] -------------------------------------" << std::endl;
+
+	}
+
+	std::cout << std::endl;
+	std::cout << "[ffpDetectApp] =====================================" << std::endl;
+	std::cout << "[ffpDetectApp] =====================================" << std::endl;
+	std::cout << "[ffpDetectApp] TOT:  " << TOT << std::endl;
+	std::cout << "[ffpDetectApp] TACC:  " << TACC << std::endl;
+	std::cout << "[ffpDetectApp] FACC:  " << FACC << std::endl;
+	std::cout << "[ffpDetectApp] NOCAND:  " << NOCAND << std::endl;
+	std::cout << "[ffpDetectApp] DONTKNOW:  " << DONTKNOW << std::endl;
+	std::cout << "[ffpDetectApp] =====================================" << std::endl;
+	
 	return 0;
 }
+
+	// My cmdline-arguments: -f C:\Users\Patrik\Documents\GitHub\data\firstrun\theRealWorld_png2.lst
+
+	// TODO important:
+	// getPatchesROI Bug bei skalen, schraeg verschoben (?) bei x,y=0, s=1 sichtbar. No, I think I looked at this with MR, and the code was actually correct?
+// Copy and = c'tors
+	// pub/private
+	// ALL in RegressorWVR.h/cpp is the same as in DetWVM! Except the classify loop AND threshold loading. -> own class (?)
+	// Logger.drawscales
+	// Logger draw 1 scale only, and points with color instead of boxes
+	// logger filter lvls etc
+	// problem when 2 diff. featuredet run on same scale
+	// results dir from config etc
+	// Diff. patch sizes: Cascade is a VDetectorVM, and calculates ONE subsampfac for the master-detector in his size. Then, for second det with diff. patchsize, calc remaining pyramids.
+	// Test limit_reliability (SVM)	
+	// Draw FFPs in different colors, and as points (symbols), not as boxes. See lib MR
+	// Bisschen durcheinander mit pyramid_widths, subsampfac. Pyr_widths not necessary anymore? Pyr_widths are per detector
+//  WVM/R: bisschen viele *thresh*...?
+// wie verhaelt sich alles bei GRAY input image?? (imread, Logger)
+
+// Error handling when something (eg det, img) not found -> STOP
+
+// FFP-App: Read master-config. (Clean this up... keine vererbung mehr etc). FD. Then start as many FFD Det's as there are in the configs.
+
+// @MR: Warum "-b" ? ComparisonRegr.xlsx 6grad systemat. fehler da ML +3.3, MR -3.3
+
+
+/* 
+/	Todo:
+	* .lst: #=comment, ignore line
+	* DetID alles int machen. Und dann mapper von int zu String (wo sich jeder Det am anfang eintraegt)
+	* CascadeWvmOeSvmOe is a VDetVec... and returnFilterSize should return wvm->filtersizex... etc
+	* I think the whole det-naming system ["..."] collapses when someone uses custom names (which we have to when using features)
+/	* Filelists
+	* optimizations (eg const)
+/	* dump_BBList der ffp
+	* OE: write field in patch, fout=1 -> passed, fout=0 failed OE
+	* RVR/RVM
+	* Why do we do (SVM)
+	this->support[is][y*filter_size_x+x] = (unsigned char)(255.0*matdata[k++]);	 // because the training images grey level values were divided by 255;
+	  but with the WVM, support is all float instead of uchar.
+
+	 * erasing from the beginning of a vector is a slow operation, because at each step, all the elements of the vector have to be shifted down one place. Better would be to loop over the vector freeing everything (then clear() the vector. (or use a list, ...?) Improve speed of OE
+	 * i++ --> ++i (faster)
+*/
+
+
+		/*cv::Mat color_img, color_hsv;
+		int h_ = 0;   // H : 0 179, Hue
+int s_ = 255; // S : 0 255, Saturation
+int v_ = 255; // V : 0 255, Brightness Value
+	const char *window_name = "HSV color";
+	cv::namedWindow(window_name);
+	cv::createTrackbar("H", window_name, &h_, 180, NULL, NULL);
+	cv::createTrackbar("S", window_name, &s_, 255, NULL, NULL);
+	cv::createTrackbar("V", window_name, &v_, 255, NULL, NULL);
+
+	while(true) {
+		color_hsv = cv::Mat(cv::Size(320, 240), CV_8UC3, cv::Scalar(h_,s_,v_));
+		cv::cvtColor(color_hsv, color_img, CV_HSV2BGR);
+		cv::imshow(window_name, color_img);
+		int c = cv::waitKey(10);
+		if (c == 27) break;
+	}
+	cv::destroyAllWindows();*/

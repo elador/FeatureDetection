@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
             ("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
                   "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
 			("verbose-images,w", po::value<string>(&verboseLevelImages)->implicit_value("INTERMEDIATE")->default_value("FINAL","write images with FINAL loglevel or below."),
-				  "specify the verbosity of the console output: FINAL, INTERMEDIATE, INFO, DEBUG or TRACE")
+				  "specify the verbosity of the image output: FINAL, INTERMEDIATE, INFO, DEBUG or TRACE")
 			("config,c", po::value<path>()->required(), 
 				"path to a config (.cfg) file")
 			("input,i", po::value<vector<path>>()->required(), 
@@ -357,11 +357,17 @@ int main(int argc, char *argv[])
 	// output-dir
 	// load ffd/ROI
 	// relative bilder-pfad aus filelist
+	// boost::po behaves strangely with -h and the required arguments (cannot show help without them) ?
 	// our libs: add library dependencies (eg to boost) in add_library ?
 	// log (text) what is going on. Eg detecting on image... bla... Svm reduced from x to y...
 	//       where to put this? as deep as possible? (eg just there where the variable needed (eg filename, 
 	//       detector-name is still visible). I think for OE there's already something in it.
 	// move drawBoxes(...) somewhere else
+	// in the config: should we rename wvm/svm to firstStage/secondStage (or similar)? To e.g. be able to 
+	//      load a rvm instead of a wvm or svm. But what if they have different feature spaces. At the
+	//      moment, in 1 FiveStageDet., I believe there cannot be 2 different feature spaces. 
+	//      (the second classifier just gets a list of patches - theoretically, he could go extract them again?)
+	//      Should we make this all way more dynamic?
 
 	/* Note: We could change/write/add something to the config with
 	pt.put("detection.svm.threshold", -0.5f);

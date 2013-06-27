@@ -21,7 +21,7 @@ public:
 	/**
 	 * Constructs a new conversion filter.
 	 *
-	 * @param[in] type The type (depth) of the filtered images. If negative, the type remains unchanged.
+	 * @param[in] type The OpenCV type (depth) of the filtered images. If negative, the type remains unchanged.
 	 * @param[in] alpha The optional scaling factor.
 	 * @param[in] beta The optional delta that is added to the scaled values.
 	 */
