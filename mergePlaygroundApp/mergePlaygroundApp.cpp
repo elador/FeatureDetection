@@ -398,10 +398,10 @@ int main(int argc, char *argv[])
 				ptree patchFilterNodes = kv.second.get_child("patchFilter");
 				for (const auto& filterNode : patchFilterNodes) {
 					string filterType = filterNode.first;
-					if (filterType=="ReshapingFilter") {
+					if (filterType=="reshapingFilter") {
 						int filterArgs = filterNode.second.get_value<int>();
 						featureExtractor->addPatchFilter(make_shared<ReshapingFilter>(filterArgs));
-					} else if (filterType=="ConversionFilter") {
+					} else if (filterType=="conversionFilter") {
 						string filterArgs = filterNode.second.get_value<string>();
 						stringstream ss(filterArgs);
 						int type;
@@ -483,7 +483,7 @@ int main(int argc, char *argv[])
 			ImageLoggers->getLogger("mergePlaygroundApp").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
 			ImageLogger imageLogger = ImageLoggers->getLogger("mergePlaygroundApp");
 			Mat imgWvm = img.clone();
-			imageLogger.intermediate(imgWvm, bind(drawBoxes, imgWvm, resultingPatches), "rvm_whi");
+			imageLogger.intermediate(imgWvm, bind(drawBoxes, imgWvm, resultingPatches), "rrvm_gray");
 
 
 		} // end for each face detector

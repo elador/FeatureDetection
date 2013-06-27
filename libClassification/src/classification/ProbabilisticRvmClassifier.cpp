@@ -8,13 +8,20 @@
 #include "classification/ProbabilisticRvmClassifier.hpp"
 #include "classification/RvmClassifier.hpp"
 #include "mat.h"
+#ifdef WIN32
+	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
+	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
+#endif
+#include "boost/filesystem/path.hpp"
 #include <iostream>
 #include <stdexcept>
 
+using boost::filesystem::path;
 using std::make_pair;
 using std::make_shared;
 using std::invalid_argument;
 using std::runtime_error;
+using std::logic_error;
 
 namespace classification {
 
@@ -76,11 +83,19 @@ shared_ptr<ProbabilisticRvmClassifier> ProbabilisticRvmClassifier::loadMatlab(co
 
 shared_ptr<ProbabilisticRvmClassifier> ProbabilisticRvmClassifier::loadConfig(const ptree& subtree)
 {
-	//return loadMatlab(subtree.get<string>("classifierFile"), subtree.get<string>("thresholdsFile"));
-	// TODO improve, hacked in for the moment
-	shared_ptr<RvmClassifier> rvm = RvmClassifier::loadText(subtree.get<string>("classifierFile"));
-	//return make_shared<ProbabilisticRvmClassifier>(rvm, logisticA, logisticB);
-	return make_shared<ProbabilisticRvmClassifier>(rvm);
+	path classifierFile = subtree.get<path>("classifierFile");
+	string a = classifierFile.extension().string();
+	if (classifierFile.extension() == ".mat") {
+		//return loadMatlab(classifierFile.string(), subtree.get<string>("thresholdsFile"));
+		throw logic_error("ProbabilisticRvmClassifier: Loading of .mat RVM's is not yet supported!");
+	} else {
+		double logisticA = 0;
+		double logisticB = 0;
+		shared_ptr<RvmClassifier> svm = RvmClassifier::loadText(classifierFile.string());
+		//return make_shared<ProbabilisticSvmClassifier>(svm, logisticA, logisticB);
+		return make_shared<ProbabilisticRvmClassifier>(svm); // default values for a, b
+	}
+
 }
 
 } /* namespace classification */
