@@ -85,15 +85,19 @@ shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadMatlab(co
 shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadConfig(const ptree& subtree)
 {
 	path classifierFile = subtree.get<path>("classifierFile");
-	string a = classifierFile.extension().string();
 	if (classifierFile.extension() == ".mat") {
 		return loadMatlab(classifierFile.string(), subtree.get<string>("thresholdsFile"));
 	} else {
-		double logisticA = 0;
-		double logisticB = 0;
 		shared_ptr<SvmClassifier> svm = SvmClassifier::loadText(classifierFile.string());
-		//return make_shared<ProbabilisticSvmClassifier>(svm, logisticA, logisticB);
-		return make_shared<ProbabilisticSvmClassifier>(svm); // default values for a, b
+		svm->setThreshold(subtree.get("threshold", 0.0f)); // TODO SvmClassifier::loadText should do that
+		double logisticA = subtree.get("logisticA", 0.0);
+		double logisticB = subtree.get("logisticB", 0.0);
+		if (logisticA == 0.0 || logisticB == 0.0) {
+			std::cout << "Warning, one or both sigmoid parameters not set in config, using default sigmoid parameters." << std::endl; // TODO use logger
+			return make_shared<ProbabilisticSvmClassifier>(svm);
+		} else {
+			return make_shared<ProbabilisticSvmClassifier>(svm, logisticA, logisticB);
+		}
 	}
 }
 

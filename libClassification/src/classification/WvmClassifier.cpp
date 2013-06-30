@@ -14,11 +14,11 @@
 
 using logging::Logger;
 using logging::LoggerFactory;
+using boost::lexical_cast;
 using std::make_shared;
 using std::make_pair;
 using std::invalid_argument;
 using std::runtime_error;
-using boost::lexical_cast;
 
 namespace classification {
 
@@ -406,7 +406,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 		for (hrsv=0;hrsv<nHK;hrsv++)  {
 
 			mxArray* mval=mxGetField(pmxarray,hrsv,valstr);
- 			if (mval == NULL ) {
+			if (mval == NULL ) {
 				throw runtime_error("WvmClassifier: '" + lexical_cast<string>(valstr) + "' not found (WVM: 'val_u', else: 'val', right *.mat/kernel?)");
 			}
 			dim=mxGetDimensions(mval);
@@ -643,9 +643,9 @@ float WvmClassifier::linEvalWvmHisteq64(
 	} else if (fx>0)   {
 		norm_new= iimg_xx->data[dr] - iimg_xx->data[dll]; sumv0= iimg_x->data[dr] - iimg_x->data[dll];
 	} else if (fy>0)	{
-	    norm_new= iimg_xx->data[dr] - iimg_xx->data[uur]; sumv0= iimg_x->data[dr] - iimg_x->data[uur];
+		norm_new= iimg_xx->data[dr] - iimg_xx->data[uur]; sumv0= iimg_x->data[dr] - iimg_x->data[uur];
 	} else {*///if (fx==0 && fy==0)
-	    norm_new= iimg_xx->data[dr]; sumv0= iimg_x->data[dr];
+		norm_new= iimg_xx->data[dr]; sumv0= iimg_x->data[dr];
 	//}
 	sum_xx=norm_new;
 
@@ -691,9 +691,9 @@ float WvmClassifier::linEvalWvmHisteq64(
 			else if	(ax1+1>0)
 				sumv+=   iimg_x->data[ay2w +ax2] - iimg_x->data[ay2w +ax1];
 			else if	(ay1>0)
-            	sumv+=   iimg_x->data[ay2w +ax2] - iimg_x->data[ay1w +ax2];
+				sumv+=   iimg_x->data[ay2w +ax2] - iimg_x->data[ay1w +ax2];
 			else //if (ax1==0 && ay1==0)
-            	sumv+=   iimg_x->data[ay2w +ax2];
+				sumv+=   iimg_x->data[ay2w +ax2];
 
 			//Profiler.sxp_iimg += (double)(clock()-sxp_iimg_begin);
 		}

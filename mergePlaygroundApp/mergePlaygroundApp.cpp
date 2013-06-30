@@ -112,8 +112,8 @@ void drawBoxes(Mat image, vector<shared_ptr<ClassifiedPatch>> patches)
 template<class T>
 ostream& operator<<(ostream& os, const vector<T>& v)
 {
-    copy(v.begin(), v.end(), ostream_iterator<T>(cout, " ")); 
-    return os;
+	copy(v.begin(), v.end(), ostream_iterator<T>(cout, " ")); 
+	return os;
 }
 
 int main(int argc, char *argv[])
@@ -137,12 +137,12 @@ int main(int argc, char *argv[])
 	path outputPicsDir;
 
 	try {
-        po::options_description desc("Allowed options");
-        desc.add_options()
-            ("help,h",
+		po::options_description desc("Allowed options");
+		desc.add_options()
+			("help,h",
 				"produce help message")
-            ("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
-                  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
+			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
+				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
 			("verbose-images,w", po::value<string>(&verboseLevelImages)->implicit_value("INTERMEDIATE")->default_value("FINAL","write images with FINAL loglevel or below."),
 				  "specify the verbosity of the image output: FINAL, INTERMEDIATE, INFO, DEBUG or TRACE")
 			("config,c", po::value<path>()->required(), 
@@ -151,20 +151,20 @@ int main(int argc, char *argv[])
 				"input from one or more files, a directory, or a  .lst-file containing a list of images")
 			("output-dir,o", po::value<path>()->default_value("."),
 				"output directory for the result images")
-        ;
+		;
 
-        po::positional_options_description p;
-        p.add("input", -1);
-        
-        po::variables_map vm;
-        po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
-        po::notify(vm);
-    
-        if (vm.count("help")) {
-            cout << "Usage: ffpDetectApp [options]\n";
-            cout << desc;
-            return EXIT_SUCCESS;
-        }
+		po::positional_options_description p;
+		p.add("input", -1);
+		
+		po::variables_map vm;
+		po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
+		po::notify(vm);
+	
+		if (vm.count("help")) {
+			cout << "Usage: ffpDetectApp [options]\n";
+			cout << desc;
+			return EXIT_SUCCESS;
+		}
 		if (vm.count("verbose")) {
 			verboseLevelConsole = vm["verbose"].as<string>();
 		}
@@ -183,10 +183,10 @@ int main(int argc, char *argv[])
 		{
 			outputPicsDir = vm["output-dir"].as<path>();
 		}
-    } catch(std::exception& e) {
-        cout << e.what() << endl;
-        return EXIT_FAILURE;
-    }
+	} catch(std::exception& e) {
+		cout << e.what() << endl;
+		return EXIT_FAILURE;
+	}
 
 	loglevel logLevel;
 	if(boost::iequals(verboseLevelConsole, "PANIC")) logLevel = loglevel::PANIC;
@@ -483,7 +483,7 @@ int main(int argc, char *argv[])
 			ImageLoggers->getLogger("mergePlaygroundApp").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
 			ImageLogger imageLogger = ImageLoggers->getLogger("mergePlaygroundApp");
 			Mat imgWvm = img.clone();
-			imageLogger.intermediate(imgWvm, bind(drawBoxes, imgWvm, resultingPatches), "rrvm_gray");
+			imageLogger.intermediate(imgWvm, bind(drawBoxes, imgWvm, resultingPatches), "TEST");
 
 
 		} // end for each face detector

@@ -12,10 +12,12 @@
 #include "classification/ProbabilisticClassifier.hpp"
 #include "boost/property_tree/ptree.hpp"
 #include <memory>
+#include <utility>
 
 using boost::property_tree::ptree;
 using std::shared_ptr;
 using std::string;
+using std::pair;
 
 namespace classification {
 
@@ -70,23 +72,23 @@ public:
 	void setLogisticParameters(double logisticA, double logisticB);
 
 	/**
-	 * Creates a new probabilistic SVM classifier from the parameters given in some Matlab file. Loads the logistic function's
-	 * parameters from the matlab file, then passes the loading to the underlying SVM which loads the vectors and thresholds
-	 * from the matlab file.
+	 * Creates a new probabilistic RVM classifier from the parameters given in some Matlab file. Loads the logistic function's
+	 * parameters from the Matlab file, then passes the loading to the underlying SVM which loads the vectors and thresholds
+	 * from the Matlab file.
 	 *
 	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
 	 * @param[in] logisticFilename The name of the file containing the logistic function's parameters.
-	 * @return The newly created probabilistic SVM classifier.
+	 * @return The newly created probabilistic RVM classifier. TODO update doc
 	 */
-	//TODO static shared_ptr<ProbabilisticRvmClassifier> loadMatlab(const string& classifierFilename, const string& logisticFilename);
+	static pair<double, double> loadSigmoidParamsFromMatlab(const string& logisticFilename);
 
 	/**
-	 * Creates a new probabilistic SVM classifier from the parameters given in the ptree sub-tree. Loads the logistic function's
+	 * Creates a new probabilistic RVM classifier from the parameters given in the ptree sub-tree. Loads the logistic function's
 	 * parameters, then passes the loading to the underlying SVM which loads the vectors and thresholds
-	 * from the matlab file.
+	 * from the Matlab file.
 	 *
 	 * @param[in] subtree The subtree containing the config information for this classifier.
-	 * @return The newly created probabilistic WVM classifier.
+	 * @return The newly created probabilistic RVM classifier.
 	 */
 	static shared_ptr<ProbabilisticRvmClassifier> loadConfig(const ptree& subtree);
 

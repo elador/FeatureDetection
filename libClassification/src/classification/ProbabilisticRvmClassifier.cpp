@@ -44,8 +44,8 @@ void ProbabilisticRvmClassifier::setLogisticParameters(double logisticA, double 
 	this->logisticB = logisticB;
 }
 
-/*
-shared_ptr<ProbabilisticRvmClassifier> ProbabilisticRvmClassifier::loadMatlab(const string& classifierFilename, const string& logisticFilename)
+
+pair<double, double> ProbabilisticRvmClassifier::loadSigmoidParamsFromMatlab(const string& logisticFilename)
 {
 	// Load sigmoid stuff:
 	double logisticA, logisticB;
@@ -56,7 +56,7 @@ shared_ptr<ProbabilisticRvmClassifier> ProbabilisticRvmClassifier::loadMatlab(co
 		throw invalid_argument("ProbabilisticRvmClassifier: Unable to open the thresholds-file: " + logisticFilename);
 	} 
 
-	//TODO is there a case (when svm+wvm from same trainingdata) when there exists only a posterior_svm, and I should use this here?
+	//TODO is there a case (when svm+wvm from same training-data) when there exists only a posterior_svm, and I should use this here?
 	pmxarray = matGetVariable(pmatfile, "posterior_wrvm");
 	if (pmxarray == 0) {
 		throw runtime_error("ProbabilisticRvmClassifier: Unable to find the vector posterior_wrvm. If you don't want probabilistic output, don't use a probabilistic classifier.");
@@ -75,27 +75,25 @@ shared_ptr<ProbabilisticRvmClassifier> ProbabilisticRvmClassifier::loadMatlab(co
 	}
 	matClose(pmatfile);
 
-	// Load the detector and thresholds:
-	shared_ptr<RvmClassifier> svm = RvmClassifier::loadMatlab(classifierFilename);
-	return make_shared<ProbabilisticRvmClassifier>(svm, logisticA, logisticB);
+	return make_pair(logisticA, logisticB);
 }
-*/
+
 
 shared_ptr<ProbabilisticRvmClassifier> ProbabilisticRvmClassifier::loadConfig(const ptree& subtree)
 {
 	path classifierFile = subtree.get<path>("classifierFile");
-	string a = classifierFile.extension().string();
 	if (classifierFile.extension() == ".mat") {
-		//return loadMatlab(classifierFile.string(), subtree.get<string>("thresholdsFile"));
-		throw logic_error("ProbabilisticRvmClassifier: Loading of .mat RVM's is not yet supported!");
+		pair<double, double> logisticParams = ProbabilisticRvmClassifier::loadSigmoidParamsFromMatlab(subtree.get<path>("thresholdsFile").string());
+		shared_ptr<RvmClassifier> rvm = RvmClassifier::loadConfig(subtree);
+		return make_shared<ProbabilisticRvmClassifier>(rvm, logisticParams.first, logisticParams.second);
+		// TODO: Re-think this whole loading logic. As soon as we call loadMatlab here, we lose the ptree, but
+		// we want the RvmClassifier to be able to load additional parameters like a "threshold" or "numUsedVectors".
+		// Option 1: Make a pair<float sigmA, float sigmB> loadSigmFromML(...); <- changed to this now
+		//        2: Here, first call rvm = RvmClassifier::loadConfig(subtree), loads everything.
+		//			 Then, here, call prvm = ProbRvmClass::loadMatlab/ProbabilisticStuff(rvm, thresholdsFile);
 	} else {
-		double logisticA = 0;
-		double logisticB = 0;
-		shared_ptr<RvmClassifier> svm = RvmClassifier::loadText(classifierFile.string());
-		//return make_shared<ProbabilisticSvmClassifier>(svm, logisticA, logisticB);
-		return make_shared<ProbabilisticRvmClassifier>(svm); // default values for a, b
+		throw logic_error("ProbabilisticRvmClassifier: Only loading of .mat RVMs is supported. If you want to load a non-cascaded RVM, use an SvmClassifier.");
 	}
-
 }
 
 } /* namespace classification */

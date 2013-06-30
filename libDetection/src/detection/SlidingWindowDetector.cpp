@@ -32,6 +32,12 @@ SlidingWindowDetector::SlidingWindowDetector(shared_ptr<ProbabilisticClassifier>
 vector<shared_ptr<ClassifiedPatch>> SlidingWindowDetector::detect(const Mat& image)
 {
 	featureExtractor->update(image);
+	// hacked-in to show the patch-sizes:
+	vector<cv::Size> patchSizes = featureExtractor->getPatchSizes();
+	Mat tmp = image.clone();
+	for (const auto& p : patchSizes) {
+		cv::rectangle(tmp, cv::Rect(0, 0, p.width, p.height), cv::Scalar(0.0f, 0.0f, 0.0f));
+	}
 	return detect();
 }
 

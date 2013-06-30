@@ -11,9 +11,11 @@
 
 #include "classification/VectorMachineClassifier.hpp"
 #include "opencv2/core/core.hpp"
+#include "boost/property_tree/ptree.hpp"
 #include <string>
 #include <vector>
 
+using boost::property_tree::ptree;
 using cv::Mat;
 using std::string;
 using std::vector;
@@ -64,25 +66,27 @@ public:
 	void setSvmParameters(vector<Mat> supportVectors, vector<float> coefficients, double bias);
 
 	/**
-	 * Creates a new SVM classifier from the parameters given in some Matlab file.
+	 * Creates a new RVM classifier from the parameters given in some Matlab file. TODO update doc
 	 *
-	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
-	 * @return The newly created SVM classifier.
+	 * @param[in] classifierFilename The name of the file containing the RVM vectors and weights.
+	 * @return The newly created RVM classifier.
 	 */
-	//TODO static shared_ptr<RvmClassifier> loadMatlab(const string& classifierFilename);
+	static shared_ptr<RvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename);
 
 	/**
-	 * Creates a new SVM classifier from the parameters given in some text file.
+	 * Creates a new RVM classifier from the parameters given in the ptree sub-tree. Loads
+	 * the vectors and thresholds from the Matlab file.
 	 *
-	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
-	 * @return The newly created SVM classifier.
+	 * @param[in] subtree The subtree containing the config information for this classifier.
+	 * @return The newly created probabilistic RVM classifier.
 	 */
-	static shared_ptr<RvmClassifier> loadText(const string& classifierFilename);
+	static shared_ptr<RvmClassifier> loadConfig(const ptree& subtree);
 
 private:
 
-	vector<Mat> supportVectors; ///< The support vectors.
-	vector<float> coefficients; ///< The coefficients of the support vectors.
+	vector<Mat> supportVectors; ///< The support vectors (or here, RSVs).
+	//vector<vector<float>> coefficients; ///< The coefficients of the support vectors. Each step in the cascade has its own set of coefficients.
+	vector<float> coefficients;
 };
 
 } /* namespace classification */
