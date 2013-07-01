@@ -32,26 +32,33 @@ using std::logic_error;
 namespace classification {
 
 RvmClassifier::RvmClassifier(shared_ptr<Kernel> kernel) :
-		VectorMachineClassifier(kernel), supportVectors(), coefficients() {}
+		VectorMachineClassifier(kernel), supportVectors(), coefficients() {} // TODO coefficients() probably different... vector<vector<... how?
 
 RvmClassifier::~RvmClassifier() {}
 
 bool RvmClassifier::classify(const Mat& featureVector) const {
-	return classify(computeHyperplaneDistance(featureVector));
+	bool isFeature = false;
+	unsigned int filterLevel = 0;
+	do {
+		isFeature = classify(computeHyperplaneDistance(featureVector, filterLevel), filterLevel);
+		++filterLevel;
+	} while (isFeature && filterLevel < this->numFiltersToUse); // TODO check the logic of this...
+	return isFeature;
 }
 
-bool RvmClassifier::classify(double hyperplaneDistance) const {
-	return hyperplaneDistance >= threshold;
+bool RvmClassifier::classify(double hyperplaneDistance, const int filterLevel) const {
+	return hyperplaneDistance >= hierarchicalThresholds[filterLevel];
 }
 
-double RvmClassifier::computeHyperplaneDistance(const Mat& featureVector) const {
+double RvmClassifier::computeHyperplaneDistance(const Mat& featureVector, const int filterLevel) const {
 	double distance = -bias;
-	for (size_t i = 0; i < supportVectors.size(); ++i)
-		distance += coefficients[i] * kernel->compute(featureVector, supportVectors[i]);
+	for (unsigned int i=0; i<=filterLevel; ++i) {
+		distance += coefficients[filterLevel][i] * kernel->compute(featureVector, supportVectors[i]);
+	}
 	return distance;
 }
 
-void RvmClassifier::setSvmParameters(vector<Mat> supportVectors, vector<float> coefficients, double bias) {
+void RvmClassifier::setRvmParameters(vector<Mat> supportVectors, vector<vector<float>> coefficients, double bias) {
 	this->supportVectors = supportVectors;
 	this->coefficients = coefficients;
 	this->bias = bias;
@@ -76,9 +83,9 @@ shared_ptr<RvmClassifier> RvmClassifier::loadMatlab(const string& classifierFile
 		// TODO (concerns the whole class): I think we leak memory here (all the MATFile and double pointers etc.)?
 	}
 	matdata = mxGetPr(pmxarray);
-	int nfilter = (int)matdata[0];
+	int numFilter = (int)matdata[0];
 	mxDestroyArray(pmxarray);
-	logger.debug("Found " + lexical_cast<string>(nfilter) + " reduced set vectors (RSVs).");
+	logger.debug("Found " + lexical_cast<string>(numFilter) + " reduced set vectors (RSVs).");
 
 	float nonlinThreshold;
 	int nonLinType;
@@ -120,51 +127,45 @@ shared_ptr<RvmClassifier> RvmClassifier::loadMatlab(const string& classifierFile
 	shared_ptr<RvmClassifier> rvm = make_shared<RvmClassifier>(kernel);
 	rvm->bias = nonlinThreshold;
 
-	logger.debug("Reading the " + lexical_cast<string>(nfilter) + " non-linear filters support_hk* and weight_hk* ...");
+	logger.debug("Reading the " + lexical_cast<string>(numFilter) + " non-linear filters support_hk* and weight_hk* ...");
 	char str[100];
 	sprintf(str, "support_hk%d", 1);
 	pmxarray = matGetVariable(pmatfile, str);
-	const mwSize *dim = mxGetDimensions(pmxarray);
-	// TODO add a check if that variable exists?
-	int filterSizeY = (int)dim[0]; // height
-	int filterSizeX = (int)dim[1]; // width TODO check if this is right with eg 24x16
-
-/*
-	rvm->numLinFilters = nfilter;
-	rvm->linFilters = new float* [rvm->numLinFilters];
-	for (int i = 0; i < rvm->numLinFilters; ++i)
-		rvm->linFilters[i] = new float[w*h];
-		
-	//hierarchicalThresholds = new float [numLinFilters];
-	rvm->hkWeights = new float* [rvm->numLinFilters];
-	for (int i = 0; i < rvm->numLinFilters; ++i)
-		rvm->hkWeights[i] = new float[rvm->numLinFilters];
-
 	if (pmxarray == 0) {
 		throw runtime_error("RvmClassifier: Unable to find the matrix 'support_hk1' in the classifier file.");
 	}
 	if (mxGetNumberOfDimensions(pmxarray) != 2) {
-		throw runtime_error("WvmClassifier: The matrix 'filter1' in the classifier file should have 2 dimensions.");
+		throw runtime_error("RvmClassifier: The matrix 'support_hk1' in the classifier file should have 2 dimensions.");
 	}
+	const mwSize *dim = mxGetDimensions(pmxarray);
+	int filterSizeY = (int)dim[0]; // height
+	int filterSizeX = (int)dim[1]; // width TODO check if this is right with eg 24x16
 	mxDestroyArray(pmxarray);
 
-	for (int i = 0; i < wvm->numLinFilters; i++) {
+	// Alloc space for SV's and alphas (weights)
+	rvm->supportVectors.reserve(numFilter);
+	rvm->coefficients.reserve(numFilter);
 
+	// Read the reduced vectors and coefficients (weights):
+	for (int i = 0; i < numFilter; ++i) {
 		sprintf(str, "support_hk%d", i+1);
 		pmxarray = matGetVariable(pmatfile, str);
 		if (pmxarray == 0) {
-			throw runtime_error("WvmClassifier: Unable to find the matrix 'support_hk" + lexical_cast<string>(i+1) + "' in the classifier file.");
+			throw runtime_error("RvmClassifier: Unable to find the matrix 'support_hk" + lexical_cast<string>(i+1) + "' in the classifier file.");
 		}
 		if (mxGetNumberOfDimensions(pmxarray) != 2) {
-			throw runtime_error("WvmClassifier: The matrix 'filter" + lexical_cast<string>(i+1) + "' in the classifier file should have 2 dimensions.");
+			throw runtime_error("RvmClassifier: The matrix 'support_hk" + lexical_cast<string>(i+1) + "' in the classifier file should have 2 dimensions.");
 		}
 
+		// Read the reduced-vector:
 		matdata = mxGetPr(pmxarray);
-				
 		int k = 0;
-		for (int x = 0; x < wvm->filter_size_x; ++x)
-			for (int y = 0; y < wvm->filter_size_y; ++y)
-				wvm->linFilters[i][y*wvm->filter_size_x+x] = 255.0f*(float)matdata[k++];	// because the training images grey level values were divided by 255;
+		Mat supportVector(filterSizeY, filterSizeX, CV_32F);
+		float* values = supportVector.ptr<float>(0);
+		for (int x = 0; x < filterSizeX; ++x)	// column-major order (ML-convention)
+			for (int y = 0; y < filterSizeY; ++y)
+				values[y * filterSizeX + x] = static_cast<float>(matdata[k++]); // because the training images gray level values were divided by 255
+		rvm->supportVectors.push_back(supportVector);
 		mxDestroyArray(pmxarray);
 
 		sprintf(str, "weight_hk%d", i+1);
@@ -172,45 +173,18 @@ shared_ptr<RvmClassifier> RvmClassifier::loadMatlab(const string& classifierFile
 		if (pmxarray != 0) {
 			const mwSize *dim = mxGetDimensions(pmxarray);
 			if ((dim[1] != i+1) && (dim[0] != i+1)) {
-				throw runtime_error("WvmClassifier: The matrix " + lexical_cast<string>(str) + " in the classifier file should have a dimensions 1x" + lexical_cast<string>(i+1) + " or " + lexical_cast<string>(i+1) + "x1");
+				throw runtime_error("RvmClassifier: The matrix " + lexical_cast<string>(str) + " in the classifier file should have a dimensions 1x" + lexical_cast<string>(i+1) + " or " + lexical_cast<string>(i+1) + "x1");
 			}
+			vector<float> coefficientsForFilter;
 			matdata = mxGetPr(pmxarray);
 			for (int j = 0; j <= i; ++j) {
-				wvm->hkWeights[i][j] = (float)matdata[j];
+				coefficientsForFilter.push_back(static_cast<float>(matdata[j]));
 			}
+			rvm->coefficients.push_back(coefficientsForFilter);
 			mxDestroyArray(pmxarray);
 		}
 	}	// end for over numHKs
 	logger.debug("Vectors and weights successfully read.");
-
-
-
-
-	wvm->lin_thresholds = new float [wvm->numLinFilters];
-	for (int i = 0; i < wvm->numLinFilters; ++i) {			//wrvm_out=treshSVM+sum(beta*kernel)
-		wvm->lin_thresholds[i] = (float)wvm->bias;
-	}
-
-	// number of filters per level (eg 14)
-	pmxarray = matGetVariable(pmatfile, "num_hk_wvm");
-	if (pmxarray != 0) {
-		matdata = mxGetPr(pmxarray);
-		assert(matdata != 0);	// TODO REMOVE
-		wvm->numFiltersPerLevel = (int)matdata[0];
-		mxDestroyArray(pmxarray);
-	} else {
-		throw runtime_error("WvmClassifier: Variable 'num_hk_wvm' not found in classifier file.");
-	}
-	// number of levels with filters (eg 20)
-	pmxarray = matGetVariable(pmatfile, "num_lev_wvm");
-	if (pmxarray != 0) {
-		matdata = mxGetPr(pmxarray);
-		assert(matdata != 0);
-		wvm->numLevels = (int)matdata[0];
-		mxDestroyArray(pmxarray);
-	} else {
-		throw runtime_error("WvmClassifier: Variable 'num_lev_wvm' not found in classifier file.");
-	}
 
 	if (matClose(pmatfile) != 0) {
 		logger.warn("RvmClassifier: Could not close file " + classifierFilename);
@@ -220,56 +194,31 @@ shared_ptr<RvmClassifier> RvmClassifier::loadMatlab(const string& classifierFile
 
 
 	//MATFile *mxtFile = matOpen(args->threshold, "r");
-	logger.info("Loading WVM thresholds from Matlab file: " + thresholdsFilename);
+	logger.info("Loading RVM thresholds from Matlab file: " + thresholdsFilename);
 	pmatfile = matOpen(thresholdsFilename.c_str(), "r");
 	if (pmatfile == 0) {
-		throw runtime_error("WvmClassifier: Unable to open the thresholds file (wrong format?):" + thresholdsFilename);
+		throw runtime_error("RvmClassifier: Unable to open the thresholds file (wrong format?):" + thresholdsFilename);
 	} else {
 		pmxarray = matGetVariable(pmatfile, "hierar_thresh");
 		if (pmxarray == 0) {
-			throw runtime_error("WvmClassifier: Unable to find the matrix hierar_thresh in the thresholds file.");
+			throw runtime_error("RvmClassifier: Unable to find the matrix hierar_thresh in the thresholds file.");
 		} else {
 			double* matdata = mxGetPr(pmxarray);
 			const mwSize *dim = mxGetDimensions(pmxarray);
 			for (int o=0; o<(int)dim[1]; ++o) {
-				//TPairIf p(o+1, (float)matdata[o]);
-				//std::pair<int, float> p(o+1, (float)matdata[o]); // = std::make_pair<int, float>
-				//this->hierarchicalThresholdsFromFile.push_back(p);
-				wvm->hierarchicalThresholdsFromFile.push_back((float)matdata[o]);
+				rvm->hierarchicalThresholds.push_back(static_cast<float>(matdata[o]));
 			}
 			mxDestroyArray(pmxarray);
 		}
-			
 		matClose(pmatfile);
 	}
 
-	//int i;
-	//for (i = 0; i < this->numLinFilters; ++i) {
-	//	this->hierarchicalThresholds[i] = 0;
-	//}
-	//for (i = 0; i < this->hierarchicalThresholdsFromFile.size(); ++i) {
-	//	if (this->hierarchicalThresholdsFromFile[i].first <= this->numLinFilters)
-	//		this->hierarchicalThresholds[this->hierarchicalThresholdsFromFile[i].first-1] = this->hierarchicalThresholdsFromFile[i].second;
-	//}
-	////Diffwert fuer W-RSV's-Schwellen 
-	//if (this->limitReliabilityFilter!=0.0)
-	//	for (i = 0; i < this->numLinFilters; ++i) this->hierarchicalThresholds[i]+=this->limitReliabilityFilter;
-	//
-
-	if(wvm->hierarchicalThresholdsFromFile.size() != wvm->numLinFilters) {
-		throw runtime_error("RvmClassifier: Something seems to be wrong, hierarchicalThresholdsFromFile.size() != numLinFilters; " + lexical_cast<string>(wvm->hierarchicalThresholdsFromFile.size()) + "!=" + lexical_cast<string>(wvm->numLinFilters));
+	if(rvm->hierarchicalThresholds.size() != rvm->coefficients.size()) {
+		throw runtime_error("RvmClassifier: Something seems to be wrong, hierarchicalThresholds.size() != coefficients.size(): " + lexical_cast<string>(rvm->hierarchicalThresholds.size()) + "!=" + lexical_cast<string>(rvm->coefficients.size()));
 	}
-	wvm->setLimitReliabilityFilter(wvm->limitReliabilityFilter);	// This initializes the vector hierarchicalThresholds
 
-	//for (i = 0; i < this->numLinFilters; ++i) printf("b%d=%g ",i+1,this->hierarchicalThresholds[i]);
-	//printf("\n");
 	logger.info("RVM thresholds successfully read.");
-
-	wvm->filter_output = new float[wvm->numLinFilters];
-	wvm->u_kernel_eval = new float[wvm->numLinFilters];
-
-	wvm->setNumUsedFilters(wvm->numUsedFilters);	// Makes sure that we don't use more filters than the loaded WVM has, and if zero, set to numLinFilters.
-*/
+	rvm->setNumFiltersToUse(numFilter);
 	return rvm;
 }
 
@@ -285,6 +234,20 @@ shared_ptr<RvmClassifier> RvmClassifier::loadConfig(const ptree& subtree)
 		return rvm;
 	} else {
 		throw logic_error("ProbabilisticRvmClassifier: Only loading of .mat RVMs is supported. If you want to load a non-cascaded RVM, use an SvmClassifier.");
+	}
+}
+
+unsigned int RvmClassifier::getNumFiltersToUse(void) const
+{
+	return numFiltersToUse;
+}
+
+void RvmClassifier::setNumFiltersToUse(const unsigned int numFilters)
+{
+	if (numFilters == 0 || numFilters > this->coefficients.size()) {
+		numFiltersToUse = this->coefficients.size();
+	} else {
+		numFiltersToUse = numFilters;
 	}
 }
 

@@ -64,7 +64,7 @@ public:
 
 	vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(), int firstLayer = -1, int lastLayer = -1) const {
 		vector<shared_ptr<Patch>> patches = extractor->extract(stepX, stepY, roi, firstLayer, lastLayer);
-		for (auto patch : patches)
+		for (const auto& patch : patches)
 			patchFilter->applyInPlace(patch->getData());
 		return patches;
 	}

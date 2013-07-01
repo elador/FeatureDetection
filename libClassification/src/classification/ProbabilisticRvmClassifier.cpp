@@ -26,17 +26,27 @@ using std::logic_error;
 namespace classification {
 
 ProbabilisticRvmClassifier::ProbabilisticRvmClassifier() :
-		svm(), logisticA(0), logisticB(0) {}
+		rvm(), logisticA(0), logisticB(0) {}
 
-ProbabilisticRvmClassifier::ProbabilisticRvmClassifier(shared_ptr<RvmClassifier> svm, double logisticA, double logisticB) :
-		svm(svm), logisticA(logisticA), logisticB(logisticB) {}
+ProbabilisticRvmClassifier::ProbabilisticRvmClassifier(shared_ptr<RvmClassifier> rvm, double logisticA, double logisticB) :
+		rvm(rvm), logisticA(logisticA), logisticB(logisticB) {}
 
 ProbabilisticRvmClassifier::~ProbabilisticRvmClassifier() {}
 
 pair<bool, double> ProbabilisticRvmClassifier::classify(const Mat& featureVector) const {
-	double hyperplaneDistance = svm->computeHyperplaneDistance(featureVector);
+	// Would be great if this could be made simpler (as in ProbabilisticSvmClassifier) and less
+	// code duplication with RvmClassifier::classify(...).
+	bool isFeature = false;
+	unsigned int filterLevel = 0;
+	double hyperplaneDistance = 0;
+	do {
+		hyperplaneDistance = rvm->computeHyperplaneDistance(featureVector, filterLevel);
+		isFeature = rvm->classify(hyperplaneDistance, filterLevel);
+		++filterLevel;
+	} while (isFeature && filterLevel < rvm->getNumFiltersToUse()); // TODO check the logic of this...
+	
 	double probability = 1.0f / (1.0f + exp(logisticA + logisticB * hyperplaneDistance));
-	return make_pair(svm->classify(hyperplaneDistance), probability);
+	return make_pair(isFeature, probability);
 }
 
 void ProbabilisticRvmClassifier::setLogisticParameters(double logisticA, double logisticB) {

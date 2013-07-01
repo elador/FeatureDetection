@@ -483,7 +483,7 @@ int main(int argc, char *argv[])
 			ImageLoggers->getLogger("mergePlaygroundApp").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
 			ImageLogger imageLogger = ImageLoggers->getLogger("mergePlaygroundApp");
 			Mat imgWvm = img.clone();
-			imageLogger.intermediate(imgWvm, bind(drawBoxes, imgWvm, resultingPatches), "TEST");
+			imageLogger.intermediate(imgWvm, bind(drawBoxes, imgWvm, resultingPatches), "rvm_casc");
 
 
 		} // end for each face detector

@@ -43,22 +43,22 @@ public:
 	 * @param[in] logisticA Parameter a of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 	 * @param[in] logisticB Parameter b of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 	 */
-	explicit ProbabilisticRvmClassifier(shared_ptr<RvmClassifier> svm, double logisticA = 0.00556, double logisticB = -2.95);
+	explicit ProbabilisticRvmClassifier(shared_ptr<RvmClassifier> rvm, double logisticA = 0.00556, double logisticB = -2.95);
 
 	~ProbabilisticRvmClassifier();
 
 	/**
 	 * @return The actual SVM.
 	 */
-	shared_ptr<RvmClassifier> getSvm() {
-		return svm;
+	shared_ptr<RvmClassifier> getRvm() {
+		return rvm;
 	}
 
 	/**
 	 * @return The actual SVM.
 	 */
-	const shared_ptr<RvmClassifier> getSvm() const {
-		return svm;
+	const shared_ptr<RvmClassifier> getRvm() const {
+		return rvm;
 	}
 
 	pair<bool, double> classify(const Mat& featureVector) const;
@@ -94,7 +94,7 @@ public:
 
 private:
 
-	shared_ptr<RvmClassifier> svm; ///< The actual SVM.
+	shared_ptr<RvmClassifier> rvm; ///< The actual RVM.
 	double logisticA; ///< Parameter a of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 	double logisticB; ///< Parameter b of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 };

@@ -289,7 +289,7 @@ shared_ptr<WvmClassifier> WvmClassifier::loadMatlab(const string& classifierFile
 			throw runtime_error("WvmClassifier: Unable to find the matrix 'support_hk1' in the classifier file.");
 		}
 		if (mxGetNumberOfDimensions(pmxarray) != 2) {
-			throw runtime_error("WvmClassifier: The matrix 'filter1' in the classifier file should have 2 dimensions.");
+			throw runtime_error("WvmClassifier: The matrix 'support_hk' in the classifier file should have 2 dimensions.");
 		}
 		mxDestroyArray(pmxarray);
 
@@ -711,7 +711,7 @@ float WvmClassifier::linEvalWvmHisteq64(
 
 	//3rd term: p'*p (convolution of the appr. RSV - constrant calculated at the training)
 	//spp_begin = clock();
-	sum_pp=app_rsv_convol[level]; // patrik: �berfl�ssig?
+	sum_pp=app_rsv_convol[level]; // Patrik: Ueberfluessig?
 	norm_new+=app_rsv_convol[level];
 	//Profiler.spp += (double)(clock()-spp_begin);
 

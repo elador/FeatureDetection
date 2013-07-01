@@ -57,7 +57,6 @@ vector<shared_ptr<ClassifiedPatch>> SlidingWindowDetector::detect() const
 		if(res.first==true)
 			classifiedPatches.push_back(make_shared<ClassifiedPatch>(pyramidPatches[i], res));
 	}
-
 	return classifiedPatches;
 }
 
