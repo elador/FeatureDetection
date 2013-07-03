@@ -23,8 +23,9 @@ Camera::~Camera(void)
 
 void Camera::init()
 {
-	this->verticalAngle = -CV_PI/4.0f;
-	this->updateFixed(cv::Vec3f(0.0f, 3.0f, 3.0f), cv::Vec3f(0.0f, 0.0f, 0.0f));	// "at" initialization doesn't matter
+	//this->verticalAngle = -CV_PI/4.0f;
+	this->verticalAngle = 0.0f;
+	this->updateFixed(cv::Vec3f(0.0f, 0.0f, 3.0f), cv::Vec3f(0.0f, 0.0f, 0.0f));	// "at" initialization doesn't matter
 }
 
 void Camera::update(int deltaTime)	// Hmm this doesn't really belong here, it's application dependent. But ok for now.
@@ -57,8 +58,8 @@ void Camera::updateFree(const cv::Vec3f& eye, const cv::Vec3f& up)
 	cv::Mat tmpRes = transformMatrix * cv::Mat(cv::Vec4f(0.0f, 0.0f, -1.0f, 1.0f));
 	//cv::Mat tmp = (cv::Mat_<float>(1, 4) << 0.0f, 0.0f, -1.0f, 0.0f);
 	//cv::Mat tmpRes = tmp * transformMatrix;
-	forwardVector[0] = tmpRes.at<float>(0, 0);
-	forwardVector[1] = tmpRes.at<float>(1, 0);
+	forwardVector[0] = tmpRes.at<float>(0, 0);	// This rotates the standard forward-vector (0, 0, -1) with the rotation
+	forwardVector[1] = tmpRes.at<float>(1, 0);	// matrix and sets the new forward-vector accordingly (?)
 	forwardVector[2] = tmpRes.at<float>(2, 0);
 
 	cv::Mat tmpRes2 = transformMatrix * cv::Mat(cv::Vec4f(1.0f, 0.0f, 0.0f, 1.0f));

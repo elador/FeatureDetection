@@ -14,6 +14,8 @@
 #include <stdexcept>
 
 using cv::Ptr;
+using cv::Size;
+using cv::Point;
 using cv::BaseFilter;
 using std::array;
 using std::invalid_argument;
@@ -25,8 +27,8 @@ namespace imageprocessing {
  * be put into one bin, the resulting amount of bins is 59. Otherwise, the amount of bins is 256. The input image has to
  * have a single channel.
  *
- * The code for computing the LBP codes was taken from http://www.bytefish.de/blog/local_binary_patterns/, where can be found
- * the code for the extended LBP, too.
+ * The code for computing the LBP codes was taken from http://www.bytefish.de/blog/local_binary_patterns/, where the
+ * code for the extended LBP can be found too.
  */
 class LbpFilter : public HistogramFilter {
 public:
@@ -98,8 +100,8 @@ private:
 	public:
 
 		Lbp8Filter() {
-			anchor = { 1, 1 };
-			ksize = { 3, 3 };
+			anchor = Point(1, 1);
+			ksize = Size(3, 3);
 		}
 
 		~Lbp8Filter() {}
@@ -134,8 +136,8 @@ private:
 	public:
 
 		Lbp4Filter() {
-			anchor = { 1, 1 };
-			ksize = { 3, 3 };
+			anchor = Point(1, 1);
+			ksize = Size(3, 3);
 		}
 
 		~Lbp4Filter() {}
@@ -166,8 +168,8 @@ private:
 	public:
 
 		RotatedLbp4Filter() {
-			anchor = { 1, 1 };
-			ksize = { 3, 3 };
+			anchor = Point(1, 1);
+			ksize = Size(3, 3);
 		}
 
 		~RotatedLbp4Filter() {}

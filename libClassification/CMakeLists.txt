@@ -4,6 +4,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
+MESSAGE(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
+
 # find dependencies
 FIND_PACKAGE(Boost 1.48.0 REQUIRED)
 FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core)
@@ -30,7 +32,9 @@ SET(HEADERS
 	include/classification/VectorMachineClassifier.hpp
 	include/classification/ProbabilisticWvmClassifier.hpp
 	include/classification/ProbabilisticSvmClassifier.hpp
+	include/classification/ProbabilisticRvmClassifier.hpp
 	include/classification/SvmClassifier.hpp
+	include/classification/RvmClassifier.hpp
 	include/classification/TrainableClassifier.hpp
 	include/classification/TrainableBinaryClassifier.hpp
 	include/classification/TrainableProbabilisticClassifier.hpp
@@ -51,8 +55,10 @@ SET(SOURCE
 	src/classification/WvmClassifier.cpp
 	src/classification/IImg.cpp
 	src/classification/SvmClassifier.cpp
+	src/classification/RvmClassifier.cpp
 	src/classification/VectorMachineClassifier.cpp
 	src/classification/ProbabilisticWvmClassifier.cpp
+	src/classification/ProbabilisticRvmClassifier.cpp
 	src/classification/ProbabilisticSvmClassifier.cpp
 	src/classification/TrainableSvmClassifier.cpp
 	src/classification/FrameBasedTrainableSvmClassifier.cpp

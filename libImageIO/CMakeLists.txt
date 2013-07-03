@@ -4,6 +4,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
+MESSAGE(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
+
 # find dependencies
 #FIND_PACKAGE(Boost 1.48.0 COMPONENTS filesystem REQUIRED)	# Patrik: I think we need 'system' too, if the app doesn't link to it, ImageIO fails to link.
 FIND_PACKAGE(Boost 1.48.0 REQUIRED) # We only want the headers in the lib?

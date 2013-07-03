@@ -15,6 +15,7 @@ namespace imageprocessing {
 /**
  * Image filter that equalizes the histogram using our old implementation. It uses 64 bins and corresponds to the matlab
  * implementation used in the training of WVM/SVM's. The images must be of type 8-bit single channel (CV_8U / CV_8UC1).
+ * The output image will be CV_8U as well.
  */
 class HistEq64Filter : public ImageFilter {
 public:

@@ -14,7 +14,8 @@ namespace imageprocessing {
 
 /**
  * Image filter that approximately whitens the power spectrum of natural images. The input image
- * must not have more than one channel.
+ * must not have more than one channel and can be of any type. The output image has the same type
+ * as the input image.
  *
  * The algorithm was taken from http://sun360.csail.mit.edu/jxiao/SFMedu/SFMedu/lib/vlfeat/toolbox/imop/vl_imwhiten.m.
  */

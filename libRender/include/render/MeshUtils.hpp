@@ -10,9 +10,10 @@
 #ifndef MESHUTILS_HPP_
 #define MESHUTILS_HPP_
 
-#include <opencv2/core/core.hpp>
-
 #include "render/Mesh.hpp"
+#include "render/MorphableModel.hpp"
+
+#include "opencv2/core/core.hpp"
 
 // Todo: Class with static methods? Or just functions? I don't know which method is better.
 
@@ -27,6 +28,7 @@ namespace render {
 			static Mesh createPlane(void);
 
 			static Mesh readFromHdf5(std::string filename);
+			static MorphableModel readFromScm(std::string filename);
 
 		};
 

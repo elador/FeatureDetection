@@ -113,6 +113,7 @@ int main(int argc, char *argv[])
 	bool useFileList = false;
 	bool useImgs = false;
 	bool useDirectory = false;
+	vector<path> inputPaths;
 	path inputFilelist;
 	path inputDirectory;
 	vector<path> inputFilenames;
@@ -128,21 +129,17 @@ int main(int argc, char *argv[])
             ("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
                   "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
 			("verbose-images,w", po::value<string>(&verboseLevelImages)->implicit_value("INTERMEDIATE")->default_value("FINAL","write images with FINAL loglevel or below."),
-				  "specify the verbosity of the console output: FINAL, INTERMEDIATE, INFO, DEBUG or TRACE")
+				  "specify the verbosity of the image output: FINAL, INTERMEDIATE, INFO, DEBUG or TRACE")
 			("config,c", po::value<path>()->required(), 
 				"path to a config (.cfg) file")
-			("input-list,l", po::value<path>(), 
-				"input from a file containing a list of images")
-			("input-file,f", po::value<vector<path>>(),
-				"input one or several images")
-			("input-dir,d", po::value<path>(),
-				"input all images inside the directory")
-			("output-dir,o", po::value<path>(),
+			("input,i", po::value<vector<path>>()->required(), 
+				"input from one or more files, a directory, or a  .lst-file containing a list of images")
+			("output-dir,o", po::value<path>()->default_value("."),
 				"output directory for the result images")
         ;
 
         po::positional_options_description p;
-        p.add("input-file", -1);
+        p.add("input", -1);
         
         po::variables_map vm;
         po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
@@ -159,20 +156,9 @@ int main(int argc, char *argv[])
 		if (vm.count("verbose-images")) {
 			verboseLevelImages = vm["verbose-images"].as<string>();
 		}
-		if (vm.count("input-list"))
+		if (vm.count("input"))
 		{
-			useFileList = true;
-			inputFilelist = vm["input-list"].as<path>();
-		}
-		if (vm.count("input-file"))
-		{
-			useImgs = true;
-			inputFilenames = vm["input-file"].as<vector<path>>();
-		}
-		if (vm.count("input-dir"))
-		{
-			useDirectory = true;
-			inputDirectory = vm["input-dir"].as<path>();
+			inputPaths = vm["input"].as<vector<path>>();
 		}
 		if (vm.count("config"))
 		{
@@ -226,9 +212,29 @@ int main(int argc, char *argv[])
 
 	ImageLoggers->getLogger("detection").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir));
 
-	int numInputs = 0;
+	if(inputPaths.size() > 1) {
+		// We assume the user has given several, valid images
+		useImgs = true;
+		inputFilenames = inputPaths;
+	} else if (inputPaths.size() == 1) {
+		// We assume the user has given either an image, directory, or a .lst-file
+		if (inputPaths[0].extension().string() == ".lst") { // check for .lst first
+			useFileList = true;
+			inputFilelist = inputPaths[0];
+		} else if (boost::filesystem::is_directory(inputPaths[0])) { // check if it's a directory
+			useDirectory = true;
+			inputDirectory = inputPaths[0];
+		} else { // it must be an image
+			useImgs = true;
+			inputFilenames = inputPaths;
+		}
+	} else {
+		appLogger.error("Please either specify one or several files, a directory, or a .lst-file containing a list of images to run the program!");
+		return EXIT_FAILURE;
+	}
+
+
 	if(useFileList==true) {
-		numInputs++;
 		appLogger.info("Using file-list as input: " + inputFilelist.string());
 		shared_ptr<ImageSource> fileListImgSrc;
 		try {
@@ -244,7 +250,6 @@ int main(int argc, char *argv[])
 		imageSource = fileListImgSrc;
 	}
 	if(useImgs==true) {
-		numInputs++;
 		//imageSource = make_shared<FileImageSource>(inputFilenames);
 		//imageSource = make_shared<RepeatingFileImageSource>("C:\\Users\\Patrik\\GitHub\\data\\firstrun\\ws_8.png");
 		appLogger.info("Using input images: ");
@@ -267,7 +272,6 @@ int main(int argc, char *argv[])
 		imageSource = fileImgSrc;
 	}
 	if(useDirectory==true) {
-		numInputs++;
 		appLogger.info("Using input images from directory: " + inputDirectory.string());
 		try {
 			imageSource = make_shared<DirectoryImageSource>(inputDirectory.string());
@@ -275,10 +279,6 @@ int main(int argc, char *argv[])
 			appLogger.error(e.what());
 			return EXIT_FAILURE;
 		}
-	}
-	if(numInputs!=1) {
-		appLogger.error("Please either specify a file-list (-l), an input-file (-f) or a directory (-d) (and only one of them) to run the program!");
-		return EXIT_FAILURE;
 	}
 
 	const float DETECT_MAX_DIST_X = 0.33f;	// --> Config / Landmarks
@@ -357,12 +357,17 @@ int main(int argc, char *argv[])
 	// output-dir
 	// load ffd/ROI
 	// relative bilder-pfad aus filelist
+	// boost::po behaves strangely with -h and the required arguments (cannot show help without them) ?
 	// our libs: add library dependencies (eg to boost) in add_library ?
-	// -f file.png fails?
 	// log (text) what is going on. Eg detecting on image... bla... Svm reduced from x to y...
 	//       where to put this? as deep as possible? (eg just there where the variable needed (eg filename, 
 	//       detector-name is still visible). I think for OE there's already something in it.
 	// move drawBoxes(...) somewhere else
+	// in the config: should we rename wvm/svm to firstStage/secondStage (or similar)? To e.g. be able to 
+	//      load a rvm instead of a wvm or svm. But what if they have different feature spaces. At the
+	//      moment, in 1 FiveStageDet., I believe there cannot be 2 different feature spaces. 
+	//      (the second classifier just gets a list of patches - theoretically, he could go extract them again?)
+	//      Should we make this all way more dynamic?
 
 	/* Note: We could change/write/add something to the config with
 	pt.put("detection.svm.threshold", -0.5f);
@@ -393,7 +398,7 @@ int main(int argc, char *argv[])
 
 		stringstream ss;
 		ss << std::ctime(&end_time);
-		appLogger.info("finished computation at " + ss.str() + "elapsed time: " + lexical_cast<string>(elapsed_seconds) + "s, " + lexical_cast<string>(elapsed_mseconds) + "ms\n");
+		appLogger.info("finished computation at " + ss.str() + "elapsed time: " + lexical_cast<string>(elapsed_seconds) + "s or exactly " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
 
 		TOT++;
 		vector<string> resultingPatches;

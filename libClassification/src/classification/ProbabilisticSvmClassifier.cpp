@@ -8,9 +8,15 @@
 #include "classification/ProbabilisticSvmClassifier.hpp"
 #include "classification/SvmClassifier.hpp"
 #include "mat.h"
+#ifdef WIN32
+	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
+	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
+#endif
+#include "boost/filesystem/path.hpp"
 #include <iostream>
 #include <stdexcept>
 
+using boost::filesystem::path;
 using std::make_pair;
 using std::make_shared;
 using std::runtime_error;
@@ -78,7 +84,21 @@ shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadMatlab(co
 
 shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadConfig(const ptree& subtree)
 {
-	return loadMatlab(subtree.get<string>("classifierFile"), subtree.get<string>("thresholdsFile"));
+	path classifierFile = subtree.get<path>("classifierFile");
+	if (classifierFile.extension() == ".mat") {
+		return loadMatlab(classifierFile.string(), subtree.get<string>("thresholdsFile"));
+	} else {
+		shared_ptr<SvmClassifier> svm = SvmClassifier::loadText(classifierFile.string());
+		svm->setThreshold(subtree.get("threshold", 0.0f)); // TODO SvmClassifier::loadText should do that
+		double logisticA = subtree.get("logisticA", 0.0);
+		double logisticB = subtree.get("logisticB", 0.0);
+		if (logisticA == 0.0 || logisticB == 0.0) {
+			std::cout << "Warning, one or both sigmoid parameters not set in config, using default sigmoid parameters." << std::endl; // TODO use logger
+			return make_shared<ProbabilisticSvmClassifier>(svm);
+		} else {
+			return make_shared<ProbabilisticSvmClassifier>(svm, logisticA, logisticB);
+		}
+	}
 }
 
 } /* namespace classification */

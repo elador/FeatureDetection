@@ -33,9 +33,6 @@
 #include <chrono>
 #include <unordered_map>
 
-#include <frsdk/config.h>
-#include <frsdk/face.h>
-
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -51,8 +48,8 @@
 
 #include "imageio/Landmark.hpp"
 #include "imageio/LandmarksHelper.hpp"
-#include "imageio/LandmarkSource.hpp"
-#include "imageio/LabeledImageSource.hpp"
+#include "imageio/DefaultNamedLandmarkSource.hpp"
+#include "imageio/NamedLabeledImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
 #include "imageio/RepeatingFileImageSource.hpp"
@@ -61,6 +58,8 @@
 #include "imageio/DidLandmarkFormatParser.hpp"
 
 #include "logging/LoggerFactory.hpp"
+
+#include "faceRecogTestApp.hpp"
 
 namespace po = boost::program_options;
 using namespace std;
@@ -115,7 +114,6 @@ int main(int argc, char *argv[])
 	string inputFilelist;
 	string inputDirectory;
 	vector<std::string> inputFilenames;
-	shared_ptr<ImageSource> imageSource;
 	
 	try {
         po::options_description desc("Allowed options");
@@ -180,104 +178,52 @@ int main(int argc, char *argv[])
 	int numInputs = 0;
 	if(useFileList==true) {
 		numInputs++;
-		shared_ptr<ImageSource> fileImgSrc = make_shared<FileListImageSource>(inputFilelist);
-		shared_ptr<DidLandmarkFormatParser> didParser= make_shared<DidLandmarkFormatParser>();
-		vector<path> landmarkDir; landmarkDir.push_back(path("C:\\Users\\Patrik\\Github\\data\\labels\\xm2vts\\guosheng\\"));
-		shared_ptr<LandmarkSource> lmSrc = make_shared<LandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
-		imageSource = make_shared<LabeledImageSource>(fileImgSrc, lmSrc);
 	}
 	if(useImgs==true) {
 		numInputs++;
-		//imageSource = make_shared<FileImageSource>(inputFilenames);
-		//imageSource = make_shared<RepeatingFileImageSource>("C:\\Users\\Patrik\\GitHub\\data\\firstrun\\ws_8.png");
-		shared_ptr<ImageSource> fileImgSrc = make_shared<FileImageSource>(inputFilenames);
-		shared_ptr<DidLandmarkFormatParser> didParser= make_shared<DidLandmarkFormatParser>();
-		vector<path> landmarkDir; landmarkDir.push_back(path("C:\\Users\\Patrik\\Github\\data\\labels\\xm2vts\\guosheng\\"));
-		shared_ptr<LandmarkSource> lmSrc = make_shared<LandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
-		imageSource = make_shared<LabeledImageSource>(fileImgSrc, lmSrc);
 	}
 	if(useDirectory==true) {
 		numInputs++;
-		imageSource = make_shared<DirectoryImageSource>(inputDirectory);
 	}
 	if(numInputs!=1) {
 		cout << "[faceRecogTestApp] Error: Please either specify a file-list, an input-file or a directory (and only one of them) to run the program!" << endl;
 		return 1;
 	}
 
-	string cfgFn = "C:\\FVSDK_8_7_0\\etc\\frsdk.cfg";
-	FRsdk::Configuration cfg( cfgFn );
+	path fvsdkBins = "C:\\Users\\Patrik\\Documents\\GitHub\\FVSDK_bins\\";
+	path firOutDir = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\FIRs\\";
+	path scoreOutDir = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\scores\\";
+	path galleryFirList = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath_firlist.lst";
 
-	FRsdk::Face::Finder faceFinder( cfg);
+	shared_ptr<ImageSource> galleryImageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath.lst");
+	shared_ptr<ImageSource> probeImageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_probe_fullpath.lst");
 
 	Mat img;
-	while ((img = imageSource->getImage()).rows != 0) { // TODO Can we check against !=Mat() somehow? or .empty?
+	string cmd;
+	// create all FIR's of gallery
+	/*
+	while (galleryImageSource->next()) {
+		img = galleryImageSource->getImage();
+		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + galleryImageSource->getName().stem().string() + ".fir " + "-imgs " + galleryImageSource->getName().string();
+		int cmdRet = system(cmd.c_str());
+		cout << cmdRet;
+	}*/
 
-		cv::namedWindow("src", CV_WINDOW_AUTOSIZE); cv::imshow("src", img);
-		cvMoveWindow("src", 0, 0);
-		std::chrono::time_point<std::chrono::system_clock> start, end;
-		start = std::chrono::system_clock::now();
+	// create all FIR's of probes
+	/*
+	while (probeImageSource->next()) {
+		img = probeImageSource->getImage();
+		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + probeImageSource->getName().stem().string() + ".fir " + "-imgs " + probeImageSource->getName().string();
+		int cmdRet = system(cmd.c_str());
+		cout << cmdRet;
+	}*/
 
-		string filePath = string( imageSource->getName().string() );
-		
-		
-
-		float minrEyeDist = 0.1f;
-
-		FRsdk::Image imgCog( FRsdk::ImageIO::load( filePath ));
-
-		float mindist = 0.1f;
-		float maxdist = 0.4f;
-
-		// doing face finding
-		//shared_ptr<FRsdk::Face::LocationSet> locations = make_shared<FRsdk::Face::LocationSet>(			
-		//	faceFinder.find (imgCog, mindist, maxdist)
-		//	);
-		FRsdk::Face::LocationSet* locations = new FRsdk::Face::LocationSet(			
-				faceFinder.find (imgCog, mindist, maxdist)
-				);
-
-		std::cout << endl << "number of found faces: " << locations->size () << endl;
-
-		FRsdk::Face::LocationSet::const_iterator faceIter = locations->begin();
-		while( faceIter != locations->end()) {
-			cout << "Face location: [" << (*faceIter).pos.x() << ", " 
-				<< (*faceIter).pos.y() << "], width=" 
-				<< (*faceIter).width << ", confidence=" 
-				<< (*faceIter).confidence << ", rotationAngle="
-				<< (*faceIter).rotationAngle 
-				<< endl;
-			faceIter++;
-		}
-
-
-		end = std::chrono::system_clock::now();
-		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-		std::time_t end_time = std::chrono::system_clock::to_time_t(end);
-		std::cout << "Elapsed time: " << elapsed_mseconds << "ms\n";
-		imageSource->next();
+	// create the scores of each probe against the whole gallery
+	while (probeImageSource->next()) {
+		cmd = fvsdkBins.string() + "match.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-probe " + firOutDir.string() + probeImageSource->getName().stem().string() + ".fir " + "-gallery " + galleryFirList.string() + " -out " + scoreOutDir.string() + probeImageSource->getName().stem().string() + ".fir";
+		int cmdRet = system(cmd.c_str());
 	}
+
+
 	return 0;
 }
-
-	// My cmdline-arguments: -f C:\Users\Patrik\Documents\GitHub\data\firstrun\theRealWorld_png2.lst
-
-
-/* TODOs:
-Hmm, was hältst du von einer FileImageSource und FileListImageSource ?
-Bin grad am überlegen, wie ichs unter einen Hut krieg, sowohl von Ordnern, Bildern wie auch einer Bilder-Liste laden zu können
-[15:30:44] Patrik: Das nächste problem wird dann, dass ich die Bilder gerne auch mit Landmarks (also gelabelter groundtruth) laden möchte, manchmal, falls vorhanden.
-Frage mich grad wie wir das mit den *ImageSource's kombinieren könnten.
-[16:10:44] ex-ratt: jo, sowas schwirrte mir auch mal im kopf herum - ground-truth-daten mitladen
-[16:11:32] ex-ratt: habe mir aber bisher keine weiteren gedanken gemacht, wollte das aber irgendwie in die image-sources mit reinkriegen bzw. spezielle abgeleitete image-sources basteln, die diese zusatzinfo beinhalten
-[16:12:44] Patrik: Jop... ok joa das klingt sehr gut, falls du dich da nicht in den nächsten tagen dran machst, werd ich es tun!
-
-Nochn comment zum oberen: Evtl sollten wir die DirectoryImageSource erweitern, dass sie nur images in der liste hält, die von opencv geladen werden, oft hat man in datenbanken-bilder-dirs auch readme's, oder (Hallo Windows!) Thumbs.db files.
-[16:13:07] ex-ratt: jo, da gibts bestimmt file-filters oder sowas
-[16:13:22] ex-ratt: bastel erstmal was, ich schau dann mal drüber
-[16:13:28] Patrik: Ok :)
-[16:14:32] ex-ratt: es gibt eine FaceBoxLandmark
-[16:15:00] ex-ratt: aber ich könnte mir vorstellen, dass sowas auch für nicht-gesichter sinn macht
-[16:15:23] Patrik: Genau, siehe die klasse Landmark. die FaceBoxLandmark war dann ein wenig "gehacke", weil ich da auch die breite brauch..
-[16:16:50] Patrik: Hm, evtl schmeissen wir width/height in die Landmark-klasse, und setzen das einfach 0 wenns nicht benötigt wird, dann fällt ne extra klasse für die face-box weg
-*/

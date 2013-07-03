@@ -10,7 +10,7 @@
 #ifndef MATRIXUTILS_HPP_
 #define MATRIXUTILS_HPP_
 
-#include <opencv2/core/core.hpp>
+#include "opencv2/core/core.hpp"
 
 // Todo: Class with static methods? Or just functions? I don't know which method is better.
 

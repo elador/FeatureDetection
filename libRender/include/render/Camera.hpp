@@ -8,7 +8,7 @@
  */
 #pragma once
 
-#include <opencv2/core/core.hpp>
+#include "opencv2/core/core.hpp"
 
 namespace render {
 
@@ -40,7 +40,7 @@ public:
 	void setFrustum(float l, float r, float t, float b, float n, float f);
 
 private:
-	cv::Vec3f eye, at, up;
+	cv::Vec3f eye, at, up;	// (eye is where my eyes are (where I am = position of camera!), at is my target (where I'm looking at), and up is up direction
 	cv::Vec3f forwardVector, rightVector, upVector;
 
 	struct Frustum {

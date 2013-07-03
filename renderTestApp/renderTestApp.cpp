@@ -13,6 +13,7 @@
    #endif
 #endif  // _DEBUG
 
+#include "render/MorphableModel.hpp"
 #include "render/SRenderer.hpp"
 #include "render/Vertex.hpp"
 #include "render/Triangle.hpp"
@@ -25,15 +26,15 @@
 #include <iostream>
 #include <fstream>
 
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include "opencv2/core/core.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
 
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
-#include <boost/program_options.hpp>
+#include "boost/program_options.hpp"
 
 
 namespace po = boost::program_options;
@@ -89,10 +90,14 @@ int main(int argc, char *argv[])
 	render::Mesh cube = render::utils::MeshUtils::createCube();
 	render::Mesh plane = render::utils::MeshUtils::createPlane();
 
+	//render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("D:\\model2012_l6_rms.h5");
+	render::MorphableModel mmHeadL4 = render::utils::MeshUtils::readFromScm("D:\\MorphModel\\ShpVtxModelBin.scm");
+
 	const float& aspect = 640.0f/480.0f;
 
 	//render::Renderer->camera.setFrustum(-0.25f*aspect, 0.25f*aspect, 0.25f, -0.25f, 0.5f, 500.0f);
-	render::Renderer->camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, 5.0f, 1000.0f);
+	//render::Renderer->camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, 0.5f, 500.0f);
+	render::Renderer->camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, -0.5, -5000.0f);
 
 	// loop start
 	bool running = true;
@@ -109,13 +114,22 @@ int main(int argc, char *argv[])
 		render::Renderer->setMesh(&cube);	// The cube is the first object
 		render::Renderer->setTexture(cube.texture);	// not necessary anymore
 		//cube.hasTexture = false;
-		for (int i = 0; i < 2; i++)	// draw 15 cubes in each direction on the plane
+		//for (int i = 0; i < 2; i++)	// draw 15 cubes in each direction on the plane
 		{
-			for (int j = 0; j < 2; j++)
+			//for (int j = 0; j < 2; j++)
 			{
 				//cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(3.0f*(i - 7), 0.5f, 3.0f*(j - 7));
-				cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(4.0f*(i - 1), 0.5f, 4.0f*(j - 1));
+				//cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(4.0f*(i - 1), 0.5f, 4.0f*(j - 1));
+				cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, 0.0f);
 				render::Renderer->setTransform(viewProjTransform * worldTransform);
+				render::Renderer->draw();
+
+				cv::Mat worldTransform2 = render::utils::MatrixUtils::createTranslationMatrix(2.0f, 0.5f, -10.0f);
+				render::Renderer->setTransform(viewProjTransform * worldTransform2);
+				render::Renderer->draw();
+
+				cv::Mat worldTransform3 = render::utils::MatrixUtils::createTranslationMatrix(2.0f, 0.5f, 10.0f);
+				render::Renderer->setTransform(viewProjTransform * worldTransform3);
 				render::Renderer->draw();
 			}
 		}
@@ -129,24 +143,25 @@ int main(int argc, char *argv[])
 		plane.hasTexture = false;
 		render::Renderer->setMesh(&plane);	// The plane is the second object
 		cv::Mat wrld = viewProjTransform * render::utils::MatrixUtils::createScalingMatrix(15.0f, 1.0f, 15.0f);
-		std::cout << "MVP " << std::endl  << wrld << std::endl;
 		render::Renderer->setTransform(wrld);
 		//render::Renderer->setTexture(plane.texture);
 		render::Renderer->draw();
 		
-		render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("H:\\projects\\Software Renderer\\statismo_l4_head.h5");
-		render::Renderer->setMesh(&mmHeadL4);
+		/*
+		render::Renderer->setMesh(&mmHeadL4.mesh);
 		cv::Mat headWorld = render::utils::MatrixUtils::createScalingMatrix(1.0f/70.0f, 1.0f/70.0f, 1.0f/70.0f);
-		render::Renderer->setTransform(viewProjTransform/* headWorld*/);
+		cv::Mat mvp_3dmm = viewProjTransform * headWorld;
+		std::cout << "MVP " << std::endl  << mvp_3dmm << std::endl;
+		render::Renderer->setTransform(mvp_3dmm);
 		render::Renderer->draw();
-		
+		*/
 		render::Renderer->end();
 
 		cv::namedWindow("renderOutput");
 		cv::imshow("renderOutput", render::Renderer->getRendererImage());
 
-		float speed = 20.0f;
-		float mouseSpeed = 0.2f;
+		float speed = 2.0f;
+		float mouseSpeed = 0.10f;
 		cv::Vec3f eye = render::Renderer->camera.getEye();
 		float deltaTime = 1.0f;
 
