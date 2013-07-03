@@ -53,6 +53,7 @@
 #include "classification/SvmClassifier.hpp"
 #include "classification/WvmClassifier.hpp"
 #include "classification/ProbabilisticWvmClassifier.hpp"
+#include "classification/ProbabilisticRvmClassifier.hpp"
 #include "classification/ProbabilisticSvmClassifier.hpp"
 
 #include "imageio/ImageSource.hpp"
@@ -62,10 +63,17 @@
 
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
+#include "imageprocessing/ReshapingFilter.hpp"
+#include "imageprocessing/ConversionFilter.hpp"
 #include "imageprocessing/Patch.hpp"
 #include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
+#include "imageprocessing/FilteringPyramidFeatureExtractor.hpp"
+#include "imageprocessing/FilteringFeatureExtractor.hpp"
 #include "imageprocessing/HistEq64Filter.hpp"
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
+#include "imageprocessing/ZeroMeanUnitVarianceFilter.hpp"
+#include "imageprocessing/IntensityNormNormalizationFilter.hpp"
+#include "imageprocessing/WhiteningFilter.hpp"
 
 #include "detection/SlidingWindowDetector.hpp"
 #include "detection/ClassifiedPatch.hpp"
@@ -94,11 +102,19 @@ using boost::filesystem::path;
 using boost::lexical_cast;
 
 
+void drawBoxes(Mat image, vector<shared_ptr<ClassifiedPatch>> patches)
+{
+	for(const auto& cpatch : patches) {
+		shared_ptr<Patch> patch = cpatch->getPatch();
+		cv::rectangle(image, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((cpatch->getProbability())/1.0)   ));
+	}
+}
+
 template<class T>
 ostream& operator<<(ostream& os, const vector<T>& v)
 {
-    copy(v.begin(), v.end(), ostream_iterator<T>(cout, " ")); 
-    return os;
+	copy(v.begin(), v.end(), ostream_iterator<T>(cout, " ")); 
+	return os;
 }
 
 int main(int argc, char *argv[])
@@ -122,12 +138,12 @@ int main(int argc, char *argv[])
 	path outputPicsDir;
 
 	try {
-        po::options_description desc("Allowed options");
-        desc.add_options()
-            ("help,h",
+		po::options_description desc("Allowed options");
+		desc.add_options()
+			("help,h",
 				"produce help message")
-            ("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
-                  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
+			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
+				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
 			("verbose-images,w", po::value<string>(&verboseLevelImages)->implicit_value("INTERMEDIATE")->default_value("FINAL","write images with FINAL loglevel or below."),
 				  "specify the verbosity of the image output: FINAL, INTERMEDIATE, INFO, DEBUG or TRACE")
 			("config,c", po::value<path>()->required(), 
@@ -136,20 +152,20 @@ int main(int argc, char *argv[])
 				"input from one or more files, a directory, or a  .lst-file containing a list of images")
 			("output-dir,o", po::value<path>()->default_value("."),
 				"output directory for the result images")
-        ;
+		;
 
-        po::positional_options_description p;
-        p.add("input", -1);
-        
-        po::variables_map vm;
-        po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
-        po::notify(vm);
-    
-        if (vm.count("help")) {
-            cout << "Usage: ffpDetectApp [options]\n";
-            cout << desc;
-            return EXIT_SUCCESS;
-        }
+		po::positional_options_description p;
+		p.add("input", -1);
+		
+		po::variables_map vm;
+		po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
+		po::notify(vm);
+	
+		if (vm.count("help")) {
+			cout << "Usage: ffpDetectApp [options]\n";
+			cout << desc;
+			return EXIT_SUCCESS;
+		}
 		if (vm.count("verbose")) {
 			verboseLevelConsole = vm["verbose"].as<string>();
 		}
@@ -168,10 +184,10 @@ int main(int argc, char *argv[])
 		{
 			outputPicsDir = vm["output-dir"].as<path>();
 		}
-    } catch(std::exception& e) {
-        cout << e.what() << endl;
-        return EXIT_FAILURE;
-    }
+	} catch(std::exception& e) {
+		cout << e.what() << endl;
+		return EXIT_FAILURE;
+	}
 
 	loglevel logLevel;
 	if(boost::iequals(verboseLevelConsole, "PANIC")) logLevel = loglevel::PANIC;
@@ -211,6 +227,7 @@ int main(int argc, char *argv[])
 	}
 
 	ImageLoggers->getLogger("detection").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir));
+	ImageLoggers->getLogger("mergePlaygroundApp").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir));
 
 	if(inputPaths.size() > 1) {
 		// We assume the user has given several, valid images
@@ -299,48 +316,126 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	unordered_map<string, shared_ptr<FiveStageSlidingWindowDetector>> faceDetectors;
-	unordered_map<string, shared_ptr<FiveStageSlidingWindowDetector>> featureDetectors;
+	unordered_map<string, shared_ptr<Detector>> faceDetectors;
+	unordered_map<string, shared_ptr<Detector>> featureDetectors;
 
 	try {
 		ptree ptDetectors = pt.get_child("detectors");
 		for_each(begin(ptDetectors), end(ptDetectors), [&faceDetectors, &featureDetectors](ptree::value_type kv) {
-			// TODO: 1) error handling if a key doesn't exist
-			//		 2) make more dynamic, search for wvm or svm and add respective to map, or even just check if it's a WVM
-			//				This would require another for_each and check if kv.first is 'wvm' or a .get...?
-			ptree wvm = kv.second.get_child("wvm");	// TODO add error checking
-			ptree svm = kv.second.get_child("svm");	// TODO add error checking
-			ptree imgpyr = kv.second.get_child("pyramid");	// TODO add error checking
-			ptree oeCfg = kv.second.get_child("overlapElimination");	// TODO add error checking. get_child throws when child doesn't exist.
+
 			string landmarkName = kv.second.get<string>("landmark");
+			string type = kv.second.get<string>("type");
 
-			shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadConfig(wvm);
-			shared_ptr<ProbabilisticSvmClassifier> psvm = ProbabilisticSvmClassifier::loadConfig(svm);
+			if(type=="fiveStageCascade") {
 
-			//pwvm->getWvm()->setLimitReliabilityFilter(-0.5f);
-			//psvm->getSvm()->setThreshold(-1.0f);	// TODO read this from the config
+				ptree firstClassifierNode = kv.second.get_child("firstClassifier");
+				ptree secondClassifierNode = kv.second.get_child("secondClassifier");
+				ptree imgpyr = kv.second.get_child("pyramid");
+				ptree oeCfg = kv.second.get_child("overlapElimination");
 
-			shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(oeCfg.get<float>("dist", 5.0f), oeCfg.get<float>("ratio", 0.0f));
-			
-			// This:
-			shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f), imgpyr.get<float>("incrementalScaleFactor", 0.9f));
-			imgPyr->addImageFilter(make_shared<GrayscaleFilter>());
-			shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(imgPyr, imgpyr.get<int>("patch.width"), imgpyr.get<int>("patch.height"));
-			// Or:
-			//shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"), config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"), config.get<double>("pyramid.scaleFactor"));
-			//featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+				shared_ptr<ProbabilisticWvmClassifier> firstClassifier = ProbabilisticWvmClassifier::loadConfig(firstClassifierNode);
+				shared_ptr<ProbabilisticSvmClassifier> secondClassifier = ProbabilisticSvmClassifier::loadConfig(secondClassifierNode);
 
-			featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
+				//pwvm->getWvm()->setLimitReliabilityFilter(-0.5f);
+				//psvm->getSvm()->setThreshold(-1.0f);	// TODO read this from the config
 
-			shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(pwvm, featureExtractor);
+				shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(oeCfg.get<float>("dist", 5.0f), oeCfg.get<float>("ratio", 0.0f));
 
-			shared_ptr<FiveStageSlidingWindowDetector> fsd = make_shared<FiveStageSlidingWindowDetector>(det, oe, psvm);
-			fsd->landmark = landmarkName;
-			if (landmarkName == "face")	{
-				faceDetectors.insert(make_pair(kv.first, fsd));
-			} else {
-				featureDetectors.insert(make_pair(kv.first, fsd));
+				// This:
+				shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f), imgpyr.get<float>("incrementalScaleFactor", 0.9f));
+				imgPyr->addImageFilter(make_shared<GrayscaleFilter>());
+				shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(imgPyr, imgpyr.get<int>("patch.width"), imgpyr.get<int>("patch.height"));
+				// Or:
+				//shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"), config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"), config.get<double>("pyramid.scaleFactor"));
+				//featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+
+				featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
+
+				shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(firstClassifier, featureExtractor);
+
+				shared_ptr<FiveStageSlidingWindowDetector> fsd = make_shared<FiveStageSlidingWindowDetector>(det, oe, secondClassifier);
+				fsd->landmark = landmarkName;
+				if (landmarkName == "face")	{
+					faceDetectors.insert(make_pair(kv.first, fsd));
+				} else {
+					featureDetectors.insert(make_pair(kv.first, fsd));
+				}
+
+			} else if(type=="single") {
+
+				ptree classifierNode = kv.second.get_child("classifier");
+				ptree imgpyr = kv.second.get_child("pyramid");
+				ptree featurespace = kv.second.get_child("feature");
+
+				// One for all classifiers (with same pyramids):
+				// This:
+				shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f), imgpyr.get<float>("incrementalScaleFactor", 0.9f));
+				imgPyr->addImageFilter(make_shared<GrayscaleFilter>());
+				shared_ptr<DirectPyramidFeatureExtractor> patchExtractor = make_shared<DirectPyramidFeatureExtractor>(imgPyr, imgpyr.get<int>("patch.width"), imgpyr.get<int>("patch.height"));
+				// Or:
+				//shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"), config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"), config.get<double>("pyramid.scaleFactor"));
+				//featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+
+				// One for each classifiers, can make several, that share the same DirectPyramidFeatureExtractor
+				// The split in FilteringPyramidFeatureExtractor and DirectPyramidFeatureExtractor is theoretically not necessary here
+				// as we only have one classifier. But I guess we need it if we start sharing pyramids across several detectors.
+				auto featureExtractor = make_shared<FilteringPyramidFeatureExtractor>(patchExtractor);
+				if (featurespace.get_value<string>() == "histeq") {
+					//ared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
+					featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
+				} else if (featurespace.get_value<string>() == "whi") {
+					//shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
+					featureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
+					featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
+					featureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0/127.5, -1.0));
+					featureExtractor->addPatchFilter(make_shared<IntensityNormNormalizationFilter>(cv::NORM_L2));
+				} else if (featurespace.get_value<string>() == "hq64") {
+					//shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
+					featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
+				} else if (featurespace.get_value<string>() == "gray") {
+					//shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
+					// no patch filter
+				}
+
+				ptree patchFilterNodes = kv.second.get_child("patchFilter");
+				for (const auto& filterNode : patchFilterNodes) {
+					string filterType = filterNode.first;
+					if (filterType=="reshapingFilter") {
+						int filterArgs = filterNode.second.get_value<int>();
+						featureExtractor->addPatchFilter(make_shared<ReshapingFilter>(filterArgs));
+					} else if (filterType=="conversionFilter") {
+						string filterArgs = filterNode.second.get_value<string>();
+						stringstream ss(filterArgs);
+						int type;
+						ss >> type;
+						double scaling;
+						ss >> scaling;
+						featureExtractor->addPatchFilter(make_shared<ConversionFilter>(type, scaling));
+					}
+				}
+
+				string classifierType = classifierNode.get_value<string>();
+				shared_ptr<ProbabilisticClassifier> classifier;
+				if (classifierType == "pwvm") {
+					classifier = ProbabilisticWvmClassifier::loadConfig(classifierNode);
+				} else if (classifierType == "prvm") {
+					classifier = ProbabilisticRvmClassifier::loadConfig(classifierNode);
+				} if (classifierType == "psvm") {
+					classifier = ProbabilisticSvmClassifier::loadConfig(classifierNode);
+				} 
+				
+				//psvm->getSvm()->setThreshold(-1.0f);	// TODO read this from the config
+
+				shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(classifier, featureExtractor);
+
+				det->landmark = landmarkName;
+				if (landmarkName == "face")	{
+					faceDetectors.insert(make_pair(kv.first, det));
+				} else {
+					featureDetectors.insert(make_pair(kv.first, det));
+				}
 			}
+
 		});
 	} catch(const boost::property_tree::ptree_error& error) {
 		appLogger.error(error.what());
@@ -349,6 +444,9 @@ int main(int argc, char *argv[])
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
 	} catch (const runtime_error& error) {
+		appLogger.error(error.what());
+		return EXIT_FAILURE;
+	} catch (const logic_error& error) {
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
 	}
@@ -363,8 +461,7 @@ int main(int argc, char *argv[])
 	//       where to put this? as deep as possible? (eg just there where the variable needed (eg filename, 
 	//       detector-name is still visible). I think for OE there's already something in it.
 	// move drawBoxes(...) somewhere else
-	// in the config: should we rename wvm/svm to firstStage/secondStage (or similar)? To e.g. be able to 
-	//      load a rvm instead of a wvm or svm. But what if they have different feature spaces. At the
+	// in the config: firstStage/secondStage: What if they have different feature spaces (or patch-sizes). At the
 	//      moment, in 1 FiveStageDet., I believe there cannot be 2 different feature spaces. 
 	//      (the second classifier just gets a list of patches - theoretically, he could go extract them again?)
 	//      Should we make this all way more dynamic?
@@ -387,6 +484,12 @@ int main(int argc, char *argv[])
 
 			ImageLoggers->getLogger("detection").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
 			vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img);
+
+			ImageLoggers->getLogger("mergePlaygroundApp").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
+			ImageLogger imageLogger = ImageLoggers->getLogger("mergePlaygroundApp");
+			Mat imgWvm = img.clone();
+			imageLogger.intermediate(imgWvm, bind(drawBoxes, imgWvm, resultingPatches), "rvm_casc_whi");
+
 
 		} // end for each face detector
 

@@ -33,6 +33,7 @@ SET(HEADERS
 	include/imageprocessing/ImagePyramid.hpp
 	include/imageprocessing/ImagePyramidLayer.hpp
 	include/imageprocessing/IntegralImageFilter.hpp
+	include/imageprocessing/IntensityNormNormalizationFilter.hpp
 	include/imageprocessing/LbpFilter.hpp
 	include/imageprocessing/MultipleImageFilter.hpp
 	include/imageprocessing/Patch.hpp
@@ -45,7 +46,6 @@ SET(HEADERS
 	include/imageprocessing/VersionedImage.hpp
 	include/imageprocessing/WhiteningFilter.hpp
 	include/imageprocessing/ZeroMeanUnitVarianceFilter.hpp
-	
 )
 SET(SOURCE
 	src/imageprocessing/CachingFeatureExtractor.cpp
@@ -62,6 +62,7 @@ SET(SOURCE
 	src/imageprocessing/ImagePyramid.cpp
 	src/imageprocessing/ImagePyramidLayer.cpp
 	src/imageprocessing/IntegralImageFilter.cpp
+	src/imageprocessing/IntensityNormNormalizationFilter.cpp
 	src/imageprocessing/LbpFilter.cpp
 	src/imageprocessing/MultipleImageFilter.cpp
 	src/imageprocessing/ReshapingFilter.cpp

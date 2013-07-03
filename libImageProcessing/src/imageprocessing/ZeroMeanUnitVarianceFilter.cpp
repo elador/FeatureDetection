@@ -20,10 +20,11 @@ ZeroMeanUnitVarianceFilter::~ZeroMeanUnitVarianceFilter() {}
 
 Mat ZeroMeanUnitVarianceFilter::applyTo(const Mat& image, Mat& filtered) {
 	if (image.channels() > 1)
-		throw invalid_argument("ZeroMeanUnitVarianceFilter: the image must have exactly one channel");
+		throw invalid_argument("ZeroMeanUnitVarianceFilter: The image must have exactly one channel.");
 	Scalar mean, deviation;
 	meanStdDev(image, mean, deviation);
 	image.convertTo(filtered, CV_32F);
+
 	if (deviation[0] == 0)
 		filtered = Scalar(0);
 	else

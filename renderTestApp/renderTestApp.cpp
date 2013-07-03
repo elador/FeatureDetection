@@ -8,8 +8,8 @@
 
 #ifdef _DEBUG
    #ifndef DBG_NEW
-      #define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
-      #define new DBG_NEW
+	  #define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
+	  #define new DBG_NEW
    #endif
 #endif  // _DEBUG
 
@@ -23,30 +23,41 @@
 #include "render/Texture.hpp"
 #include "render/Mesh.hpp"
 
-#include <iostream>
-#include <fstream>
-
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
-
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
 #include "boost/program_options.hpp"
 
+#include <iostream>
+#include <fstream>
+
 
 namespace po = boost::program_options;
 using namespace std;
 
+const float& aspect = 640.0f/480.0f;
+int near = 1;
+int far = 100;
+const string controlWindowName = "Controls";
+
+void nearChanged(int state, void* userdata) {
+	render::Renderer->camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, static_cast<float>(state)/10.0f, static_cast<float>(far));
+}
+void farChanged(int state, void* userdata) {
+	render::Renderer->camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, static_cast<float>(near)/10.0f, static_cast<float>(state));
+}
+
+
 template<class T>
 ostream& operator<<(ostream& os, const vector<T>& v)
 {
-    copy(v.begin(), v.end(), ostream_iterator<T>(cout, " ")); 
-    return os;
+	copy(v.begin(), v.end(), ostream_iterator<T>(cout, " ")); 
+	return os;
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -58,46 +69,54 @@ int main(int argc, char *argv[])
 	std::string filename; // Create vector to hold the filenames
 	
 	try {
-        po::options_description desc("Allowed options");
-        desc.add_options()
-            ("help,h", "produce help message")
-            ("input-file,i", po::value<string>(), "input image")
-        ;
+		po::options_description desc("Allowed options");
+		desc.add_options()
+			("help,h", "produce help message")
+			("input-file,i", po::value<string>(), "input image")
+		;
 
-        po::variables_map vm;
-        po::store(po::command_line_parser(argc, argv).
-                  options(desc).run(), vm);
-        po::notify(vm);
-    
-        if (vm.count("help")) {
-            cout << "[renderTestApp] Usage: options_description [options]\n";
-            cout << desc;
-            return 0;
-        }
-        if (vm.count("input-file"))
-        {
-            cout << "[renderTestApp] Using input images: " << vm["input-file"].as< vector<string> >() << "\n";
+		po::variables_map vm;
+		po::store(po::command_line_parser(argc, argv).
+				  options(desc).run(), vm);
+		po::notify(vm);
+	
+		if (vm.count("help")) {
+			cout << "[renderTestApp] Usage: options_description [options]\n";
+			cout << desc;
+			return 0;
+		}
+		if (vm.count("input-file"))
+		{
+			cout << "[renderTestApp] Using input images: " << vm["input-file"].as< vector<string> >() << "\n";
 			filename = vm["input-file"].as<string>();
-        }
-    }
-    catch(std::exception& e) {
-        cout << e.what() << "\n";
-        return 1;
-    }
+		}
+	}
+	catch(std::exception& e) {
+		cout << e.what() << "\n";
+		return 1;
+	}
 
 	render::Renderer->create();
+
+	cvNamedWindow(controlWindowName.c_str(), CV_WINDOW_AUTOSIZE);
+	cvMoveWindow(controlWindowName.c_str(), 900, 50);
+
+	cv::createTrackbar("Near", controlWindowName, NULL, 100, nearChanged/*, this*/);
+	cv::setTrackbarPos("Near", controlWindowName, 10);
+	cv::createTrackbar("Far", controlWindowName, NULL, 200, farChanged/*, this*/);
+	cv::setTrackbarPos("Far", controlWindowName, 100);
 	
 	render::Mesh cube = render::utils::MeshUtils::createCube();
 	render::Mesh plane = render::utils::MeshUtils::createPlane();
 
 	//render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("D:\\model2012_l6_rms.h5");
-	render::MorphableModel mmHeadL4 = render::utils::MeshUtils::readFromScm("D:\\MorphModel\\ShpVtxModelBin.scm");
+	render::MorphableModel mmHeadL4 = render::utils::MeshUtils::readFromScm("E:\\MorphModel\\ShpVtxModelBin.scm");
 
-	const float& aspect = 640.0f/480.0f;
+	//const float& aspect = 640.0f/480.0f;
 
 	//render::Renderer->camera.setFrustum(-0.25f*aspect, 0.25f*aspect, 0.25f, -0.25f, 0.5f, 500.0f);
 	//render::Renderer->camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, 0.5f, 500.0f);
-	render::Renderer->camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, -0.5, -5000.0f);
+	render::Renderer->camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, static_cast<float>(near)/10.0f, static_cast<float>(far));
 
 	// loop start
 	bool running = true;
@@ -124,11 +143,11 @@ int main(int argc, char *argv[])
 				render::Renderer->setTransform(viewProjTransform * worldTransform);
 				render::Renderer->draw();
 
-				cv::Mat worldTransform2 = render::utils::MatrixUtils::createTranslationMatrix(2.0f, 0.5f, -10.0f);
+				cv::Mat worldTransform2 = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -10.0f);
 				render::Renderer->setTransform(viewProjTransform * worldTransform2);
 				render::Renderer->draw();
 
-				cv::Mat worldTransform3 = render::utils::MatrixUtils::createTranslationMatrix(2.0f, 0.5f, 10.0f);
+				cv::Mat worldTransform3 = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, 10.0f);
 				render::Renderer->setTransform(viewProjTransform * worldTransform3);
 				render::Renderer->draw();
 			}
@@ -160,7 +179,7 @@ int main(int argc, char *argv[])
 		cv::namedWindow("renderOutput");
 		cv::imshow("renderOutput", render::Renderer->getRendererImage());
 
-		float speed = 2.0f;
+		float speed = 1.0f;
 		float mouseSpeed = 0.10f;
 		cv::Vec3f eye = render::Renderer->camera.getEye();
 		float deltaTime = 1.0f;
@@ -175,6 +194,8 @@ int main(int argc, char *argv[])
 
 		std::cout << "verticalAngle: " << render::Renderer->camera.verticalAngle << std::endl;
 		std::cout << "horizontalAngle: " << render::Renderer->camera.horizontalAngle << std::endl;
+
+		std::cout << "Ready!" << std::endl;
 
 		char c = (char)cv::waitKey(0);
 		if (c == 'b')

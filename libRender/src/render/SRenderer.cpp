@@ -87,13 +87,13 @@ cv::Mat SRenderer::constructProjTransform()
 	cv::Mat perspective = (cv::Mat_<float>(4,4) << 
 						camera.frustum.n,	0.0f,				0.0f,									0.0f,
 						0.0f,				camera.frustum.n,	0.0f,									0.0f,
-						0.0f,				0.0f,				camera.frustum.n + camera.frustum.f,	-camera.frustum.n * camera.frustum.f, // CG book has -f*n ? (I had +f*n before)
-						0.0f,				0.0f,				1.0f, /* CG has +1 here, I had -1 */	0.0f);
+						0.0f,				0.0f,				camera.frustum.n + camera.frustum.f,	camera.frustum.n * camera.frustum.f, // CG book has -f*n ? (I had +f*n before)
+						0.0f,				0.0f,				-1.0f, /* CG has +1 here, I had -1 */	0.0f);
 	
 	cv::Mat orthogonal = (cv::Mat_<float>(4,4) << 
 		2.0f / (camera.frustum.r - camera.frustum.l),	0.0f,											0.0f,											-(camera.frustum.r + camera.frustum.l) / (camera.frustum.r - camera.frustum.l),
 		0.0f,											2.0f / (camera.frustum.t - camera.frustum.b),	0.0f,											-(camera.frustum.t + camera.frustum.b) / (camera.frustum.t - camera.frustum.b),
-		0.0f,											0.0f,											2.0f / (camera.frustum.n - camera.frustum.f),	-(camera.frustum.n + camera.frustum.f) / (camera.frustum.n - camera.frustum.f), // CG book has denominator (n-f) ? I had (f-n) before.
+		0.0f,											0.0f,											2.0f / (camera.frustum.n - camera.frustum.f),	-(camera.frustum.n + camera.frustum.f) / (camera.frustum.f - camera.frustum.n), // CG book has denominator (n-f) ? I had (f-n) before.
 		0.0f,											0.0f,											0.0f,											1.0f);
 	
 	return orthogonal * perspective;
