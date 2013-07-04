@@ -42,7 +42,7 @@ public:
 	 *
 	 * @param[in] kernel The kernel function.
 	 */
-	explicit RvmClassifier(shared_ptr<Kernel> kernel);
+	explicit RvmClassifier(shared_ptr<Kernel> kernel, bool cascadedCoefficients = true);
 
 	~RvmClassifier();
 
@@ -66,6 +66,8 @@ public:
 	 * @return The distance of the feature vector to the decision hyperplane.
 	 */
 	double computeHyperplaneDistance(const Mat& featureVector, const int filterLevel) const;
+
+	double computeHyperplaneDistanceCached(const Mat& featureVector, const int filterLevel, vector<double>& filterEvalCache) const;
 
 	/**
 	 * Returns the number of filters (RSVs) this RVM is currently using for classifying.
@@ -102,12 +104,14 @@ public:
 	 */
 	static shared_ptr<RvmClassifier> loadConfig(const ptree& subtree);
 
+
 private:
 
 	vector<Mat> supportVectors;				///< The support vectors (or here, RSVs).
 	vector<vector<float>> coefficients;		///< The coefficients of the support vectors. Each step in the cascade has its own set of coefficients.
 	int numFiltersToUse;					///< The number of filters to use out of the total number.
 	vector<float> hierarchicalThresholds;	///< A classification threshold for each filter.
+
 };
 
 } /* namespace classification */

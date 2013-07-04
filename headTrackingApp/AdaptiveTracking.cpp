@@ -336,8 +336,9 @@ void AdaptiveTracking::initGui() {
 	cvNamedWindow(videoWindowName.c_str(), CV_WINDOW_AUTOSIZE);
 	cvMoveWindow(videoWindowName.c_str(), 50, 50);
 
-	cvNamedWindow(controlWindowName.c_str(), CV_WINDOW_AUTOSIZE);
+	cvNamedWindow(controlWindowName.c_str(), CV_WINDOW_NORMAL);
 	cvMoveWindow(controlWindowName.c_str(), 900, 50);
+	//cv::resizeWindow(controlWindowName, 300, 200);
 
 	if (initialTracker) {
 		cv::createTrackbar("Adaptive", controlWindowName, NULL, 1, adaptiveChanged, this);

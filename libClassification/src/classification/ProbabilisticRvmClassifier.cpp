@@ -33,18 +33,25 @@ ProbabilisticRvmClassifier::ProbabilisticRvmClassifier(shared_ptr<RvmClassifier>
 
 ProbabilisticRvmClassifier::~ProbabilisticRvmClassifier() {}
 
+
 pair<bool, double> ProbabilisticRvmClassifier::classify(const Mat& featureVector) const {
 	// Would be great if this could be made simpler (as in ProbabilisticSvmClassifier) and less
 	// code duplication with RvmClassifier::classify(...).
 	bool isFeature = false;
+	vector<double> filterEvalCache;
+	bool useCache = true;
 	unsigned int filterLevel = 0;
 	double hyperplaneDistance = 0;
 	do {
-		hyperplaneDistance = rvm->computeHyperplaneDistance(featureVector, filterLevel);
+		if (useCache) {
+			hyperplaneDistance = rvm->computeHyperplaneDistanceCached(featureVector, filterLevel, filterEvalCache);
+		} else {
+			hyperplaneDistance = rvm->computeHyperplaneDistance(featureVector, filterLevel);
+		}
 		isFeature = rvm->classify(hyperplaneDistance, filterLevel);
 		++filterLevel;
 	} while (isFeature && filterLevel < rvm->getNumFiltersToUse()); // TODO check the logic of this...
-	
+
 	double probability = 1.0f / (1.0f + exp(logisticA + logisticB * hyperplaneDistance));
 	return make_pair(isFeature, probability);
 }

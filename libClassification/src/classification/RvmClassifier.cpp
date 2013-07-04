@@ -31,8 +31,11 @@ using std::logic_error;
 
 namespace classification {
 
-RvmClassifier::RvmClassifier(shared_ptr<Kernel> kernel) :
-		VectorMachineClassifier(kernel), supportVectors(), coefficients() {} // TODO coefficients() probably different... vector<vector<... how?
+RvmClassifier::RvmClassifier(shared_ptr<Kernel> kernel, bool cascadedCoefficients) :
+		VectorMachineClassifier(kernel), supportVectors(), coefficients() { // TODO coefficients() probably different... vector<vector<... how?
+
+	//useCaching = !cascadedCoefficients;
+}
 
 RvmClassifier::~RvmClassifier() {}
 
@@ -55,6 +58,28 @@ double RvmClassifier::computeHyperplaneDistance(const Mat& featureVector, const 
 	for (unsigned int i=0; i<=filterLevel; ++i) {
 		distance += coefficients[filterLevel][i] * kernel->compute(featureVector, supportVectors[i]);
 	}
+
+	return distance;
+}
+
+double RvmClassifier::computeHyperplaneDistanceCached(const Mat& featureVector, const int filterLevel, vector<double>& filterEvalCache) const {
+	
+	if (filterEvalCache.size() == filterLevel && filterLevel != 0) {
+		double distance = filterEvalCache[filterLevel-1];
+		distance += coefficients[filterLevel][filterLevel] * kernel->compute(featureVector, supportVectors[filterLevel]);
+		filterEvalCache.push_back(distance);
+		return distance;
+	}
+
+	filterEvalCache.clear();
+
+	double distance = -bias;
+	for (unsigned int i=0; i<=filterLevel; ++i) {
+		distance += coefficients[filterLevel][i] * kernel->compute(featureVector, supportVectors[i]);
+	}
+
+	filterEvalCache.push_back(distance);
+
 	return distance;
 }
 

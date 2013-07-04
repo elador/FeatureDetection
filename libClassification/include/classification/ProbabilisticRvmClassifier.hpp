@@ -63,6 +63,8 @@ public:
 
 	pair<bool, double> classify(const Mat& featureVector) const;
 
+	pair<bool, double> classifyCached(const Mat& featureVector);
+
 	/**
 	 * Changes the logistic parameters of this probabilistic SVM.
 	 *
@@ -94,6 +96,7 @@ private:
 	shared_ptr<RvmClassifier> rvm; ///< The actual RVM.
 	double logisticA; ///< Parameter a of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 	double logisticB; ///< Parameter b of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
+
 };
 
 } /* namespace classification */
