@@ -72,6 +72,7 @@
 #include "imageprocessing/HistEq64Filter.hpp"
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
 #include "imageprocessing/ZeroMeanUnitVarianceFilter.hpp"
+#include "imageprocessing/IntensityNormNormalizationFilter.hpp"
 #include "imageprocessing/WhiteningFilter.hpp"
 
 #include "detection/SlidingWindowDetector.hpp"
@@ -125,9 +126,6 @@ int main(int argc, char *argv[])
 	
 	string verboseLevelConsole;
 	string verboseLevelImages;
-	bool useFileList = false;
-	bool useImgs = false;
-	bool useDirectory = false;
 	vector<path> inputPaths;
 	path inputFilelist;
 	path inputDirectory;
@@ -161,7 +159,7 @@ int main(int argc, char *argv[])
 		po::notify(vm);
 	
 		if (vm.count("help")) {
-			cout << "Usage: ffpDetectApp [options]\n";
+			cout << "Usage: mergePlaygroundApp [options]\n";
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
@@ -228,245 +226,133 @@ int main(int argc, char *argv[])
 	ImageLoggers->getLogger("detection").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir));
 	ImageLoggers->getLogger("mergePlaygroundApp").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir));
 
-	if(inputPaths.size() > 1) {
-		// We assume the user has given several, valid images
-		useImgs = true;
-		inputFilenames = inputPaths;
-	} else if (inputPaths.size() == 1) {
-		// We assume the user has given either an image, directory, or a .lst-file
-		if (inputPaths[0].extension().string() == ".lst") { // check for .lst first
-			useFileList = true;
-			inputFilelist = inputPaths[0];
-		} else if (boost::filesystem::is_directory(inputPaths[0])) { // check if it's a directory
-			useDirectory = true;
-			inputDirectory = inputPaths[0];
-		} else { // it must be an image
-			useImgs = true;
-			inputFilenames = inputPaths;
+
+	
+	// TEMP: Read a txt patchset from Cog, do WHI, and write a new .txt.
+	// =================================================================
+	vector<cv::Mat> positives;
+	std::ifstream file("E:/training/ffd_training_regrPaperX200/data/posPatches.txt");
+	if (!file.is_open()) {
+		std::cout << "Invalid patches file" << std::endl;
+		return 0;
+	}
+	while (file.good()) {
+		string line;
+		if (!std::getline(file, line))
+			break;
+
+		int width = 31;
+		int height = 31;
+		int dimensions = width * height;
+		Mat patch(width, height, CV_8U);
+		std::istringstream lineStream(line);
+		if (!lineStream.good() || lineStream.fail()) {
+			std::cout << "Invalid patches file l2" << std::endl;
+			return 0;
 		}
-	} else {
-		appLogger.error("Please either specify one or several files, a directory, or a .lst-file containing a list of images to run the program!");
-		return EXIT_FAILURE;
-	}
-
-
-	if(useFileList==true) {
-		appLogger.info("Using file-list as input: " + inputFilelist.string());
-		shared_ptr<ImageSource> fileListImgSrc;
-		try {
-			fileListImgSrc = make_shared<FileListImageSource>(inputFilelist.string());
-		} catch(const std::runtime_error& e) {
-			appLogger.error(e.what());
-			return EXIT_FAILURE;
+		uchar* values = patch.ptr<uchar>(0);
+		float val;
+		for (int j = 0; j < dimensions; ++j) {
+			lineStream >> val;
+			values[j] = static_cast<uchar>(val*255.0f);
 		}
-		//shared_ptr<DidLandmarkFormatParser> didParser= make_shared<DidLandmarkFormatParser>();
-		//vector<path> landmarkDir; landmarkDir.push_back(path("C:\\Users\\Patrik\\Github\\data\\labels\\xm2vts\\guosheng\\"));
-		//shared_ptr<DefaultNamedLandmarkSource> lmSrc = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
-		//imageSource = make_shared<NamedLabeledImageSource>(fileImgSrc, lmSrc);
-		imageSource = fileListImgSrc;
+
+		positives.push_back(patch);
 	}
-	if(useImgs==true) {
-		//imageSource = make_shared<FileImageSource>(inputFilenames);
-		//imageSource = make_shared<RepeatingFileImageSource>("C:\\Users\\Patrik\\GitHub\\data\\firstrun\\ws_8.png");
-		appLogger.info("Using input images: ");
-		vector<string> inputFilenamesStrings;	// Hack until we use vector<path> (?)
-		for (const auto& fn : inputFilenames) {
-			appLogger.info(fn.string());
-			inputFilenamesStrings.push_back(fn.string());
+	file.close();
+
+	vector<cv::Mat> negatives;
+	file.open("E:/training/ffd_training_regrPaperX200/data/negPatches.txt");
+	if (!file.is_open()) {
+		std::cout << "Invalid patches file" << std::endl;
+		return 0;
+	}
+	while (file.good()) {
+		string line;
+		if (!std::getline(file, line))
+			break;
+
+		int width = 31;
+		int height = 31;
+		int dimensions = width * height;
+		Mat patch(width, height, CV_8U);
+		std::istringstream lineStream(line);
+		if (!lineStream.good() || lineStream.fail()) {
+			std::cout << "Invalid patches file l4" << std::endl;
+			return 0;
 		}
-		shared_ptr<ImageSource> fileImgSrc;
-		try {
-			fileImgSrc = make_shared<FileImageSource>(inputFilenamesStrings);
-		} catch(const std::runtime_error& e) {
-			appLogger.error(e.what());
-			return EXIT_FAILURE;
+		uchar* values = patch.ptr<uchar>(0);
+		float val;
+		for (int j = 0; j < dimensions; ++j) {
+			lineStream >> val;
+			values[j] = static_cast<uchar>(val*255.0f);
 		}
-		//shared_ptr<DidLandmarkFormatParser> didParser= make_shared<DidLandmarkFormatParser>();
-		//vector<path> landmarkDir; landmarkDir.push_back(path("C:\\Users\\Patrik\\Github\\data\\labels\\xm2vts\\guosheng\\"));
-		//shared_ptr<DefaultNamedLandmarkSource> lmSrc = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
-		//imageSource = make_shared<NamedLabeledImageSource>(fileImgSrc, lmSrc);
-		imageSource = fileImgSrc;
+
+		negatives.push_back(patch);
 	}
-	if(useDirectory==true) {
-		appLogger.info("Using input images from directory: " + inputDirectory.string());
-		try {
-			imageSource = make_shared<DirectoryImageSource>(inputDirectory.string());
-		} catch(const std::runtime_error& e) {
-			appLogger.error(e.what());
-			return EXIT_FAILURE;
+	file.close();
+
+	shared_ptr<WhiteningFilter> fw = make_shared<WhiteningFilter>();
+	shared_ptr<HistogramEqualizationFilter> fh = make_shared<HistogramEqualizationFilter>();
+	shared_ptr<ConversionFilter> fc = make_shared<ConversionFilter>(CV_32F, 1.0/127.5, -1.0);
+	shared_ptr<IntensityNormNormalizationFilter> fi = make_shared<IntensityNormNormalizationFilter>(cv::NORM_L2);
+	shared_ptr<ReshapingFilter> fr = make_shared<ReshapingFilter>(1);
+	for (auto& p : positives) {
+		//p.convertTo(p, CV_32F);
+		fw->applyInPlace(p);
+		// min/max, stretch to [0, 255] 8U
+		fh->applyInPlace(p);
+		// need to go back to [-1, 1] before IntensityNormNormalizationFilter:
+		fc->applyInPlace(p);
+		fi->applyInPlace(p);
+		fr->applyInPlace(p);
+	}
+	for (auto& p : negatives) {
+		fw->applyInPlace(p);
+		fh->applyInPlace(p);
+		fc->applyInPlace(p);
+		fi->applyInPlace(p);
+		fr->applyInPlace(p);
+	}
+
+	std::ofstream ofile("E:/training/ffd_training_regrPaperX200/data/posPatchesWhi.txt");
+	if (!ofile.is_open()) {
+		std::cout << "Invalid patches file" << std::endl;
+		return 0;
+	}
+	for (auto& p : positives) {
+		int width = 31;
+		int height = 31;
+		int dimensions = width * height;
+		float* values = p.ptr<float>(0);
+		float val;
+		for (int j = 0; j < dimensions; ++j) {
+			ofile << values[j] << " ";
 		}
+		ofile << "\n";
 	}
+	ofile.close();
 
-	const float DETECT_MAX_DIST_X = 0.33f;	// --> Config / Landmarks
-	const float DETECT_MAX_DIST_Y = 0.33f;
-	const float DETECT_MAX_DIFF_W = 0.33f;
-
-	int TOT = 0;
-	int TACC = 0;
-	int FACC = 0;
-	int NOCAND = 0;
-	int DONTKNOW = 0;
-
-	ptree pt;
-	try {
-		read_info(configFilename.string(), pt);
-	} catch(const boost::property_tree::ptree_error& error) {
-		appLogger.error(error.what());
-		return EXIT_FAILURE;
+	ofile.open("E:/training/ffd_training_regrPaperX200/data/negPatchesWhi.txt");
+	if (!ofile.is_open()) {
+		std::cout << "Invalid patches file" << std::endl;
+		return 0;
 	}
-
-	unordered_map<string, shared_ptr<Detector>> faceDetectors;
-	unordered_map<string, shared_ptr<Detector>> featureDetectors;
-
-	try {
-		ptree ptDetectors = pt.get_child("detectors");
-		for_each(begin(ptDetectors), end(ptDetectors), [&faceDetectors, &featureDetectors](ptree::value_type kv) {
-
-			string landmarkName = kv.second.get<string>("landmark");
-			string type = kv.second.get<string>("type");
-
-			if(type=="fiveStageCascade") {
-
-				ptree firstClassifierNode = kv.second.get_child("firstClassifier");
-				ptree secondClassifierNode = kv.second.get_child("secondClassifier");
-				ptree imgpyr = kv.second.get_child("pyramid");
-				ptree oeCfg = kv.second.get_child("overlapElimination");
-
-				shared_ptr<ProbabilisticWvmClassifier> firstClassifier = ProbabilisticWvmClassifier::loadConfig(firstClassifierNode);
-				shared_ptr<ProbabilisticSvmClassifier> secondClassifier = ProbabilisticSvmClassifier::loadConfig(secondClassifierNode);
-
-				//pwvm->getWvm()->setLimitReliabilityFilter(-0.5f);
-				//psvm->getSvm()->setThreshold(-1.0f);	// TODO read this from the config
-
-				shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(oeCfg.get<float>("dist", 5.0f), oeCfg.get<float>("ratio", 0.0f));
-
-				// This:
-				shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f), imgpyr.get<float>("incrementalScaleFactor", 0.9f));
-				imgPyr->addImageFilter(make_shared<GrayscaleFilter>());
-				shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(imgPyr, imgpyr.get<int>("patch.width"), imgpyr.get<int>("patch.height"));
-				// Or:
-				//shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"), config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"), config.get<double>("pyramid.scaleFactor"));
-				//featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
-
-				featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
-
-				shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(firstClassifier, featureExtractor);
-
-				shared_ptr<FiveStageSlidingWindowDetector> fsd = make_shared<FiveStageSlidingWindowDetector>(det, oe, secondClassifier);
-				fsd->landmark = landmarkName;
-				if (landmarkName == "face")	{
-					faceDetectors.insert(make_pair(kv.first, fsd));
-				} else {
-					featureDetectors.insert(make_pair(kv.first, fsd));
-				}
-
-			} else if(type=="single") {
-
-				ptree classifierNode = kv.second.get_child("classifier");
-				ptree imgpyr = kv.second.get_child("pyramid");
-				ptree featurespace = kv.second.get_child("feature");
-
-				// One for all classifiers (with same pyramids):
-				// This:
-				shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f), imgpyr.get<float>("incrementalScaleFactor", 0.9f));
-				imgPyr->addImageFilter(make_shared<GrayscaleFilter>());
-				shared_ptr<DirectPyramidFeatureExtractor> patchExtractor = make_shared<DirectPyramidFeatureExtractor>(imgPyr, imgpyr.get<int>("patch.width"), imgpyr.get<int>("patch.height"));
-				// Or:
-				//shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"), config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"), config.get<double>("pyramid.scaleFactor"));
-				//featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
-
-				// One for each classifiers, can make several, that share the same DirectPyramidFeatureExtractor
-				// The split in FilteringPyramidFeatureExtractor and DirectPyramidFeatureExtractor is theoretically not necessary here
-				// as we only have one classifier. But I guess we need it if we start sharing pyramids across several detectors.
-				auto featureExtractor = make_shared<FilteringPyramidFeatureExtractor>(patchExtractor);
-				if (featurespace.get_value<string>() == "histeq") {
-					//ared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
-					featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
-				} else if (featurespace.get_value<string>() == "whi") {
-					//shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
-					featureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
-					featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
-					featureExtractor->addPatchFilter(make_shared<ZeroMeanUnitVarianceFilter>());
-				} else if (featurespace.get_value<string>() == "hq64") {
-					//shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
-					featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
-				} else if (featurespace.get_value<string>() == "gray") {
-					//shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
-					// no patch filter
-				}
-
-				ptree patchFilterNodes = kv.second.get_child("patchFilter");
-				for (const auto& filterNode : patchFilterNodes) {
-					string filterType = filterNode.first;
-					if (filterType=="reshapingFilter") {
-						int filterArgs = filterNode.second.get_value<int>();
-						featureExtractor->addPatchFilter(make_shared<ReshapingFilter>(filterArgs));
-					} else if (filterType=="conversionFilter") {
-						string filterArgs = filterNode.second.get_value<string>();
-						stringstream ss(filterArgs);
-						int type;
-						ss >> type;
-						double scaling;
-						ss >> scaling;
-						featureExtractor->addPatchFilter(make_shared<ConversionFilter>(type, scaling));
-					}
-				}
-
-				string classifierType = classifierNode.get_value<string>();
-				shared_ptr<ProbabilisticClassifier> classifier;
-				if (classifierType == "pwvm") {
-					classifier = ProbabilisticWvmClassifier::loadConfig(classifierNode);
-				} else if (classifierType == "prvm") {
-					classifier = ProbabilisticRvmClassifier::loadConfig(classifierNode);
-				} if (classifierType == "psvm") {
-					classifier = ProbabilisticSvmClassifier::loadConfig(classifierNode);
-				} 
-				
-				//psvm->getSvm()->setThreshold(-1.0f);	// TODO read this from the config
-
-				shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(classifier, featureExtractor);
-
-				det->landmark = landmarkName;
-				if (landmarkName == "face")	{
-					faceDetectors.insert(make_pair(kv.first, det));
-				} else {
-					featureDetectors.insert(make_pair(kv.first, det));
-				}
-			}
-
-		});
-	} catch(const boost::property_tree::ptree_error& error) {
-		appLogger.error(error.what());
-		return EXIT_FAILURE;
-	} catch (const invalid_argument& error) {
-		appLogger.error(error.what());
-		return EXIT_FAILURE;
-	} catch (const runtime_error& error) {
-		appLogger.error(error.what());
-		return EXIT_FAILURE;
+	for (auto& p : negatives) {
+		int width = 31;
+		int height = 31;
+		int dimensions = width * height;
+		float* values = p.ptr<float>(0);
+		float val;
+		for (int j = 0; j < dimensions; ++j) {
+			ofile << values[j] << " ";
+		}
+		ofile << "\n";
 	}
+	ofile.close();
+	
+	// END TEMP
 
-	// lm-loading
-	// output-dir
-	// load ffd/ROI
-	// relative bilder-pfad aus filelist
-	// boost::po behaves strangely with -h and the required arguments (cannot show help without them) ?
-	// our libs: add library dependencies (eg to boost) in add_library ?
-	// log (text) what is going on. Eg detecting on image... bla... Svm reduced from x to y...
-	//       where to put this? as deep as possible? (eg just there where the variable needed (eg filename, 
-	//       detector-name is still visible). I think for OE there's already something in it.
-	// move drawBoxes(...) somewhere else
-	// in the config: firstStage/secondStage: What if they have different feature spaces (or patch-sizes). At the
-	//      moment, in 1 FiveStageDet., I believe there cannot be 2 different feature spaces. 
-	//      (the second classifier just gets a list of patches - theoretically, he could go extract them again?)
-	//      Should we make this all way more dynamic?
-
-	/* Note: We could change/write/add something to the config with
-	pt.put("detection.svm.threshold", -0.5f);
-	If the value already exists, it gets overwritten, if not, it gets created.
-	Save it with:
-	write_info("C:\\Users\\Patrik\\Documents\\GitHub\\ffpDetectApp.cfg", pt);
-	*/
 
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img;
@@ -474,19 +360,8 @@ int main(int argc, char *argv[])
 
 		img = imageSource->getImage();
 		start = std::chrono::system_clock::now();
-		
-		for(auto detector : faceDetectors) {
 
-			ImageLoggers->getLogger("detection").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
-			vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img);
-
-			ImageLoggers->getLogger("mergePlaygroundApp").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
-			ImageLogger imageLogger = ImageLoggers->getLogger("mergePlaygroundApp");
-			Mat imgWvm = img.clone();
-			imageLogger.intermediate(imgWvm, bind(drawBoxes, imgWvm, resultingPatches), "rvm_casc");
-
-
-		} // end for each face detector
+		// do something
 
 		end = std::chrono::system_clock::now();
 
@@ -498,120 +373,7 @@ int main(int argc, char *argv[])
 		ss << std::ctime(&end_time);
 		appLogger.info("finished computation at " + ss.str() + "elapsed time: " + lexical_cast<string>(elapsed_seconds) + "s or exactly " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
 
-		TOT++;
-		vector<string> resultingPatches;
-		if(resultingPatches.size()<1) {
-			//std::cout << "[ffpDetectApp] No face-candidates at all found:  " << filenames[i] << std::endl;
-			NOCAND++;
-		} else {
-			// TODO Check if the LM exists or it will crash! Currently broken!
-			if(false) { //no groundtruth
-				//std::cout << "[ffpDetectApp] No ground-truth available, not counting anything: " << filenames[i] << std::endl;
-				++DONTKNOW;
-			} else { //we have groundtruth
-				/*int gt_w = groundtruthFaceBoxes[i].getWidth();
-				int gt_h = groundtruthFaceBoxes[i].getHeight();
-				int gt_cx = groundtruthFaceBoxes[i].getX();
-				int gt_cy = groundtruthFaceBoxes[i].getY();
-				// TODO implement a isClose, isDetected... or something like that function
-				if (abs(gt_cx - svmPatches[0]->getPatch()->getX()) < DETECT_MAX_DIST_X*(float)gt_w &&
-					abs(gt_cy - svmPatches[0]->getPatch()->getY()) < DETECT_MAX_DIST_Y*(float)gt_w &&
-					abs(gt_w - svmPatches[0]->getPatch()->getWidth()) < DETECT_MAX_DIFF_W*(float)gt_w       ) {
-				
-					std::cout << "[ffpDetectApp] TACC (1/1): " << filenames[i] << std::endl;
-					TACC++;
-				} else {
-					std::cout << "[ffpDetectApp] Face not found, wrong position:  " << filenames[i] << std::endl;
-					FACC++;
-				}*/
-			} // end no groundtruth
-		}
-
-		std::cout << std::endl;
-		std::cout << "[ffpDetectApp] -------------------------------------" << std::endl;
-		std::cout << "[ffpDetectApp] TOT:  " << TOT << std::endl;
-		std::cout << "[ffpDetectApp] TACC:  " << TACC << std::endl;
-		std::cout << "[ffpDetectApp] FACC:  " << FACC << std::endl;
-		std::cout << "[ffpDetectApp] NOCAND:  " << NOCAND << std::endl;
-		std::cout << "[ffpDetectApp] DONTKNOW:  " << DONTKNOW << std::endl;
-		std::cout << "[ffpDetectApp] -------------------------------------" << std::endl;
-
-	}
-
-	std::cout << std::endl;
-	std::cout << "[ffpDetectApp] =====================================" << std::endl;
-	std::cout << "[ffpDetectApp] =====================================" << std::endl;
-	std::cout << "[ffpDetectApp] TOT:  " << TOT << std::endl;
-	std::cout << "[ffpDetectApp] TACC:  " << TACC << std::endl;
-	std::cout << "[ffpDetectApp] FACC:  " << FACC << std::endl;
-	std::cout << "[ffpDetectApp] NOCAND:  " << NOCAND << std::endl;
-	std::cout << "[ffpDetectApp] DONTKNOW:  " << DONTKNOW << std::endl;
-	std::cout << "[ffpDetectApp] =====================================" << std::endl;
 	
 	return 0;
 }
 
-	// My cmdline-arguments: -f C:\Users\Patrik\Documents\GitHub\data\firstrun\theRealWorld_png2.lst
-
-	// TODO important:
-	// getPatchesROI Bug bei skalen, schraeg verschoben (?) bei x,y=0, s=1 sichtbar. No, I think I looked at this with MR, and the code was actually correct?
-// Copy and = c'tors
-	// pub/private
-	// ALL in RegressorWVR.h/cpp is the same as in DetWVM! Except the classify loop AND threshold loading. -> own class (?)
-	// Logger.drawscales
-	// Logger draw 1 scale only, and points with color instead of boxes
-	// logger filter lvls etc
-	// problem when 2 diff. featuredet run on same scale
-	// results dir from config etc
-	// Diff. patch sizes: Cascade is a VDetectorVM, and calculates ONE subsampfac for the master-detector in his size. Then, for second det with diff. patchsize, calc remaining pyramids.
-	// Test limit_reliability (SVM)	
-	// Draw FFPs in different colors, and as points (symbols), not as boxes. See lib MR
-	// Bisschen durcheinander mit pyramid_widths, subsampfac. Pyr_widths not necessary anymore? Pyr_widths are per detector
-//  WVM/R: bisschen viele *thresh*...?
-// wie verhaelt sich alles bei GRAY input image?? (imread, Logger)
-
-// Error handling when something (eg det, img) not found -> STOP
-
-// FFP-App: Read master-config. (Clean this up... keine vererbung mehr etc). FD. Then start as many FFD Det's as there are in the configs.
-
-// @MR: Warum "-b" ? ComparisonRegr.xlsx 6grad systemat. fehler da ML +3.3, MR -3.3
-
-
-/* 
-/	Todo:
-	* .lst: #=comment, ignore line
-	* DetID alles int machen. Und dann mapper von int zu String (wo sich jeder Det am anfang eintraegt)
-	* CascadeWvmOeSvmOe is a VDetVec... and returnFilterSize should return wvm->filtersizex... etc
-	* I think the whole det-naming system ["..."] collapses when someone uses custom names (which we have to when using features)
-/	* Filelists
-	* optimizations (eg const)
-/	* dump_BBList der ffp
-	* OE: write field in patch, fout=1 -> passed, fout=0 failed OE
-	* RVR/RVM
-	* Why do we do (SVM)
-	this->support[is][y*filter_size_x+x] = (unsigned char)(255.0*matdata[k++]);	 // because the training images grey level values were divided by 255;
-	  but with the WVM, support is all float instead of uchar.
-
-	 * erasing from the beginning of a vector is a slow operation, because at each step, all the elements of the vector have to be shifted down one place. Better would be to loop over the vector freeing everything (then clear() the vector. (or use a list, ...?) Improve speed of OE
-	 * i++ --> ++i (faster)
-*/
-
-
-		/*cv::Mat color_img, color_hsv;
-		int h_ = 0;   // H : 0 179, Hue
-int s_ = 255; // S : 0 255, Saturation
-int v_ = 255; // V : 0 255, Brightness Value
-	const char *window_name = "HSV color";
-	cv::namedWindow(window_name);
-	cv::createTrackbar("H", window_name, &h_, 180, NULL, NULL);
-	cv::createTrackbar("S", window_name, &s_, 255, NULL, NULL);
-	cv::createTrackbar("V", window_name, &v_, 255, NULL, NULL);
-
-	while(true) {
-		color_hsv = cv::Mat(cv::Size(320, 240), CV_8UC3, cv::Scalar(h_,s_,v_));
-		cv::cvtColor(color_hsv, color_img, CV_HSV2BGR);
-		cv::imshow(window_name, color_img);
-		int c = cv::waitKey(10);
-		if (c == 27) break;
-	}
-	cv::destroyAllWindows();*/

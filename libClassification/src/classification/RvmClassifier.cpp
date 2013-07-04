@@ -58,12 +58,6 @@ double RvmClassifier::computeHyperplaneDistance(const Mat& featureVector, const 
 	return distance;
 }
 
-void RvmClassifier::setRvmParameters(vector<Mat> supportVectors, vector<vector<float>> coefficients, double bias) {
-	this->supportVectors = supportVectors;
-	this->coefficients = coefficients;
-	this->bias = bias;
-}
-
 shared_ptr<RvmClassifier> RvmClassifier::loadMatlab(const string& classifierFilename, const string& thresholdsFilename)
 {
 	Logger logger = Loggers->getLogger("classification");

@@ -58,7 +58,7 @@ SET(HEADERS
 include_directories( "include" )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES("C:\\Users\\Patrik\\Documents\\GitHub\\HDF5\\include\\hdf5\\")
+INCLUDE_DIRECTORIES("E:\\HDF5\\include\\hdf5\\")
 
 #Make the library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )

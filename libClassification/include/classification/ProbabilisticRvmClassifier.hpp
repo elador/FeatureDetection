@@ -24,7 +24,7 @@ namespace classification {
 class RvmClassifier;
 
 /**
- * SVM classifier that produces pseudo-probabilistic output. The hyperplane distance of a feature vector will be transformed
+ * RVM classifier that produces pseudo-probabilistic output. The hyperplane distance of a feature vector will be transformed
  * into a probability using a logistic function p(x) = 1 / (1 + exp(a + b * x)) with x being the hyperplane distance and a and
  * b being parameters.
  */
@@ -32,14 +32,14 @@ class ProbabilisticRvmClassifier : public ProbabilisticClassifier {
 public:
 
 	/**
-	 * Constructs a new empty probabilistic SVM classifier.
+	 * Constructs a new empty probabilistic RVM classifier.
 	 */
 	ProbabilisticRvmClassifier();
 
 	/**
-	 * Constructs a new probabilistic SVM classifier.
+	 * Constructs a new probabilistic RVM classifier.
 	 *
-	 * @param[in] svm The actual SVM.
+	 * @param[in] svm The actual RVM.
 	 * @param[in] logisticA Parameter a of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 	 * @param[in] logisticB Parameter b of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 	 */
@@ -48,14 +48,14 @@ public:
 	~ProbabilisticRvmClassifier();
 
 	/**
-	 * @return The actual SVM.
+	 * @return The actual RVM.
 	 */
 	shared_ptr<RvmClassifier> getRvm() {
 		return rvm;
 	}
 
 	/**
-	 * @return The actual SVM.
+	 * @return The actual RVM.
 	 */
 	const shared_ptr<RvmClassifier> getRvm() const {
 		return rvm;
@@ -72,19 +72,16 @@ public:
 	void setLogisticParameters(double logisticA, double logisticB);
 
 	/**
-	 * Creates a new probabilistic RVM classifier from the parameters given in some Matlab file. Loads the logistic function's
-	 * parameters from the Matlab file, then passes the loading to the underlying SVM which loads the vectors and thresholds
-	 * from the Matlab file.
+	 * Loads the logistic function's parameters from the Matlab file and returns them.
 	 *
-	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
-	 * @param[in] logisticFilename The name of the file containing the logistic function's parameters.
-	 * @return The newly created probabilistic RVM classifier. TODO update doc
+	 * @param[in] logisticFilename The name of the Matlab-file containing the logistic function's parameters.
+	 * @return A pair (a, b) containing the logistic parameters.
 	 */
 	static pair<double, double> loadSigmoidParamsFromMatlab(const string& logisticFilename);
 
 	/**
 	 * Creates a new probabilistic RVM classifier from the parameters given in the ptree sub-tree. Loads the logistic function's
-	 * parameters, then passes the loading to the underlying SVM which loads the vectors and thresholds
+	 * parameters, then passes the loading to the underlying RVM which loads the vectors and thresholds
 	 * from the Matlab file.
 	 *
 	 * @param[in] subtree The subtree containing the config information for this classifier.
