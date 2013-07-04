@@ -23,12 +23,10 @@ using std::invalid_argument;
 namespace imageprocessing {
 
 /**
- * Image filter that computes the (original) local binary pattern codes for each pixel. If all non-uniform patterns should
- * be put into one bin, the resulting amount of bins is 59. Otherwise, the amount of bins is 256. The input image has to
- * have a single channel.
+ * Image filter that computes the (original) local binary pattern codes for each pixel.
  *
  * The code for computing the LBP codes was taken from http://www.bytefish.de/blog/local_binary_patterns/, where the
- * code for the extended LBP can be found too.
+ * code for the extended LBP can be found, too.
  */
 class LbpFilter : public HistogramFilter {
 public:

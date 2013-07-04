@@ -20,6 +20,7 @@ SET(HEADERS
 	include/condensation/LowVarianceSampling.hpp
 	include/condensation/MaxWeightPositionExtractor.hpp
 	include/condensation/MeasurementModel.hpp
+	include/condensation/OpticalFlowTransitionModel.hpp
 	include/condensation/PartiallyAdaptiveCondensationTracker.hpp
 	include/condensation/PositionDependentMeasurementModel.hpp
 	include/condensation/PositionExtractor.hpp
@@ -41,6 +42,7 @@ SET(SOURCE
 	src/condensation/GridSampler.cpp
 	src/condensation/LowVarianceSampling.cpp
 	src/condensation/MaxWeightPositionExtractor.cpp
+	src/condensation/OpticalFlowTransitionModel.cpp
 	src/condensation/PartiallyAdaptiveCondensationTracker.cpp
 	src/condensation/PositionDependentMeasurementModel.cpp
 	src/condensation/ResamplingSampler.cpp

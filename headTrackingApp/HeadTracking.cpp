@@ -5,118 +5,189 @@
  *      Author: poschmann
  */
 
-#include "HeadTracking.h"
-#include "HeadWvmSvmModel.h"
-#include "imageio/VideoImageSource.h"
-#include "imageio/KinectImageSource.h"
-#include "imageio/DirectoryImageSource.h"
-#include "imageio/VideoImageSink.h"
-#include "classification/FrameBasedLibSvmTraining.h"
-#include "classification/FastLibSvmTraining.h"
-#include "classification/FixedSizeLibSvmTraining.h"
-#include "classification/LibSvmParameterBuilder.h"
-#include "classification/RbfLibSvmParameterBuilder.h"
-#include "classification/PolyLibSvmParameterBuilder.h"
-#include "classification/SigmoidParameterComputation.h"
-#include "classification/ApproximateSigmoidParameterComputation.h"
-#include "classification/FixedApproximateSigmoidParameterComputation.h"
-#include "classification/TrainableClassifier.h"
-#include "classification/LibSvmClassifier.h"
-#include "classification/HistEqFeatureExtractor.h"
-#include "tracking/ResamplingSampler.h"
-#include "tracking/GridSampler.h"
-#include "tracking/LowVarianceSampling.h"
-#include "tracking/SimpleTransitionModel.h"
-#include "tracking/SelfLearningMeasurementModel.h"
-#include "tracking/PositionDependentMeasurementModel.h"
-#include "tracking/FilteringPositionExtractor.h"
-#include "tracking/WeightedMeanPositionExtractor.h"
-#include "tracking/Rectangle.h"
-#include "tracking/Sample.h"
-#include "OverlapElimination.h"
-#include "VDetectorVectorMachine.h"
-#include "DetectorWVM.h"
-#include "DetectorSVM.h"
-#include "SLogger.h"
-#include <boost/optional.hpp>
-#include <boost/program_options.hpp>
+#include "HeadTracking.hpp"
+#include "logging/LoggerFactory.hpp"
+#include "logging/Logger.hpp"
+#include "logging/ConsoleAppender.hpp"
+#include "imageio/VideoImageSource.hpp"
+#include "imageio/KinectImageSource.hpp"
+#include "imageio/DirectoryImageSource.hpp"
+#include "imageio/VideoImageSink.hpp"
+#include "imageprocessing/ImagePyramid.hpp"
+#include "imageprocessing/FeatureExtractor.hpp"
+#include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
+#include "imageprocessing/FilteringFeatureExtractor.hpp"
+#include "imageprocessing/PatchResizingFeatureExtractor.hpp"
+#include "imageprocessing/GrayscaleFilter.hpp"
+#include "imageprocessing/HistEq64Filter.hpp"
+#include "imageprocessing/WhiteningFilter.hpp"
+#include "imageprocessing/ZeroMeanUnitVarianceFilter.hpp"
+#include "imageprocessing/HistogramEqualizationFilter.hpp"
+#include "classification/ProbabilisticWvmClassifier.hpp"
+#include "classification/ProbabilisticSvmClassifier.hpp"
+#include "classification/RbfKernel.hpp"
+#include "classification/PolynomialKernel.hpp"
+#include "classification/FrameBasedTrainableSvmClassifier.hpp"
+#include "classification/TrainableProbabilisticTwoStageClassifier.hpp"
+#include "classification/FixedSizeTrainableSvmClassifier.hpp"
+#include "classification/FixedTrainableProbabilisticSvmClassifier.hpp"
+#include "condensation/ResamplingSampler.hpp"
+#include "condensation/GridSampler.hpp"
+#include "condensation/LowVarianceSampling.hpp"
+#include "condensation/SimpleTransitionModel.hpp"
+#include "condensation/OpticalFlowTransitionModel.hpp"
+#include "condensation/WvmSvmModel.hpp"
+#include "condensation/SelfLearningMeasurementModel.hpp"
+#include "condensation/PositionDependentMeasurementModel.hpp"
+#include "condensation/FilteringPositionExtractor.hpp"
+#include "condensation/WeightedMeanPositionExtractor.hpp"
+#include "condensation/Sample.hpp"
+#include "boost/program_options.hpp"
+#include "boost/property_tree/info_parser.hpp"
+#include "boost/optional.hpp"
 #include <vector>
 #include <iostream>
-#ifdef WIN32
-	#include "wingettimeofday.h"
-#else
-	#include <sys/time.h>
-#endif
+#include <chrono>
+#include <sstream>
 
+using namespace logging;
+using namespace imageprocessing;
+using namespace classification;
+using namespace std::chrono;
+using boost::property_tree::info_parser::read_info;
+using std::milli;
 using std::move;
+using std::ostringstream;
 
 namespace po = boost::program_options;
 
-const std::string HeadTracking::videoWindowName = "Image";
-const std::string HeadTracking::controlWindowName = "Controls";
+const string HeadTracking::videoWindowName = "Image";
+const string HeadTracking::controlWindowName = "Controls";
 
-HeadTracking::HeadTracking(unique_ptr<imageio::ImageSource> imageSource, unique_ptr<imageio::ImageSink> imageSink,
-		std::string svmConfigFile, std::string negativesFile) :
-				svmConfigFile(svmConfigFile),
-				negativesFile(negativesFile),
-				imageSource(move(imageSource)),
-				imageSink(move(imageSink)) {
-	initTracking();
+HeadTracking::HeadTracking(unique_ptr<ImageSource> imageSource, unique_ptr<ImageSink> imageSink, ptree config) :
+		imageSource(move(imageSource)), imageSink(move(imageSink)) {
+	initTracking(config);
 	initGui();
 }
 
 HeadTracking::~HeadTracking() {}
 
-void HeadTracking::initTracking() {
+shared_ptr<Kernel> HeadTracking::createKernel(ptree config) {
+	if (config.get_value<string>() == "rbf") {
+		return make_shared<RbfKernel>(config.get<double>("gamma"));
+	} else if (config.get_value<string>() == "poly") {
+		return make_shared<PolynomialKernel>(
+				config.get<double>("alpha"), config.get<double>("constant"), config.get<double>("degree"));
+	} else {
+		throw invalid_argument("HeadTracking: invalid kernel type: " + config.get_value<string>());
+	}
+}
+
+shared_ptr<TrainableSvmClassifier> HeadTracking::createTrainableSvm(shared_ptr<Kernel> kernel, ptree config) {
+	shared_ptr<TrainableSvmClassifier> trainableSvm;
+	if (config.get_value<string>() == "fixedsize") {
+		trainableSvm = make_shared<FixedSizeTrainableSvmClassifier>(kernel, config.get<double>("constraintsViolationCosts"),
+				config.get<unsigned int>("positiveExamples"), config.get<unsigned int>("negativeExamples"), config.get<unsigned int>("minPositiveExamples"));
+	} else if (config.get_value<string>() == "framebased") {
+		trainableSvm = make_shared<FrameBasedTrainableSvmClassifier>(kernel, config.get<double>("constraintsViolationCosts"),
+				config.get<int>("frameLength"), config.get<float>("minAvgSamples"));
+	} else {
+		throw invalid_argument("HeadTracking: invalid training type: " + config.get_value<string>());
+	}
+	optional<ptree&> negativesConfig = config.get_child_optional("staticNegatives");
+	if (negativesConfig && negativesConfig->get_value<bool>()) {
+		trainableSvm->loadStaticNegatives(negativesConfig->get<string>("filename"),
+				negativesConfig->get<int>("amount"), negativesConfig->get<double>("scale"));
+	}
+	return trainableSvm;
+}
+
+shared_ptr<TrainableProbabilisticClassifier> HeadTracking::createClassifier(
+		shared_ptr<TrainableSvmClassifier> trainableSvm, ptree config) {
+	if (config.get_value<string>() == "default")
+		return make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm);
+	else if (config.get_value<string>() == "fixed")
+		return make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm);
+	else
+		throw invalid_argument("HeadTracking: invalid classifier type: " + config.get_value<string>());
+}
+
+void HeadTracking::initTracking(ptree config) {
+	// create feature extractors
+	shared_ptr<DirectPyramidFeatureExtractor> patchExtractor = make_shared<DirectPyramidFeatureExtractor>(
+			config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"),
+			config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"),
+			config.get<double>("pyramid.scaleFactor"));
+	patchExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+
+	shared_ptr<FilteringFeatureExtractor> staticFilteringFeatureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
+	staticFilteringFeatureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
+	shared_ptr<PatchResizingFeatureExtractor> staticFeatureExtractor = make_shared<PatchResizingFeatureExtractor>(
+			staticFilteringFeatureExtractor, 0.55, 0.1);
+
+	shared_ptr<FilteringFeatureExtractor> adaptiveFeatureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
+	if (config.get<string>("feature.adaptive") == "histeq") {
+		adaptiveFeatureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
+	} else if (config.get<string>("feature.adaptive") == "whi") {
+		adaptiveFeatureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
+		adaptiveFeatureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
+		adaptiveFeatureExtractor->addPatchFilter(make_shared<ZeroMeanUnitVarianceFilter>());
+	} else {
+		throw invalid_argument("HeadTracking: invalid feature type: " + config.get<string>("feature.adaptive"));
+	}
+
 	// create static measurement model
-	shared_ptr<VDetectorVectorMachine> wvm = make_shared<DetectorWVM>();
-	wvm->load(svmConfigFile);
-	shared_ptr<VDetectorVectorMachine> svm = make_shared<DetectorSVM>();
-	svm->load(svmConfigFile);
-	shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>();
-	oe->load(svmConfigFile);
-	staticMeasurementModel = make_shared<HeadWvmSvmModel>(wvm, svm, oe);
+	string classifierFile = config.get<string>("measurement.static.classifier.configFile");
+	string thresholdsFile = config.get<string>("measurement.static.classifier.thresholdsFile");
+	shared_ptr<ProbabilisticWvmClassifier> wvm = ProbabilisticWvmClassifier::loadMatlab(classifierFile, thresholdsFile);
+	shared_ptr<ProbabilisticSvmClassifier> svm = ProbabilisticSvmClassifier::loadMatlab(classifierFile, thresholdsFile);
+	staticMeasurementModel = make_shared<WvmSvmModel>(staticFeatureExtractor, wvm, svm);
 
 	// create adaptive measurement model
-	shared_ptr<LibSvmParameterBuilder> svmParameterBuilder = make_shared<RbfLibSvmParameterBuilder>(0.05);
-//	shared_ptr<LibSvmParameterBuilder> svmParameterBuilder = make_shared<PolyLibSvmParameterBuilder>(2, 1, 1);
-
-	shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation = make_shared<FixedApproximateSigmoidParameterComputation>();
-//	shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation = make_shared<FastApproximateSigmoidParameterComputation>();
-//	shared_ptr<SigmoidParameterComputation> sigmoidParameterComputation = make_shared<ApproximateSigmoidParameterComputation>();
-
-//	shared_ptr<LibSvmTraining> training = make_shared<FastLibSvmTraining>(7, 14, 50, svmParameterBuilder, sigmoidParameterComputation);
-//	shared_ptr<LibSvmTraining> training = make_shared<FrameBasedLibSvmTraining>(5, 4, svmParameterBuilder, sigmoidParameterComputation);
-	shared_ptr<LibSvmTraining> training = make_shared<FixedSizeLibSvmTraining>(10, 50, 3);
-//	training->readStaticNegatives(negativesFile, 200);
-	shared_ptr<TrainableClassifier> classifier = make_shared<LibSvmClassifier>(training);
-//	shared_ptr<TrainableClassifier> classifier = make_shared<TrainableTwoStageClassifier>(
-//			make_shared<WvmClassifier>(wvm), make_shared<LibSvmClassifier>(training));
-
-	shared_ptr<HistEqFeatureExtractor> featureExtractor = make_shared<HistEqFeatureExtractor>(cv::Size(20, 20), 0.85, 0.1666, 1.0);
-
-//	adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(featureExtractor, classifier, 0.85, 0.05);
-//	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor, classifier, 0.05, 0.5, true, true, 0);
-	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(featureExtractor, classifier, 3, 40, 0.0, 0.5, false, false, 10);
+	shared_ptr<Kernel> kernel = createKernel(config.get_child("measurement.adaptive.classifier.kernel"));
+	shared_ptr<TrainableSvmClassifier> trainableSvm = createTrainableSvm(kernel, config.get_child("measurement.adaptive.classifier.training"));
+	shared_ptr<TrainableProbabilisticClassifier> classifier = createClassifier(trainableSvm, config.get_child("measurement.adaptive.classifier.probabilistic"));
+	optional<bool> withWvm = config.get_optional<bool>("measurement.adaptive.classifier.withWvm");
+	if (withWvm && *withWvm)
+		classifier = make_shared<TrainableProbabilisticTwoStageClassifier>(wvm, classifier);
+	if (config.get<string>("measurement.adaptive") == "selfLearning") {
+		adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(adaptiveFeatureExtractor, classifier,
+				config.get<double>("measurement.adaptive.positiveThreshold"), config.get<double>("measurement.adaptive.negativeThreshold"));
+	} else if (config.get<string>("measurement.adaptive") == "positionDependent") {
+		adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(adaptiveFeatureExtractor, classifier,
+				config.get<int>("measurement.adaptive.startFrameCount"), config.get<int>("measurement.adaptive.stopFrameCount"),
+				config.get<float>("measurement.adaptive.targetThreshold"), config.get<float>("measurement.adaptive.confidenceThreshold"),
+				config.get<float>("measurement.adaptive.positiveOffsetFactor"), config.get<float>("measurement.adaptive.negativeOffsetFactor"),
+				config.get<bool>("measurement.adaptive.sampleNegativesAroundTarget"), config.get<bool>("measurement.adaptive.sampleFalsePositives"),
+				config.get<unsigned int>("measurement.adaptive.randomNegatives"), config.get<bool>("measurement.adaptive.exploitSymmetry"));
+	} else {
+		throw invalid_argument("HeadTracking: invalid adaptive measurement model type: " + config.get<string>("measurement.adaptive"));
+	}
 
 	// create tracker
-	unsigned int count = 800;
-	double randomRate = 0.35;
-	transitionModel = make_shared<SimpleTransitionModel>(0.2);
-	resamplingSampler = make_shared<ResamplingSampler>(count, randomRate, make_shared<LowVarianceSampling>(),
-			transitionModel, 0.1666, 1.0);
-	gridSampler = make_shared<GridSampler>(0.1666, 0.8, 1 / 0.85, 0.1);
-	tracker = unique_ptr<AdaptiveCondensationTracker>(new AdaptiveCondensationTracker(
+	transitionModel = make_shared<SimpleTransitionModel>(
+			config.get<double>("transition.positionScatter"), config.get<double>("transition.velocityScatter"));
+	shared_ptr<OpticalFlowTransitionModel> transitionModel = make_shared<OpticalFlowTransitionModel>(
+			make_shared<SimpleTransitionModel>(0.02, 0.05), 0.01);
+	resamplingSampler = make_shared<ResamplingSampler>(
+			config.get<unsigned int>("resampling.particleCount"), config.get<double>("resampling.randomRate"), make_shared<LowVarianceSampling>(),
+			transitionModel, config.get<double>("resampling.minSize"), config.get<double>("resampling.maxSize"));
+	gridSampler = make_shared<GridSampler>(config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"),
+			1 / config.get<double>("pyramid.scaleFactor"), 0.1);
+	tracker = unique_ptr<PartiallyAdaptiveCondensationTracker>(new PartiallyAdaptiveCondensationTracker(
 			resamplingSampler, staticMeasurementModel, adaptiveMeasurementModel,
 			make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>())));
-//	tracker->setLearningActive(false);
+	tracker->setUseAdaptiveModel(false);
 }
 
 void HeadTracking::initGui() {
 	drawSamples = true;
 
+	cvNamedWindow(videoWindowName.c_str(), CV_WINDOW_AUTOSIZE);
+	cvMoveWindow(videoWindowName.c_str(), 50, 50);
+
 	cvNamedWindow(controlWindowName.c_str(), CV_WINDOW_AUTOSIZE);
-	cvMoveWindow(controlWindowName.c_str(), 750, 50);
+	cvMoveWindow(controlWindowName.c_str(), 900, 50);
 
 	cv::createTrackbar("Adaptive", controlWindowName, NULL, 1, adaptiveChanged, this);
 	cv::setTrackbarPos("Adaptive", controlWindowName, tracker->isUsingAdaptiveModel() ? 1 : 0);
@@ -130,8 +201,11 @@ void HeadTracking::initGui() {
 	cv::createTrackbar("Random Rate", controlWindowName, NULL, 100, randomRateChanged, this);
 	cv::setTrackbarPos("Random Rate", controlWindowName, 100 * resamplingSampler->getRandomRate());
 
-	cv::createTrackbar("Scatter * 100", controlWindowName, NULL, 100, scatterChanged, this);
-	cv::setTrackbarPos("Scatter * 100", controlWindowName, 100 * transitionModel->getScatter());
+	cv::createTrackbar("Position Scatter * 100", controlWindowName, NULL, 100, positionScatterChanged, this);
+	cv::setTrackbarPos("Position Scatter * 100", controlWindowName, 100 * transitionModel->getPositionScatter());
+
+	cv::createTrackbar("Velocity Scatter * 100", controlWindowName, NULL, 100, velocityScatterChanged, this);
+	cv::setTrackbarPos("Velocity Scatter * 100", controlWindowName, 100 * transitionModel->getVelocityScatter());
 
 	cv::createTrackbar("Draw samples", controlWindowName, NULL, 1, drawSamplesChanged, this);
 	cv::setTrackbarPos("Draw samples", controlWindowName, drawSamples ? 1 : 0);
@@ -160,9 +234,14 @@ void HeadTracking::randomRateChanged(int state, void* userdata) {
 	tracking->resamplingSampler->setRandomRate(0.01 * state);
 }
 
-void HeadTracking::scatterChanged(int state, void* userdata) {
+void HeadTracking::positionScatterChanged(int state, void* userdata) {
 	HeadTracking *tracking = (HeadTracking*)userdata;
-	tracking->transitionModel->setScatter(0.01 * state);
+	tracking->transitionModel->setPositionScatter(0.01 * state);
+}
+
+void HeadTracking::velocityScatterChanged(int state, void* userdata) {
+	HeadTracking *tracking = (HeadTracking*)userdata;
+	tracking->transitionModel->setVelocityScatter(0.01 * state);
 }
 
 void HeadTracking::drawSamplesChanged(int state, void* userdata) {
@@ -177,8 +256,12 @@ void HeadTracking::drawDebug(cv::Mat& image) {
 	if (drawSamples) {
 		const std::vector<Sample> samples = tracker->getSamples();
 		for (std::vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
-			cv::Scalar color = sit->isObject() ? cv::Scalar(0, 0, sit->getWeight() * 255) : black;
-			cv::circle(image, cv::Point(sit->getX(), sit->getY()), 3, color);
+			if (!sit->isObject())
+				cv::circle(image, cv::Point(sit->getX(), sit->getY()), 3, black);
+		}
+		for (std::vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
+			if (sit->isObject())
+				cv::circle(image, cv::Point(sit->getX(), sit->getY()), 3, cv::Scalar(0, 0, sit->getWeight() * 255));
 		}
 	}
 	cv::Scalar& svmIndicatorColor = tracker->wasUsingAdaptiveModel() ? green : red;
@@ -186,6 +269,7 @@ void HeadTracking::drawDebug(cv::Mat& image) {
 }
 
 void HeadTracking::run() {
+	Logger& log = Loggers->getLogger("app");
 	running = true;
 	paused = false;
 
@@ -194,16 +278,13 @@ void HeadTracking::run() {
 	cv::Scalar green(0, 255, 0); // blue, green, red
 	cv::Scalar red(0, 0, 255); // blue, green, red
 
-	timeval start, detStart, detEnd, frameStart, frameEnd;
-	float allIterationTimeSeconds = 0, allDetectionTimeSeconds = 0;
-
+	duration<double> allIterationTime;
+	duration<double> allCondensationTime;
 	int frames = 0;
-	gettimeofday(&start, 0);
-	std::cout.precision(2);
 
 	while (running) {
 		frames++;
-		gettimeofday(&frameStart, 0);
+		steady_clock::time_point frameStart = steady_clock::now();
 		frame = imageSource->get();
 
 		if (frame.empty()) {
@@ -215,29 +296,31 @@ void HeadTracking::run() {
 				first = false;
 				image.create(frame.rows, frame.cols, frame.type());
 			}
-			gettimeofday(&detStart, 0);
-			boost::optional<tracking::Rectangle> head = tracker->process(frame);
-			gettimeofday(&detEnd, 0);
+			steady_clock::time_point condensationStart = steady_clock::now();
+			boost::optional<Rect> face = tracker->process(frame);
+			steady_clock::time_point condensationEnd = steady_clock::now();
 			image = frame;
 			drawDebug(image);
 			cv::Scalar& color = tracker->wasUsingAdaptiveModel() ? green : red;
-			if (head)
-				cv::rectangle(image, cv::Point(head->getX(), head->getY()),
-						cv::Point(head->getX() + head->getWidth(), head->getY() + head->getHeight()), color);
+			if (face)
+				cv::rectangle(image, *face, color);
 			imshow(videoWindowName, image);
 			if (imageSink.get() != 0)
 				imageSink->add(image);
-			gettimeofday(&frameEnd, 0);
+			steady_clock::time_point frameEnd = steady_clock::now();
 
-			int iterationTimeMilliseconds = 1000 * (frameEnd.tv_sec - frameStart.tv_sec) + (frameEnd.tv_usec - frameStart.tv_usec) / 1000;
-			int detectionTimeMilliseconds = 1000 * (detEnd.tv_sec - detStart.tv_sec) + (detEnd.tv_usec - detStart.tv_usec) / 1000;
-			allIterationTimeSeconds += 0.001 * iterationTimeMilliseconds;
-			allDetectionTimeSeconds += 0.001 * detectionTimeMilliseconds;
-			float iterationFps = frames / allIterationTimeSeconds;
-			float detectionFps = frames / allDetectionTimeSeconds;
-			std::cout << "frame: " << frames << "; time: "
-					<< iterationTimeMilliseconds << " ms (" << iterationFps << " fps); detection: "
-					<< detectionTimeMilliseconds << " ms (" << detectionFps << " fps)" << std::endl;
+			milliseconds iterationTime = duration_cast<milliseconds>(frameEnd - frameStart);
+			milliseconds condensationTime = duration_cast<milliseconds>(condensationEnd - condensationStart);
+			allIterationTime += iterationTime;
+			allCondensationTime += condensationTime;
+			float iterationFps = frames / allIterationTime.count();
+			float condensationFps = frames / allCondensationTime.count();
+
+			ostringstream text;
+			text.precision(2);
+			text << frames << " frame: " << iterationTime.count() << " ms (" << iterationFps << " fps);"
+					<< " condensation: " << condensationTime.count() << " ms (" << condensationFps << " fps)";
+			log.info(text.str());
 
 			int delay = paused ? 0 : 5;
 			char c = (char)cv::waitKey(delay);
@@ -254,14 +337,13 @@ void HeadTracking::stop() {
 }
 
 int main(int argc, char *argv[]) {
-
 	int verboseLevelText;
 	int verboseLevelImages;
 	int deviceId, kinectId;
-	std::string filename, directory;
+	string filename, directory;
 	bool useCamera = false, useKinect = false, useFile = false, useDirectory = false;
-	std::string svmConfigFile, negativeRtlPatches;
-	std::string outputFile;
+	string configFile;
+	string outputFile;
 	int outputFps = -1;
 
 	try {
@@ -270,13 +352,12 @@ int main(int argc, char *argv[]) {
 			("help,h", "Produce help message")
 			("verbose-text,v", po::value<int>(&verboseLevelText)->implicit_value(2)->default_value(0,"minimal text output"), "Enable text-verbosity (optionally specify level)")
 			("verbose-images,w", po::value<int>(&verboseLevelImages)->implicit_value(2)->default_value(0,"minimal image output"), "Enable image-verbosity (optionally specify level)")
-			("filename,f", po::value< std::string >(&filename), "A filename of a video to run the tracking")
-			("directory,i", po::value< std::string >(&directory), "Use a directory as input")
+			("filename,f", po::value< string >(&filename), "A filename of a video to run the tracking")
+			("directory,i", po::value< string >(&directory), "Use a directory as input")
 			("device,d", po::value<int>(&deviceId)->implicit_value(0), "A camera device ID for use with the OpenCV camera driver")
 			("kinect,k", po::value<int>(&kinectId)->implicit_value(0), "Windows only: Use a Kinect as camera. Optionally specify a device ID.")
-			("config,c", po::value< std::string >(&svmConfigFile)->default_value("fd_config_fft_fd.mat","fd_config_fft_fd.mat"), "The filename to the config file that contains the SVM and WVM classifiers.")
-			("nonfaces,n", po::value< std::string >(&negativeRtlPatches)->default_value("nonfaces_1000","nonfaces_1000"), "Filename to a file containing the static negative training examples for the real-time learning SVM.")
-			("output,o", po::value< std::string >(&outputFile)->default_value("","none"), "Filename to a video file for storing the image data.")
+			("config,c", po::value< string >(&configFile)->default_value("default.cfg","default.cfg"), "The filename to the config file.")
+			("output,o", po::value< string >(&outputFile)->default_value("","none"), "Filename to a video file for storing the image data.")
 			("output-fps,r", po::value<int>(&outputFps)->default_value(-1), "The framerate of the output video.")
 			;
 
@@ -317,29 +398,30 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	Logger->setVerboseLevelText(verboseLevelText);
-	Logger->setVerboseLevelImages(verboseLevelImages);
+	Loggers->getLogger("app").addAppender(make_shared<ConsoleAppender>(loglevel::INFO));
 
-	unique_ptr<imageio::ImageSource> imageSource;
+	unique_ptr<ImageSource> imageSource;
 	if (useCamera)
-		imageSource.reset(new imageio::VideoImageSource(deviceId));
+		imageSource.reset(new VideoImageSource(deviceId));
 	else if (useKinect)
-		imageSource.reset(new imageio::KinectImageSource(kinectId));
+		imageSource.reset(new KinectImageSource(kinectId));
 	else if (useFile)
-		imageSource.reset(new imageio::VideoImageSource(filename));
+		imageSource.reset(new VideoImageSource(filename));
 	else if (useDirectory)
-		imageSource.reset(new imageio::DirectoryImageSource(directory));
+		imageSource.reset(new DirectoryImageSource(directory));
 
-	unique_ptr<imageio::ImageSink> imageSink;
+	unique_ptr<ImageSink> imageSink;
 	if (outputFile != "") {
 		if (outputFps < 0) {
 			std::cout << "Usage: You have to specify the framerate of the output video file by using option -r. Use -h for help." << std::endl;
 			return -1;
 		}
-		imageSink.reset(new imageio::VideoImageSink(outputFile, outputFps));
+		imageSink.reset(new VideoImageSink(outputFile, outputFps));
 	}
 
-	unique_ptr<HeadTracking> tracker(new HeadTracking(move(imageSource), move(imageSink), svmConfigFile, negativeRtlPatches));
+	ptree config;
+	read_info(configFile, config);
+	unique_ptr<HeadTracking> tracker(new HeadTracking(move(imageSource), move(imageSink), config.get_child("tracking")));
 	tracker->run();
 	return 0;
 }

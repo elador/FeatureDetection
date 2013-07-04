@@ -8,11 +8,14 @@
 #ifndef ADAPTIVETRACKING_HPP_
 #define ADAPTIVETRACKING_HPP_
 
+#include "HogExtractor.hpp"
+#include "HogImageExtractor.hpp"
 #include "imageio/LabeledImageSource.hpp"
 #include "imageio/ImageSink.hpp"
 #include "imageio/LandmarkCollection.hpp"
 #include "imageprocessing/FeatureExtractor.hpp"
 #include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
+#include "DirectImageExtractor.hpp"
 #include "imageprocessing/LbpFilter.hpp"
 #include "classification/Kernel.hpp"
 #include "classification/TrainableSvmClassifier.hpp"
@@ -22,6 +25,7 @@
 #include "condensation/AdaptiveMeasurementModel.hpp"
 #include "condensation/MeasurementModel.hpp"
 #include "condensation/SimpleTransitionModel.hpp"
+#include "condensation/OpticalFlowTransitionModel.hpp"
 #include "condensation/ResamplingSampler.hpp"
 #include "condensation/GridSampler.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -57,6 +61,7 @@ private:
 	enum Initialization { AUTOMATIC, MANUAL, GROUND_TRUTH };
 
 	static void adaptiveChanged(int state, void* userdata);
+	static void scatterChanged(int state, void* userdata);
 	static void positionScatterChanged(int state, void* userdata);
 	static void velocityScatterChanged(int state, void* userdata);
 	static void initialSamplerChanged(int state, void* userdata);
@@ -66,12 +71,13 @@ private:
 	static void adaptiveSampleCountChanged(int state, void* userdata);
 	static void adaptiveRandomRateChanged(int state, void* userdata);
 	static void drawSamplesChanged(int state, void* userdata);
+	static void drawFlowChanged(int state, void* userdata);
 
 	static void onMouse(int event, int x, int y, int, void* userdata);
 
 	shared_ptr<FeatureExtractor> createFeatureExtractor(shared_ptr<DirectPyramidFeatureExtractor> patchExtractor, ptree config);
 	shared_ptr<LbpFilter> createLbpFilter(string lbpType);
-	shared_ptr<FeatureExtractor> createHistogramFeatureExtractor(shared_ptr<DirectPyramidFeatureExtractor> patchExtractor, unsigned int bins, ptree config);
+	shared_ptr<FeatureExtractor> createHistogramFeatureExtractor(shared_ptr<FeatureExtractor> patchExtractor, unsigned int bins, ptree config);
 	shared_ptr<FeatureExtractor> wrapFeatureExtractor(shared_ptr<FeatureExtractor> featureExtractor, float scaleFactor);
 	shared_ptr<Kernel> createKernel(ptree config);
 	shared_ptr<TrainableSvmClassifier> createTrainableSvm(shared_ptr<Kernel> kernel, ptree config);
@@ -100,15 +106,21 @@ private:
 	bool useAdaptive;
 	bool adaptiveUsable;
 	bool drawSamples;
+	int drawFlow;
 
+	shared_ptr<ProbabilisticClassifier> svmClassifier;
 	Initialization initialization;
 	shared_ptr<DirectPyramidFeatureExtractor> patchExtractor;
+//	shared_ptr<DirectImageExtractor> patchExtractor;
+//	shared_ptr<HogExtractor> hogExtr;
+	shared_ptr<HogImageExtractor> hogExtr;
 	shared_ptr<FeatureExtractor> adaptiveFeatureExtractor;
 	unique_ptr<CondensationTracker> initialTracker;
 	unique_ptr<AdaptiveCondensationTracker> adaptiveTracker;
 	shared_ptr<MeasurementModel> staticMeasurementModel;
 	shared_ptr<AdaptiveMeasurementModel> adaptiveMeasurementModel;
-	shared_ptr<SimpleTransitionModel> transitionModel;
+	shared_ptr<SimpleTransitionModel> simpleTransitionModel;
+	shared_ptr<OpticalFlowTransitionModel> opticalFlowTransitionModel;
 	shared_ptr<ResamplingSampler> initialResamplingSampler;
 	shared_ptr<ResamplingSampler> adaptiveResamplingSampler;
 	shared_ptr<GridSampler> gridSampler;

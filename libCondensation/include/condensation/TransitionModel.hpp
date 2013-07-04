@@ -8,8 +8,12 @@
 #ifndef TRANSITIONMODEL_HPP_
 #define TRANSITIONMODEL_HPP_
 
+#include "opencv2/core/core.hpp"
+#include "boost/optional.hpp"
 #include <vector>
 
+using cv::Mat;
+using boost::optional;
 using std::vector;
 
 namespace condensation {
@@ -25,11 +29,20 @@ public:
 	virtual ~TransitionModel() {}
 
 	/**
-	 * Predicts the new state of the sample and adds some noise.
+	 * Initializes this transition model.
 	 *
-	 * @param[in,out] sample The sample.
+	 * @param[in] image The current image.
 	 */
-	virtual void predict(Sample& sample) = 0;
+	virtual void init(const Mat& image) = 0;
+
+	/**
+	 * Predicts the new state of the samples and adds some noise.
+	 *
+	 * @param[in,out] samples The samples.
+	 * @param[in] image The new image.
+	 * @param[in] target The previous target state.
+	 */
+	virtual void predict(vector<Sample>& samples, const Mat& image, const optional<Sample>& target) = 0;
 };
 
 } /* namespace condensation */

@@ -9,9 +9,11 @@
 #define SAMPLER_HPP_
 
 #include "opencv2/core/core.hpp"
+#include "boost/optional.hpp"
 #include <vector>
 
 using cv::Mat;
+using boost::optional;
 using std::vector;
 
 namespace condensation {
@@ -27,13 +29,21 @@ public:
 	virtual ~Sampler() {}
 
 	/**
+	 * Initializes this sampler.
+	 *
+	 * @param[in] image The current image.
+	 */
+	virtual void init(const Mat& image) = 0;
+
+	/**
 	 * Creates new samples.
 	 *
 	 * @param[in] samples The vector containing the samples of the previous time step.
-	 * @param[in] image The new image.
 	 * @param[in,out] newSamples The vector to insert the new samples into.
+	 * @param[in] image The new image.
+	 * @param[in] target The previous target state.
 	 */
-	virtual void sample(const vector<Sample>& samples, const Mat& image, vector<Sample>& newSamples) = 0;
+	virtual void sample(const vector<Sample>& samples, vector<Sample>& newSamples, const Mat& image, const optional<Sample>& target) = 0;
 };
 
 } /* namespace condensation */

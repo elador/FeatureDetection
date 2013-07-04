@@ -107,7 +107,7 @@ void ImagePyramid::update() {
 			incrementalScaleFactor = sourcePyramid->incrementalScaleFactor;
 			layers.clear();
 			const vector<shared_ptr<ImagePyramidLayer>>& sourceLayers = sourcePyramid->layers;
-			for (auto layer = make_indirect_iterator(layers.begin()); layer != make_indirect_iterator(layers.end()); ++layer) {
+			for (auto layer = make_indirect_iterator(sourceLayers.begin()); layer != make_indirect_iterator(sourceLayers.end()); ++layer) {
 				if (layer->getScaleFactor() > maxScaleFactor)
 					continue;
 				if (layer->getScaleFactor() < minScaleFactor)

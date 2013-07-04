@@ -28,10 +28,14 @@ CondensationTracker::CondensationTracker(shared_ptr<Sampler> sampler,
 
 CondensationTracker::~CondensationTracker() {}
 
+void CondensationTracker::initialize(const vector<Sample>& samples) {
+	this->samples = samples;
+}
+
 optional<Rect> CondensationTracker::process(const Mat& imageData) {
 	image->setData(imageData);
 	oldSamples = samples;
-	sampler->sample(oldSamples, image->getData(), samples);
+	sampler->sample(oldSamples, samples, image->getData(), state);
 	// evaluate samples and extract position
 	measurementModel->evaluate(image, samples);
 	state = extractor->extract(samples);

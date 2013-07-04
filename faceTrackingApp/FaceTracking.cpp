@@ -70,10 +70,10 @@ void FaceTracking::initTracking() {
 	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(20, 20, 80, 480, 0.85);
 	featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 	featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
-	//string svmConfigFile1 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat";
-	string svmConfigFile1 = "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat";
-	//string svmConfigFile2 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat";
-	string svmConfigFile2 = "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat";
+	string svmConfigFile1 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat";
+//	string svmConfigFile1 = "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat";
+	string svmConfigFile2 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat";
+//	string svmConfigFile2 = "C:/Users/Patrik/Documents/GitHub/config/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--ts107742-hq64_thres_0.005--with-outnew02HQ64SVM.mat";
 	shared_ptr<ProbabilisticWvmClassifier> wvm = ProbabilisticWvmClassifier::loadMatlab(svmConfigFile1, svmConfigFile2);
 	shared_ptr<ProbabilisticSvmClassifier> svm = ProbabilisticSvmClassifier::loadMatlab(svmConfigFile1, svmConfigFile2);
 	measurementModel = make_shared<WvmSvmModel>(featureExtractor, wvm, svm);
@@ -198,27 +198,22 @@ void FaceTracking::run() {
 	int frames = 0;
 
 	while (running) {
-		frames++;
 		steady_clock::time_point frameStart = steady_clock::now();
-		frame = imageSource->get();
 
-		if (frame.empty()) {
+		if (!imageSource->next()) {
 			std::cerr << "Could not capture frame - press 'q' to quit program" << std::endl;
 			stop();
 			while ('q' != (char)cv::waitKey(10));
 		} else {
-			if (first) {
-				first = false;
-				image.create(frame.rows, frame.cols, frame.type());
-			}
+			frames++;
+			frame = imageSource->getImage();
 			steady_clock::time_point condensationStart = steady_clock::now();
 			boost::optional<Rect> face = tracker->process(frame);
 			steady_clock::time_point condensationEnd = steady_clock::now();
-			image = frame;
+			frame.copyTo(image);
 			drawDebug(image);
-			if (face) {
+			if (face)
 				cv::rectangle(image, *face, red);
-			}
 			imshow(videoWindowName, image);
 			if (imageSink.get() != 0)
 				imageSink->add(image);

@@ -372,7 +372,7 @@ int main(int argc, char *argv[])
 		stringstream ss;
 		ss << std::ctime(&end_time);
 		appLogger.info("finished computation at " + ss.str() + "elapsed time: " + lexical_cast<string>(elapsed_seconds) + "s or exactly " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
-
+	}
 	
 	return 0;
 }

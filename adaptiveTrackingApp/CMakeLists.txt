@@ -6,7 +6,7 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # find dependencies
 FIND_PACKAGE(Boost 1.48.0 COMPONENTS random system filesystem program_options REQUIRED)
-FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core imgproc highgui)
+FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core imgproc highgui video)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 # Matlab
@@ -30,9 +30,21 @@ ENDIF()
 # source and header files
 SET(HEADERS
 	AdaptiveTracking.hpp
+	DirectImageExtractor.hpp
+	HaarImageExtractor.hpp
+	HogExtractor.hpp
+	HogImageExtractor.hpp
+	IntegralHistogramPyramid.hpp
+	IntegralHistogramPyramidLayer.hpp
 )
 SET(SOURCE
 	AdaptiveTracking.cpp
+	DirectImageExtractor.cpp
+	HaarImageExtractor.cpp
+	HogExtractor.cpp
+	HogImageExtractor.cpp
+	IntegralHistogramPyramid.cpp
+	IntegralHistogramPyramidLayer.cpp
 )
 
 # add dependencies

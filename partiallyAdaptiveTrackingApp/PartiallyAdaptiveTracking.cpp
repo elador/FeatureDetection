@@ -152,9 +152,10 @@ void PartiallyAdaptiveTracking::initTracking(ptree config) {
 	} else if (config.get<string>("measurement.adaptive") == "positionDependent") {
 		adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(adaptiveFeatureExtractor, classifier,
 				config.get<int>("measurement.adaptive.startFrameCount"), config.get<int>("measurement.adaptive.stopFrameCount"),
+				config.get<float>("measurement.adaptive.targetThreshold"), config.get<float>("measurement.adaptive.confidenceThreshold"),
 				config.get<float>("measurement.adaptive.positiveOffsetFactor"), config.get<float>("measurement.adaptive.negativeOffsetFactor"),
 				config.get<bool>("measurement.adaptive.sampleNegativesAroundTarget"), config.get<bool>("measurement.adaptive.sampleFalsePositives"),
-				config.get<unsigned int>("measurement.adaptive.randomNegatives"));
+				config.get<unsigned int>("measurement.adaptive.randomNegatives"), config.get<bool>("adaptive.measurement.exploitSymmetry"));
 	} else {
 		throw invalid_argument("PartiallyAdaptiveTracking: invalid adaptive measurement model type: " + config.get<string>("measurement.adaptive"));
 	}
@@ -355,7 +356,7 @@ int main(int argc, char *argv[]) {
 		po::notify(vm);
 
 		if (vm.count("help")) {
-			std::cout << "Usage: adaptiveTrackingApp [options]" << std::endl;
+			std::cout << "Usage: partiallyAdaptiveTrackingApp [options]" << std::endl;
 			std::cout << desc;
 			return 0;
 		}

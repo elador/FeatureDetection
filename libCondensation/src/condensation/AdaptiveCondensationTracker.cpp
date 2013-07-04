@@ -36,11 +36,13 @@ bool AdaptiveCondensationTracker::initialize(const Mat& imageData, const Rect& p
 	image->setData(imageData);
 	samples.clear();
 	Sample::setAspectRatio(positionData.width, positionData.height);
-	Sample position(positionData.x + positionData.width / 2, positionData.y + positionData.height / 2, positionData.width);
-	measurementModel->adapt(image, samples, position);
+	state = optional<Sample>(Sample(
+			positionData.x + positionData.width / 2, positionData.y + positionData.height / 2, positionData.width));
+	sampler->init(imageData);
+	measurementModel->adapt(image, samples, *state);
 	if (measurementModel->isUsable()) {
 		for (int i = 0; i < initialCount; ++i)
-			samples.push_back(position);
+			samples.push_back(*state);
 	}
 	return measurementModel->isUsable();
 }
@@ -50,7 +52,7 @@ optional<Rect> AdaptiveCondensationTracker::process(const Mat& imageData) {
 		throw runtime_error("AdaptiveCondensationTracker: Is not usable (was not initialized or was resetted)");
 	image->setData(imageData);
 	oldSamples = samples;
-	sampler->sample(oldSamples, image->getData(), samples);
+	sampler->sample(oldSamples, samples, image->getData(), state);
 	// evaluate samples and extract position
 	measurementModel->evaluate(image, samples);
 	state = extractor->extract(samples);

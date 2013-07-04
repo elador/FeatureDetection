@@ -31,7 +31,9 @@ public:
 
 	~SimpleTransitionModel();
 
-	void predict(Sample& sample);
+	void init(const Mat& image);
+
+	void predict(vector<Sample>& samples, const Mat& image, const optional<Sample>& target);
 
 	/**
 	 * @return The scatter that controls the diffusion of the position.
@@ -41,7 +43,7 @@ public:
 	}
 
 	/**
-	 * @param[in] The new scatter that controls the diffusion of the position.
+	 * @param[in] scatter The new scatter that controls the diffusion of the position.
 	 */
 	void setPositionScatter(double scatter) {
 		this->positionScatter = scatter;
@@ -55,16 +57,17 @@ public:
 	}
 
 	/**
-	 * @param[in] The new scatter that controls the diffusion of the velocity.
+	 * @param[in] scatter The new scatter that controls the diffusion of the velocity.
 	 */
 	void setVelocityScatter(double scatter) {
 		this->velocityScatter = scatter;
 	}
 
 private:
+
 	double positionScatter; ///< The scatter that controls the diffusion of the position.
 	double velocityScatter; ///< The scatter that controls the diffusion of the velocity.
-	boost::variate_generator<boost::mt19937, boost::normal_distribution<> > generator; ///< Random number generator.
+	boost::variate_generator<boost::mt19937, boost::normal_distribution<>> generator; ///< Random number generator.
 };
 
 } /* namespace condensation */

@@ -62,9 +62,9 @@ void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& sam
 	}
 	if (!remainingPatches.empty()) {
 		// TODO overlap elimination instead?
-		if (remainingPatches.size() > 10) {
+		if (remainingPatches.size() > 8) {
 			sort(make_indirect_iterator(remainingPatches.begin()), make_indirect_iterator(remainingPatches.end()), greater<ClassifiedPatch>());
-			remainingPatches.resize(10);
+			remainingPatches.resize(8);
 		}
 		for (auto patchWithProb = remainingPatches.cbegin(); patchWithProb != remainingPatches.cend(); ++patchWithProb) {
 			shared_ptr<Patch> patch = (*patchWithProb)->getPatch();

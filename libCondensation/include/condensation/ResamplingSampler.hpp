@@ -42,7 +42,9 @@ public:
 
 	~ResamplingSampler();
 
-	void sample(const vector<Sample>& samples, const Mat& image, vector<Sample>& newSamples);
+	void init(const Mat& image);
+
+	void sample(const vector<Sample>& samples, vector<Sample>& newSamples, const Mat& image, const optional<Sample>& target);
 
 	/**
 	 * @return The number of samples.

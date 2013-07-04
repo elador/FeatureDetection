@@ -49,6 +49,8 @@ public:
 
 	~CondensationTracker();
 
+	void initialize(const vector<Sample>& samples);
+
 	/**
 	 * Processes the next image and returns the most probable object position.
 	 *

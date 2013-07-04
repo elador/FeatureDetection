@@ -36,7 +36,7 @@ PartiallyAdaptiveCondensationTracker::~PartiallyAdaptiveCondensationTracker() {}
 optional<Rect> PartiallyAdaptiveCondensationTracker::process(const Mat& imageData) {
 	image->setData(imageData);
 	oldSamples = samples;
-	sampler->sample(oldSamples, image->getData(), samples);
+	sampler->sample(oldSamples, samples, image->getData(), state);
 	// evaluate samples and extract position
 	if (useAdaptiveModel && measurementModel->isUsable()) {
 		measurementModel->evaluate(image, samples);

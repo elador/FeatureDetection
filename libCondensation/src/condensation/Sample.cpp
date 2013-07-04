@@ -10,5 +10,6 @@
 namespace condensation {
 
 double Sample::aspectRatio = 1;
+int Sample::nextClusterId = 0;
 
 } /* namespace condensation */

@@ -7,7 +7,6 @@
 
 #include "condensation/LowVarianceSampling.hpp"
 #include "condensation/Sample.hpp"
-
 #include <ctime>
 
 namespace condensation {

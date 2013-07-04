@@ -28,7 +28,7 @@ public:
 	 *
 	 * @param[in] type The type (depth) of the filtered images. If negative, the type is chosen automatically.
 	 */
-	explicit IntegralImageFilter(int type);
+	explicit IntegralImageFilter(int type = -1);
 
 	~IntegralImageFilter();
 

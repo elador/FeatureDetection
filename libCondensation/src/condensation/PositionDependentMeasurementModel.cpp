@@ -19,19 +19,22 @@ namespace condensation {
 
 PositionDependentMeasurementModel::PositionDependentMeasurementModel(shared_ptr<FeatureExtractor> featureExtractor,
 		shared_ptr<TrainableProbabilisticClassifier> classifier, int startFrameCount, int stopFrameCount,
-		float positiveOffsetFactor, float negativeOffsetFactor,
-		bool sampleNegativesAroundTarget, bool sampleFalsePositives, unsigned int randomNegatives) :
+		float targetThreshold, float confidenceThreshold, float positiveOffsetFactor, float negativeOffsetFactor,
+		bool sampleNegativesAroundTarget, bool sampleFalsePositives, unsigned int randomNegatives, bool exploitSymmetry) :
 				SingleClassifierModel(featureExtractor, classifier),
 				classifier(classifier),
 				usable(false),
 				frameCount(0),
 				startFrameCount(startFrameCount),
 				stopFrameCount(stopFrameCount),
+				targetThreshold(targetThreshold),
+				confidenceThreshold(confidenceThreshold),
 				positiveOffsetFactor(positiveOffsetFactor),
 				negativeOffsetFactor(negativeOffsetFactor),
 				sampleNegativesAroundTarget(sampleNegativesAroundTarget),
 				sampleFalsePositives(sampleFalsePositives),
-				randomNegatives(randomNegatives) {}
+				randomNegatives(randomNegatives),
+				exploitSymmetry(exploitSymmetry) {}
 
 PositionDependentMeasurementModel::~PositionDependentMeasurementModel() {}
 
@@ -50,6 +53,10 @@ void PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 	} else {
 		frameCount = 0;
 	}
+
+	shared_ptr<Patch> targetPatch = featureExtractor->extract(target.getX(), target.getY(), target.getWidth(), target.getHeight());
+	if (isUsable() && targetPatch && classifier->classify(targetPatch->getData()).second < targetThreshold)
+		return;
 
 	vector<Sample> positiveSamples;
 	if (positiveOffsetFactor == 0) {
@@ -72,7 +79,7 @@ void PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 	int yLowBound = target.getY() - boundOffset;
 	int yHighBound = target.getY() + boundOffset;
 	int sizeLowBound = (int)((1 - negativeOffsetFactor) * target.getSize());
-	int sizeHighBound = (int)((1 + 2 * negativeOffsetFactor) * target.getSize());
+	int sizeHighBound = (int)((1 + 1.5 * negativeOffsetFactor) * target.getSize()); // TODO mit wert rumspielen
 
 	if (sampleNegativesAroundTarget) {
 		negativeSamples.push_back(Sample(xLowBound, target.getY(), target.getSize()));
@@ -150,7 +157,14 @@ void PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 		negativeSamples.insert(negativeSamples.end(), additionalNegatives.begin(), additionalNegatives.end());
 	}
 
-	usable = classifier->retrain(getFeatureVectors(positiveSamples), getFeatureVectors(negativeSamples));
+	if (isUsable() && confidenceThreshold > 0)
+		usable = classifier->retrain(
+				getFeatureVectors(positiveSamples, [this](Mat& vector) { return classifier->classify(vector).second < confidenceThreshold; }),
+				getFeatureVectors(negativeSamples, [this](Mat& vector) { return classifier->classify(vector).second > 1 - confidenceThreshold; }));
+	else
+		usable = classifier->retrain(
+				getFeatureVectors(positiveSamples, [](Mat&) { return true; }),
+				getFeatureVectors(negativeSamples, [](Mat&) { return true; }));
 }
 
 void PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples) {
@@ -175,13 +189,22 @@ Sample PositionDependentMeasurementModel::createRandomSample(const Mat& image) {
 	return Sample(x, y, size);
 }
 
-vector<Mat> PositionDependentMeasurementModel::getFeatureVectors(vector<Sample>& samples) {
+vector<Mat> PositionDependentMeasurementModel::getFeatureVectors(vector<Sample>& samples, function<bool(Mat&)> pred) {
 	vector<Mat> trainingExamples;
-	trainingExamples.reserve(samples.size());
+	if (exploitSymmetry)
+		trainingExamples.reserve(2 * samples.size());
+	else
+		trainingExamples.reserve(samples.size());
 	for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample) {
 		shared_ptr<Patch> patch = featureExtractor->extract(sample->getX(), sample->getY(), sample->getWidth(), sample->getHeight());
-		if (patch)
+		if (patch && pred(patch->getData())) {
 			trainingExamples.push_back(patch->getData());
+			if (exploitSymmetry) {
+				Mat mirroredPatchData;
+				cv::flip(patch->getData(), mirroredPatchData, 1);
+				trainingExamples.push_back(mirroredPatchData);
+			}
+		}
 	}
 	return trainingExamples;
 }

@@ -16,7 +16,8 @@ namespace condensation {
 
 /**
  * Weighted sample representing a square image region with position and size (x, y, size) and according change (vx, vy, vsize).
- * The size is supposed to be the width of the sample, whereas the height depends on the aspect ratio of all samples.
+ * The size is supposed to be the width of the sample, whereas the height depends on the aspect ratio of all samples. The change
+ * of the size is not an offset, but a factor for the size, so 1 means no change.
  */
 class Sample {
 public:
@@ -24,7 +25,7 @@ public:
 	/**
 	 * Constructs a new sample.
 	 */
-	Sample() : x(0), y(0), size(0), vx(0), vy(0), vsize(0), weight(1), object(false) {}
+	Sample() : x(0), y(0), size(0), vx(0), vy(0), vsize(1), weight(1), object(false), clusterId(nextClusterId++) {}
 
 	/**
 	 * Constructs a new sample with velocities of zero and a weight of one.
@@ -33,7 +34,7 @@ public:
 	 * @param[in] y The y coordinate of the center.
 	 * @param[in] size The size.
 	 */
-	Sample(int x, int y, int size) : x(x), y(y), size(size), vx(0), vy(0), vsize(0),  weight(1), object(false) {}
+	Sample(int x, int y, int size) : x(x), y(y), size(size), vx(0), vy(0), vsize(1),  weight(1), object(false), clusterId(nextClusterId++) {}
 
 	/**
 	 * Constructs a new sample with a weight of one.
@@ -43,10 +44,10 @@ public:
 	 * @param[in] size The size.
 	 * @param[in] vx The change of the x coordinate.
 	 * @param[in] vy The change of the y coordinate.
-	 * @param[in] vsize The change of the size.
+	 * @param[in] vsize The change of the size (factor).
 	 */
-	Sample(int x, int y, int size, int vx, int vy, int vsize) :
-			x(x), y(y), size(size), vx(vx), vy(vy), vsize(vsize),  weight(1), object(false) {}
+	Sample(int x, int y, int size, int vx, int vy, float vsize) :
+			x(x), y(y), size(size), vx(vx), vy(vy), vsize(vsize),  weight(1), object(false), clusterId(nextClusterId++) {}
 
 	~Sample() {}
 
@@ -142,16 +143,16 @@ public:
 	}
 
 	/**
-	 * @return The change of the size.
+	 * @return The change of the size (factor).
 	 */
-	int getVSize() const {
+	float getVSize() const {
 		return vsize;
 	}
 
 	/**
-	 * @param[in] size The new change of the size.
+	 * @param[in] size The new change of the size (factor).
 	 */
-	void setVSize(int vsize) {
+	void setVSize(float vsize) {
 		this->vsize = vsize;
 	}
 
@@ -185,6 +186,13 @@ public:
 	 */
 	void setObject(bool object) {
 		this->object = object;
+	}
+
+	/**
+	 * @return The ID of the cluster this sample belongs to.
+	 */
+	int getClusterId() const {
+		return clusterId;
 	}
 
 	/**
@@ -249,6 +257,7 @@ public:
 	}
 
 	static double aspectRatio; ///< The aspect ratio of all samples. Cannot be made private, because C++.
+	static int nextClusterId; ///< The next cluster ID.
 
 private:
 
@@ -257,9 +266,10 @@ private:
 	int size;      ///< The size.
 	int vx;        ///< The change of the x coordinate.
 	int vy;        ///< The change of the y coordinate.
-	int vsize;     ///< The change of the size.
+	float vsize;   ///< The change of the size (factor).
 	double weight; ///< The weight.
 	bool object;   ///< Flag that indicates whether this sample represents the object.
+	int clusterId; ///< ID of the cluster this sample belongs to.
 };
 
 } /* namespace condensation */
