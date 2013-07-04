@@ -126,6 +126,11 @@ void OpticalFlowTransitionModel::predict(vector<Sample>& samples, const Mat& ima
 			xs.push_back(flows[index].x);
 			ys.push_back(flows[index].y);
 		}
+		if (correctFlowCount < points.size() / 2) { // to little correct correspondences
+			// TODO fallback
+			fallback->predict(samples, image, target);
+			return;
+		}
 
 		sort(xs.begin(), xs.end());
 		sort(ys.begin(), ys.end());

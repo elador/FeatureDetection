@@ -273,7 +273,7 @@ void AdaptiveTracking::initTracking(ptree config) {
 		filterFeatureExtractor = make_shared<DirectPyramidFeatureExtractor>(31, 31, 31, 480, 0.9); // w, h, min, max, scale
 		filterFeatureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 		filterFeatureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 255.0));
-	} else if (config.get<string>("filter.feature") == "grayscale") {
+	} else if (config.get<string>("filter.feature") == "whi") {
 		filterFeatureExtractor = make_shared<DirectPyramidFeatureExtractor>(31, 31, 31, 480, 0.9); // w, h, min, max, scale
 		filterFeatureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 		filterFeatureExtractor->addLayerFilter(make_shared<WhiteningFilter>());

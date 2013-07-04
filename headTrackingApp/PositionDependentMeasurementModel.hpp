@@ -14,6 +14,7 @@
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int.hpp"
 #include <string>
+#include <functional>
 
 using cv::Mat;
 using std::function;
