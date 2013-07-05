@@ -14,11 +14,13 @@
 #include "boost/property_tree/ptree.hpp"
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 using boost::property_tree::ptree;
 using cv::Mat;
 using std::string;
 using std::vector;
+using std::unordered_map;
 
 namespace classification {
 
@@ -35,6 +37,36 @@ namespace classification {
  *    positive very early.
  */
 class RvmClassifier : public VectorMachineClassifier {
+private:
+
+	class CacheKey {
+	public:
+
+		CacheKey(const Mat& lhs, const Mat& rhs) : lhs(lhs), rhs(rhs) {}
+
+		~CacheKey() {}
+
+		bool operator==(const CacheKey& other) const {
+			return lhs.data == other.lhs.data && rhs.data == other.rhs.data;
+		}
+
+		const Mat lhs;
+		const Mat rhs;
+	};
+
+	/**
+	 * The hash operation for cache keys.
+	 */
+	struct KeyHash {
+		size_t operator()(const CacheKey& key) const {
+			size_t prime = 31;
+			size_t hash = 1;
+			hash = prime * hash + std::hash<uchar*>()(key.lhs.data);
+			hash = prime * hash + std::hash<uchar*>()(key.rhs.data);
+			return hash;
+		}
+	};
+
 public:
 
 	/**
@@ -66,6 +98,8 @@ public:
 	 * @return The distance of the feature vector to the decision hyperplane.
 	 */
 	double computeHyperplaneDistance(const Mat& featureVector, const int filterLevel) const;
+
+	double getKernelValue(const Mat& lhs, const Mat& rhs) const;
 
 	/**
 	 * Returns the number of filters (RSVs) this RVM is currently using for classifying.
@@ -108,6 +142,7 @@ private:
 	vector<vector<float>> coefficients;		///< The coefficients of the support vectors. Each step in the cascade has its own set of coefficients.
 	int numFiltersToUse;					///< The number of filters to use out of the total number.
 	vector<float> hierarchicalThresholds;	///< A classification threshold for each filter.
+	mutable unordered_map<CacheKey, double, KeyHash> cache; ///< The current cache of stored patches.
 };
 
 } /* namespace classification */

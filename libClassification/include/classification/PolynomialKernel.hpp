@@ -12,6 +12,9 @@
 
 #include "classification/Kernel.hpp"
 #include "svm.h"
+#include <stdexcept>
+
+using std::invalid_argument;
 
 namespace classification {
 
@@ -34,7 +37,12 @@ public:
 	~PolynomialKernel() {}
 
 	double compute(const Mat& lhs, const Mat& rhs) const {
-		return powi(alpha * lhs.dot(rhs) + constant, degree);
+		switch (lhs.type()) {
+			case CV_8U: return powi(alpha * computeDotProduct_uchar(lhs, rhs) + constant, degree);
+			case CV_32F: return powi(alpha * computeDotProduct_any<float>(lhs, rhs) + constant, degree);
+		}
+		throw invalid_argument("PolynomialKernel: arguments have to be of type CV_8U or CV_32F");
+//		return powi(alpha * lhs.dot(rhs) + constant, degree);
 	}
 
 	void setLibSvmParams(struct svm_parameter *param) const {
@@ -61,6 +69,25 @@ private:
 			tmp = tmp * tmp;
 		}
 		return ret;
+	}
+
+	int computeDotProduct_uchar(const Mat& lhs, const Mat& rhs) const {
+		const uchar* lvalues = lhs.ptr<uchar>(0);
+		const uchar* rvalues = rhs.ptr<uchar>(0);
+		int dot = 0;
+		for (int i = 0; i < lhs.rows * lhs.cols; ++i)
+			dot += lvalues[i] * rvalues[i];
+		return dot;
+	}
+
+	template<class T>
+	float computeDotProduct_any(const Mat& lhs, const Mat& rhs) const {
+		const T* lvalues = lhs.ptr<T>(0);
+		const T* rvalues = rhs.ptr<T>(0);
+		float dot = 0;
+		for (int i = 0; i < lhs.rows * lhs.cols; ++i)
+			dot += lvalues[i] * rvalues[i];
+		return dot;
 	}
 
 	double alpha;    ///< The slope &alpha of the polynomial kernel function (&alpha; * x<sup>T</sup>y + c)<sup>d</sup>.

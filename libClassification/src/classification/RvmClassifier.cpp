@@ -53,9 +53,20 @@ bool RvmClassifier::classify(double hyperplaneDistance, const int filterLevel) c
 double RvmClassifier::computeHyperplaneDistance(const Mat& featureVector, const int filterLevel) const {
 	double distance = -bias;
 	for (unsigned int i=0; i<=filterLevel; ++i) {
-		distance += coefficients[filterLevel][i] * kernel->compute(featureVector, supportVectors[i]);
+		distance += coefficients[filterLevel][i] * getKernelValue(featureVector, supportVectors[i]);
 	}
 	return distance;
+}
+
+double RvmClassifier::getKernelValue(const Mat& lhs, const Mat& rhs) const {
+	CacheKey key(lhs, rhs);
+	auto iterator = cache.find(key);
+	if (iterator == cache.end()) {
+		double value = kernel->compute(lhs, rhs);
+		cache.emplace(key, value);
+		return value;
+	}
+	return iterator->second;
 }
 
 shared_ptr<RvmClassifier> RvmClassifier::loadMatlab(const string& classifierFilename, const string& thresholdsFilename)
