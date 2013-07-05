@@ -31,16 +31,21 @@ using std::logic_error;
 
 namespace classification {
 
-RvmClassifier::RvmClassifier(shared_ptr<Kernel> kernel) :
-		VectorMachineClassifier(kernel), supportVectors(), coefficients() {} // TODO coefficients() probably different... vector<vector<... how?
+RvmClassifier::RvmClassifier(shared_ptr<Kernel> kernel, bool cascadedCoefficients) :
+		VectorMachineClassifier(kernel), supportVectors(), coefficients() { // TODO coefficients() probably different... vector<vector<... how?
+
+	//useCaching = !cascadedCoefficients;
+}
 
 RvmClassifier::~RvmClassifier() {}
 
 bool RvmClassifier::classify(const Mat& featureVector) const {
 	bool isFeature = false;
 	unsigned int filterLevel = 0;
+	vector<double> filterEvalCache(this->numFiltersToUse);
 	do {
-		isFeature = classify(computeHyperplaneDistance(featureVector, filterLevel), filterLevel);
+//		isFeature = classify(computeHyperplaneDistance(featureVector, filterLevel), filterLevel);
+		isFeature = classify(computeHyperplaneDistanceCached(featureVector, filterLevel, filterEvalCache), filterLevel);
 		++filterLevel;
 	} while (isFeature && filterLevel < this->numFiltersToUse); // TODO check the logic of this...
 	return isFeature;
@@ -53,20 +58,30 @@ bool RvmClassifier::classify(double hyperplaneDistance, const int filterLevel) c
 double RvmClassifier::computeHyperplaneDistance(const Mat& featureVector, const int filterLevel) const {
 	double distance = -bias;
 	for (unsigned int i=0; i<=filterLevel; ++i) {
-		distance += coefficients[filterLevel][i] * getKernelValue(featureVector, supportVectors[i]);
+		distance += coefficients[filterLevel][i] * kernel->compute(featureVector, supportVectors[i]);
 	}
 	return distance;
 }
 
-double RvmClassifier::getKernelValue(const Mat& lhs, const Mat& rhs) const {
-	CacheKey key(lhs, rhs);
-	auto iterator = cache.find(key);
-	if (iterator == cache.end()) {
-		double value = kernel->compute(lhs, rhs);
-		cache.emplace(key, value);
-		return value;
+double RvmClassifier::computeHyperplaneDistanceCached(const Mat& featureVector, const int filterLevel, vector<double>& filterEvalCache) const {
+	
+	if (filterEvalCache.size() == filterLevel && filterLevel != 0) {
+		double distance = filterEvalCache[filterLevel-1];
+		distance += coefficients[filterLevel][filterLevel] * kernel->compute(featureVector, supportVectors[filterLevel]);
+		filterEvalCache.push_back(distance);
+		return distance;
 	}
-	return iterator->second;
+
+	filterEvalCache.clear();
+
+	double distance = -bias;
+	for (unsigned int i=0; i<=filterLevel; ++i) {
+		distance += coefficients[filterLevel][i] * kernel->compute(featureVector, supportVectors[i]);
+	}
+
+	filterEvalCache.push_back(distance);
+
+	return distance;
 }
 
 shared_ptr<RvmClassifier> RvmClassifier::loadMatlab(const string& classifierFilename, const string& thresholdsFilename)

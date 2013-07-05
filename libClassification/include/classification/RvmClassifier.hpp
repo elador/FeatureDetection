@@ -14,13 +14,11 @@
 #include "boost/property_tree/ptree.hpp"
 #include <string>
 #include <vector>
-#include <unordered_map>
 
 using boost::property_tree::ptree;
 using cv::Mat;
 using std::string;
 using std::vector;
-using std::unordered_map;
 
 namespace classification {
 
@@ -37,36 +35,6 @@ namespace classification {
  *    positive very early.
  */
 class RvmClassifier : public VectorMachineClassifier {
-private:
-
-	class CacheKey {
-	public:
-
-		CacheKey(const Mat& lhs, const Mat& rhs) : lhs(lhs), rhs(rhs) {}
-
-		~CacheKey() {}
-
-		bool operator==(const CacheKey& other) const {
-			return lhs.data == other.lhs.data && rhs.data == other.rhs.data;
-		}
-
-		const Mat lhs;
-		const Mat rhs;
-	};
-
-	/**
-	 * The hash operation for cache keys.
-	 */
-	struct KeyHash {
-		size_t operator()(const CacheKey& key) const {
-			size_t prime = 31;
-			size_t hash = 1;
-			hash = prime * hash + std::hash<uchar*>()(key.lhs.data);
-			hash = prime * hash + std::hash<uchar*>()(key.rhs.data);
-			return hash;
-		}
-	};
-
 public:
 
 	/**
@@ -74,7 +42,7 @@ public:
 	 *
 	 * @param[in] kernel The kernel function.
 	 */
-	explicit RvmClassifier(shared_ptr<Kernel> kernel);
+	explicit RvmClassifier(shared_ptr<Kernel> kernel, bool cascadedCoefficients = true);
 
 	~RvmClassifier();
 
@@ -99,7 +67,7 @@ public:
 	 */
 	double computeHyperplaneDistance(const Mat& featureVector, const int filterLevel) const;
 
-	double getKernelValue(const Mat& lhs, const Mat& rhs) const;
+	double computeHyperplaneDistanceCached(const Mat& featureVector, const int filterLevel, vector<double>& filterEvalCache) const;
 
 	/**
 	 * Returns the number of filters (RSVs) this RVM is currently using for classifying.
@@ -136,13 +104,13 @@ public:
 	 */
 	static shared_ptr<RvmClassifier> loadConfig(const ptree& subtree);
 
+
 private:
 
 	vector<Mat> supportVectors;				///< The support vectors (or here, RSVs).
 	vector<vector<float>> coefficients;		///< The coefficients of the support vectors. Each step in the cascade has its own set of coefficients.
 	int numFiltersToUse;					///< The number of filters to use out of the total number.
 	vector<float> hierarchicalThresholds;	///< A classification threshold for each filter.
-	mutable unordered_map<CacheKey, double, KeyHash> cache; ///< The current cache of stored patches.
 };
 
 } /* namespace classification */

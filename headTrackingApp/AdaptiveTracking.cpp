@@ -288,13 +288,14 @@ void AdaptiveTracking::initTracking(ptree config) {
 	shared_ptr<Kernel> kernel = createKernel(config.get_child("adaptive.measurement.classifier.kernel"));
 	shared_ptr<TrainableSvmClassifier> trainableSvm = createTrainableSvm(kernel, config.get_child("adaptive.measurement.classifier.training"));
 	shared_ptr<TrainableProbabilisticClassifier> classifier = createClassifier(trainableSvm, config.get_child("adaptive.measurement.classifier.probabilistic"));
-	adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel2>(
+	shared_ptr<PositionDependentMeasurementModel2> tmp(new PositionDependentMeasurementModel2(
 			filterFeatureExtractor, filter, adaptiveFeatureExtractor, classifier,
 			config.get<int>("adaptive.measurement.startFrameCount"), config.get<int>("adaptive.measurement.stopFrameCount"),
 			config.get<float>("adaptive.measurement.targetThreshold"), config.get<float>("adaptive.measurement.confidenceThreshold"),
 			config.get<float>("adaptive.measurement.positiveOffsetFactor"), config.get<float>("adaptive.measurement.negativeOffsetFactor"),
 			config.get<bool>("adaptive.measurement.sampleNegativesAroundTarget"), config.get<bool>("adaptive.measurement.sampleFalsePositives"),
-			config.get<unsigned int>("adaptive.measurement.randomNegatives"), config.get<bool>("adaptive.measurement.exploitSymmetry"));
+			config.get<unsigned int>("adaptive.measurement.randomNegatives"), config.get<bool>("adaptive.measurement.exploitSymmetry")));
+	adaptiveMeasurementModel = tmp;
 
 	// create transition model
 	shared_ptr<TransitionModel> transitionModel;
@@ -335,8 +336,9 @@ void AdaptiveTracking::initGui() {
 	cvNamedWindow(videoWindowName.c_str(), CV_WINDOW_AUTOSIZE);
 	cvMoveWindow(videoWindowName.c_str(), 50, 50);
 
-	cvNamedWindow(controlWindowName.c_str(), CV_WINDOW_AUTOSIZE);
+	cvNamedWindow(controlWindowName.c_str(), CV_WINDOW_NORMAL);
 	cvMoveWindow(controlWindowName.c_str(), 900, 50);
+	//cv::resizeWindow(controlWindowName, 300, 200);
 
 	if (initialTracker) {
 		cv::createTrackbar("Adaptive", controlWindowName, NULL, 1, adaptiveChanged, this);
