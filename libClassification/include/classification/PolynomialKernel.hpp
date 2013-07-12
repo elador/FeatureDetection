@@ -37,18 +37,7 @@ public:
 	~PolynomialKernel() {}
 
 	double compute(const Mat& lhs, const Mat& rhs) const {
-		if (lhs.channels() > 1 || rhs.channels() > 1)
-			throw invalid_argument("PolynomialKernel: arguments have to have only one channel");
-		if (lhs.flags != rhs.flags)
-			throw invalid_argument("PolynomialKernel: arguments have to have the same type");
-		if (lhs.rows * lhs.cols != rhs.rows * rhs.cols)
-			throw invalid_argument("PolynomialKernel: arguments have to have the same length");
-		switch (lhs.type()) {
-			case CV_8U: return powi(alpha * computeDotProduct_uchar(lhs, rhs) + constant, degree);
-			case CV_32S: return powi(alpha * computeDotProduct_any<int>(lhs, rhs) + constant, degree);
-			case CV_32F: return powi(alpha * computeDotProduct_any<float>(lhs, rhs) + constant, degree);
-		}
-		throw invalid_argument("PolynomialKernel: arguments have to be of type CV_8U, CV_32S or CV_32F");
+		return powi(alpha * lhs.dot(rhs) + constant, degree);
 	}
 
 	void setLibSvmParams(struct svm_parameter *param) const {
@@ -59,39 +48,6 @@ public:
 	}
 
 private:
-
-	/**
-	 * Computes the dot product of two vectors of unsigned characters.
-	 *
-	 * @param[in] lhs The first vector.
-	 * @param[in] rhs The second vector.
-	 * @return The dot product.
-	 */
-	int computeDotProduct_uchar(const Mat& lhs, const Mat& rhs) const {
-		const uchar* lvalues = lhs.ptr<uchar>(0);
-		const uchar* rvalues = rhs.ptr<uchar>(0);
-		int dot = 0;
-		for (int i = 0; i < /*lhs.rows * lhs.cols*/lhs.total(); ++i)
-			dot += lvalues[i] * rvalues[i];
-		return dot;
-	}
-
-	/**
-	 * Computes the dot product of two vectors of arbitrary value types.
-	 *
-	 * @param[in] lhs The first vector.
-	 * @param[in] rhs The second vector.
-	 * @return The dot product.
-	 */
-	template<class T>
-	float computeDotProduct_any(const Mat& lhs, const Mat& rhs) const {
-		const T* lvalues = lhs.ptr<T>(0);
-		const T* rvalues = rhs.ptr<T>(0);
-		float dot = 0;
-		for (int i = 0; i < lhs.rows * lhs.cols; ++i)
-			dot += lvalues[i] * rvalues[i];
-		return dot;
-	}
 
 	/**
 	 * Computes the n-th power of a floating point number, where n is an integer value.
