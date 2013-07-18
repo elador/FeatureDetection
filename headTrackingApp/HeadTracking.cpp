@@ -61,8 +61,6 @@
 #include "condensation/FilteringPositionExtractor.hpp"
 #include "condensation/WeightedMeanPositionExtractor.hpp"
 #include "condensation/Sample.hpp"
-#include "detection/ClassifiedPatch.hpp"
-#include "detection/SlidingWindowDetector.hpp"
 #include "boost/program_options.hpp"
 #include "boost/property_tree/info_parser.hpp"
 #include "boost/optional.hpp"
