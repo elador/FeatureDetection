@@ -257,7 +257,7 @@ public:
 	}
 
 	static double aspectRatio; ///< The aspect ratio of all samples. Cannot be made private, because C++.
-	static int nextClusterId; ///< The next cluster ID.
+	static int nextClusterId;  ///< The next cluster ID that was not assigned to any sample before.
 
 private:
 

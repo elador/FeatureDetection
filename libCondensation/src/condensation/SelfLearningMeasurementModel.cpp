@@ -81,11 +81,11 @@ void SelfLearningMeasurementModel::reset() {
 	usable = false;
 }
 
-void SelfLearningMeasurementModel::adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples, const Sample& target) {
-	adapt(image, samples);
+bool SelfLearningMeasurementModel::adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples, const Sample& target) {
+	return adapt(image, samples);
 }
 
-void SelfLearningMeasurementModel::adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples) {
+bool SelfLearningMeasurementModel::adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples) {
 	if (isUsable()) {
 		usable = classifier->retrain(getFeatureVectors(positiveTrainingExamples), getFeatureVectors(negativeTrainingExamples));
 		positiveTrainingExamples.clear();
@@ -110,6 +110,7 @@ void SelfLearningMeasurementModel::adapt(shared_ptr<VersionedImage> image, const
 		featureExtractor->update(image);
 		usable = classifier->retrain(getFeatureVectors(goodSamples), getFeatureVectors(badSamples));
 	}
+	return true;
 }
 
 vector<Mat> SelfLearningMeasurementModel::getFeatureVectors(const vector<shared_ptr<ClassifiedPatch>>& patches) {

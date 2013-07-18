@@ -30,21 +30,11 @@ ENDIF()
 # source and header files
 SET(HEADERS
 	AdaptiveTracking.hpp
-	DirectImageExtractor.hpp
-	HaarImageExtractor.hpp
-	HogExtractor.hpp
 	HogImageExtractor.hpp
-	IntegralHistogramPyramid.hpp
-	IntegralHistogramPyramidLayer.hpp
 )
 SET(SOURCE
 	AdaptiveTracking.cpp
-	DirectImageExtractor.cpp
-	HaarImageExtractor.cpp
-	HogExtractor.cpp
 	HogImageExtractor.cpp
-	IntegralHistogramPyramid.cpp
-	IntegralHistogramPyramidLayer.cpp
 )
 
 # add dependencies

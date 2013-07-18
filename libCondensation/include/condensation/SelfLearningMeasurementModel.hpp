@@ -61,9 +61,9 @@ public:
 		return usable;
 	}
 
-	void adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples, const Sample& target);
+	bool adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples, const Sample& target);
 
-	void adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples);
+	bool adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples);
 
 	void reset();
 

@@ -29,20 +29,14 @@ ENDIF()
 
 # source and header files
 SET(HEADERS
-	#HeadTracking.hpp
-	AdaptiveTracking.hpp
 	DualClassifierModel.hpp
-	HaarImageExtractor.hpp
-	HogImageExtractor.hpp
-	PositionDependentMeasurementModel.hpp
+	HeadTracking.hpp
+	PositionDependentMeasurementModel2.hpp
 )
 SET(SOURCE
-	#HeadTracking.cpp
-	AdaptiveTracking.cpp
 	DualClassifierModel.cpp
-	HaarImageExtractor.cpp
-	HogImageExtractor.cpp
-	PositionDependentMeasurementModel.cpp
+	HeadTracking.cpp
+	PositionDependentMeasurementModel2.cpp
 )
 
 # add dependencies

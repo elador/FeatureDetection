@@ -1,8 +1,8 @@
 /*
- * DirectImageExtractor.hpp
+ * HogImageExtractor.hpp
  *
  *  Created on: 30.06.2013
- *      Author: ex-ratt
+ *      Author: poschmann
  */
 
 #ifndef HOGIMAGEEXTRACTOR_HPP_

@@ -18,6 +18,7 @@ SET(HEADERS
 	include/imageprocessing/CachingFeatureExtractor.hpp
 	include/imageprocessing/CachingPyramidFeatureExtractor.hpp
 	include/imageprocessing/ConversionFilter.hpp
+	include/imageprocessing/DirectImageFeatureExtractor.hpp
 	include/imageprocessing/DirectPyramidFeatureExtractor.hpp
 	include/imageprocessing/FeatureExtractor.hpp
 	include/imageprocessing/FilteringFeatureExtractor.hpp
@@ -26,6 +27,7 @@ SET(HEADERS
 	include/imageprocessing/GradientHistogramFilter.hpp
 	include/imageprocessing/GradientMagnitudeFilter.hpp
 	include/imageprocessing/GrayscaleFilter.hpp
+	include/imageprocessing/HaarFeatureFilter.hpp
 	include/imageprocessing/HistEq64Filter.hpp
 	include/imageprocessing/HistogramEqualizationFilter.hpp
 	include/imageprocessing/HistogramFeatureExtractor.hpp
@@ -52,11 +54,13 @@ SET(SOURCE
 	src/imageprocessing/CachingFeatureExtractor.cpp
 	src/imageprocessing/CachingPyramidFeatureExtractor.cpp
 	src/imageprocessing/ConversionFilter.cpp
+	src/imageprocessing/DirectImageFeatureExtractor.cpp
 	src/imageprocessing/DirectPyramidFeatureExtractor.cpp
 	src/imageprocessing/GradientFilter.cpp
 	src/imageprocessing/GradientHistogramFilter.cpp
 	src/imageprocessing/GradientMagnitudeFilter.cpp
 	src/imageprocessing/GrayscaleFilter.cpp
+	src/imageprocessing/HaarFeatureFilter.cpp
 	src/imageprocessing/HistEq64Filter.cpp
 	src/imageprocessing/HistogramEqualizationFilter.cpp
 	src/imageprocessing/HistogramFeatureExtractor.cpp

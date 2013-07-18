@@ -8,14 +8,11 @@
 #ifndef ADAPTIVETRACKING_HPP_
 #define ADAPTIVETRACKING_HPP_
 
-#include "HogExtractor.hpp"
-#include "HogImageExtractor.hpp"
 #include "imageio/LabeledImageSource.hpp"
 #include "imageio/ImageSink.hpp"
 #include "imageio/LandmarkCollection.hpp"
 #include "imageprocessing/FeatureExtractor.hpp"
 #include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
-#include "DirectImageExtractor.hpp"
 #include "imageprocessing/LbpFilter.hpp"
 #include "classification/Kernel.hpp"
 #include "classification/TrainableSvmClassifier.hpp"
@@ -50,7 +47,7 @@ using std::make_shared;
 class AdaptiveTracking {
 public:
 
-	AdaptiveTracking(unique_ptr<LabeledImageSource> imageSource, unique_ptr<ImageSink> imageSink, ptree config);
+	AdaptiveTracking(unique_ptr<LabeledImageSource> imageSource, unique_ptr<ImageSink> imageSink, ptree& config);
 	virtual ~AdaptiveTracking();
 
 	void run();
@@ -58,7 +55,7 @@ public:
 
 private:
 
-	enum Initialization { AUTOMATIC, MANUAL, GROUND_TRUTH };
+	enum class Initialization { AUTOMATIC, MANUAL, GROUND_TRUTH };
 
 	static void adaptiveChanged(int state, void* userdata);
 	static void scatterChanged(int state, void* userdata);
@@ -75,20 +72,20 @@ private:
 
 	static void onMouse(int event, int x, int y, int, void* userdata);
 
-	shared_ptr<FeatureExtractor> createFeatureExtractor(shared_ptr<DirectPyramidFeatureExtractor> patchExtractor, ptree config);
+	shared_ptr<FeatureExtractor> createFeatureExtractor(shared_ptr<DirectPyramidFeatureExtractor> patchExtractor, ptree& config);
 	shared_ptr<LbpFilter> createLbpFilter(string lbpType);
-	shared_ptr<FeatureExtractor> createHistogramFeatureExtractor(shared_ptr<FeatureExtractor> patchExtractor, unsigned int bins, ptree config);
+	shared_ptr<FeatureExtractor> createHistogramFeatureExtractor(shared_ptr<FeatureExtractor> patchExtractor, unsigned int bins, ptree& config);
 	shared_ptr<FeatureExtractor> wrapFeatureExtractor(shared_ptr<FeatureExtractor> featureExtractor, float scaleFactor);
-	shared_ptr<Kernel> createKernel(ptree config);
-	shared_ptr<TrainableSvmClassifier> createTrainableSvm(shared_ptr<Kernel> kernel, ptree config);
-	shared_ptr<TrainableProbabilisticClassifier> createClassifier(shared_ptr<TrainableSvmClassifier> trainableSvm, ptree config);
-	void initTracking(ptree config);
+	shared_ptr<Kernel> createKernel(ptree& config);
+	shared_ptr<TrainableSvmClassifier> createTrainableSvm(shared_ptr<Kernel> kernel, ptree& config);
+	shared_ptr<TrainableProbabilisticClassifier> createClassifier(shared_ptr<TrainableSvmClassifier> trainableSvm, ptree& config);
+	void initTracking(ptree& config);
 	void initGui();
 	void drawDebug(Mat& image, bool usedAdaptive);
 	void drawCrosshair(Mat& image);
 	void drawBox(Mat& image);
 	void drawGroundTruth(Mat& image, const LandmarkCollection& target);
-	void drawTarget(Mat& image, optional<Rect> target, optional<Sample> state, bool usedAdaptive = true);
+	void drawTarget(Mat& image, optional<Rect> target, optional<Sample> state, bool usedAdaptive, bool adapted);
 
 	static const string videoWindowName;
 	static const string controlWindowName;
@@ -108,12 +105,8 @@ private:
 	bool drawSamples;
 	int drawFlow;
 
-	shared_ptr<ProbabilisticClassifier> svmClassifier;
 	Initialization initialization;
 	shared_ptr<DirectPyramidFeatureExtractor> patchExtractor;
-//	shared_ptr<DirectImageExtractor> patchExtractor;
-//	shared_ptr<HogExtractor> hogExtr;
-	shared_ptr<HogImageExtractor> hogExtr;
 	shared_ptr<FeatureExtractor> adaptiveFeatureExtractor;
 	unique_ptr<CondensationTracker> initialTracker;
 	unique_ptr<AdaptiveCondensationTracker> adaptiveTracker;

@@ -1,7 +1,7 @@
 /*
- * SingleClassifierModel.hpp
+ * DualClassifierModel.hpp
  *
- *  Created on: 28.03.2013
+ *  Created on: 03.07.2013
  *      Author: poschmann
  */
 
@@ -23,16 +23,17 @@ using classification::ProbabilisticClassifier;
 namespace condensation {
 
 /**
- * Simple measurement model that evaluates each sample by classifying its extracted feature vector.
+ * Measurement model that uses two classifiers (one for early filtering, one for actual evaluation).
  */
 class DualClassifierModel : public MeasurementModel {
 public:
 
 	/**
-	 * Constructs a new single classifier measurement model.
+	 * Constructs a new dual classifier measurement model.
 	 *
 	 * @param[in] featureExtractor The feature extractor.
 	 * @param[in] classifier The classifier.
+	 * TODO missing arguments
 	 */
 	DualClassifierModel(shared_ptr<FeatureExtractor> featureExtractor, shared_ptr<ProbabilisticClassifier> classifier,
 			shared_ptr<FeatureExtractor> filterFeatureExtractor, shared_ptr<ProbabilisticClassifier> filter);

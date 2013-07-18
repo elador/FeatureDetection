@@ -74,6 +74,18 @@ public:
 	optional<Rect> process(const Mat& image);
 
 	/**
+	 * Resets this tracker to its uninitialized state, so it has to be initialized again.
+	 */
+	void reset();
+
+	/**
+	 * @return True if the tracker has adapted to the current appearance, false otherwise.
+	 */
+	bool hasAdapted() {
+		return adapted;
+	}
+
+	/**
 	 * @return The estimated state.
 	 */
 	optional<Sample> getState() {
@@ -107,6 +119,7 @@ private:
 	vector<Sample> samples;    ///< The current samples.
 	vector<Sample> oldSamples; ///< The previous samples.
 	optional<Sample> state;    ///< The estimated state.
+	bool adapted;              ///< Flag that indicates whether the tracker has adapted to the current appearance.
 
 	shared_ptr<VersionedImage> image;                      ///< The image used for evaluation.
 	shared_ptr<Sampler> sampler;                           ///< The sampler.

@@ -13,8 +13,6 @@
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/variate_generator.hpp"
 #include <memory>
-#include "imageprocessing/GradientFilter.hpp"
-#include "imageprocessing/GradientMagnitudeFilter.hpp"
 using cv::Size;
 using cv::Point2f;
 using cv::Scalar;
@@ -34,12 +32,13 @@ public:
 	 *
 	 * @param[in] fallback Fallback model in case the optical flow cannot be used.
 	 * @param[in] scatter The scatter that controls the diffusion of the position.
-	 * @param[in] gridSize The size of the point grid.
+	 * @param[in] gridSize The size of the point grid (amount of points).
+	 * @param[in] circle Flag that indicates whether the point grid should be a circle (points in the corners are discarded).
 	 * @param[in] windowSize Size of the search window for the optical flow calculation.
 	 * @param[in] maxLevel 0-based maximal pyramid level number of the optical flow calculation.
 	 */
-	explicit OpticalFlowTransitionModel(shared_ptr<TransitionModel> fallback, double scatter = 0.01,
-			Size gridSize = Size(10, 10), Size windowSize = Size(15, 15), int maxLevel = 2);
+	explicit OpticalFlowTransitionModel(shared_ptr<TransitionModel> fallback, double scatter = 0.02,
+			Size gridSize = Size(10, 10), bool circle = true, Size windowSize = Size(15, 15), int maxLevel = 2);
 
 	~OpticalFlowTransitionModel();
 
@@ -51,10 +50,11 @@ public:
 	 * Draws the flow of the chosen points into an image.
 	 *
 	 * @param[in] image The image.
-	 * @param[in] color The color of the flow lines.
-	 * @param[in] thickness The thickness of the flow lines.
+	 * @param[in] thickness The thickness of the flow lines or radius of points. If negative, only the current correct points will be drawn.
+	 * @param[in] color The color of the flow lines or points.
+	 * @param[in] badColor The color of the bad (ignored) flow lines.
 	 */
-	void drawFlow(Mat& image, Scalar color, int thickness) const;
+	void drawFlow(Mat& image, int thickness, Scalar color, Scalar badColor = Scalar(-1, -1, -1)) const;
 
 	/**
 	 * @return The scatter that controls the diffusion of the position.
@@ -93,10 +93,8 @@ private:
 	vector<uchar> forwardStatus;    ///< Status of each point of the forward calculation.
 	vector<uchar> backwardStatus;   ///< Status of each point of the backward calculation.
 	vector<float> error;            ///< Error values of the points.
-
-	vector<pair<float, int>> squaredDistances;
-	unsigned int correctFlowCount;
-
+	vector<pair<float, int>> squaredDistances; ///< Forward-backward-error paired with the point index, ordered by the error.
+	unsigned int correctFlowCount;             ///< The amount of flows that are considered correct and are used for median flow.
 	double scatter; ///< The scatter that controls the diffusion of the position.
 	boost::variate_generator<boost::mt19937, boost::normal_distribution<>> generator; ///< Random number generator.
 };

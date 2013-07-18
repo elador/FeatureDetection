@@ -6,8 +6,6 @@
  */
 
 #include "AdaptiveTracking.hpp"
-#include "IntegralHistogramPyramid.hpp"
-#include "HaarImageExtractor.hpp"
 #include "logging/LoggerFactory.hpp"
 #include "logging/Logger.hpp"
 #include "logging/ConsoleAppender.hpp"
@@ -22,6 +20,10 @@
 #include "imageio/VideoImageSink.hpp"
 #include "imageio/Landmark.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
+#include "imageprocessing/IntensityNormNormalizationFilter.hpp"
+#include "imageprocessing/ConversionFilter.hpp"
+#include "imageprocessing/HaarFeatureFilter.hpp"
+#include "imageprocessing/IntegralImageFilter.hpp"
 #include "imageprocessing/HistEq64Filter.hpp"
 #include "imageprocessing/WhiteningFilter.hpp"
 #include "imageprocessing/ZeroMeanUnitVarianceFilter.hpp"
@@ -30,6 +32,7 @@
 #include "imageprocessing/GradientMagnitudeFilter.hpp"
 #include "imageprocessing/GradientHistogramFilter.hpp"
 #include "imageprocessing/ImagePyramid.hpp"
+#include "imageprocessing/DirectImageFeatureExtractor.hpp"
 #include "imageprocessing/FilteringFeatureExtractor.hpp"
 #include "imageprocessing/FilteringPyramidFeatureExtractor.hpp"
 #include "imageprocessing/PatchResizingFeatureExtractor.hpp"
@@ -46,7 +49,6 @@
 #include "classification/TrainableProbabilisticTwoStageClassifier.hpp"
 #include "classification/FixedSizeTrainableSvmClassifier.hpp"
 #include "classification/FixedTrainableProbabilisticSvmClassifier.hpp"
-#include "classification/TemplateMatchingClassifier.hpp"
 #include "condensation/ResamplingSampler.hpp"
 #include "condensation/GridSampler.hpp"
 #include "condensation/LowVarianceSampling.hpp"
@@ -57,7 +59,6 @@
 #include "condensation/PositionDependentMeasurementModel.hpp"
 #include "condensation/FilteringPositionExtractor.hpp"
 #include "condensation/WeightedMeanPositionExtractor.hpp"
-#include "condensation/MaxWeightPositionExtractor.hpp"
 #include "condensation/Sample.hpp"
 #include "detection/ClassifiedPatch.hpp"
 #include "detection/SlidingWindowDetector.hpp"
@@ -80,13 +81,14 @@ using boost::lexical_cast;
 using std::milli;
 using std::move;
 using std::ostringstream;
+using std::istringstream;
 
 namespace po = boost::program_options;
 
 const string AdaptiveTracking::videoWindowName = "Image";
 const string AdaptiveTracking::controlWindowName = "Controls";
 
-AdaptiveTracking::AdaptiveTracking(unique_ptr<LabeledImageSource> imageSource, unique_ptr<ImageSink> imageSink, ptree config) :
+AdaptiveTracking::AdaptiveTracking(unique_ptr<LabeledImageSource> imageSource, unique_ptr<ImageSink> imageSink, ptree& config) :
 		imageSource(move(imageSource)), imageSink(move(imageSink)) {
 	initTracking(config);
 	initGui();
@@ -95,7 +97,7 @@ AdaptiveTracking::AdaptiveTracking(unique_ptr<LabeledImageSource> imageSource, u
 AdaptiveTracking::~AdaptiveTracking() {}
 
 shared_ptr<FeatureExtractor> AdaptiveTracking::createFeatureExtractor(
-		shared_ptr<DirectPyramidFeatureExtractor> patchExtractor, ptree config) {
+		shared_ptr<DirectPyramidFeatureExtractor> patchExtractor, ptree& config) {
 	float scaleFactor = config.get<float>("scale");
 	if (config.get_value<string>() == "histeq") {
 		shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
@@ -105,58 +107,52 @@ shared_ptr<FeatureExtractor> AdaptiveTracking::createFeatureExtractor(
 		shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
 		featureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
 		featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
-		featureExtractor->addPatchFilter(make_shared<ZeroMeanUnitVarianceFilter>());
+		featureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0));
+		featureExtractor->addPatchFilter(make_shared<IntensityNormNormalizationFilter>());
 		return wrapFeatureExtractor(featureExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "haar") {
-		return wrapFeatureExtractor(make_shared<HaarImageExtractor>(), scaleFactor);
+		vector<float> sizes;
+		float size;
+		istringstream sizesStream(config.get<string>("sizes"));
+		while (sizesStream.good() && !sizesStream.fail()) {
+			sizesStream >> size;
+			sizes.push_back(size);
+		}
+		float gridRows = config.get<float>("gridRows");
+		float gridCols = config.get<float>("gridCols");
+		int types = 0;
+		string type;
+		istringstream typesStream(config.get<string>("types"));
+		while (typesStream.good() && !typesStream.fail()) {
+			typesStream >> type;
+			if (type == "2rect")
+				types |= HaarFeatureFilter::TYPE_2RECTANGLE;
+			else if (type == "3rect")
+				types |= HaarFeatureFilter::TYPE_3RECTANGLE;
+			else if (type == "4rect")
+				types |= HaarFeatureFilter::TYPE_4RECTANGLE;
+			else if (type == "center-surround")
+				types |= HaarFeatureFilter::TYPE_CENTER_SURROUND;
+			else if (type == "all")
+				types |= HaarFeatureFilter::TYPES_ALL;
+		}
+		shared_ptr<DirectImageFeatureExtractor> featureExtractor = make_shared<DirectImageFeatureExtractor>();
+		featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+		featureExtractor->addImageFilter(make_shared<IntegralImageFilter>());
+		featureExtractor->addPatchFilter(make_shared<HaarFeatureFilter>(sizes, gridRows, gridCols, types));
+		return wrapFeatureExtractor(featureExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "hog") {
-		// TODO more new stuff
-//		HistogramFeatureExtractor::Normalization normalization;
-//		if (config.get<string>("histogram.normalization") == "none")
-//			normalization = HistogramFeatureExtractor::Normalization::NONE;
-//		else if (config.get<string>("histogram.normalization") == "l2norm")
-//			normalization = HistogramFeatureExtractor::Normalization::L2NORM;
-//		else if (config.get<string>("histogram.normalization") == "l2hys")
-//			normalization = HistogramFeatureExtractor::Normalization::L2HYS;
-//		else if (config.get<string>("histogram.normalization") == "l1norm")
-//			normalization = HistogramFeatureExtractor::Normalization::L1NORM;
-//		else if (config.get<string>("histogram.normalization") == "l1sqrt")
-//			normalization = HistogramFeatureExtractor::Normalization::L1SQRT;
-//		else
-//			throw invalid_argument("AdaptiveTracking: invalid normalization method: " + config.get<string>("histogram.normalization"));
-//		hogExtr = make_shared<HogImageExtractor>(config.get<int>("bins"), config.get<float>("offset"), config.get<bool>("signed"),
-//				5, config.get<int>("histogram.blockSize"), config.get<bool>("histogram.combine"), normalization);
-//		return wrapFeatureExtractor(hogExtr, scaleFactor);
-		// TODO new stuff
-//		shared_ptr<IntegralHistogramPyramid> ihPyr = make_shared<IntegralHistogramPyramid>(
-//				config.get<int>("bins"), config.get<bool>("signed"), config.get<float>("offset"), patchExtractor->getPyramid());
-//		HistogramFeatureExtractor::Normalization normalization;
-//		if (config.get<string>("histogram.normalization") == "none")
-//			normalization = HistogramFeatureExtractor::Normalization::NONE;
-//		else if (config.get<string>("histogram.normalization") == "l2norm")
-//			normalization = HistogramFeatureExtractor::Normalization::L2NORM;
-//		else if (config.get<string>("histogram.normalization") == "l2hys")
-//			normalization = HistogramFeatureExtractor::Normalization::L2HYS;
-//		else if (config.get<string>("histogram.normalization") == "l1norm")
-//			normalization = HistogramFeatureExtractor::Normalization::L1NORM;
-//		else if (config.get<string>("histogram.normalization") == "l1sqrt")
-//			normalization = HistogramFeatureExtractor::Normalization::L1SQRT;
-//		else
-//			throw invalid_argument("AdaptiveTracking: invalid normalization method: " + config.get<string>("histogram.normalization"));
-//		hogExtr = make_shared<HogExtractor>(ihPyr, 20, 20, config.get<int>("histogram.cellSize"), config.get<int>("histogram.blockSize"), config.get<bool>("histogram.combine"), normalization);
-//		return wrapFeatureExtractor(hogExtr, scaleFactor);
-		// TODO old stuff
 		patchExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
 		patchExtractor->addLayerFilter(make_shared<GradientHistogramFilter>(config.get<int>("bins"), config.get<bool>("signed"), config.get<float>("offset")));
 		return wrapFeatureExtractor(createHistogramFeatureExtractor(patchExtractor,
 				config.get<int>("bins"), config.get_child("histogram")), scaleFactor);
 	} else if (config.get_value<string>() == "lbp") {
-		shared_ptr<LbpFilter> lbpFilter = createLbpFilter(config.get<string>("lbptype"));
+		shared_ptr<LbpFilter> lbpFilter = createLbpFilter(config.get<string>("type"));
 		patchExtractor->addLayerFilter(lbpFilter);
 		return wrapFeatureExtractor(createHistogramFeatureExtractor(patchExtractor,
 				lbpFilter->getBinCount(), config.get_child("histogram")), scaleFactor);
 	} else if (config.get_value<string>() == "glbp") {
-		shared_ptr<LbpFilter> lbpFilter = createLbpFilter(config.get<string>("lbptype"));
+		shared_ptr<LbpFilter> lbpFilter = createLbpFilter(config.get<string>("type"));
 		patchExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
 		patchExtractor->addLayerFilter(make_shared<GradientMagnitudeFilter>());
 		patchExtractor->addLayerFilter(lbpFilter);
@@ -183,7 +179,7 @@ shared_ptr<LbpFilter> AdaptiveTracking::createLbpFilter(string lbpType) {
 }
 
 shared_ptr<FeatureExtractor> AdaptiveTracking::createHistogramFeatureExtractor(
-		shared_ptr<FeatureExtractor> patchExtractor, unsigned int bins, ptree config) {
+		shared_ptr<FeatureExtractor> patchExtractor, unsigned int bins, ptree& config) {
 	HistogramFeatureExtractor::Normalization normalization;
 	if (config.get<string>("normalization") == "none")
 		normalization = HistogramFeatureExtractor::Normalization::NONE;
@@ -212,7 +208,7 @@ shared_ptr<FeatureExtractor> AdaptiveTracking::wrapFeatureExtractor(shared_ptr<F
 	return make_shared<PatchResizingFeatureExtractor>(featureExtractor, scaleFactor);
 }
 
-shared_ptr<Kernel> AdaptiveTracking::createKernel(ptree config) {
+shared_ptr<Kernel> AdaptiveTracking::createKernel(ptree& config) {
 	if (config.get_value<string>() == "rbf") {
 		return make_shared<RbfKernel>(config.get<double>("gamma"));
 	} else if (config.get_value<string>() == "poly") {
@@ -227,7 +223,7 @@ shared_ptr<Kernel> AdaptiveTracking::createKernel(ptree config) {
 	}
 }
 
-shared_ptr<TrainableSvmClassifier> AdaptiveTracking::createTrainableSvm(shared_ptr<Kernel> kernel, ptree config) {
+shared_ptr<TrainableSvmClassifier> AdaptiveTracking::createTrainableSvm(shared_ptr<Kernel> kernel, ptree& config) {
 	shared_ptr<TrainableSvmClassifier> trainableSvm;
 	if (config.get_value<string>() == "fixedsize") {
 		trainableSvm = make_shared<FixedSizeTrainableSvmClassifier>(kernel, config.get<double>("constraintsViolationCosts"),
@@ -243,12 +239,11 @@ shared_ptr<TrainableSvmClassifier> AdaptiveTracking::createTrainableSvm(shared_p
 		trainableSvm->loadStaticNegatives(negativesConfig->get<string>("filename"),
 				negativesConfig->get<int>("amount"), negativesConfig->get<double>("scale"));
 	}
-//	trainableSvm->getSvm()->setThreshold(0.5); // TODO
 	return trainableSvm;
 }
 
 shared_ptr<TrainableProbabilisticClassifier> AdaptiveTracking::createClassifier(
-		shared_ptr<TrainableSvmClassifier> trainableSvm, ptree config) {
+		shared_ptr<TrainableSvmClassifier> trainableSvm, ptree& config) {
 	if (config.get_value<string>() == "default")
 		return make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm);
 	else if (config.get_value<string>() == "fixed")
@@ -257,33 +252,29 @@ shared_ptr<TrainableProbabilisticClassifier> AdaptiveTracking::createClassifier(
 		throw invalid_argument("AdaptiveTracking: invalid classifier type: " + config.get_value<string>());
 }
 
-void AdaptiveTracking::initTracking(ptree config) {
+void AdaptiveTracking::initTracking(ptree& config) {
 	// create patch extractor
 	patchExtractor = make_shared<DirectPyramidFeatureExtractor>(
 			config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"),
 			config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"),
 			config.get<double>("pyramid.scaleFactor"));
 	patchExtractor->addImageFilter(make_shared<GrayscaleFilter>());
-//	patchExtractor = make_shared<DirectImageExtractor>();
 
 	// create adaptive measurement model
 	adaptiveFeatureExtractor = createFeatureExtractor(patchExtractor, config.get_child("adaptive.feature"));
 	shared_ptr<Kernel> kernel = createKernel(config.get_child("adaptive.measurement.classifier.kernel"));
 	shared_ptr<TrainableSvmClassifier> trainableSvm = createTrainableSvm(kernel, config.get_child("adaptive.measurement.classifier.training"));
 	shared_ptr<TrainableProbabilisticClassifier> classifier = createClassifier(trainableSvm, config.get_child("adaptive.measurement.classifier.probabilistic"));
-	svmClassifier = classifier;// TODO remove
-//	classifier = make_shared<TemplateMatchingClassifier>(); // TODO
 	if (config.get<string>("adaptive.measurement") == "selfLearning") {
 		adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(adaptiveFeatureExtractor, classifier,
 				config.get<double>("adaptive.measurement.positiveThreshold"), config.get<double>("adaptive.measurement.negativeThreshold"));
 	} else if (config.get<string>("adaptive.measurement") == "positionDependent") {
-		shared_ptr<PositionDependentMeasurementModel> tmp(new PositionDependentMeasurementModel(adaptiveFeatureExtractor, classifier,
+		adaptiveMeasurementModel.reset(new PositionDependentMeasurementModel(adaptiveFeatureExtractor, classifier,
 				config.get<int>("adaptive.measurement.startFrameCount"), config.get<int>("adaptive.measurement.stopFrameCount"),
 				config.get<float>("adaptive.measurement.targetThreshold"), config.get<float>("adaptive.measurement.confidenceThreshold"),
 				config.get<float>("adaptive.measurement.positiveOffsetFactor"), config.get<float>("adaptive.measurement.negativeOffsetFactor"),
-				config.get<bool>("adaptive.measurement.sampleNegativesAroundTarget"), config.get<bool>("adaptive.measurement.sampleFalsePositives"),
+				config.get<int>("adaptive.measurement.sampleNegativesAroundTarget"), config.get<bool>("adaptive.measurement.sampleFalsePositives"),
 				config.get<unsigned int>("adaptive.measurement.randomNegatives"), config.get<bool>("adaptive.measurement.exploitSymmetry")));
-		adaptiveMeasurementModel = tmp;
 	} else {
 		throw invalid_argument("AdaptiveTracking: invalid adaptive measurement model type: " + config.get<string>("adaptive.measurement"));
 	}
@@ -312,14 +303,13 @@ void AdaptiveTracking::initTracking(ptree config) {
 			1 / config.get<double>("pyramid.scaleFactor"), 0.1);
 	shared_ptr<PositionExtractor> positionExtractor
 			= make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>());
-//			= make_shared<FilteringPositionExtractor>(make_shared<MaxWeightPositionExtractor>()); // TODO
 	adaptiveTracker = unique_ptr<AdaptiveCondensationTracker>(new AdaptiveCondensationTracker(
 			adaptiveResamplingSampler, adaptiveMeasurementModel, positionExtractor,
 			config.get<unsigned int>("adaptive.resampling.particleCount")));
 	useAdaptive = true;
 
 	if (config.get<string>("initial") == "automatic") {
-		initialization = AUTOMATIC;
+		initialization = Initialization::AUTOMATIC;
 
 		// create static measurement model
 		shared_ptr<FilteringFeatureExtractor> staticFeatureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
@@ -338,9 +328,9 @@ void AdaptiveTracking::initTracking(ptree config) {
 		initialTracker = unique_ptr<CondensationTracker>(new CondensationTracker(
 				initialResamplingSampler, staticMeasurementModel, positionExtractor));
 	} else if (config.get<string>("initial") == "manual") {
-		initialization = MANUAL;
+		initialization = Initialization::MANUAL;
 	} else if (config.get<string>("initial") == "groundtruth") {
-		initialization = GROUND_TRUTH;
+		initialization = Initialization::GROUND_TRUTH;
 	} else {
 		throw invalid_argument("AdaptiveTracking: invalid initialization type: " + config.get<string>("initial"));
 	}
@@ -398,7 +388,7 @@ void AdaptiveTracking::initGui() {
 	cv::setTrackbarPos("Draw samples", controlWindowName, drawSamples ? 1 : 0);
 
 	if (opticalFlowTransitionModel) {
-		cv::createTrackbar("Draw flow", controlWindowName, NULL, 2, drawFlowChanged, this);
+		cv::createTrackbar("Draw flow", controlWindowName, NULL, 3, drawFlowChanged, this);
 		cv::setTrackbarPos("Draw flow", controlWindowName, drawFlow);
 	}
 }
@@ -490,8 +480,10 @@ void AdaptiveTracking::drawDebug(Mat& image, bool usedAdaptive) {
 			}
 		}
 	}
-	if (drawFlow > 0)
-		opticalFlowTransitionModel->drawFlow(image, red, drawFlow);
+	if (drawFlow == 1)
+		opticalFlowTransitionModel->drawFlow(image, -drawFlow, green, red);
+	else if (drawFlow > 1)
+		opticalFlowTransitionModel->drawFlow(image, drawFlow - 1, green, red);
 }
 
 void AdaptiveTracking::drawCrosshair(Mat& image) {
@@ -518,19 +510,14 @@ void AdaptiveTracking::drawGroundTruth(Mat& image, const LandmarkCollection& lan
 		landmarks.getLandmark().draw(image, cv::Scalar(255, 153, 102), 2);
 }
 
-void AdaptiveTracking::drawTarget(Mat& image, optional<Rect> target, optional<Sample> state, bool usedAdaptive) {
-	const cv::Scalar& color = usedAdaptive ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 255);
+void AdaptiveTracking::drawTarget(Mat& image, optional<Rect> target, optional<Sample> state, bool usedAdaptive, bool adapted) {
+	const cv::Scalar& color = usedAdaptive ? (adapted ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 255, 255)) : cv::Scalar(0, 0, 255);
 	if (target) {
-		cv::rectangle(image, *target, color);
-		if (state)
-			cv::line(image,
-					cv::Point(state->getX() - state->getVx(), state->getY() - state->getVy()),
-					cv::Point(state->getX(), state->getY()), color);
+		cv::rectangle(image, *target, color, 2);
 //		if (state)
-//			hogExtr->extract(state->getX(), state->getY(), state->getWidth(), state->getHeight());
-//		else
-//			hogExtr->extract(target->x + target->width/2, target->y + target->height/2, target->width, target->height);
-//		imshow("HOG", hogExtr->hogImage);
+//			cv::line(image,
+//					cv::Point(state->getX() - state->getVx(), state->getY() - state->getVy()),
+//					cv::Point(state->getX(), state->getY()), color);
 	}
 }
 
@@ -542,12 +529,12 @@ void AdaptiveTracking::onMouse(int event, int x, int y, int, void* userdata) {
 			tracking->currentY = y;
 			Mat& image = tracking->image;
 			tracking->frame.copyTo(image);
-			tracking->drawCrosshair(image);
 			tracking->drawBox(image);
+			tracking->drawCrosshair(image);
 			imshow(videoWindowName, image);
 		} else if (event == cv::EVENT_LBUTTONDOWN) {
 			if (tracking->storedX < 0 || tracking->storedY < 0) {
-				tracking->paused = true;
+//				tracking->paused = true;
 				tracking->storedX = x;
 				tracking->storedY = y;
 			}
@@ -562,7 +549,6 @@ void AdaptiveTracking::onMouse(int event, int x, int y, int, void* userdata) {
 				double patchWidth = sqrt(dimension / aspectRatio);
 				double patchHeight = aspectRatio * patchWidth;
 				tracking->patchExtractor->setPatchSize(cvRound(patchWidth), cvRound(patchHeight));
-//				tracking->hogExtr->setPatchSize(cvRound(patchWidth), cvRound(patchHeight));
 				log.info("Initialized patch size at " + lexical_cast<string>(tracking->patchExtractor->getPatchWidth())
 						+ " x " + lexical_cast<string>(tracking->patchExtractor->getPatchHeight()));
 
@@ -579,7 +565,7 @@ void AdaptiveTracking::onMouse(int event, int x, int y, int, void* userdata) {
 					tracking->currentY = -1;
 					Mat& image = tracking->image;
 					tracking->frame.copyTo(image);
-					tracking->drawTarget(image, optional<Rect>(position), optional<Sample>());
+					tracking->drawTarget(image, optional<Rect>(position), optional<Sample>(), true, true);
 					imshow(videoWindowName, image);
 				} else {
 					log.warn("Could not initialize tracker after " + lexical_cast<string>(tries) + " tries (patch too small/big?)");
@@ -597,186 +583,152 @@ void AdaptiveTracking::run() {
 	paused = false;
 	adaptiveUsable = false;
 
-	// initialization (manual or via ground truth)
-	if (initialization == MANUAL) {
-		storedX = -1;
-		storedY = -1;
-		currentX = -1;
-		currentY = -1;
-		cv::setMouseCallback(videoWindowName, onMouse, this);
-		while (running && !adaptiveUsable) {
-			if (!imageSource->next()) {
-				std::cerr << "Could not capture frame - press 'q' to quit program" << std::endl;
-				stop();
-				while ('q' != (char)cv::waitKey(10));
-			} else {
-				frame = imageSource->getImage();
-				frame.copyTo(image);
-				drawGroundTruth(image, imageSource->getLandmarks());
-				drawCrosshair(image);
-				imshow(videoWindowName, image);
-				if (imageSink.get() != 0)
-					imageSink->add(image);
-
-				int delay = paused ? 0 : 5;
-				char c = (char)cv::waitKey(delay);
-				if (c == 'p')
-					paused = !paused;
-				else if (c == 'q')
-					stop();
-			}
-		}
-	} else if (initialization == GROUND_TRUTH) {
-		Logger& log = Loggers->getLogger("app");
-		int tries = 0;
-		while (running && !adaptiveUsable) {
-			if (!imageSource->next()) {
-				std::cerr << "Could not capture frame - press 'q' to quit program" << std::endl;
-				stop();
-				while ('q' != (char)cv::waitKey(10));
-			} else {
-				frame = imageSource->getImage();
-				frame.copyTo(image);
-				if (!imageSource->getLandmarks().isEmpty()) {
-					const Landmark& landmark = imageSource->getLandmarks().getLandmark();
-					Rect position = landmark.getRect();
-					if (tries == 0) {
-						double dimension = patchExtractor->getPatchWidth() * patchExtractor->getPatchHeight();
-						float aspectRatio = landmark.getHeight() / landmark.getWidth();
-						double patchWidth = sqrt(dimension / aspectRatio);
-						double patchHeight = aspectRatio * patchWidth;
-						patchExtractor->setPatchSize(cvRound(patchWidth), cvRound(patchHeight));
-						hogExtr->setPatchSize(cvRound(patchWidth), cvRound(patchHeight));
-						log.info("Initialized patch size at " + lexical_cast<string>(patchExtractor->getPatchWidth())
-								+ " x " + lexical_cast<string>(patchExtractor->getPatchHeight()));
-					}
-					tries++;
-					adaptiveUsable = adaptiveTracker->initialize(frame, position);
-					if (adaptiveUsable)
-						log.info("Initialized adaptive tracking after " + lexical_cast<string>(tries) + " tries");
-				}
-				drawGroundTruth(image, imageSource->getLandmarks());
-				imshow(videoWindowName, image);
-				if (imageSink.get() != 0)
-					imageSink->add(image);
-
-				int delay = paused ? 0 : 5;
-				char c = (char)cv::waitKey(delay);
-				if (c == 'p')
-					paused = !paused;
-				else if (c == 'q')
-					stop();
-			}
-		}
-	}
-
-	duration<double> allIterationTime;
-	duration<double> allCondensationTime;
-	int frames = 0;
-
-	// (adaptive) tracking
 	while (running) {
-		steady_clock::time_point frameStart = steady_clock::now();
 
-		if (!imageSource->next()) {
-			std::cerr << "Could not capture frame - press 'q' to quit program" << std::endl;
-			stop();
-			while ('q' != (char)cv::waitKey(10));
-		} else {
-			frames++;
-			frame = imageSource->getImage();
-			steady_clock::time_point condensationStart = steady_clock::now();
-			bool usedAdaptive = false;
-			boost::optional<Rect> position;
-			boost::optional<Sample> state;
-			if (useAdaptive) {
-				if (adaptiveUsable) {
-					position = adaptiveTracker->process(frame);
-					state = adaptiveTracker->getState();
-					usedAdaptive = true;
+		// initialization (manual or via ground truth)
+		if (initialization == Initialization::MANUAL) {
+			storedX = -1;
+			storedY = -1;
+			currentX = -1;
+			currentY = -1;
+			cv::setMouseCallback(videoWindowName, onMouse, this);
+			while (running && !adaptiveUsable) {
+				if (!imageSource->next()) {
+					std::cerr << "Could not capture frame - press 'q' to quit program" << std::endl;
+					stop();
+					while ('q' != (char)cv::waitKey(10));
+				} else {
+					frame = imageSource->getImage();
+					frame.copyTo(image);
+					drawGroundTruth(image, imageSource->getLandmarks());
+					drawBox(image);
+					drawCrosshair(image);
+					imshow(videoWindowName, image);
+					if (imageSink.get() != 0)
+						imageSink->add(image);
+
+					int delay = paused ? 0 : 5;
+					char c = (char)cv::waitKey(delay);
+					if (c == 'p')
+						paused = !paused;
+					else if (c == 'q')
+						stop();
+				}
+			}
+		} else if (initialization == Initialization::GROUND_TRUTH) {
+			Logger& log = Loggers->getLogger("app");
+			int tries = 0;
+			while (running && !adaptiveUsable) {
+				if (!imageSource->next()) {
+					std::cerr << "Could not capture frame - press 'q' to quit program" << std::endl;
+					stop();
+					while ('q' != (char)cv::waitKey(10));
+				} else {
+					frame = imageSource->getImage();
+					frame.copyTo(image);
+					if (!imageSource->getLandmarks().isEmpty()) {
+						const Landmark& landmark = imageSource->getLandmarks().getLandmark();
+						Rect position = landmark.getRect();
+						if (tries == 0) {
+							double dimension = patchExtractor->getPatchWidth() * patchExtractor->getPatchHeight();
+							float aspectRatio = landmark.getHeight() / landmark.getWidth();
+							double patchWidth = sqrt(dimension / aspectRatio);
+							double patchHeight = aspectRatio * patchWidth;
+							patchExtractor->setPatchSize(cvRound(patchWidth), cvRound(patchHeight));
+							log.info("Initialized patch size at " + lexical_cast<string>(patchExtractor->getPatchWidth())
+									+ " x " + lexical_cast<string>(patchExtractor->getPatchHeight()));
+						}
+						tries++;
+						adaptiveUsable = adaptiveTracker->initialize(frame, position);
+						if (adaptiveUsable)
+							log.info("Initialized adaptive tracking after " + lexical_cast<string>(tries) + " tries");
+					}
+					drawGroundTruth(image, imageSource->getLandmarks());
+					imshow(videoWindowName, image);
+					if (imageSink.get() != 0)
+						imageSink->add(image);
+
+					int delay = paused ? 0 : 5;
+					char c = (char)cv::waitKey(delay);
+					if (c == 'p')
+						paused = !paused;
+					else if (c == 'q')
+						stop();
+				}
+			}
+		}
+
+		duration<double> allIterationTime;
+		duration<double> allCondensationTime;
+		int frames = 0;
+
+		// (adaptive) tracking
+		while (running) {
+			steady_clock::time_point frameStart = steady_clock::now();
+
+			if (!imageSource->next()) {
+				std::cerr << "Could not capture frame - press 'q' to quit program" << std::endl;
+				stop();
+				while ('q' != (char)cv::waitKey(10));
+			} else {
+				frames++;
+				frame = imageSource->getImage();
+				steady_clock::time_point condensationStart = steady_clock::now();
+				bool usedAdaptive = false;
+				bool adapted = false;
+				boost::optional<Rect> position;
+				boost::optional<Sample> state;
+				if (useAdaptive) {
+					if (adaptiveUsable) {
+						position = adaptiveTracker->process(frame);
+						state = adaptiveTracker->getState();
+						usedAdaptive = true;
+						adapted = adaptiveTracker->hasAdapted();
+					} else {
+						position = initialTracker->process(frame);
+						state = initialTracker->getState();
+						if (position)
+							adaptiveUsable = adaptiveTracker->initialize(frame, *position);
+					}
 				} else {
 					position = initialTracker->process(frame);
 					state = initialTracker->getState();
-					if (position)
-						adaptiveUsable = adaptiveTracker->initialize(frame, *position);
 				}
-			} else {
-				position = initialTracker->process(frame);
-				state = initialTracker->getState();
+				steady_clock::time_point condensationEnd = steady_clock::now();
+				frame.copyTo(image);
+				drawDebug(image, usedAdaptive);
+				drawGroundTruth(image, imageSource->getLandmarks());
+				drawTarget(image, position, state, usedAdaptive, adapted);
+				imshow(videoWindowName, image);
+				if (imageSink.get() != 0)
+					imageSink->add(image);
+				steady_clock::time_point frameEnd = steady_clock::now();
+
+				milliseconds iterationTime = duration_cast<milliseconds>(frameEnd - frameStart);
+				milliseconds condensationTime = duration_cast<milliseconds>(condensationEnd - condensationStart);
+				allIterationTime += iterationTime;
+				allCondensationTime += condensationTime;
+				float iterationFps = frames / allIterationTime.count();
+				float condensationFps = frames / allCondensationTime.count();
+
+				ostringstream text;
+				text.precision(2);
+				text << frames << " frame: " << iterationTime.count() << " ms (" << iterationFps << " fps);"
+						<< " condensation: " << condensationTime.count() << " ms (" << condensationFps << " fps)";
+				log.info(text.str());
+
+				int delay = paused ? 0 : 5;
+				char c = (char)cv::waitKey(delay);
+				if (c == 'p')
+					paused = !paused;
+				else if (c == 'q')
+					stop();
+				else if (c == 'r') {
+					adaptiveTracker->reset();
+					adaptiveUsable = false;
+					break;
+				}
 			}
-			steady_clock::time_point condensationEnd = steady_clock::now();
-			frame.copyTo(image);
-			drawDebug(image, usedAdaptive);
-			drawGroundTruth(image, imageSource->getLandmarks());
-			drawTarget(image, position, state, usedAdaptive);
-			imshow(videoWindowName, image);
-			if (imageSink.get() != 0)
-				imageSink->add(image);
-			steady_clock::time_point frameEnd = steady_clock::now();
-
-			// TODO remove
-//			if (paused) {
-//				shared_ptr<ImagePyramid> pyr = make_shared<ImagePyramid>(1, 1);
-//				shared_ptr<DirectPyramidFeatureExtractor> patchExt = make_shared<DirectPyramidFeatureExtractor>(pyr, patchExtractor->getPatchWidth(), patchExtractor->getPatchHeight());
-//				patchExt->addPatchFilter(make_shared<HistogramEqualizationFilter>());
-//				detection::SlidingWindowDetector det(svmClassifier, patchExt);
-//				vector<Mat> maps;
-//				vector<double> maxs;
-//				vector<shared_ptr<ImagePyramidLayer>> layers = patchExtractor->getPyramid()->getLayers();
-//				for (auto layer = layers.begin(); layer != layers.end(); ++layer) {
-//					const Mat& img = (*layer)->getScaledImage();
-//					vector<shared_ptr<ClassifiedPatch>> patches = det.detect(img);
-//					double max = 0;
-//					Mat map = Mat::zeros(img.rows, img.cols, CV_8U);
-//					for (auto patch = patches.begin(); patch != patches.end(); ++patch) {
-//						double prob = (*patch)->getProbability();
-//						max = std::max(max, prob);
-//						map.at<uchar>((*patch)->getPatch()->getY(), (*patch)->getPatch()->getX()) = cvRound(255 * prob);
-//					}
-//					maxs.push_back(max);
-//					maps.push_back(map);
-//				}
-//				std::cout << maps.size() << std::endl;
-//				int asdfX = 10;
-//				int asdfY = 10;
-//				int asdfYnext = 0;
-//				for (unsigned int i = 0; i < maps.size(); ++i) {
-////				for (unsigned int i = 11; i < 18; ++i) {
-//					if (maxs[i] < 0.2)
-//						continue;
-//					std::cout << i << ": " << maxs[i] << std::endl;
-//					string name = string("map ") + lexical_cast<string>(i);
-//					imshow(name, maps[i]);
-//					if (asdfX + maps[i].cols > 1920) {
-//						asdfX = 10;
-//						asdfY = asdfYnext;
-//					}
-//					cvMoveWindow(name.c_str(), asdfX, asdfY);
-//					asdfX += maps[i].cols + 10;
-//					if (asdfYnext < asdfY + maps[i].rows + 10)
-//						asdfYnext = asdfY + maps[i].rows + 10;
-//				}
-//			}
-
-			milliseconds iterationTime = duration_cast<milliseconds>(frameEnd - frameStart);
-			milliseconds condensationTime = duration_cast<milliseconds>(condensationEnd - condensationStart);
-			allIterationTime += iterationTime;
-			allCondensationTime += condensationTime;
-			float iterationFps = frames / allIterationTime.count();
-			float condensationFps = frames / allCondensationTime.count();
-
-			ostringstream text;
-			text.precision(2);
-			text << frames << " frame: " << iterationTime.count() << " ms (" << iterationFps << " fps);"
-					<< " condensation: " << condensationTime.count() << " ms (" << condensationFps << " fps)";
-			log.info(text.str());
-
-			int delay = paused ? 0 : 5;
-			char c = (char)cv::waitKey(delay);
-			if (c == 'p')
-				paused = !paused;
-			else if (c == 'q')
-				stop();
 		}
 	}
 }

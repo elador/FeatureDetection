@@ -1,7 +1,7 @@
 /*
- * SingleClassifierModel.cpp
+ * DualClassifierModel.cpp
  *
- *  Created on: 28.03.2013
+ *  Created on: 03.07.2013
  *      Author: poschmann
  */
 

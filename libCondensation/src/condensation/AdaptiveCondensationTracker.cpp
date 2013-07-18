@@ -25,12 +25,17 @@ AdaptiveCondensationTracker::AdaptiveCondensationTracker(shared_ptr<Sampler> sam
 				samples(),
 				oldSamples(),
 				state(),
+				adapted(false),
 				image(make_shared<VersionedImage>()),
 				sampler(sampler),
 				measurementModel(measurementModel),
 				extractor(extractor) {}
 
 AdaptiveCondensationTracker::~AdaptiveCondensationTracker() {}
+
+void AdaptiveCondensationTracker::reset() {
+	measurementModel->reset();
+}
 
 bool AdaptiveCondensationTracker::initialize(const Mat& imageData, const Rect& positionData) {
 	image->setData(imageData);
@@ -58,9 +63,9 @@ optional<Rect> AdaptiveCondensationTracker::process(const Mat& imageData) {
 	state = extractor->extract(samples);
 	// update model
 	if (state)
-		measurementModel->adapt(image, samples, *state);
+		adapted = measurementModel->adapt(image, samples, *state);
 	else
-		measurementModel->adapt(image, samples);
+		adapted = measurementModel->adapt(image, samples);
 	// return position
 	if (state)
 		return optional<Rect>(state->getBounds());

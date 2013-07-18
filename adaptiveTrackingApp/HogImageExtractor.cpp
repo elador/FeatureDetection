@@ -1,14 +1,14 @@
 /*
- * DirectImageExtractor.cpp
+ * HogImageExtractor.cpp
  *
  *  Created on: 30.06.2013
- *      Author: ex-ratt
+ *      Author: poschmann
  */
 
 #include "HogImageExtractor.hpp"
 #include "imageprocessing/Patch.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include <iostream> // TODO
+
 using cv::Rect;
 using cv::Size;
 using cv::resize;

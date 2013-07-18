@@ -20,7 +20,7 @@ namespace condensation {
 PositionDependentMeasurementModel::PositionDependentMeasurementModel(shared_ptr<FeatureExtractor> featureExtractor,
 		shared_ptr<TrainableProbabilisticClassifier> classifier, int startFrameCount, int stopFrameCount,
 		float targetThreshold, float confidenceThreshold, float positiveOffsetFactor, float negativeOffsetFactor,
-		bool sampleNegativesAroundTarget, bool sampleFalsePositives, unsigned int randomNegatives, bool exploitSymmetry) :
+		int sampleNegativesAroundTarget, bool sampleFalsePositives, unsigned int randomNegatives, bool exploitSymmetry) :
 				SingleClassifierModel(featureExtractor, classifier),
 				classifier(classifier),
 				usable(false),
@@ -43,11 +43,11 @@ void PositionDependentMeasurementModel::reset() {
 	usable = false;
 }
 
-void PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples, const Sample& target) {
+bool PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples, const Sample& target) {
 	if (!isUsable()) {
 		frameCount++;
 		if (frameCount < startFrameCount)
-			return;
+			return false;
 		// feature extractor has to be initialized on the image when this model was not used for evaluation
 		featureExtractor->update(image);
 	} else {
@@ -56,7 +56,7 @@ void PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 
 	shared_ptr<Patch> targetPatch = featureExtractor->extract(target.getX(), target.getY(), target.getWidth(), target.getHeight());
 	if (isUsable() && targetPatch && classifier->classify(targetPatch->getData()).second < targetThreshold)
-		return;
+		return false;
 
 	vector<Sample> positiveSamples;
 	if (positiveOffsetFactor == 0) {
@@ -78,38 +78,46 @@ void PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 	int xHighBound = target.getX() + boundOffset;
 	int yLowBound = target.getY() - boundOffset;
 	int yHighBound = target.getY() + boundOffset;
-	int sizeLowBound = (int)((1 - negativeOffsetFactor) * target.getSize());
-	int sizeHighBound = (int)((1 + 1.5 * negativeOffsetFactor) * target.getSize()); // TODO mit wert rumspielen
+	float downScaleBound = (1 - negativeOffsetFactor);
+	float upScaleBound = 1 / downScaleBound;
+	int sizeLowBound = (int)(downScaleBound * target.getSize());
+	int sizeHighBound = (int)(upScaleBound * target.getSize());
 
-	if (sampleNegativesAroundTarget) {
+	if (sampleNegativesAroundTarget > 0) {
 		negativeSamples.push_back(Sample(xLowBound, target.getY(), target.getSize()));
 		negativeSamples.push_back(Sample(xHighBound, target.getY(), target.getSize()));
 		negativeSamples.push_back(Sample(target.getX(), yLowBound, target.getSize()));
 		negativeSamples.push_back(Sample(target.getX(), yHighBound, target.getSize()));
-		negativeSamples.push_back(Sample(xLowBound, yLowBound, target.getSize()));
-		negativeSamples.push_back(Sample(xLowBound, yHighBound, target.getSize()));
-		negativeSamples.push_back(Sample(xHighBound, yLowBound, target.getSize()));
-		negativeSamples.push_back(Sample(xHighBound, yHighBound, target.getSize()));
-
 		negativeSamples.push_back(Sample(target.getX(), target.getY(), sizeLowBound));
-		negativeSamples.push_back(Sample(xLowBound, target.getY(), sizeLowBound));
-		negativeSamples.push_back(Sample(xHighBound, target.getY(), sizeLowBound));
-		negativeSamples.push_back(Sample(target.getX(), yLowBound, sizeLowBound));
-		negativeSamples.push_back(Sample(target.getX(), yHighBound, sizeLowBound));
-//		negativeSamples.push_back(Sample(xLowBound, yLowBound, sizeLowBound));
-//		negativeSamples.push_back(Sample(xLowBound, yHighBound, sizeLowBound));
-//		negativeSamples.push_back(Sample(xHighBound, yLowBound, sizeLowBound));
-//		negativeSamples.push_back(Sample(xHighBound, yHighBound, sizeLowBound));
-
 		negativeSamples.push_back(Sample(target.getX(), target.getY(), sizeHighBound));
-		negativeSamples.push_back(Sample(xLowBound, target.getY(), sizeHighBound));
-		negativeSamples.push_back(Sample(xHighBound, target.getY(), sizeHighBound));
-		negativeSamples.push_back(Sample(target.getX(), yLowBound, sizeHighBound));
-		negativeSamples.push_back(Sample(target.getX(), yHighBound, sizeHighBound));
-//		negativeSamples.push_back(Sample(xLowBound, yLowBound, sizeHighBound));
-//		negativeSamples.push_back(Sample(xLowBound, yHighBound, sizeHighBound));
-//		negativeSamples.push_back(Sample(xHighBound, yLowBound, sizeHighBound));
-//		negativeSamples.push_back(Sample(xHighBound, yHighBound, sizeHighBound));
+
+		if (sampleNegativesAroundTarget > 1) {
+			negativeSamples.push_back(Sample(xLowBound, yLowBound, target.getSize()));
+			negativeSamples.push_back(Sample(xLowBound, yHighBound, target.getSize()));
+			negativeSamples.push_back(Sample(xHighBound, yLowBound, target.getSize()));
+			negativeSamples.push_back(Sample(xHighBound, yHighBound, target.getSize()));
+
+			negativeSamples.push_back(Sample(xLowBound, target.getY(), sizeLowBound));
+			negativeSamples.push_back(Sample(xLowBound, target.getY(), sizeHighBound));
+			negativeSamples.push_back(Sample(xHighBound, target.getY(), sizeLowBound));
+			negativeSamples.push_back(Sample(xHighBound, target.getY(), sizeHighBound));
+
+			negativeSamples.push_back(Sample(target.getX(), yLowBound, sizeLowBound));
+			negativeSamples.push_back(Sample(target.getX(), yLowBound, sizeHighBound));
+			negativeSamples.push_back(Sample(target.getX(), yHighBound, sizeLowBound));
+			negativeSamples.push_back(Sample(target.getX(), yHighBound, sizeHighBound));
+
+			if (sampleNegativesAroundTarget > 2) {
+				negativeSamples.push_back(Sample(xLowBound, yLowBound, sizeLowBound));
+				negativeSamples.push_back(Sample(xLowBound, yLowBound, sizeHighBound));
+				negativeSamples.push_back(Sample(xLowBound, yHighBound, sizeLowBound));
+				negativeSamples.push_back(Sample(xLowBound, yHighBound, sizeHighBound));
+				negativeSamples.push_back(Sample(xHighBound, yLowBound, sizeLowBound));
+				negativeSamples.push_back(Sample(xHighBound, yLowBound, sizeHighBound));
+				negativeSamples.push_back(Sample(xHighBound, yHighBound, sizeLowBound));
+				negativeSamples.push_back(Sample(xHighBound, yHighBound, sizeHighBound));
+			}
+		}
 	}
 
 	if (sampleFalsePositives) {
@@ -165,9 +173,10 @@ void PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 		usable = classifier->retrain(
 				getFeatureVectors(positiveSamples, [](Mat&) { return true; }),
 				getFeatureVectors(negativeSamples, [](Mat&) { return true; }));
+	return true;
 }
 
-void PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples) {
+bool PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples) {
 	if (isUsable())
 		frameCount++;
 	if (frameCount == stopFrameCount) {
@@ -177,6 +186,7 @@ void PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 		const vector<Mat> empty;
 		usable = classifier->retrain(empty, empty);
 	}
+	return false;
 }
 
 Sample PositionDependentMeasurementModel::createRandomSample(const Mat& image) {

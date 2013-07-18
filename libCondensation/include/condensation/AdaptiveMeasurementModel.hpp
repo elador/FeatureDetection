@@ -33,16 +33,18 @@ public:
 	 * @param[in] image The image.
 	 * @param[in] samples The weighted samples.
 	 * @param[in] target The estimated target position.
+	 * @return True if the model was updated, false otherwise.
 	 */
-	virtual void adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples, const Sample& target) = 0;
+	virtual bool adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples, const Sample& target) = 0;
 
 	/**
 	 * Adapts this model in case the target was not found.
 	 *
 	 * @param[in] image The image.
 	 * @param[in] samples The weighted samples.
+	 * @return True if the model was updated, false otherwise.
 	 */
-	virtual void adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples) = 0;
+	virtual bool adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples) = 0;
 
 	/**
 	 * Resets this model to its original state.

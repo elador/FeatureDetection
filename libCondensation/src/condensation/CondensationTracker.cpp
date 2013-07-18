@@ -28,10 +28,6 @@ CondensationTracker::CondensationTracker(shared_ptr<Sampler> sampler,
 
 CondensationTracker::~CondensationTracker() {}
 
-void CondensationTracker::initialize(const vector<Sample>& samples) {
-	this->samples = samples;
-}
-
 optional<Rect> CondensationTracker::process(const Mat& imageData) {
 	image->setData(imageData);
 	oldSamples = samples;

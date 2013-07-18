@@ -45,7 +45,7 @@ public:
 	 * @param[in] confidenceThreshold The confidence threshold that must be undercut by examples to be used for training.
 	 * @param[in] positiveOffsetFactor The position offset relative to the target size of still positive examples.
 	 * @param[in] negativeOffsetFactor The minimum position offset relative to the target size of surely negative examples.
-	 * @param[in] sampleNegativesAroundTarget Indicates whether negative examples should be sampled around the target.
+	 * @param[in] sampleNegativesAroundTarget Amount of dimensions that may be used for sampling negatives around the target at the same time. Zero means no sampling.
 	 * @param[in] sampleFalsePositives Indicates whether positive detections other than the target should be negative examples.
 	 * @param[in] randomNegatives The amount of additional random negative examples sampled from the image.
 	 * @param[in] exploitSymmetry Flag that indicates whether mirrored (y-axis) patches should be used for training, too.
@@ -53,7 +53,7 @@ public:
 	PositionDependentMeasurementModel(shared_ptr<FeatureExtractor> featureExtractor,
 			shared_ptr<TrainableProbabilisticClassifier> classifier, int startFrameCount = 3, int stopFrameCount = 20,
 			float targetThreshold = 0.7, float confidenceThreshold = 0.95, float positiveOffsetFactor = 0.05, float negativeOffsetFactor = 0.5,
-			bool sampleNegativesAroundTarget = true, bool sampleFalsePositives = true, unsigned int randomNegatives = 0, bool exploitSymmetry = false);
+			int sampleNegativesAroundTarget = 0, bool sampleFalsePositives = true, unsigned int randomNegatives = 0, bool exploitSymmetry = false);
 
 	~PositionDependentMeasurementModel();
 
@@ -65,9 +65,9 @@ public:
 		return usable;
 	}
 
-	void adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples, const Sample& target);
+	bool adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples, const Sample& target);
 
-	void adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples);
+	bool adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples);
 
 	void reset();
 
@@ -104,7 +104,7 @@ private:
 	float confidenceThreshold;  ///< The confidence threshold that must be fallen short of by examples to be used for training.
 	float positiveOffsetFactor; ///< The position offset relative to the target size of still positive examples.
 	float negativeOffsetFactor; ///< The minimum position offset relative to the target size of surely negative examples.
-	bool sampleNegativesAroundTarget; ///< Indicates whether negative examples should be sampled around the target.
+	int sampleNegativesAroundTarget; ///< Amount of dimensions that may be used for sampling negatives around the target at the same time. Zero means no sampling.
 	bool sampleFalsePositives;        ///< Indicates whether positive detections other than the target should be negative examples.
 	unsigned int randomNegatives;     ///< The amount of additional random negative examples sampled from the image.
 	bool exploitSymmetry;             ///< Flag that indicates whether mirrored (y-axis) patches should be used for training, too.
