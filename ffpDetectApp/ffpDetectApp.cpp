@@ -333,8 +333,8 @@ int main(int argc, char *argv[])
 				ptree imgpyr = kv.second.get_child("pyramid");
 				ptree oeCfg = kv.second.get_child("overlapElimination");
 
-				shared_ptr<ProbabilisticWvmClassifier> firstClassifier = ProbabilisticWvmClassifier::loadConfig(firstClassifierNode);
-				shared_ptr<ProbabilisticSvmClassifier> secondClassifier = ProbabilisticSvmClassifier::loadConfig(secondClassifierNode);
+				shared_ptr<ProbabilisticWvmClassifier> firstClassifier = ProbabilisticWvmClassifier::load(firstClassifierNode);
+				shared_ptr<ProbabilisticSvmClassifier> secondClassifier = ProbabilisticSvmClassifier::load(secondClassifierNode);
 
 				//pwvm->getWvm()->setLimitReliabilityFilter(-0.5f);
 				//psvm->getSvm()->setThreshold(-1.0f);	// TODO read this from the config
@@ -417,11 +417,11 @@ int main(int argc, char *argv[])
 				string classifierType = classifierNode.get_value<string>();
 				shared_ptr<ProbabilisticClassifier> classifier;
 				if (classifierType == "pwvm") {
-					classifier = ProbabilisticWvmClassifier::loadConfig(classifierNode);
+					classifier = ProbabilisticWvmClassifier::load(classifierNode);
 				} else if (classifierType == "prvm") {
-					classifier = ProbabilisticRvmClassifier::loadConfig(classifierNode);
+					classifier = ProbabilisticRvmClassifier::load(classifierNode);
 				} if (classifierType == "psvm") {
-					classifier = ProbabilisticSvmClassifier::loadConfig(classifierNode);
+					classifier = ProbabilisticSvmClassifier::load(classifierNode);
 				} 
 				
 				//psvm->getSvm()->setThreshold(-1.0f);	// TODO read this from the config

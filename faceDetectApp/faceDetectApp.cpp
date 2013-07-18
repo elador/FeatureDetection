@@ -294,8 +294,8 @@ int main(int argc, char *argv[])
 		ptree oeCfg = kv.second.get_child("overlapElimination");	// TODO add error checking. get_child throws when child doesn't exist.
 		string landmarkName = kv.second.get<string>("landmark");
 
-		shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::loadConfig(wvm);
-		shared_ptr<ProbabilisticSvmClassifier> psvm = ProbabilisticSvmClassifier::loadConfig(svm);
+		shared_ptr<ProbabilisticWvmClassifier> pwvm = ProbabilisticWvmClassifier::load(wvm);
+		shared_ptr<ProbabilisticSvmClassifier> psvm = ProbabilisticSvmClassifier::load(svm);
 
 		//pwvm->getWvm()->setLimitReliabilityFilter(-0.5f);
 		psvm->getSvm()->setThreshold(-1.0f);	// TODO read this from the config

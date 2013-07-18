@@ -84,7 +84,7 @@ double RvmClassifier::computeHyperplaneDistanceCached(const Mat& featureVector, 
 	return distance;
 }
 
-shared_ptr<RvmClassifier> RvmClassifier::loadMatlab(const string& classifierFilename, const string& thresholdsFilename)
+shared_ptr<RvmClassifier> RvmClassifier::loadFromMatlab(const string& classifierFilename, const string& thresholdsFilename)
 {
 	Logger logger = Loggers->getLogger("classification");
 	logger.info("Loading RVM classifier from Matlab file: " + classifierFilename);
@@ -242,11 +242,11 @@ shared_ptr<RvmClassifier> RvmClassifier::loadMatlab(const string& classifierFile
 	return rvm;
 }
 
-shared_ptr<RvmClassifier> RvmClassifier::loadConfig(const ptree& subtree)
+shared_ptr<RvmClassifier> RvmClassifier::load(const ptree& subtree)
 {
 	path classifierFile = subtree.get<path>("classifierFile");
 	if (classifierFile.extension() == ".mat") {
-		shared_ptr<RvmClassifier> rvm = loadMatlab(classifierFile.string(), subtree.get<string>("thresholdsFile"));
+		shared_ptr<RvmClassifier> rvm = loadFromMatlab(classifierFile.string(), subtree.get<string>("thresholdsFile"));
 		// Do some stuff, e.g.
 		//int numFiltersToUse = subtree.get<int>("");
 		//Number filters to use

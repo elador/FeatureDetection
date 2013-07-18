@@ -93,7 +93,7 @@ public:
 	 * @param[in] thresholdsFilename The name of the file containing the RVM thresholds.
 	 * @return The newly created RVM classifier.
 	 */
-	static shared_ptr<RvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename);
+	static shared_ptr<RvmClassifier> loadFromMatlab(const string& classifierFilename, const string& thresholdsFilename);
 
 	/**
 	 * Creates a new RVM classifier from the parameters given in the ptree sub-tree. Passes the
@@ -102,8 +102,7 @@ public:
 	 * @param[in] subtree The subtree containing the config information for this classifier.
 	 * @return The newly created RVM classifier.
 	 */
-	static shared_ptr<RvmClassifier> loadConfig(const ptree& subtree);
-
+	static shared_ptr<RvmClassifier> load(const ptree& subtree);
 
 private:
 

@@ -78,7 +78,7 @@ public:
 	 * @param[in] logisticFilename The name of the file containing the logistic function's parameters.
 	 * @return The newly created probabilistic SVM classifier.
 	 */
-	static shared_ptr<ProbabilisticSvmClassifier> loadMatlab(const string& classifierFilename, const string& logisticFilename);
+	static shared_ptr<ProbabilisticSvmClassifier> loadFromMatlab(const string& classifierFilename, const string& logisticFilename);
 
 	/**
 	 * Creates a new probabilistic SVM classifier from the parameters given in the ptree sub-tree. Loads the logistic function's
@@ -88,7 +88,7 @@ public:
 	 * @param[in] subtree The subtree containing the config information for this classifier.
 	 * @return The newly created probabilistic WVM classifier.
 	 */
-	static shared_ptr<ProbabilisticSvmClassifier> loadConfig(const ptree& subtree);
+	static shared_ptr<ProbabilisticSvmClassifier> load(const ptree& subtree);
 
 private:
 

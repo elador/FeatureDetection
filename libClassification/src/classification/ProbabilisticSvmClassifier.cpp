@@ -42,7 +42,7 @@ void ProbabilisticSvmClassifier::setLogisticParameters(double logisticA, double 
 	this->logisticB = logisticB;
 }
 
-shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadMatlab(const string& classifierFilename, const string& logisticFilename)
+shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadFromMatlab(const string& classifierFilename, const string& logisticFilename)
 {
 	// Load sigmoid stuff:
 	double logisticA = 0;
@@ -78,17 +78,17 @@ shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadMatlab(co
 	}
 
 	// Load the detector and thresholds:
-	shared_ptr<SvmClassifier> svm = SvmClassifier::loadMatlab(classifierFilename);
+	shared_ptr<SvmClassifier> svm = SvmClassifier::loadFromMatlab(classifierFilename);
 	return make_shared<ProbabilisticSvmClassifier>(svm, logisticA, logisticB);
 }
 
-shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadConfig(const ptree& subtree)
+shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::load(const ptree& subtree)
 {
 	path classifierFile = subtree.get<path>("classifierFile");
 	if (classifierFile.extension() == ".mat") {
-		return loadMatlab(classifierFile.string(), subtree.get<string>("thresholdsFile"));
+		return loadFromMatlab(classifierFile.string(), subtree.get<string>("thresholdsFile"));
 	} else {
-		shared_ptr<SvmClassifier> svm = SvmClassifier::loadText(classifierFile.string());
+		shared_ptr<SvmClassifier> svm = SvmClassifier::loadFromText(classifierFile.string());
 		svm->setThreshold(subtree.get("threshold", 0.0f)); // TODO SvmClassifier::loadText should do that
 		double logisticA = subtree.get("logisticA", 0.0);
 		double logisticB = subtree.get("logisticB", 0.0);

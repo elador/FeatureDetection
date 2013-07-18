@@ -89,7 +89,7 @@ public:
 	 * @param[in] subtree The subtree containing the config information for this classifier.
 	 * @return The newly created probabilistic RVM classifier.
 	 */
-	static shared_ptr<ProbabilisticRvmClassifier> loadConfig(const ptree& subtree);
+	static shared_ptr<ProbabilisticRvmClassifier> load(const ptree& subtree);
 
 private:
 

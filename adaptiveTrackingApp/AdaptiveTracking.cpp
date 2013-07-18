@@ -314,8 +314,8 @@ void AdaptiveTracking::initTracking(ptree& config) {
 		staticFeatureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
 		string classifierFile = config.get<string>("initial.measurement.classifier.classifierFile");
 		string thresholdsFile = config.get<string>("initial.measurement.classifier.thresholdsFile");
-		shared_ptr<ProbabilisticWvmClassifier> wvm = ProbabilisticWvmClassifier::loadMatlab(classifierFile, thresholdsFile);
-		shared_ptr<ProbabilisticSvmClassifier> svm = ProbabilisticSvmClassifier::loadMatlab(classifierFile, thresholdsFile);
+		shared_ptr<ProbabilisticWvmClassifier> wvm = ProbabilisticWvmClassifier::loadFromMatlab(classifierFile, thresholdsFile);
+		shared_ptr<ProbabilisticSvmClassifier> svm = ProbabilisticSvmClassifier::loadFromMatlab(classifierFile, thresholdsFile);
 		staticMeasurementModel = make_shared<WvmSvmModel>(staticFeatureExtractor, wvm, svm);
 
 		// create initial tracker

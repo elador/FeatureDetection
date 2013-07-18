@@ -135,8 +135,8 @@ void PartiallyAdaptiveTracking::initTracking(ptree config) {
 	// create static measurement model
 	string classifierFile = config.get<string>("measurement.static.classifier.configFile");
 	string thresholdsFile = config.get<string>("measurement.static.classifier.thresholdsFile");
-	shared_ptr<ProbabilisticWvmClassifier> wvm = ProbabilisticWvmClassifier::loadMatlab(classifierFile, thresholdsFile);
-	shared_ptr<ProbabilisticSvmClassifier> svm = ProbabilisticSvmClassifier::loadMatlab(classifierFile, thresholdsFile);
+	shared_ptr<ProbabilisticWvmClassifier> wvm = ProbabilisticWvmClassifier::loadFromMatlab(classifierFile, thresholdsFile);
+	shared_ptr<ProbabilisticSvmClassifier> svm = ProbabilisticSvmClassifier::loadFromMatlab(classifierFile, thresholdsFile);
 	staticMeasurementModel = make_shared<WvmSvmModel>(staticFeatureExtractor, wvm, svm);
 
 	// create adaptive measurement model

@@ -69,7 +69,7 @@ public:
 	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
 	 * @return The newly created SVM classifier.
 	 */
-	static shared_ptr<SvmClassifier> loadMatlab(const string& classifierFilename);
+	static shared_ptr<SvmClassifier> loadFromMatlab(const string& classifierFilename);
 
 	/**
 	 * Creates a new SVM classifier from the parameters given in some text file.
@@ -77,7 +77,7 @@ public:
 	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
 	 * @return The newly created SVM classifier.
 	 */
-	static shared_ptr<SvmClassifier> loadText(const string& classifierFilename);
+	static shared_ptr<SvmClassifier> loadFromText(const string& classifierFilename);
 
 private:
 

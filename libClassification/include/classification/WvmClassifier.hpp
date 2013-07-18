@@ -61,7 +61,7 @@ public:
 	 * @param[in] thresholdsFilename The name of the file containing the thresholds of the filter levels.
 	 * @return The newly created WVM classifier.
 	 */
-	static shared_ptr<WvmClassifier> loadMatlab(const string& classifierFilename, const string& thresholdsFilename);
+	static shared_ptr<WvmClassifier> loadFromMatlab(const string& classifierFilename, const string& thresholdsFilename);
 
 	int getNumUsedFilters(void);
 	void setNumUsedFilters(int);			 ///< Change the number of currently used wavelet-vectors

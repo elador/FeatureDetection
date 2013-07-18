@@ -273,7 +273,7 @@ void HeadTracking::initTracking(ptree& config) {
 		filterFeatureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0));
 		filterFeatureExtractor->addPatchFilter(make_shared<IntensityNormNormalizationFilter>());
 	}
-	filter = ProbabilisticRvmClassifier::loadConfig(config.get_child("filter"));
+	filter = ProbabilisticRvmClassifier::load(config.get_child("filter"));
 
 	// create adaptive measurement model
 	adaptiveFeatureExtractor = createFeatureExtractor(patchExtractor, config.get_child("adaptive.feature"));

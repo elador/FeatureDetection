@@ -55,7 +55,7 @@ pair<bool, double> ProbabilisticWvmClassifier::classify( const Mat& featureVecto
 	*/
 }
 
-shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadMatlab(const string& classifierFilename, const string& thresholdsFilename)
+shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadFromMatlab(const string& classifierFilename, const string& thresholdsFilename)
 {
 	// Load sigmoid stuff:
 	double logisticA, logisticB;
@@ -86,13 +86,13 @@ shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadMatlab(co
 	matClose(pmatfile);
 
 	// Load the detector and thresholds:
-	shared_ptr<WvmClassifier> wvm = WvmClassifier::loadMatlab(classifierFilename, thresholdsFilename);
+	shared_ptr<WvmClassifier> wvm = WvmClassifier::loadFromMatlab(classifierFilename, thresholdsFilename);
 	return make_shared<ProbabilisticWvmClassifier>(wvm, logisticA, logisticB);
 }
 
-shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadConfig(const ptree& subtree)
+shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::load(const ptree& subtree)
 {
-	return loadMatlab(subtree.get<string>("classifierFile"), subtree.get<string>("thresholdsFile"));
+	return loadFromMatlab(subtree.get<string>("classifierFile"), subtree.get<string>("thresholdsFile"));
 }
 
 } /* namespace classification */

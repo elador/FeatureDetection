@@ -96,12 +96,12 @@ pair<double, double> ProbabilisticRvmClassifier::loadSigmoidParamsFromMatlab(con
 }
 
 
-shared_ptr<ProbabilisticRvmClassifier> ProbabilisticRvmClassifier::loadConfig(const ptree& subtree)
+shared_ptr<ProbabilisticRvmClassifier> ProbabilisticRvmClassifier::load(const ptree& subtree)
 {
 	path classifierFile = subtree.get<path>("classifierFile");
 	if (classifierFile.extension() == ".mat") {
 		pair<double, double> logisticParams = ProbabilisticRvmClassifier::loadSigmoidParamsFromMatlab(subtree.get<path>("thresholdsFile").string());
-		shared_ptr<RvmClassifier> rvm = RvmClassifier::loadConfig(subtree);
+		shared_ptr<RvmClassifier> rvm = RvmClassifier::load(subtree);
 		return make_shared<ProbabilisticRvmClassifier>(rvm, logisticParams.first, logisticParams.second);
 		// TODO: Re-think this whole loading logic. As soon as we call loadMatlab here, we lose the ptree, but
 		// we want the RvmClassifier to be able to load additional parameters like a "threshold" or "numUsedVectors".
