@@ -22,7 +22,7 @@ public:
 	/**
 	 * Normalization method.
 	 */
-	enum Normalization { NONE, L2NORM, L2HYS, L1NORM, L1SQRT };
+	enum class Normalization { NONE, L2NORM, L2HYS, L1NORM, L1SQRT };
 
 	/**
 	 * Constructs a new histogram feature extractor.

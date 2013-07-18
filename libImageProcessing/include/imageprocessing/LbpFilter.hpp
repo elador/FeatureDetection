@@ -34,7 +34,7 @@ public:
 	/**
 	 * The local binary pattern type.
 	 */
-	enum Type {
+	enum class Type {
 		LBP8, ///< Original local binary patterns using the 8-neighborhood, resulting in 256 bins.
 		LBP8_UNIFORM, ///< LBP8 with all non-uniform patterns falling into the same bin, resulting in 59 bins.
 		LBP4, ///< Local binary patterns using the 4-neighborhood (the pixel to the left, right, top and bottom), resulting in 16 bins.
@@ -46,7 +46,7 @@ public:
 	 *
 	 * @param[in] uniform Flag that indicates whether all non-uniform patterns should fall into the same bin.
 	 */
-	explicit LbpFilter(Type type = LBP8);
+	explicit LbpFilter(Type type = Type::LBP8);
 
 	~LbpFilter();
 

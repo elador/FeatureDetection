@@ -12,25 +12,25 @@ using std::make_pair;
 namespace imageio {
 
 ModelLandmark::ModelLandmark(const string& name) :
-		Landmark(MODEL, name, false), position(0, 0, 0) {}
+		Landmark(LandmarkType::MODEL, name, false), position(0, 0, 0) {}
 
 ModelLandmark::ModelLandmark(const string& name, float x, float y, float z) :
-		Landmark(MODEL, name, true), position(x, y, z) {}
+		Landmark(LandmarkType::MODEL, name, true), position(x, y, z) {}
 
 ModelLandmark::ModelLandmark(const string& name, const Vec2f& position) :
-		Landmark(MODEL, name, true), position(position[0], position[1], 0) {}
+		Landmark(LandmarkType::MODEL, name, true), position(position[0], position[1], 0) {}
 
 ModelLandmark::ModelLandmark(const string& name, const Vec3f& position) :
-		Landmark(MODEL, name, true), position(position) {}
+		Landmark(LandmarkType::MODEL, name, true), position(position) {}
 
 ModelLandmark::ModelLandmark(const string& name, const Vec3f& position, bool visible) :
-		Landmark(MODEL, name, visible), position(position) {}
+		Landmark(LandmarkType::MODEL, name, visible), position(position) {}
 
 ModelLandmark::~ModelLandmark() {}
 
 bool ModelLandmark::isEqual(const Landmark& landmark) const
 {
-	if (landmark.getType() != MODEL)
+	if (landmark.getType() != LandmarkType::MODEL)
 		return false;
 	// TODO implement this function
 	return false;
@@ -38,7 +38,7 @@ bool ModelLandmark::isEqual(const Landmark& landmark) const
 
 bool ModelLandmark::isClose(const Landmark& landmark, const float similarity) const
 {
-	if (landmark.getType() != MODEL)
+	if (landmark.getType() != LandmarkType::MODEL)
 		return false;
 	// TODO implement this function
 	return false;

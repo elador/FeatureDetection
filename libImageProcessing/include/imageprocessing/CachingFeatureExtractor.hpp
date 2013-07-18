@@ -73,7 +73,7 @@ public:
 	 * INPUT_COPYING - first caller gets its own patches, subsequent callers share patches
 	 * OUTPUT_COPYING - cache shares patches of first caller, subsequent callers get copies of that patch
 	 */
-	enum Strategy { SHARING, COPYING, INPUT_COPYING, OUTPUT_COPYING };
+	enum class Strategy { SHARING, COPYING, INPUT_COPYING, OUTPUT_COPYING };
 
 	/**
 	 * Constructs a new caching feature extractor.
@@ -81,7 +81,7 @@ public:
 	 * @param[in] extractor The underlying feature extractor.
 	 * @param[in] strategy The caching strategy (copies of patches will be stored vs. patches will be shared).
 	 */
-	explicit CachingFeatureExtractor(shared_ptr<FeatureExtractor> extractor, Strategy strategy = COPYING);
+	explicit CachingFeatureExtractor(shared_ptr<FeatureExtractor> extractor, Strategy strategy = Strategy::COPYING);
 
 	~CachingFeatureExtractor();
 

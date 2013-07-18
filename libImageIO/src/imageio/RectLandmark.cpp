@@ -14,33 +14,33 @@ using std::min;
 namespace imageio {
 
 RectLandmark::RectLandmark(const Landmark& landmark) :
-		Landmark(RECT, landmark.getName(), landmark.isVisible()), position(landmark.getPosition2D()), size(landmark.getSize()) {}
+		Landmark(LandmarkType::RECT, landmark.getName(), landmark.isVisible()), position(landmark.getPosition2D()), size(landmark.getSize()) {}
 
 RectLandmark::RectLandmark(const string& name) :
-		Landmark(RECT, name, false), position(0, 0), size(0, 0) {}
+		Landmark(LandmarkType::RECT, name, false), position(0, 0), size(0, 0) {}
 
 RectLandmark::RectLandmark(const string& name, float x, float y, float width, float height) :
-		Landmark(RECT, name, true), position(x, y), size(width, height) {}
+		Landmark(LandmarkType::RECT, name, true), position(x, y), size(width, height) {}
 
 RectLandmark::RectLandmark(const string& name, const Rect& rect) :
-		Landmark(RECT, name, true), position(rect.x + 0.5f * rect.width, rect.y + 0.5f * rect.height), size(rect.width, rect.height) {}
+		Landmark(LandmarkType::RECT, name, true), position(rect.x + 0.5f * rect.width, rect.y + 0.5f * rect.height), size(rect.width, rect.height) {}
 
 RectLandmark::RectLandmark(const string& name, const Rect_<float>& rect) :
-		Landmark(RECT, name, true), position(rect.x + 0.5f * rect.width, rect.y + 0.5f * rect.height), size(rect.width, rect.height) {}
+		Landmark(LandmarkType::RECT, name, true), position(rect.x + 0.5f * rect.width, rect.y + 0.5f * rect.height), size(rect.width, rect.height) {}
 
 RectLandmark::RectLandmark(const string& name, const Point2f& position, const Size2f& size) :
-		Landmark(RECT, name, true), position(position.x, position.y), size(size) {}
+		Landmark(LandmarkType::RECT, name, true), position(position.x, position.y), size(size) {}
 
 RectLandmark::RectLandmark(const string& name, const Vec2f& position, const Size2f& size) :
-		Landmark(RECT, name, true), position(position), size(size) {}
+		Landmark(LandmarkType::RECT, name, true), position(position), size(size) {}
 
 RectLandmark::RectLandmark(const string& name, const Vec2f& position, const Size2f& size, bool visible) :
-		Landmark(RECT, name, visible), position(position), size(size) {}
+		Landmark(LandmarkType::RECT, name, visible), position(position), size(size) {}
 
 RectLandmark::~RectLandmark() {}
 
 bool RectLandmark::isEqual(const Landmark& landmark) const {
-	if (landmark.getType() != RECT)
+	if (landmark.getType() != LandmarkType::RECT)
 		return false;
 	float eps = 1e-6;
 	return abs(getX() - landmark.getX()) < eps && abs(getY() - landmark.getY()) < eps
@@ -48,7 +48,7 @@ bool RectLandmark::isEqual(const Landmark& landmark) const {
 }
 
 bool RectLandmark::isClose(const Landmark& landmark, const float similarity) const {
-	if (landmark.getType() != RECT)
+	if (landmark.getType() != LandmarkType::RECT)
 		return false;
 	Rect_<float> thisRect = getRect();
 	Rect_<float> thatRect = landmark.getRect();

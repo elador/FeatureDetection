@@ -36,13 +36,13 @@ void CachingFeatureExtractor::update(shared_ptr<VersionedImage> image) {
 
 shared_ptr<Patch> CachingFeatureExtractor::extract(int x, int y, int width, int height) const {
 	switch (strategy) {
-	case SHARING:
+	case Strategy::SHARING:
 		return extractSharing(x, y, width, height);
-	case COPYING:
+	case Strategy::COPYING:
 		return extractCopying(x, y, width, height);
-	case INPUT_COPYING:
+	case Strategy::INPUT_COPYING:
 		return extractInputCopying(x, y, width, height);
-	case OUTPUT_COPYING:
+	case Strategy::OUTPUT_COPYING:
 		return extractOutputCopying(x, y, width, height);
 	default: // should never be reached
 		return extractor->extract(x, y, width, height);

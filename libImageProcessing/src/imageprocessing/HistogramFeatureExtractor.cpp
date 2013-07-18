@@ -15,11 +15,11 @@ HistogramFeatureExtractor::~HistogramFeatureExtractor() {}
 
 void HistogramFeatureExtractor::normalize(Mat& histogram) const {
 	switch (normalization) {
-		case L2NORM: normalizeL2(histogram); break;
-		case L2HYS:  normalizeL2Hys(histogram); break;
-		case L1NORM: normalizeL1(histogram); break;
-		case L1SQRT: normalizeL1Sqrt(histogram); break;
-		case NONE:   break;
+		case Normalization::L2NORM: normalizeL2(histogram); break;
+		case Normalization::L2HYS:  normalizeL2Hys(histogram); break;
+		case Normalization::L1NORM: normalizeL1(histogram); break;
+		case Normalization::L1SQRT: normalizeL1Sqrt(histogram); break;
+		case Normalization::NONE:   break;
 	}
 }
 

@@ -32,7 +32,7 @@ namespace imageio {
 class Landmark {
 public:
 
-	enum LandmarkType { MODEL, RECT };
+	enum class LandmarkType { MODEL, RECT };
 
 	/**
 	 * Constructs a new landmark.

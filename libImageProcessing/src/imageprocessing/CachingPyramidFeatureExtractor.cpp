@@ -57,13 +57,13 @@ shared_ptr<Patch> CachingPyramidFeatureExtractor::extract(int x, int y, int widt
 		return shared_ptr<Patch>();
 	CacheLayer& layer = cache[index];
 	switch (strategy) {
-	case SHARING:
+	case Strategy::SHARING:
 		return extractSharing(layer, layer.getScaled(x), layer.getScaled(y));
-	case COPYING:
+	case Strategy::COPYING:
 		return extractCopying(layer, layer.getScaled(x), layer.getScaled(y));
-	case INPUT_COPYING:
+	case Strategy::INPUT_COPYING:
 		return extractInputCopying(layer, layer.getScaled(x), layer.getScaled(y));
-	case OUTPUT_COPYING:
+	case Strategy::OUTPUT_COPYING:
 		return extractOutputCopying(layer, layer.getScaled(x), layer.getScaled(y));
 	default: // should never be reached
 		return extractor->extract(layerIndex, x, y);
@@ -96,16 +96,16 @@ vector<shared_ptr<Patch>> CachingPyramidFeatureExtractor::extract(int stepX, int
 			center.x = centerRoiBegin.x;
 			while (center.x <= centerRoiEnd.x) {
 				switch (strategy) {
-				case SHARING:
+				case Strategy::SHARING:
 					patches.push_back(extractSharing(*layer, center.x, center.y));
 					break;
-				case COPYING:
+				case Strategy::COPYING:
 					patches.push_back(extractCopying(*layer, center.x, center.y));
 					break;
-				case INPUT_COPYING:
+				case Strategy::INPUT_COPYING:
 					patches.push_back(extractInputCopying(*layer, center.x, center.y));
 					break;
-				case OUTPUT_COPYING:
+				case Strategy::OUTPUT_COPYING:
 					patches.push_back(extractOutputCopying(*layer, center.x, center.y));
 					break;
 				}
@@ -123,13 +123,13 @@ shared_ptr<Patch> CachingPyramidFeatureExtractor::extract(int layerIndex, int x,
 		return shared_ptr<Patch>();
 	CacheLayer& layer = cache[index];
 	switch (strategy) {
-	case SHARING:
+	case Strategy::SHARING:
 		return extractSharing(layer, x, y);
-	case COPYING:
+	case Strategy::COPYING:
 		return extractCopying(layer, x, y);
-	case INPUT_COPYING:
+	case Strategy::INPUT_COPYING:
 		return extractInputCopying(layer, x, y);
-	case OUTPUT_COPYING:
+	case Strategy::OUTPUT_COPYING:
 		return extractOutputCopying(layer, x, y);
 	default: // should never be reached
 		return extractor->extract(layerIndex, x, y);

@@ -30,7 +30,7 @@ public:
 	 * @param[in] normalization The normalization method of the block histograms.
 	 */
 	SpatialHistogramFeatureExtractor(shared_ptr<FeatureExtractor> extractor, unsigned int bins,
-			int cellSize, int blockSize, bool combineHistograms = true, Normalization normalization = NONE);
+			int cellSize, int blockSize, bool combineHistograms = true, Normalization normalization = Normalization::NONE);
 
 	/**
 	 * Constructs a new spatial histogram feature extractor.
@@ -45,7 +45,7 @@ public:
 	 * @param[in] normalization The normalization method of the block histograms.
 	 */
 	SpatialHistogramFeatureExtractor(shared_ptr<FeatureExtractor> extractor, unsigned int bins,
-			int cellWidth, int cellHeight, int blockWidth, int blockHeight, bool combineHistograms = true, Normalization normalization = NONE);
+			int cellWidth, int cellHeight, int blockWidth, int blockHeight, bool combineHistograms = true, Normalization normalization = Normalization::NONE);
 
 	~SpatialHistogramFeatureExtractor();
 

@@ -30,11 +30,9 @@ ENDIF()
 # source and header files
 SET(HEADERS
 	AdaptiveTracking.hpp
-	HogImageExtractor.hpp
 )
 SET(SOURCE
 	AdaptiveTracking.cpp
-	HogImageExtractor.cpp
 )
 
 # add dependencies

@@ -114,9 +114,9 @@ public:
 	 * INPUT_COPYING - first caller gets its own patches, subsequent callers share patches
 	 * OUTPUT_COPYING - cache shares patches of first caller, subsequent callers get copies of that patch
 	 */
-	enum Strategy { SHARING, COPYING, INPUT_COPYING, OUTPUT_COPYING };
+	enum class Strategy { SHARING, COPYING, INPUT_COPYING, OUTPUT_COPYING };
 
-	explicit CachingPyramidFeatureExtractor(shared_ptr<PyramidFeatureExtractor> extractor, Strategy strategy = COPYING);
+	explicit CachingPyramidFeatureExtractor(shared_ptr<PyramidFeatureExtractor> extractor, Strategy strategy = Strategy::COPYING);
 
 	~CachingPyramidFeatureExtractor();
 

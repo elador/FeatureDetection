@@ -14,7 +14,7 @@ using cv::FilterEngine;
 namespace imageprocessing {
 
 LbpFilter::LbpFilter(Type type) : type(type) {
-	if (type == LBP8_UNIFORM) {
+	if (type == Type::LBP8_UNIFORM) {
 		int nonUniformIndex = 0;
 		int emptyIndex = 1;
 		for (unsigned int i = 0; i < map.size(); ++i) {
@@ -43,11 +43,10 @@ bool LbpFilter::isUniform(uchar code) const {
 
 unsigned int LbpFilter::getBinCount() const {
 	switch (type) {
-		case LBP8: return 256;
-		case LBP8_UNIFORM: return 59;
-		case LBP4:
-		case LBP4_ROTATED: return 16;
-		default: throw invalid_argument("LbpFilter: unsupported LBP type " + type);
+		case Type::LBP8: return 256;
+		case Type::LBP8_UNIFORM: return 59;
+		case Type::LBP4:
+		case Type::LBP4_ROTATED: return 16;
 	}
 }
 
@@ -56,18 +55,17 @@ Mat LbpFilter::applyTo(const Mat& image, Mat& filtered) {
 		throw invalid_argument("LbpFilter: the image must have exactly one channel");
 	Ptr<BaseFilter> filter2D;
 	switch (type) {
-		case LBP8: filter2D = createBaseFilter<Lbp8Filter>(image.type()); break;
-		case LBP8_UNIFORM: filter2D = createBaseFilter<Lbp8Filter>(image.type()); break;
-		case LBP4: filter2D = createBaseFilter<Lbp4Filter>(image.type()); break;
-		case LBP4_ROTATED: filter2D = createBaseFilter<RotatedLbp4Filter>(image.type()); break;
-		default: throw invalid_argument("LbpFilter: unsupported LBP type " + type);
+		case Type::LBP8: filter2D = createBaseFilter<Lbp8Filter>(image.type()); break;
+		case Type::LBP8_UNIFORM: filter2D = createBaseFilter<Lbp8Filter>(image.type()); break;
+		case Type::LBP4: filter2D = createBaseFilter<Lbp4Filter>(image.type()); break;
+		case Type::LBP4_ROTATED: filter2D = createBaseFilter<RotatedLbp4Filter>(image.type()); break;
 	}
 	filtered.create(image.rows, image.cols, CV_8U);
 	Ptr<FilterEngine> filterEngine(new FilterEngine(filter2D, Ptr<BaseRowFilter>(), Ptr<BaseColumnFilter>(),
 			image.type(), CV_8U, image.type(), cv::BORDER_REPLICATE));
 	filterEngine->apply(image, filtered);
 
-	if (type == LBP8_UNIFORM) {
+	if (type == Type::LBP8_UNIFORM) {
 		int rows = filtered.rows;
 		int cols = filtered.cols;
 		if (filtered.isContinuous()) {
