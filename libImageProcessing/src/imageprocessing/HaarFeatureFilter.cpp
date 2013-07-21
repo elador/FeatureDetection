@@ -13,7 +13,10 @@ using std::invalid_argument;
 namespace imageprocessing {
 
 HaarFeatureFilter::HaarFeatureFilter() : features() {
-	buildFeatures({ 0.2f, 0.4f }, 5, 5, TYPES_ALL);
+	vector<float> sizes;
+	sizes.push_back(0.2f);
+	sizes.push_back(0.4f);
+	buildFeatures(sizes, 5, 5, TYPES_ALL);
 }
 
 HaarFeatureFilter::HaarFeatureFilter(vector<float> sizes, unsigned int count, int types) : features() {

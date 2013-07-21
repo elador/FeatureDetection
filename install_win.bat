@@ -1,10 +1,11 @@
 @ECHO OFF
 echo.
-echo 1) INSTALL:
+echo 1) SETUP BUILD:
 echo ============================
-echo No setup necessary. Just run
+echo Running:
 echo ---
 echo cmake -C ..\FeatureDetection\initial_cache.cmake -G "Visual Studio 11 Win64" ..\FeatureDetection
+cmake -C ..\FeatureDetection\initial_cache.cmake -G "Visual Studio 11 Win64" ..\FeatureDetection
 echo ---
 echo from the build directory (you should currently be in the build directory).
 echo.
