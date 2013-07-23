@@ -33,9 +33,9 @@ SET(HEADERS
 include_directories( ${Render_SOURCE_DIR}/include )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES("E:\\HDF5\\include\\hdf5\\")
+INCLUDE_DIRECTORIES("C:\\Users\\Patrik\\Cloud\\PhD\\HDF5\\include\\hdf5\\")
 
-link_directories( "E:\\HDF5\\lib\\hdf5\\" )
+link_directories( "C:\\Users\\Patrik\\Cloud\\PhD\\HDF5\\lib\\hdf5\\" )
 set(HDF5_LIBRARIES debug hdf5d debug hdf5_cppd optimized hdf5; optimized hdf5_cpp)
 
 #Make the library
