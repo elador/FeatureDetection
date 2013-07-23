@@ -55,7 +55,9 @@ bool PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 	}
 
 	shared_ptr<Patch> targetPatch = featureExtractor->extract(target.getX(), target.getY(), target.getWidth(), target.getHeight());
-	if (isUsable() && targetPatch && classifier->classify(targetPatch->getData()).second < targetThreshold)
+	if (!targetPatch)
+		return false;
+	if (isUsable() && classifier->classify(targetPatch->getData()).second < targetThreshold)
 		return false;
 
 	vector<Sample> positiveSamples;

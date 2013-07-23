@@ -11,6 +11,7 @@
 #include <stdexcept>
 
 using cv::Vec2b;
+using cv::Vec4b;
 using std::vector;
 using std::runtime_error;
 
@@ -78,8 +79,32 @@ shared_ptr<Patch> SpatialPyramidHistogramFeatureExtractor::extract(int x, int y,
 					normalize(histogram);
 				}
 			}
+		} else if (patchData.channels() == 4) { // two bin indices and weights available
+			for (int cellRow = 0; cellRow < count; ++cellRow) {
+				for (int cellCol = 0; cellCol < count; ++cellCol) {
+					Mat& histogram = cellHistograms[cellRow * count + cellCol];
+					histogram = Mat::zeros(1, bins, CV_32F);
+					float* histogramValues = histogram.ptr<float>(0);
+					int startRow = (cellRow * patchData.rows) / count;
+					int startCol = (cellCol * patchData.cols) / count;
+					int endRow = ((cellRow + 1) * patchData.rows) / count;
+					int endCol = ((cellCol + 1) * patchData.cols) / count;
+					for (int row = startRow; row < endRow; ++row) {
+						Vec4b* rowValues = patchData.ptr<Vec4b>(row);
+						for (int col = startCol; col < endCol; ++col) {
+							uchar bin1 = rowValues[col][0];
+							uchar weight1 = rowValues[col][1];
+							uchar bin2 = rowValues[col][2];
+							uchar weight2 = rowValues[col][3];
+							histogramValues[bin1] += weight1 / 255.0f;
+							histogramValues[bin2] += weight2 / 255.0f;
+						}
+					}
+					normalize(histogram);
+				}
+			}
 		} else {
-			throw runtime_error("SpatialPyramidHistogramFeatureExtractor: Patch data must have one or two channels");
+			throw runtime_error("SpatialPyramidHistogramFeatureExtractor: Patch data must have one, two or four channels");
 		}
 
 		int histogramCount = 0;

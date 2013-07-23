@@ -11,6 +11,7 @@
 #include <stdexcept>
 
 using cv::Vec2b;
+using cv::Vec4b;
 using std::vector;
 using std::runtime_error;
 
@@ -95,8 +96,31 @@ shared_ptr<Patch> SpatialHistogramFeatureExtractor::extract(int x, int y, int wi
 					}
 				}
 			}
+		} else if (patchData.channels() == 4) { // two bin indices and weights available
+			for (int cellRow = 0; cellRow < cellRows; ++cellRow) {
+				for (int cellCol = 0; cellCol < cellCols; ++cellCol) {
+					Mat& histogram = cellHistograms[cellRow * cellCols + cellCol];
+					histogram = Mat::zeros(1, bins, CV_32F);
+					float* histogramValues = histogram.ptr<float>(0);
+					int startRow = (cellRow * patchData.rows) / cellRows;
+					int startCol = (cellCol * patchData.cols) / cellCols;
+					int endRow = ((cellRow + 1) * patchData.rows) / cellRows;
+					int endCol = ((cellCol + 1) * patchData.cols) / cellCols;
+					for (int row = startRow; row < endRow; ++row) {
+						Vec4b* rowValues = patchData.ptr<Vec4b>(row);
+						for (int col = startCol; col < endCol; ++col) {
+							uchar bin1 = rowValues[col][0];
+							uchar weight1 = rowValues[col][1];
+							uchar bin2 = rowValues[col][2];
+							uchar weight2 = rowValues[col][3];
+							histogramValues[bin1] += weight1 / 255.0f;
+							histogramValues[bin2] += weight2 / 255.0f;
+						}
+					}
+				}
+			}
 		} else {
-			throw runtime_error("SpatialHistogramFeatureExtractor: Patch data must have one or two channels");
+			throw runtime_error("SpatialHistogramFeatureExtractor: Patch data must have one, two or four channels");
 		}
 
 		// create histograms of blocks
@@ -113,7 +137,7 @@ shared_ptr<Patch> SpatialHistogramFeatureExtractor::extract(int x, int y, int wi
 					float* blockHistogramValues = blockHistogram.ptr<float>(0);
 					for (int cellRow = blockRow; cellRow < blockRow + blockHeight; ++cellRow) {
 						for (int cellCol = blockCol; cellCol < blockCol + blockWidth; ++cellCol) {
-							Mat& cellHistogram = cellHistograms[blockRow * blockCols + blockCol];
+							Mat& cellHistogram = cellHistograms[cellRow * cellCols + cellCol];
 							float* cellHistogramValues = cellHistogram.ptr<float>(0);
 							for (unsigned int bin = 0; bin < bins; ++bin)
 								blockHistogramValues[bin] += cellHistogramValues[bin];
@@ -125,7 +149,7 @@ shared_ptr<Patch> SpatialHistogramFeatureExtractor::extract(int x, int y, int wi
 					float* blockHistogramValues = blockHistogram.ptr<float>(0);
 					for (int cellRow = blockRow; cellRow < blockRow + blockHeight; ++cellRow) {
 						for (int cellCol = blockCol; cellCol < blockCol + blockWidth; ++cellCol) {
-							Mat& cellHistogram = cellHistograms[blockRow * blockCols + blockCol];
+							Mat& cellHistogram = cellHistograms[cellRow * cellCols + cellCol];
 							float* cellHistogramValues = cellHistogram.ptr<float>(0);
 							for (unsigned int bin = 0; bin < bins; ++bin)
 								blockHistogramValues[bin] = cellHistogramValues[bin];

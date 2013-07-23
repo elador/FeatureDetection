@@ -11,16 +11,17 @@
 #include "imageprocessing/HistogramFilter.hpp"
 #include <array>
 
-using cv::Vec2b;
+using cv::Vec4b;
 using std::array;
 
 namespace imageprocessing {
 
 /**
  * Image filter that expects an image of type CV_8UC2, where the first channel corresponds to the gradient of x and
- * the second channel corresponds to the gradient of y. The resulting image has the same type, where the first
- * channel corresponds to the histogram bin (according to the gradient direction) and the second channel corresponds
- * to the weight (according to the magnitude of the gradient).
+ * the second channel corresponds to the gradient of y. The resulting image is of type CV_8UC4, where channels one
+ * and three correspond to histogram bins (according to the gradient direction) and channels two and four are the
+ * corresponding weights (according to the magnitude of the gradient and the distance of the gradient to the center
+ * of the bin).
  */
 class GradientHistogramFilter : public HistogramFilter {
 public:
@@ -30,9 +31,8 @@ public:
 	 *
 	 * @param[in] bins The amount of bins to use.
 	 * @param[in] signedGradients Flag that indicates whether signed gradients (direction from 0° to 360°) should be used.
-	 * @param[in] offset Lower boundary of the first bin.
 	 */
-	explicit GradientHistogramFilter(unsigned int bins, bool signedGradients = false, double offset = 0);
+	explicit GradientHistogramFilter(unsigned int bins, bool signedGradients = false);
 
 	~GradientHistogramFilter();
 
@@ -46,9 +46,8 @@ public:
 
 private:
 
-	unsigned int bins; ///< The amount of bins.
-	double offset; ///< Lower boundary of the first bin.
-	array<Vec2b, 256 * 256> binCodes; ///< The look-up tables of the bin codes, the gradient codes are used as the index.
+	unsigned int bins;                ///< The amount of bins.
+	array<Vec4b, 256 * 256> binCodes; ///< The look-up tables of the bin codes, the gradient codes are used as the index.
 };
 
 } /* namespace imageprocessing */
