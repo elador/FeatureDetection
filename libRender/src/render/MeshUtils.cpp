@@ -120,7 +120,7 @@ Mesh MeshUtils::createCube(void)
 	cube.triangleList.push_back(render::Triangle(cube.vertex[20], cube.vertex[21], cube.vertex[22]));
 	cube.triangleList.push_back(render::Triangle(cube.vertex[20], cube.vertex[22], cube.vertex[23]));*/
 
-	cube.texture.createFromFile("E:/crate.jpg");
+	cube.texture.createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\crate.jpg");
 	cube.hasTexture = true;
 
 	return cube;
@@ -159,7 +159,7 @@ Mesh MeshUtils::createPlane(void)
 	//plane.triangleList.push_back(render::Triangle(plane.vertex[0], plane.vertex[1], plane.vertex[2]));
 	//plane.triangleList.push_back(render::Triangle(plane.vertex[0], plane.vertex[2], plane.vertex[3]));
 
-	plane.texture.createFromFile("E:/rocks.png");
+	plane.texture.createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\rocks.png");
 	plane.hasTexture = true;
 
 	return plane;

@@ -87,7 +87,7 @@ cv::Mat SRenderer::constructProjTransform()
 	cv::Mat perspective = (cv::Mat_<float>(4,4) << 
 						camera.frustum.n,	0.0f,				0.0f,									0.0f,
 						0.0f,				camera.frustum.n,	0.0f,									0.0f,
-						0.0f,				0.0f,				camera.frustum.n + camera.frustum.f,	camera.frustum.n * camera.frustum.f, // CG book has -f*n ? (I had +f*n before)
+						0.0f,				0.0f,				camera.frustum.n + camera.frustum.f,	+camera.frustum.n * camera.frustum.f, // CG book has -f*n ? (I had +f*n before)
 						0.0f,				0.0f,				-1.0f, /* CG has +1 here, I had -1 */	0.0f);
 	
 	cv::Mat orthogonal = (cv::Mat_<float>(4,4) << 
@@ -96,7 +96,7 @@ cv::Mat SRenderer::constructProjTransform()
 		0.0f,											0.0f,											2.0f / (camera.frustum.n - camera.frustum.f),	-(camera.frustum.n + camera.frustum.f) / (camera.frustum.f - camera.frustum.n), // CG book has denominator (n-f) ? I had (f-n) before.
 		0.0f,											0.0f,											0.0f,											1.0f);
 	
-	return orthogonal * perspective;
+	return orthogonal/* * perspective*/;
 }
 
 void SRenderer::setMesh(const Mesh* mesh) // make an optional argument, an index-list of vertices or so to render, if we don't want to render the full mesh.

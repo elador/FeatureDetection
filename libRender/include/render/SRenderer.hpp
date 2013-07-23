@@ -50,6 +50,10 @@ public:
 	cv::Mat getRendererImage();
 	cv::Mat getRendererDepthBuffer();
 
+	cv::Mat getWindowTransform() {
+		return windowTransform;
+	}
+
 	Camera camera;	// TODO make private
 
 private:
