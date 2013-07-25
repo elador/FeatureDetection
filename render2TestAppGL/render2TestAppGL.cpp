@@ -14,14 +14,9 @@
 #endif  // _DEBUG
 
 #include "render2/MorphableModel.hpp"
-#include "render2/SRenderer.hpp"
-#include "render2/Vertex.hpp"
-#include "render2/Triangle.hpp"
-#include "render2/Camera.hpp"
-#include "render2/MatrixUtils.hpp"
+#include "render2/Renderer.hpp"
+#include "render2/SoftwareDevice.hpp"
 #include "render2/MeshUtils.hpp"
-#include "render2/Texture.hpp"
-#include "render2/Mesh.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -42,71 +37,80 @@
 
 namespace po = boost::program_options;
 using namespace std;
+using namespace cv;
 
 
-/*
-void on_opengl(void* param)
-{
-	glLoadIdentity();
-
-	glTranslated(0.0, 0.0, -1.0);
-
-	glRotatef( 55, 1, 0, 0 );
-	glRotatef( 45, 0, 1, 0 );
-	glRotatef( 0, 0, 0, 1 );
-
-	static const int coords[6][4][3] = {
-		{ { +1, -1, -1 }, { -1, -1, -1 }, { -1, +1, -1 }, { +1, +1, -1 } },
-		{ { +1, +1, -1 }, { -1, +1, -1 }, { -1, +1, +1 }, { +1, +1, +1 } },
-		{ { +1, -1, +1 }, { +1, -1, -1 }, { +1, +1, -1 }, { +1, +1, +1 } },
-		{ { -1, -1, -1 }, { -1, -1, +1 }, { -1, +1, +1 }, { -1, +1, -1 } },
-		{ { +1, -1, +1 }, { -1, -1, +1 }, { -1, -1, -1 }, { +1, -1, -1 } },
-		{ { -1, -1, +1 }, { +1, -1, +1 }, { +1, +1, +1 }, { -1, +1, +1 } }
-	};
-
-	for (int i = 0; i < 6; ++i) {
-		glColor3ub( i*20, 100+i*10, i*42 );
-		glBegin(GL_QUADS);
-		for (int j = 0; j < 4; ++j) {
-			glVertex3d(0.2 * coords[i][j][0], 0.2 * coords[i][j][1], 0.2 * coords[i][j][2]);
-		}
-		glEnd();
-	}
-}*/
 
 void on_opengl(void* userdata)
 {
 	cv::GlTexture2D* pTex = static_cast<cv::GlTexture2D*>(userdata);
 	if (pTex->empty())
 		return;
+
+	// INIT (once)
+	glEnable(GL_TEXTURE_2D);                        // Enable Texture Mapping ( NEW )
+	glShadeModel(GL_SMOOTH);                        // Enable Smooth Shading
+	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);                   // Black Background
+	glClearDepth(1.0f);                         // Depth Buffer Setup
+	glEnable(GL_DEPTH_TEST);                        // Enables Depth Testing
+	glDepthFunc(GL_LEQUAL);                         // The Type Of Depth Testing To Do
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);          // Really Nice Perspective Calculations
+	// INIT END
+	
+	// init per frame
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);     // Clear The Screen And The Depth Buffer
 	glLoadIdentity();
+	// end
 
-	glTranslated(0.0, 0.0, 1.0);
+	//glScalef(0.1f, 0.1f, 0.1f);
+	/*
+	glTranslatef(-1.5f,0.0f, 0.0f);                 // Move Left 1.5 Units And Into The Screen 6.0
+	glBegin(GL_TRIANGLES);                      // Drawing Using Triangles
+		glColor3f(1.0f,0.0f,0.0f);          // Set The Color To Red
+		glVertex3f( 0.0f, 1.0f, 0.0f);              // Top
+		glColor3f(0.0f,1.0f,0.0f);          // Set The Color To Green
+		glVertex3f(-1.0f,-1.0f, 0.0f);              // Bottom Left
+		glColor3f(0.0f,0.0f,1.0f);          // Set The Color To Blue
+		glVertex3f( 1.0f,-1.0f, 0.0f);              // Bottom Right
+	glEnd();                            // Finished Drawing The Triangle
 
-	glRotatef( 55, 1, 0, 0 );
-	glRotatef( 45, 0, 1, 0 );
-	glRotatef( 0, 0, 0, 1 );
+	glTranslatef(3.0f,0.0f,0.0f);                   // Move Right 3 Units
+	glColor3f(0.5f,0.5f,1.0f);              // Set The Color To Blue One Time Only
+	glBegin(GL_QUADS);                      // Draw A Quad
+		glVertex3f(-1.0f, 1.0f, 0.0f);              // Top Left
+		glVertex3f( 1.0f, 1.0f, 0.0f);              // Top Right
+		glVertex3f( 1.0f,-1.0f, 0.0f);              // Bottom Right
+		glVertex3f(-1.0f,-1.0f, 0.0f);              // Bottom Left
+	glEnd();                            // Done Drawing The Quad
+	*/
+	glColor3f(1.0f, 0.0f, 0.0f);	// x-axis
+	glBegin(GL_LINES);
+		glVertex3f(0.0f, 0.0f, 0.0f);              // From
+		glVertex3f( 1.0f, 0.0f, 0.0f);              // To
+	glEnd();
+	glColor3f(0.0f, 1.0f, 0.0f);	// y-axis
+	glBegin(GL_LINES);
+		glVertex3f(0.0f, 0.0f, 0.0f);              // From
+		glVertex3f( 0.0f, 1.0f, 0.0f);              // To
+	glEnd();
+	glColor3f(0.0f, 0.0f, 1.0f);	// z-axis
+	glBegin(GL_LINES);
+		glVertex3f(0.0f, 0.0f, 0.0f);              // From
+		glVertex3f( 0.0f, 0.0f, 1.0f);              // To
+	glEnd();
 
-	static const int coords[6][4][3] = {
-		{ { +1, -1, -1 }, { -1, -1, -1 }, { -1, +1, -1 }, { +1, +1, -1 } },
-		{ { +1, +1, -1 }, { -1, +1, -1 }, { -1, +1, +1 }, { +1, +1, +1 } },
-		{ { +1, -1, +1 }, { +1, -1, -1 }, { +1, +1, -1 }, { +1, +1, +1 } },
-		{ { -1, -1, -1 }, { -1, -1, +1 }, { -1, +1, +1 }, { -1, +1, -1 } },
-		{ { +1, -1, +1 }, { -1, -1, +1 }, { -1, -1, -1 }, { +1, -1, -1 } },
-		{ { -1, -1, +1 }, { +1, -1, +1 }, { +1, +1, +1 }, { -1, +1, +1 } }
-	};
 
+	/*
 	glEnable(GL_TEXTURE_2D);
 	pTex->bind();
+	glBegin( GL_QUADS );
+		glTexCoord2d(0.0,0.0); glVertex2d(0.0,0.0);
+		glTexCoord2d(1.0,0.0); glVertex2d(1.0,0.0);
+		glTexCoord2d(1.0,1.0); glVertex2d(1.0,1.0);
+		glTexCoord2d(0.0,1.0); glVertex2d(0.0,1.0);
+	glEnd();
+	*/
 
-	for (int i = 0; i < 6; ++i) {
-		glColor3ub( i*20, 100+i*10, i*42 );
-		glBegin(GL_QUADS);
-		for (int j = 0; j < 4; ++j) {
-			glVertex3d(0.2*coords[i][j][0], 0.2 * coords[i][j][1], 0.2*coords[i][j][2]);
-		}
-		glEnd();
-	}
 }
 
 
@@ -154,20 +158,8 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	render::Renderer->create();
 
-	render::Mesh cube = render::utils::MeshUtils::createCube();
-	render::Mesh plane = render::utils::MeshUtils::createPlane();
-
-	//render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("D:\\model2012_l6_rms.h5");
-	render::MorphableModel mmHeadL4 = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
-
-	const float& aspect = 640.0f/480.0f;
-
-	//render::Renderer->camera.setFrustum(-0.25f*aspect, 0.25f*aspect, 0.25f, -0.25f, 0.5f, 500.0f);
-	//render::Renderer->camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, 0.5f, 500.0f);
-	render::Renderer->camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, 0.1f, 100.0f);
-
+	//render::MorphableModel mmHeadL4 = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
 
 	/*
 	const string windowName = "OpenGL Sample";
@@ -176,14 +168,26 @@ int main(int argc, char *argv[])
 	cv::setOpenGlDrawCallback(windowName, on_opengl);*/
 	//cv::setOpenGlContext(windowName);
 
+	const float& aspect = 640.0f/480.0f;
+	shared_ptr<render::RenderDevice> swr = make_shared<render::SoftwareDevice>(640, 480);
+	render::Renderer r(swr);
+	r.renderDevice->getCamera().setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, 0.1f, 100.0f);
+	Vec4f test(0.5f, 0.5f, 0.5f, 1.0f);
+	r.renderDevice->renderVertex(test);
+
+
+
 #pragma comment(lib, "opengl32")
-#pragma comment(lib, "glu32")
-	/*
+//#pragma comment(lib, "glu32")
+	
 	cv::VideoCapture webcam(CV_CAP_ANY);
 
 	cv::namedWindow("window", CV_WINDOW_OPENGL);
+	cv::resizeWindow("window", 640, 480);
 
-	cv::Mat frame;
+	Mat frame;
+	//cv::Mat frame = imread("C:/Users/Patrik/Cloud/may_prag_vs_basel.png");
+	//resize(frame, frame, Size(640, 480));
 	cv::GlTexture2D tex;
 
 	cv::setOpenGlDrawCallback("window", on_opengl, &tex);
@@ -198,124 +202,10 @@ int main(int argc, char *argv[])
 	cv::setOpenGlDrawCallback("window", 0, 0);
 	cv::destroyAllWindows();
 
-	*/
-
-
-	// loop start
-	bool running = true;
-	while(running) {
-		render::Renderer->camera.update(1);
 	
-		cv::Mat vt = render::Renderer->constructViewTransform();
-		cv::Mat pt = render::Renderer->constructProjTransform();
-		cv::Mat viewProjTransform = pt * vt;
-		std::cout << "vt " << std::endl << vt << std::endl;
-		std::cout << "pt " << std::endl  << pt << std::endl;
-		std::cout << "pt*vt " << std::endl  << viewProjTransform<< std::endl;
 
-		render::Renderer->setMesh(&cube);	// The cube is the first object
-		render::Renderer->setTexture(cube.texture);	// not necessary anymore
-		//cube.hasTexture = false;
-		//for (int i = 0; i < 2; i++)	// draw 15 cubes in each direction on the plane
-		{
-			//for (int j = 0; j < 2; j++)
-			{
-				//cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(3.0f*(i - 7), 0.5f, 3.0f*(j - 7));
-				//cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(4.0f*(i - 1), 0.5f, 4.0f*(j - 1));
-				cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, 0.0f);
-				render::Renderer->setTransform(viewProjTransform * worldTransform);
-				render::Renderer->draw();
-				/*
-				cv::Mat worldTransform2 = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -10.0f);
-				render::Renderer->setTransform(viewProjTransform * worldTransform2);
-				render::Renderer->draw();
 
-				cv::Mat worldTransform3 = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, 10.0f);
-				render::Renderer->setTransform(viewProjTransform * worldTransform3);
-				render::Renderer->draw();
-				*/
-			}
-		}
-
-		/*cube.hasTexture = false;
-		render::Renderer->setMesh(&cube);
-		//cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(3.0f*(i - 7), 0.5f, 3.0f*(j - 7));
-		render::Renderer->setTransform(viewProjTransform);
-		render::Renderer->draw();*/
-
-		/* PLANE
-		plane.hasTexture = false;
-		render::Renderer->setMesh(&plane);	// The plane is the second object
-		cv::Mat wrld = viewProjTransform * render::utils::MatrixUtils::createScalingMatrix(15.0f, 1.0f, 15.0f);
-		render::Renderer->setTransform(wrld);
-		//render::Renderer->setTexture(plane.texture);
-		render::Renderer->draw();
-		*/
-
-		/*
-		render::Renderer->setMesh(&mmHeadL4.mesh);
-		cv::Mat headWorld = render::utils::MatrixUtils::createScalingMatrix(1.0f/90.0f, 1.0f/90.0f, 1.0f/90.0f);
-		cv::Mat headWorldRot = render::utils::MatrixUtils::createRotationMatrixZ(45.0f);
-		cv::Mat mvp_3dmm = viewProjTransform * headWorld * headWorldRot;
-		std::cout << "MVP " << std::endl  << mvp_3dmm << std::endl;
-		render::Renderer->setTransform(mvp_3dmm);
-		render::Renderer->draw();*/
-		
-		render::Renderer->end();
-
-		cv::namedWindow("renderOutput");
-		cv::imshow("renderOutput", render::Renderer->getRendererImage());
-
-		float speed = 1.0f;
-		float mouseSpeed = 0.10f;
-		cv::Vec3f eye = render::Renderer->camera.getEye();
-		float deltaTime = 1.0f;
-
-		std::cout << "getEye: " << cv::Mat(render::Renderer->camera.getEye()) << std::endl;
-		std::cout << "getAt: " << cv::Mat(render::Renderer->camera.getAt()) << std::endl;
-		std::cout << "getUp: " << cv::Mat(render::Renderer->camera.getUp()) << std::endl;
-
-		std::cout << "getForwardVector: " << cv::Mat(render::Renderer->camera.getForwardVector()) << std::endl;
-		std::cout << "getRightVector: " << cv::Mat(render::Renderer->camera.getRightVector()) << std::endl;
-		std::cout << "getUpVector: " << cv::Mat(render::Renderer->camera.getUpVector()) << std::endl;
-
-		std::cout << "verticalAngle: " << render::Renderer->camera.verticalAngle << std::endl;
-		std::cout << "horizontalAngle: " << render::Renderer->camera.horizontalAngle << std::endl;
-
-		std::cout << "Ready!" << std::endl;
-
-		char c = (char)cv::waitKey(0);
-		if (c == 'b')
-			running = false;
-		else if (c == 't')
-			std::cout << "a" << std::endl;
-		else if (c == 'w')
-			eye += speed * deltaTime * render::Renderer->camera.getForwardVector();	// 'w' key
-		else if (c == 's')
-			eye -= speed * deltaTime * render::Renderer->camera.getForwardVector();	// 's' key
-		else if (c == 'a')
-			eye -= speed * deltaTime * render::Renderer->camera.getRightVector();	// 'a' key
-		else if (c == 'd')
-			eye += speed * deltaTime * render::Renderer->camera.getRightVector();	// 'd' key
-		else if (c == 'i')
-			render::Renderer->camera.verticalAngle += mouseSpeed;		// mouse up
-		else if (c == 'k')
-			render::Renderer->camera.verticalAngle -= mouseSpeed;		// mouse down
-		else if (c == 'j')
-			render::Renderer->camera.horizontalAngle += mouseSpeed;	// mouse left
-		else if (c == 'l')
-			render::Renderer->camera.horizontalAngle -= mouseSpeed;	// mouse right
-		else if (c == 'x')
-			eye -= 2.0f * deltaTime * render::Renderer->camera.getForwardVector();	// 's' key
-		std::cout << "next frame" << std::endl;
-
-		render::Renderer->camera.updateFree(eye);
-	}
-	// loop end - measure the time here
-
-	cv::imwrite("colorBuffer.png", render::Renderer->getRendererImage());
-	cv::imwrite("depthBuffer.png", render::Renderer->getRendererDepthBuffer());
-
+	
 	return 0;
 }
 
