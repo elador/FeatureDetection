@@ -15,6 +15,7 @@ SET(HEADERS
 	include/condensation/AdaptiveCondensationTracker.hpp
 	include/condensation/AdaptiveMeasurementModel.hpp
 	include/condensation/CondensationTracker.hpp
+	include/condensation/FilteringClassifierModel.hpp
 	include/condensation/FilteringPositionExtractor.hpp
 	include/condensation/GridSampler.hpp
 	include/condensation/LowVarianceSampling.hpp
@@ -38,6 +39,7 @@ SET(HEADERS
 SET(SOURCE
 	src/condensation/AdaptiveCondensationTracker.cpp
 	src/condensation/CondensationTracker.cpp
+	src/condensation/FilteringClassifierModel.cpp
 	src/condensation/FilteringPositionExtractor.cpp
 	src/condensation/GridSampler.cpp
 	src/condensation/LowVarianceSampling.cpp

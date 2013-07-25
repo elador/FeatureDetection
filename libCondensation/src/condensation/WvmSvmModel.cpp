@@ -13,16 +13,11 @@
 #include "classification/ProbabilisticSvmClassifier.hpp"
 #include "detection/ClassifiedPatch.hpp"
 #include "boost/iterator/indirect_iterator.hpp"
-#include <unordered_map>
 #include <utility>
 #include <functional>
 
-using imageprocessing::Patch;
-using imageprocessing::FeatureExtractor;
 using detection::ClassifiedPatch;
 using boost::make_indirect_iterator;
-using std::unordered_map;
-using std::pair;
 using std::make_shared;
 using std::greater;
 
@@ -30,13 +25,42 @@ namespace condensation {
 
 WvmSvmModel::WvmSvmModel(shared_ptr<FeatureExtractor> featureExtractor,
 		shared_ptr<ProbabilisticWvmClassifier> wvm, shared_ptr<ProbabilisticSvmClassifier> svm) :
-		featureExtractor(featureExtractor), wvm(wvm), svm(svm) {}
+		featureExtractor(featureExtractor), wvm(wvm), svm(svm), cache() {}
 
 WvmSvmModel::~WvmSvmModel() {}
 
-void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples) {
+void WvmSvmModel::update(shared_ptr<VersionedImage> image) {
+	cache.clear();
 	featureExtractor->update(image);
-	unordered_map<shared_ptr<Patch>, pair<bool, double>> results;
+}
+
+void WvmSvmModel::evaluate(Sample& sample) {
+	shared_ptr<Patch> patch = featureExtractor->extract(sample.getX(), sample.getY(), sample.getWidth(), sample.getHeight());
+	if (!patch) {
+		sample.setObject(false);
+		sample.setWeight(0);
+	} else {
+		pair<bool, double> wvmResult;
+		auto resIt = cache.find(patch);
+		if (resIt == cache.end()) {
+			wvmResult = wvm->classify(patch->getData());
+			cache.emplace(patch, wvmResult);
+		} else {
+			wvmResult = resIt->second;
+		}
+		if (wvmResult.first) {
+			pair<bool, double> svmResult = svm->classify(patch->getData());
+			sample.setObject(svmResult.first);
+			sample.setWeight(wvmResult.second * svmResult.second);
+		} else {
+			sample.setObject(false);
+			sample.setWeight(0.5 * wvmResult.second);
+		}
+	}
+}
+
+void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples) {
+	update(image);
 	vector<shared_ptr<ClassifiedPatch>> remainingPatches;
 	unordered_map<shared_ptr<Patch>, vector<Sample*>> patch2samples;
 	for (auto sample = samples.begin(); sample != samples.end(); ++sample) {
@@ -46,12 +70,12 @@ void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& sam
 			sample->setWeight(0);
 		} else {
 			pair<bool, double> result;
-			auto resIt = results.find(patch);
-			if (resIt == results.end()) {
+			auto resIt = cache.find(patch);
+			if (resIt == cache.end()) {
 				result = wvm->classify(patch->getData());
 				if (result.first)
 					remainingPatches.push_back(make_shared<ClassifiedPatch>(patch, result));
-				results.emplace(patch, result);
+				cache.emplace(patch, result);
 			} else {
 				result = resIt->second;
 			}

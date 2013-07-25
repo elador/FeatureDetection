@@ -29,14 +29,10 @@ ENDIF()
 
 # source and header files
 SET(HEADERS
-	DualClassifierModel.hpp
 	HeadTracking.hpp
-	PositionDependentMeasurementModel2.hpp
 )
 SET(SOURCE
-	DualClassifierModel.cpp
 	HeadTracking.cpp
-	PositionDependentMeasurementModel2.cpp
 )
 
 # add dependencies

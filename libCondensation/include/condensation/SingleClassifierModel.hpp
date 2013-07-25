@@ -9,11 +9,18 @@
 #define SINGLECLASSIFIERMODEL_HPP_
 
 #include "condensation/MeasurementModel.hpp"
+#include <unordered_map>
+#include <utility>
+
+using std::unordered_map;
+using std::pair;
 
 namespace imageprocessing {
 class FeatureExtractor;
+class Patch;
 }
 using imageprocessing::FeatureExtractor;
+using imageprocessing::Patch;
 
 namespace classification {
 class ProbabilisticClassifier;
@@ -36,14 +43,27 @@ public:
 	 */
 	SingleClassifierModel(shared_ptr<FeatureExtractor> featureExtractor, shared_ptr<ProbabilisticClassifier> classifier);
 
-	virtual ~SingleClassifierModel();
+	~SingleClassifierModel();
 
-	void evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples);
+	void update(shared_ptr<VersionedImage> image);
 
-protected:
+	void evaluate(Sample& sample);
+
+	using MeasurementModel::evaluate;
+
+private:
+
+	/**
+	 * Classifies a patch using its data.
+	 *
+	 * @param[in] patch The patch.
+	 * @return The classification result.
+	 */
+	pair<bool, double> classify(shared_ptr<Patch> patch);
 
 	shared_ptr<FeatureExtractor> featureExtractor;  ///< The feature extractor.
 	shared_ptr<ProbabilisticClassifier> classifier; ///< The classifier.
+	unordered_map<shared_ptr<Patch>, pair<bool, double>> cache; ///< The classification result cache.
 };
 
 } /* namespace condensation */

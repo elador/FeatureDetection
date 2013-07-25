@@ -20,7 +20,9 @@ public:
 
 	virtual ~AdaptiveMeasurementModel() {}
 
-	virtual void evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples) = 0;
+	using MeasurementModel::update;
+
+	using MeasurementModel::evaluate;
 
 	/**
 	 * @return True if this measurement model may be used, false otherwise.

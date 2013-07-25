@@ -10,44 +10,42 @@
 #include "imageprocessing/Patch.hpp"
 #include "imageprocessing/FeatureExtractor.hpp"
 #include "classification/ProbabilisticClassifier.hpp"
-#include <unordered_map>
-#include <utility>
 
-using imageprocessing::Patch;
-using imageprocessing::FeatureExtractor;
 using std::make_shared;
-using std::unordered_map;
-using std::pair;
 
 namespace condensation {
 
 SingleClassifierModel::SingleClassifierModel(shared_ptr<FeatureExtractor> featureExtractor,
 		shared_ptr<ProbabilisticClassifier> classifier) :
-				featureExtractor(featureExtractor), classifier(classifier) {}
+				featureExtractor(featureExtractor), classifier(classifier), cache() {}
 
 SingleClassifierModel::~SingleClassifierModel() {}
 
-void SingleClassifierModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples) {
+void SingleClassifierModel::update(shared_ptr<VersionedImage> image) {
+	cache.clear();
 	featureExtractor->update(image);
-	unordered_map<shared_ptr<Patch>, pair<bool, double>> results;
-	for (auto sample = samples.begin(); sample != samples.end(); ++sample) {
-		sample->setObject(false);
-		shared_ptr<Patch> patch = featureExtractor->extract(sample->getX(), sample->getY(), sample->getWidth(), sample->getHeight());
-		if (!patch) {
-			sample->setWeight(0);
-		} else {
-			pair<bool, double> result;
-			auto resIt = results.find(patch);
-			if (resIt == results.end()) {
-				result = classifier->classify(patch->getData());
-				results.emplace(patch, result);
-			} else {
-				result = resIt->second;
-			}
-			sample->setObject(result.first);
-			sample->setWeight(result.second);
-		}
+}
+
+void SingleClassifierModel::evaluate(Sample& sample) {
+	shared_ptr<Patch> patch = featureExtractor->extract(sample.getX(), sample.getY(), sample.getWidth(), sample.getHeight());
+	if (patch) {
+		pair<bool, double> result = classify(patch);
+		sample.setObject(result.first);
+		sample.setWeight(result.second);
+	} else {
+		sample.setObject(false);
+		sample.setWeight(0);
 	}
+}
+
+pair<bool, double> SingleClassifierModel::classify(shared_ptr<Patch> patch) {
+	auto resIt = cache.find(patch);
+	if (resIt == cache.end()) {
+		pair<bool, double> result = classifier->classify(patch->getData());
+		cache.emplace(patch, result);
+		return result;
+	}
+	return resIt->second;
 }
 
 } /* namespace condensation */
