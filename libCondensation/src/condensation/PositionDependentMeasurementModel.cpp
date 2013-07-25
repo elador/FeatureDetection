@@ -6,6 +6,7 @@
  */
 
 #include "condensation/PositionDependentMeasurementModel.hpp"
+#include "condensation/SingleClassifierModel.hpp"
 #include "condensation/Sample.hpp"
 #include "imageprocessing/Patch.hpp"
 #include "imageprocessing/FeatureExtractor.hpp"
@@ -14,6 +15,7 @@
 
 using imageprocessing::Patch;
 using imageprocessing::FeatureExtractor;
+using std::make_shared;
 
 namespace condensation {
 
@@ -21,7 +23,33 @@ PositionDependentMeasurementModel::PositionDependentMeasurementModel(shared_ptr<
 		shared_ptr<TrainableProbabilisticClassifier> classifier, int startFrameCount, int stopFrameCount,
 		float targetThreshold, float confidenceThreshold, float positiveOffsetFactor, float negativeOffsetFactor,
 		int sampleNegativesAroundTarget, bool sampleFalsePositives, unsigned int randomNegatives, bool exploitSymmetry) :
-				SingleClassifierModel(featureExtractor, classifier),
+				generator(),
+				distribution(),
+				measurementModel(make_shared<SingleClassifierModel>(featureExtractor, classifier)),
+				featureExtractor(featureExtractor),
+				classifier(classifier),
+				usable(false),
+				frameCount(0),
+				startFrameCount(startFrameCount),
+				stopFrameCount(stopFrameCount),
+				targetThreshold(targetThreshold),
+				confidenceThreshold(confidenceThreshold),
+				positiveOffsetFactor(positiveOffsetFactor),
+				negativeOffsetFactor(negativeOffsetFactor),
+				sampleNegativesAroundTarget(sampleNegativesAroundTarget),
+				sampleFalsePositives(sampleFalsePositives),
+				randomNegatives(randomNegatives),
+				exploitSymmetry(exploitSymmetry) {}
+
+PositionDependentMeasurementModel::PositionDependentMeasurementModel(shared_ptr<MeasurementModel> measurementModel,
+		shared_ptr<FeatureExtractor> featureExtractor, shared_ptr<TrainableProbabilisticClassifier> classifier,
+		int startFrameCount, int stopFrameCount, float targetThreshold, float confidenceThreshold,
+		float positiveOffsetFactor, float negativeOffsetFactor, int sampleNegativesAroundTarget, bool sampleFalsePositives,
+		unsigned int randomNegatives, bool exploitSymmetry) :
+				generator(),
+				distribution(),
+				measurementModel(measurementModel),
+				featureExtractor(featureExtractor),
 				classifier(classifier),
 				usable(false),
 				frameCount(0),
@@ -38,6 +66,22 @@ PositionDependentMeasurementModel::PositionDependentMeasurementModel(shared_ptr<
 
 PositionDependentMeasurementModel::~PositionDependentMeasurementModel() {}
 
+void PositionDependentMeasurementModel::update(shared_ptr<VersionedImage> image) {
+	measurementModel->update(image);
+}
+
+void PositionDependentMeasurementModel::evaluate(Sample& sample) {
+	measurementModel->evaluate(sample);
+}
+
+void PositionDependentMeasurementModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples) {
+	measurementModel->evaluate(image, samples);
+}
+
+bool PositionDependentMeasurementModel::isUsable() {
+	return usable;
+}
+
 void PositionDependentMeasurementModel::reset() {
 	classifier->reset();
 	usable = false;
@@ -48,12 +92,11 @@ bool PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 		frameCount++;
 		if (frameCount < startFrameCount)
 			return false;
-		// feature extractor has to be initialized on the image when this model was not used for evaluation
-		featureExtractor->update(image);
 	} else {
 		frameCount = 0;
 	}
 
+	featureExtractor->update(image);
 	shared_ptr<Patch> targetPatch = featureExtractor->extract(target.getX(), target.getY(), target.getWidth(), target.getHeight());
 	if (!targetPatch)
 		return false;

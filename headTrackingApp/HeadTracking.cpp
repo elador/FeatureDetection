@@ -6,7 +6,6 @@
  */
 
 #include "HeadTracking.hpp"
-#include "PositionDependentMeasurementModel2.hpp"
 #include "logging/LoggerFactory.hpp"
 #include "logging/Logger.hpp"
 #include "logging/ConsoleAppender.hpp"
@@ -45,7 +44,6 @@
 #include "classification/PolynomialKernel.hpp"
 #include "classification/HikKernel.hpp"
 #include "classification/LinearKernel.hpp"
-#include "classification/RvmClassifier.hpp"
 #include "classification/SvmClassifier.hpp"
 #include "classification/FrameBasedTrainableSvmClassifier.hpp"
 #include "classification/TrainableProbabilisticTwoStageClassifier.hpp"
@@ -57,7 +55,10 @@
 #include "condensation/SimpleTransitionModel.hpp"
 #include "condensation/OpticalFlowTransitionModel.hpp"
 #include "condensation/WvmSvmModel.hpp"
+#include "condensation/SingleClassifierModel.hpp"
+#include "condensation/FilteringClassifierModel.hpp"
 #include "condensation/SelfLearningMeasurementModel.hpp"
+#include "condensation/PositionDependentMeasurementModel.hpp"
 #include "condensation/FilteringPositionExtractor.hpp"
 #include "condensation/WeightedMeanPositionExtractor.hpp"
 #include "condensation/Sample.hpp"
@@ -259,29 +260,49 @@ void HeadTracking::initTracking(ptree& config) {
 			config.get<double>("pyramid.scaleFactor"));
 	patchExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 
-	// create filter
-	shared_ptr<DirectPyramidFeatureExtractor> filterFeatureExtractor;
-	if (config.get<string>("filter.feature") == "grayscale") {
-		filterFeatureExtractor = make_shared<DirectPyramidFeatureExtractor>(31, 31, 31, 480, 0.9); // w, h, min, max, scale
-		filterFeatureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
-		filterFeatureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 255.0));
-	} else if (config.get<string>("filter.feature") == "whi") {
-		filterFeatureExtractor = make_shared<DirectPyramidFeatureExtractor>(31, 31, 31, 480, 0.9); // w, h, min, max, scale
-		filterFeatureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
-		filterFeatureExtractor->addLayerFilter(make_shared<WhiteningFilter>());
-		filterFeatureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
-		filterFeatureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0));
-		filterFeatureExtractor->addPatchFilter(make_shared<IntensityNormNormalizationFilter>());
-	}
-	filter = ProbabilisticRvmClassifier::load(config.get_child("filter"));
-
 	// create adaptive measurement model
 	adaptiveFeatureExtractor = createFeatureExtractor(patchExtractor, config.get_child("adaptive.feature"));
 	shared_ptr<Kernel> kernel = createKernel(config.get_child("adaptive.measurement.classifier.kernel"));
 	shared_ptr<TrainableSvmClassifier> trainableSvm = createTrainableSvm(kernel, config.get_child("adaptive.measurement.classifier.training"));
 	shared_ptr<TrainableProbabilisticClassifier> classifier = createClassifier(trainableSvm, config.get_child("adaptive.measurement.classifier.probabilistic"));
-	adaptiveMeasurementModel.reset(new PositionDependentMeasurementModel2(
-			filterFeatureExtractor, filter, adaptiveFeatureExtractor, classifier,
+	shared_ptr<MeasurementModel> measurementModel;
+	if (config.get<string>("filter") == "none") {
+		measurementModel = make_shared<SingleClassifierModel>(adaptiveFeatureExtractor, classifier);
+	} else {
+		// create filter
+		shared_ptr<DirectPyramidFeatureExtractor> filterFeatureExtractor;
+		if (config.get<string>("filter.feature") == "grayscale") {
+			filterFeatureExtractor = make_shared<DirectPyramidFeatureExtractor>(
+					config.get<int>("filter.feature.pyramid.patch.width"), config.get<int>("filter.feature.pyramid.patch.height"),
+					config.get<int>("filter.feature.pyramid.patch.minWidth"), config.get<int>("filter.feature.pyramid.patch.maxWidth"),
+					config.get<float>("filter.feature.pyramid.scaleFactor"));
+			filterFeatureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+			filterFeatureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 255.0));
+		} else if (config.get<string>("filter.feature") == "whi") {
+			filterFeatureExtractor = make_shared<DirectPyramidFeatureExtractor>(
+					config.get<int>("filter.feature.pyramid.patch.width"), config.get<int>("filter.feature.pyramid.patch.height"),
+					config.get<int>("filter.feature.pyramid.patch.minWidth"), config.get<int>("filter.feature.pyramid.patch.maxWidth"),
+					config.get<float>("filter.feature.pyramid.scaleFactor"));
+			filterFeatureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+			filterFeatureExtractor->addLayerFilter(make_shared<WhiteningFilter>());
+			filterFeatureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
+			filterFeatureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0));
+			filterFeatureExtractor->addPatchFilter(make_shared<IntensityNormNormalizationFilter>());
+		} else {
+			throw invalid_argument("AdaptiveTracking: invalid filter feature type: " + config.get<string>("filter.feature"));
+		}
+		filter = RvmClassifier::load(config.get_child("filter"));
+
+		if (config.get<string>("filter") == "before") {
+			measurementModel = make_shared<FilteringClassifierModel>(filterFeatureExtractor, filter, adaptiveFeatureExtractor, classifier, FilteringClassifierModel::Behavior::RESET_WEIGHT);
+		} else if (config.get<string>("filter") == "after") {
+			measurementModel = make_shared<FilteringClassifierModel>(filterFeatureExtractor, filter, adaptiveFeatureExtractor, classifier, FilteringClassifierModel::Behavior::KEEP_WEIGHT);
+		} else {
+			throw invalid_argument("AdaptiveTracking: invalid filter type: " + config.get<string>("filter"));
+		}
+	}
+	adaptiveMeasurementModel.reset(new PositionDependentMeasurementModel(
+			measurementModel, adaptiveFeatureExtractor, classifier,
 			config.get<int>("adaptive.measurement.startFrameCount"), config.get<int>("adaptive.measurement.stopFrameCount"),
 			config.get<float>("adaptive.measurement.targetThreshold"), config.get<float>("adaptive.measurement.confidenceThreshold"),
 			config.get<float>("adaptive.measurement.positiveOffsetFactor"), config.get<float>("adaptive.measurement.negativeOffsetFactor"),
@@ -369,8 +390,8 @@ void HeadTracking::initGui() {
 	cv::setTrackbarPos("Adaptive Random Rate", controlWindowName, 100 * adaptiveResamplingSampler->getRandomRate());
 
 	if (filter) {
-		cv::createTrackbar("NumFilters", controlWindowName, NULL, filter->getRvm()->getNumFiltersToUse(), numFiltersChanged, this);
-		cv::setTrackbarPos("NumFilters", controlWindowName, filter->getRvm()->getNumFiltersToUse());
+		cv::createTrackbar("NumFilters", controlWindowName, NULL, filter->getNumFiltersToUse(), numFiltersChanged, this);
+		cv::setTrackbarPos("NumFilters", controlWindowName, filter->getNumFiltersToUse());
 	}
 
 	cv::createTrackbar("Draw samples", controlWindowName, NULL, 1, drawSamplesChanged, this);
@@ -442,7 +463,7 @@ void HeadTracking::adaptiveRandomRateChanged(int state, void* userdata) {
 
 void HeadTracking::numFiltersChanged(int state, void* userdata) {
 	HeadTracking *tracking = (HeadTracking*)userdata;
-	tracking->filter->getRvm()->setNumFiltersToUse(state);
+	tracking->filter->setNumFiltersToUse(state);
 }
 
 void HeadTracking::drawSamplesChanged(int state, void* userdata) {

@@ -11,9 +11,11 @@
 #include "condensation/AdaptiveMeasurementModel.hpp"
 #include "opencv2/core/core.hpp"
 #include <string>
+#include <unordered_map>
 #include <utility>
 
 using cv::Mat;
+using std::unordered_map;
 using std::pair;
 
 namespace imageprocessing {
@@ -55,7 +57,11 @@ public:
 
 	~SelfLearningMeasurementModel();
 
-	void evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples);
+	void update(shared_ptr<VersionedImage> image);
+
+	void evaluate(Sample& sample);
+
+	using AdaptiveMeasurementModel::evaluate;
 
 	bool isUsable() {
 		return usable;
@@ -88,6 +94,7 @@ private:
 	shared_ptr<FeatureExtractor> featureExtractor; ///< The feature extractor used with the dynamic SVM.
 	shared_ptr<TrainableProbabilisticClassifier> classifier;    ///< The classifier that will be re-trained.
 	bool usable; ///< Flag that indicates whether this model may be used for evaluation.
+	unordered_map<shared_ptr<Patch>, pair<bool, double>> cache; ///< The classification result cache.
 	double positiveThreshold; ///< The threshold for samples to be used as positive training samples (must be exceeded).
 	double negativeThreshold; ///< The threshold for samples to be used as negative training samples (must fall below).
 	vector<shared_ptr<ClassifiedPatch>> positiveTrainingExamples; ///< The positive training examples.

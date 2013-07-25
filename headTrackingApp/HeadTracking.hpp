@@ -17,7 +17,7 @@
 #include "classification/Kernel.hpp"
 #include "classification/TrainableSvmClassifier.hpp"
 #include "classification/TrainableProbabilisticClassifier.hpp"
-#include "classification/ProbabilisticRvmClassifier.hpp"
+#include "classification/RvmClassifier.hpp"
 #include "condensation/CondensationTracker.hpp"
 #include "condensation/AdaptiveCondensationTracker.hpp"
 #include "condensation/AdaptiveMeasurementModel.hpp"
@@ -107,7 +107,7 @@ private:
 	int drawFlow;
 
 	Initialization initialization;
-	shared_ptr<ProbabilisticRvmClassifier> filter;
+	shared_ptr<RvmClassifier> filter;
 	shared_ptr<DirectPyramidFeatureExtractor> patchExtractor;
 	shared_ptr<FeatureExtractor> adaptiveFeatureExtractor;
 	unique_ptr<CondensationTracker> initialTracker;

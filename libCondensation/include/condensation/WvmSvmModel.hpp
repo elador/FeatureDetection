@@ -11,13 +11,19 @@
 #include "condensation/MeasurementModel.hpp"
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <utility>
 
 using std::shared_ptr;
+using std::unordered_map;
+using std::pair;
 
 namespace imageprocessing {
 class FeatureExtractor;
+class Patch;
 }
 using imageprocessing::FeatureExtractor;
+using imageprocessing::Patch;
 
 namespace classification {
 class ProbabilisticWvmClassifier;
@@ -50,6 +56,10 @@ public:
 
 	~WvmSvmModel();
 
+	void update(shared_ptr<VersionedImage> image);
+
+	void evaluate(Sample& sample);
+
 	void evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples);
 
 private:
@@ -58,6 +68,7 @@ private:
 	shared_ptr<ProbabilisticWvmClassifier> wvm;    ///< The fast WVM.
 	shared_ptr<ProbabilisticSvmClassifier> svm;    ///< The slower SVM.
 	//shared_ptr<OverlapElimination> oe;      ///< The overlap elimination algorithm. TODO
+	unordered_map<shared_ptr<Patch>, pair<bool, double>> cache; ///< The cache of the WVM classification results.
 };
 
 } /* namespace condensation */
