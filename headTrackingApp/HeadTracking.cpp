@@ -96,16 +96,46 @@ HeadTracking::HeadTracking(unique_ptr<LabeledImageSource> imageSource, unique_pt
 
 HeadTracking::~HeadTracking() {}
 
+shared_ptr<DirectPyramidFeatureExtractor> HeadTracking::createPyramidExtractor(
+		ptree& config, shared_ptr<ImagePyramid> pyramid, bool needsLayerFilters) {
+	if (config.get_value<string>() == "direct") {
+		shared_ptr<DirectPyramidFeatureExtractor> pyramidExtractor = make_shared<DirectPyramidFeatureExtractor>(
+				config.get<int>("patch.width"), config.get<int>("patch.height"),
+				config.get<int>("patch.minWidth"), config.get<int>("patch.maxWidth"),
+				config.get<float>("scaleFactor"));
+		pyramidExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+		return pyramidExtractor;
+	} else if (config.get_value<string>() == "derived") {
+		if (!pyramid)
+			throw invalid_argument("HeadTracking: base pyramid necessary for creating a derived pyramid");
+		if (needsLayerFilters)
+			return make_shared<DirectPyramidFeatureExtractor>(make_shared<ImagePyramid>(pyramid),
+					config.get<int>("patch.width"), config.get<int>("patch.height"));
+		else
+			return make_shared<DirectPyramidFeatureExtractor>(pyramid,
+					config.get<int>("patch.width"), config.get<int>("patch.height"));
+	} else {
+		throw invalid_argument("HeadTracking: invalid pyramid type: " + config.get_value<string>());
+	}
+}
+
 shared_ptr<FeatureExtractor> HeadTracking::createFeatureExtractor(
-		shared_ptr<DirectPyramidFeatureExtractor> patchExtractor, ptree& config) {
-	float scaleFactor = config.get<float>("scale");
-	if (config.get_value<string>() == "histeq") {
-		shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
+		shared_ptr<ImagePyramid> pyramid, ptree& config) {
+	float scaleFactor = config.get<float>("scale", 1.f);
+	if (config.get_value<string>() == "grayscale") {
+		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(
+				config.get_child("pyramid"), pyramid, false);
+		featureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 255.0));
+		return wrapFeatureExtractor(featureExtractor, scaleFactor);
+	} else if (config.get_value<string>() == "histeq") {
+		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(
+				config.get_child("pyramid"), pyramid, false);
 		featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
 		return wrapFeatureExtractor(featureExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "whi") {
-		shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
-		featureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
+		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(
+				config.get_child("pyramid"), pyramid, true);
+		featureExtractor->addLayerFilter(make_shared<WhiteningFilter>());
 		featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
 		featureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0));
 		featureExtractor->addPatchFilter(make_shared<IntensityNormNormalizationFilter>());
@@ -142,24 +172,30 @@ shared_ptr<FeatureExtractor> HeadTracking::createFeatureExtractor(
 		featureExtractor->addPatchFilter(make_shared<HaarFeatureFilter>(sizes, gridRows, gridCols, types));
 		return wrapFeatureExtractor(featureExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "hog") {
-		patchExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
-		patchExtractor->addLayerFilter(make_shared<GradientHistogramFilter>(config.get<int>("bins"), config.get<bool>("signed")));
-		return wrapFeatureExtractor(createHistogramFeatureExtractor(patchExtractor,
+		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(
+				config.get_child("pyramid"), pyramid, true);
+		featureExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
+		featureExtractor->addLayerFilter(make_shared<GradientHistogramFilter>(config.get<int>("bins"), config.get<bool>("signed")));
+		return wrapFeatureExtractor(createHistogramFeatureExtractor(featureExtractor,
 				config.get<int>("bins"), config.get_child("histogram")), scaleFactor);
 	} else if (config.get_value<string>() == "lbp") {
+		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(
+				config.get_child("pyramid"), pyramid, true);
 		shared_ptr<LbpFilter> lbpFilter = createLbpFilter(config.get<string>("type"));
-		patchExtractor->addLayerFilter(lbpFilter);
-		return wrapFeatureExtractor(createHistogramFeatureExtractor(patchExtractor,
+		featureExtractor->addLayerFilter(lbpFilter);
+		return wrapFeatureExtractor(createHistogramFeatureExtractor(featureExtractor,
 				lbpFilter->getBinCount(), config.get_child("histogram")), scaleFactor);
 	} else if (config.get_value<string>() == "glbp") {
+		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(
+				config.get_child("pyramid"), pyramid, true);
 		shared_ptr<LbpFilter> lbpFilter = createLbpFilter(config.get<string>("type"));
-		patchExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
-		patchExtractor->addLayerFilter(make_shared<GradientMagnitudeFilter>());
-		patchExtractor->addLayerFilter(lbpFilter);
-		return wrapFeatureExtractor(createHistogramFeatureExtractor(patchExtractor,
+		featureExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
+		featureExtractor->addLayerFilter(make_shared<GradientMagnitudeFilter>());
+		featureExtractor->addLayerFilter(lbpFilter);
+		return wrapFeatureExtractor(createHistogramFeatureExtractor(featureExtractor,
 				lbpFilter->getBinCount(), config.get_child("histogram")), scaleFactor);
 	} else {
-		throw invalid_argument("AdaptiveTracking: invalid feature type: " + config.get<string>("feature"));
+		throw invalid_argument("HeadTracking: invalid feature type: " + config.get<string>("feature"));
 	}
 }
 
@@ -174,7 +210,7 @@ shared_ptr<LbpFilter> HeadTracking::createLbpFilter(string lbpType) {
 	else if (lbpType == "lbp4rotated")
 		type = LbpFilter::Type::LBP4_ROTATED;
 	else
-		throw invalid_argument("AdaptiveTracking: invalid LBP type: " + lbpType);
+		throw invalid_argument("HeadTracking: invalid LBP type: " + lbpType);
 	return make_shared<LbpFilter>(type);
 }
 
@@ -192,14 +228,14 @@ shared_ptr<FeatureExtractor> HeadTracking::createHistogramFeatureExtractor(
 	else if (config.get<string>("normalization") == "l1sqrt")
 		normalization = HistogramFeatureExtractor::Normalization::L1SQRT;
 	else
-		throw invalid_argument("AdaptiveTracking: invalid normalization method: " + config.get<string>("normalization"));
+		throw invalid_argument("HeadTracking: invalid normalization method: " + config.get<string>("normalization"));
 	if (config.get_value<string>() == "spatial")
 		return make_shared<SpatialHistogramFeatureExtractor>(patchExtractor, bins,
 				config.get<int>("cellSize"), config.get<int>("blockSize"), config.get<bool>("combine"), normalization);
 	else 	if (config.get_value<string>() == "pyramid")
 		return make_shared<SpatialPyramidHistogramFeatureExtractor>(patchExtractor, bins, config.get<int>("level"), normalization);
 	else
-		throw invalid_argument("AdaptiveTracking: invalid histogram type: " + config.get_value<string>());
+		throw invalid_argument("HeadTracking: invalid histogram type: " + config.get_value<string>());
 }
 
 shared_ptr<FeatureExtractor> HeadTracking::wrapFeatureExtractor(shared_ptr<FeatureExtractor> featureExtractor, float scaleFactor) {
@@ -219,7 +255,7 @@ shared_ptr<Kernel> HeadTracking::createKernel(ptree& config) {
 	} else if (config.get_value<string>() == "linear") {
 		return make_shared<LinearKernel>();
 	} else {
-		throw invalid_argument("AdaptiveTracking: invalid kernel type: " + config.get_value<string>());
+		throw invalid_argument("HeadTracking: invalid kernel type: " + config.get_value<string>());
 	}
 }
 
@@ -232,7 +268,7 @@ shared_ptr<TrainableSvmClassifier> HeadTracking::createTrainableSvm(shared_ptr<K
 		trainableSvm = make_shared<FrameBasedTrainableSvmClassifier>(kernel, config.get<double>("constraintsViolationCosts"),
 				config.get<int>("frameLength"), config.get<float>("minAvgSamples"));
 	} else {
-		throw invalid_argument("AdaptiveTracking: invalid training type: " + config.get_value<string>());
+		throw invalid_argument("HeadTracking: invalid training type: " + config.get_value<string>());
 	}
 	optional<ptree&> negativesConfig = config.get_child_optional("staticNegatives");
 	if (negativesConfig && negativesConfig->get_value<bool>()) {
@@ -249,19 +285,24 @@ shared_ptr<TrainableProbabilisticClassifier> HeadTracking::createClassifier(
 	else if (config.get_value<string>() == "fixed")
 		return make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm);
 	else
-		throw invalid_argument("AdaptiveTracking: invalid classifier type: " + config.get_value<string>());
+		throw invalid_argument("HeadTracking: invalid classifier type: " + config.get_value<string>());
 }
 
 void HeadTracking::initTracking(ptree& config) {
-	// create patch extractor
-	patchExtractor = make_shared<DirectPyramidFeatureExtractor>(
-			config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"),
-			config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"),
-			config.get<double>("pyramid.scaleFactor"));
-	patchExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+	// create base pyramid
+	shared_ptr<ImagePyramid> pyramid;
+	optional<ptree&> pyramidConfig = config.get_child_optional("pyramid");
+	if (pyramidConfig) {
+		DirectPyramidFeatureExtractor tmp(
+				pyramidConfig->get<int>("patch.width"), pyramidConfig->get<int>("patch.height"),
+				pyramidConfig->get<int>("patch.minWidth"), pyramidConfig->get<int>("patch.maxWidth"),
+				pyramidConfig->get<double>("scaleFactor"));
+		tmp.addImageFilter(make_shared<GrayscaleFilter>());
+		pyramid = tmp.getPyramid();
+	}
 
 	// create adaptive measurement model
-	adaptiveFeatureExtractor = createFeatureExtractor(patchExtractor, config.get_child("adaptive.feature"));
+	adaptiveFeatureExtractor = createFeatureExtractor(pyramid, config.get_child("adaptive.feature"));
 	shared_ptr<Kernel> kernel = createKernel(config.get_child("adaptive.measurement.classifier.kernel"));
 	shared_ptr<TrainableSvmClassifier> trainableSvm = createTrainableSvm(kernel, config.get_child("adaptive.measurement.classifier.training"));
 	shared_ptr<TrainableProbabilisticClassifier> classifier = createClassifier(trainableSvm, config.get_child("adaptive.measurement.classifier.probabilistic"));
@@ -270,35 +311,14 @@ void HeadTracking::initTracking(ptree& config) {
 		measurementModel = make_shared<SingleClassifierModel>(adaptiveFeatureExtractor, classifier);
 	} else {
 		// create filter
-		shared_ptr<DirectPyramidFeatureExtractor> filterFeatureExtractor;
-		if (config.get<string>("filter.feature") == "grayscale") {
-			filterFeatureExtractor = make_shared<DirectPyramidFeatureExtractor>(
-					config.get<int>("filter.feature.pyramid.patch.width"), config.get<int>("filter.feature.pyramid.patch.height"),
-					config.get<int>("filter.feature.pyramid.patch.minWidth"), config.get<int>("filter.feature.pyramid.patch.maxWidth"),
-					config.get<float>("filter.feature.pyramid.scaleFactor"));
-			filterFeatureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
-			filterFeatureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 255.0));
-		} else if (config.get<string>("filter.feature") == "whi") {
-			filterFeatureExtractor = make_shared<DirectPyramidFeatureExtractor>(
-					config.get<int>("filter.feature.pyramid.patch.width"), config.get<int>("filter.feature.pyramid.patch.height"),
-					config.get<int>("filter.feature.pyramid.patch.minWidth"), config.get<int>("filter.feature.pyramid.patch.maxWidth"),
-					config.get<float>("filter.feature.pyramid.scaleFactor"));
-			filterFeatureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
-			filterFeatureExtractor->addLayerFilter(make_shared<WhiteningFilter>());
-			filterFeatureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
-			filterFeatureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0));
-			filterFeatureExtractor->addPatchFilter(make_shared<IntensityNormNormalizationFilter>());
-		} else {
-			throw invalid_argument("AdaptiveTracking: invalid filter feature type: " + config.get<string>("filter.feature"));
-		}
+		shared_ptr<FeatureExtractor> filterFeatureExtractor = createFeatureExtractor(pyramid, config.get_child("filter.feature"));
 		filter = RvmClassifier::load(config.get_child("filter"));
-
 		if (config.get<string>("filter") == "before") {
 			measurementModel = make_shared<FilteringClassifierModel>(filterFeatureExtractor, filter, adaptiveFeatureExtractor, classifier, FilteringClassifierModel::Behavior::RESET_WEIGHT);
 		} else if (config.get<string>("filter") == "after") {
 			measurementModel = make_shared<FilteringClassifierModel>(filterFeatureExtractor, filter, adaptiveFeatureExtractor, classifier, FilteringClassifierModel::Behavior::KEEP_WEIGHT);
 		} else {
-			throw invalid_argument("AdaptiveTracking: invalid filter type: " + config.get<string>("filter"));
+			throw invalid_argument("HeadTracking: invalid filter type: " + config.get<string>("filter"));
 		}
 	}
 	adaptiveMeasurementModel.reset(new PositionDependentMeasurementModel(
@@ -321,7 +341,7 @@ void HeadTracking::initTracking(ptree& config) {
 		opticalFlowTransitionModel = make_shared<OpticalFlowTransitionModel>(simpleTransitionModel, config.get<double>("transition.scatter"));
 		transitionModel = opticalFlowTransitionModel;
 	} else {
-		throw invalid_argument("AdaptiveTracking: invalid transition model type: " + config.get<string>("transition"));
+		throw invalid_argument("HeadTracking: invalid transition model type: " + config.get<string>("transition"));
 	}
 
 	// create tracker
