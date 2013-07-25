@@ -1,11 +1,13 @@
-/*
- * MatrixUtils.cpp
+/*!
+ * \file MatrixUtils.cpp
  *
- *  Created on: 12.12.2012
- *      Author: Patrik Huber
+ * \author Patrik Huber
+ * \date December 12, 2012
+ *
+ * [comment here]
  */
 
-#include "render/MatrixUtils.hpp"
+#include "renderold/MatrixUtils.hpp"
 
 namespace render {
 	namespace utils {
@@ -60,5 +62,5 @@ cv::Mat MatrixUtils::createTranslationMatrix(float tx, float ty, float tz)
 	return translation;
 }
 
-	} /* namespace utils */
-} /* namespace render */
+	} /* END namespace utils */
+} /* END namespace render */

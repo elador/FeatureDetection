@@ -1,11 +1,13 @@
-/*
- * Hdf5Utils.cpp
+/*!
+ * \file Hdf5Utils.cpp
  *
- *  Created on: 12.12.2012
- *      Author: Patrik Huber
+ * \author Patrik Huber
+ * \date December 12, 2012
+ *
+ * [comment here]
  */
 
-#include "render/Hdf5Utils.hpp"
+#include "renderold/Hdf5Utils.hpp"
 
 namespace render {
 	namespace utils {
@@ -101,5 +103,5 @@ bool Hdf5Utils::existsObjectWithName(const H5::CommonFG& fg, const std::string& 
 	return false;
 }
 
-	} /* namespace utils */
-} /* namespace render */
+	} /* END namespace utils */
+} /* END namespace render */

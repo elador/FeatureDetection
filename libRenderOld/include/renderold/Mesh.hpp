@@ -1,17 +1,16 @@
-/*
- * Mesh.hpp
+/*!
+ * \file Mesh.hpp
  *
- *  Created on: 12.12.2012
- *      Author: Patrik Huber
+ * \author Patrik Huber
+ * \date December 12, 2012
+ *
+ * [comment here]
  */
 #pragma once
 
-#ifndef MESH_HPP_
-#define MESH_HPP_
-
-#include "render/Vertex.hpp"
-#include "render/Triangle.hpp"
-#include "render/Texture.hpp"
+#include "renderold/Vertex.hpp"
+#include "renderold/Triangle.hpp"
+#include "renderold/Texture.hpp"
 
 #include <vector>
 #include <array>
@@ -19,9 +18,6 @@
 
 namespace render {
 
-/**
- * Desc
- */
 class Mesh
 {
 public:
@@ -49,6 +45,4 @@ public:
 
 };
 
-} /* namespace render */
-
-#endif /* MESH_HPP_ */
+}

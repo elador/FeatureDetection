@@ -1,15 +1,16 @@
-/*
- * Hdf5Utils.hpp
+/*!
+ * \file Hdf5Utils.hpp
  *
- *  Created on: 12.12.2012
- *      Author: Patrik Huber
+ * \author Patrik Huber
+ * \date December 12, 2012
+ *
+ * [comment here]
  */
 #pragma once
-
 #ifndef HDF5UTILS_HPP_
 #define HDF5UTILS_HPP_
 
-#include "render/Mesh.hpp"
+#include "renderold/Mesh.hpp"
 
 #ifdef WIN32	// This is a shitty hack...  find out what the proper way to do this is. Probably include the hdf5.tar.gz in our cmake project. Bzw... without cpp is maybe correct, and my windows-installation is wrong?
 	#include "cpp/H5Cpp.h"
@@ -17,7 +18,7 @@
 	#include "H5Cpp.h"
 #endif
 
-#include "opencv2/core/core.hpp"
+#include <opencv2/core/core.hpp>
 
 #include <vector>
 
@@ -41,7 +42,6 @@ namespace render {
 
 		};
 
-	} /* namespace utils */
-} /* namespace render */
-
+	}
+}
 #endif /* HDF5UTILS_HPP_ */

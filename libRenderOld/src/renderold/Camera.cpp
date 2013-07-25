@@ -1,12 +1,14 @@
-/*
- * Camera.cpp
+/*!
+ * \file Camera.cpp
  *
- *  Created on: 05.12.2012
- *      Author: Patrik Huber
+ * \author Patrik Huber
+ * \date December 5, 2012
+ *
+ * [comment here]
  */
 
-#include "render/Camera.hpp"
-#include "render/MatrixUtils.hpp"
+#include "renderold/Camera.hpp"
+#include "renderold/MatrixUtils.hpp"
 
 namespace render {
 	
@@ -111,4 +113,4 @@ void Camera::setFrustum( float l, float r, float t, float b, float n, float f )
 	frustum.f = f;
 }
 
-} /* namespace render */
+}

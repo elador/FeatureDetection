@@ -14,7 +14,8 @@
 #endif  // _DEBUG
 
 #include "render/MorphableModel.hpp"
-#include "render/SRenderer.hpp"
+#include "render/Renderer.hpp"
+#include "render/SoftwareDevice.hpp"
 #include "render/Vertex.hpp"
 #include "render/Triangle.hpp"
 #include "render/Camera.hpp"
@@ -39,14 +40,6 @@ namespace po = boost::program_options;
 using namespace std;
 
 
-cv::Vec4f matToColVec4f(cv::Mat m) {
-	cv::Vec4f ret;
-	ret[0] = m.at<float>(0, 0);
-	ret[1] = m.at<float>(1, 0);
-	ret[2] = m.at<float>(2, 0);
-	ret[3] = m.at<float>(3, 0);
-	return ret;
-}
 
 template<class T>
 ostream& operator<<(ostream& os, const vector<T>& v)
@@ -92,18 +85,10 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-
-	render::Renderer->create();
-	
-	render::Mesh cube = render::utils::MeshUtils::createCube();
-	render::Mesh plane = render::utils::MeshUtils::createPlane();
-
 	//render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("D:\\model2012_l6_rms.h5");
 	render::MorphableModel mmHeadL4 = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
 
 	const float& aspect = 640.0f/480.0f;
-
-	render::Renderer->camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, 0.1f, 100.0f);
 
 	vector<int> vertexIds;
 	vertexIds.push_back(177); // left-eye-left - right.eye.corner_outer
@@ -119,51 +104,9 @@ int main(int argc, char *argv[])
 	vertexIds.push_back(); // right-alare - 
 
 	for (int pitch = -30; pitch <= 30; ++pitch) {
-		render::Renderer->camera.update(1);
-
-		cv::Mat vt = render::Renderer->constructViewTransform();
-		cv::Mat pt = render::Renderer->constructProjTransform();
-		cv::Mat viewProjTransform = pt * vt;
-
-
-		render::Renderer->setMesh(&mmHeadL4.mesh);
-		cv::Mat headWorld = render::utils::MatrixUtils::createScalingMatrix(1.0f/100.0f, 1.0f/100.0f, 1.0f/100.0f);
-		cv::Mat headWorldRot = render::utils::MatrixUtils::createRotationMatrixX(pitch*(CV_PI/180));
-		cv::Mat mvp_3dmm = viewProjTransform * headWorld * headWorldRot;
-
-		//cv::Mat myvec = (cv::Mat_<float>(4,1) << 
-		//	0.5f, 0.5f,	-0.5f, 1.0f);
-
-		cv::Mat myvec = cv::Mat(mmHeadL4.mesh.vertex[0].position);
-
-		cv::Mat res = mvp_3dmm * myvec;
-		// project from 4D to 2D window position with depth value in z coordinate
-		cv::Vec4f position = matToColVec4f(res);
-		position = position / position[3];	// divide by w
-		cv::Mat tmp = render::Renderer->getWindowTransform() * cv::Mat(position);	// places the vec as a column in the matrix
-		position = matToColVec4f(tmp);
-
-
-		cv::namedWindow("renderOutput");
-		cv::imshow("renderOutput", render::Renderer->getRendererImage());
-
-		float speed = 1.0f;
-		float mouseSpeed = 0.10f;
-		cv::Vec3f eye = render::Renderer->camera.getEye();
-		float deltaTime = 1.0f;
-
-		std::cout << "verticalAngle: " << render::Renderer->camera.verticalAngle << std::endl;
-		std::cout << "horizontalAngle: " << render::Renderer->camera.horizontalAngle << std::endl;
-
-
-		char c = (char)cv::waitKey(0);
 
 	}
 
-	// loop end - measure the time here
-
-	cv::imwrite("colorBuffer.png", render::Renderer->getRendererImage());
-	cv::imwrite("depthBuffer.png", render::Renderer->getRendererDepthBuffer());
 
 	return 0;
 }

@@ -4,12 +4,11 @@
  *  Created on: 24.06.2013
  *      Author: Patrik Huber
  */
-#pragma once
 
 #ifndef MORPHABLEMODEL_HPP_
 #define MORPHABLEMODEL_HPP_
 
-#include "render/Mesh.hpp"
+#include "renderold/Mesh.hpp"
 
 namespace render {
 

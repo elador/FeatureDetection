@@ -13,10 +13,10 @@
    #endif
 #endif  // _DEBUG
 
-#include "render2/MorphableModel.hpp"
-#include "render2/Renderer.hpp"
-#include "render2/SoftwareDevice.hpp"
-#include "render2/MeshUtils.hpp"
+#include "render/MorphableModel.hpp"
+#include "render/Renderer.hpp"
+#include "render/SoftwareDevice.hpp"
+#include "render/MeshUtils.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"

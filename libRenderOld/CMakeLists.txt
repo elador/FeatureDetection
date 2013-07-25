@@ -1,4 +1,4 @@
-SET( SUBPROJECT_NAME Render )	# my own variable, not cmake's
+SET( SUBPROJECT_NAME Renderold )	# my own variable, not cmake's
 PROJECT( ${SUBPROJECT_NAME} )
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
@@ -30,34 +30,29 @@ ENDIF()
 
 #Source and header files:
 SET(SOURCE
-	src/render/Renderer.cpp
-	src/render/OpenGlDevice.cpp
-	src/render/SoftwareDevice.cpp
-	src/render/Vertex.cpp
-	src/render/Triangle.cpp
-	src/render/Camera.cpp
-	src/render/Texture.cpp
-	src/render/Mesh.cpp
-	src/render/MatrixUtils.cpp
-	src/render/MeshUtils.cpp
-	src/render/Hdf5Utils.cpp
-	src/render/MorphableModel.cpp
+	src/renderold/SRenderer.cpp
+	src/renderold/Vertex.cpp
+	src/renderold/Triangle.cpp
+	src/renderold/Camera.cpp
+	src/renderold/Texture.cpp
+	src/renderold/Mesh.cpp
+	src/renderold/MatrixUtils.cpp
+	src/renderold/MeshUtils.cpp
+	src/renderold/Hdf5Utils.cpp
+	src/renderold/MorphableModel.cpp
 )
 
 SET(HEADERS
-	include/render/Renderer.hpp
-	include/render/RenderDevice.hpp
-	include/render/OpenGlDevice.hpp
-	include/render/SoftwareDevice.hpp
-	include/render/Vertex.hpp
-	include/render/Triangle.hpp
-	include/render/Camera.hpp
-	include/render/Texture.hpp
-	include/render/Mesh.hpp
-	include/render/MatrixUtils.hpp
-	include/render/MeshUtils.hpp
-	include/render/Hdf5Utils.hpp
-	include/render/MorphableModel.hpp
+	include/renderold/SRenderer.hpp
+	include/renderold/Vertex.hpp
+	include/renderold/Triangle.hpp
+	include/renderold/Camera.hpp
+	include/renderold/Texture.hpp
+	include/renderold/Mesh.hpp
+	include/renderold/MatrixUtils.hpp
+	include/renderold/MeshUtils.hpp
+	include/renderold/Hdf5Utils.hpp
+	include/renderold/MorphableModel.hpp
 )
 
 include_directories( "include" )

@@ -1,11 +1,13 @@
-/*
- * Triangle.cpp
+/*!
+ * \file Triangle.cpp
  *
- *  Created on: 04.12.2012
- *      Author: Patrik Huber
+ * \author Patrik Huber
+ * \date December 4, 2012
+ *
+ * [comment here]
  */
 
-#include "render/Triangle.hpp"
+#include "renderold/Triangle.hpp"
 
 namespace render {
 
@@ -24,4 +26,4 @@ Triangle::~Triangle(void)
 {
 }
 
-} /* namespace render */
+}

@@ -1,16 +1,17 @@
-/*
- * MeshUtils.hpp
+/*!
+ * \file MeshUtils.hpp
  *
- *  Created on: 12.12.2012
- *      Author: Patrik Huber
+ * \author Patrik Huber
+ * \date December 12, 2012
+ *
+ * [comment here]
  */
 #pragma once
-
 #ifndef MESHUTILS_HPP_
 #define MESHUTILS_HPP_
 
-#include "render/Mesh.hpp"
-#include "render/MorphableModel.hpp"
+#include "renderold/Mesh.hpp"
+#include "renderold/MorphableModel.hpp"
 
 #include "opencv2/core/core.hpp"
 
@@ -31,8 +32,7 @@ namespace render {
 
 		};
 
-	} /* namespace utils */
+	}
 
-} /* namespace render */
-
+}
 #endif /* MESHUTILS_HPP_ */

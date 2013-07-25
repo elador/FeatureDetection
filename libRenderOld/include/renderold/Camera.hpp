@@ -1,21 +1,17 @@
-/*
- * Camera.hpp
+/*!
+ * \file Camera.hpp
  *
- *  Created on: 05.12.2012
- *      Author: Patrik Huber
+ * \author Patrik Huber
+ * \date December 5, 2012
+ *
+ * [comment here]
  */
 #pragma once
-
-#ifndef CAMERA_HPP_
-#define CAMERA_HPP_
 
 #include "opencv2/core/core.hpp"
 
 namespace render {
 
-/**
- * Desc
- */
 class Camera
 {
 public:
@@ -60,6 +56,4 @@ public:
 	Frustum frustum;	// TODO make private
 };
 
-} /* namespace render */
-
-#endif /* CAMERA_HPP_ */
+}

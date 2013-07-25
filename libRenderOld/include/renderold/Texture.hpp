@@ -1,21 +1,17 @@
-/*
- * Texture.hpp
+/*!
+ * \file Texture.hpp
  *
- *  Created on: 07.12.2012
- *      Author: Patrik Huber
+ * \author Patrik Huber
+ * \date December 7, 2012
+ *
+ * [comment here]
  */
 #pragma once
 
-#ifndef TEXTURE_HPP_
-#define TEXTURE_HPP_
-
-#include "opencv2/core/core.hpp"
+#include <opencv2/core/core.hpp>
 
 namespace render {
 
-/**
- * Desc
- */
 class Texture
 {
 public:
@@ -37,6 +33,4 @@ private:
 	};	// goto cpp/helpers
 };
 
-} /* namespace render */
-
-#endif /* TEXTURE_HPP_ */
+}

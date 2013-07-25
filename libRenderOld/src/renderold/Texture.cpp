@@ -1,16 +1,18 @@
-/*
- * Texture.cpp
+/*!
+ * \file Texture.cpp
  *
- *  Created on: 07.12.2012
- *      Author: Patrik Huber
+ * \author Patrik Huber
+ * \date December 7, 2012
+ *
+ * [comment here]
  */
 
-#include "render/Texture.hpp"
-#include "render/MatrixUtils.hpp"
+#include "renderold/Texture.hpp"
+#include "renderold/MatrixUtils.hpp"
 
-#include "opencv2/core/core.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/highgui/highgui.hpp"
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 #include <iostream>
 
@@ -74,4 +76,4 @@ void Texture::createFromFile(const std::string& fileName, uchar mipmapsNum)
 	this->heightLog = (uchar)(std::logf(mipmaps[0].rows)/CV_LOG2 + 0.0001f);
 }
 
-} /* namespace render */
+}

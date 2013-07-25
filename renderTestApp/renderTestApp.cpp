@@ -13,15 +13,15 @@
    #endif
 #endif  // _DEBUG
 
-#include "render/MorphableModel.hpp"
-#include "render/SRenderer.hpp"
-#include "render/Vertex.hpp"
-#include "render/Triangle.hpp"
-#include "render/Camera.hpp"
-#include "render/MatrixUtils.hpp"
-#include "render/MeshUtils.hpp"
-#include "render/Texture.hpp"
-#include "render/Mesh.hpp"
+#include "renderold/MorphableModel.hpp"
+#include "renderold/SRenderer.hpp"
+#include "renderold/Vertex.hpp"
+#include "renderold/Triangle.hpp"
+#include "renderold/Camera.hpp"
+#include "renderold/MatrixUtils.hpp"
+#include "renderold/MeshUtils.hpp"
+#include "renderold/Texture.hpp"
+#include "renderold/Mesh.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"

@@ -1,12 +1,14 @@
-/*
- * MeshUtils.cpp
+/*!
+ * \file MeshUtils.cpp
  *
- *  Created on: 12.12.2012
- *      Author: Patrik Huber
+ * \author Patrik Huber
+ * \date December 12, 2012
+ *
+ * [comment here]
  */
 
-#include "render/MeshUtils.hpp"
-#include "render/Hdf5Utils.hpp"
+#include "renderold/MeshUtils.hpp"
+#include "renderold/Hdf5Utils.hpp"
 
 #include "opencv2/core/core.hpp"
 
@@ -433,5 +435,5 @@ MorphableModel MeshUtils::readFromScm(std::string filename)
 	return mm; // pReference
 }
 
-	} /* namespace utils */
-} /* namespace render */
+	} /* END namespace utils */
+} /* END namespace render */

@@ -1,24 +1,20 @@
-/*
- * Triangle.hpp
+/*!
+ * \file Triangle.hpp
  *
- *  Created on: 04.12.2012
- *      Author: Patrik Huber
+ * \author Patrik Huber
+ * \date December 4, 2012
+ *
+ * [comment here]
  */
 #pragma once
 
-#ifndef TRIANGLE_HPP_
-#define TRIANGLE_HPP_
-
 #include <array>
 
-#include "render/Vertex.hpp"
-#include "render/Texture.hpp"
+#include "renderold/Vertex.hpp"
+#include "renderold/Texture.hpp"
 
 namespace render {
 
-/**
- * Desc
- */
 class Triangle
 {
 public:
@@ -137,6 +133,4 @@ struct TriangleToRasterize
 	}
 };
 
-} /* namespace render */
-
-#endif /* TRIANGLE_HPP_ */
+}

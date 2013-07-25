@@ -1,11 +1,13 @@
-/*
- * Vertex.cpp
+/*!
+ * \file Vertex.cpp
  *
- *  Created on: 04.12.2012
- *      Author: Patrik Huber
+ * \author Patrik Huber
+ * \date December 4, 2012
+ *
+ * [comment here]
  */
 
-#include "render/Vertex.hpp"
+#include "renderold/Vertex.hpp"
 
 namespace render {
 
@@ -25,4 +27,4 @@ Vertex::~Vertex(void)
 {
 }
 
-} /* namespace render */
+}
