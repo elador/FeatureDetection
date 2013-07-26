@@ -15,12 +15,12 @@ ResizingFilter::ResizingFilter(Size size, int interpolation) : size(size), inter
 
 ResizingFilter::~ResizingFilter() {}
 
-Mat ResizingFilter::applyTo(const Mat& image, Mat& filtered) {
+Mat ResizingFilter::applyTo(const Mat& image, Mat& filtered) const {
 	resize(image, filtered, size, 0, 0, interpolation);
 	return filtered;
 }
 
-void ResizingFilter::applyInPlace(Mat& image) {
+void ResizingFilter::applyInPlace(Mat& image) const {
 	image = applyTo(image);
 }
 

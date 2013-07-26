@@ -58,7 +58,7 @@ unsigned int GradientHistogramFilter::getBinCount() const {
 	return bins;
 }
 
-Mat GradientHistogramFilter::applyTo(const Mat& image, Mat& filtered) {
+Mat GradientHistogramFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.type() != CV_8UC2)
 		throw invalid_argument("GradientHistogramFilter: the image must by of type CV_8UC2");
 
@@ -79,7 +79,7 @@ Mat GradientHistogramFilter::applyTo(const Mat& image, Mat& filtered) {
 	return filtered;
 }
 
-void GradientHistogramFilter::applyInPlace(Mat& image) {
+void GradientHistogramFilter::applyInPlace(Mat& image) const {
 	image = applyTo(image);
 }
 

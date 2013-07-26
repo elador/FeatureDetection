@@ -14,12 +14,12 @@ IntegralImageFilter::IntegralImageFilter(int type) : type(type) {}
 
 IntegralImageFilter::~IntegralImageFilter() {}
 
-Mat IntegralImageFilter::applyTo(const Mat& image, Mat& filtered) {
+Mat IntegralImageFilter::applyTo(const Mat& image, Mat& filtered) const {
 	cv::integral(image, filtered, type);
 	return filtered;
 }
 
-void IntegralImageFilter::applyInPlace(Mat& image) {
+void IntegralImageFilter::applyInPlace(Mat& image) const {
 	image = applyTo(image);
 }
 

@@ -27,9 +27,9 @@ public:
 
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered);
+	Mat applyTo(const Mat& image, Mat& filtered) const;
 
-	void applyInPlace(Mat& image);
+	void applyInPlace(Mat& image) const;
 
 private:
 
@@ -43,7 +43,7 @@ private:
 	 * @param[in] delta The offset of the gradients (in case the image has an unsigned data type).
 	 */
 	template<class T>
-	void computeMagnitude(const Mat& image, Mat& filtered, int rows, int cols, double delta = 0) {
+	void computeMagnitude(const Mat& image, Mat& filtered, int rows, int cols, double delta = 0) const {
 		for (int row = 0; row < rows; ++row) {
 			const Vec<T, 2> *gradientRow = image.ptr<Vec<T, 2>>(row);
 			T *magnitudeRow = filtered.ptr<T>(row);

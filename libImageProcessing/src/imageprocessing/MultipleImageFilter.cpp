@@ -13,7 +13,7 @@ MultipleImageFilter::MultipleImageFilter() : filters() {}
 
 MultipleImageFilter::~MultipleImageFilter() {}
 
-Mat MultipleImageFilter::applyTo(const Mat &image, Mat &filtered) {
+Mat MultipleImageFilter::applyTo(const Mat &image, Mat &filtered) const {
 	if (filters.empty()) {
 		image.copyTo(filtered);
 	} else {
@@ -24,7 +24,7 @@ Mat MultipleImageFilter::applyTo(const Mat &image, Mat &filtered) {
 	return filtered;
 }
 
-void MultipleImageFilter::applyInPlace(Mat& image) {
+void MultipleImageFilter::applyInPlace(Mat& image) const {
 	for (unsigned int i = 0; i < filters.size(); ++i)
 		filters[i]->applyInPlace(image);
 }

@@ -27,9 +27,9 @@ HistEq64Filter::~HistEq64Filter() {
 	LUTbin = NULL;
 }
 
-Mat HistEq64Filter::applyTo(const Mat& image, Mat& filtered) {
+Mat HistEq64Filter::applyTo(const Mat& image, Mat& filtered) const {
 	//cv::equalizeHist(image, filtered);
-	stretchFactor = 255.0f/(float)(image.cols*image.rows);
+	float stretchFactor = 255.0f/(float)(image.cols*image.rows);
 	filtered.create(image.rows, image.cols, CV_8U);
 	int rows = image.rows;
 	int cols = image.cols;
@@ -122,7 +122,7 @@ Mat HistEq64Filter::applyTo(const Mat& image, Mat& filtered) {
 	return filtered;
 }
 
-void HistEq64Filter::applyInPlace(Mat& image) {
+void HistEq64Filter::applyInPlace(Mat& image) const {
 	applyTo(image, image);
 }
 

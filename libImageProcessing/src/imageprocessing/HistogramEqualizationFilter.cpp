@@ -14,12 +14,12 @@ HistogramEqualizationFilter::HistogramEqualizationFilter() {}
 
 HistogramEqualizationFilter::~HistogramEqualizationFilter() {}
 
-Mat HistogramEqualizationFilter::applyTo(const Mat& image, Mat& filtered) {
+Mat HistogramEqualizationFilter::applyTo(const Mat& image, Mat& filtered) const {
 	cv::equalizeHist(image, filtered);
 	return filtered;
 }
 
-void HistogramEqualizationFilter::applyInPlace(Mat& image) {
+void HistogramEqualizationFilter::applyInPlace(Mat& image) const {
 	applyTo(image, image);
 }
 

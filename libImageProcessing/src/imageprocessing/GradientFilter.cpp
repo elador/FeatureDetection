@@ -21,7 +21,7 @@ GradientFilter::GradientFilter(int kernelSize, int blurKernelSize) : kernelSize(
 
 GradientFilter::~GradientFilter() {}
 
-double GradientFilter::getScale(int kernelSize) {
+double GradientFilter::getScale(int kernelSize) const {
 	if (kernelSize == 1)
 		return 1. / 2;
 	if (kernelSize == CV_SCHARR)
@@ -29,7 +29,7 @@ double GradientFilter::getScale(int kernelSize) {
 	return 1. / (1 << (2 * kernelSize - 3));
 }
 
-double GradientFilter::getDelta(int imageType) {
+double GradientFilter::getDelta(int imageType) const {
 	if (imageType == CV_8U)
 		return 127;
 	if (imageType == CV_16U)
@@ -37,7 +37,7 @@ double GradientFilter::getDelta(int imageType) {
 	return 0;
 }
 
-Mat GradientFilter::applyTo(const Mat& image, Mat& filtered) {
+Mat GradientFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.channels() > 1)
 		throw invalid_argument("GradientFilter: the image must have exactly one channel");
 
@@ -63,7 +63,7 @@ Mat GradientFilter::applyTo(const Mat& image, Mat& filtered) {
 	return filtered;
 }
 
-void GradientFilter::applyInPlace(Mat& image) {
+void GradientFilter::applyInPlace(Mat& image) const {
 	applyTo(image, image);
 }
 

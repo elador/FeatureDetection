@@ -13,10 +13,10 @@
 namespace imageprocessing {
 
 /**
- * Feature extractor that extracts surroundings of the requested patch or focusses on the patch center. It scales the
- * patch size prior to extracting the patch from the underlying feature extractor and corrects the size of the patch
- * afterwards (reverses the scaling), so further processing works with the original patch size. Additionally, the patch
- * center can be moved by an offset.
+ * Feature extractor that manipulates the positioning and size of the patch before extraction, so it may focus on the
+ * center of the original patch or capture the surroundings. The position and size of the extracted patch are then
+ * changed, so they match the original extract request and further processing works with the original patch position
+ * and size. The patch (image) data will remain unchanged.
  */
 class PatchResizingFeatureExtractor : public FeatureExtractor {
 public:

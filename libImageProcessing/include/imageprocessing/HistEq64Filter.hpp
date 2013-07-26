@@ -32,12 +32,12 @@ public:
 
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered);
+	Mat applyTo(const Mat& image, Mat& filtered) const;
 
-	void applyInPlace(Mat& image);
+	void applyInPlace(Mat& image) const;
 
 private:
-	float stretchFactor;	///< stretch factor for the histogram equalization
+
 	unsigned char* LUTbin; ///< lookup table for the histogram equalization
 };
 

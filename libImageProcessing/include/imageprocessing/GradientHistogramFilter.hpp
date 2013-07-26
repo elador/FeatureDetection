@@ -38,9 +38,9 @@ public:
 
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered);
+	Mat applyTo(const Mat& image, Mat& filtered) const;
 
-	void applyInPlace(Mat& image);
+	void applyInPlace(Mat& image) const;
 
 	unsigned int getBinCount() const;
 

@@ -34,9 +34,9 @@ public:
 
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered);
+	Mat applyTo(const Mat& image, Mat& filtered) const;
 
-	void applyInPlace(Mat& image);
+	void applyInPlace(Mat& image) const;
 
 private:
 
@@ -47,13 +47,13 @@ private:
 	 * @param[in] height The height of the image (and filter).
 	 * @return The filter of the given size.
 	 */
-	const Mat& getFilter(int width, int height);
+	const Mat& getFilter(int width, int height) const;
 
 	float alpha;           ///< Decay of modulus of spectrum is assumed as 1/frequency^alpha.
 	float cutoffFrequency; ///< The cut-off frequency of the additional low-pass filter (only applied when greater than zero).
-	Mat filter;       ///< The current filter.
-	Mat floatImage;   ///< Temporal buffer for the float conversion of the image.
-	Mat fourierImage; ///< Temporal buffer for the Fourier transformation of the image.
+	mutable Mat filter;       ///< The current filter.
+	mutable Mat floatImage;   ///< Temporal buffer for the float conversion of the image.
+	mutable Mat fourierImage; ///< Temporal buffer for the Fourier transformation of the image.
 };
 
 } /* namespace imageprocessing */

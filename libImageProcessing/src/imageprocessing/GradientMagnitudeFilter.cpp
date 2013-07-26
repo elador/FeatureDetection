@@ -17,7 +17,7 @@ GradientMagnitudeFilter::GradientMagnitudeFilter() {}
 
 GradientMagnitudeFilter::~GradientMagnitudeFilter() {}
 
-Mat GradientMagnitudeFilter::applyTo(const Mat& image, Mat& filtered) {
+Mat GradientMagnitudeFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.channels() != 2)
 		throw invalid_argument("GradientMagnitudeFilter: the image must have two channels");
 
@@ -42,7 +42,7 @@ Mat GradientMagnitudeFilter::applyTo(const Mat& image, Mat& filtered) {
 	return filtered;
 }
 
-void GradientMagnitudeFilter::applyInPlace(Mat& image) {
+void GradientMagnitudeFilter::applyInPlace(Mat& image) const {
 	image = applyTo(image);
 }
 

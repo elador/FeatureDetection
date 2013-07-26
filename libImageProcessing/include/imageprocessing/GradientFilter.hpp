@@ -32,9 +32,9 @@ public:
 
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered);
+	Mat applyTo(const Mat& image, Mat& filtered) const;
 
-	void applyInPlace(Mat& image);
+	void applyInPlace(Mat& image) const;
 
 private:
 
@@ -44,7 +44,7 @@ private:
 	 * @param[in] kernelSize The size of the Sobel kernel.
 	 * @return The normalization factor of the kernel values.
 	 */
-	double getScale(int kernelSize);
+	double getScale(int kernelSize) const;
 
 	/**
 	 * Determines the offset of the gradient values.
@@ -52,7 +52,7 @@ private:
 	 * @param[in] imageType The type of the output image.
 	 * @return The offset.
 	 */
-	double getDelta(int imageType);
+	double getDelta(int imageType) const;
 
 	int kernelSize;     ///< The size of the Sobel kernel. Must be 1, 3, 5, 7 or CV_SCHARR.
 	int blurKernelSize; ///< The size of the blurring kernel for additional smoothing.
