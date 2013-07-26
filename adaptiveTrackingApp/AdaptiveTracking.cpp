@@ -94,20 +94,43 @@ AdaptiveTracking::AdaptiveTracking(unique_ptr<LabeledImageSource> imageSource, u
 
 AdaptiveTracking::~AdaptiveTracking() {}
 
+shared_ptr<DirectPyramidFeatureExtractor> AdaptiveTracking::createPyramidExtractor(
+		ptree& config, shared_ptr<ImagePyramid> pyramid, bool needsLayerFilters) {
+	if (config.get_value<string>() == "direct") {
+		shared_ptr<DirectPyramidFeatureExtractor> pyramidExtractor = make_shared<DirectPyramidFeatureExtractor>(
+				config.get<int>("patch.width"), config.get<int>("patch.height"),
+				config.get<int>("patch.minWidth"), config.get<int>("patch.maxWidth"),
+				config.get<float>("scaleFactor"));
+		pyramidExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+		return pyramidExtractor;
+	} else if (config.get_value<string>() == "derived") {
+		if (!pyramid)
+			throw invalid_argument("AdaptiveTracking: base pyramid necessary for creating a derived pyramid");
+		if (needsLayerFilters)
+			return make_shared<DirectPyramidFeatureExtractor>(make_shared<ImagePyramid>(pyramid),
+					config.get<int>("patch.width"), config.get<int>("patch.height"));
+		else
+			return make_shared<DirectPyramidFeatureExtractor>(pyramid,
+					config.get<int>("patch.width"), config.get<int>("patch.height"));
+	} else {
+		throw invalid_argument("AdaptiveTracking: invalid pyramid type: " + config.get_value<string>());
+	}
+}
+
 shared_ptr<FeatureExtractor> AdaptiveTracking::createFeatureExtractor(
-		shared_ptr<DirectPyramidFeatureExtractor> patchExtractor, ptree& config) {
-	float scaleFactor = config.get<float>("scale");
+		shared_ptr<ImagePyramid> pyramid, ptree& config) {
+	float scaleFactor = config.get<float>("scale", 1.f);
 	if (config.get_value<string>() == "histeq") {
-		shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
-		featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
-		return wrapFeatureExtractor(featureExtractor, scaleFactor);
+		pyramidExtractor = createPyramidExtractor(config.get_child("pyramid"), pyramid, false);
+		pyramidExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
+		return wrapFeatureExtractor(pyramidExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "whi") {
-		shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
-		featureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
-		featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
-		featureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0));
-		featureExtractor->addPatchFilter(make_shared<IntensityNormNormalizationFilter>());
-		return wrapFeatureExtractor(featureExtractor, scaleFactor);
+		pyramidExtractor = createPyramidExtractor(config.get_child("pyramid"), pyramid, true);
+		pyramidExtractor->addLayerFilter(make_shared<WhiteningFilter>());
+		pyramidExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
+		pyramidExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0));
+		pyramidExtractor->addPatchFilter(make_shared<IntensityNormNormalizationFilter>());
+		return wrapFeatureExtractor(pyramidExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "haar") {
 		vector<float> sizes;
 		float size;
@@ -140,21 +163,24 @@ shared_ptr<FeatureExtractor> AdaptiveTracking::createFeatureExtractor(
 		featureExtractor->addPatchFilter(make_shared<HaarFeatureFilter>(sizes, gridRows, gridCols, types));
 		return wrapFeatureExtractor(featureExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "hog") {
-		patchExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
-		patchExtractor->addLayerFilter(make_shared<GradientHistogramFilter>(config.get<int>("bins"), config.get<bool>("signed")));
-		return wrapFeatureExtractor(createHistogramFeatureExtractor(patchExtractor,
+		pyramidExtractor = createPyramidExtractor(config.get_child("pyramid"), pyramid, true);
+		pyramidExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
+		pyramidExtractor->addLayerFilter(make_shared<GradientHistogramFilter>(config.get<int>("bins"), config.get<bool>("signed")));
+		return wrapFeatureExtractor(createHistogramFeatureExtractor(pyramidExtractor,
 				config.get<int>("bins"), config.get_child("histogram")), scaleFactor);
 	} else if (config.get_value<string>() == "lbp") {
+		pyramidExtractor = createPyramidExtractor(config.get_child("pyramid"), pyramid, true);
 		shared_ptr<LbpFilter> lbpFilter = createLbpFilter(config.get<string>("type"));
-		patchExtractor->addLayerFilter(lbpFilter);
-		return wrapFeatureExtractor(createHistogramFeatureExtractor(patchExtractor,
+		pyramidExtractor->addLayerFilter(lbpFilter);
+		return wrapFeatureExtractor(createHistogramFeatureExtractor(pyramidExtractor,
 				lbpFilter->getBinCount(), config.get_child("histogram")), scaleFactor);
 	} else if (config.get_value<string>() == "glbp") {
+		pyramidExtractor = createPyramidExtractor(config.get_child("pyramid"), pyramid, true);
 		shared_ptr<LbpFilter> lbpFilter = createLbpFilter(config.get<string>("type"));
-		patchExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
-		patchExtractor->addLayerFilter(make_shared<GradientMagnitudeFilter>());
-		patchExtractor->addLayerFilter(lbpFilter);
-		return wrapFeatureExtractor(createHistogramFeatureExtractor(patchExtractor,
+		pyramidExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
+		pyramidExtractor->addLayerFilter(make_shared<GradientMagnitudeFilter>());
+		pyramidExtractor->addLayerFilter(lbpFilter);
+		return wrapFeatureExtractor(createHistogramFeatureExtractor(pyramidExtractor,
 				lbpFilter->getBinCount(), config.get_child("histogram")), scaleFactor);
 	} else {
 		throw invalid_argument("AdaptiveTracking: invalid feature type: " + config.get<string>("feature"));
@@ -251,15 +277,20 @@ shared_ptr<TrainableProbabilisticClassifier> AdaptiveTracking::createClassifier(
 }
 
 void AdaptiveTracking::initTracking(ptree& config) {
-	// create patch extractor
-	patchExtractor = make_shared<DirectPyramidFeatureExtractor>(
-			config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"),
-			config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"),
-			config.get<double>("pyramid.scaleFactor"));
-	patchExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+	// create base pyramid
+	shared_ptr<ImagePyramid> pyramid;
+	optional<ptree&> pyramidConfig = config.get_child_optional("pyramid");
+	if (pyramidConfig) {
+		DirectPyramidFeatureExtractor tmp(
+				pyramidConfig->get<int>("patch.width"), pyramidConfig->get<int>("patch.height"),
+				pyramidConfig->get<int>("patch.minWidth"), pyramidConfig->get<int>("patch.maxWidth"),
+				pyramidConfig->get<double>("scaleFactor"));
+		tmp.addImageFilter(make_shared<GrayscaleFilter>());
+		pyramid = tmp.getPyramid();
+	}
 
 	// create adaptive measurement model
-	adaptiveFeatureExtractor = createFeatureExtractor(patchExtractor, config.get_child("adaptive.feature"));
+	adaptiveFeatureExtractor = createFeatureExtractor(pyramid, config.get_child("adaptive.feature"));
 	shared_ptr<Kernel> kernel = createKernel(config.get_child("adaptive.measurement.classifier.kernel"));
 	shared_ptr<TrainableSvmClassifier> trainableSvm = createTrainableSvm(kernel, config.get_child("adaptive.measurement.classifier.training"));
 	shared_ptr<TrainableProbabilisticClassifier> classifier = createClassifier(trainableSvm, config.get_child("adaptive.measurement.classifier.probabilistic"));
@@ -310,7 +341,8 @@ void AdaptiveTracking::initTracking(ptree& config) {
 		initialization = Initialization::AUTOMATIC;
 
 		// create static measurement model
-		shared_ptr<FilteringFeatureExtractor> staticFeatureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
+		shared_ptr<DirectPyramidFeatureExtractor> staticFeatureExtractor = createPyramidExtractor(
+				config.get_child("initial.measurement.pyramid"), pyramid, false);
 		staticFeatureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
 		string classifierFile = config.get<string>("initial.measurement.classifier.classifierFile");
 		string thresholdsFile = config.get<string>("initial.measurement.classifier.thresholdsFile");
@@ -542,13 +574,15 @@ void AdaptiveTracking::onMouse(int event, int x, int y, int, void* userdata) {
 					abs(tracking->currentX - tracking->storedX), abs(tracking->currentY - tracking->storedY));
 
 			if (position.width != 0 && position.height != 0) {
-				double dimension = tracking->patchExtractor->getPatchWidth() * tracking->patchExtractor->getPatchHeight();
-				float aspectRatio = static_cast<float>(position.height) / static_cast<float>(position.width);
-				double patchWidth = sqrt(dimension / aspectRatio);
-				double patchHeight = aspectRatio * patchWidth;
-				tracking->patchExtractor->setPatchSize(cvRound(patchWidth), cvRound(patchHeight));
-				log.info("Initialized patch size at " + lexical_cast<string>(tracking->patchExtractor->getPatchWidth())
-						+ " x " + lexical_cast<string>(tracking->patchExtractor->getPatchHeight()));
+				if (tracking->pyramidExtractor) {
+					double dimension = tracking->pyramidExtractor->getPatchWidth() * tracking->pyramidExtractor->getPatchHeight();
+					float aspectRatio = static_cast<float>(position.height) / static_cast<float>(position.width);
+					double patchWidth = sqrt(dimension / aspectRatio);
+					double patchHeight = aspectRatio * patchWidth;
+					tracking->pyramidExtractor->setPatchSize(cvRound(patchWidth), cvRound(patchHeight));
+					log.info("Initialized patch size at " + lexical_cast<string>(tracking->pyramidExtractor->getPatchWidth())
+							+ " x " + lexical_cast<string>(tracking->pyramidExtractor->getPatchHeight()));
+				}
 
 				int tries = 0;
 				while (tries < 10 && !tracking->adaptiveUsable) {
@@ -627,14 +661,14 @@ void AdaptiveTracking::run() {
 					if (!imageSource->getLandmarks().isEmpty()) {
 						const Landmark& landmark = imageSource->getLandmarks().getLandmark();
 						Rect position = landmark.getRect();
-						if (tries == 0) {
-							double dimension = patchExtractor->getPatchWidth() * patchExtractor->getPatchHeight();
+						if (tries == 0 && pyramidExtractor) {
+							double dimension = pyramidExtractor->getPatchWidth() * pyramidExtractor->getPatchHeight();
 							float aspectRatio = landmark.getHeight() / landmark.getWidth();
 							double patchWidth = sqrt(dimension / aspectRatio);
 							double patchHeight = aspectRatio * patchWidth;
-							patchExtractor->setPatchSize(cvRound(patchWidth), cvRound(patchHeight));
-							log.info("Initialized patch size at " + lexical_cast<string>(patchExtractor->getPatchWidth())
-									+ " x " + lexical_cast<string>(patchExtractor->getPatchHeight()));
+							pyramidExtractor->setPatchSize(cvRound(patchWidth), cvRound(patchHeight));
+							log.info("Initialized patch size at " + lexical_cast<string>(pyramidExtractor->getPatchWidth())
+									+ " x " + lexical_cast<string>(pyramidExtractor->getPatchHeight()));
 						}
 						tries++;
 						adaptiveUsable = adaptiveTracker->initialize(frame, position);

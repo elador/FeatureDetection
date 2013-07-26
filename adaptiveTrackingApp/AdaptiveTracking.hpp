@@ -72,7 +72,9 @@ private:
 
 	static void onMouse(int event, int x, int y, int, void* userdata);
 
-	shared_ptr<FeatureExtractor> createFeatureExtractor(shared_ptr<DirectPyramidFeatureExtractor> patchExtractor, ptree& config);
+	shared_ptr<DirectPyramidFeatureExtractor> createPyramidExtractor(
+			ptree& config, shared_ptr<ImagePyramid> pyramid, bool needsLayerFilters);
+	shared_ptr<FeatureExtractor> createFeatureExtractor(shared_ptr<ImagePyramid> pyramid, ptree& config);
 	shared_ptr<LbpFilter> createLbpFilter(string lbpType);
 	shared_ptr<FeatureExtractor> createHistogramFeatureExtractor(shared_ptr<FeatureExtractor> patchExtractor, unsigned int bins, ptree& config);
 	shared_ptr<FeatureExtractor> wrapFeatureExtractor(shared_ptr<FeatureExtractor> featureExtractor, float scaleFactor);
@@ -106,7 +108,7 @@ private:
 	int drawFlow;
 
 	Initialization initialization;
-	shared_ptr<DirectPyramidFeatureExtractor> patchExtractor;
+	shared_ptr<DirectPyramidFeatureExtractor> pyramidExtractor;
 	shared_ptr<FeatureExtractor> adaptiveFeatureExtractor;
 	unique_ptr<CondensationTracker> initialTracker;
 	unique_ptr<AdaptiveCondensationTracker> adaptiveTracker;
