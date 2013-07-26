@@ -33,6 +33,10 @@ public:
 
 	//Mat renderMesh(Mesh mesh, vector<int> mask=vector<int>());
 
+	void setWorldTransform(Mat worldTransform);
+
+	void setBackgroundImage(Mat background) {};
+
 private:
 	Mat colorBuffer;
 	Mat depthBuffer;
@@ -42,7 +46,7 @@ private:
 	Mat projectionTransform;	// Orthogonal or projective transform
 	Mat windowTransform;	// Transform to window coordinates, 4 x 4 float
 
-	void setWorldTransform(Mat worldTransform);
+	
 	void updateViewTransform();
 	void updateProjectionTransform(bool perspective=true);
 	void setViewport(unsigned int screenWidth, unsigned int screenHeight);

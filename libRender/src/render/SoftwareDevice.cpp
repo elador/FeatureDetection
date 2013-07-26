@@ -39,7 +39,7 @@ Mat SoftwareDevice::getDepthBuffer()
 
 void SoftwareDevice::setWorldTransform(Mat worldTransform)
 {
-	this->worldTransform = Mat::eye(4, 4, CV_32FC1);
+	this->worldTransform = worldTransform;
 }
 
 void SoftwareDevice::updateViewTransform()
