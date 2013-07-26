@@ -11,6 +11,7 @@
 #include "condensation/Sampler.hpp"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int.hpp"
+#include "boost/random/uniform_real.hpp"
 #include <memory>
 
 using std::shared_ptr;
@@ -101,8 +102,9 @@ private:
 	int minSize; ///< The minimum size of a sample.
 	int maxSize; ///< The maximum size of a sample.
 
-	boost::mt19937 generator;          ///< Random number generator.
-	boost::uniform_int<> distribution; ///< Uniform integer distribution.
+	boost::mt19937 generator; ///< Random number generator.
+	boost::uniform_int<> intDistribution;   ///< Uniform integer distribution.
+	boost::uniform_real<> realDistribution; ///< Uniform real distribution.
 };
 
 } /* namespace condensation */

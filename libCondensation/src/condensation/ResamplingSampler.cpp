@@ -26,7 +26,8 @@ ResamplingSampler::ResamplingSampler(unsigned int count, double randomRate,
 				minSize(minSize),
 				maxSize(maxSize),
 				generator(boost::mt19937(time(0))),
-				distribution(boost::uniform_int<>()) {
+				intDistribution(boost::uniform_int<>()),
+				realDistribution(boost::uniform_real<>()) {
 	if (minSize < 1)
 		throw invalid_argument("ResamplingSampler: the minimum size must be greater than zero");
 	if (maxSize < minSize)
@@ -70,11 +71,12 @@ bool ResamplingSampler::isValid(const Sample& sample, const Mat& image) {
 }
 
 void ResamplingSampler::sampleValid(Sample& sample, const Mat& image) {
-	int size = distribution(generator, maxSize - minSize) + minSize;
+	double sizeFactor = realDistribution(generator) * (static_cast<double>(maxSize) / static_cast<double>(minSize) - 1.0) + 1.0;
+	int size = cvRound(sizeFactor * minSize);
 	int halfSize = size / 2;
 	sample.setSize(size);
-	sample.setX(distribution(generator, image.cols - size) + halfSize);
-	sample.setY(distribution(generator, image.rows - size) + halfSize);
+	sample.setX(intDistribution(generator, image.cols - size) + halfSize);
+	sample.setY(intDistribution(generator, image.rows - size) + halfSize);
 	sample.setVx(0);
 	sample.setVy(0);
 	sample.setVSize(1);
