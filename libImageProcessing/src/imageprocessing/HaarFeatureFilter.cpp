@@ -37,28 +37,6 @@ HaarFeatureFilter::HaarFeatureFilter(vector<float> sizes, vector<float> xs, vect
 
 HaarFeatureFilter::~HaarFeatureFilter() {}
 
-Mat HaarFeatureFilter::applyTo(const Mat& image, Mat& filtered) {
-	if (image.type() != CV_32SC1)
-		throw invalid_argument("HaarFeatureFilter: the image must be of type CV_32SC1");
-	filtered.create(1, features.size(), CV_32F);
-	float* data = filtered.ptr<float>(0);
-	for (int i = 0; i < features.size(); ++i) {
-		float value = 0;
-		const HaarFeature& feature = features[i];
-		for (int j = 0; j < feature.rects.size(); ++j) {
-			const Rect_<float>& rect = feature.rects[j];
-			int x1 = cvRound(rect.x * image.cols);
-			int x2 = cvRound((rect.x + rect.width) * image.cols);
-			int y1 = cvRound(rect.y * image.rows);
-			int y2 = cvRound((rect.y + rect.height) * image.rows);
-			int areaSum = image.at<int>(y1, x1) + image.at<int>(y2, x2) - image.at<int>(y1, x2) - image.at<int>(y2, x1);
-			value += feature.weights[j] * areaSum;
-		}
-		data[i] = value / (feature.factor * feature.area * image.cols * image.rows);
-	}
-	return filtered;
-}
-
 void HaarFeatureFilter::buildFeatures(vector<float> sizes, unsigned int xCount, unsigned int yCount, int types) {
 	vector<float> xs(xCount);
 	vector<float> ys(yCount);
@@ -156,7 +134,29 @@ void HaarFeatureFilter::buildFeatures(vector<float> sizes, vector<float> xs, vec
 	}
 }
 
-void HaarFeatureFilter::applyInPlace(Mat& image) {
+Mat HaarFeatureFilter::applyTo(const Mat& image, Mat& filtered) const {
+	if (image.type() != CV_32SC1)
+		throw invalid_argument("HaarFeatureFilter: the image must be of type CV_32SC1");
+	filtered.create(1, features.size(), CV_32F);
+	float* data = filtered.ptr<float>(0);
+	for (int i = 0; i < features.size(); ++i) {
+		float value = 0;
+		const HaarFeature& feature = features[i];
+		for (int j = 0; j < feature.rects.size(); ++j) {
+			const Rect_<float>& rect = feature.rects[j];
+			int x1 = cvRound(rect.x * image.cols);
+			int x2 = cvRound((rect.x + rect.width) * image.cols);
+			int y1 = cvRound(rect.y * image.rows);
+			int y2 = cvRound((rect.y + rect.height) * image.rows);
+			int areaSum = image.at<int>(y1, x1) + image.at<int>(y2, x2) - image.at<int>(y1, x2) - image.at<int>(y2, x1);
+			value += feature.weights[j] * areaSum;
+		}
+		data[i] = value / (feature.factor * feature.area * image.cols * image.rows);
+	}
+	return filtered;
+}
+
+void HaarFeatureFilter::applyInPlace(Mat& image) const {
 	image = applyTo(image);
 }
 

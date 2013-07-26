@@ -50,7 +50,7 @@ unsigned int LbpFilter::getBinCount() const {
 	}
 }
 
-Mat LbpFilter::applyTo(const Mat& image, Mat& filtered) {
+Mat LbpFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.channels() > 1)
 		throw invalid_argument("LbpFilter: the image must have exactly one channel");
 	Ptr<BaseFilter> filter2D;
@@ -81,7 +81,7 @@ Mat LbpFilter::applyTo(const Mat& image, Mat& filtered) {
 	return filtered;
 }
 
-void LbpFilter::applyInPlace(Mat& image) {
+void LbpFilter::applyInPlace(Mat& image) const {
 	applyTo(image, image);
 }
 

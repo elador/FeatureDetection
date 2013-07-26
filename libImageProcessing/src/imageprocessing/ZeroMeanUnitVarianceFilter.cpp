@@ -18,7 +18,7 @@ ZeroMeanUnitVarianceFilter::ZeroMeanUnitVarianceFilter() {}
 
 ZeroMeanUnitVarianceFilter::~ZeroMeanUnitVarianceFilter() {}
 
-Mat ZeroMeanUnitVarianceFilter::applyTo(const Mat& image, Mat& filtered) {
+Mat ZeroMeanUnitVarianceFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.channels() > 1)
 		throw invalid_argument("ZeroMeanUnitVarianceFilter: The image must have exactly one channel.");
 	Scalar mean, deviation;
@@ -32,7 +32,7 @@ Mat ZeroMeanUnitVarianceFilter::applyTo(const Mat& image, Mat& filtered) {
 	return filtered;
 }
 
-void ZeroMeanUnitVarianceFilter::applyInPlace(Mat& image) {
+void ZeroMeanUnitVarianceFilter::applyInPlace(Mat& image) const {
 	image = applyTo(image);
 }
 

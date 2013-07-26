@@ -13,12 +13,12 @@ ConversionFilter::ConversionFilter(int type, double alpha, double beta) : type(t
 
 ConversionFilter::~ConversionFilter() {}
 
-Mat ConversionFilter::applyTo(const Mat& image, Mat& filtered) {
+Mat ConversionFilter::applyTo(const Mat& image, Mat& filtered) const {
 	image.convertTo(filtered, type, alpha, beta);
 	return filtered;
 }
 
-void ConversionFilter::applyInPlace(Mat& image) {
+void ConversionFilter::applyInPlace(Mat& image) const {
 	applyTo(image, image);
 }
 

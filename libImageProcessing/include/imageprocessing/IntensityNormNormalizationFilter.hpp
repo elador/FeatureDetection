@@ -25,7 +25,7 @@ public:
 	/**
 	 * Constructs a new filter that normalizes an image by its intensity-norm.
 	 *
-	 * @param[in] normType The type of norm to use.
+	 * @param[in] normType The norm type (see cv::norm).
 	 */
 	IntensityNormNormalizationFilter(int normType = cv::NORM_L2);
 
@@ -33,12 +33,13 @@ public:
 
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered);
+	Mat applyTo(const Mat& image, Mat& filtered) const;
 
-	void applyInPlace(Mat& image);
+	void applyInPlace(Mat& image) const;
 
 private:
-	int normType;
+
+	int normType; ///< The norm type (see cv::norm).
 };
 
 } /* namespace imageprocessing */

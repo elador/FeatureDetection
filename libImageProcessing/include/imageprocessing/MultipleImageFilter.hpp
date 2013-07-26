@@ -32,9 +32,9 @@ public:
 
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered);
+	Mat applyTo(const Mat& image, Mat& filtered) const;
 
-	void applyInPlace(Mat& image);
+	void applyInPlace(Mat& image) const;
 
 	/**
 	 * Adds a new image filter that is applied to images after the currently existing filters.

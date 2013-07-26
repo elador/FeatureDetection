@@ -16,7 +16,7 @@ GrayscaleFilter::GrayscaleFilter() {}
 
 GrayscaleFilter::~GrayscaleFilter() {}
 
-Mat GrayscaleFilter::applyTo(const Mat& image, Mat& filtered) {
+Mat GrayscaleFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.channels() > 1)
 		cvtColor(image, filtered, CV_BGR2GRAY);
 	else
@@ -24,7 +24,7 @@ Mat GrayscaleFilter::applyTo(const Mat& image, Mat& filtered) {
 	return filtered;
 }
 
-void GrayscaleFilter::applyInPlace(Mat& image) {
+void GrayscaleFilter::applyInPlace(Mat& image) const {
 	if (image.channels() > 1) {
 		Mat tmp;
 		cvtColor(image, tmp, CV_BGR2GRAY);

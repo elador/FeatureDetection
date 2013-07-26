@@ -17,7 +17,7 @@ IntensityNormNormalizationFilter::IntensityNormNormalizationFilter(int normType)
 
 IntensityNormNormalizationFilter::~IntensityNormNormalizationFilter() {}
 
-Mat IntensityNormNormalizationFilter::applyTo(const Mat& image, Mat& filtered) {
+Mat IntensityNormNormalizationFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.channels() > 1)
 		throw invalid_argument("IntensityNormNormalizationFilter: The image must have exactly one channel.");
 	
@@ -28,7 +28,7 @@ Mat IntensityNormNormalizationFilter::applyTo(const Mat& image, Mat& filtered) {
 	return filtered;
 }
 
-void IntensityNormNormalizationFilter::applyInPlace(Mat& image) {
+void IntensityNormNormalizationFilter::applyInPlace(Mat& image) const {
 	image = applyTo(image);
 }
 

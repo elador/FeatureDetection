@@ -18,7 +18,7 @@ WhiteningFilter::WhiteningFilter(float alpha, float cutoffFrequency) :
 
 WhiteningFilter::~WhiteningFilter() {}
 
-Mat WhiteningFilter::applyTo(const Mat& image, Mat& filtered) {
+Mat WhiteningFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.channels() > 1)
 		throw invalid_argument("WhiteningFilter: the image must have exactly one channel");
 
@@ -56,11 +56,11 @@ Mat WhiteningFilter::applyTo(const Mat& image, Mat& filtered) {
 	return filtered;
 }
 
-void WhiteningFilter::applyInPlace(Mat& image) {
+void WhiteningFilter::applyInPlace(Mat& image) const {
 	applyTo(image, image);
 }
 
-const Mat& WhiteningFilter::getFilter(int width, int height) {
+const Mat& WhiteningFilter::getFilter(int width, int height) const {
 	if (filter.cols != width || filter.rows != height) {
 		filter.create(height, width, CV_32F);
 		float nyquistFrequency = 0.5;
