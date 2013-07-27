@@ -43,9 +43,11 @@ public:
 
 	void setFrustum(float l, float r, float t, float b, float n, float f);
 
-private:
+	// Todo: move those all back to private
 	cv::Vec3f eye, at, up;	// (eye is where my eyes are (where I am = position of camera!), at is my target (where I'm looking at), and up is up direction
 	cv::Vec3f forwardVector, rightVector, upVector;
+private:
+
 
 	struct Frustum {
 		float l;

@@ -60,8 +60,11 @@ static float horizontalAngle = 0.0f;
 static float verticalAngle = 0.0f;
 static int lastX = 0;
 static int lastY = 0;
-static float movingFactor = 1.0f;
+static float movingFactor = 0.5f;
 static bool moving = false;
+
+static float zNear = -0.1f;
+static float zFar = -100.0f;
 
 static void winOnMouse(int event, int x, int y, int, void* userdata)
 {
@@ -87,6 +90,89 @@ static void winOnMouse(int event, int x, int y, int, void* userdata)
 	if (event == EVENT_LBUTTONUP) {
 		moving = false;
 	}
+
+}
+
+Mat updateProjectionTransform(Camera camera, bool perspective=false) {
+	Mat projectionTransform;
+
+	Mat orthogonal = (cv::Mat_<float>(4,4) << 
+		2.0f / (camera.frustum.r - camera.frustum.l),	0.0f,											0.0f,											-(camera.frustum.r + camera.frustum.l) / (camera.frustum.r - camera.frustum.l),
+		0.0f,											2.0f / (camera.frustum.t - camera.frustum.b),	0.0f,											-(camera.frustum.t + camera.frustum.b) / (camera.frustum.t - camera.frustum.b),
+		0.0f,											0.0f,											2.0f / (camera.frustum.n - camera.frustum.f),	-(camera.frustum.n + camera.frustum.f) / (camera.frustum.n - camera.frustum.f), // CG book has denominator (n-f) ? I had (f-n) before. When n and f are neg and here is n-f, then it's the same as n and f pos and f-n here.
+		0.0f,											0.0f,											0.0f,											1.0f);
+	if (perspective) {
+		Mat perspective = (cv::Mat_<float>(4,4) << 
+			camera.frustum.n,	0.0f,				0.0f,									0.0f,
+			0.0f,				camera.frustum.n,	0.0f,									0.0f,
+			0.0f,				0.0f,				camera.frustum.n + camera.frustum.f,	-camera.frustum.n * camera.frustum.f, // CG book has -f*n ? (I had +f*n before). (doesn't matter, cancels when either both n and f neg or both pos)
+			0.0f,				0.0f,				+1.0f, /* CG has +1 here, I had -1 */	0.0f);
+		projectionTransform = orthogonal * perspective;
+	} else {
+		projectionTransform = orthogonal;
+	}
+	return projectionTransform;
+}
+
+void renderAxes(Mat worldTransform, Mat viewTransform, Mat projectionTransform, Mat windowTransform) {
+
+	Vec4f origin(0.0f, 0.0f, 0.0f, 1.0f);
+	Vec4f xAxis(1.0f, 0.0f, 0.0f, 1.0f);
+	Vec4f yAxis(0.0f, 1.0f, 0.0f, 1.0f);
+	Vec4f zAxis(0.0f, 0.0f, 1.0f, 1.0f);
+	Vec4f mzAxis(0.0f, 0.0f, -1.0f, 1.0f);
+
+	// START Draw the axes:
+	Mat worldSpace = worldTransform * Mat(origin);
+	Mat camSpace = viewTransform * worldSpace;
+	Mat normalizedViewingVolume = projectionTransform * camSpace;
+	Vec4f normViewVolVec = matToColVec4f(normalizedViewingVolume);
+	normViewVolVec = normViewVolVec / normViewVolVec[3];	// divide by w
+	Mat windowCoords = windowTransform * Mat(normViewVolVec);	// places the vec as a column in the matrix
+	Vec4f windowCoordsVec = matToColVec4f(windowCoords);
+	Point2f originScreen(windowCoordsVec[0], windowCoordsVec[1]);
+
+	worldSpace = worldTransform * Mat(xAxis);
+	camSpace = viewTransform * worldSpace;
+	normalizedViewingVolume = projectionTransform * camSpace;
+	normViewVolVec = matToColVec4f(normalizedViewingVolume);
+	normViewVolVec = normViewVolVec / normViewVolVec[3];	// divide by w
+	windowCoords = windowTransform * Mat(normViewVolVec);	// places the vec as a column in the matrix
+	windowCoordsVec = matToColVec4f(windowCoords);
+	Point2f xAxisScreen(windowCoordsVec[0], windowCoordsVec[1]);
+
+	worldSpace = worldTransform * Mat(yAxis);
+	camSpace = viewTransform * worldSpace;
+	normalizedViewingVolume = projectionTransform * camSpace;
+	normViewVolVec = matToColVec4f(normalizedViewingVolume);
+	normViewVolVec = normViewVolVec / normViewVolVec[3];	// divide by w
+	windowCoords = windowTransform * Mat(normViewVolVec);	// places the vec as a column in the matrix
+	windowCoordsVec = matToColVec4f(windowCoords);
+	Point2f yAxisScreen(windowCoordsVec[0], windowCoordsVec[1]);
+
+	worldSpace = worldTransform * Mat(zAxis);
+	camSpace = viewTransform * worldSpace;
+	normalizedViewingVolume = projectionTransform * camSpace;
+	normViewVolVec = matToColVec4f(normalizedViewingVolume);
+	normViewVolVec = normViewVolVec / normViewVolVec[3];	// divide by w
+	windowCoords = windowTransform * Mat(normViewVolVec);	// places the vec as a column in the matrix
+	windowCoordsVec = matToColVec4f(windowCoords);
+	Point2f zAxisScreen(windowCoordsVec[0], windowCoordsVec[1]);
+
+	worldSpace = worldTransform * Mat(mzAxis);
+	camSpace = viewTransform * worldSpace;
+	normalizedViewingVolume = projectionTransform * camSpace;
+	normViewVolVec = matToColVec4f(normalizedViewingVolume);
+	normViewVolVec = normViewVolVec / normViewVolVec[3];	// divide by w
+	windowCoords = windowTransform * Mat(normViewVolVec);	// places the vec as a column in the matrix
+	windowCoordsVec = matToColVec4f(windowCoords);
+	Point2f mzAxisScreen(windowCoordsVec[0], windowCoordsVec[1]);
+
+	line(colorBuffer, originScreen, xAxisScreen, Scalar(0.0f, 0.0f, 255.0f));
+	line(colorBuffer, originScreen, yAxisScreen, Scalar(0.0f, 255.0f, 0.0f));
+	line(colorBuffer, originScreen, zAxisScreen, Scalar(255.0f, 0.0f, 0.0f));
+	line(colorBuffer, originScreen, mzAxisScreen, Scalar(255.0f, 0.0f, 255.0f));
+	// END draw axes
 
 }
 
@@ -137,12 +223,13 @@ int main(int argc, char *argv[])
 	const float aspect = (float)screenWidth/(float)screenHeight;
 	bool perspective = false;
 	Camera camera;
-	camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, 0.1f, 100.0f);
+	camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, zNear, zFar);
 	horizontalAngle = 0.0f; verticalAngle = 0.0f;
 	// Cam init: (init + updateFixed)
 	Vec3f eye(0.0f, 0.0f, 3.0f);
 	Vec3f at(0.0f, 0.0f, 0.0f);
-	camera.updateFixed(eye, at); // is fwdVec now 0, 0, -1 ?
+	camera.updateFixed(eye, at); // fwdVec now (0, 0, -1)
+	camera.updateFree(eye);  // : given hor/verAngle (and eye), calculate the new FwdVec. Then, new right and up. Then also set at-Vec.
 
 	Mat windowTransform = (cv::Mat_<float>(4,4) << 
 		(float)screenWidth/2.0f,		0.0f,						0.0f,	(float)screenWidth/2.0f, // CG book says (screenWidth-1)/2.0f for second value?
@@ -160,23 +247,7 @@ int main(int argc, char *argv[])
 		0.0f,				0.0f,				0.0f,				1.0f);
 	Mat viewTransform = rotate * translate;
 
-	Mat projectionTransform;
-	Mat orthogonal = (cv::Mat_<float>(4,4) << 
-		2.0f / (camera.frustum.r - camera.frustum.l),	0.0f,											0.0f,											-(camera.frustum.r + camera.frustum.l) / (camera.frustum.r - camera.frustum.l),
-		0.0f,											2.0f / (camera.frustum.t - camera.frustum.b),	0.0f,											-(camera.frustum.t + camera.frustum.b) / (camera.frustum.t - camera.frustum.b),
-		0.0f,											0.0f,											2.0f / (camera.frustum.n - camera.frustum.f),	-(camera.frustum.n + camera.frustum.f) / (camera.frustum.f - camera.frustum.n), // CG book has denominator (n-f) ? I had (f-n) before.
-		0.0f,											0.0f,											0.0f,											1.0f);
-	if (perspective) {
-		Mat perspective = (cv::Mat_<float>(4,4) << 
-			camera.frustum.n,	0.0f,				0.0f,									0.0f,
-			0.0f,				camera.frustum.n,	0.0f,									0.0f,
-			0.0f,				0.0f,				camera.frustum.n + camera.frustum.f,	+camera.frustum.n * camera.frustum.f, // CG book has -f*n ? (I had +f*n before)
-			0.0f,				0.0f,				-1.0f, /* CG has +1 here, I had -1 */	0.0f);
-		projectionTransform = orthogonal * perspective;
-	} else {
-		projectionTransform = orthogonal;
-	}
-
+	Mat projectionTransform = updateProjectionTransform(camera, true);
 
 	colorBuffer = Mat::zeros(screenHeight, screenWidth, CV_8UC4);
 	depthBuffer = Mat::ones(screenHeight, screenWidth, CV_64FC1)*1000000;
@@ -184,27 +255,6 @@ int main(int argc, char *argv[])
 	imshow(windowName, colorBuffer);
 	setMouseCallback(windowName, winOnMouse);
 
-	// Render:
-	//camera.update(1):
-	// eye += speed * time * forwardVec (or RightVec) (+ or -) = WASD
-	camera.updateFree(eye); // : given hor/verAngle (and eye), calculate the new FwdVec. Then, new right and up. Then also set at-Vec.
-	// update viewTr, projTr
-	
-	vector<Vec2f> pointList;
-	for (const auto& vertex : vertexList) {		// Note: We could put all the points in a matrix and then transform only this matrix?
-		Mat worldSpace = worldTransform * Mat(vertex);
-		Mat camSpace = viewTransform * worldSpace;
-		Mat normalizedViewingVolume = projectionTransform * camSpace;
-
-		// project from 4D to 2D window position with depth value in z coordinate
-		Vec4f normViewVolVec = matToColVec4f(normalizedViewingVolume);
-		normViewVolVec = normViewVolVec / normViewVolVec[3];	// divide by w
-		Mat windowCoords = windowTransform * Mat(normViewVolVec);	// places the vec as a column in the matrix
-		Vec4f windowCoordsVec = matToColVec4f(windowCoords);
-
-		Vec2f p = Vec2f(windowCoordsVec[0], windowCoordsVec[1]);
-		pointList.push_back(p);
-	}
 
 
 	bool running = true;
@@ -216,12 +266,97 @@ int main(int argc, char *argv[])
 		if (key == 'q') {
 			running = false;
 		}
+		if (key == 'w') {
+			camera.eye += 0.05f * camera.getForwardVector();
+		}
+		if (key == 'a') {
+			camera.eye -= 0.05f * camera.getRightVector();
+		}
+		if (key == 's') {
+			camera.eye -= 0.05f * camera.getForwardVector();
+		}
+		if (key == 'd') {
+			camera.eye += 0.05f * camera.getRightVector();
+		}
+		if (key == 'i') {
+			camera.frustum.n += 0.1f;
+		}
+		if (key == 'k') {
+			camera.frustum.n -= 0.1f;
+		}
+		if (key == 'o') {
+			camera.frustum.f += 1.0f;
+		}
+		if (key == 'l') {
+			camera.frustum.f -= 1.0f;
+		}
+		
+
+		colorBuffer = Mat::zeros(screenHeight, screenWidth, CV_8UC4);
+		depthBuffer = Mat::ones(screenHeight, screenWidth, CV_64FC1)*1000000;
+		// Render:
+		//camera.update(1):
+		// eye += speed * time * forwardVec (or RightVec) (+ or -) = WASD
+		// set camera.angles to myangles here:
+		camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
+		camera.verticalAngle = verticalAngle*(CV_PI/180.0f);
+		camera.updateFree(camera.eye); // : given hor/verAngle (and eye), calculate the new FwdVec. Then, new right and up. Then also set at-Vec.
+		// update viewTr, projTr
+		translate = render::utils::MatrixUtils::createTranslationMatrix(-camera.getEye()[0], -camera.getEye()[1], -camera.getEye()[2]);
+		rotate = (cv::Mat_<float>(4,4) << 
+			camera.getRightVector()[0],		camera.getRightVector()[1],		camera.getRightVector()[2],		0.0f,
+			camera.getUpVector()[0],		camera.getUpVector()[1],		camera.getUpVector()[2],		0.0f,
+			-camera.getForwardVector()[0],	-camera.getForwardVector()[1],	-camera.getForwardVector()[2],	0.0f,
+			0.0f,				0.0f,				0.0f,				1.0f);
+		viewTransform = rotate * translate;
+
+		projectionTransform = updateProjectionTransform(camera, false);
+
+		renderAxes(worldTransform, viewTransform, projectionTransform, windowTransform);
+
 		Mat screenWithOverlay = colorBuffer.clone();
 		putText(screenWithOverlay, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), FONT_HERSHEY_COMPLEX_SMALL, 1.0, Scalar(0, 0, 255));
 		putText(screenWithOverlay, "horA: " + lexical_cast<string>(horizontalAngle) + ", verA: " + lexical_cast<string>(verticalAngle), Point(10, 45), FONT_HERSHEY_COMPLEX_SMALL, 1.0, Scalar(0, 0, 255));
 		putText(screenWithOverlay, "moving: " + lexical_cast<string>(moving), Point(10, 70), FONT_HERSHEY_COMPLEX_SMALL, 1.0, Scalar(0, 0, 255));
+		putText(screenWithOverlay, "zNear: " + lexical_cast<string>(camera.frustum.n) + ", zFar: " + lexical_cast<string>(camera.frustum.f), Point(10, 95), FONT_HERSHEY_COMPLEX_SMALL, 1.0, Scalar(0, 0, 255));
 		imshow(windowName, screenWithOverlay);
+
+		// n and f have no influence at the moment because I do no clipping??
 	}
+
+
+	
+	for (const auto& tIdx : plane.tvi) {
+		vector<Vertex> triangle;
+		triangle.push_back(plane.vertex[tIdx[0]]);
+		triangle.push_back(plane.vertex[tIdx[1]]);
+		triangle.push_back(plane.vertex[tIdx[2]]);
+
+		vector<Point> points;
+		for (const auto& vtx : triangle) {
+			Vec4f vertex = vtx.position;
+			// Note: We could put all the points in a matrix and then transform only this matrix?
+			Mat worldSpace = worldTransform * Mat(vertex);
+			Mat camSpace = viewTransform * worldSpace;
+			Mat normalizedViewingVolume = projectionTransform * camSpace;
+
+			// project from 4D to 2D window position with depth value in z coordinate
+			Vec4f normViewVolVec = matToColVec4f(normalizedViewingVolume);
+			normViewVolVec = normViewVolVec / normViewVolVec[3];	// divide by w
+			Mat windowCoords = windowTransform * Mat(normViewVolVec);	// places the vec as a column in the matrix
+			Vec4f windowCoordsVec = matToColVec4f(windowCoords);
+
+			//Vec2f p = Vec2f(windowCoordsVec[0], windowCoordsVec[1]);
+			points.push_back(Point2f(windowCoordsVec[0], windowCoordsVec[1]));
+			
+		}/*
+		line(colorBuffer, points[0], points[1], Scalar(0.0f, 0.0f, 255.0f));
+		line(colorBuffer, points[1], points[2], Scalar(0.0f, 0.0f, 255.0f));
+		line(colorBuffer, points[2], points[0], Scalar(0.0f, 0.0f, 255.0f));*/
+	}
+
+
+
 	
 	Vec4f test(0.5f, 0.5f, 0.5f, 1.0f);
 	
