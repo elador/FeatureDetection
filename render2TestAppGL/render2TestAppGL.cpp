@@ -86,6 +86,9 @@ int main(int argc, char *argv[])
 
 	//render::MorphableModel mmHeadL4 = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
 
+	render::Mesh cube = render::utils::MeshUtils::createCube();
+	render::Mesh pyramid = render::utils::MeshUtils::createPyramid();
+	render::Mesh plane = render::utils::MeshUtils::createPlane();
 
 	cv::VideoCapture webcam(CV_CAP_ANY);
 
@@ -96,13 +99,15 @@ int main(int argc, char *argv[])
 	Vec4f test(0.5f, 0.5f, 0.5f, 1.0f);
 	cv::Mat bg = imread("C:/Users/Patrik/Cloud/may_prag_vs_basel.png");
 	resize(bg, bg, Size(200, 150));
-	r.renderDevice->setBackgroundImage(bg);
+	//r.renderDevice->setBackgroundImage(bg);
 	r.renderDevice->renderVertex(test);
 	Mat frame;
 	while(cv::waitKey(30) < 0)
 	{
 		webcam >> frame;
-		r.renderDevice->setBackgroundImage(frame);
+		//r.renderDevice->setBackgroundImage(frame);
+		//r.renderDevice->renderMesh(plane);
+		//r.renderDevice->renderMesh(pyramid);
 		r.renderDevice->updateWindow(); // move that to setBackgroundImage(), private (if possible / opengl is already ready then)
 	}
 

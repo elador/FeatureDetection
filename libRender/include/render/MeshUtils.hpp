@@ -25,6 +25,7 @@ namespace render {
 		public:
 			static Mesh createCube(void);
 			static Mesh createPlane(void);
+			static Mesh createPyramid(void);
 
 			static Mesh readFromHdf5(std::string filename);
 			static MorphableModel readFromScm(std::string filename);

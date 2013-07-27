@@ -10,6 +10,7 @@
 #define RENDERDEVICE_HPP_
 
 #include "render/Camera.hpp"
+#include "render/Mesh.hpp"
 
 #include "opencv2/core/core.hpp"
 
@@ -46,6 +47,7 @@ public:
 	// Render... Does not do any clipping.
 	virtual Vec2f renderVertex(Vec4f vertex) = 0;
 	virtual vector<Vec2f> renderVertexList(vector<Vec4f> vertexList) = 0;
+	virtual void renderMesh(Mesh mesh) = 0;
 
 	virtual void setWorldTransform(Mat worldTransform) = 0;
 

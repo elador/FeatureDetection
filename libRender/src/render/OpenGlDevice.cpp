@@ -20,6 +20,7 @@ namespace render {
 
 OpenGlDevice::OpenGlDevice(unsigned int screenWidth, unsigned int screenHeight)
 {
+	renderTypeState = RenderTypeState::NONE;
 	aspect = (float)screenWidth/(float)screenHeight;
 	windowName = "OpenGlRenderContext";
 	cv::namedWindow(windowName, CV_WINDOW_OPENGL);
@@ -55,9 +56,11 @@ Mat OpenGlDevice::getDepthBuffer()
 void OpenGlDevice::openGlDrawCallback(void* userdata)
 {
 	OpenGlDevice* ptr = static_cast<OpenGlDevice*>(userdata);
+	// if (ptr)
 	ptr->openGlDrawCallbackReal();
 }
 
+// rename to draw()?
 void OpenGlDevice::openGlDrawCallbackReal()
 {
 	// init per frame
@@ -75,7 +78,10 @@ void OpenGlDevice::openGlDrawCallbackReal()
 	glMatrixMode(GL_MODELVIEW);                     // Select The Modelview Matrix
 	glLoadIdentity();                           // Reset The Modelview Matrix
 	// move the camera:
-	glTranslatef(0.0f, 0.0f, -1.0f);
+	
+	glRotatef( 20.0f, 1.0f, 0.0f, 0.0f);
+	glRotatef( 20.0f, 0.0f, 1.0f, 0.0f);
+	glTranslatef(0.0f, 0.0f, -1.5f);
 	//glTranslatef(0.5f, 0.5f, 0.0f);
 	// //gluLookAt(-0.5f, 0.5f, 3.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f); ?
 
@@ -95,7 +101,9 @@ void OpenGlDevice::openGlDrawCallbackReal()
 	drawAxes();
 	//drawPlaneXY(1.0f, 1.0f, 1.0f);
 
-
+	if (renderTypeState==RenderTypeState::MESH) {
+		drawMesh();
+	}
 
 }
 
@@ -128,12 +136,12 @@ void OpenGlDevice::drawAxes(float scale)
 		glVertex3f(0.0f, 0.0f, 0.0f);              // From
 		glVertex3f(0.0f, 1.0f*scale, 0.0f);              // To
 	glEnd();
-	glColor3f(0.0f, 0.0f, 1.0f);	// z-axis
+	glColor3f(0.0f, 0.0f, 1.0f);	// z-axis (coming to front)
 	glBegin(GL_LINES);
 		glVertex3f(0.0f, 0.0f, 0.0f);              // From
 		glVertex3f(0.0f, 0.0f, 1.0f*scale);              // To
 	glEnd();
-	glColor3f(1.0f, 0.0f, 1.0f);	// minus z-axis
+	glColor3f(1.0f, 0.0f, 1.0f);	// minus z-axis (violet)
 	glBegin(GL_LINES);
 		glVertex3f(0.0f, 0.0f, 0.0f);              // From
 		glVertex3f(0.0f, 0.0f, -1.0f*scale);              // To
@@ -219,6 +227,35 @@ void OpenGlDevice::setBackgroundImage(Mat background)
 void OpenGlDevice::updateWindow()
 {
 	cv::updateWindow(windowName);
+}
+
+void OpenGlDevice::renderMesh(Mesh mesh)
+{
+	meshToDraw = mesh;
+	renderTypeState = RenderTypeState::MESH;
+}
+
+void OpenGlDevice::drawMesh()
+{
+	for (const auto& tIdx : meshToDraw.tvi) {
+		Vertex v0 = meshToDraw.vertex[tIdx[0]];
+		Vertex v1 = meshToDraw.vertex[tIdx[1]];
+		Vertex v2 = meshToDraw.vertex[tIdx[2]];
+		glBegin(GL_TRIANGLES);
+			glColor3f(v0.color[0],  v0.color[1],  v0.color[2]); // BGR to RGB
+			glVertex3f(v0.position[0], v0.position[1], v0.position[2]);
+			glColor3f(v1.color[0],  v1.color[1],  v1.color[2]); // BGR to RGB
+			glVertex3f(v1.position[0], v1.position[1], v1.position[2]);	
+			glColor3f(v2.color[0],  v2.color[1],  v2.color[2]); // BGR to RGB
+			glVertex3f(v2.position[0], v2.position[1], v2.position[2]);
+		glEnd();
+	}
+
+}
+
+void OpenGlDevice::drawVertex(Vertex v)
+{
+
 }
 
 } /* namespace render */

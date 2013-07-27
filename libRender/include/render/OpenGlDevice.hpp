@@ -15,8 +15,10 @@
 #include "opencv2/core/opengl_interop.hpp"
 
 #include <string>
+#include <memory>
 
 using std::string;
+using std::shared_ptr;
 
 namespace render {
 
@@ -36,6 +38,7 @@ public:
 	
 	Vec2f renderVertex(Vec4f vertex);
 	vector<Vec2f> renderVertexList(vector<Vec4f> vertexList);
+	void renderMesh(Mesh mesh);
 
 	void setWorldTransform(Mat worldTransform);
 
@@ -44,6 +47,9 @@ public:
 	void updateWindow();
 	
 private:
+	enum class RenderTypeState { NONE, VERTEX, VERTEXLIST, MESH };
+	RenderTypeState renderTypeState;
+
 	cv::Mat colorBuffer;
 	cv::Mat depthBuffer;
 
@@ -58,6 +64,9 @@ private:
 	void drawPlaneXY(float x, float y, float z, float scale=1);
 	void drawCube(float x, float y, float z, float scale=1);
 
+	void drawMesh();
+	Mesh meshToDraw; // 1) make shared_ptr. 2) Problems as soon as we want to draw more than 1 object
+	void drawVertex(Vertex v);
 };
 
 } /* namespace render */

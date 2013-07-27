@@ -39,6 +39,7 @@ add_subdirectory(libRenderold)			# A tiny software renderer to render lists of 3
 add_subdirectory(renderTestApp)			# Test app for the old libRenderold
 add_subdirectory(render2TestAppGL)		# Test app for the new libRender
 add_subdirectory(renderTestAppKlaus)	# Test app for the new libRender and data for Klaus
+add_subdirectory(render3TestApp)		# Test app for the newest libRender
 
 #add_subdirectory(trackerAppERT)		# kind of deprecated, was only a test. But can use this to see how to make a real-time tracker.
 

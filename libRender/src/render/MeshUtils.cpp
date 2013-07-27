@@ -118,7 +118,7 @@ Mesh MeshUtils::createCube(void)
 	cube.triangleList.push_back(render::Triangle(cube.vertex[20], cube.vertex[21], cube.vertex[22]));
 	cube.triangleList.push_back(render::Triangle(cube.vertex[20], cube.vertex[22], cube.vertex[23]));*/
 
-	cube.texture.createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\crate.jpg");
+	cube.texture.createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\up.png");
 	cube.hasTexture = true;
 
 	return cube;
@@ -161,6 +161,39 @@ Mesh MeshUtils::createPlane(void)
 	plane.hasTexture = true;
 
 	return plane;
+}
+
+Mesh MeshUtils::createPyramid(void)
+{
+	Mesh pyramid;
+	pyramid.vertex.resize(4);
+
+	pyramid.vertex[0].position = cv::Vec4f(-0.5f, 0.0f, 0.5f, 1.0f);
+	pyramid.vertex[0].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
+
+	pyramid.vertex[1].position = cv::Vec4f(0.5f, 0.0f, 0.5f, 1.0f);
+	pyramid.vertex[1].color = cv::Vec3f(0.0f, 1.0f, 0.0f);
+
+	pyramid.vertex[2].position = cv::Vec4f(0.0f, 0.0f, -0.5f, 1.0f);
+	pyramid.vertex[2].color = cv::Vec3f(0.0f, 0.0f, 1.0f);
+	
+	pyramid.vertex[3].position = cv::Vec4f(0.0f, 1.0f, 0.0f, 1.0f);
+	pyramid.vertex[3].color = cv::Vec3f(0.5f, 0.5f, 0.5f);
+
+	// the efficiency of this might be improvable...
+	std::array<int, 3> vi;
+	vi[0] = 0; vi[1] = 2; vi[2] = 1; // the bottom plate, draw so that visible from below
+	pyramid.tvi.push_back(vi);
+	vi[0] = 0; vi[1] = 1; vi[2] = 3; // front
+	pyramid.tvi.push_back(vi);
+	vi[0] = 2; vi[1] = 3; vi[2] = 1; // right side
+	pyramid.tvi.push_back(vi);
+	vi[0] = 3; vi[1] = 2; vi[2] = 0; // left side
+	pyramid.tvi.push_back(vi);
+
+	pyramid.hasTexture = false;
+
+	return pyramid;
 }
 
 Mesh MeshUtils::readFromHdf5(std::string filename)
