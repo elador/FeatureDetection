@@ -28,7 +28,7 @@ public:
 	float distanceFromEyeToAt;
 
 	const cv::Vec3f& getEye() const { return eye; }
-	const cv::Vec3f& getAt() const { return at; }
+	const cv::Vec3f& getAt() const { return gaze; }
 	const cv::Vec3f& getUp() const { return up; }
 
 	const cv::Vec3f& getForwardVector() const { return forwardVector; }
@@ -44,8 +44,9 @@ public:
 	void setFrustum(float l, float r, float t, float b, float n, float f);
 
 	// Todo: move those all back to private
+	// viewer position and orientation. specified by the user.
 	cv::Vec3f eye;	// 'e' eye is where my eyes are (where I am = position of camera!)
-	cv::Vec3f at; // 'g', gaze, lookAt, at is my target (where I'm looking at)
+	cv::Vec3f gaze; // 'g', gaze, lookAt, at is my target (where I'm looking at)
 	cv::Vec3f up; // 't', up is up direction
 
 	// uvw-basis, updated per frame

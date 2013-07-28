@@ -23,7 +23,7 @@ void Camera::init()
 {
 	//this->verticalAngle = -CV_PI/4.0f;
 	this->verticalAngle = 0.0f;
-	this->updateFixed(cv::Vec3f(0.0f, 0.0f, 3.0f), cv::Vec3f(0.0f, 0.0f, 0.0f));	// "at" initialization doesn't matter
+	this->updateFixed(cv::Vec3f(0.0f, 0.0f, 3.0f), cv::Vec3f(0.0f, 0.0f, 0.0f));	// "gaze" initialization doesn't matter
 }
 
 void Camera::update(int deltaTime)	// Hmm this doesn't really belong here, it's application dependent. But ok for now.
@@ -39,21 +39,28 @@ void Camera::update(int deltaTime)	// Hmm this doesn't really belong here, it's 
 	this->updateFree(eye);
 }
 
-void Camera::updateFixed(const cv::Vec3f& eye, const cv::Vec3f& at, const cv::Vec3f& up)
+// input: eye and gaze. Calculate the camera! (completely ignore the angles)
+void Camera::updateFixed(const cv::Vec3f& eye, const cv::Vec3f& gaze, const cv::Vec3f& up)
 {
-	this->forwardVector = at - eye;
+	this->eye = eye;
+	this->gaze = gaze;
+	this->up = up;
+
+	this->forwardVector = -gaze;
 	this->forwardVector /= cv::norm(forwardVector, cv::NORM_L2);
 
-	this->eye = eye;
-	this->at = at;
-	this->up = up;
+	this->rightVector = up.cross(forwardVector);
+	this->rightVector /= cv::norm(rightVector, cv::NORM_L2);
+
+	this->upVector = forwardVector.cross(rightVector);
 }
 
-
+// given the two angles, find the forward, right and up vec. Then, set the eye and gaze in this direction.
 void Camera::updateFree(const cv::Vec3f& eye, const cv::Vec3f& up)
 {
 	cv::Mat transformMatrix = render::utils::MatrixUtils::createRotationMatrixY(horizontalAngle) * render::utils::MatrixUtils::createRotationMatrixX(verticalAngle);
-	cv::Mat tmpRes = transformMatrix * cv::Mat(cv::Vec4f(0.0f, 0.0f, -1.0f, 1.0f));
+	//cv::Mat tmpRes = transformMatrix * cv::Mat(cv::Vec4f(0.0f, 0.0f, -1.0f, 1.0f));
+	cv::Mat tmpRes = transformMatrix * cv::Mat(cv::Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
 	//cv::Mat tmp = (cv::Mat_<float>(1, 4) << 0.0f, 0.0f, -1.0f, 0.0f);
 	//cv::Mat tmpRes = tmp * transformMatrix;
 	forwardVector[0] = tmpRes.at<float>(0, 0);	// This rotates the standard forward-vector (0, 0, -1) with the rotation
@@ -68,16 +75,17 @@ void Camera::updateFree(const cv::Vec3f& eye, const cv::Vec3f& up)
 	rightVector[2] = tmpRes2.at<float>(2, 0);
 	//rightVector = cv::Vec3f(1.0f, 0.0f, 0.0f) * transformMatrix;
 
-	upVector = rightVector.cross(forwardVector);
+	this->upVector = forwardVector.cross(rightVector);
 
 	this->eye = eye;
-	this->at = eye + forwardVector;
+	this->gaze = -forwardVector;
 	this->up = up;
 }
 
 
-
-void Camera::updateFocused(const cv::Vec3f& at, const cv::Vec3f& up)
+// give a vector with absolute coords where to look at. (given angles + this point, calculate the cam pos.)
+// NOT YET IMPLEMENTED
+void Camera::updateFocused(const cv::Vec3f& lookAt, const cv::Vec3f& up)
 {
 	cv::Mat transformMatrix = render::utils::MatrixUtils::createRotationMatrixY(horizontalAngle) * render::utils::MatrixUtils::createRotationMatrixX(verticalAngle);
 
@@ -96,8 +104,8 @@ void Camera::updateFocused(const cv::Vec3f& at, const cv::Vec3f& up)
 	
 	upVector = rightVector.cross(forwardVector);
 
-	this->eye = at - forwardVector*distanceFromEyeToAt;
-	this->at = at;
+	this->eye = lookAt - forwardVector*distanceFromEyeToAt;
+	this->gaze = lookAt;
 	this->up = up;
 }
 

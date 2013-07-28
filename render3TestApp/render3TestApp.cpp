@@ -65,6 +65,7 @@ static bool moving = false;
 
 static float zNear = -0.1f;
 static float zFar = -100.0f;
+static bool perspective = false;
 
 static void winOnMouse(int event, int x, int y, int, void* userdata)
 {
@@ -171,9 +172,32 @@ void renderAxes(Mat worldTransform, Mat viewTransform, Mat projectionTransform, 
 	line(colorBuffer, originScreen, xAxisScreen, Scalar(0.0f, 0.0f, 255.0f));
 	line(colorBuffer, originScreen, yAxisScreen, Scalar(0.0f, 255.0f, 0.0f));
 	line(colorBuffer, originScreen, zAxisScreen, Scalar(255.0f, 0.0f, 0.0f));
-	line(colorBuffer, originScreen, mzAxisScreen, Scalar(255.0f, 0.0f, 255.0f));
+	line(colorBuffer, originScreen, mzAxisScreen, Scalar(0.0f, 255.0f, 255.0f));
 	// END draw axes
 
+}
+
+void renderLine(Vec4f p0, Vec4f p1, Mat worldTransform, Mat viewTransform, Mat projectionTransform, Mat windowTransform) {
+
+	Mat worldSpace = worldTransform * Mat(p0);
+	Mat camSpace = viewTransform * worldSpace;
+	Mat normalizedViewingVolume = projectionTransform * camSpace;
+	Vec4f normViewVolVec = matToColVec4f(normalizedViewingVolume);
+	normViewVolVec = normViewVolVec / normViewVolVec[3];	// divide by w
+	Mat windowCoords = windowTransform * Mat(normViewVolVec);	// places the vec as a column in the matrix
+	Vec4f windowCoordsVec = matToColVec4f(windowCoords);
+	Point2f p0Screen(windowCoordsVec[0], windowCoordsVec[1]);
+
+	worldSpace = worldTransform * Mat(p1);
+	camSpace = viewTransform * worldSpace;
+	normalizedViewingVolume = projectionTransform * camSpace;
+	normViewVolVec = matToColVec4f(normalizedViewingVolume);
+	normViewVolVec = normViewVolVec / normViewVolVec[3];	// divide by w
+	windowCoords = windowTransform * Mat(normViewVolVec);	// places the vec as a column in the matrix
+	windowCoordsVec = matToColVec4f(windowCoords);
+	Point2f p1Screen(windowCoordsVec[0], windowCoordsVec[1]);
+
+	line(colorBuffer, p0Screen, p1Screen, Scalar(0.0f, 0.0f, 255.0f));
 }
 
 int main(int argc, char *argv[])
@@ -221,14 +245,13 @@ int main(int argc, char *argv[])
 	int screenWidth = 640;
 	int screenHeight = 480;
 	const float aspect = (float)screenWidth/(float)screenHeight;
-	bool perspective = false;
 	Camera camera;
 	camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, zNear, zFar);
 	horizontalAngle = 0.0f; verticalAngle = 0.0f;
 	// Cam init: (init + updateFixed)
-	Vec3f eye(0.0f, 0.0f, 3.0f);
-	Vec3f at(0.0f, 0.0f, 0.0f);
-	camera.updateFixed(eye, at); // fwdVec now (0, 0, -1)
+	Vec3f eye(0.0f, 0.0f, 0.0f);
+	//Vec3f gaze(0.0f, 0.0f, 1.0f);
+	//camera.updateFixed(eye, gaze); // fwdVec now (0, 0, 1)
 	camera.updateFree(eye);  // : given hor/verAngle (and eye), calculate the new FwdVec. Then, new right and up. Then also set at-Vec.
 
 	Mat windowTransform = (cv::Mat_<float>(4,4) << 
@@ -243,11 +266,11 @@ int main(int argc, char *argv[])
 	Mat rotate = (cv::Mat_<float>(4,4) << 
 		camera.getRightVector()[0],		camera.getRightVector()[1],		camera.getRightVector()[2],		0.0f,
 		camera.getUpVector()[0],		camera.getUpVector()[1],		camera.getUpVector()[2],		0.0f,
-		-camera.getForwardVector()[0],	-camera.getForwardVector()[1],	-camera.getForwardVector()[2],	0.0f,
+		camera.getForwardVector()[0],	camera.getForwardVector()[1],	camera.getForwardVector()[2],	0.0f,
 		0.0f,				0.0f,				0.0f,				1.0f);
 	Mat viewTransform = rotate * translate;
 
-	Mat projectionTransform = updateProjectionTransform(camera, false);
+	Mat projectionTransform = updateProjectionTransform(camera, perspective);
 
 	colorBuffer = Mat::zeros(screenHeight, screenWidth, CV_8UC4);
 	depthBuffer = Mat::ones(screenHeight, screenWidth, CV_64FC1)*1000000;
@@ -267,13 +290,13 @@ int main(int argc, char *argv[])
 			running = false;
 		}
 		if (key == 'w') {
-			camera.eye += 0.05f * camera.getForwardVector();
+			camera.eye += 0.05f * -camera.getForwardVector();
 		}
 		if (key == 'a') {
 			camera.eye -= 0.05f * camera.getRightVector();
 		}
 		if (key == 's') {
-			camera.eye -= 0.05f * camera.getForwardVector();
+			camera.eye -= 0.05f * -camera.getForwardVector();
 		}
 		if (key == 'd') {
 			camera.eye += 0.05f * camera.getRightVector();
@@ -289,6 +312,9 @@ int main(int argc, char *argv[])
 		}
 		if (key == 'l') {
 			camera.frustum.f -= 1.0f;
+		}
+		if (key == 'p') {
+			perspective = !perspective;
 		}
 		
 
@@ -306,22 +332,37 @@ int main(int argc, char *argv[])
 		rotate = (cv::Mat_<float>(4,4) << 
 			camera.getRightVector()[0],		camera.getRightVector()[1],		camera.getRightVector()[2],		0.0f,
 			camera.getUpVector()[0],		camera.getUpVector()[1],		camera.getUpVector()[2],		0.0f,
-			-camera.getForwardVector()[0],	-camera.getForwardVector()[1],	-camera.getForwardVector()[2],	0.0f,
+			camera.getForwardVector()[0],	camera.getForwardVector()[1],	camera.getForwardVector()[2],	0.0f,
 			0.0f,				0.0f,				0.0f,				1.0f);
 		viewTransform = rotate * translate;
 
-		projectionTransform = updateProjectionTransform(camera, false);
+		projectionTransform = updateProjectionTransform(camera, perspective);
 
 		renderAxes(worldTransform, viewTransform, projectionTransform, windowTransform);
+		/*
+		for (const auto& tIdx : cube.tvi) {
+			Vertex v0 = cube.vertex[tIdx[0]];
+			Vertex v1 = cube.vertex[tIdx[1]];
+			Vertex v2 = cube.vertex[tIdx[2]];
+			renderLine(v0.position, v1.position, worldTransform, viewTransform, projectionTransform, windowTransform);
+			renderLine(v1.position, v2.position, worldTransform, viewTransform, projectionTransform, windowTransform);
+			renderLine(v2.position, v0.position, worldTransform, viewTransform, projectionTransform, windowTransform);
+		}*/
+		
+		
+		//renderLine(Vec4f(0.0f, 0.0f, -0.1f, 1.0f), Vec4f(0.0f, 0.0f, -100.0f, 1.0f), worldTransform, viewTransform, projectionTransform, windowTransform);
+		renderLine(Vec4f(1.5f, 0.0f, 0.5f, 1.0f), Vec4f(-1.5f, 0.0f, 0.5f, 1.0f), worldTransform, viewTransform, projectionTransform, windowTransform);
+		
 
 		Mat screenWithOverlay = colorBuffer.clone();
-		putText(screenWithOverlay, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), FONT_HERSHEY_COMPLEX_SMALL, 1.0, Scalar(0, 0, 255));
-		putText(screenWithOverlay, "horA: " + lexical_cast<string>(horizontalAngle) + ", verA: " + lexical_cast<string>(verticalAngle), Point(10, 45), FONT_HERSHEY_COMPLEX_SMALL, 1.0, Scalar(0, 0, 255));
-		putText(screenWithOverlay, "moving: " + lexical_cast<string>(moving), Point(10, 70), FONT_HERSHEY_COMPLEX_SMALL, 1.0, Scalar(0, 0, 255));
-		putText(screenWithOverlay, "zNear: " + lexical_cast<string>(camera.frustum.n) + ", zFar: " + lexical_cast<string>(camera.frustum.f), Point(10, 95), FONT_HERSHEY_COMPLEX_SMALL, 1.0, Scalar(0, 0, 255));
+		putText(screenWithOverlay, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screenWithOverlay, "horA: " + lexical_cast<string>(horizontalAngle) + ", verA: " + lexical_cast<string>(verticalAngle), Point(10, 38), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screenWithOverlay, "moving: " + lexical_cast<string>(moving), Point(10, 56), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screenWithOverlay, "zNear: " + lexical_cast<string>(camera.frustum.n) + ", zFar: " + lexical_cast<string>(camera.frustum.f) + ", p: " + lexical_cast<string>(perspective), Point(10, 74), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screenWithOverlay, "eye: " + lexical_cast<string>(camera.eye[0]) + ", " + lexical_cast<string>(camera.eye[1]) + ", " + lexical_cast<string>(camera.eye[2]), Point(10, 92), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		imshow(windowName, screenWithOverlay);
 
-		// n and f have no influence at the moment because I do no clipping??
+		// n and f have no influence at the moment because I do no clipping?
 	}
 
 
