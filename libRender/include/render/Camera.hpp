@@ -44,8 +44,14 @@ public:
 	void setFrustum(float l, float r, float t, float b, float n, float f);
 
 	// Todo: move those all back to private
-	cv::Vec3f eye, at, up;	// (eye is where my eyes are (where I am = position of camera!), at is my target (where I'm looking at), and up is up direction
-	cv::Vec3f forwardVector, rightVector, upVector;
+	cv::Vec3f eye;	// 'e' eye is where my eyes are (where I am = position of camera!)
+	cv::Vec3f at; // 'g', gaze, lookAt, at is my target (where I'm looking at)
+	cv::Vec3f up; // 't', up is up direction
+
+	// uvw-basis, updated per frame
+	cv::Vec3f forwardVector; // w (opposite to gaze!)
+	cv::Vec3f rightVector; // u
+	cv::Vec3f upVector; // v
 private:
 
 

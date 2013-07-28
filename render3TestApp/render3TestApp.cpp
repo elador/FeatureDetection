@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
 
 	Mat windowTransform = (cv::Mat_<float>(4,4) << 
 		(float)screenWidth/2.0f,		0.0f,						0.0f,	(float)screenWidth/2.0f, // CG book says (screenWidth-1)/2.0f for second value?
-		0.0f,							(float)screenHeight/2.0f,	0.0f,	(float)screenHeight/2.0f,
+		0.0f,							-(float)screenHeight/2.0f,	0.0f,	(float)screenHeight/2.0f,
 		0.0f,							0.0f,						1.0f,	0.0f,
 		0.0f,							0.0f,						0.0f,	1.0f);
 
@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
 		0.0f,				0.0f,				0.0f,				1.0f);
 	Mat viewTransform = rotate * translate;
 
-	Mat projectionTransform = updateProjectionTransform(camera, true);
+	Mat projectionTransform = updateProjectionTransform(camera, false);
 
 	colorBuffer = Mat::zeros(screenHeight, screenWidth, CV_8UC4);
 	depthBuffer = Mat::ones(screenHeight, screenWidth, CV_64FC1)*1000000;
