@@ -1,12 +1,11 @@
-/*!
- * \file MeshUtils.hpp
+/*
+ * MeshUtils.hpp
  *
- * \author Patrik Huber
- * \date December 12, 2012
- *
- * [comment here]
+ *  Created on: 12.12.2012
+ *      Author: Patrik Huber
  */
 #pragma once
+
 #ifndef MESHUTILS_HPP_
 #define MESHUTILS_HPP_
 
@@ -26,13 +25,15 @@ namespace render {
 		public:
 			static Mesh createCube(void);
 			static Mesh createPlane(void);
+			static Mesh createPyramid(void);
 
 			static Mesh readFromHdf5(std::string filename);
 			static MorphableModel readFromScm(std::string filename);
 
 		};
 
-	}
+	} /* namespace utils */
 
-}
+} /* namespace render */
+
 #endif /* MESHUTILS_HPP_ */

@@ -54,9 +54,9 @@ void ModelLandmark::draw(Mat& image, const Scalar& color, float width) const
 		for (int currRow = cvRound(position[1])-1; currRow<=cvRound(position[1])+1; ++currRow) {
 			for (int currCol = cvRound(position[0])-1; currCol<=cvRound(position[0])+1; ++currCol) {
 				if(symbol[pos]==true) {
-					image.at<cv::Vec3b>(currRow,currCol)[0] = (uchar)cvRound(255.0f * color.val[0]);
-					image.at<cv::Vec3b>(currRow,currCol)[1] = (uchar)cvRound(255.0f * color.val[1]);
-					image.at<cv::Vec3b>(currRow,currCol)[2] = (uchar)cvRound(255.0f * color.val[2]);
+					image.at<cv::Vec3b>(currRow, currCol)[0] = (uchar)cvRound(255.0f * color.val[0]);
+					image.at<cv::Vec3b>(currRow, currCol)[1] = (uchar)cvRound(255.0f * color.val[1]);
+					image.at<cv::Vec3b>(currRow, currCol)[2] = (uchar)cvRound(255.0f * color.val[2]);
 				}
 				++pos;
 			}

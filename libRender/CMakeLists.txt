@@ -30,7 +30,10 @@ ENDIF()
 
 #Source and header files:
 SET(SOURCE
-	src/render/SRenderer.cpp
+	src/render/Renderer.cpp
+	src/render/RenderDevice.cpp
+	src/render/OpenGlDevice.cpp
+	src/render/SoftwareDevice.cpp
 	src/render/Vertex.cpp
 	src/render/Triangle.cpp
 	src/render/Camera.cpp
@@ -43,7 +46,10 @@ SET(SOURCE
 )
 
 SET(HEADERS
-	include/render/SRenderer.hpp
+	include/render/Renderer.hpp
+	include/render/RenderDevice.hpp
+	include/render/OpenGlDevice.hpp
+	include/render/SoftwareDevice.hpp
 	include/render/Vertex.hpp
 	include/render/Triangle.hpp
 	include/render/Camera.hpp
@@ -58,7 +64,7 @@ SET(HEADERS
 include_directories( "include" )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES("E:\\HDF5\\include\\hdf5\\")
+INCLUDE_DIRECTORIES("C:\\Users\\Patrik\\Cloud\\PhD\\HDF5\\include\\hdf5\\")
 
 #Make the library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )

@@ -47,7 +47,7 @@ public:
 	const map<path, LandmarkCollection> read(path landmarkFilePath);
 
 private:
-	map<int, string> didLmMapping;	///< Contains a mapping from the .did Surrey 3DMM to tlms landmark names
+	static map<int, string> didLmMapping;	///< Contains a mapping from the .did Surrey 3DMM to tlms landmark names
 	
 	/**
 	 * Opens and parses a .did file and returns a collection of all the landmarks it contains.
@@ -65,7 +65,8 @@ private:
 	 */
 	shared_ptr<ModelLandmark> readFromDidLine(const string& line);
 	
-	string didToTlmsName(int didVertexId);
+public:
+	static string didToTlmsName(int didVertexId);
 };
 
 } /* namespace imageio */

@@ -8,9 +8,9 @@
  */
 #pragma once
 
-#include "render/Triangle.hpp"
-#include "render/Mesh.hpp"
-#include "render/Camera.hpp"
+#include "renderold/Triangle.hpp"
+#include "renderold/Mesh.hpp"
+#include "renderold/Camera.hpp"
 
 #include <opencv2/core/core.hpp>
 
@@ -49,6 +49,10 @@ public:
 
 	cv::Mat getRendererImage();
 	cv::Mat getRendererDepthBuffer();
+
+	cv::Mat getWindowTransform() {
+		return windowTransform;
+	}
 
 	Camera camera;	// TODO make private
 

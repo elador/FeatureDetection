@@ -1,10 +1,8 @@
-/*!
- * \file Mesh.cpp
+/*
+ * Mesh.cpp
  *
- * \author Patrik Huber
- * \date December 12, 2012
- *
- * [comment here]
+ *  Created on: 12.12.2012
+ *      Author: Patrik Huber
  */
 
 #include "render/Mesh.hpp"
@@ -21,4 +19,4 @@ Mesh::~Mesh(void)
 {
 }
 
-}
+} /* namespace render */

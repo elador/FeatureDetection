@@ -21,7 +21,7 @@ MorphableModel::~MorphableModel()
 
 }
 
-std::vector<Vertex> MorphableModel::drawNewVertexPositions( Mesh mesh )
+std::vector<Vertex> MorphableModel::drawNewVertexPositions(Mesh mesh)
 {
 	return std::vector<Vertex>();
 }
