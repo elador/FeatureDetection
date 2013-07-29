@@ -71,8 +71,6 @@ static void winOnMouse(int event, int x, int y, int, void* userdata)
 			lastX = x;
 			lastY = y;
 		}
-
-		//imshow(windowName, colorBuffer);
 	}
 	if (event == EVENT_LBUTTONDOWN) {
 		moving = true;
@@ -129,22 +127,12 @@ int main(int argc, char *argv[])
 
 	int screenWidth = 640;
 	int screenHeight = 480;
-	RenderDevice r(screenWidth, screenHeight);
 	const float aspect = (float)screenWidth/(float)screenHeight;
-	Camera camera;
-	camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, zNear, zFar);
-	r.camera = camera;
 
-	horizontalAngle = 0.0f; verticalAngle = 0.0f;
-	camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
-	camera.verticalAngle = verticalAngle*(CV_PI/180.0f);
-	
-	// Cam init: (init + updateFixed)
-	Vec3f eye(0.0f, 0.0f, 0.0f);
-	//Vec3f gaze(-1.0f, 0.0f, 0.0f);
-	Vec3f gaze(0.0f, 0.0f, -1.0f);
-	//camera.updateFixed(eye, gaze); // 
-	camera.updateFree(eye);  // : given hor/verAngle (and eye), calculate the new FwdVec. Then, new right and up. Then also set at-Vec.
+	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
+	Camera camera(Vec3f(0.0f, 0.0f, 0.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
+
+	RenderDevice r(screenWidth, screenHeight, camera);
 
 	namedWindow(windowName, WINDOW_AUTOSIZE);
 	setMouseCallback(windowName, winOnMouse);
@@ -159,65 +147,59 @@ int main(int argc, char *argv[])
 			running = false;
 		}
 		if (key == 'w') {
-			camera.eye += 0.05f * -camera.getForwardVector();
+			r.camera.eye += 0.05f * -camera.getForwardVector();
 		}
 		if (key == 'a') {
-			camera.eye -= 0.05f * camera.getRightVector();
+			r.camera.eye -= 0.05f * camera.getRightVector();
 		}
 		if (key == 's') {
-			camera.eye -= 0.05f * -camera.getForwardVector();
+			r.camera.eye -= 0.05f * -camera.getForwardVector();
 		}
 		if (key == 'd') {
-			camera.eye += 0.05f * camera.getRightVector();
+			r.camera.eye += 0.05f * camera.getRightVector();
 		}
 		if (key == 'r') {
-			camera.eye += 0.05f * camera.getUpVector();
+			r.camera.eye += 0.05f * camera.getUpVector();
 		}
 		if (key == 'f') {
-			camera.eye -= 0.05f * camera.getUpVector();
+			r.camera.eye -= 0.05f * camera.getUpVector();
 		}
 
 		if (key == 'z') {
-			camera.gaze += 0.05f * camera.getUpVector();
+			r.camera.gaze += 0.05f * camera.getUpVector();
 		}
 		if (key == 'h') {
-			camera.gaze -= 0.05f * camera.getUpVector();
+			r.camera.gaze -= 0.05f * camera.getUpVector();
 		}
 		if (key == 'g') {
-			camera.gaze -= 0.05f * camera.getRightVector();
+			r.camera.gaze -= 0.05f * camera.getRightVector();
 		}
 		if (key == 'j') {
-			camera.gaze += 0.05f * camera.getRightVector();
+			r.camera.gaze += 0.05f * camera.getRightVector();
 		}
 
 		if (key == 'i') {
-			camera.frustum.n += 0.1f;
+			r.camera.frustum.n += 0.1f;
 		}
 		if (key == 'k') {
-			camera.frustum.n -= 0.1f;
+			r.camera.frustum.n -= 0.1f;
 		}
 		if (key == 'o') {
-			camera.frustum.f += 1.0f;
+			r.camera.frustum.f += 1.0f;
 		}
 		if (key == 'l') {
-			camera.frustum.f -= 1.0f;
+			r.camera.frustum.f -= 1.0f;
 		}
 		if (key == 'p') {
 			perspective = !perspective;
 		}
-		
 		r.resetBuffers();
 
-		// Render:
-		//camera.update(1):
-		// eye += speed * time * forwardVec (or RightVec) (+ or -) = WASD
-		// set camera.angles to myangles here:
-		camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
-		camera.verticalAngle = verticalAngle*(CV_PI/180.0f);
-		camera.updateFree(camera.eye); // : given hor/verAngle (and eye), calculate the new FwdVec. Then, new right and up. Then also set at-Vec.
-		//camera.updateFixed(camera.eye, camera.gaze);
-		r.camera = camera;
-		// update viewTr, projTr
+		r.camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
+		r.camera.verticalAngle = verticalAngle*(CV_PI/180.0f);
+		r.camera.updateFree(r.camera.eye);
+		//r.camera.updateFixed(r.camera.eye, r.camera.gaze);
+
 		r.updateViewTransform();
 		r.updateProjectionTransform(false);
 
@@ -246,8 +228,8 @@ int main(int argc, char *argv[])
 		putText(screen, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		putText(screen, "horA: " + lexical_cast<string>(horizontalAngle) + ", verA: " + lexical_cast<string>(verticalAngle), Point(10, 38), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		putText(screen, "moving: " + lexical_cast<string>(moving), Point(10, 56), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
-		putText(screen, "zNear: " + lexical_cast<string>(camera.frustum.n) + ", zFar: " + lexical_cast<string>(camera.frustum.f) + ", p: " + lexical_cast<string>(perspective), Point(10, 74), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
-		putText(screen, "eye: " + lexical_cast<string>(camera.eye[0]) + ", " + lexical_cast<string>(camera.eye[1]) + ", " + lexical_cast<string>(camera.eye[2]), Point(10, 92), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screen, "zNear: " + lexical_cast<string>(r.camera.frustum.n) + ", zFar: " + lexical_cast<string>(r.camera.frustum.f) + ", p: " + lexical_cast<string>(perspective), Point(10, 74), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screen, "eye: " + lexical_cast<string>(r.camera.eye[0]) + ", " + lexical_cast<string>(r.camera.eye[1]) + ", " + lexical_cast<string>(r.camera.eye[2]), Point(10, 92), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		imshow(windowName, screen);
 
 		// n and f have no influence at the moment because I do no clipping?

@@ -19,20 +19,35 @@ RenderDevice::RenderDevice(unsigned int screenWidth, unsigned int screenHeight)
 	this->screenHeight = screenHeight;
 	aspect = (float)screenWidth/(float)screenHeight;
 
-	setViewport(screenWidth, screenHeight);
-	camera.init();
-	// Todo: Set default values for the frustum? (in Camera?)
-
-	this->colorBuffer = cv::Mat::zeros(screenHeight, screenWidth, CV_8UC4);
-	this->depthBuffer = cv::Mat::ones(screenHeight, screenWidth, CV_64FC1)*1000000;
+	this->colorBuffer = Mat::zeros(screenHeight, screenWidth, CV_8UC4);
+	this->depthBuffer = Mat::ones(screenHeight, screenWidth, CV_64FC1)*1000000;
 
 	setWorldTransform(Mat::eye(4, 4, CV_32FC1));
-	
+	updateViewTransform();
+	updateProjectionTransform(false);
+	setViewport(screenWidth, screenHeight);
+}
+
+RenderDevice::RenderDevice(unsigned int screenWidth, unsigned int screenHeight, Camera camera)
+{
+	this->camera = camera;
+
+	// Todo: Use delegating c'tors as soon as VS supports it
+	this->screenWidth = screenWidth;
+	this->screenHeight = screenHeight;
+	aspect = (float)screenWidth/(float)screenHeight;
+
+	this->colorBuffer = Mat::zeros(screenHeight, screenWidth, CV_8UC4);
+	this->depthBuffer = Mat::ones(screenHeight, screenWidth, CV_64FC1)*1000000;
+
+	setWorldTransform(Mat::eye(4, 4, CV_32FC1));
+	updateViewTransform();
+	updateProjectionTransform(false);
+	setViewport(screenWidth, screenHeight);
 }
 
 RenderDevice::~RenderDevice()
 {
-
 }
 
 Mat RenderDevice::getImage()
@@ -49,7 +64,6 @@ void RenderDevice::setWorldTransform(Mat worldTransform)
 {
 	this->worldTransform = worldTransform;
 }
-
 
 void RenderDevice::updateViewTransform()
 {
@@ -103,10 +117,6 @@ Vec2f RenderDevice::projectVertex(Vec4f vertex)
 
 vector<Vec2f> RenderDevice::projectVertexList(vector<Vec4f> vertexList)
 {
-	camera.update(1);
-	updateViewTransform();
-	updateProjectionTransform(false); // Must somewhere update at least once to be valid. in C'tor? Here is maybe not so bad?
-
 	vector<Vec2f> pointList;
 
 	for (const auto& vertex : vertexList) {		// Note: We could put all the points in a matrix and then transform only this matrix?

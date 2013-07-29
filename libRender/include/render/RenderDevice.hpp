@@ -32,11 +32,12 @@ class RenderDevice
 public:
 	// Future Todo: Use c++11 delegating c'tors as soon as VS supports it, i.e. create a viewport with 640x480 default
 	
-	RenderDevice(unsigned int screenWidth, unsigned int screenHeight); // TODO: +Camera
+	RenderDevice(unsigned int screenWidth, unsigned int screenHeight);
+	RenderDevice(unsigned int screenWidth, unsigned int screenHeight, Camera camera);
 	~RenderDevice(); // Why no virtual possible?
 
-	cv::Mat getImage(); // make these a '&' ?
-	cv::Mat getDepthBuffer();
+	Mat getImage(); // make these a '&' ?
+	Mat getDepthBuffer();
 
 	Camera& getCamera() {
 			return camera;
@@ -56,7 +57,8 @@ public:
 
 	void resetBuffers();
 
-	Camera camera; // init this in c'tor? (no it's on stack so default Camera c'tor init)
+	// Todo: move the camera to Renderer, not RenderDevice.
+	Camera camera;
 	void updateViewTransform();
 	void updateProjectionTransform(bool perspective=true);
 protected:
