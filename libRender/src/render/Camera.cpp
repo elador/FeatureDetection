@@ -10,20 +10,20 @@
 
 namespace render {
 	
-Camera::Camera(void) : horizontalAngle(0.0f), verticalAngle(0.0f), distanceFromEyeToAt(1.0f)
+Camera::Camera() : horizontalAngle(0.0f), verticalAngle(0.0f)/*, distanceFromEyeToAt(1.0f)*/
 {
 }
 
 
-Camera::~Camera(void)
+Camera::~Camera()
 {
 }
 
 void Camera::init()
 {
-	//this->verticalAngle = -CV_PI/4.0f;
-	this->verticalAngle = 0.0f;
-	this->updateFixed(cv::Vec3f(0.0f, 0.0f, 3.0f), cv::Vec3f(0.0f, 0.0f, 0.0f));	// "gaze" initialization doesn't matter
+	horizontalAngle = 0.0f;
+	verticalAngle = 0.0f;
+	updateFixed(cv::Vec3f(0.0f, 0.0f, 0.0f), cv::Vec3f(0.0f, 0.0f, -1.0f));
 }
 
 void Camera::update(int deltaTime)	// Hmm this doesn't really belong here, it's application dependent. But ok for now.
@@ -36,7 +36,7 @@ void Camera::update(int deltaTime)	// Hmm this doesn't really belong here, it's 
 	eye -= speed * deltaTime * this->getRightVector();	// 'a' key
 	eye += speed * deltaTime * this->getRightVector();	// 'd' key
 	*/
-	this->updateFree(eye);
+	updateFree(eye);
 }
 
 // input: eye and gaze. Calculate the camera! (completely ignore the angles)
@@ -87,6 +87,7 @@ void Camera::updateFree(const cv::Vec3f& eye, const cv::Vec3f& up)
 // NOT YET IMPLEMENTED
 void Camera::updateFocused(const cv::Vec3f& lookAt, const cv::Vec3f& up)
 {
+	/*
 	cv::Mat transformMatrix = render::utils::MatrixUtils::createRotationMatrixY(horizontalAngle) * render::utils::MatrixUtils::createRotationMatrixX(verticalAngle);
 
 	cv::Mat tmp = (cv::Mat_<float>(1, 4) << 0.0f, 0.0f, -1.0f, 0.0f);
@@ -107,6 +108,7 @@ void Camera::updateFocused(const cv::Vec3f& lookAt, const cv::Vec3f& up)
 	this->eye = lookAt - forwardVector*distanceFromEyeToAt;
 	this->gaze = lookAt;
 	this->up = up;
+	*/
 }
 
 void Camera::setFrustum( float l, float r, float t, float b, float n, float f )

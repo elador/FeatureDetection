@@ -24,7 +24,7 @@ namespace render {
 
 /**
  * Desc
- */
+ */ /*
 class OpenGlDevice : public RenderDevice
 {
 
@@ -68,7 +68,7 @@ private:
 	Mesh meshToDraw; // 1) make shared_ptr. 2) Problems as soon as we want to draw more than 1 object
 	void drawVertex(Vertex v);
 };
-
+*/
 } /* namespace render */
 
 #endif /* OPENGLDEVICE_HPP_ */

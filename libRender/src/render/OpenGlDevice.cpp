@@ -17,7 +17,7 @@
 #include <GL/glu.h>
 
 namespace render {
-
+	/*
 OpenGlDevice::OpenGlDevice(unsigned int screenWidth, unsigned int screenHeight)
 {
 	renderTypeState = RenderTypeState::NONE;
@@ -153,7 +153,7 @@ void OpenGlDevice::drawBackground()
 
 }
 
-void OpenGlDevice::drawPlaneXY(float x, float y, float z, float scale/*=1*/)
+void OpenGlDevice::drawPlaneXY(float x, float y, float z, float scale/*=1*//*)
 {
 	glBegin(GL_POLYGON);
 	glColor3f( 1.0, 0.0, 0.0 );     glVertex3f(  0.5, -0.5, -0.5 );      // P1 is red
@@ -163,7 +163,7 @@ void OpenGlDevice::drawPlaneXY(float x, float y, float z, float scale/*=1*/)
 	glEnd();
 }
 
-void OpenGlDevice::drawCube(float x, float y, float z, float scale/*=1*/)
+void OpenGlDevice::drawCube(float x, float y, float z, float scale/*=1*//*)
 {
 	//Multi-colored side - FRONT
 	glBegin(GL_POLYGON);
@@ -257,7 +257,7 @@ void OpenGlDevice::drawVertex(Vertex v)
 {
 
 }
-
+*/
 } /* namespace render */
 
 /*

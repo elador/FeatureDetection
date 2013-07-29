@@ -22,10 +22,11 @@ public:
 	Camera(void);
 	~Camera(void);
 
+	// sets up cam, angles = 0, eye 0 0 0 and gaze along -z.
 	void init();
 
 	float horizontalAngle, verticalAngle;
-	float distanceFromEyeToAt;
+	//float distanceFromEyeToAt;
 
 	const cv::Vec3f& getEye() const { return eye; }
 	const cv::Vec3f& getAt() const { return gaze; }

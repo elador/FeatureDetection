@@ -16,6 +16,7 @@ namespace render {
 /**
  * Desc
  */
+/*
 class SoftwareDevice : public RenderDevice
 {
 
@@ -61,7 +62,7 @@ private:
 		return ret;
 	};
 };
-
+*/
  } /* namespace render */
 
 #endif /* SOFTWAREDEVICE_HPP_ */

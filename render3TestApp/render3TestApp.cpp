@@ -248,10 +248,14 @@ int main(int argc, char *argv[])
 	Camera camera;
 	camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, zNear, zFar);
 	horizontalAngle = 0.0f; verticalAngle = 0.0f;
+	camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
+	camera.verticalAngle = verticalAngle*(CV_PI/180.0f);
+	
 	// Cam init: (init + updateFixed)
 	Vec3f eye(0.0f, 0.0f, 0.0f);
-	//Vec3f gaze(0.0f, 0.0f, 1.0f);
-	//camera.updateFixed(eye, gaze); // fwdVec now (0, 0, 1)
+	//Vec3f gaze(-1.0f, 0.0f, 0.0f);
+	Vec3f gaze(0.0f, 0.0f, -1.0f);
+	//camera.updateFixed(eye, gaze); // 
 	camera.updateFree(eye);  // : given hor/verAngle (and eye), calculate the new FwdVec. Then, new right and up. Then also set at-Vec.
 
 	Mat windowTransform = (cv::Mat_<float>(4,4) << 
@@ -301,6 +305,26 @@ int main(int argc, char *argv[])
 		if (key == 'd') {
 			camera.eye += 0.05f * camera.getRightVector();
 		}
+		if (key == 'r') {
+			camera.eye += 0.05f * camera.getUpVector();
+		}
+		if (key == 'f') {
+			camera.eye -= 0.05f * camera.getUpVector();
+		}
+
+		if (key == 'z') {
+			camera.gaze += 0.05f * camera.getUpVector();
+		}
+		if (key == 'h') {
+			camera.gaze -= 0.05f * camera.getUpVector();
+		}
+		if (key == 'g') {
+			camera.gaze -= 0.05f * camera.getRightVector();
+		}
+		if (key == 'j') {
+			camera.gaze += 0.05f * camera.getRightVector();
+		}
+
 		if (key == 'i') {
 			camera.frustum.n += 0.1f;
 		}
@@ -327,6 +351,7 @@ int main(int argc, char *argv[])
 		camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
 		camera.verticalAngle = verticalAngle*(CV_PI/180.0f);
 		camera.updateFree(camera.eye); // : given hor/verAngle (and eye), calculate the new FwdVec. Then, new right and up. Then also set at-Vec.
+		//camera.updateFixed(camera.eye, camera.gaze);
 		// update viewTr, projTr
 		translate = render::utils::MatrixUtils::createTranslationMatrix(-camera.getEye()[0], -camera.getEye()[1], -camera.getEye()[2]);
 		rotate = (cv::Mat_<float>(4,4) << 
@@ -339,7 +364,7 @@ int main(int argc, char *argv[])
 		projectionTransform = updateProjectionTransform(camera, perspective);
 
 		renderAxes(worldTransform, viewTransform, projectionTransform, windowTransform);
-		/*
+		
 		for (const auto& tIdx : cube.tvi) {
 			Vertex v0 = cube.vertex[tIdx[0]];
 			Vertex v1 = cube.vertex[tIdx[1]];
@@ -347,7 +372,7 @@ int main(int argc, char *argv[])
 			renderLine(v0.position, v1.position, worldTransform, viewTransform, projectionTransform, windowTransform);
 			renderLine(v1.position, v2.position, worldTransform, viewTransform, projectionTransform, windowTransform);
 			renderLine(v2.position, v0.position, worldTransform, viewTransform, projectionTransform, windowTransform);
-		}*/
+		}
 		
 		
 		//renderLine(Vec4f(0.0f, 0.0f, -0.1f, 1.0f), Vec4f(0.0f, 0.0f, -100.0f, 1.0f), worldTransform, viewTransform, projectionTransform, windowTransform);
@@ -355,6 +380,8 @@ int main(int argc, char *argv[])
 		
 
 		Mat screenWithOverlay = colorBuffer.clone();
+		Mat tmp;
+		flip(screenWithOverlay, tmp, 0);
 		putText(screenWithOverlay, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		putText(screenWithOverlay, "horA: " + lexical_cast<string>(horizontalAngle) + ", verA: " + lexical_cast<string>(verticalAngle), Point(10, 38), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		putText(screenWithOverlay, "moving: " + lexical_cast<string>(moving), Point(10, 56), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));

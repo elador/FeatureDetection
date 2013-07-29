@@ -31,6 +31,7 @@ ENDIF()
 #Source and header files:
 SET(SOURCE
 	src/render/Renderer.cpp
+	src/render/RenderDevice.cpp
 	src/render/OpenGlDevice.cpp
 	src/render/SoftwareDevice.cpp
 	src/render/Vertex.cpp
