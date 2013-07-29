@@ -19,6 +19,10 @@ namespace render {
 class Camera
 {
 public:
+	// Todo: Create 2 c'tors.
+	// - takes 2 angl + eye + frustum, does updateFree
+	// - takes eye + gaze + frustum, does updateFixed.
+	// (- later a 3rd for focused)
 	Camera(void);
 	~Camera(void);
 

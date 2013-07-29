@@ -19,6 +19,7 @@
 using cv::Mat;
 using cv::Vec2f;
 using cv::Vec4f;
+using cv::Scalar;
 using std::vector;
 
 namespace render {
@@ -29,8 +30,9 @@ namespace render {
 class RenderDevice
 {
 public:
-	RenderDevice(); // I think I don't want a default constructor?
-	RenderDevice(unsigned int screenWidth, unsigned int screenHeight);
+	// Future Todo: Use c++11 delegating c'tors as soon as VS supports it, i.e. create a viewport with 640x480 default
+	
+	RenderDevice(unsigned int screenWidth, unsigned int screenHeight); // TODO: +Camera
 	~RenderDevice(); // Why no virtual possible?
 
 	cv::Mat getImage(); // make these a '&' ?
@@ -47,19 +49,23 @@ public:
 	// Render... Does not do any clipping.
 	Vec2f projectVertex(Vec4f vertex);
 	vector<Vec2f> projectVertexList(vector<Vec4f> vertexList);
+	void renderLine(Vec4f p0, Vec4f p1, Scalar color);
 	void renderMesh(Mesh mesh);
 
 	void setWorldTransform(Mat worldTransform);
 
 	void resetBuffers();
 
+	Camera camera; // init this in c'tor? (no it's on stack so default Camera c'tor init)
+	void updateViewTransform();
+	void updateProjectionTransform(bool perspective=true);
 protected:
 	Mat colorBuffer;
 	Mat depthBuffer;
 	unsigned int screenWidth;
 	unsigned int screenHeight;
 	float aspect;
-	Camera camera; // init this in c'tor? (no it's on stack so default Camera c'tor init)
+	
 
 	Mat worldTransform;			// Model-matrix. We should have/save one per object if we start rendering more than 1 object.
 	Mat viewTransform;			// Camera-transform
@@ -67,8 +73,7 @@ protected:
 	Mat windowTransform;	// Transform to window coordinates, 4 x 4 float
 
 
-	void updateViewTransform();
-	void updateProjectionTransform(bool perspective=true);
+
 	void setViewport(unsigned int screenWidth, unsigned int screenHeight);
 
 	cv::Vec4f matToColVec4f(cv::Mat m) {

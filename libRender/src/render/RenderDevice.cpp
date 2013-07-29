@@ -8,12 +8,15 @@
 #include "render/RenderDevice.hpp"
 #include "render/MatrixUtils.hpp"
 
+using cv::Point2f;
+using cv::Scalar;
+
 namespace render {
 
 RenderDevice::RenderDevice(unsigned int screenWidth, unsigned int screenHeight)
 {
-	screenWidth = screenWidth;
-	screenHeight = screenHeight;
+	this->screenWidth = screenWidth;
+	this->screenHeight = screenHeight;
 	aspect = (float)screenWidth/(float)screenHeight;
 
 	setViewport(screenWidth, screenHeight);
@@ -128,6 +131,29 @@ void RenderDevice::resetBuffers()
 {
 	colorBuffer = Mat::zeros(screenHeight, screenWidth, CV_8UC4);
 	depthBuffer = Mat::ones(screenHeight, screenWidth, CV_64FC1)*1000000;
+}
+
+void RenderDevice::renderLine(Vec4f p0, Vec4f p1, Scalar color)
+{
+	Mat worldSpace = worldTransform * Mat(p0);
+	Mat camSpace = viewTransform * worldSpace;
+	Mat normalizedViewingVolume = projectionTransform * camSpace;
+	Vec4f normViewVolVec = matToColVec4f(normalizedViewingVolume);
+	normViewVolVec = normViewVolVec / normViewVolVec[3];	// divide by w
+	Mat windowCoords = windowTransform * Mat(normViewVolVec);	// places the vec as a column in the matrix
+	Vec4f windowCoordsVec = matToColVec4f(windowCoords);
+	Point2f p0Screen(windowCoordsVec[0], windowCoordsVec[1]);
+
+	worldSpace = worldTransform * Mat(p1);
+	camSpace = viewTransform * worldSpace;
+	normalizedViewingVolume = projectionTransform * camSpace;
+	normViewVolVec = matToColVec4f(normalizedViewingVolume);
+	normViewVolVec = normViewVolVec / normViewVolVec[3];	// divide by w
+	windowCoords = windowTransform * Mat(normViewVolVec);	// places the vec as a column in the matrix
+	windowCoordsVec = matToColVec4f(windowCoords);
+	Point2f p1Screen(windowCoordsVec[0], windowCoordsVec[1]);
+
+	line(colorBuffer, p0Screen, p1Screen, color);
 }
 
 } /* namespace render */
