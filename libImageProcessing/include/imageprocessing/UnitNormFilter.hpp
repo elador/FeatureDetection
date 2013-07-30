@@ -1,12 +1,12 @@
 /*
- * IntensityNormNormalizationFilter.hpp
+ * UnitNormFilter.hpp
  *
  *  Created on: 02.07.2013
  *      Author: Patrik Huber
  */
 
-#ifndef INTENSITYNORMNORMALIZATIONFILTER_HPP_
-#define INTENSITYNORMNORMALIZATIONFILTER_HPP_
+#ifndef UNITNORMFILTER_HPP_
+#define UNITNORMFILTER_HPP_
 
 #include "imageprocessing/ImageFilter.hpp"
 
@@ -19,7 +19,7 @@ namespace imageprocessing {
  * The input image must not have more than one channel and can be of any type. The
  * filtered image is of type CV_32F with the values in the same range.
  */
-class IntensityNormNormalizationFilter : public ImageFilter {
+class UnitNormFilter : public ImageFilter {
 public:
 
 	/**
@@ -27,9 +27,9 @@ public:
 	 *
 	 * @param[in] normType The norm type (see cv::norm).
 	 */
-	IntensityNormNormalizationFilter(int normType = cv::NORM_L2);
+	UnitNormFilter(int normType = cv::NORM_L2);
 
-	~IntensityNormNormalizationFilter();
+	~UnitNormFilter();
 
 	using ImageFilter::applyTo;
 
@@ -43,4 +43,4 @@ private:
 };
 
 } /* namespace imageprocessing */
-#endif /* INTENSITYNORMNORMALIZATIONFILTER_HPP_ */
+#endif /* UNITNORMFILTER_HPP_ */

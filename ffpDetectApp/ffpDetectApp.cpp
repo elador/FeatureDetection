@@ -72,7 +72,7 @@
 #include "imageprocessing/HistEq64Filter.hpp"
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
 #include "imageprocessing/ZeroMeanUnitVarianceFilter.hpp"
-#include "imageprocessing/IntensityNormNormalizationFilter.hpp"
+#include "imageprocessing/UnitNormFilter.hpp"
 #include "imageprocessing/WhiteningFilter.hpp"
 
 #include "detection/SlidingWindowDetector.hpp"
@@ -388,7 +388,7 @@ int main(int argc, char *argv[])
 					featureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
 					featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
 					featureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0/127.5, -1.0));
-					featureExtractor->addPatchFilter(make_shared<IntensityNormNormalizationFilter>(cv::NORM_L2));
+					featureExtractor->addPatchFilter(make_shared<UnitNormFilter>(cv::NORM_L2));
 				} else if (featurespace.get_value<string>() == "hq64") {
 					//shared_ptr<FilteringFeatureExtractor> featureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
 					featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());

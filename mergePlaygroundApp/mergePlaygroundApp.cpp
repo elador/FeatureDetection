@@ -72,7 +72,7 @@
 #include "imageprocessing/HistEq64Filter.hpp"
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
 #include "imageprocessing/ZeroMeanUnitVarianceFilter.hpp"
-#include "imageprocessing/IntensityNormNormalizationFilter.hpp"
+#include "imageprocessing/UnitNormFilter.hpp"
 #include "imageprocessing/WhiteningFilter.hpp"
 
 #include "detection/SlidingWindowDetector.hpp"
@@ -295,14 +295,14 @@ int main(int argc, char *argv[])
 	shared_ptr<WhiteningFilter> fw = make_shared<WhiteningFilter>();
 	shared_ptr<HistogramEqualizationFilter> fh = make_shared<HistogramEqualizationFilter>();
 	shared_ptr<ConversionFilter> fc = make_shared<ConversionFilter>(CV_32F, 1.0/127.5, -1.0);
-	shared_ptr<IntensityNormNormalizationFilter> fi = make_shared<IntensityNormNormalizationFilter>(cv::NORM_L2);
+	shared_ptr<UnitNormFilter> fi = make_shared<UnitNormFilter>(cv::NORM_L2);
 	shared_ptr<ReshapingFilter> fr = make_shared<ReshapingFilter>(1);
 	for (auto& p : positives) {
 		//p.convertTo(p, CV_32F);
 		fw->applyInPlace(p);
 		// min/max, stretch to [0, 255] 8U
 		fh->applyInPlace(p);
-		// need to go back to [-1, 1] before IntensityNormNormalizationFilter:
+		// need to go back to [-1, 1] before UnitNormFilter:
 		fc->applyInPlace(p);
 		fi->applyInPlace(p);
 		fr->applyInPlace(p);

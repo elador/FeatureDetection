@@ -23,10 +23,12 @@ SET(HEADERS
 	include/imageprocessing/FeatureExtractor.hpp
 	include/imageprocessing/FilteringFeatureExtractor.hpp
 	include/imageprocessing/FilteringPyramidFeatureExtractor.hpp
+	include/imageprocessing/GammaCorrectionFilter.hpp
 	include/imageprocessing/GradientFilter.hpp
 	include/imageprocessing/GradientHistogramFilter.hpp
 	include/imageprocessing/GradientMagnitudeFilter.hpp
 	include/imageprocessing/GrayscaleFilter.hpp
+	include/imageprocessing/GreyWorldNormalizationFilter.hpp
 	include/imageprocessing/HaarFeatureFilter.hpp
 	include/imageprocessing/HistEq64Filter.hpp
 	include/imageprocessing/HistogramEqualizationFilter.hpp
@@ -36,7 +38,6 @@ SET(HEADERS
 	include/imageprocessing/ImagePyramid.hpp
 	include/imageprocessing/ImagePyramidLayer.hpp
 	include/imageprocessing/IntegralImageFilter.hpp
-	include/imageprocessing/IntensityNormNormalizationFilter.hpp
 	include/imageprocessing/LbpFilter.hpp
 	include/imageprocessing/MultipleImageFilter.hpp
 	include/imageprocessing/Patch.hpp
@@ -46,6 +47,7 @@ SET(HEADERS
 	include/imageprocessing/ResizingFilter.hpp
 	include/imageprocessing/SpatialHistogramFeatureExtractor.hpp
 	include/imageprocessing/SpatialPyramidHistogramFeatureExtractor.hpp
+	include/imageprocessing/UnitNormFilter.hpp
 	include/imageprocessing/VersionedImage.hpp
 	include/imageprocessing/WhiteningFilter.hpp
 	include/imageprocessing/ZeroMeanUnitVarianceFilter.hpp
@@ -56,10 +58,12 @@ SET(SOURCE
 	src/imageprocessing/ConversionFilter.cpp
 	src/imageprocessing/DirectImageFeatureExtractor.cpp
 	src/imageprocessing/DirectPyramidFeatureExtractor.cpp
+	src/imageprocessing/GammaCorrectionFilter.cpp
 	src/imageprocessing/GradientFilter.cpp
 	src/imageprocessing/GradientHistogramFilter.cpp
 	src/imageprocessing/GradientMagnitudeFilter.cpp
 	src/imageprocessing/GrayscaleFilter.cpp
+	src/imageprocessing/GreyWorldNormalizationFilter.cpp
 	src/imageprocessing/HaarFeatureFilter.cpp
 	src/imageprocessing/HistEq64Filter.cpp
 	src/imageprocessing/HistogramEqualizationFilter.cpp
@@ -67,13 +71,13 @@ SET(SOURCE
 	src/imageprocessing/ImagePyramid.cpp
 	src/imageprocessing/ImagePyramidLayer.cpp
 	src/imageprocessing/IntegralImageFilter.cpp
-	src/imageprocessing/IntensityNormNormalizationFilter.cpp
 	src/imageprocessing/LbpFilter.cpp
 	src/imageprocessing/MultipleImageFilter.cpp
 	src/imageprocessing/ReshapingFilter.cpp
 	src/imageprocessing/ResizingFilter.cpp
 	src/imageprocessing/SpatialHistogramFeatureExtractor.cpp
 	src/imageprocessing/SpatialPyramidHistogramFeatureExtractor.cpp
+	src/imageprocessing/UnitNormFilter.cpp
 	src/imageprocessing/WhiteningFilter.cpp
 	src/imageprocessing/ZeroMeanUnitVarianceFilter.cpp
 )

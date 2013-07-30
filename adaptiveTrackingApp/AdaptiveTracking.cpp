@@ -20,7 +20,7 @@
 #include "imageio/VideoImageSink.hpp"
 #include "imageio/Landmark.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
-#include "imageprocessing/IntensityNormNormalizationFilter.hpp"
+#include "imageprocessing/UnitNormFilter.hpp"
 #include "imageprocessing/ConversionFilter.hpp"
 #include "imageprocessing/HaarFeatureFilter.hpp"
 #include "imageprocessing/IntegralImageFilter.hpp"
@@ -129,7 +129,7 @@ shared_ptr<FeatureExtractor> AdaptiveTracking::createFeatureExtractor(
 		pyramidExtractor->addLayerFilter(make_shared<WhiteningFilter>());
 		pyramidExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
 		pyramidExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0));
-		pyramidExtractor->addPatchFilter(make_shared<IntensityNormNormalizationFilter>());
+		pyramidExtractor->addPatchFilter(make_shared<UnitNormFilter>());
 		return wrapFeatureExtractor(pyramidExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "haar") {
 		vector<float> sizes;

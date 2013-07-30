@@ -30,7 +30,7 @@
 #include "imageprocessing/GradientMagnitudeFilter.hpp"
 #include "imageprocessing/GradientHistogramFilter.hpp"
 #include "imageprocessing/ConversionFilter.hpp"
-#include "imageprocessing/IntensityNormNormalizationFilter.hpp"
+#include "imageprocessing/UnitNormFilter.hpp"
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/DirectImageFeatureExtractor.hpp"
 #include "imageprocessing/FilteringFeatureExtractor.hpp"
@@ -138,7 +138,7 @@ shared_ptr<FeatureExtractor> HeadTracking::createFeatureExtractor(
 		featureExtractor->addLayerFilter(make_shared<WhiteningFilter>());
 		featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
 		featureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0));
-		featureExtractor->addPatchFilter(make_shared<IntensityNormNormalizationFilter>());
+		featureExtractor->addPatchFilter(make_shared<UnitNormFilter>());
 		return wrapFeatureExtractor(featureExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "haar") {
 		vector<float> sizes;
@@ -544,10 +544,10 @@ void HeadTracking::drawTarget(Mat& image, optional<Rect> target, optional<Sample
 	const cv::Scalar& color = usedAdaptive ? (adapted ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 255, 255)) : cv::Scalar(0, 0, 255);
 	if (target) {
 		cv::rectangle(image, *target, color, 2);
-		if (state)
-			cv::line(image,
-					cv::Point(state->getX() - state->getVx(), state->getY() - state->getVy()),
-					cv::Point(state->getX(), state->getY()), color);
+//		if (state)
+//			cv::line(image,
+//					cv::Point(state->getX() - state->getVx(), state->getY() - state->getVy()),
+//					cv::Point(state->getX(), state->getY()), color);
 	}
 }
 
