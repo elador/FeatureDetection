@@ -34,6 +34,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <random>
+#include <functional>
 
 namespace po = boost::program_options;
 using namespace std;
@@ -126,8 +128,8 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	//render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("D:\\model2012_l6_rms.h5");
-	render::MorphableModel mmHeadL4 = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
+	//render::Mesh morphableModel = render::utils::MeshUtils::readFromHdf5("D:\\model2012_l6_rms.h5");
+	render::MorphableModel morphableModel = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
 	render::Mesh cube = render::utils::MeshUtils::createCube();
 	render::Mesh pyramid = render::utils::MeshUtils::createPyramid();
 	render::Mesh plane = render::utils::MeshUtils::createPlane();
@@ -156,8 +158,20 @@ int main(int argc, char *argv[])
 	vertexIds.push_back(270); // nasal septum - 
 	vertexIds.push_back(3284); // left-alare - right nose ...
 	vertexIds.push_back(572); // right-alare - left nose ...
-	
 
+	ofstream outputFile;
+	outputFile.open("C:/Users/Patrik/Cloud/data_3dmm_landmarks_mean_batch1_p.txt");
+	outputFile << "pose_rndvtx_x " << "pose_rndvtx_y " << "frontal_rndvtx_x " << "frontal_rndvtx_y " << "pose_lel_x " << "pose_lel_y " << "pose_ler_x " << "pose_ler_y " << "pose_rel_x " << "pose_rel_y " << "pose_rer_x " << "pose_rer_y " << "pose_ml_x " << "pose_ml_y " << "pose_mr_x " << "pose_mr_y " << "pose_bn_x " << "pose_bn_y " << "pose_nt_x " << "pose_nt_y " << "pose_ns_x " << "pose_ns_y " << "pose_la_x " << "pose_la_y " << "pose_ra_x " << "pose_ra_y " << "yaw " << "pitch " << "roll" << std::endl;
+	
+	
+	std::uniform_int_distribution<int> distribution(0, morphableModel.mesh.vertex.size()-1);
+	std::mt19937 engine; // Mersenne twister MT19937
+	//std::random_device rd;
+	//engine.seed(rd());
+	engine.seed();
+	auto randInt = std::bind(distribution, engine);
+	
+	float xAngle = 0.0f;
 	bool running = true;
 	while (running) {
 		int key = waitKey(30);
@@ -217,6 +231,13 @@ int main(int argc, char *argv[])
 		if (key == 'c') {
 			freeCamera = !freeCamera;
 		}
+
+		if (key == 'n') {
+			xAngle -= 1.0f;
+		}
+		if (key == 'm') {
+			xAngle += 1.0f;
+		}
 		r.resetBuffers();
 
 		r.camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
@@ -250,39 +271,63 @@ int main(int argc, char *argv[])
 			r.renderLine(v2.position, v0.position, Scalar(0.0f, 0.0f, 255.0f));
 		}
 
-		Mat rot = render::utils::MatrixUtils::createRotationMatrixZ(10.0f * (CV_PI/180.0f));
-		Mat tra = render::utils::MatrixUtils::createTranslationMatrix(-1.2f, 0.0f, 0.0f);
-		Mat sc = render::utils::MatrixUtils::createScalingMatrix(1.0f/2.0f, 1.0f/2.0f, 1.0f/2.0f);
-		Mat modelWorld =  tra * sc * rot;
-		r.setWorldTransform(modelWorld);
-		for (const auto& tIdx : cube.tvi) {
-			Vertex v0 = cube.vertex[tIdx[0]];
-			Vertex v1 = cube.vertex[tIdx[1]];
-			Vertex v2 = cube.vertex[tIdx[2]];
-			r.renderLine(v0.position, v1.position, Scalar(0.0f, 0.0f, 255.0f));
-			r.renderLine(v1.position, v2.position, Scalar(0.0f, 0.0f, 255.0f));
-			r.renderLine(v2.position, v0.position, Scalar(0.0f, 0.0f, 255.0f));
-		}
+		for (int angle = -30; angle <= 30; ++angle) {
+			for (int sampleNumPerDegree = 0; sampleNumPerDegree < 200; ++sampleNumPerDegree) {
+				r.resetBuffers();
+				int randomVertex = randInt();
+				vector<shared_ptr<Landmark>> pointsToWrite;
+				
+				// 1) Render the randomVertex frontal
+				Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
+				Mat rot = Mat::eye(4, 4, CV_32FC1);
+				Mat modelMatrix = rot * modelScaling;
+				r.setWorldTransform(modelMatrix);
+				Vec2f res = r.projectVertex(morphableModel.mesh.vertex[randomVertex].position);
+				string name = "randomVertexFrontal";
+				pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
+				
+				// 2) Render the randomVertex in pose angle
+				rot = render::utils::MatrixUtils::createRotationMatrixX(angle * (CV_PI/180.0f));
+				modelMatrix = rot * modelScaling;
+				r.setWorldTransform(modelMatrix);
+				res = r.projectVertex(morphableModel.mesh.vertex[randomVertex].position);
+				name = "randomVertexPose";
+				pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
 
-		vector<shared_ptr<Landmark>> lms;
-		for (const auto& vid : vertexIds) {
-			Mat rot2 = render::utils::MatrixUtils::createRotationMatrixZ(45.0f * (CV_PI/180.0f));
-			Mat sc2 = render::utils::MatrixUtils::createScalingMatrix(1.0f/100.0f, 1.0f/100.0f, 1.0f/100.0f);
-			Mat modelWorld2 = /*rot2 * */sc2;
-			r.setWorldTransform(modelWorld2);
-			Vec2f res = r.projectVertex(mmHeadL4.mesh.vertex[vid].position);
-			r.renderLM(mmHeadL4.mesh.vertex[vid].position, Scalar(255.0f, 0.0f, 0.0f));
+				// 3) Render all LMs in pose angle
+				for (const auto& vid : vertexIds) {
+					rot = render::utils::MatrixUtils::createRotationMatrixX(angle * (CV_PI/180.0f));
+					modelMatrix = rot * modelScaling;
+					r.setWorldTransform(modelMatrix);
+					res = r.projectVertex(morphableModel.mesh.vertex[vid].position);
+					//r.renderLM(morphableModel.mesh.vertex[vid].position, Scalar(255.0f, 0.0f, 0.0f));
+					name = DidLandmarkFormatParser::didToTlmsName(vid);
+					pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
+				}
+
+				Mat screen = r.getImage();
+				// 4) Write one row to the file
+				for (const auto& lm : pointsToWrite) {
+					lm->draw(screen);
+					outputFile << lm->getX() << " " << lm->getY() << " ";
+				}
+				int yaw = 0;
+				int pitch = angle;
+				int roll = 0;
+				outputFile << yaw << " " << pitch << " " << roll << std::endl;
+				
 			
-			string name = DidLandmarkFormatParser::didToTlmsName(vid);
-			shared_ptr<Landmark> lm = make_shared<ModelLandmark>(name, res);
-			lms.push_back(lm);
+
+			}
 		}
 
+		outputFile.close();
 
 		Mat screen = r.getImage();
+		/*
 		for (const auto& lm : lms) {
 			lm->draw(screen);
-		}
+		}*/
 
 		putText(screen, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		putText(screen, "horA: " + lexical_cast<string>(horizontalAngle) + ", verA: " + lexical_cast<string>(verticalAngle), Point(10, 38), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
@@ -299,7 +344,7 @@ int main(int argc, char *argv[])
 
 		for (const auto& vid : vertexIds) {
 			r.renderDevice->setWorldTransform(render::utils::MatrixUtils::createRotationMatrixX(angle * (CV_PI/180.0f)));
-			Vec2f res = r.renderDevice->renderVertex(mmHeadL4.mesh.vertex[vid].position);
+			Vec2f res = r.renderDevice->renderVertex(morphableModel.mesh.vertex[vid].position);
 			string name = DidLandmarkFormatParser::didToTlmsName(vid);
 			shared_ptr<Landmark> lm = make_shared<ModelLandmark>(name, res);
 			lms.push_back(lm);
