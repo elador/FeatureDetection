@@ -51,6 +51,7 @@ public:
 	Vec2f projectVertex(Vec4f vertex);
 	vector<Vec2f> projectVertexList(vector<Vec4f> vertexList);
 	void renderLine(Vec4f p0, Vec4f p1, Scalar color);
+	void renderLM(Vec4f p0, Scalar color);
 	void renderMesh(Mesh mesh);
 
 	void setWorldTransform(Mat worldTransform);

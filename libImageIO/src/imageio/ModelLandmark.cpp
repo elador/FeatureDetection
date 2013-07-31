@@ -53,10 +53,16 @@ void ModelLandmark::draw(Mat& image, const Scalar& color, float width) const
 		unsigned int pos = 0;
 		for (int currRow = cvRound(position[1])-1; currRow<=cvRound(position[1])+1; ++currRow) {
 			for (int currCol = cvRound(position[0])-1; currCol<=cvRound(position[0])+1; ++currCol) {
-				if(symbol[pos]==true) {
-					image.at<cv::Vec3b>(currRow, currCol)[0] = (uchar)cvRound(255.0f * color.val[0]);
-					image.at<cv::Vec3b>(currRow, currCol)[1] = (uchar)cvRound(255.0f * color.val[1]);
-					image.at<cv::Vec3b>(currRow, currCol)[2] = (uchar)cvRound(255.0f * color.val[2]);
+				if (symbol[pos]==true) {
+					if (image.channels()==4) {
+						image.at<cv::Vec4b>(currRow, currCol)[0] = (uchar)cvRound(255.0f * color.val[0]);
+						image.at<cv::Vec4b>(currRow, currCol)[1] = (uchar)cvRound(255.0f * color.val[1]);
+						image.at<cv::Vec4b>(currRow, currCol)[2] = (uchar)cvRound(255.0f * color.val[2]);
+					} else if (image.channels()==3) {
+						image.at<cv::Vec3b>(currRow, currCol)[0] = (uchar)cvRound(255.0f * color.val[0]);
+						image.at<cv::Vec3b>(currRow, currCol)[1] = (uchar)cvRound(255.0f * color.val[1]);
+						image.at<cv::Vec3b>(currRow, currCol)[2] = (uchar)cvRound(255.0f * color.val[2]);
+					}
 				}
 				++pos;
 			}
