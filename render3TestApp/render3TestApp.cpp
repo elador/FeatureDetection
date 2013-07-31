@@ -57,6 +57,7 @@ static bool moving = false;
 static float zNear = -0.1f;
 static float zFar = -100.0f;
 static bool perspective = false;
+static bool freeCamera = true;
 
 static void winOnMouse(int event, int x, int y, int, void* userdata)
 {
@@ -193,15 +194,21 @@ int main(int argc, char *argv[])
 		if (key == 'p') {
 			perspective = !perspective;
 		}
+		if (key == 'c') {
+			freeCamera = !freeCamera;
+		}
 		r.resetBuffers();
 
 		r.camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
 		r.camera.verticalAngle = verticalAngle*(CV_PI/180.0f);
-		r.camera.updateFree(r.camera.eye);
-		//r.camera.updateFixed(r.camera.eye, r.camera.gaze);
+		if(freeCamera) {
+			r.camera.updateFree(r.camera.eye);
+		} else {
+			r.camera.updateFixed(r.camera.eye, r.camera.gaze);
+		}
 
 		r.updateViewTransform();
-		r.updateProjectionTransform(false);
+		r.updateProjectionTransform(perspective);
 
 		Vec4f origin(0.0f, 0.0f, 0.0f, 1.0f);
 		Vec4f xAxis(1.0f, 0.0f, 0.0f, 1.0f);

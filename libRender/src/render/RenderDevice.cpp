@@ -166,4 +166,18 @@ void RenderDevice::renderLine(Vec4f p0, Vec4f p1, Scalar color)
 	line(colorBuffer, p0Screen, p1Screen, color);
 }
 
+void RenderDevice::renderLM(Vec4f p0, Scalar color)
+{
+	Mat worldSpace = worldTransform * Mat(p0);
+	Mat camSpace = viewTransform * worldSpace;
+	Mat normalizedViewingVolume = projectionTransform * camSpace;
+	Vec4f normViewVolVec = matToColVec4f(normalizedViewingVolume);
+	normViewVolVec = normViewVolVec / normViewVolVec[3];	// divide by w
+	Mat windowCoords = windowTransform * Mat(normViewVolVec);	// places the vec as a column in the matrix
+	Vec4f windowCoordsVec = matToColVec4f(windowCoords);
+	Point2f p0Screen(windowCoordsVec[0], windowCoordsVec[1]);
+
+	circle(colorBuffer, p0Screen, 3, color);
+}
+
 } /* namespace render */

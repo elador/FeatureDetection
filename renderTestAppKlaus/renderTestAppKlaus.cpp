@@ -14,15 +14,10 @@
 #endif  // _DEBUG
 
 #include "render/MorphableModel.hpp"
-#include "render/Renderer.hpp"
-#include "render/SoftwareDevice.hpp"
-#include "render/Vertex.hpp"
-#include "render/Triangle.hpp"
-#include "render/Camera.hpp"
-#include "render/MatrixUtils.hpp"
 #include "render/MeshUtils.hpp"
-#include "render/Texture.hpp"
-#include "render/Mesh.hpp"
+#include "render/MatrixUtils.hpp"
+#include "render/RenderDevice.hpp"
+#include "render/Camera.hpp"
 
 #include "imageio/LandmarkCollection.hpp"
 #include "imageio/ModelLandmark.hpp"
@@ -44,6 +39,8 @@ namespace po = boost::program_options;
 using namespace std;
 using namespace cv;
 using namespace imageio;
+using namespace render;
+using boost::lexical_cast;
 
 
 template<class T>
@@ -51,6 +48,45 @@ ostream& operator<<(ostream& os, const vector<T>& v)
 {
 	copy(v.begin(), v.end(), ostream_iterator<T>(cout, " ")); 
 	return os;
+}
+
+
+static string windowName = "test";
+static float horizontalAngle = 0.0f;
+static float verticalAngle = 0.0f;
+static int lastX = 0;
+static int lastY = 0;
+static float movingFactor = 0.5f;
+static bool moving = false;
+
+static float zNear = -0.1f;
+static float zFar = -100.0f;
+static bool perspective = false;
+static bool freeCamera = true;
+
+static void winOnMouse(int event, int x, int y, int, void* userdata)
+{
+	if (event == EVENT_MOUSEMOVE && moving == false) {
+		lastX = x;
+		lastY = y;
+	}
+	if (event == EVENT_MOUSEMOVE && moving == true) {
+		if (x != lastX || y != lastY) {
+			horizontalAngle += (x-lastX)*movingFactor;
+			verticalAngle += (y-lastY)*movingFactor;
+			lastX = x;
+			lastY = y;
+		}
+	}
+	if (event == EVENT_LBUTTONDOWN) {
+		moving = true;
+		lastX = x;
+		lastY = y;
+	}
+	if (event == EVENT_LBUTTONUP) {
+		moving = false;
+	}
+
 }
 
 int main(int argc, char *argv[])
@@ -92,14 +128,21 @@ int main(int argc, char *argv[])
 
 	//render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("D:\\model2012_l6_rms.h5");
 	render::MorphableModel mmHeadL4 = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
+	render::Mesh cube = render::utils::MeshUtils::createCube();
+	render::Mesh pyramid = render::utils::MeshUtils::createPyramid();
+	render::Mesh plane = render::utils::MeshUtils::createPlane();
 
-	const float& aspect = 640.0f/480.0f;
-	shared_ptr<render::SoftwareDevice> swr = make_shared<render::SoftwareDevice>(640, 480);
-	render::Renderer r(swr);
-	r.renderDevice->getCamera().setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, 0.1f, 100.0f);
-	r.renderDevice->setWorldTransform(render::utils::MatrixUtils::createScalingMatrix(1.0f/100.0f, -1.0f/100.0f, 1.0f/100.0f));
-	Vec4f test(0.5f, 0.5f, 0.5f, 1.0f);
-	Vec2f res = r.renderDevice->renderVertex(test);
+	int screenWidth = 640;
+	int screenHeight = 480;
+	const float aspect = (float)screenWidth/(float)screenHeight;
+
+	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
+	Camera camera(Vec3f(0.0f, 0.0f, 0.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
+
+	RenderDevice r(screenWidth, screenHeight, camera);
+
+	namedWindow(windowName, WINDOW_AUTOSIZE);
+	setMouseCallback(windowName, winOnMouse);
 
 	vector<int> vertexIds;
 	vertexIds.push_back(177); // left-eye-left - right.eye.corner_outer
@@ -113,8 +156,144 @@ int main(int argc, char *argv[])
 	vertexIds.push_back(270); // nasal septum - 
 	vertexIds.push_back(3284); // left-alare - right nose ...
 	vertexIds.push_back(572); // right-alare - left nose ...
+	
+
+	bool running = true;
+	while (running) {
+		int key = waitKey(30);
+		if (key==-1) {
+			// no key pressed
+		}
+		if (key == 'q') {
+			running = false;
+		}
+		if (key == 'w') {
+			r.camera.eye += 0.05f * -camera.getForwardVector();
+		}
+		if (key == 'a') {
+			r.camera.eye -= 0.05f * camera.getRightVector();
+		}
+		if (key == 's') {
+			r.camera.eye -= 0.05f * -camera.getForwardVector();
+		}
+		if (key == 'd') {
+			r.camera.eye += 0.05f * camera.getRightVector();
+		}
+		if (key == 'r') {
+			r.camera.eye += 0.05f * camera.getUpVector();
+		}
+		if (key == 'f') {
+			r.camera.eye -= 0.05f * camera.getUpVector();
+		}
+
+		if (key == 'z') {
+			r.camera.gaze += 0.05f * camera.getUpVector();
+		}
+		if (key == 'h') {
+			r.camera.gaze -= 0.05f * camera.getUpVector();
+		}
+		if (key == 'g') {
+			r.camera.gaze -= 0.05f * camera.getRightVector();
+		}
+		if (key == 'j') {
+			r.camera.gaze += 0.05f * camera.getRightVector();
+		}
+
+		if (key == 'i') {
+			r.camera.frustum.n += 0.1f;
+		}
+		if (key == 'k') {
+			r.camera.frustum.n -= 0.1f;
+		}
+		if (key == 'o') {
+			r.camera.frustum.f += 1.0f;
+		}
+		if (key == 'l') {
+			r.camera.frustum.f -= 1.0f;
+		}
+		if (key == 'p') {
+			perspective = !perspective;
+		}
+		if (key == 'c') {
+			freeCamera = !freeCamera;
+		}
+		r.resetBuffers();
+
+		r.camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
+		r.camera.verticalAngle = verticalAngle*(CV_PI/180.0f);
+		if(freeCamera) {
+			r.camera.updateFree(r.camera.eye);
+		} else {
+			r.camera.updateFixed(r.camera.eye, r.camera.gaze);
+		}
+
+		r.updateViewTransform();
+		r.updateProjectionTransform(perspective);
+
+		r.setWorldTransform(render::utils::MatrixUtils::createScalingMatrix(1.0f, 1.0f, 1.0f));
+		Vec4f origin(0.0f, 0.0f, 0.0f, 1.0f);
+		Vec4f xAxis(1.0f, 0.0f, 0.0f, 1.0f);
+		Vec4f yAxis(0.0f, 1.0f, 0.0f, 1.0f);
+		Vec4f zAxis(0.0f, 0.0f, 1.0f, 1.0f);
+		Vec4f mzAxis(0.0f, 0.0f, -1.0f, 1.0f);
+		r.renderLine(origin, xAxis, Scalar(0.0f, 0.0f, 255.0f));
+		r.renderLine(origin, yAxis, Scalar(0.0f, 255.0f, 0.0f));
+		r.renderLine(origin, zAxis, Scalar(255.0f, 0.0f, 0.0f));
+		r.renderLine(origin, mzAxis, Scalar(0.0f, 255.0f, 255.0f));
+
+		for (const auto& tIdx : cube.tvi) {
+			Vertex v0 = cube.vertex[tIdx[0]];
+			Vertex v1 = cube.vertex[tIdx[1]];
+			Vertex v2 = cube.vertex[tIdx[2]];
+			r.renderLine(v0.position, v1.position, Scalar(0.0f, 0.0f, 255.0f));
+			r.renderLine(v1.position, v2.position, Scalar(0.0f, 0.0f, 255.0f));
+			r.renderLine(v2.position, v0.position, Scalar(0.0f, 0.0f, 255.0f));
+		}
+
+		Mat rot = render::utils::MatrixUtils::createRotationMatrixZ(10.0f * (CV_PI/180.0f));
+		Mat tra = render::utils::MatrixUtils::createTranslationMatrix(-1.2f, 0.0f, 0.0f);
+		Mat sc = render::utils::MatrixUtils::createScalingMatrix(1.0f/2.0f, 1.0f/2.0f, 1.0f/2.0f);
+		Mat modelWorld =  tra * sc * rot;
+		r.setWorldTransform(modelWorld);
+		for (const auto& tIdx : cube.tvi) {
+			Vertex v0 = cube.vertex[tIdx[0]];
+			Vertex v1 = cube.vertex[tIdx[1]];
+			Vertex v2 = cube.vertex[tIdx[2]];
+			r.renderLine(v0.position, v1.position, Scalar(0.0f, 0.0f, 255.0f));
+			r.renderLine(v1.position, v2.position, Scalar(0.0f, 0.0f, 255.0f));
+			r.renderLine(v2.position, v0.position, Scalar(0.0f, 0.0f, 255.0f));
+		}
+
+		vector<shared_ptr<Landmark>> lms;
+		for (const auto& vid : vertexIds) {
+			Mat rot2 = render::utils::MatrixUtils::createRotationMatrixZ(45.0f * (CV_PI/180.0f));
+			Mat sc2 = render::utils::MatrixUtils::createScalingMatrix(1.0f/100.0f, 1.0f/100.0f, 1.0f/100.0f);
+			Mat modelWorld2 = /*rot2 * */sc2;
+			r.setWorldTransform(modelWorld2);
+			Vec2f res = r.projectVertex(mmHeadL4.mesh.vertex[vid].position);
+			r.renderLM(mmHeadL4.mesh.vertex[vid].position, Scalar(255.0f, 0.0f, 0.0f));
+			
+			string name = DidLandmarkFormatParser::didToTlmsName(vid);
+			shared_ptr<Landmark> lm = make_shared<ModelLandmark>(name, res);
+			lms.push_back(lm);
+		}
 
 
+		Mat screen = r.getImage();
+		for (const auto& lm : lms) {
+			lm->draw(screen);
+		}
+
+		putText(screen, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screen, "horA: " + lexical_cast<string>(horizontalAngle) + ", verA: " + lexical_cast<string>(verticalAngle), Point(10, 38), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screen, "moving: " + lexical_cast<string>(moving), Point(10, 56), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screen, "zNear: " + lexical_cast<string>(r.camera.frustum.n) + ", zFar: " + lexical_cast<string>(r.camera.frustum.f) + ", p: " + lexical_cast<string>(perspective), Point(10, 74), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screen, "eye: " + lexical_cast<string>(r.camera.eye[0]) + ", " + lexical_cast<string>(r.camera.eye[1]) + ", " + lexical_cast<string>(r.camera.eye[2]), Point(10, 92), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		imshow(windowName, screen);
+
+	}
+
+	/*
 	for (int angle = -45; angle <= 45; ++angle) {
 		vector<shared_ptr<Landmark>> lms;
 
@@ -130,7 +309,7 @@ int main(int argc, char *argv[])
 		for (const auto& lm : lms) {
 			lm->draw(img);
 		}
-	}
+	}*/
 
 
 
