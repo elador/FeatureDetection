@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 	vertexIds.push_back(572); // right-alare - left nose ...
 
 	ofstream outputFile;
-	outputFile.open("C:/Users/Patrik/Cloud/data_3dmm_landmarks_mean_batch1_p.txt");
+	outputFile.open("C:/Users/Patrik/Cloud/data_3dmm_landmarks_norm02_batch1_y.txt");
 	outputFile << "pose_rndvtx_x " << "pose_rndvtx_y " << "frontal_rndvtx_x " << "frontal_rndvtx_y " << "pose_lel_x " << "pose_lel_y " << "pose_ler_x " << "pose_ler_y " << "pose_rel_x " << "pose_rel_y " << "pose_rer_x " << "pose_rer_y " << "pose_ml_x " << "pose_ml_y " << "pose_mr_x " << "pose_mr_y " << "pose_bn_x " << "pose_bn_y " << "pose_nt_x " << "pose_nt_y " << "pose_ns_x " << "pose_ns_y " << "pose_la_x " << "pose_la_y " << "pose_ra_x " << "pose_ra_y " << "yaw " << "pitch " << "roll" << std::endl;
 	
 	
@@ -271,9 +271,12 @@ int main(int argc, char *argv[])
 			r.renderLine(v2.position, v0.position, Scalar(0.0f, 0.0f, 255.0f));
 		}
 
-		for (int angle = -30; angle <= 30; ++angle) {
+		for (int angle = -45; angle <= 45; ++angle) {
 			for (int sampleNumPerDegree = 0; sampleNumPerDegree < 200; ++sampleNumPerDegree) {
 				r.resetBuffers();
+
+				morphableModel.drawNewVertexPositions();
+
 				int randomVertex = randInt();
 				vector<shared_ptr<Landmark>> pointsToWrite;
 				
@@ -287,7 +290,7 @@ int main(int argc, char *argv[])
 				pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
 				
 				// 2) Render the randomVertex in pose angle
-				rot = render::utils::MatrixUtils::createRotationMatrixX(angle * (CV_PI/180.0f));
+				rot = render::utils::MatrixUtils::createRotationMatrixY(angle * (CV_PI/180.0f));
 				modelMatrix = rot * modelScaling;
 				r.setWorldTransform(modelMatrix);
 				res = r.projectVertex(morphableModel.mesh.vertex[randomVertex].position);
@@ -296,7 +299,7 @@ int main(int argc, char *argv[])
 
 				// 3) Render all LMs in pose angle
 				for (const auto& vid : vertexIds) {
-					rot = render::utils::MatrixUtils::createRotationMatrixX(angle * (CV_PI/180.0f));
+					rot = render::utils::MatrixUtils::createRotationMatrixY(angle * (CV_PI/180.0f));
 					modelMatrix = rot * modelScaling;
 					r.setWorldTransform(modelMatrix);
 					res = r.projectVertex(morphableModel.mesh.vertex[vid].position);
@@ -311,8 +314,8 @@ int main(int argc, char *argv[])
 					lm->draw(screen);
 					outputFile << lm->getX() << " " << lm->getY() << " ";
 				}
-				int yaw = 0;
-				int pitch = angle;
+				int yaw = angle;
+				int pitch = 0;
 				int roll = 0;
 				outputFile << yaw << " " << pitch << " " << roll << std::endl;
 				
