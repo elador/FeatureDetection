@@ -231,7 +231,7 @@ shared_ptr<FeatureExtractor> HeadTracking::createHistogramFeatureExtractor(
 		throw invalid_argument("HeadTracking: invalid normalization method: " + config.get<string>("normalization"));
 	if (config.get_value<string>() == "spatial")
 		return make_shared<SpatialHistogramFeatureExtractor>(patchExtractor, bins,
-				config.get<int>("cellSize"), config.get<int>("blockSize"), config.get<bool>("combine"), normalization);
+				config.get<int>("cellSize"), config.get<int>("blockSize"), config.get<bool>("interpolation"), config.get<bool>("combine"), normalization);
 	else 	if (config.get_value<string>() == "pyramid")
 		return make_shared<SpatialPyramidHistogramFeatureExtractor>(patchExtractor, bins, config.get<int>("level"), normalization);
 	else

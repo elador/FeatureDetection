@@ -23,7 +23,6 @@ GradientHistogramFilter::GradientHistogramFilter(unsigned int bins, bool signedG
 	// build the look-up table
 	// index of the look-up table is the binary concatanation of the gradients of x and y
 	// value of the look-up table is the binary concatanation of the bin index and weight (scaled to 255)
-	double min = 255, max = -255, maxMag, maxBin, maxGradX, maxGradY;
 	gradientCode.gradient.x = 0;
 	for (int x = 0; x < 256; ++x) {
 		double gradientX = (static_cast<double>(x) - 127) / 127;
@@ -71,7 +70,6 @@ Mat GradientHistogramFilter::applyTo(const Mat& image, Mat& filtered) const {
 	}
 	for (int row = 0; row < rows; ++row) {
 		const ushort* gradientCode = image.ptr<ushort>(row); // concatenation of x gradient and y gradient (both uchar)
-		const cv::Vec2b* gradientCode2 = image.ptr<cv::Vec2b>(row); // concatenation of x gradient and y gradient (both uchar)
 		Vec4b* binCode = filtered.ptr<Vec4b>(row); // concatenation of two bin indices and weights (all uchar)
 		for (int col = 0; col < cols; ++col)
 			binCode[col] = binCodes[gradientCode[col]];

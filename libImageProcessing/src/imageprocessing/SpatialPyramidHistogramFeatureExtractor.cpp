@@ -40,6 +40,7 @@ shared_ptr<Patch> SpatialPyramidHistogramFeatureExtractor::extract(int x, int y,
 		Mat& patchData = patch->getData();
 		int count = 1 << (level - 1);
 		vector<Mat> cellHistograms(count * count);
+		float factor = 1.f / 255.f;
 		if (patchData.channels() == 1) { // bin information only, no weights
 			for (int cellRow = 0; cellRow < count; ++cellRow) {
 				for (int cellCol = 0; cellCol < count; ++cellCol) {
@@ -73,7 +74,7 @@ shared_ptr<Patch> SpatialPyramidHistogramFeatureExtractor::extract(int x, int y,
 						for (int col = startCol; col < endCol; ++col) {
 							uchar bin = rowValues[col][0];
 							uchar weight = rowValues[col][1];
-							histogramValues[bin] += weight / 255.0f;
+							histogramValues[bin] += factor * weight;
 						}
 					}
 					normalize(histogram);
@@ -96,8 +97,8 @@ shared_ptr<Patch> SpatialPyramidHistogramFeatureExtractor::extract(int x, int y,
 							uchar weight1 = rowValues[col][1];
 							uchar bin2 = rowValues[col][2];
 							uchar weight2 = rowValues[col][3];
-							histogramValues[bin1] += weight1 / 255.0f;
-							histogramValues[bin2] += weight2 / 255.0f;
+							histogramValues[bin1] += factor * weight1;
+							histogramValues[bin2] += factor * weight2;
 						}
 					}
 					normalize(histogram);
