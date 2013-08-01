@@ -74,6 +74,8 @@ shared_ptr<ModelLandmark> DidLandmarkFormatParser::readFromDidLine(const string&
 	}
 }
 
+map<int, string> DidLandmarkFormatParser::didLmMapping;
+
 string DidLandmarkFormatParser::didToTlmsName(int didVertexId) {
 	if (didLmMapping.empty()) {
 		didLmMapping.insert(make_pair( 177, "right.eye.corner_outer"));

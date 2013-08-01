@@ -103,6 +103,7 @@ public:
 
 	bool isClose(const Landmark& landmark, const float similarity) const;
 
+	// Note: Expects a 3-channel image.
 	void draw(Mat& image, const Scalar& color = Scalar(0, 0, 0), float width = 1) const;
 
 private:

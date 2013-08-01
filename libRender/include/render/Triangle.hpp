@@ -1,12 +1,13 @@
-/*!
- * \file Triangle.hpp
+/*
+ * Triangle.hpp
  *
- * \author Patrik Huber
- * \date December 4, 2012
- *
- * [comment here]
+ *  Created on: 04.12.2012
+ *      Author: Patrik Huber
  */
 #pragma once
+
+#ifndef TRIANGLE_HPP_
+#define TRIANGLE_HPP_
 
 #include <array>
 
@@ -15,6 +16,9 @@
 
 namespace render {
 
+/**
+ * Desc
+ */
 class Triangle
 {
 public:
@@ -133,4 +137,6 @@ struct TriangleToRasterize
 	}
 };
 
-}
+} /* namespace render */
+
+#endif /* TRIANGLE_HPP_ */

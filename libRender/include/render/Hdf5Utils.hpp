@@ -1,12 +1,11 @@
-/*!
- * \file Hdf5Utils.hpp
+/*
+ * Hdf5Utils.hpp
  *
- * \author Patrik Huber
- * \date December 12, 2012
- *
- * [comment here]
+ *  Created on: 12.12.2012
+ *      Author: Patrik Huber
  */
 #pragma once
+
 #ifndef HDF5UTILS_HPP_
 #define HDF5UTILS_HPP_
 
@@ -18,7 +17,7 @@
 	#include "H5Cpp.h"
 #endif
 
-#include <opencv2/core/core.hpp>
+#include "opencv2/core/core.hpp"
 
 #include <vector>
 
@@ -42,6 +41,7 @@ namespace render {
 
 		};
 
-	}
-}
+	} /* namespace utils */
+} /* namespace render */
+
 #endif /* HDF5UTILS_HPP_ */

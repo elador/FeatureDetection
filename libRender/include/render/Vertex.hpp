@@ -1,17 +1,21 @@
-/*!
- * \file Vertex.hpp
+/*
+ * Vertex.hpp
  *
- * \author Patrik Huber
- * \date December 4, 2012
- *
- * [comment here]
+ *  Created on: 04.12.2012
+ *      Author: Patrik Huber
  */
 #pragma once
+
+#ifndef VERTEX_HPP_
+#define VERTEX_HPP_
 
 #include "opencv2/core/core.hpp"
 
 namespace render {
 
+/**
+ * Desc
+ */
 class Vertex
 {
 public:
@@ -25,4 +29,6 @@ public:
 
 };
 
-}
+} /* namespace render */
+
+#endif /* VERTEX_HPP_ */

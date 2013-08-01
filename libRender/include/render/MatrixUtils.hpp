@@ -1,12 +1,11 @@
-/*!
- * \file MatrixUtils.hpp
+/*
+ * MatrixUtils.hpp
  *
- * \author Patrik Huber
- * \date December 6, 2012
- *
- * [comment here]
+ *  Created on: 06.12.2012
+ *      Author: Patrik Huber
  */
 #pragma once
+
 #ifndef MATRIXUTILS_HPP_
 #define MATRIXUTILS_HPP_
 
@@ -45,7 +44,8 @@ namespace render {
 
 		};
 
-	}
+	} /* namespace utils */
 
-}
+} /* namespace render */
+
 #endif /* MATRIXUTILS_HPP_ */

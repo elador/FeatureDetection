@@ -1,12 +1,13 @@
-/*!
- * \file Mesh.hpp
+/*
+ * Mesh.hpp
  *
- * \author Patrik Huber
- * \date December 12, 2012
- *
- * [comment here]
+ *  Created on: 12.12.2012
+ *      Author: Patrik Huber
  */
 #pragma once
+
+#ifndef MESH_HPP_
+#define MESH_HPP_
 
 #include "render/Vertex.hpp"
 #include "render/Triangle.hpp"
@@ -18,6 +19,9 @@
 
 namespace render {
 
+/**
+ * Desc
+ */
 class Mesh
 {
 public:
@@ -45,4 +49,6 @@ public:
 
 };
 
-}
+} /* namespace render */
+
+#endif /* MESH_HPP_ */

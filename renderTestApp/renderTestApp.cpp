@@ -13,15 +13,15 @@
    #endif
 #endif  // _DEBUG
 
-#include "render/MorphableModel.hpp"
-#include "render/SRenderer.hpp"
-#include "render/Vertex.hpp"
-#include "render/Triangle.hpp"
-#include "render/Camera.hpp"
-#include "render/MatrixUtils.hpp"
-#include "render/MeshUtils.hpp"
-#include "render/Texture.hpp"
-#include "render/Mesh.hpp"
+#include "renderold/MorphableModel.hpp"
+#include "renderold/SRenderer.hpp"
+#include "renderold/Vertex.hpp"
+#include "renderold/Triangle.hpp"
+#include "renderold/Camera.hpp"
+#include "renderold/MatrixUtils.hpp"
+#include "renderold/MeshUtils.hpp"
+#include "renderold/Texture.hpp"
+#include "renderold/Mesh.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -110,13 +110,64 @@ int main(int argc, char *argv[])
 	render::Mesh plane = render::utils::MeshUtils::createPlane();
 
 	//render::Mesh mmHeadL4 = render::utils::MeshUtils::readFromHdf5("D:\\model2012_l6_rms.h5");
-	render::MorphableModel mmHeadL4 = render::utils::MeshUtils::readFromScm("E:\\MorphModel\\ShpVtxModelBin.scm");
+	render::MorphableModel mmHeadL4 = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
 
 	//const float& aspect = 640.0f/480.0f;
 
 	//render::Renderer->camera.setFrustum(-0.25f*aspect, 0.25f*aspect, 0.25f, -0.25f, 0.5f, 500.0f);
 	//render::Renderer->camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, 0.5f, 500.0f);
 	render::Renderer->camera.setFrustum(-1.0f*aspect, 1.0f*aspect, 1.0f, -1.0f, static_cast<float>(near)/10.0f, static_cast<float>(far));
+
+	// START TEST
+	render::Camera camera = render::Renderer->camera;
+	cv::Mat perspective = (cv::Mat_<float>(4,4) << 
+		camera.frustum.n,	0.0f,				0.0f,									0.0f,
+		0.0f,				camera.frustum.n,	0.0f,									0.0f,
+		0.0f,				0.0f,				camera.frustum.n + camera.frustum.f,	-camera.frustum.n * camera.frustum.f, // CG book has -f*n ? (I had +f*n before)
+		0.0f,				0.0f,				+1.0f, /* CG has +1 here, I had -1 */	0.0f);
+
+	cv::Mat orthogonal = (cv::Mat_<float>(4,4) << 
+		2.0f / (camera.frustum.r - camera.frustum.l),	0.0f,											0.0f,											-(camera.frustum.r + camera.frustum.l) / (camera.frustum.r - camera.frustum.l),
+		0.0f,											2.0f / (camera.frustum.t - camera.frustum.b),	0.0f,											-(camera.frustum.t + camera.frustum.b) / (camera.frustum.t - camera.frustum.b),
+		0.0f,											0.0f,											2.0f / (camera.frustum.n - camera.frustum.f),	-(camera.frustum.n + camera.frustum.f) / (camera.frustum.n - camera.frustum.f), // CG book has denominator (n-f) ? I had (f-n) before.
+		0.0f,											0.0f,											0.0f,											1.0f);
+	camera.update(1);
+
+	cv::Mat translate = render::utils::MatrixUtils::createTranslationMatrix(-camera.getEye()[0], -camera.getEye()[1], -camera.getEye()[2]);
+	cv::Mat rotate = (cv::Mat_<float>(4,4) << 
+		camera.getRightVector()[0],		camera.getRightVector()[1],		camera.getRightVector()[2],		0.0f,
+		camera.getUpVector()[0],			camera.getUpVector()[1],		camera.getUpVector()[2],		0.0f,
+		-camera.getForwardVector()[0],	-camera.getForwardVector()[1],	-camera.getForwardVector()[2],	0.0f,
+		0.0f,				0.0f,				0.0f,				1.0f);
+
+	cv::Mat cameraTransf = rotate * translate;
+
+	float screenWidth = 640.0f; float screenHeight = 480.0f;
+	cv::Mat windowTransform = (cv::Mat_<float>(4,4) << 
+		(float)screenWidth/2.0f,		0.0f,						0.0f,	(float)screenWidth/2.0f, // CG book says (screenWidth-1)/2.0f for second value?
+		0.0f,							(float)screenHeight/2.0f,	0.0f,	(float)screenHeight/2.0f,
+		0.0f,							0.0f,						1.0f,	0.0f,
+		0.0f,							0.0f,						0.0f,	1.0f);
+
+	cv::Mat myvec = (cv::Mat_<float>(4,1) << 
+		0.5f, 0.5f,	-0.5f, 1.0f);
+
+	cv::Mat r1 = cameraTransf * myvec;
+	cv::Mat r2 = perspective * r1;
+	cv::Mat r3 = orthogonal * r2;
+
+	cv::Mat res = orthogonal * perspective * cameraTransf * myvec;
+
+	// project from 4D to 2D window position with depth value in z coordinate
+	cv::Vec4f posOld(res.at<float>(0, 0), res.at<float>(1, 0), res.at<float>(2, 0), res.at<float>(3, 0));
+	cv::Vec4f position = posOld / posOld[3];	// divide by w
+	cv::Mat tmp = windowTransform * cv::Mat(position);	// places the vec as a column in the matrix
+	position[0] = tmp.at<float>(0, 0);
+	position[1] = tmp.at<float>(1, 0);
+	position[2] = tmp.at<float>(2, 0);
+	position[3] = tmp.at<float>(3, 0);
+
+	// END TEST
 
 	// loop start
 	bool running = true;
@@ -139,10 +190,10 @@ int main(int argc, char *argv[])
 			{
 				//cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(3.0f*(i - 7), 0.5f, 3.0f*(j - 7));
 				//cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(4.0f*(i - 1), 0.5f, 4.0f*(j - 1));
-				cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, 0.0f);
+				/*cv::Mat worldTransform = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, 0.0f);
 				render::Renderer->setTransform(viewProjTransform * worldTransform);
-				render::Renderer->draw();
-
+				render::Renderer->draw();*/
+				/*
 				cv::Mat worldTransform2 = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -10.0f);
 				render::Renderer->setTransform(viewProjTransform * worldTransform2);
 				render::Renderer->draw();
@@ -150,6 +201,7 @@ int main(int argc, char *argv[])
 				cv::Mat worldTransform3 = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, 10.0f);
 				render::Renderer->setTransform(viewProjTransform * worldTransform3);
 				render::Renderer->draw();
+				*/
 			}
 		}
 
@@ -159,21 +211,24 @@ int main(int argc, char *argv[])
 		render::Renderer->setTransform(viewProjTransform);
 		render::Renderer->draw();*/
 
+		/* PLANE
 		plane.hasTexture = false;
 		render::Renderer->setMesh(&plane);	// The plane is the second object
 		cv::Mat wrld = viewProjTransform * render::utils::MatrixUtils::createScalingMatrix(15.0f, 1.0f, 15.0f);
 		render::Renderer->setTransform(wrld);
 		//render::Renderer->setTexture(plane.texture);
 		render::Renderer->draw();
+		*/
+
 		
-		/*
 		render::Renderer->setMesh(&mmHeadL4.mesh);
-		cv::Mat headWorld = render::utils::MatrixUtils::createScalingMatrix(1.0f/70.0f, 1.0f/70.0f, 1.0f/70.0f);
-		cv::Mat mvp_3dmm = viewProjTransform * headWorld;
+		cv::Mat headWorld = render::utils::MatrixUtils::createScalingMatrix(1.0f/90.0f, 1.0f/90.0f, 1.0f/90.0f);
+		cv::Mat headWorldRot = render::utils::MatrixUtils::createRotationMatrixZ(45.0f);
+		cv::Mat mvp_3dmm = viewProjTransform * headWorld * headWorldRot;
 		std::cout << "MVP " << std::endl  << mvp_3dmm << std::endl;
 		render::Renderer->setTransform(mvp_3dmm);
 		render::Renderer->draw();
-		*/
+		
 		render::Renderer->end();
 
 		cv::namedWindow("renderOutput");
