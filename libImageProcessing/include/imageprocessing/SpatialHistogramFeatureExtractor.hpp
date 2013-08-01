@@ -18,6 +18,10 @@ namespace imageprocessing {
 /**
  * Feature extractor that creates spatial histograms that may overlap. Builds upon a feature extractor that delivers
  * patches containing histogram information (bin indices and optionally weights).
+ *
+ * The patch data must be of type CV_8U and have one, two or four channels. In case of one channel, it just contains the
+ * bin index. The second channel adds a weight that will be divided by 255 to be between zero and one. The third channel
+ * is another bin index and the fourth channel is the corresponding weight.
  */
 class SpatialHistogramFeatureExtractor : public HistogramFeatureExtractor {
 public:
@@ -29,12 +33,12 @@ public:
 	 * @param[in] bins The amount of bins inside the histogram.
 	 * @param[in] cellSize The preferred width and height of the cells in pixels (actual size might deviate).
 	 * @param[in] blockSize The width and height of the blocks in cells.
-	 * @param[in] bilinearInterpolation Flat that indicates whether the bin value of a pixel should be divided between neighboring cells.
+	 * @param[in] interpolation Flat that indicates whether the bin value of a pixel should be divided between neighboring cells.
 	 * @param[in] combinedHistograms Flag that indicates whether the histograms of the cells should be added up to form the block histogram.
 	 * @param[in] normalization The normalization method of the block histograms.
 	 */
 	SpatialHistogramFeatureExtractor(shared_ptr<FeatureExtractor> extractor, unsigned int bins,
-			int cellSize, int blockSize, bool bilinearInterpolation,
+			int cellSize, int blockSize, bool interpolation,
 			bool combineHistograms = true, Normalization normalization = Normalization::NONE);
 
 	/**
@@ -46,12 +50,12 @@ public:
 	 * @param[in] cellHeight The preferred height of the cells in pixels (actual height might deviate).
 	 * @param[in] blockWidth The width of the blocks in cells.
 	 * @param[in] blockHeight The height of the blocks in cells.
-	 * @param[in] bilinearInterpolation Flat that indicates whether the bin value of a pixel should be divided between neighboring cells.
+	 * @param[in] interpolation Flat that indicates whether the bin value of a pixel should be divided between neighboring cells.
 	 * @param[in] combinedHistograms Flag that indicates whether the histograms of the cells should be added up to form the block histogram.
 	 * @param[in] normalization The normalization method of the block histograms.
 	 */
 	SpatialHistogramFeatureExtractor(shared_ptr<FeatureExtractor> extractor, unsigned int bins,
-			int cellWidth, int cellHeight, int blockWidth, int blockHeight, bool bilinearInterpolation,
+			int cellWidth, int cellHeight, int blockWidth, int blockHeight, bool interpolation,
 			bool combineHistograms = true, Normalization normalization = Normalization::NONE);
 
 	~SpatialHistogramFeatureExtractor();
@@ -87,8 +91,8 @@ private:
 	int cellHeight;    ///< The preferred height of the cells in pixels (actual height might deviate).
 	int blockWidth;    ///< The width of the blocks in cells.
 	int blockHeight;   ///< The height of the blocks in cells.
-	bool bilinearInterpolation; ///< Flat that indicates whether the bin value of a pixel should be divided between neighboring cells.
-	bool combineHistograms;     ///< Flag that indicates whether the histograms of the cells should be added up to form the block histogram.
+	bool interpolation;     ///< Flat that indicates whether the bin value of a pixel should be divided between neighboring cells.
+	bool combineHistograms; ///< Flag that indicates whether the histograms of the cells should be added up to form the block histogram.
 	mutable vector<CacheEntry> rowCache; ///< Cache for the linear interpolation of the row indices.
 	mutable vector<CacheEntry> colCache; ///< Cache for the linear interpolation of the column indices.
 };

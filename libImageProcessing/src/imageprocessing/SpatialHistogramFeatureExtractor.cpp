@@ -17,7 +17,7 @@ namespace imageprocessing {
 
 SpatialHistogramFeatureExtractor::SpatialHistogramFeatureExtractor(shared_ptr<FeatureExtractor> extractor,
 		unsigned int bins, int cellSize, int blockSize,
-		bool bilinearInterpolation, bool combineHistograms, Normalization normalization) :
+		bool interpolation, bool combineHistograms, Normalization normalization) :
 				HistogramFeatureExtractor(normalization),
 				extractor(extractor),
 				bins(bins),
@@ -25,7 +25,7 @@ SpatialHistogramFeatureExtractor::SpatialHistogramFeatureExtractor(shared_ptr<Fe
 				cellHeight(cellSize),
 				blockWidth(blockSize),
 				blockHeight(blockSize),
-				bilinearInterpolation(bilinearInterpolation),
+				interpolation(interpolation),
 				combineHistograms(combineHistograms),
 				rowCache(),
 				colCache() {}
@@ -33,7 +33,7 @@ SpatialHistogramFeatureExtractor::SpatialHistogramFeatureExtractor(shared_ptr<Fe
 SpatialHistogramFeatureExtractor::SpatialHistogramFeatureExtractor(
 		shared_ptr<FeatureExtractor> extractor, unsigned int bins,
 		int cellWidth, int cellHeight, int blockWidth, int blockHeight,
-		bool bilinearInterpolation, bool combineHistograms, Normalization normalization) :
+		bool interpolation, bool combineHistograms, Normalization normalization) :
 				HistogramFeatureExtractor(normalization),
 				extractor(extractor),
 				bins(bins),
@@ -41,7 +41,7 @@ SpatialHistogramFeatureExtractor::SpatialHistogramFeatureExtractor(
 				cellHeight(cellHeight),
 				blockWidth(blockWidth),
 				blockHeight(blockHeight),
-				bilinearInterpolation(bilinearInterpolation),
+				interpolation(interpolation),
 				combineHistograms(combineHistograms),
 				rowCache(),
 				colCache() {}
@@ -62,6 +62,8 @@ shared_ptr<Patch> SpatialHistogramFeatureExtractor::extract(int x, int y, int wi
 		Mat& patchData = patch->getData();
 		if (patchData.channels() == 3)
 			throw runtime_error("SpatialHistogramFeatureExtractor: Patch data must have one, two or four channels");
+		if (patchData.type() != CV_8U)
+			throw runtime_error("SpatialHistogramFeatureExtractor: Patch data must be of type CV_8U");
 
 		// create histograms of cells
 		int cellRows = cvRound(static_cast<double>(patchData.rows) / static_cast<double>(cellHeight));
@@ -70,7 +72,7 @@ shared_ptr<Patch> SpatialHistogramFeatureExtractor::extract(int x, int y, int wi
 		float* cellHistogramsValues = cellHistograms.ptr<float>();
 
 		float factor = 1.f / 255.f;
-		if (bilinearInterpolation) { // bilinear interpolation between cells
+		if (interpolation) { // bilinear interpolation between cells
 			createCache(rowCache, patchData.rows, cellHeight);
 			createCache(colCache, patchData.cols, cellWidth);
 			if (patchData.channels() == 1) { // bin information only, no weights

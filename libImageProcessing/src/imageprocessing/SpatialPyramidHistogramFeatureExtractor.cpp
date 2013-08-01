@@ -38,6 +38,8 @@ shared_ptr<Patch> SpatialPyramidHistogramFeatureExtractor::extract(int x, int y,
 	shared_ptr<Patch> patch = extractor->extract(x, y, width, height);
 	if (patch) {
 		Mat& patchData = patch->getData();
+		if (patchData.type() != CV_8U)
+			throw runtime_error("SpatialHistogramFeatureExtractor: Patch data must be of type CV_8U");
 		int count = 1 << (level - 1);
 		vector<Mat> cellHistograms(count * count);
 		float factor = 1.f / 255.f;
