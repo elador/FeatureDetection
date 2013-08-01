@@ -26,7 +26,7 @@ Mat GammaCorrectionFilter::applyTo(const Mat& image, Mat& filtered) const {
 	case CV_32F: return applyGammaCorrection<float>(image, filtered);
 	case CV_64F: return applyGammaCorrection<double>(image, filtered);
 	}
-	throw invalid_argument("GammaCorrectionFilter: The image must be of type CV_8U, CV_32F or CV_64F, but was " + image.type());
+	throw invalid_argument("GammaCorrectionFilter: The image must be of type CV_8U, CV_32F or CV_64F");
 }
 
 void GammaCorrectionFilter::applyInPlace(Mat& image) const {

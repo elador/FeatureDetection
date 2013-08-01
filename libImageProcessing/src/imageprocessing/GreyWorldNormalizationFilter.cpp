@@ -20,7 +20,7 @@ GreyWorldNormalizationFilter::~GreyWorldNormalizationFilter() {}
 
 Mat GreyWorldNormalizationFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.type() != CV_8UC3)
-		throw invalid_argument("GreyWorldNormalizationFilter: The image type must be CV_8UC3, but was " + image.type());
+		throw invalid_argument("GreyWorldNormalizationFilter: The image type must be CV_8UC3");
 	int rows = image.rows;
 	int cols = image.cols;
 	filtered.create(rows, cols, image.type());

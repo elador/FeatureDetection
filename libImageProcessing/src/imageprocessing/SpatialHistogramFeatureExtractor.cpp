@@ -62,9 +62,8 @@ shared_ptr<Patch> SpatialHistogramFeatureExtractor::extract(int x, int y, int wi
 		Mat& patchData = patch->getData();
 		if (patchData.channels() == 3)
 			throw runtime_error("SpatialHistogramFeatureExtractor: Patch data must have one, two or four channels");
-		if (patchData.type() != CV_8U)
-			throw runtime_error("SpatialHistogramFeatureExtractor: Patch data must be of type CV_8U");
-
+		if (patchData.depth() != CV_8U)
+			throw runtime_error("SpatialHistogramFeatureExtractor: Patch data must have a depth of CV_8U");
 		// create histograms of cells
 		int cellRows = cvRound(static_cast<double>(patchData.rows) / static_cast<double>(cellHeight));
 		int cellCols = cvRound(static_cast<double>(patchData.cols) / static_cast<double>(cellWidth));
