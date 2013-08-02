@@ -20,6 +20,7 @@ SET(HEADERS
 	include/imageprocessing/ConversionFilter.hpp
 	include/imageprocessing/DirectImageFeatureExtractor.hpp
 	include/imageprocessing/DirectPyramidFeatureExtractor.hpp
+	include/imageprocessing/ExtendedHogExtractor.hpp
 	include/imageprocessing/FeatureExtractor.hpp
 	include/imageprocessing/FilteringFeatureExtractor.hpp
 	include/imageprocessing/FilteringPyramidFeatureExtractor.hpp
@@ -58,6 +59,7 @@ SET(SOURCE
 	src/imageprocessing/ConversionFilter.cpp
 	src/imageprocessing/DirectImageFeatureExtractor.cpp
 	src/imageprocessing/DirectPyramidFeatureExtractor.cpp
+	src/imageprocessing/ExtendedHogExtractor.cpp
 	src/imageprocessing/GammaCorrectionFilter.cpp
 	src/imageprocessing/GradientFilter.cpp
 	src/imageprocessing/GradientHistogramFilter.cpp

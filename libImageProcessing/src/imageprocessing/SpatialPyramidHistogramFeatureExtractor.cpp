@@ -39,7 +39,8 @@ shared_ptr<Patch> SpatialPyramidHistogramFeatureExtractor::extract(int x, int y,
 	if (patch) {
 		Mat& patchData = patch->getData();
 		if (patchData.depth() != CV_8U)
-			throw runtime_error("SpatialPyramidHistogramFeatureExtractor: Patch data must have a depth of CV_8U");
+			throw runtime_error("SpatialPyramidHistogramFeatureExtractor: patch data must have a depth of CV_8U");
+
 		int count = 1 << (level - 1);
 		vector<Mat> cellHistograms(count * count);
 		float factor = 1.f / 255.f;
@@ -107,7 +108,7 @@ shared_ptr<Patch> SpatialPyramidHistogramFeatureExtractor::extract(int x, int y,
 				}
 			}
 		} else {
-			throw runtime_error("SpatialPyramidHistogramFeatureExtractor: Patch data must have one, two or four channels");
+			throw runtime_error("SpatialPyramidHistogramFeatureExtractor: patch data must have one, two or four channels");
 		}
 
 		int histogramCount = 0;

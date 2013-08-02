@@ -61,10 +61,11 @@ shared_ptr<Patch> SpatialHistogramFeatureExtractor::extract(int x, int y, int wi
 	if (patch) {
 		Mat& patchData = patch->getData();
 		if (patchData.channels() == 3)
-			throw runtime_error("SpatialHistogramFeatureExtractor: Patch data must have one, two or four channels");
+			throw runtime_error("SpatialHistogramFeatureExtractor: patch data must have one, two or four channels");
 		if (patchData.depth() != CV_8U)
-			throw runtime_error("SpatialHistogramFeatureExtractor: Patch data must have a depth of CV_8U");
-		// create histograms of cells
+			throw runtime_error("SpatialHistogramFeatureExtractor: patch data must have a depth of CV_8U");
+
+		// create histograms over cells
 		int cellRows = cvRound(static_cast<double>(patchData.rows) / static_cast<double>(cellHeight));
 		int cellCols = cvRound(static_cast<double>(patchData.cols) / static_cast<double>(cellWidth));
 		Mat cellHistograms = Mat::zeros(1, cellRows * cellCols * bins, CV_32F);
@@ -72,8 +73,8 @@ shared_ptr<Patch> SpatialHistogramFeatureExtractor::extract(int x, int y, int wi
 
 		float factor = 1.f / 255.f;
 		if (interpolation) { // bilinear interpolation between cells
-			createCache(rowCache, patchData.rows, cellHeight);
-			createCache(colCache, patchData.cols, cellWidth);
+			createCache(rowCache, patchData.rows, cellRows);
+			createCache(colCache, patchData.cols, cellCols);
 			if (patchData.channels() == 1) { // bin information only, no weights
 				for (int row = 0; row < patchData.rows; ++row) {
 					uchar* rowValues = patchData.ptr<uchar>(row);
@@ -237,17 +238,17 @@ shared_ptr<Patch> SpatialHistogramFeatureExtractor::extract(int x, int y, int wi
 			}
 		}
 
-		// create histograms of blocks
+		// create histograms over blocks
 		int blockHistogramSize = combineHistograms ? bins : blockWidth * blockHeight * bins;
 		int blockRows = cellRows - blockHeight + 1;
 		int blockCols = cellCols - blockWidth + 1;
-		vector<Mat> blockHistograms(blockRows * blockCols);
+		patchData.create(1, blockRows * blockCols * blockHistogramSize, CV_32F);
 		for (int blockRow = 0; blockRow < blockRows; ++blockRow) {
 			for (int blockCol = 0; blockCol < blockCols; ++blockCol) {
-				Mat& blockHistogram = blockHistograms[blockRow * blockCols + blockCol];
+				Mat blockHistogram(patchData, cv::Range(0, 1), cv::Range((blockRow * blockCols + blockCol) * blockHistogramSize, (blockRow * blockCols + blockCol + 1) * blockHistogramSize));
+				float* blockHistogramValues = blockHistogram.ptr<float>();
 				if (combineHistograms) { // combine histograms by adding the bin values
 					blockHistogram = Mat::zeros(1, bins, CV_32F);
-					float* blockHistogramValues = blockHistogram.ptr<float>(0);
 					for (int cellRow = blockRow; cellRow < blockRow + blockHeight; ++cellRow) {
 						for (int cellCol = blockCol; cellCol < blockCol + blockWidth; ++cellCol) {
 							float* cellHistogramValues = cellHistogramsValues + cellRow * cellCols * bins + cellCol * bins;
@@ -256,8 +257,6 @@ shared_ptr<Patch> SpatialHistogramFeatureExtractor::extract(int x, int y, int wi
 						}
 					}
 				} else { // create concatenation of histograms
-					blockHistogram.create(1, blockHistogramSize, CV_32F);
-					float* blockHistogramValues = blockHistogram.ptr<float>(0);
 					for (int cellRow = blockRow; cellRow < blockRow + blockHeight; ++cellRow) {
 						for (int cellCol = blockCol; cellCol < blockCol + blockWidth; ++cellCol) {
 							float* cellHistogramValues = cellHistogramsValues + cellRow * cellCols * bins + cellCol * bins;
@@ -270,26 +269,17 @@ shared_ptr<Patch> SpatialHistogramFeatureExtractor::extract(int x, int y, int wi
 				normalize(blockHistogram);
 			}
 		}
-		patchData.create(1, blockHistograms.size() * blockHistogramSize, CV_32F);
-		float* patchValues = patchData.ptr<float>(0);
-		for (unsigned int histIndex = 0; histIndex < blockHistograms.size(); ++histIndex) {
-			Mat& blockHistogram = blockHistograms[histIndex];
-			float* blockHistogramValues = blockHistogram.ptr<float>(0);
-			for (int bin = 0; bin < blockHistogramSize; ++bin)
-				patchValues[bin] = blockHistogramValues[bin];
-			patchValues += blockHistogramSize;
-		}
 	}
 	return patch;
 }
 
-void SpatialHistogramFeatureExtractor::createCache(vector<CacheEntry>& cache, unsigned int size, int cellSize) const {
+void SpatialHistogramFeatureExtractor::createCache(vector<CacheEntry>& cache, unsigned int size, int count) const {
 	if (cache.size() != size) {
 		cache.clear();
 		cache.reserve(size);
 		CacheEntry entry;
 		for (unsigned int matIndex = 0; matIndex < size; ++matIndex) {
-			double realIndex = (static_cast<double>(matIndex) + 0.5) / static_cast<double>(cellSize) - 0.5;
+			double realIndex = static_cast<double>(count) * (static_cast<double>(matIndex) + 0.5) / static_cast<double>(size) - 0.5;
 			entry.index = static_cast<int>(floor(realIndex));
 			entry.weight = realIndex - entry.index;
 			cache.push_back(entry);

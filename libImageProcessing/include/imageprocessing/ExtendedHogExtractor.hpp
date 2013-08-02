@@ -1,14 +1,14 @@
 /*
- * SpatialHistogramFeatureExtractor.hpp
+ * ExtendedHogExtractor.hpp
  *
- *  Created on: 30.05.2013
+ *  Created on: 01.08.2013
  *      Author: poschmann
  */
 
-#ifndef SPATIALHISTOGRAMFEATUREEXTRACTOR_HPP_
-#define SPATIALHISTOGRAMFEATUREEXTRACTOR_HPP_
+#ifndef EXTENDEDHOGEXTRACTOR_HPP_
+#define EXTENDEDHOGEXTRACTOR_HPP_
 
-#include "imageprocessing/HistogramFeatureExtractor.hpp"
+#include "imageprocessing/FeatureExtractor.hpp"
 #include <vector>
 
 using std::vector;
@@ -16,33 +16,35 @@ using std::vector;
 namespace imageprocessing {
 
 /**
- * Feature extractor that creates spatial histograms that may overlap. Builds upon a feature extractor that delivers
- * patches containing histogram information (bin indices and optionally weights).
+ * Feature extractor that builds exteded HOG feature vectors based on patches containing orientation histogram data (bin
+ * indices and optionally weights) per pixel. The extended HOG features were described in [1]. HOG descriptors are computed
+ * for the inner cells only, so the cells at the border are only used for computing the gradient energies.
  *
  * The patch data must be of type CV_8U and have one, two or four channels. In case of one channel, it just contains the
  * bin index. The second channel adds a weight that will be divided by 255 to be between zero and one. The third channel
  * is another bin index and the fourth channel is the corresponding weight.
+ *
+ * [1] Felzenszwalb et al., Object Detection with Discriminatively Trained Part-Based Models, PAMI, 2010.
  */
-class SpatialHistogramFeatureExtractor : public HistogramFeatureExtractor {
+class ExtendedHogExtractor : public FeatureExtractor {
 public:
 
 	/**
-	 * Constructs a new spatial histogram feature extractor with square cells and blocks.
+	 * Constructs a new extended HOG feature extractor with square cells and blocks.
 	 *
 	 * @param[in] extractor The underlying feature extractor (has to deliver histogram bin indices per pixel with optional weight).
 	 * @param[in] bins The amount of bins inside the histogram.
 	 * @param[in] cellSize The preferred width and height of the cells in pixels (actual size might deviate).
 	 * @param[in] blockSize The width and height of the blocks in cells.
 	 * @param[in] interpolation Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
-	 * @param[in] combinedHistograms Flag that indicates whether the histograms of the cells should be added up to form the block histogram.
-	 * @param[in] normalization The normalization method of the block histograms.
+	 * @param[in] signedAndUnsigned Flag that indicates whether signed and unsigned gradients should be used.
+	 * @param[in] alpha Truncation threshold of the orientation bin values (applied after normalization).
 	 */
-	SpatialHistogramFeatureExtractor(shared_ptr<FeatureExtractor> extractor, unsigned int bins,
-			int cellSize, int blockSize, bool interpolation,
-			bool combineHistograms = true, Normalization normalization = Normalization::NONE);
+	ExtendedHogExtractor(shared_ptr<FeatureExtractor> extractor, unsigned int bins,
+			int cellSize, int blockSize, bool interpolation, bool signedAndUnsigned, float alpha = 0.2);
 
 	/**
-	 * Constructs a new spatial histogram feature extractor.
+	 * Constructs a new extended HOG feature extractor.
 	 *
 	 * @param[in] extractor The underlying feature extractor (has to deliver histogram bin indices per pixel with optional weight).
 	 * @param[in] bins The amount of bins inside the histogram.
@@ -51,14 +53,13 @@ public:
 	 * @param[in] blockWidth The width of the blocks in cells.
 	 * @param[in] blockHeight The height of the blocks in cells.
 	 * @param[in] interpolation Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
-	 * @param[in] combinedHistograms Flag that indicates whether the histograms of the cells should be added up to form the block histogram.
-	 * @param[in] normalization The normalization method of the block histograms.
+	 * @param[in] signedAndUnsigned Flag that indicates whether signed and unsigned gradients should be used.
+	 * @param[in] alpha Truncation threshold of the orientation bin values (applied after normalization).
 	 */
-	SpatialHistogramFeatureExtractor(shared_ptr<FeatureExtractor> extractor, unsigned int bins,
-			int cellWidth, int cellHeight, int blockWidth, int blockHeight, bool interpolation,
-			bool combineHistograms = true, Normalization normalization = Normalization::NONE);
+	ExtendedHogExtractor(shared_ptr<FeatureExtractor> extractor, unsigned int bins,
+			int cellWidth, int cellHeight, int blockWidth, int blockHeight, bool interpolation, bool signedAndUnsigned, float alpha = 0.2);
 
-	~SpatialHistogramFeatureExtractor();
+	~ExtendedHogExtractor();
 
 	void update(const Mat& image);
 
@@ -92,10 +93,12 @@ private:
 	int blockWidth;    ///< The width of the blocks in cells.
 	int blockHeight;   ///< The height of the blocks in cells.
 	bool interpolation;     ///< Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
-	bool combineHistograms; ///< Flag that indicates whether the histograms of the cells should be added up to form the block histogram.
+	bool signedAndUnsigned; ///< Flag that indicates whether signed and unsigned gradients should be used.
+	float alpha; ///< Truncation threshold of the orientation bin values (applied after normalization).
 	mutable vector<CacheEntry> rowCache; ///< Cache for the linear interpolation of the row indices.
 	mutable vector<CacheEntry> colCache; ///< Cache for the linear interpolation of the column indices.
+	static const float eps; ///< The small value being added to the norms to prevent divisions by zero.
 };
 
 } /* namespace imageprocessing */
-#endif /* SPATIALHISTOGRAMFEATUREEXTRACTOR_HPP_ */
+#endif /* EXTENDEDHOGEXTRACTOR_HPP_ */

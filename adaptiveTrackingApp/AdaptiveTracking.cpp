@@ -38,6 +38,7 @@
 #include "imageprocessing/PatchResizingFeatureExtractor.hpp"
 #include "imageprocessing/SpatialHistogramFeatureExtractor.hpp"
 #include "imageprocessing/SpatialPyramidHistogramFeatureExtractor.hpp"
+#include "imageprocessing/ExtendedHogExtractor.hpp"
 #include "classification/ProbabilisticWvmClassifier.hpp"
 #include "classification/ProbabilisticSvmClassifier.hpp"
 #include "classification/RbfKernel.hpp"
@@ -168,6 +169,14 @@ shared_ptr<FeatureExtractor> AdaptiveTracking::createFeatureExtractor(
 		pyramidExtractor->addLayerFilter(make_shared<GradientHistogramFilter>(config.get<int>("bins"), config.get<bool>("signed")));
 		return wrapFeatureExtractor(createHistogramFeatureExtractor(pyramidExtractor,
 				config.get<int>("bins"), config.get_child("histogram")), scaleFactor);
+	} else if (config.get_value<string>() == "ehog") {
+		pyramidExtractor = createPyramidExtractor(
+				config.get_child("pyramid"), pyramid, true);
+		pyramidExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
+		pyramidExtractor->addLayerFilter(make_shared<GradientHistogramFilter>(config.get<int>("bins"), config.get<bool>("signed")));
+		return wrapFeatureExtractor(make_shared<ExtendedHogExtractor>(pyramidExtractor, config.get<int>("bins"),
+				config.get<int>("histogram.cellSize"), config.get<int>("histogram.blockSize"), config.get<bool>("histogram.interpolation"),
+				config.get<bool>("histogram.signedAndUnsigned"), config.get<float>("histogram.alpha")), scaleFactor);
 	} else if (config.get_value<string>() == "lbp") {
 		pyramidExtractor = createPyramidExtractor(config.get_child("pyramid"), pyramid, true);
 		shared_ptr<LbpFilter> lbpFilter = createLbpFilter(config.get<string>("type"));
