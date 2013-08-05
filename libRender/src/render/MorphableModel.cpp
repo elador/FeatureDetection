@@ -8,6 +8,7 @@
 #include "render/MorphableModel.hpp"
 #include "opencv2/core/core.hpp"
 
+#include <cmath>
 
 using cv::Mat;
 using cv::Vec4f;
@@ -34,15 +35,20 @@ void MorphableModel::drawNewVertexPositions()
 
 	//std::uniform_int_distribution<int> distribution(0, 99);
 	std::normal_distribution<double> distribution(0.0, 2.0);
-	int test = distribution(engine);
 
 	Mat alphas = Mat::zeros(55, 1, CV_64FC1);
 	for (int row=0; row < alphas.rows; ++row) {
 		alphas.at<double>(row, 0) = distribution(engine);
 	}
 
-	Mat vertices = matMeanShp + matPcaBasisShp * alphas;
-	Mat smallBasis = matEigenvalsShp(cv::Rect(0, 0, 54, 100));
+	//Mat smallBasis = matPcaBasisShp(cv::Rect(0, 0, 55, 100));
+
+	Mat matSqrtEigenvalsShp = matEigenvalsShp;
+	for (unsigned int i=0; i<matEigenvalsShp.rows; ++i)	{
+		matSqrtEigenvalsShp.at<double>(i) = std::sqrt(matSqrtEigenvalsShp.at<double>(i));
+	}
+
+	Mat vertices = matMeanShp + matPcaBasisShp * alphas.mul(matSqrtEigenvalsShp);
 
 	unsigned int matIdx = 0;
 	for (auto& v : mesh.vertex) {

@@ -37,7 +37,6 @@ add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature poin
 add_subdirectory(libRender)				# A tiny software renderer to render lists of 3D vertices
 add_subdirectory(libRenderold)			# A tiny software renderer to render lists of 3D vertices (old)
 add_subdirectory(renderTestApp)			# Test app for the old libRenderold
-add_subdirectory(render2TestAppGL)		# Test app for the new libRender
 add_subdirectory(renderTestAppKlaus)	# Test app for the new libRender and data for Klaus
 add_subdirectory(render3TestApp)		# Test app for the newest libRender
 

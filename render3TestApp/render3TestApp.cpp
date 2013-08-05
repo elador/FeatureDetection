@@ -125,6 +125,9 @@ int main(int argc, char *argv[])
 	render::Mesh cube = render::utils::MeshUtils::createCube();
 	render::Mesh pyramid = render::utils::MeshUtils::createPyramid();
 	render::Mesh plane = render::utils::MeshUtils::createPlane();
+	shared_ptr<render::Mesh> tri = render::utils::MeshUtils::createTriangle();
+	
+	render::MorphableModel mm = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
 
 	int screenWidth = 640;
 	int screenHeight = 480;
@@ -197,6 +200,10 @@ int main(int argc, char *argv[])
 		if (key == 'c') {
 			freeCamera = !freeCamera;
 		}
+		if (key == 'n') {
+			mm.drawNewVertexPositions();
+		}
+		
 		r.resetBuffers();
 
 		r.camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
@@ -219,7 +226,7 @@ int main(int argc, char *argv[])
 		r.renderLine(origin, yAxis, Scalar(0.0f, 255.0f, 0.0f));
 		r.renderLine(origin, zAxis, Scalar(255.0f, 0.0f, 0.0f));
 		r.renderLine(origin, mzAxis, Scalar(0.0f, 255.0f, 255.0f));
-		
+		/*
 		for (const auto& tIdx : cube.tvi) {
 			Vertex v0 = cube.vertex[tIdx[0]];
 			Vertex v1 = cube.vertex[tIdx[1]];
@@ -228,8 +235,28 @@ int main(int argc, char *argv[])
 			r.renderLine(v1.position, v2.position, Scalar(0.0f, 0.0f, 255.0f));
 			r.renderLine(v2.position, v0.position, Scalar(0.0f, 0.0f, 255.0f));
 		}
+
+		// Test-vertex for rasterizing:
+		Vertex v0 = cube.vertex[0];
+		Vertex v1 = cube.vertex[1];
+		Vertex v2 = cube.vertex[2];
+		r.renderLine(v0.position, v1.position, Scalar(255.0f, 0.0f, 0.0f));
+		r.renderLine(v1.position, v2.position, Scalar(255.0f, 0.0f, 0.0f));
+		r.renderLine(v2.position, v0.position, Scalar(255.0f, 0.0f, 0.0f));
+
+		r.draw(tri, tri->texture);
+		*/
+		shared_ptr<Mesh> mmMesh = std::make_shared<Mesh>(mm.mesh);
+		Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
+		Mat rot = Mat::eye(4, 4, CV_32FC1);
+		Mat modelMatrix = rot * modelScaling;
+		r.setWorldTransform(modelMatrix);
+		r.draw(mmMesh, nullptr);
+
+		r.setWorldTransform(Mat::eye(4, 4, CV_32FC1));
+		// End test
 		
-		r.renderLine(Vec4f(1.5f, 0.0f, 0.5f, 1.0f), Vec4f(-1.5f, 0.0f, 0.5f, 1.0f), Scalar(0.0f, 0.0f, 255.0f));
+		//r.renderLine(Vec4f(1.5f, 0.0f, 0.5f, 1.0f), Vec4f(-1.5f, 0.0f, 0.5f, 1.0f), Scalar(0.0f, 0.0f, 255.0f));
 
 		Mat screen = r.getImage();
 		putText(screen, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));

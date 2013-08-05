@@ -14,6 +14,10 @@
 
 #include "opencv2/core/core.hpp"
 
+#include <memory>
+
+using std::shared_ptr;
+
 // Todo: Class with static methods? Or just functions? I don't know which method is better.
 
 namespace render {
@@ -23,9 +27,10 @@ namespace render {
 		class MeshUtils
 		{
 		public:
-			static Mesh createCube(void);
-			static Mesh createPlane(void);
-			static Mesh createPyramid(void);
+			static Mesh createCube();
+			static Mesh createPlane();
+			static Mesh createPyramid();
+			static shared_ptr<Mesh> createTriangle();
 
 			static Mesh readFromHdf5(std::string filename);
 			static MorphableModel readFromScm(std::string filename);
