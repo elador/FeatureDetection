@@ -60,7 +60,7 @@ shared_ptr<Patch> SpatialHistogramFeatureExtractor::extract(int x, int y, int wi
 	shared_ptr<Patch> patch = extractor->extract(x, y, width, height);
 	if (patch) {
 		Mat& patchData = patch->getData();
-		if (patchData.channels() == 3)
+		if (patchData.channels() != 1 && patchData.channels() != 2 && patchData.channels() != 4)
 			throw runtime_error("SpatialHistogramFeatureExtractor: patch data must have one, two or four channels");
 		if (patchData.depth() != CV_8U)
 			throw runtime_error("SpatialHistogramFeatureExtractor: patch data must have a depth of CV_8U");
