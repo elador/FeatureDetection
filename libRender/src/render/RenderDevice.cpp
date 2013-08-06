@@ -230,17 +230,20 @@ void RenderDevice::runVertexProcessor()
 			{
 				visibilityBits[k] = 0;
 
-				if (triangle.vertex[k].position[0] < -triangle.vertex[k].position[3])	// true if outside of view frustum
-					visibilityBits[k] |= 1;												// set bit if outside of frustum
-				if (triangle.vertex[k].position[0] > triangle.vertex[k].position[3])
+				float xOverW = triangle.vertex[k].position[0] / triangle.vertex[k].position[3];
+				float yOverW = triangle.vertex[k].position[1] / triangle.vertex[k].position[3];
+				float zOverW = triangle.vertex[k].position[2] / triangle.vertex[k].position[3];
+				if (xOverW < -1)			// true if outside of view frustum
+					visibilityBits[k] |= 1;	// set bit if outside of frustum
+				if (xOverW > 1)
 					visibilityBits[k] |= 2;
-				if (triangle.vertex[k].position[1] < -triangle.vertex[k].position[3])
+				if (yOverW < -1)
 					visibilityBits[k] |= 4;
-				if (triangle.vertex[k].position[1] > triangle.vertex[k].position[3])
+				if (yOverW > 1)
 					visibilityBits[k] |= 8;
-				if (triangle.vertex[k].position[2] < -triangle.vertex[k].position[3])
+				if (zOverW < -1)
 					visibilityBits[k] |= 16;
-				if (triangle.vertex[k].position[2] > triangle.vertex[k].position[3])
+				if (zOverW > 1)
 					visibilityBits[k] |= 32;
 			} // if all bits are 0, then it's inside the frustum
 
@@ -303,16 +306,17 @@ Vertex RenderDevice::runVertexShader(shared_ptr<Mesh> mesh, const cv::Mat& trans
 	output.position[2] = tmp.at<float>(2, 0);
 	output.position[3] = tmp.at<float>(3, 0);
 	*/
+	/*
 	Mat worldToViewVol = projectionTransform * viewTransform * worldTransform;
 	output.position = matToColVec4f(worldToViewVol * Mat(mesh->vertex[vertexNum].position));
-
-	/*
+	*/
+	
 	Mat worldSpace = worldTransform * Mat(mesh->vertex[vertexNum].position);
 	Mat camSpace = viewTransform * worldSpace;
 	Mat normalizedViewingVolume = projectionTransform * camSpace;
 	Vec4f normViewVolVec = matToColVec4f(normalizedViewingVolume);
 	output.position = normViewVolVec;
-	*/
+	
 
 	output.color = mesh->vertex[vertexNum].color;
 	if(mesh->hasTexture)	// not the 100% fastest/most correct approach. What if the model has a texture but we want it to render with vertex color, etc.

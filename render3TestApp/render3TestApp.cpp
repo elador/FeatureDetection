@@ -243,9 +243,9 @@ int main(int argc, char *argv[])
 		r.renderLine(v0.position, v1.position, Scalar(255.0f, 0.0f, 0.0f));
 		r.renderLine(v1.position, v2.position, Scalar(255.0f, 0.0f, 0.0f));
 		r.renderLine(v2.position, v0.position, Scalar(255.0f, 0.0f, 0.0f));
-
-		r.draw(tri, tri->texture);
 		*/
+		r.draw(tri, tri->texture);
+		/*
 		shared_ptr<Mesh> mmMesh = std::make_shared<Mesh>(mm.mesh);
 		Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
 		Mat rot = Mat::eye(4, 4, CV_32FC1);
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
 		r.setWorldTransform(modelMatrix);
 		r.draw(mmMesh, nullptr);
 
-		r.setWorldTransform(Mat::eye(4, 4, CV_32FC1));
+		r.setWorldTransform(Mat::eye(4, 4, CV_32FC1));*/
 		// End test
 		
 		//r.renderLine(Vec4f(1.5f, 0.0f, 0.5f, 1.0f), Vec4f(-1.5f, 0.0f, 0.5f, 1.0f), Scalar(0.0f, 0.0f, 255.0f));
