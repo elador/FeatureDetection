@@ -306,17 +306,17 @@ Vertex RenderDevice::runVertexShader(shared_ptr<Mesh> mesh, const cv::Mat& trans
 	output.position[2] = tmp.at<float>(2, 0);
 	output.position[3] = tmp.at<float>(3, 0);
 	*/
-	/*
+	
 	Mat worldToViewVol = projectionTransform * viewTransform * worldTransform;
 	output.position = matToColVec4f(worldToViewVol * Mat(mesh->vertex[vertexNum].position));
-	*/
 	
+	/*
 	Mat worldSpace = worldTransform * Mat(mesh->vertex[vertexNum].position);
 	Mat camSpace = viewTransform * worldSpace;
 	Mat normalizedViewingVolume = projectionTransform * camSpace;
 	Vec4f normViewVolVec = matToColVec4f(normalizedViewingVolume);
 	output.position = normViewVolVec;
-	
+	*/
 
 	output.color = mesh->vertex[vertexNum].color;
 	if(mesh->hasTexture)	// not the 100% fastest/most correct approach. What if the model has a texture but we want it to render with vertex color, etc.

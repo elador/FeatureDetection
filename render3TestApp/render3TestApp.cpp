@@ -46,7 +46,13 @@ ostream& operator<<(ostream& os, const vector<T>& v)
 	return os;
 }
 
-static string windowName = "test";
+static string controlWindowName = "Controls";
+static std::array<float, 55> pcVals;
+static std::array<int, 55> pcValsInt;
+
+static render::MorphableModel mm;
+
+static string windowName = "RenderOutput";
 static float horizontalAngle = 0.0f;
 static float verticalAngle = 0.0f;
 static int lastX = 0;
@@ -82,6 +88,18 @@ static void winOnMouse(int event, int x, int y, int, void* userdata)
 		moving = false;
 	}
 
+}
+
+static void controlWinOnMouse(int test, void* userdata)
+{
+	for (int i = 0; i < pcValsInt.size(); ++i) {
+		pcVals[i] = 0.1f * static_cast<float>(pcValsInt[i]) - 5.0f;
+	}
+	Mat coefficients = Mat::zeros(55, 1, CV_64FC1);
+	for (int row=0; row < coefficients.rows; ++row) {
+		coefficients.at<double>(row, 0) = pcVals[row];
+	}
+	mm.drawNewVertexPositions(coefficients);
 }
 
 int main(int argc, char *argv[])
@@ -127,19 +145,28 @@ int main(int argc, char *argv[])
 	render::Mesh plane = render::utils::MeshUtils::createPlane();
 	shared_ptr<render::Mesh> tri = render::utils::MeshUtils::createTriangle();
 	
-	render::MorphableModel mm = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
+	mm = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
 
 	int screenWidth = 640;
 	int screenHeight = 480;
 	const float aspect = (float)screenWidth/(float)screenHeight;
 
 	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
-	Camera camera(Vec3f(0.0f, 0.0f, 0.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
+	Camera camera(Vec3f(0.0f, 0.0f, 0.5f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 
 	RenderDevice r(screenWidth, screenHeight, camera);
 
 	namedWindow(windowName, WINDOW_AUTOSIZE);
 	setMouseCallback(windowName, winOnMouse);
+
+	namedWindow(controlWindowName, WINDOW_NORMAL);
+	for (auto& val : pcValsInt)	{
+		val = 50;
+	}
+	for (unsigned int i = 0; i < pcVals.size(); ++i) {
+		createTrackbar("PC" + lexical_cast<string>(i) + ": " + lexical_cast<string>(pcVals[i]), controlWindowName, &pcValsInt[i], 100, controlWinOnMouse);
+	}
+	
 
 	bool running = true;
 	while (running) {
@@ -244,16 +271,16 @@ int main(int argc, char *argv[])
 		r.renderLine(v1.position, v2.position, Scalar(255.0f, 0.0f, 0.0f));
 		r.renderLine(v2.position, v0.position, Scalar(255.0f, 0.0f, 0.0f));
 		*/
-		r.draw(tri, tri->texture);
-		/*
+		//r.draw(tri, tri->texture);
+		
 		shared_ptr<Mesh> mmMesh = std::make_shared<Mesh>(mm.mesh);
 		Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
 		Mat rot = Mat::eye(4, 4, CV_32FC1);
 		Mat modelMatrix = rot * modelScaling;
 		r.setWorldTransform(modelMatrix);
 		r.draw(mmMesh, nullptr);
-
-		r.setWorldTransform(Mat::eye(4, 4, CV_32FC1));*/
+		
+		r.setWorldTransform(Mat::eye(4, 4, CV_32FC1));
 		// End test
 		
 		//r.renderLine(Vec4f(1.5f, 0.0f, 0.5f, 1.0f), Vec4f(-1.5f, 0.0f, 0.5f, 1.0f), Scalar(0.0f, 0.0f, 255.0f));

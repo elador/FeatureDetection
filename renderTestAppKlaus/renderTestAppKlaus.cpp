@@ -61,7 +61,7 @@ static int lastY = 0;
 static float movingFactor = 0.5f;
 static bool moving = false;
 
-static float zNear = -0.1f;
+static float zNear = -0.01f;
 static float zFar = -100.0f;
 static bool perspective = false;
 static bool freeCamera = true;
@@ -139,12 +139,12 @@ int main(int argc, char *argv[])
 	const float aspect = (float)screenWidth/(float)screenHeight;
 
 	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
-	Camera camera(Vec3f(0.0f, 0.0f, 0.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
+	Camera camera(Vec3f(0.0f, 0.0f, 3.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 
 	RenderDevice r(screenWidth, screenHeight, camera);
 
-	namedWindow(windowName, WINDOW_AUTOSIZE);
-	setMouseCallback(windowName, winOnMouse);
+	//namedWindow(windowName, WINDOW_AUTOSIZE);
+	//setMouseCallback(windowName, winOnMouse);
 
 	vector<int> vertexIds;
 	vertexIds.push_back(177); // left-eye-left - right.eye.corner_outer
@@ -160,8 +160,8 @@ int main(int argc, char *argv[])
 	vertexIds.push_back(572); // right-alare - left nose ...
 
 	ofstream outputFile;
-	outputFile.open("C:/Users/Patrik/Cloud/data_3dmm_landmarks_norm02_batch3_y.txt");
-	outputFile << "pose_rndvtx_x " << "pose_rndvtx_y " << "frontal_rndvtx_x " << "frontal_rndvtx_y " << "pose_lel_x " << "pose_lel_y " << "pose_ler_x " << "pose_ler_y " << "pose_rel_x " << "pose_rel_y " << "pose_rer_x " << "pose_rer_y " << "pose_ml_x " << "pose_ml_y " << "pose_mr_x " << "pose_mr_y " << "pose_bn_x " << "pose_bn_y " << "pose_nt_x " << "pose_nt_y " << "pose_ns_x " << "pose_ns_y " << "pose_la_x " << "pose_la_y " << "pose_ra_x " << "pose_ra_y " << "yaw " << "pitch " << "roll" << std::endl;
+	outputFile.open("C:/Users/Patrik/data_3dmm_landmarks_random_sd0.8_batch3_600000k.txt");
+	outputFile << "frontal_rndvtx_x " << "frontal_rndvtx_y " << "frontal_lel_x " << "frontal_lel_y " << "frontal_ler_x " << "frontal_ler_y " << "frontal_rel_x " << "frontal_rel_y " << "frontal_rer_x " << "frontal_rer_y " << "frontal_ml_x " << "frontal_ml_y " << "frontal_mr_x " << "frontal_mr_y " << "frontal_bn_x " << "frontal_bn_y " << "frontal_nt_x " << "frontal_nt_y " << "frontal_ns_x " << "frontal_ns_y " << "frontal_la_x " << "frontal_la_y " << "frontal_ra_x " << "frontal_ra_y " << "pose_rndvtx_x " << "pose_rndvtx_y " << "pose_lel_x " << "pose_lel_y " << "pose_ler_x " << "pose_ler_y " << "pose_rel_x " << "pose_rel_y " << "pose_rer_x " << "pose_rer_y " << "pose_ml_x " << "pose_ml_y " << "pose_mr_x " << "pose_mr_y " << "pose_bn_x " << "pose_bn_y " << "pose_nt_x " << "pose_nt_y " << "pose_ns_x " << "pose_ns_y " << "pose_la_x " << "pose_la_y " << "pose_ra_x " << "pose_ra_y " << "yaw " << "pitch " << "roll " << "rndvtx_id" << std::endl;
 	
 	
 	std::uniform_int_distribution<int> distribution(0, morphableModel.mesh.vertex.size()-1);
@@ -169,196 +169,93 @@ int main(int argc, char *argv[])
 	//std::random_device rd;
 	//engine.seed(rd());
 	engine.seed();
-	auto randInt = std::bind(distribution, engine);
+	auto randIntVtx = std::bind(distribution, engine);
+
+	std::uniform_int_distribution<int> distrRandYaw(-45, 45);
+	auto randIntYaw = std::bind(distrRandYaw, engine);
+	std::uniform_int_distribution<int> distrRandPitch(-30, 30);
+	auto randIntPitch = std::bind(distrRandPitch, engine);
+	std::uniform_int_distribution<int> distrRandRoll(-20, 20);
+	auto randIntRoll = std::bind(distrRandRoll, engine);
 	
-	float xAngle = 0.0f;
-	bool running = true;
-	while (running) {
-		int key = waitKey(30);
-		if (key==-1) {
-			// no key pressed
-		}
-		if (key == 'q') {
-			running = false;
-		}
-		if (key == 'w') {
-			r.camera.eye += 0.05f * -camera.getForwardVector();
-		}
-		if (key == 'a') {
-			r.camera.eye -= 0.05f * camera.getRightVector();
-		}
-		if (key == 's') {
-			r.camera.eye -= 0.05f * -camera.getForwardVector();
-		}
-		if (key == 'd') {
-			r.camera.eye += 0.05f * camera.getRightVector();
-		}
-		if (key == 'r') {
-			r.camera.eye += 0.05f * camera.getUpVector();
-		}
-		if (key == 'f') {
-			r.camera.eye -= 0.05f * camera.getUpVector();
-		}
+	r.resetBuffers();
 
-		if (key == 'z') {
-			r.camera.gaze += 0.05f * camera.getUpVector();
-		}
-		if (key == 'h') {
-			r.camera.gaze -= 0.05f * camera.getUpVector();
-		}
-		if (key == 'g') {
-			r.camera.gaze -= 0.05f * camera.getRightVector();
-		}
-		if (key == 'j') {
-			r.camera.gaze += 0.05f * camera.getRightVector();
-		}
+	r.camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
+	r.camera.verticalAngle = verticalAngle*(CV_PI/180.0f);
+	r.camera.updateFixed(r.camera.eye, r.camera.gaze);
 
-		if (key == 'i') {
-			r.camera.frustum.n += 0.1f;
-		}
-		if (key == 'k') {
-			r.camera.frustum.n -= 0.1f;
-		}
-		if (key == 'o') {
-			r.camera.frustum.f += 1.0f;
-		}
-		if (key == 'l') {
-			r.camera.frustum.f -= 1.0f;
-		}
-		if (key == 'p') {
-			perspective = !perspective;
-		}
-		if (key == 'c') {
-			freeCamera = !freeCamera;
-		}
-
-		if (key == 'n') {
-			xAngle -= 1.0f;
-		}
-		if (key == 'm') {
-			xAngle += 1.0f;
-		}
+	r.updateViewTransform();
+	r.updateProjectionTransform(perspective);
+		
+	for (int sampleNumPerDegree = 0; sampleNumPerDegree < 600000; ++sampleNumPerDegree) {
 		r.resetBuffers();
+		std::cout << sampleNumPerDegree << std::endl;
 
-		r.camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
-		r.camera.verticalAngle = verticalAngle*(CV_PI/180.0f);
-		if(freeCamera) {
-			r.camera.updateFree(r.camera.eye);
-		} else {
-			r.camera.updateFixed(r.camera.eye, r.camera.gaze);
+		morphableModel.drawNewVertexPositions();
+
+		int randomVertex = randIntVtx();
+		int yaw = randIntYaw();
+		int pitch = randIntPitch();
+		int roll = randIntRoll();
+
+		vector<shared_ptr<Landmark>> pointsToWrite;
+				
+		// 1) Render the randomVertex frontal
+		Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
+		Mat rotPitchX = Mat::eye(4, 4, CV_32FC1);
+		Mat rotYawY = Mat::eye(4, 4, CV_32FC1);
+		Mat rotRollZ = Mat::eye(4, 4, CV_32FC1);
+		Mat modelMatrix = rotYawY * rotPitchX * rotRollZ * modelScaling;
+		r.setWorldTransform(modelMatrix);
+		Vec2f res = r.projectVertex(morphableModel.mesh.vertex[randomVertex].position);
+		string name = "randomVertexFrontal";
+		pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
+
+		// 2) Render all LMs in frontal pose
+		for (const auto& vid : vertexIds) {
+			modelMatrix = rotYawY * rotPitchX * rotRollZ * modelScaling; // same as before in 1)
+			r.setWorldTransform(modelMatrix);
+			res = r.projectVertex(morphableModel.mesh.vertex[vid].position);
+			//r.renderLM(morphableModel.mesh.vertex[vid].position, Scalar(255.0f, 0.0f, 0.0f));
+			name = DidLandmarkFormatParser::didToTlmsName(vid);
+			pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
+		}
+				
+		// 3) Render the randomVertex in pose angle
+		rotPitchX = render::utils::MatrixUtils::createRotationMatrixX(pitch * (CV_PI/180.0f));
+		rotYawY = render::utils::MatrixUtils::createRotationMatrixY(yaw * (CV_PI/180.0f));
+		rotRollZ = render::utils::MatrixUtils::createRotationMatrixZ(roll * (CV_PI/180.0f));
+		modelMatrix = rotYawY * rotPitchX * rotRollZ * modelScaling;
+		r.setWorldTransform(modelMatrix);
+		res = r.projectVertex(morphableModel.mesh.vertex[randomVertex].position);
+		name = "randomVertexPose";
+		pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
+
+		// 4) Render all LMs in pose angle
+		for (const auto& vid : vertexIds) {
+			modelMatrix = rotYawY * rotPitchX * rotRollZ * modelScaling; // same as before in 3)
+			r.setWorldTransform(modelMatrix);
+			res = r.projectVertex(morphableModel.mesh.vertex[vid].position);
+			//r.renderLM(morphableModel.mesh.vertex[vid].position, Scalar(255.0f, 0.0f, 0.0f));
+			name = DidLandmarkFormatParser::didToTlmsName(vid);
+			pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
+		}
+			
+		//shared_ptr<Mesh> mmMesh = std::make_shared<Mesh>(morphableModel.mesh);
+		//r.draw(mmMesh, nullptr);
+
+		//Mat screen = r.getImage();
+		// 4) Write one row to the file
+		for (const auto& lm : pointsToWrite) {
+			//lm->draw(screen);
+			outputFile << lm->getX() << " " << lm->getY() << " ";
 		}
 
-		r.updateViewTransform();
-		r.updateProjectionTransform(perspective);
-
-		r.setWorldTransform(render::utils::MatrixUtils::createScalingMatrix(1.0f, 1.0f, 1.0f));
-		Vec4f origin(0.0f, 0.0f, 0.0f, 1.0f);
-		Vec4f xAxis(1.0f, 0.0f, 0.0f, 1.0f);
-		Vec4f yAxis(0.0f, 1.0f, 0.0f, 1.0f);
-		Vec4f zAxis(0.0f, 0.0f, 1.0f, 1.0f);
-		Vec4f mzAxis(0.0f, 0.0f, -1.0f, 1.0f);
-		r.renderLine(origin, xAxis, Scalar(0.0f, 0.0f, 255.0f));
-		r.renderLine(origin, yAxis, Scalar(0.0f, 255.0f, 0.0f));
-		r.renderLine(origin, zAxis, Scalar(255.0f, 0.0f, 0.0f));
-		r.renderLine(origin, mzAxis, Scalar(0.0f, 255.0f, 255.0f));
-
-		for (const auto& tIdx : cube.tvi) {
-			Vertex v0 = cube.vertex[tIdx[0]];
-			Vertex v1 = cube.vertex[tIdx[1]];
-			Vertex v2 = cube.vertex[tIdx[2]];
-			r.renderLine(v0.position, v1.position, Scalar(0.0f, 0.0f, 255.0f));
-			r.renderLine(v1.position, v2.position, Scalar(0.0f, 0.0f, 255.0f));
-			r.renderLine(v2.position, v0.position, Scalar(0.0f, 0.0f, 255.0f));
-		}
-
-		for (int angle = -45; angle <= 45; ++angle) {
-			for (int sampleNumPerDegree = 0; sampleNumPerDegree < 200; ++sampleNumPerDegree) {
-				r.resetBuffers();
-
-				morphableModel.drawNewVertexPositions();
-
-				int randomVertex = randInt();
-				vector<shared_ptr<Landmark>> pointsToWrite;
-				
-				// 1) Render the randomVertex frontal
-				Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
-				Mat rot = Mat::eye(4, 4, CV_32FC1);
-				Mat modelMatrix = rot * modelScaling;
-				r.setWorldTransform(modelMatrix);
-				Vec2f res = r.projectVertex(morphableModel.mesh.vertex[randomVertex].position);
-				string name = "randomVertexFrontal";
-				pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
-				
-				// 2) Render the randomVertex in pose angle
-				rot = render::utils::MatrixUtils::createRotationMatrixY(angle * (CV_PI/180.0f));
-				modelMatrix = rot * modelScaling;
-				r.setWorldTransform(modelMatrix);
-				res = r.projectVertex(morphableModel.mesh.vertex[randomVertex].position);
-				name = "randomVertexPose";
-				pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
-
-				// 3) Render all LMs in pose angle
-				for (const auto& vid : vertexIds) {
-					rot = render::utils::MatrixUtils::createRotationMatrixY(angle * (CV_PI/180.0f));
-					modelMatrix = rot * modelScaling;
-					r.setWorldTransform(modelMatrix);
-					res = r.projectVertex(morphableModel.mesh.vertex[vid].position);
-					//r.renderLM(morphableModel.mesh.vertex[vid].position, Scalar(255.0f, 0.0f, 0.0f));
-					name = DidLandmarkFormatParser::didToTlmsName(vid);
-					pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
-				}
-
-				Mat screen = r.getImage();
-				// 4) Write one row to the file
-				for (const auto& lm : pointsToWrite) {
-					lm->draw(screen);
-					outputFile << lm->getX() << " " << lm->getY() << " ";
-				}
-				int yaw = angle;
-				int pitch = 0;
-				int roll = 0;
-				outputFile << yaw << " " << pitch << " " << roll << std::endl;
-				
-
-			}
-		}
-
-		outputFile.close();
-
-		Mat screen = r.getImage();
-		/*
-		for (const auto& lm : lms) {
-			lm->draw(screen);
-		}*/
-
-		putText(screen, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
-		putText(screen, "horA: " + lexical_cast<string>(horizontalAngle) + ", verA: " + lexical_cast<string>(verticalAngle), Point(10, 38), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
-		putText(screen, "moving: " + lexical_cast<string>(moving), Point(10, 56), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
-		putText(screen, "zNear: " + lexical_cast<string>(r.camera.frustum.n) + ", zFar: " + lexical_cast<string>(r.camera.frustum.f) + ", p: " + lexical_cast<string>(perspective), Point(10, 74), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
-		putText(screen, "eye: " + lexical_cast<string>(r.camera.eye[0]) + ", " + lexical_cast<string>(r.camera.eye[1]) + ", " + lexical_cast<string>(r.camera.eye[2]), Point(10, 92), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
-		imshow(windowName, screen);
+		outputFile << yaw << " " << pitch << " " << roll << " " << randomVertex << std::endl;
 
 	}
 
-	/*
-	for (int angle = -45; angle <= 45; ++angle) {
-		vector<shared_ptr<Landmark>> lms;
-
-		for (const auto& vid : vertexIds) {
-			r.renderDevice->setWorldTransform(render::utils::MatrixUtils::createRotationMatrixX(angle * (CV_PI/180.0f)));
-			Vec2f res = r.renderDevice->renderVertex(morphableModel.mesh.vertex[vid].position);
-			string name = DidLandmarkFormatParser::didToTlmsName(vid);
-			shared_ptr<Landmark> lm = make_shared<ModelLandmark>(name, res);
-			lms.push_back(lm);
-		}
-
-		Mat img = cv::Mat::zeros(480, 640, CV_8UC3);
-		for (const auto& lm : lms) {
-			lm->draw(img);
-		}
-	}*/
-
-
+	outputFile.close();
 
 	return 0;
 }
