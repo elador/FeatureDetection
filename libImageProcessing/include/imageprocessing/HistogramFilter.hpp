@@ -1,22 +1,22 @@
 /*
- * HistogramFeatureExtractor.hpp
+ * HistogramFilter.hpp
  *
  *  Created on: 06.06.2013
  *      Author: poschmann
  */
 
-#ifndef HISTOGRAMFEATUREEXTRACTOR_HPP_
-#define HISTOGRAMFEATUREEXTRACTOR_HPP_
+#ifndef HISTOGRAMFILTER_HPP_
+#define HISTOGRAMFILTER_HPP_
 
-#include "imageprocessing/FeatureExtractor.hpp"
+#include "imageprocessing/ImageFilter.hpp"
 
 namespace imageprocessing {
 
 /**
- * Feature extractor that creates histograms. Does only provide a method for histogram normalization, can not be instantiated
+ * Filter whose results are histograms. Does only provide a method for histogram normalization, can not be instantiated
  * directly.
  */
-class HistogramFeatureExtractor : public FeatureExtractor {
+class HistogramFilter : public ImageFilter {
 public:
 
 	/**
@@ -29,9 +29,11 @@ public:
 	 *
 	 * @param[in] normalization The normalization method of the histograms.
 	 */
-	explicit HistogramFeatureExtractor(Normalization normalization);
+	explicit HistogramFilter(Normalization normalization);
 
-	virtual ~HistogramFeatureExtractor();
+	virtual ~HistogramFilter();
+
+	void applyInPlace(Mat& image) const;
 
 protected:
 
@@ -79,4 +81,4 @@ private:
 };
 
 } /* namespace imageprocessing */
-#endif /* HISTOGRAMFEATUREEXTRACTOR_HPP_ */
+#endif /* HISTOGRAMFILTER_HPP_ */

@@ -21,7 +21,7 @@ SET(HEADERS
 	include/imageprocessing/ConversionFilter.hpp
 	include/imageprocessing/DirectImageFeatureExtractor.hpp
 	include/imageprocessing/DirectPyramidFeatureExtractor.hpp
-	include/imageprocessing/ExtendedHogExtractor.hpp
+	include/imageprocessing/ExtendedHogFilter.hpp
 	include/imageprocessing/FeatureExtractor.hpp
 	include/imageprocessing/FilteringFeatureExtractor.hpp
 	include/imageprocessing/FilteringPyramidFeatureExtractor.hpp
@@ -34,7 +34,7 @@ SET(HEADERS
 	include/imageprocessing/HaarFeatureFilter.hpp
 	include/imageprocessing/HistEq64Filter.hpp
 	include/imageprocessing/HistogramEqualizationFilter.hpp
-	include/imageprocessing/HistogramFeatureExtractor.hpp
+	include/imageprocessing/HistogramFilter.hpp
 	include/imageprocessing/ImageFilter.hpp
 	include/imageprocessing/ImagePyramid.hpp
 	include/imageprocessing/ImagePyramidLayer.hpp
@@ -46,8 +46,8 @@ SET(HEADERS
 	include/imageprocessing/PyramidFeatureExtractor.hpp
 	include/imageprocessing/ReshapingFilter.hpp
 	include/imageprocessing/ResizingFilter.hpp
-	include/imageprocessing/SpatialHistogramFeatureExtractor.hpp
-	include/imageprocessing/SpatialPyramidHistogramFeatureExtractor.hpp
+	include/imageprocessing/SpatialHistogramFilter.hpp
+	include/imageprocessing/SpatialPyramidHistogramFilter.hpp
 	include/imageprocessing/UnitNormFilter.hpp
 	include/imageprocessing/VersionedImage.hpp
 	include/imageprocessing/WhiteningFilter.hpp
@@ -59,7 +59,7 @@ SET(SOURCE
 	src/imageprocessing/ConversionFilter.cpp
 	src/imageprocessing/DirectImageFeatureExtractor.cpp
 	src/imageprocessing/DirectPyramidFeatureExtractor.cpp
-	src/imageprocessing/ExtendedHogExtractor.cpp
+	src/imageprocessing/ExtendedHogFilter.cpp
 	src/imageprocessing/GammaCorrectionFilter.cpp
 	src/imageprocessing/GradientBinningFilter.cpp
 	src/imageprocessing/GradientFilter.cpp
@@ -69,7 +69,7 @@ SET(SOURCE
 	src/imageprocessing/HaarFeatureFilter.cpp
 	src/imageprocessing/HistEq64Filter.cpp
 	src/imageprocessing/HistogramEqualizationFilter.cpp
-	src/imageprocessing/HistogramFeatureExtractor.cpp
+	src/imageprocessing/HistogramFilter.cpp
 	src/imageprocessing/ImagePyramid.cpp
 	src/imageprocessing/ImagePyramidLayer.cpp
 	src/imageprocessing/IntegralImageFilter.cpp
@@ -77,8 +77,8 @@ SET(SOURCE
 	src/imageprocessing/MultipleImageFilter.cpp
 	src/imageprocessing/ReshapingFilter.cpp
 	src/imageprocessing/ResizingFilter.cpp
-	src/imageprocessing/SpatialHistogramFeatureExtractor.cpp
-	src/imageprocessing/SpatialPyramidHistogramFeatureExtractor.cpp
+	src/imageprocessing/SpatialHistogramFilter.cpp
+	src/imageprocessing/SpatialPyramidHistogramFilter.cpp
 	src/imageprocessing/UnitNormFilter.cpp
 	src/imageprocessing/WhiteningFilter.cpp
 	src/imageprocessing/ZeroMeanUnitVarianceFilter.cpp

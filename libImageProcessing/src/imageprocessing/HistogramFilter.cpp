@@ -1,19 +1,23 @@
 /*
- * HistogramFeatureExtractor.cpp
+ * HistogramFilter.cpp
  *
  *  Created on: 06.06.2013
  *      Author: poschmann
  */
 
-#include "imageprocessing/HistogramFeatureExtractor.hpp"
+#include "imageprocessing/HistogramFilter.hpp"
 
 namespace imageprocessing {
 
-HistogramFeatureExtractor::HistogramFeatureExtractor(Normalization normalization) : normalization(normalization) {}
+HistogramFilter::HistogramFilter(Normalization normalization) : normalization(normalization) {}
 
-HistogramFeatureExtractor::~HistogramFeatureExtractor() {}
+HistogramFilter::~HistogramFilter() {}
 
-void HistogramFeatureExtractor::normalize(Mat& histogram) const {
+void HistogramFilter::applyInPlace(Mat& image) const {
+	image = applyTo(image);
+}
+
+void HistogramFilter::normalize(Mat& histogram) const {
 	switch (normalization) {
 		case Normalization::L2NORM: normalizeL2(histogram); break;
 		case Normalization::L2HYS:  normalizeL2Hys(histogram); break;
@@ -23,25 +27,25 @@ void HistogramFeatureExtractor::normalize(Mat& histogram) const {
 	}
 }
 
-const float HistogramFeatureExtractor::eps = 1e-3;
+const float HistogramFilter::eps = 1e-4;
 
-void HistogramFeatureExtractor::normalizeL2(Mat& histogram) const {
+void HistogramFilter::normalizeL2(Mat& histogram) const {
 	float normSquared = cv::norm(histogram, cv::NORM_L2SQR);
 	histogram = histogram / sqrt(normSquared + eps * eps);
 }
 
-void HistogramFeatureExtractor::normalizeL2Hys(Mat& histogram) const {
+void HistogramFilter::normalizeL2Hys(Mat& histogram) const {
 	normalizeL2(histogram);
 	histogram = min(histogram, 0.2);
 	normalizeL2(histogram);
 }
 
-void HistogramFeatureExtractor::normalizeL1(Mat& histogram) const {
+void HistogramFilter::normalizeL1(Mat& histogram) const {
 	float norm = cv::norm(histogram, cv::NORM_L1);
 	histogram = histogram / (norm + eps);
 }
 
-void HistogramFeatureExtractor::normalizeL1Sqrt(Mat& histogram) const {
+void HistogramFilter::normalizeL1Sqrt(Mat& histogram) const {
 	normalizeL1(histogram);
 	cv::sqrt(histogram, histogram);
 }

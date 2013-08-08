@@ -47,6 +47,7 @@ unsigned int LbpFilter::getBinCount() const {
 		case Type::LBP8_UNIFORM: return 59;
 		case Type::LBP4:
 		case Type::LBP4_ROTATED: return 16;
+		default: throw std::runtime_error("LbpFilter: invalid type (should never occur)");
 	}
 }
 

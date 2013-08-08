@@ -1,14 +1,14 @@
 /*
- * SpatialHistogramFeatureExtractor.hpp
+ * SpatialHistogramFilter.hpp
  *
  *  Created on: 30.05.2013
  *      Author: poschmann
  */
 
-#ifndef SPATIALHISTOGRAMFEATUREEXTRACTOR_HPP_
-#define SPATIALHISTOGRAMFEATUREEXTRACTOR_HPP_
+#ifndef SPATIALHISTOGRAMFILTER_HPP_
+#define SPATIALHISTOGRAMFILTER_HPP_
 
-#include "imageprocessing/HistogramFeatureExtractor.hpp"
+#include "imageprocessing/HistogramFilter.hpp"
 #include <vector>
 
 using std::vector;
@@ -16,20 +16,18 @@ using std::vector;
 namespace imageprocessing {
 
 /**
- * Feature extractor that creates spatial histograms that may overlap. Builds upon a feature extractor that delivers
- * patches containing histogram information (bin indices and optionally weights).
- *
- * The patch data must be of type CV_8U and have one, two or four channels. In case of one channel, it just contains the
- * bin index. The second channel adds a weight that will be divided by 255 to be between zero and one. The third channel
- * is another bin index and the fourth channel is the corresponding weight.
+ * Filter that creates spatial histograms that may overlap. The input is an image with depth CV_8U containing bin information
+ * (bin indices and optionally weights). It must have one, two or four channels. In case of one channel, it just contains the
+ * bin index. The second channel adds a weight that will be divided by 255 to be between zero and one. The third channel is
+ * another bin index and the fourth channel is the corresponding weight. The output will be a row vector of type CV_32F
+ * containing the concatenated normalized histograms.
  */
-class SpatialHistogramFeatureExtractor : public HistogramFeatureExtractor {
+class SpatialHistogramFilter : public HistogramFilter {
 public:
 
 	/**
-	 * Constructs a new spatial histogram feature extractor with square cells and blocks.
+	 * Constructs a new spatial histogram filter with square cells and blocks.
 	 *
-	 * @param[in] extractor The underlying feature extractor (has to deliver histogram bin indices per pixel with optional weight).
 	 * @param[in] bins The amount of bins inside the histogram.
 	 * @param[in] cellSize The preferred width and height of the cells in pixels (actual size might deviate).
 	 * @param[in] blockSize The width and height of the blocks in cells.
@@ -37,14 +35,12 @@ public:
 	 * @param[in] combinedHistograms Flag that indicates whether the histograms of the cells should be added up to form the block histogram.
 	 * @param[in] normalization The normalization method of the block histograms.
 	 */
-	SpatialHistogramFeatureExtractor(shared_ptr<FeatureExtractor> extractor, unsigned int bins,
-			int cellSize, int blockSize, bool interpolation,
-			bool combineHistograms = true, Normalization normalization = Normalization::NONE);
+	SpatialHistogramFilter(unsigned int bins, int cellSize, int blockSize,
+			bool interpolation, bool combineHistograms = true, Normalization normalization = Normalization::NONE);
 
 	/**
-	 * Constructs a new spatial histogram feature extractor.
+	 * Constructs a new spatial histogram filter.
 	 *
-	 * @param[in] extractor The underlying feature extractor (has to deliver histogram bin indices per pixel with optional weight).
 	 * @param[in] bins The amount of bins inside the histogram.
 	 * @param[in] cellWidth The preferred width of the cells in pixels (actual width might deviate).
 	 * @param[in] cellHeight The preferred height of the cells in pixels (actual height might deviate).
@@ -54,17 +50,14 @@ public:
 	 * @param[in] combinedHistograms Flag that indicates whether the histograms of the cells should be added up to form the block histogram.
 	 * @param[in] normalization The normalization method of the block histograms.
 	 */
-	SpatialHistogramFeatureExtractor(shared_ptr<FeatureExtractor> extractor, unsigned int bins,
-			int cellWidth, int cellHeight, int blockWidth, int blockHeight, bool interpolation,
-			bool combineHistograms = true, Normalization normalization = Normalization::NONE);
+	SpatialHistogramFilter(unsigned int bins, int cellWidth, int cellHeight, int blockWidth, int blockHeight,
+			bool interpolation, bool combineHistograms = true, Normalization normalization = Normalization::NONE);
 
-	~SpatialHistogramFeatureExtractor();
+	~SpatialHistogramFilter();
 
-	void update(const Mat& image);
+	using ImageFilter::applyTo;
 
-	void update(shared_ptr<VersionedImage> image);
-
-	shared_ptr<Patch> extract(int x, int y, int width, int height) const;
+	Mat applyTo(const Mat& image, Mat& filtered) const;
 
 private:
 
@@ -85,7 +78,6 @@ private:
 	 */
 	void createCache(vector<CacheEntry>& cache, unsigned int size, int count) const;
 
-	shared_ptr<FeatureExtractor> extractor; ///< The underlying feature extractor.
 	unsigned int bins; ///< The amount of bins inside the histogram.
 	int cellWidth;     ///< The preferred width of the cells in pixels (actual width might deviate).
 	int cellHeight;    ///< The preferred height of the cells in pixels (actual height might deviate).
@@ -98,4 +90,4 @@ private:
 };
 
 } /* namespace imageprocessing */
-#endif /* SPATIALHISTOGRAMFEATUREEXTRACTOR_HPP_ */
+#endif /* SPATIALHISTOGRAMFILTER_HPP_ */

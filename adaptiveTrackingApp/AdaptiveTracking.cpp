@@ -31,14 +31,14 @@
 #include "imageprocessing/GradientFilter.hpp"
 #include "imageprocessing/GradientMagnitudeFilter.hpp"
 #include "imageprocessing/GradientBinningFilter.hpp"
+#include "imageprocessing/SpatialHistogramFilter.hpp"
+#include "imageprocessing/SpatialPyramidHistogramFilter.hpp"
+#include "imageprocessing/ExtendedHogFilter.hpp"
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/DirectImageFeatureExtractor.hpp"
 #include "imageprocessing/FilteringFeatureExtractor.hpp"
 #include "imageprocessing/FilteringPyramidFeatureExtractor.hpp"
 #include "imageprocessing/PatchResizingFeatureExtractor.hpp"
-#include "imageprocessing/SpatialHistogramFeatureExtractor.hpp"
-#include "imageprocessing/SpatialPyramidHistogramFeatureExtractor.hpp"
-#include "imageprocessing/ExtendedHogExtractor.hpp"
 #include "classification/ProbabilisticWvmClassifier.hpp"
 #include "classification/ProbabilisticSvmClassifier.hpp"
 #include "classification/RbfKernel.hpp"
@@ -167,30 +167,30 @@ shared_ptr<FeatureExtractor> AdaptiveTracking::createFeatureExtractor(
 		pyramidExtractor = createPyramidExtractor(config.get_child("pyramid"), pyramid, true);
 		pyramidExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
 		pyramidExtractor->addLayerFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
-		return wrapFeatureExtractor(createHistogramFeatureExtractor(pyramidExtractor,
-				config.get<int>("bins"), config.get_child("histogram")), scaleFactor);
+		pyramidExtractor->addPatchFilter(createHistogramFilter(config.get<int>("bins"), config.get_child("histogram")));
+		return wrapFeatureExtractor(pyramidExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "ehog") {
 		pyramidExtractor = createPyramidExtractor(
 				config.get_child("pyramid"), pyramid, true);
 		pyramidExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
 		pyramidExtractor->addLayerFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
-		return wrapFeatureExtractor(make_shared<ExtendedHogExtractor>(pyramidExtractor, config.get<int>("bins"),
-				config.get<int>("histogram.cellSize"), config.get<bool>("histogram.interpolation"),
-				config.get<bool>("histogram.signedAndUnsigned"), config.get<float>("histogram.alpha")), scaleFactor);
+		pyramidExtractor->addPatchFilter(make_shared<ExtendedHogFilter>(config.get<int>("bins"), config.get<int>("histogram.cellSize"),
+				config.get<bool>("histogram.interpolation"), config.get<bool>("histogram.signedAndUnsigned"), config.get<float>("histogram.alpha")));
+		return wrapFeatureExtractor(pyramidExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "lbp") {
 		pyramidExtractor = createPyramidExtractor(config.get_child("pyramid"), pyramid, true);
 		shared_ptr<LbpFilter> lbpFilter = createLbpFilter(config.get<string>("type"));
 		pyramidExtractor->addLayerFilter(lbpFilter);
-		return wrapFeatureExtractor(createHistogramFeatureExtractor(pyramidExtractor,
-				lbpFilter->getBinCount(), config.get_child("histogram")), scaleFactor);
+		pyramidExtractor->addPatchFilter(createHistogramFilter(lbpFilter->getBinCount(), config.get_child("histogram")));
+		return wrapFeatureExtractor(pyramidExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "glbp") {
 		pyramidExtractor = createPyramidExtractor(config.get_child("pyramid"), pyramid, true);
 		shared_ptr<LbpFilter> lbpFilter = createLbpFilter(config.get<string>("type"));
 		pyramidExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
 		pyramidExtractor->addLayerFilter(make_shared<GradientMagnitudeFilter>());
 		pyramidExtractor->addLayerFilter(lbpFilter);
-		return wrapFeatureExtractor(createHistogramFeatureExtractor(pyramidExtractor,
-				lbpFilter->getBinCount(), config.get_child("histogram")), scaleFactor);
+		pyramidExtractor->addPatchFilter(createHistogramFilter(lbpFilter->getBinCount(), config.get_child("histogram")));
+		return wrapFeatureExtractor(pyramidExtractor, scaleFactor);
 	} else {
 		throw invalid_argument("AdaptiveTracking: invalid feature type: " + config.get<string>("feature"));
 	}
@@ -211,26 +211,25 @@ shared_ptr<LbpFilter> AdaptiveTracking::createLbpFilter(string lbpType) {
 	return make_shared<LbpFilter>(type);
 }
 
-shared_ptr<FeatureExtractor> AdaptiveTracking::createHistogramFeatureExtractor(
-		shared_ptr<FeatureExtractor> patchExtractor, unsigned int bins, ptree& config) {
-	HistogramFeatureExtractor::Normalization normalization;
+shared_ptr<HistogramFilter> AdaptiveTracking::createHistogramFilter(unsigned int bins, ptree& config) {
+	HistogramFilter::Normalization normalization;
 	if (config.get<string>("normalization") == "none")
-		normalization = HistogramFeatureExtractor::Normalization::NONE;
+		normalization = HistogramFilter::Normalization::NONE;
 	else if (config.get<string>("normalization") == "l2norm")
-		normalization = HistogramFeatureExtractor::Normalization::L2NORM;
+		normalization = HistogramFilter::Normalization::L2NORM;
 	else if (config.get<string>("normalization") == "l2hys")
-		normalization = HistogramFeatureExtractor::Normalization::L2HYS;
+		normalization = HistogramFilter::Normalization::L2HYS;
 	else if (config.get<string>("normalization") == "l1norm")
-		normalization = HistogramFeatureExtractor::Normalization::L1NORM;
+		normalization = HistogramFilter::Normalization::L1NORM;
 	else if (config.get<string>("normalization") == "l1sqrt")
-		normalization = HistogramFeatureExtractor::Normalization::L1SQRT;
+		normalization = HistogramFilter::Normalization::L1SQRT;
 	else
 		throw invalid_argument("AdaptiveTracking: invalid normalization method: " + config.get<string>("normalization"));
 	if (config.get_value<string>() == "spatial")
-		return make_shared<SpatialHistogramFeatureExtractor>(patchExtractor, bins,
-				config.get<int>("cellSize"), config.get<int>("blockSize"), config.get<bool>("interpolation"), config.get<bool>("combine"), normalization);
-	else if (config.get_value<string>() == "pyramid")
-		return make_shared<SpatialPyramidHistogramFeatureExtractor>(patchExtractor, bins, config.get<int>("level"), normalization);
+		return make_shared<SpatialHistogramFilter>(bins, config.get<int>("cellSize"), config.get<int>("blockSize"),
+				config.get<bool>("interpolation"), config.get<bool>("combine"), normalization);
+	else 	if (config.get_value<string>() == "pyramid")
+		return make_shared<SpatialPyramidHistogramFilter>(bins, config.get<int>("level"), normalization);
 	else
 		throw invalid_argument("AdaptiveTracking: invalid histogram type: " + config.get_value<string>());
 }

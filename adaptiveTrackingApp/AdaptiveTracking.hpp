@@ -14,6 +14,7 @@
 #include "imageprocessing/FeatureExtractor.hpp"
 #include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
 #include "imageprocessing/LbpFilter.hpp"
+#include "imageprocessing/HistogramFilter.hpp"
 #include "classification/Kernel.hpp"
 #include "classification/TrainableSvmClassifier.hpp"
 #include "classification/TrainableProbabilisticClassifier.hpp"
@@ -76,7 +77,7 @@ private:
 			ptree& config, shared_ptr<ImagePyramid> pyramid, bool needsLayerFilters);
 	shared_ptr<FeatureExtractor> createFeatureExtractor(shared_ptr<ImagePyramid> pyramid, ptree& config);
 	shared_ptr<LbpFilter> createLbpFilter(string lbpType);
-	shared_ptr<FeatureExtractor> createHistogramFeatureExtractor(shared_ptr<FeatureExtractor> patchExtractor, unsigned int bins, ptree& config);
+	shared_ptr<HistogramFilter> createHistogramFilter(unsigned int bins, ptree& config);
 	shared_ptr<FeatureExtractor> wrapFeatureExtractor(shared_ptr<FeatureExtractor> featureExtractor, float scaleFactor);
 	shared_ptr<Kernel> createKernel(ptree& config);
 	shared_ptr<TrainableSvmClassifier> createTrainableSvm(shared_ptr<Kernel> kernel, ptree& config);
