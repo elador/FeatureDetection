@@ -1,18 +1,18 @@
 /*
- * GradientHistogramFilter.cpp
+ * GradientBinningFilter.cpp
  *
  *  Created on: 28.05.2013
  *      Author: poschmann
  */
 
-#include "imageprocessing/GradientHistogramFilter.hpp"
+#include "imageprocessing/GradientBinningFilter.hpp"
 #include <stdexcept>
 
 using std::invalid_argument;
 
 namespace imageprocessing {
 
-GradientHistogramFilter::GradientHistogramFilter(unsigned int bins, bool signedGradients) : bins(bins) {
+GradientBinningFilter::GradientBinningFilter(unsigned int bins, bool signedGradients) : bins(bins) {
 	union {
 		ushort index;
 		struct {
@@ -22,7 +22,7 @@ GradientHistogramFilter::GradientHistogramFilter(unsigned int bins, bool signedG
 	Vec4b binCode;
 	// build the look-up table
 	// index of the look-up table is the binary concatanation of the gradients of x and y
-	// value of the look-up table is the binary concatanation of the bin index and weight (scaled to 255)
+	// value of the look-up table is the binary concatanation of two bin indices and weights (scaled to 255)
 	gradientCode.gradient.x = 0;
 	for (int x = 0; x < 256; ++x) {
 		double gradientX = (static_cast<double>(x) - 127) / 127;
@@ -51,15 +51,15 @@ GradientHistogramFilter::GradientHistogramFilter(unsigned int bins, bool signedG
 	}
 }
 
-GradientHistogramFilter::~GradientHistogramFilter() {}
+GradientBinningFilter::~GradientBinningFilter() {}
 
-unsigned int GradientHistogramFilter::getBinCount() const {
+unsigned int GradientBinningFilter::getBinCount() const {
 	return bins;
 }
 
-Mat GradientHistogramFilter::applyTo(const Mat& image, Mat& filtered) const {
+Mat GradientBinningFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.type() != CV_8UC2)
-		throw invalid_argument("GradientHistogramFilter: the image must by of type CV_8UC2");
+		throw invalid_argument("GradientHistogramFilter: the image must be of type CV_8UC2");
 
 	int rows = image.rows;
 	int cols = image.cols;
@@ -77,7 +77,7 @@ Mat GradientHistogramFilter::applyTo(const Mat& image, Mat& filtered) const {
 	return filtered;
 }
 
-void GradientHistogramFilter::applyInPlace(Mat& image) const {
+void GradientBinningFilter::applyInPlace(Mat& image) const {
 	image = applyTo(image);
 }
 

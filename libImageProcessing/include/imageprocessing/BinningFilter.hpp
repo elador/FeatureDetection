@@ -1,24 +1,24 @@
 /*
- * HistogramFilter.hpp
+ * BinningFilter.hpp
  *
  *  Created on: 12.06.2013
  *      Author: poschmann
  */
 
-#ifndef HISTOGRAMFILTER_HPP_
-#define HISTOGRAMFILTER_HPP_
+#ifndef BINNINGFILTER_HPP_
+#define BINNINGFILTER_HPP_
 
 #include "imageprocessing/ImageFilter.hpp"
 
 namespace imageprocessing {
 
 /**
- * Image filter that produces and image containing bin information of each pixel.
+ * Image filter whose result is an image containing bin information of each pixel.
  */
-class HistogramFilter : public ImageFilter {
+class BinningFilter : public ImageFilter {
 public:
 
-	virtual ~HistogramFilter() {}
+	virtual ~BinningFilter() {}
 
 	/**
 	 * @return The amount of bins.
@@ -27,4 +27,4 @@ public:
 };
 
 } /* namespace imageprocessing */
-#endif /* HISTOGRAMFILTER_HPP_ */
+#endif /* BINNINGFILTER_HPP_ */

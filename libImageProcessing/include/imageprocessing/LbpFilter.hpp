@@ -8,7 +8,7 @@
 #ifndef LBPFILTER_HPP_
 #define LBPFILTER_HPP_
 
-#include "imageprocessing/HistogramFilter.hpp"
+#include "imageprocessing/BinningFilter.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <array>
 #include <stdexcept>
@@ -28,7 +28,7 @@ namespace imageprocessing {
  * The code for computing the LBP codes was taken from http://www.bytefish.de/blog/local_binary_patterns/, where the
  * code for the extended LBP can be found, too.
  */
-class LbpFilter : public HistogramFilter {
+class LbpFilter : public BinningFilter {
 public:
 
 	/**

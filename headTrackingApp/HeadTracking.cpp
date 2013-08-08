@@ -28,7 +28,7 @@
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
 #include "imageprocessing/GradientFilter.hpp"
 #include "imageprocessing/GradientMagnitudeFilter.hpp"
-#include "imageprocessing/GradientHistogramFilter.hpp"
+#include "imageprocessing/GradientBinningFilter.hpp"
 #include "imageprocessing/ConversionFilter.hpp"
 #include "imageprocessing/UnitNormFilter.hpp"
 #include "imageprocessing/ImagePyramid.hpp"
@@ -136,7 +136,7 @@ shared_ptr<FeatureExtractor> HeadTracking::createFeatureExtractor(
 	} else if (config.get_value<string>() == "whi") {
 		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(
 				config.get_child("pyramid"), pyramid, true);
-		featureExtractor->addLayerFilter(make_shared<WhiteningFilter>());
+		featureExtractor->addImageFilter(make_shared<WhiteningFilter>());
 		featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
 		featureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0));
 		featureExtractor->addPatchFilter(make_shared<UnitNormFilter>());
@@ -176,16 +176,16 @@ shared_ptr<FeatureExtractor> HeadTracking::createFeatureExtractor(
 		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(
 				config.get_child("pyramid"), pyramid, true);
 		featureExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
-		featureExtractor->addLayerFilter(make_shared<GradientHistogramFilter>(config.get<int>("bins"), config.get<bool>("signed")));
+		featureExtractor->addLayerFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
 		return wrapFeatureExtractor(createHistogramFeatureExtractor(featureExtractor,
 				config.get<int>("bins"), config.get_child("histogram")), scaleFactor);
 	} else if (config.get_value<string>() == "ehog") {
 		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(
 				config.get_child("pyramid"), pyramid, true);
 		featureExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
-		featureExtractor->addLayerFilter(make_shared<GradientHistogramFilter>(config.get<int>("bins"), config.get<bool>("signed")));
+		featureExtractor->addLayerFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
 		return wrapFeatureExtractor(make_shared<ExtendedHogExtractor>(featureExtractor, config.get<int>("bins"),
-				config.get<int>("histogram.cellSize"), config.get<int>("histogram.blockSize"), config.get<bool>("histogram.interpolation"),
+				config.get<int>("histogram.cellSize"), config.get<bool>("histogram.interpolation"),
 				config.get<bool>("histogram.signedAndUnsigned"), config.get<float>("histogram.alpha")), scaleFactor);
 	} else if (config.get_value<string>() == "lbp") {
 		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(

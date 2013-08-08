@@ -30,7 +30,7 @@
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
 #include "imageprocessing/GradientFilter.hpp"
 #include "imageprocessing/GradientMagnitudeFilter.hpp"
-#include "imageprocessing/GradientHistogramFilter.hpp"
+#include "imageprocessing/GradientBinningFilter.hpp"
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/DirectImageFeatureExtractor.hpp"
 #include "imageprocessing/FilteringFeatureExtractor.hpp"
@@ -166,16 +166,16 @@ shared_ptr<FeatureExtractor> AdaptiveTracking::createFeatureExtractor(
 	} else if (config.get_value<string>() == "hog") {
 		pyramidExtractor = createPyramidExtractor(config.get_child("pyramid"), pyramid, true);
 		pyramidExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
-		pyramidExtractor->addLayerFilter(make_shared<GradientHistogramFilter>(config.get<int>("bins"), config.get<bool>("signed")));
+		pyramidExtractor->addLayerFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
 		return wrapFeatureExtractor(createHistogramFeatureExtractor(pyramidExtractor,
 				config.get<int>("bins"), config.get_child("histogram")), scaleFactor);
 	} else if (config.get_value<string>() == "ehog") {
 		pyramidExtractor = createPyramidExtractor(
 				config.get_child("pyramid"), pyramid, true);
 		pyramidExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
-		pyramidExtractor->addLayerFilter(make_shared<GradientHistogramFilter>(config.get<int>("bins"), config.get<bool>("signed")));
+		pyramidExtractor->addLayerFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
 		return wrapFeatureExtractor(make_shared<ExtendedHogExtractor>(pyramidExtractor, config.get<int>("bins"),
-				config.get<int>("histogram.cellSize"), config.get<int>("histogram.blockSize"), config.get<bool>("histogram.interpolation"),
+				config.get<int>("histogram.cellSize"), config.get<bool>("histogram.interpolation"),
 				config.get<bool>("histogram.signedAndUnsigned"), config.get<float>("histogram.alpha")), scaleFactor);
 	} else if (config.get_value<string>() == "lbp") {
 		pyramidExtractor = createPyramidExtractor(config.get_child("pyramid"), pyramid, true);

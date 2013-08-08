@@ -18,13 +18,11 @@ namespace imageprocessing {
 const float ExtendedHogExtractor::eps = 0.0001;
 
 ExtendedHogExtractor::ExtendedHogExtractor(shared_ptr<FeatureExtractor> extractor,
-		unsigned int bins, int cellSize, int blockSize, bool interpolation, bool signedAndUnsigned, float alpha) :
+		unsigned int bins, int cellSize, bool interpolation, bool signedAndUnsigned, float alpha) :
 				extractor(extractor),
 				bins(bins),
 				cellWidth(cellSize),
 				cellHeight(cellSize),
-				blockWidth(blockSize),
-				blockHeight(blockSize),
 				interpolation(interpolation),
 				signedAndUnsigned(signedAndUnsigned),
 				alpha(alpha),
@@ -33,13 +31,11 @@ ExtendedHogExtractor::ExtendedHogExtractor(shared_ptr<FeatureExtractor> extracto
 
 ExtendedHogExtractor::ExtendedHogExtractor(
 		shared_ptr<FeatureExtractor> extractor, unsigned int bins,
-		int cellWidth, int cellHeight, int blockWidth, int blockHeight, bool interpolation, bool signedAndUnsigned, float alpha) :
+		int cellWidth, int cellHeight, bool interpolation, bool signedAndUnsigned, float alpha) :
 				extractor(extractor),
 				bins(bins),
 				cellWidth(cellWidth),
 				cellHeight(cellHeight),
-				blockWidth(blockWidth),
-				blockHeight(blockHeight),
 				interpolation(interpolation),
 				signedAndUnsigned(signedAndUnsigned),
 				alpha(alpha),

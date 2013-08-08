@@ -15,6 +15,7 @@ MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
 # source and header files
 SET(HEADERS
+	include/imageprocessing/BinningFilter.hpp
 	include/imageprocessing/CachingFeatureExtractor.hpp
 	include/imageprocessing/CachingPyramidFeatureExtractor.hpp
 	include/imageprocessing/ConversionFilter.hpp
@@ -25,8 +26,8 @@ SET(HEADERS
 	include/imageprocessing/FilteringFeatureExtractor.hpp
 	include/imageprocessing/FilteringPyramidFeatureExtractor.hpp
 	include/imageprocessing/GammaCorrectionFilter.hpp
+	include/imageprocessing/GradientBinningFilter.hpp
 	include/imageprocessing/GradientFilter.hpp
-	include/imageprocessing/GradientHistogramFilter.hpp
 	include/imageprocessing/GradientMagnitudeFilter.hpp
 	include/imageprocessing/GrayscaleFilter.hpp
 	include/imageprocessing/GreyWorldNormalizationFilter.hpp
@@ -34,7 +35,6 @@ SET(HEADERS
 	include/imageprocessing/HistEq64Filter.hpp
 	include/imageprocessing/HistogramEqualizationFilter.hpp
 	include/imageprocessing/HistogramFeatureExtractor.hpp
-	include/imageprocessing/HistogramFilter.hpp
 	include/imageprocessing/ImageFilter.hpp
 	include/imageprocessing/ImagePyramid.hpp
 	include/imageprocessing/ImagePyramidLayer.hpp
@@ -61,8 +61,8 @@ SET(SOURCE
 	src/imageprocessing/DirectPyramidFeatureExtractor.cpp
 	src/imageprocessing/ExtendedHogExtractor.cpp
 	src/imageprocessing/GammaCorrectionFilter.cpp
+	src/imageprocessing/GradientBinningFilter.cpp
 	src/imageprocessing/GradientFilter.cpp
-	src/imageprocessing/GradientHistogramFilter.cpp
 	src/imageprocessing/GradientMagnitudeFilter.cpp
 	src/imageprocessing/GrayscaleFilter.cpp
 	src/imageprocessing/GreyWorldNormalizationFilter.cpp

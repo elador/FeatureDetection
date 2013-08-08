@@ -35,13 +35,12 @@ public:
 	 * @param[in] extractor The underlying feature extractor (has to deliver histogram bin indices per pixel with optional weight).
 	 * @param[in] bins The amount of bins inside the histogram.
 	 * @param[in] cellSize The preferred width and height of the cells in pixels (actual size might deviate).
-	 * @param[in] blockSize The width and height of the blocks in cells.
 	 * @param[in] interpolation Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
 	 * @param[in] signedAndUnsigned Flag that indicates whether signed and unsigned gradients should be used.
 	 * @param[in] alpha Truncation threshold of the orientation bin values (applied after normalization).
 	 */
 	ExtendedHogExtractor(shared_ptr<FeatureExtractor> extractor, unsigned int bins,
-			int cellSize, int blockSize, bool interpolation, bool signedAndUnsigned, float alpha = 0.2);
+			int cellSize, bool interpolation, bool signedAndUnsigned, float alpha = 0.2);
 
 	/**
 	 * Constructs a new extended HOG feature extractor.
@@ -50,14 +49,12 @@ public:
 	 * @param[in] bins The amount of bins inside the histogram.
 	 * @param[in] cellWidth The preferred width of the cells in pixels (actual width might deviate).
 	 * @param[in] cellHeight The preferred height of the cells in pixels (actual height might deviate).
-	 * @param[in] blockWidth The width of the blocks in cells.
-	 * @param[in] blockHeight The height of the blocks in cells.
 	 * @param[in] interpolation Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
 	 * @param[in] signedAndUnsigned Flag that indicates whether signed and unsigned gradients should be used.
 	 * @param[in] alpha Truncation threshold of the orientation bin values (applied after normalization).
 	 */
 	ExtendedHogExtractor(shared_ptr<FeatureExtractor> extractor, unsigned int bins,
-			int cellWidth, int cellHeight, int blockWidth, int blockHeight, bool interpolation, bool signedAndUnsigned, float alpha = 0.2);
+			int cellWidth, int cellHeight, bool interpolation, bool signedAndUnsigned, float alpha = 0.2);
 
 	~ExtendedHogExtractor();
 
@@ -90,8 +87,6 @@ private:
 	unsigned int bins; ///< The amount of bins inside the histogram.
 	int cellWidth;     ///< The preferred width of the cells in pixels (actual width might deviate).
 	int cellHeight;    ///< The preferred height of the cells in pixels (actual height might deviate).
-	int blockWidth;    ///< The width of the blocks in cells.
-	int blockHeight;   ///< The height of the blocks in cells.
 	bool interpolation;     ///< Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
 	bool signedAndUnsigned; ///< Flag that indicates whether signed and unsigned gradients should be used.
 	float alpha; ///< Truncation threshold of the orientation bin values (applied after normalization).

@@ -1,14 +1,14 @@
 /*
- * GradientHistogramFilter.hpp
+ * GradientBinningFilter.hpp
  *
  *  Created on: 28.05.2013
  *      Author: poschmann
  */
 
-#ifndef GRADIENTHISTOGRAMFILTER_HPP_
-#define GRADIENTHISTOGRAMFILTER_HPP_
+#ifndef GRADIENTBINNINGFILTER_HPP_
+#define GRADIENTBINNINGFILTER_HPP_
 
-#include "imageprocessing/HistogramFilter.hpp"
+#include "imageprocessing/BinningFilter.hpp"
 #include <array>
 
 using cv::Vec4b;
@@ -23,7 +23,7 @@ namespace imageprocessing {
  * corresponding weights (according to the magnitude of the gradient and the distance of the gradient to the center
  * of the bin).
  */
-class GradientHistogramFilter : public HistogramFilter {
+class GradientBinningFilter : public BinningFilter {
 public:
 
 	/**
@@ -32,9 +32,9 @@ public:
 	 * @param[in] bins The amount of bins to use.
 	 * @param[in] signedGradients Flag that indicates whether signed gradients (direction from 0° to 360°) should be used.
 	 */
-	explicit GradientHistogramFilter(unsigned int bins, bool signedGradients = false);
+	explicit GradientBinningFilter(unsigned int bins, bool signedGradients = false);
 
-	~GradientHistogramFilter();
+	~GradientBinningFilter();
 
 	using ImageFilter::applyTo;
 
@@ -51,4 +51,4 @@ private:
 };
 
 } /* namespace imageprocessing */
-#endif /* GRADIENTHISTOGRAMFILTER_HPP_ */
+#endif /* GRADIENTBINNINGFILTER_HPP_ */
