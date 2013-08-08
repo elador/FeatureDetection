@@ -79,61 +79,22 @@ ostream& operator<<(ostream& os, const vector<T>& v)
 }
 
 
-/*
-void drawFaceBoxes(Mat image, vector<shared_ptr<ClassifiedPatch>> patches)
-{
-	for(auto pit = patches.begin(); pit != patches.end(); pit++) {
-		shared_ptr<ClassifiedPatch> classifiedPatch = *pit;
-		shared_ptr<Patch> patch = classifiedPatch->getPatch();
-		cv::rectangle(image, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((classifiedPatch->getProbability())/1.0)   ));
-	}
-}
-*/
-
-void drawWindow(Mat image, string windowName, int windowX, int windowY)
-{
-	cv::namedWindow(windowName, CV_WINDOW_AUTOSIZE);
-	cv::imshow(windowName, image);
-	cvMoveWindow(windowName.c_str(), windowX, windowY);
-	cv::waitKey(30);
-}
-
-
 int main(int argc, char *argv[])
 {
 	#ifdef WIN32
 	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF ); // dump leaks at return
 	//_CrtSetBreakAlloc(3759128);
 	#endif
-	
-	int verbose_level_text;
-	int verbose_level_images;
-	bool useFileList = false;
-	bool useImgs = false;
-	bool useDirectory = false;
-	string inputFilelist;
-	string inputDirectory;
-	vector<std::string> inputFilenames;
-	
+		
 	try {
         po::options_description desc("Allowed options");
         desc.add_options()
             ("help,h", "produce help message")
-            ("verbose-text,v", po::value<int>(&verbose_level_text)->implicit_value(2)->default_value(1,"minimal text output"),
-                  "enable text-verbosity (optionally specify level)")
-            ("verbose-images,w", po::value<int>(&verbose_level_images)->implicit_value(2)->default_value(1,"minimal image output"),
-                  "enable image-verbosity (optionally specify level)")
-            ("input-list,l", po::value<string>(), "input from a file containing a list of images")
-            ("input-file,f", po::value<vector<string>>(), "input one or several images")
-			("input-dir,d", po::value<string>(), "input all images inside the directory")
         ;
 
-        po::positional_options_description p;
-        p.add("input-file", -1);	// allow one or several -f directives
-        
         po::variables_map vm;
         po::store(po::command_line_parser(argc, argv).
-                  options(desc).positional(p).run(), vm);
+                  options(desc).run(), vm);
         po::notify(vm);
     
         if (vm.count("help")) {
@@ -141,56 +102,16 @@ int main(int argc, char *argv[])
             cout << desc;
             return 0;
         }
-        if (vm.count("input-list"))
-        {
-            cout << "[faceRecogTestApp] Using file-list as input: " << vm["input-list"].as<string>() << "\n";
-			useFileList = true;
-			inputFilelist = vm["input-list"].as<string>();
-        }
-        if (vm.count("input-file"))
-        {
-            cout << "[faceRecogTestApp] Using input images: " << vm["input-file"].as<vector<string>>() << "\n";
-			useImgs = true;
-			inputFilenames = vm["input-file"].as< vector<string> >();
-        }
-		if (vm.count("input-dir"))
-		{
-			cout << "[faceRecogTestApp] Using input images: " << vm["input-dir"].as<string>() << "\n";
-			useDirectory = true;
-			inputDirectory = vm["input-dir"].as<string>();
-		}
-        if (vm.count("verbose-text")) {
-            cout << "[faceRecogTestApp] Verbose level for text: " << vm["verbose-text"].as<int>() << "\n";
-        }
-        if (vm.count("verbose-images")) {
-            cout << "[faceRecogTestApp] Verbose level for images: " << vm["verbose-images"].as<int>() << "\n";
-        }
+
     }
     catch(std::exception& e) {
         cout << e.what() << "\n";
         return 1;
     }
 
-	Loggers->getLogger("classification").addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
-	Loggers->getLogger("detection").addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
 
-	int numInputs = 0;
-	if(useFileList==true) {
-		numInputs++;
-	}
-	if(useImgs==true) {
-		numInputs++;
-	}
-	if(useDirectory==true) {
-		numInputs++;
-	}
-	if(numInputs!=1) {
-		cout << "[faceRecogTestApp] Error: Please either specify a file-list, an input-file or a directory (and only one of them) to run the program!" << endl;
-		return 1;
-	}
-
-	path fvsdkBins = "C:\\Users\\Patrik\\Documents\\GitHub\\FVSDK_bins\\";
+	path fvsdkBins = "C:\\Users\\Patrik\\Cloud\\PhD\\FVSDK_bins\\";
 	path firOutDir = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\FIRs\\";
 	path scoreOutDir = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\scores\\";
 	path galleryFirList = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath_firlist.lst";

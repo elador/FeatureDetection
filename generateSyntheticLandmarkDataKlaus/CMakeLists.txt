@@ -1,4 +1,4 @@
-SET( SUBPROJECT_NAME renderTestAppKlaus )	# my own variable, not cmake's
+SET( SUBPROJECT_NAME generateSyntheticLandmarkDataKlaus )	# my own variable, not cmake's
 PROJECT( ${SUBPROJECT_NAME} )
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
@@ -24,7 +24,7 @@ ENDIF()
 
 #Source and header files:
 SET(SOURCE
-	renderTestAppKlaus.cpp
+	generateSyntheticLandmarkDataKlaus.cpp
 )
 
 SET(HEADERS

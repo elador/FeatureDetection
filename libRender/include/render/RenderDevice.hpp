@@ -15,12 +15,14 @@
 #include "opencv2/core/core.hpp"
 
 #include <vector>
+#include <memory>
 
 using cv::Mat;
 using cv::Vec2f;
 using cv::Vec4f;
 using cv::Scalar;
 using std::vector;
+using std::shared_ptr;
 
 namespace render {
 
@@ -62,6 +64,9 @@ public:
 	Camera camera;
 	void updateViewTransform();
 	void updateProjectionTransform(bool perspective=true);
+
+	void draw(shared_ptr<Mesh> mesh, shared_ptr<Texture> texture);
+
 protected:
 	Mat colorBuffer;
 	Mat depthBuffer;
@@ -75,9 +80,39 @@ protected:
 	Mat projectionTransform;	// Orthogonal or projective transform
 	Mat windowTransform;	// Transform to window coordinates, 4 x 4 float
 
-
-
 	void setViewport(unsigned int screenWidth, unsigned int screenHeight);
+
+
+	// "old" rasterizing functions:
+	struct DrawCall	{
+		shared_ptr<Mesh> mesh; //std::vector<std::tuple<int, int, int>> triangleIndicesBuffer;
+		unsigned int trianglesNum;
+		cv::Mat transform;
+		shared_ptr<Texture> texture;
+	};
+	std::vector<DrawCall> drawCalls;
+	std::vector<TriangleToRasterize> trianglesToRasterize; // holds copies of all triangles from called triangles buffers that are to be rendered so the pipeline can work on them instead of on the original triangles
+
+	void runVertexProcessor();
+	Vertex runVertexShader(shared_ptr<Mesh> mesh, const cv::Mat& transform, const int vertexNum);
+	void processProspectiveTriangleToRasterize(const Vertex& _v0, const Vertex& _v1, const Vertex& _v2, shared_ptr<Texture> _texture);
+	std::vector<Vertex> clipPolygonToPlaneIn4D(const std::vector<Vertex>& vertices, const cv::Vec4f& planeNormal);
+
+	bool areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2);	// should better go to a RenderUtils class?
+	double implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2);	// ->utils ?
+
+	/* Pixel processing: */
+	void runPixelProcessor();
+
+	float dudx, dudy, dvdx, dvdy; // partial derivatives of U/V coordinates with respect to X/Y pixel's screen coordinates
+
+	cv::Vec3f runPixelShader(shared_ptr<Texture> texture, const cv::Vec3f& color, const cv::Vec2f& texCoord, bool useTexturing=true);
+	cv::Vec3f tex2D(shared_ptr<Texture> texture, const cv::Vec2f& texCoord);
+	cv::Vec3f tex2D_linear_mipmap_linear(shared_ptr<Texture> texture, const cv::Vec2f& texCoord);
+	cv::Vec3f tex2D_linear(shared_ptr<Texture> texture, const cv::Vec2f& imageTexCoord, unsigned char mipmapIndex);
+	cv::Vec2f texCoord_wrap(const cv::Vec2f& texCoord);
+	float clamp(float x, float a, float b);
+	// END "old" rasterizing functions
 
 	cv::Vec4f matToColVec4f(cv::Mat m) {
 		cv::Vec4f ret;

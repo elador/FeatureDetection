@@ -41,6 +41,7 @@ public:
 	cv::Mat matEigenvalsTex;
 
 	void drawNewVertexPositions();
+	void drawNewVertexPositions(cv::Mat coefficients);
 	void drawNewVertexColor();
 
 private:

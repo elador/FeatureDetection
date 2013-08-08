@@ -40,6 +40,14 @@ void Texture::createFromFile(const std::string& fileName, uchar mipmapsNum)
 	}
 
 	this->mipmapsNum = (mipmapsNum == 0 ? render::utils::MatrixUtils::getMaxPossibleMipmapsNum(image.cols, image.rows) : mipmapsNum);
+	/*if (mipmapsNum == 0)
+	{
+		uchar mmn = render::utils::MatrixUtils::getMaxPossibleMipmapsNum(image.cols, image.rows);
+		this->mipmapsNum = mmn;
+	} else
+	{
+		this->mipmapsNum = mipmapsNum;
+	}*/
 
 	if (this->mipmapsNum > 1)
 	{

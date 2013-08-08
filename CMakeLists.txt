@@ -25,6 +25,8 @@ add_subdirectory(libClassification)		# Classification and regression library
 
 add_subdirectory(libDetection)			# Sliding-window detection, Skin detection
 add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
+
+add_subdirectory(libRender)				# A software renderer to render vertices and 3D-meshes
 #add_subdirectory(libShapeModels)		# Head/face specific things; 2D/3D models; Combining feature points
 
 add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
@@ -34,15 +36,11 @@ add_subdirectory(headTrackingApp)		# Adaptive head tracking app.
 add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe).
 add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature point detection app.
 
-add_subdirectory(libRender)				# A tiny software renderer to render lists of 3D vertices
-add_subdirectory(libRenderold)			# A tiny software renderer to render lists of 3D vertices (old)
-add_subdirectory(renderTestApp)			# Test app for the old libRenderold
-add_subdirectory(render2TestAppGL)		# Test app for the new libRender
-add_subdirectory(renderTestAppKlaus)	# Test app for the new libRender and data for Klaus
-add_subdirectory(render3TestApp)		# Test app for the newest libRender
+add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
+add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
 
 #add_subdirectory(trackerAppERT)		# kind of deprecated, was only a test. But can use this to see how to make a real-time tracker.
 
 add_subdirectory(mergePlaygroundApp)	# Test-app for the refactored/merged code
 
-#add_subdirectory(faceRecogTestApp)		# App for doing face recognition tests with a gallery and probe images
+add_subdirectory(faceRecogTestApp)		# App for doing face recognition tests with a gallery and probe images
