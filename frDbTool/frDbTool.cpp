@@ -1,7 +1,7 @@
 /*
- * faceRecogTestApp.cpp
+ * frDbTool.cpp
  *
- *  Created on: 22.05.2013
+ *  Created on: 09.08.2013
  *      Author: Patrik Huber
  */
 
@@ -28,7 +28,7 @@
 #endif  // _DEBUG
 */
 
-#include "faceRecogTestApp.hpp"
+#include "frDbTool.hpp"
 
 #include "imageio/Landmark.hpp"
 #include "imageio/LandmarksHelper.hpp"
@@ -94,7 +94,13 @@ int main(int argc, char *argv[])
 	try {
         po::options_description desc("Allowed options");
         desc.add_options()
-            ("help,h", "produce help message")
+            ("help,h", "Produce help message.")
+			("create,c", "Create an empty database and generate the tables.") // dbfilename, 
+			("add-imgdb,a", "Add an image-database to the 'database' table.") // dbfilename, name, info
+			("import-images,i", "Import data from ... to the database.")
+			("import-scores,s", "Import data from ... to the database.")
+			("import-type-images,t", "The type of data to import. Currently implemented: -") // MPIE_FILELIST | ...
+			("import-type-scores,r", "The type of data to import. Currently implemented: -") // MPIE_SCORES | ...
         ;
 
         po::variables_map vm;
@@ -103,7 +109,7 @@ int main(int argc, char *argv[])
         po::notify(vm);
     
         if (vm.count("help")) {
-            cout << "[faceRecogTestApp] Usage: options_description [options]\n";
+            cout << "[frDbTool] Usage: frDbTool [options]\n";
             cout << desc;
             return 0;
         }
@@ -114,6 +120,112 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+	bool doCreate = false;
+	// create the database
+	if (doCreate) {
+		QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+		db.setDatabaseName("C:\\Users\\Patrik\\Cloud\\PhD\\data\\frdb.sqlite");
+		if (!db.open())	{
+			cout << db.lastError().text().toStdString() << endl;
+		}
+		QSqlQuery query;
+		bool ret;
+
+		ret = query.exec("CREATE TABLE databases ( \
+							name TEXT(25) NOT NULL, \
+							info CLOB, \
+							PRIMARY KEY (name) \
+						)");
+		if(!ret) {
+			cout << query.lastError().text().toStdString() << endl;
+		}
+
+		ret = query.exec("CREATE TABLE images ( \
+							 filepath CLOB NOT NULL, \
+							 subject TEXT(25) NOT NULL, \
+							 database TEXT(25) NOT NULL, \
+							 session TEXT(25), \
+							 roll REAL, \
+							 pitch REAL, \
+							 yaw REAL, \
+							 other CLOB, \
+							 PRIMARY KEY (filepath), \
+							 FOREIGN KEY (database) REFERENCES databases(name) \
+						)");
+		if(!ret) {
+			cout << query.lastError().text().toStdString() << endl;
+		}
+
+		ret = query.exec("CREATE TABLE scores ( \
+							probe TEXT(25) NOT NULL, \
+							gallery TEXT(25) NOT NULL, \
+							score REAL, \
+							algorithm TEXT(25), \
+							FOREIGN KEY (probe) REFERENCES images(filepath), \
+							FOREIGN KEY (gallery) REFERENCES images(filepath) \
+						)");
+		if(!ret) {
+			cout << query.lastError().text().toStdString() << endl;
+		}
+
+		db.close();
+		QSqlDatabase::removeDatabase("QSQLITE");
+	}
+
+	bool doAddImgDb = false;
+	// create the database
+	if (doAddImgDb) {
+		QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+		db.setDatabaseName("C:\\Users\\Patrik\\Cloud\\PhD\\data\\frdb.sqlite");
+		if (!db.open())	{
+			cout << db.lastError().text().toStdString() << endl;
+		}
+		QSqlQuery query;
+		bool ret;
+
+		ret = query.prepare("INSERT INTO databases (name, info) VALUES (:name, :info)");
+		if(!ret) {
+			cout << query.lastError().text().toStdString() << endl;
+		}
+		query.bindValue(":name", "multipie");
+		query.bindValue(":info", "The MultiPIE image database.");
+		ret = query.exec();
+		if(!ret) {
+			cout << query.lastError().text().toStdString() << endl;
+		}
+		db.close();
+		QSqlDatabase::removeDatabase("QSQLITE");
+	}
+
+	bool doImportImages = true;
+	if (doImportImages)	{
+		// if type = multipie_filelist...
+		shared_ptr<ImageSource> imageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath.lst");
+		//shared_ptr<ImageSource> imageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_probe_fullpath.lst");
+		while (imageSource->next()) {
+			vector<size_t> slashes;
+			size_t pos = imageSource->getName().string().find("/", 0);
+			while(pos != string::npos)
+			{
+				slashes.push_back(pos);
+				pos = imageSource->getName().string().find("/", pos+1);
+			}
+			size_t secondLastSlashPos = slashes[slashes.size()-2];
+			string imageFn = imageSource->getName().string().substr(secondLastSlashPos+1, string::npos);
+			string subject = imageSource->getName().stem().string().substr(0, 3);
+			string database = "multipie";
+			string session = "";
+			float roll;
+			float pitch;
+			float yaw;
+			string other;
+
+			
+			
+		}
+	}
+
+
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
 
 	path fvsdkBins = "C:\\Users\\Patrik\\Cloud\\PhD\\FVSDK_bins\\";
@@ -121,30 +233,8 @@ int main(int argc, char *argv[])
 	path scoreOutDir = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\scores\\";
 	path galleryFirList = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath_firlist.lst";
 
-	shared_ptr<ImageSource> galleryImageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath.lst");
-	shared_ptr<ImageSource> probeImageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_probe_fullpath.lst");
-
-	Mat img;
-	string cmd;
-	// create all FIR's of gallery
-	/*
-	while (galleryImageSource->next()) {
-		img = galleryImageSource->getImage();
-		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + galleryImageSource->getName().stem().string() + ".fir " + "-imgs " + galleryImageSource->getName().string();
-		int cmdRet = system(cmd.c_str());
-		cout << cmdRet;
-	}
-
-	// create all FIR's of probes
 	
-	while (probeImageSource->next()) {
-		img = probeImageSource->getImage();
-		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + probeImageSource->getName().stem().string() + ".fir " + "-imgs " + probeImageSource->getName().string();
-		int cmdRet = system(cmd.c_str());
-		cout << cmdRet;
-	}
-	*/
-
+	
 	// create the scores of each probe against the whole gallery
 	/*
 	while (probeImageSource->next()) {
@@ -165,6 +255,7 @@ int main(int argc, char *argv[])
 	// 
 
 	// Go through each probe image and calculate the statistics.
+	/*
 	int numProbes = 0;
 	int fte = 0;
 	int rank1Matches = 0;
@@ -217,7 +308,7 @@ int main(int argc, char *argv[])
 	}
 
 	cout << numProbes << ", " << fte << ", " << rank1Matches << ", " << noRank1Match << endl;
-
+	*/
 
 	// map flip
 	// unordered map, sortiert einfuegen (letztes element merken)
