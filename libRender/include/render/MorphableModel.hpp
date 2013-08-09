@@ -11,6 +11,8 @@
 
 #include "render/Mesh.hpp"
 
+#include <random>
+
 namespace render {
 
 /**
@@ -38,10 +40,12 @@ public:
 	cv::Mat matMeanTex;
 	cv::Mat matEigenvalsTex;
 
-	std::vector<Vertex> drawNewVertexPositions(Mesh mesh);
-	std::vector<Vertex> drawNewVertexColor(Mesh mesh);
+	void drawNewVertexPositions();
+	void drawNewVertexPositions(cv::Mat coefficients);
+	void drawNewVertexColor();
 
 private:
+	std::mt19937 engine; // Mersenne twister MT19937
 
 };
 

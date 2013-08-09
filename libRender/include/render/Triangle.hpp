@@ -9,10 +9,13 @@
 #ifndef TRIANGLE_HPP_
 #define TRIANGLE_HPP_
 
-#include <array>
-
 #include "render/Vertex.hpp"
 #include "render/Texture.hpp"
+
+#include <array>
+#include <memory>
+
+using std::shared_ptr;
 
 namespace render {
 
@@ -102,7 +105,7 @@ struct TriangleToRasterize
 	Vertex v0;
 	Vertex v1;
 	Vertex v2;
-	const Texture* texture;
+	shared_ptr<Texture> texture;
 	double one_over_z0;
 	double one_over_z1;
 	double one_over_z2;

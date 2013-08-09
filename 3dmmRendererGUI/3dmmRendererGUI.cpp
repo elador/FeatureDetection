@@ -19,31 +19,25 @@
 #include "render/RenderDevice.hpp"
 #include "render/Camera.hpp"
 
-#include "imageio/LandmarkCollection.hpp"
-#include "imageio/ModelLandmark.hpp"
-#include "imageio/DidLandmarkFormatParser.hpp"
-
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
+
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
 #include "boost/program_options.hpp"
+#include "boost/lexical_cast.hpp"
 
 #include <iostream>
 #include <fstream>
-#include <random>
-#include <functional>
 
 namespace po = boost::program_options;
 using namespace std;
 using namespace cv;
-using namespace imageio;
 using namespace render;
 using boost::lexical_cast;
-
 
 template<class T>
 ostream& operator<<(ostream& os, const vector<T>& v)
@@ -52,8 +46,13 @@ ostream& operator<<(ostream& os, const vector<T>& v)
 	return os;
 }
 
+static string controlWindowName = "Controls";
+static std::array<float, 55> pcVals;
+static std::array<int, 55> pcValsInt;
 
-static string windowName = "test";
+static render::MorphableModel mm;
+
+static string windowName = "RenderOutput";
 static float horizontalAngle = 0.0f;
 static float verticalAngle = 0.0f;
 static int lastX = 0;
@@ -91,6 +90,18 @@ static void winOnMouse(int event, int x, int y, int, void* userdata)
 
 }
 
+static void controlWinOnMouse(int test, void* userdata)
+{
+	for (int i = 0; i < pcValsInt.size(); ++i) {
+		pcVals[i] = 0.1f * static_cast<float>(pcValsInt[i]) - 5.0f;
+	}
+	Mat coefficients = Mat::zeros(55, 1, CV_64FC1);
+	for (int row=0; row < coefficients.rows; ++row) {
+		coefficients.at<double>(row, 0) = pcVals[row];
+	}
+	mm.drawNewVertexPositions(coefficients);
+}
+
 int main(int argc, char *argv[])
 {
 	#ifdef WIN32
@@ -119,7 +130,7 @@ int main(int argc, char *argv[])
 		}
 		if (vm.count("input-file"))
 		{
-			cout << "[renderTestApp] Using input images: " << vm["input-file"].as< vector<string> >() << "\n";
+			cout << "[renderTestApp] Using input images: " << vm["input-file"].as<vector<string>>() << "\n";
 			filename = vm["input-file"].as<string>();
 		}
 	}
@@ -127,12 +138,14 @@ int main(int argc, char *argv[])
 		cout << e.what() << "\n";
 		return 1;
 	}
-
-	//render::Mesh morphableModel = render::utils::MeshUtils::readFromHdf5("D:\\model2012_l6_rms.h5");
-	render::MorphableModel morphableModel = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
+	
+	//render::MorphableModel mmHeadL4 = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
 	render::Mesh cube = render::utils::MeshUtils::createCube();
 	render::Mesh pyramid = render::utils::MeshUtils::createPyramid();
 	render::Mesh plane = render::utils::MeshUtils::createPlane();
+	shared_ptr<render::Mesh> tri = render::utils::MeshUtils::createTriangle();
+	
+	mm = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
 
 	int screenWidth = 640;
 	int screenHeight = 480;
@@ -146,32 +159,15 @@ int main(int argc, char *argv[])
 	namedWindow(windowName, WINDOW_AUTOSIZE);
 	setMouseCallback(windowName, winOnMouse);
 
-	vector<int> vertexIds;
-	vertexIds.push_back(177); // left-eye-left - right.eye.corner_outer
-	vertexIds.push_back(181); // left-eye-right - right.eye.corner_inner
-	vertexIds.push_back(614); // right-eye-left - left.eye.corner_inner
-	vertexIds.push_back(610); // right-eye-right - left.eye.corner_outer
-	vertexIds.push_back(398); // mouth-left - right.lips.corner
-	vertexIds.push_back(812); // mouth-right - left.lips.corner
-	vertexIds.push_back(11140); // bridge of the nose - 
-	vertexIds.push_back(114); // nose-tip - center.nose.tip
-	vertexIds.push_back(270); // nasal septum - 
-	vertexIds.push_back(3284); // left-alare - right nose ...
-	vertexIds.push_back(572); // right-alare - left nose ...
+	namedWindow(controlWindowName, WINDOW_NORMAL);
+	for (auto& val : pcValsInt)	{
+		val = 50;
+	}
+	for (unsigned int i = 0; i < pcVals.size(); ++i) {
+		createTrackbar("PC" + lexical_cast<string>(i) + ": " + lexical_cast<string>(pcVals[i]), controlWindowName, &pcValsInt[i], 100, controlWinOnMouse);
+	}
+	
 
-	ofstream outputFile;
-	outputFile.open("C:/Users/Patrik/Cloud/data_3dmm_landmarks_mean_batch1_p.txt");
-	outputFile << "pose_rndvtx_x " << "pose_rndvtx_y " << "frontal_rndvtx_x " << "frontal_rndvtx_y " << "pose_lel_x " << "pose_lel_y " << "pose_ler_x " << "pose_ler_y " << "pose_rel_x " << "pose_rel_y " << "pose_rer_x " << "pose_rer_y " << "pose_ml_x " << "pose_ml_y " << "pose_mr_x " << "pose_mr_y " << "pose_bn_x " << "pose_bn_y " << "pose_nt_x " << "pose_nt_y " << "pose_ns_x " << "pose_ns_y " << "pose_la_x " << "pose_la_y " << "pose_ra_x " << "pose_ra_y " << "yaw " << "pitch " << "roll" << std::endl;
-	
-	
-	std::uniform_int_distribution<int> distribution(0, morphableModel.mesh.vertex.size()-1);
-	std::mt19937 engine; // Mersenne twister MT19937
-	//std::random_device rd;
-	//engine.seed(rd());
-	engine.seed();
-	auto randInt = std::bind(distribution, engine);
-	
-	float xAngle = 0.0f;
 	bool running = true;
 	while (running) {
 		int key = waitKey(30);
@@ -231,13 +227,10 @@ int main(int argc, char *argv[])
 		if (key == 'c') {
 			freeCamera = !freeCamera;
 		}
-
 		if (key == 'n') {
-			xAngle -= 1.0f;
+			mm.drawNewVertexPositions();
 		}
-		if (key == 'm') {
-			xAngle += 1.0f;
-		}
+		
 		r.resetBuffers();
 
 		r.camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
@@ -251,7 +244,6 @@ int main(int argc, char *argv[])
 		r.updateViewTransform();
 		r.updateProjectionTransform(perspective);
 
-		r.setWorldTransform(render::utils::MatrixUtils::createScalingMatrix(1.0f, 1.0f, 1.0f));
 		Vec4f origin(0.0f, 0.0f, 0.0f, 1.0f);
 		Vec4f xAxis(1.0f, 0.0f, 0.0f, 1.0f);
 		Vec4f yAxis(0.0f, 1.0f, 0.0f, 1.0f);
@@ -261,7 +253,7 @@ int main(int argc, char *argv[])
 		r.renderLine(origin, yAxis, Scalar(0.0f, 255.0f, 0.0f));
 		r.renderLine(origin, zAxis, Scalar(255.0f, 0.0f, 0.0f));
 		r.renderLine(origin, mzAxis, Scalar(0.0f, 255.0f, 255.0f));
-
+		/*
 		for (const auto& tIdx : cube.tvi) {
 			Vertex v0 = cube.vertex[tIdx[0]];
 			Vertex v1 = cube.vertex[tIdx[1]];
@@ -271,64 +263,29 @@ int main(int argc, char *argv[])
 			r.renderLine(v2.position, v0.position, Scalar(0.0f, 0.0f, 255.0f));
 		}
 
-		for (int angle = -30; angle <= 30; ++angle) {
-			for (int sampleNumPerDegree = 0; sampleNumPerDegree < 200; ++sampleNumPerDegree) {
-				r.resetBuffers();
-				int randomVertex = randInt();
-				vector<shared_ptr<Landmark>> pointsToWrite;
-				
-				// 1) Render the randomVertex frontal
-				Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
-				Mat rot = Mat::eye(4, 4, CV_32FC1);
-				Mat modelMatrix = rot * modelScaling;
-				r.setWorldTransform(modelMatrix);
-				Vec2f res = r.projectVertex(morphableModel.mesh.vertex[randomVertex].position);
-				string name = "randomVertexFrontal";
-				pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
-				
-				// 2) Render the randomVertex in pose angle
-				rot = render::utils::MatrixUtils::createRotationMatrixX(angle * (CV_PI/180.0f));
-				modelMatrix = rot * modelScaling;
-				r.setWorldTransform(modelMatrix);
-				res = r.projectVertex(morphableModel.mesh.vertex[randomVertex].position);
-				name = "randomVertexPose";
-				pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
-
-				// 3) Render all LMs in pose angle
-				for (const auto& vid : vertexIds) {
-					rot = render::utils::MatrixUtils::createRotationMatrixX(angle * (CV_PI/180.0f));
-					modelMatrix = rot * modelScaling;
-					r.setWorldTransform(modelMatrix);
-					res = r.projectVertex(morphableModel.mesh.vertex[vid].position);
-					//r.renderLM(morphableModel.mesh.vertex[vid].position, Scalar(255.0f, 0.0f, 0.0f));
-					name = DidLandmarkFormatParser::didToTlmsName(vid);
-					pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
-				}
-
-				Mat screen = r.getImage();
-				// 4) Write one row to the file
-				for (const auto& lm : pointsToWrite) {
-					lm->draw(screen);
-					outputFile << lm->getX() << " " << lm->getY() << " ";
-				}
-				int yaw = 0;
-				int pitch = angle;
-				int roll = 0;
-				outputFile << yaw << " " << pitch << " " << roll << std::endl;
-				
-			
-
-			}
-		}
-
-		outputFile.close();
+		// Test-vertex for rasterizing:
+		Vertex v0 = cube.vertex[0];
+		Vertex v1 = cube.vertex[1];
+		Vertex v2 = cube.vertex[2];
+		r.renderLine(v0.position, v1.position, Scalar(255.0f, 0.0f, 0.0f));
+		r.renderLine(v1.position, v2.position, Scalar(255.0f, 0.0f, 0.0f));
+		r.renderLine(v2.position, v0.position, Scalar(255.0f, 0.0f, 0.0f));
+		*/
+		//r.draw(tri, tri->texture);
+		
+		shared_ptr<Mesh> mmMesh = std::make_shared<Mesh>(mm.mesh);
+		Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
+		Mat rot = Mat::eye(4, 4, CV_32FC1);
+		Mat modelMatrix = rot * modelScaling;
+		r.setWorldTransform(modelMatrix);
+		r.draw(mmMesh, nullptr);
+		
+		r.setWorldTransform(Mat::eye(4, 4, CV_32FC1));
+		// End test
+		
+		//r.renderLine(Vec4f(1.5f, 0.0f, 0.5f, 1.0f), Vec4f(-1.5f, 0.0f, 0.5f, 1.0f), Scalar(0.0f, 0.0f, 255.0f));
 
 		Mat screen = r.getImage();
-		/*
-		for (const auto& lm : lms) {
-			lm->draw(screen);
-		}*/
-
 		putText(screen, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		putText(screen, "horA: " + lexical_cast<string>(horizontalAngle) + ", verA: " + lexical_cast<string>(verticalAngle), Point(10, 38), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		putText(screen, "moving: " + lexical_cast<string>(moving), Point(10, 56), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
@@ -336,29 +293,9 @@ int main(int argc, char *argv[])
 		putText(screen, "eye: " + lexical_cast<string>(r.camera.eye[0]) + ", " + lexical_cast<string>(r.camera.eye[1]) + ", " + lexical_cast<string>(r.camera.eye[2]), Point(10, 92), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		imshow(windowName, screen);
 
+		// n and f have no influence at the moment because I do no clipping?
 	}
-
-	/*
-	for (int angle = -45; angle <= 45; ++angle) {
-		vector<shared_ptr<Landmark>> lms;
-
-		for (const auto& vid : vertexIds) {
-			r.renderDevice->setWorldTransform(render::utils::MatrixUtils::createRotationMatrixX(angle * (CV_PI/180.0f)));
-			Vec2f res = r.renderDevice->renderVertex(morphableModel.mesh.vertex[vid].position);
-			string name = DidLandmarkFormatParser::didToTlmsName(vid);
-			shared_ptr<Landmark> lm = make_shared<ModelLandmark>(name, res);
-			lms.push_back(lm);
-		}
-
-		Mat img = cv::Mat::zeros(480, 640, CV_8UC3);
-		for (const auto& lm : lms) {
-			lm->draw(img);
-		}
-	}*/
-
-
-
+	
 	return 0;
 }
 
-// TODO: All those vec3 * mat4 cases... Do I have to add the homogeneous coordinate and make it vec4 * mat4, instead of how I'm doing it now? Difference?

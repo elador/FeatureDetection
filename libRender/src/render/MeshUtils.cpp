@@ -17,7 +17,7 @@
 namespace render {
 	namespace utils {
 
-Mesh MeshUtils::createCube(void)
+Mesh MeshUtils::createCube()
 {
 	Mesh cube;
 	cube.vertex.resize(24);
@@ -118,13 +118,14 @@ Mesh MeshUtils::createCube(void)
 	cube.triangleList.push_back(render::Triangle(cube.vertex[20], cube.vertex[21], cube.vertex[22]));
 	cube.triangleList.push_back(render::Triangle(cube.vertex[20], cube.vertex[22], cube.vertex[23]));*/
 
-	cube.texture.createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\up.png");
+	cube.texture = std::make_shared<Texture>();
+	cube.texture->createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\up.png");
 	cube.hasTexture = true;
 
 	return cube;
 }
 
-Mesh MeshUtils::createPlane(void)
+Mesh MeshUtils::createPlane()
 {
 	Mesh plane;
 	plane.vertex.resize(4);
@@ -157,13 +158,14 @@ Mesh MeshUtils::createPlane(void)
 	//plane.triangleList.push_back(render::Triangle(plane.vertex[0], plane.vertex[1], plane.vertex[2]));
 	//plane.triangleList.push_back(render::Triangle(plane.vertex[0], plane.vertex[2], plane.vertex[3]));
 
-	plane.texture.createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\rocks.png");
+	plane.texture = std::make_shared<Texture>();
+	plane.texture->createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\rocks.png");
 	plane.hasTexture = true;
 
 	return plane;
 }
 
-Mesh MeshUtils::createPyramid(void)
+Mesh MeshUtils::createPyramid()
 {
 	Mesh pyramid;
 	pyramid.vertex.resize(4);
@@ -194,6 +196,36 @@ Mesh MeshUtils::createPyramid(void)
 	pyramid.hasTexture = false;
 
 	return pyramid;
+}
+
+shared_ptr<Mesh> MeshUtils::createTriangle()
+{
+	shared_ptr<Mesh> triangle = std::make_shared<Mesh>();
+	triangle->vertex.resize(3);
+
+	triangle->vertex[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
+	triangle->vertex[0].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
+	triangle->vertex[0].texcrd = cv::Vec2f(0.0f, 0.0f);
+	
+	triangle->vertex[1].position = cv::Vec4f(-0.5f, -0.5f, 0.5f, 1.0f);
+	triangle->vertex[1].color = cv::Vec3f(0.0f, 1.0f, 0.0f);
+	triangle->vertex[1].texcrd = cv::Vec2f(0.0f, 1.0f);
+	
+	triangle->vertex[2].position = cv::Vec4f(0.5f, -0.5f, 0.5f, 1.0f);
+	triangle->vertex[2].color = cv::Vec3f(0.0f, 0.0f, 1.0f);
+	triangle->vertex[2].texcrd = cv::Vec2f(1.0f, 1.0f);
+	
+
+	// the efficiency of this might be improvable...
+	std::array<int, 3> vi;
+	vi[0] = 0; vi[1] = 1; vi[2] = 2;
+	triangle->tvi.push_back(vi);
+	
+	triangle->texture = std::make_shared<Texture>();
+	triangle->texture->createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\up.png");
+	triangle->hasTexture = false;
+
+	return triangle;
 }
 
 Mesh MeshUtils::readFromHdf5(std::string filename)
@@ -438,7 +470,7 @@ MorphableModel MeshUtils::readFromScm(std::string filename)
 		modelFile.read(reinterpret_cast<char*>(&vd1), 8);
 		modelFile.read(reinterpret_cast<char*>(&vd2), 8);
 		//meanVerticesTex.push_back(var);
-		mesh.vertex[i].color = cv::Vec3f(vd2, vd1, vd0);	// order in hdf5: RGB. Order in OCV/vertex.color: BGR
+		mesh.vertex[i].color = cv::Vec3f(vd0, vd1, vd2);	// order in hdf5: RGB. Order in OCV: BGR. But order in vertex.color: RGB
 
 		mm.matMeanTex.at<double>(matCounter, 0) = vd0;
 		++matCounter;

@@ -20,7 +20,7 @@ class Vertex
 {
 public:
 	Vertex(void);
-	Vertex::Vertex(const cv::Vec4f& position, const cv::Vec3f& color, const cv::Vec2f& texCoord);
+	Vertex(const cv::Vec4f& position, const cv::Vec3f& color, const cv::Vec2f& texCoord);
 	~Vertex(void);
 
 	cv::Vec4f position;	// g: f3Vec
