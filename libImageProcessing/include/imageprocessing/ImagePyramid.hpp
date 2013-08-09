@@ -24,7 +24,7 @@ namespace imageprocessing {
 class VersionedImage;
 class ImagePyramidLayer;
 class ImageFilter;
-class MultipleImageFilter;
+class ChainedFilter;
 
 /**
  * Image pyramid consisting of scaled representations of an image.
@@ -191,8 +191,8 @@ private:
 	shared_ptr<ImagePyramid> sourcePyramid; ///< The source pyramid.
 	int version;                            ///< The version number.
 
-	shared_ptr<MultipleImageFilter> imageFilter; ///< Filter that is applied to the image before down-scaling.
-	shared_ptr<MultipleImageFilter> layerFilter; ///< Filter that is applied to the down-scaled images of the layers.
+	shared_ptr<ChainedFilter> imageFilter; ///< Filter that is applied to the image before down-scaling.
+	shared_ptr<ChainedFilter> layerFilter; ///< Filter that is applied to the down-scaled images of the layers.
 };
 
 } /* namespace imageprocessing */

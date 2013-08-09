@@ -19,7 +19,7 @@ using std::vector;
 namespace imageprocessing {
 
 class ImageFilter;
-class MultipleImageFilter;
+class ChainedFilter;
 
 /**
  * Pyramid based feature extractor that directly operates on an image pyramid to extract patches of a constant size.
@@ -232,7 +232,7 @@ private:
 	shared_ptr<ImagePyramid> pyramid; ///< The image pyramid.
 	int patchWidth;  ///< The width of the image data of the extracted patches.
 	int patchHeight; ///< The height of the image data of the extracted patches.
-	shared_ptr<MultipleImageFilter> patchFilter; ///< Filter that is applied to the patches.
+	shared_ptr<ChainedFilter> patchFilter; ///< Filter that is applied to the patches.
 };
 
 } /* namespace imageprocessing */

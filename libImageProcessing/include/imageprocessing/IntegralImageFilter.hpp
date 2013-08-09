@@ -36,8 +36,6 @@ public:
 
 	Mat applyTo(const Mat& image, Mat& filtered) const;
 
-	void applyInPlace(Mat& image) const;
-
 private:
 
 	int type; ///< The type (depth) of the filtered images. If negative, the type is chosen automatically.

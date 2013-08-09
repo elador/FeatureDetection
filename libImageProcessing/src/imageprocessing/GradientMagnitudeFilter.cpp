@@ -42,8 +42,4 @@ Mat GradientMagnitudeFilter::applyTo(const Mat& image, Mat& filtered) const {
 	return filtered;
 }
 
-void GradientMagnitudeFilter::applyInPlace(Mat& image) const {
-	image = applyTo(image);
-}
-
 } /* namespace imageprocessing */

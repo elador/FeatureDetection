@@ -35,8 +35,6 @@ public:
 
 	Mat applyTo(const Mat& image, Mat& filtered) const;
 
-	void applyInPlace(Mat& image) const;
-
 private:
 
 	int normType; ///< The norm type (see cv::norm).

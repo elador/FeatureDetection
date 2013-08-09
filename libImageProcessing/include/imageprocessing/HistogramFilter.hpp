@@ -33,7 +33,7 @@ public:
 
 	virtual ~HistogramFilter();
 
-	void applyInPlace(Mat& image) const;
+	virtual Mat applyTo(const Mat& image, Mat& filtered) const = 0;
 
 protected:
 
@@ -43,6 +43,10 @@ protected:
 	 * @param[in,out] histogram The histogram that should be normalized.
 	 */
 	void normalize(Mat& histogram) const;
+
+	static const float eps; ///< The small value being added to the norms to prevent divisions by zero.
+
+	Normalization normalization; ///< The normalization method of the histograms.
 
 private:
 
@@ -74,10 +78,6 @@ private:
 	 * @param[in,out] histogram The histogram that should be normalized.
 	 */
 	void normalizeL1Sqrt(Mat& histogram) const;
-
-	static const float eps; ///< The small value being added to the norms to prevent divisions by zero.
-
-	Normalization normalization; ///< The normalization method of the histograms.
 };
 
 } /* namespace imageprocessing */

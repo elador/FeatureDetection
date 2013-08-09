@@ -7,7 +7,7 @@
 
 #include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
 #include "imageprocessing/Patch.hpp"
-#include "imageprocessing/MultipleImageFilter.hpp"
+#include "imageprocessing/ChainedFilter.hpp"
 #include "boost/iterator/indirect_iterator.hpp"
 
 using cv::Point;
@@ -17,11 +17,11 @@ using std::make_shared;
 namespace imageprocessing {
 
 DirectPyramidFeatureExtractor::DirectPyramidFeatureExtractor(shared_ptr<ImagePyramid> pyramid, int width, int height) :
-		pyramid(pyramid), patchWidth(width), patchHeight(height), patchFilter(make_shared<MultipleImageFilter>()) {}
+		pyramid(pyramid), patchWidth(width), patchHeight(height), patchFilter(make_shared<ChainedFilter>()) {}
 
 DirectPyramidFeatureExtractor::DirectPyramidFeatureExtractor(int width, int height, int minWidth, int maxWidth, double incrementalScaleFactor) :
 		pyramid(make_shared<ImagePyramid>(static_cast<double>(width) / maxWidth, static_cast<double>(width) / minWidth, incrementalScaleFactor)),
-		patchWidth(width), patchHeight(height), patchFilter(make_shared<MultipleImageFilter>()) {}
+		patchWidth(width), patchHeight(height), patchFilter(make_shared<ChainedFilter>()) {}
 
 DirectPyramidFeatureExtractor::~DirectPyramidFeatureExtractor() {}
 

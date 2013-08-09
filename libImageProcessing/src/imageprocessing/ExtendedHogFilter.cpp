@@ -38,10 +38,6 @@ ExtendedHogFilter::ExtendedHogFilter(unsigned int bins, int cellWidth, int cellH
 
 ExtendedHogFilter::~ExtendedHogFilter() {}
 
-void ExtendedHogFilter::applyInPlace(Mat& image) const {
-	image = applyTo(image);
-}
-
 Mat ExtendedHogFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.channels() != 2 && image.channels() != 4)
 		throw runtime_error("ExtendedHogExtractor: image must have two or four channels");

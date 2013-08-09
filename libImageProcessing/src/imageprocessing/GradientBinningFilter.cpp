@@ -77,8 +77,4 @@ Mat GradientBinningFilter::applyTo(const Mat& image, Mat& filtered) const {
 	return filtered;
 }
 
-void GradientBinningFilter::applyInPlace(Mat& image) const {
-	image = applyTo(image);
-}
-
 } /* namespace imageprocessing */

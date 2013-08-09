@@ -9,7 +9,7 @@
 #define FILTERINGPYRAMIDFEATUREEXTRACTOR_HPP_
 
 #include "imageprocessing/PyramidFeatureExtractor.hpp"
-#include "imageprocessing/MultipleImageFilter.hpp"
+#include "imageprocessing/ChainedFilter.hpp"
 #include "imageprocessing/Patch.hpp"
 #include "boost/iterator/indirect_iterator.hpp"
 
@@ -30,7 +30,7 @@ public:
 	 * @param[in] extractor The underlying pyramid feature extractor.
 	 */
 	FilteringPyramidFeatureExtractor(shared_ptr<PyramidFeatureExtractor> extractor) :
-		extractor(extractor), patchFilter(make_shared<MultipleImageFilter>()) {}
+		extractor(extractor), patchFilter(make_shared<ChainedFilter>()) {}
 
 	~FilteringPyramidFeatureExtractor() {}
 
@@ -107,7 +107,7 @@ public:
 private:
 
 	shared_ptr<PyramidFeatureExtractor> extractor; ///< The underlying feature extractor.
-	shared_ptr<MultipleImageFilter> patchFilter;   ///< Filter that is applied to the patches.
+	shared_ptr<ChainedFilter> patchFilter;         ///< Filter that is applied to the patches.
 };
 
 } /* namespace imageprocessing */

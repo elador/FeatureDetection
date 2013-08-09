@@ -16,7 +16,7 @@ using std::make_shared;
 namespace imageprocessing {
 
 class ImageFilter;
-class MultipleImageFilter;
+class ChainedFilter;
 class VersionedImage;
 
 /**
@@ -56,8 +56,8 @@ private:
 
 	int version; ///< The version number.
 	Mat image;   ///< The filtered image.
-	shared_ptr<MultipleImageFilter> imageFilter; ///< Filter that is applied to the image.
-	shared_ptr<MultipleImageFilter> patchFilter; ///< Filter that is applied to the patches.
+	shared_ptr<ChainedFilter> imageFilter; ///< Filter that is applied to the image.
+	shared_ptr<ChainedFilter> patchFilter; ///< Filter that is applied to the patches.
 };
 
 } /* namespace imageprocessing */

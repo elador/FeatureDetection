@@ -53,7 +53,9 @@ public:
 	 *
 	 * @param[in,out] image The image that should be filtered.
 	 */
-	virtual void applyInPlace(Mat& image) const = 0;
+	virtual void applyInPlace(Mat& image) const {
+		image = applyTo(image);
+	}
 };
 
 } /* namespace imageprocessing */

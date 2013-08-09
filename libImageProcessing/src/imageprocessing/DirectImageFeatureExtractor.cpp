@@ -7,7 +7,7 @@
 
 #include "imageprocessing/DirectImageFeatureExtractor.hpp"
 #include "imageprocessing/ImageFilter.hpp"
-#include "imageprocessing/MultipleImageFilter.hpp"
+#include "imageprocessing/ChainedFilter.hpp"
 #include "imageprocessing/VersionedImage.hpp"
 #include "imageprocessing/Patch.hpp"
 
@@ -18,8 +18,8 @@ namespace imageprocessing {
 DirectImageFeatureExtractor::DirectImageFeatureExtractor() :
 		version(-1),
 		image(),
-		imageFilter(make_shared<MultipleImageFilter>()),
-		patchFilter(make_shared<MultipleImageFilter>()) {}
+		imageFilter(make_shared<ChainedFilter>()),
+		patchFilter(make_shared<ChainedFilter>()) {}
 
 DirectImageFeatureExtractor::~DirectImageFeatureExtractor() {}
 

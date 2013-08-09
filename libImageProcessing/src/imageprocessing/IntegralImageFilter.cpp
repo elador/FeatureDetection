@@ -19,8 +19,4 @@ Mat IntegralImageFilter::applyTo(const Mat& image, Mat& filtered) const {
 	return filtered;
 }
 
-void IntegralImageFilter::applyInPlace(Mat& image) const {
-	image = applyTo(image);
-}
-
 } /* namespace imageprocessing */

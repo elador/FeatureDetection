@@ -29,8 +29,6 @@ public:
 
 	Mat applyTo(const Mat& image, Mat& filtered) const;
 
-	void applyInPlace(Mat& image) const;
-
 private:
 
 	/**

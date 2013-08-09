@@ -18,6 +18,10 @@ SET(HEADERS
 	include/imageprocessing/BinningFilter.hpp
 	include/imageprocessing/CachingFeatureExtractor.hpp
 	include/imageprocessing/CachingPyramidFeatureExtractor.hpp
+	include/imageprocessing/ChainedFilter.hpp
+	include/imageprocessing/ColorBinningFilter.hpp
+	include/imageprocessing/ColorChannelFilter.hpp
+	include/imageprocessing/ColorSpaceConversionFilter.hpp
 	include/imageprocessing/ConversionFilter.hpp
 	include/imageprocessing/DirectImageFeatureExtractor.hpp
 	include/imageprocessing/DirectPyramidFeatureExtractor.hpp
@@ -27,6 +31,7 @@ SET(HEADERS
 	include/imageprocessing/FilteringPyramidFeatureExtractor.hpp
 	include/imageprocessing/GammaCorrectionFilter.hpp
 	include/imageprocessing/GradientBinningFilter.hpp
+	include/imageprocessing/GradientChannelFilter.hpp
 	include/imageprocessing/GradientFilter.hpp
 	include/imageprocessing/GradientMagnitudeFilter.hpp
 	include/imageprocessing/GrayscaleFilter.hpp
@@ -38,9 +43,12 @@ SET(HEADERS
 	include/imageprocessing/ImageFilter.hpp
 	include/imageprocessing/ImagePyramid.hpp
 	include/imageprocessing/ImagePyramidLayer.hpp
+	include/imageprocessing/IntegralChannelFeatureFilter.hpp
+	include/imageprocessing/IntegralChannelHistogramFilter.hpp
+	include/imageprocessing/IntegralFeatureExtractor.hpp
 	include/imageprocessing/IntegralImageFilter.hpp
 	include/imageprocessing/LbpFilter.hpp
-	include/imageprocessing/MultipleImageFilter.hpp
+	include/imageprocessing/ParallelFilter.hpp
 	include/imageprocessing/Patch.hpp
 	include/imageprocessing/PatchResizingFeatureExtractor.hpp
 	include/imageprocessing/PyramidFeatureExtractor.hpp
@@ -56,12 +64,17 @@ SET(HEADERS
 SET(SOURCE
 	src/imageprocessing/CachingFeatureExtractor.cpp
 	src/imageprocessing/CachingPyramidFeatureExtractor.cpp
+	src/imageprocessing/ChainedFilter.cpp
+	src/imageprocessing/ColorBinningFilter.cpp
+	src/imageprocessing/ColorChannelFilter.cpp
+	src/imageprocessing/ColorSpaceConversionFilter.cpp
 	src/imageprocessing/ConversionFilter.cpp
 	src/imageprocessing/DirectImageFeatureExtractor.cpp
 	src/imageprocessing/DirectPyramidFeatureExtractor.cpp
 	src/imageprocessing/ExtendedHogFilter.cpp
 	src/imageprocessing/GammaCorrectionFilter.cpp
 	src/imageprocessing/GradientBinningFilter.cpp
+	src/imageprocessing/GradientChannelFilter.cpp
 	src/imageprocessing/GradientFilter.cpp
 	src/imageprocessing/GradientMagnitudeFilter.cpp
 	src/imageprocessing/GrayscaleFilter.cpp
@@ -72,9 +85,11 @@ SET(SOURCE
 	src/imageprocessing/HistogramFilter.cpp
 	src/imageprocessing/ImagePyramid.cpp
 	src/imageprocessing/ImagePyramidLayer.cpp
+	src/imageprocessing/IntegralChannelFeatureFilter.cpp
+	src/imageprocessing/IntegralChannelHistogramFilter.cpp
 	src/imageprocessing/IntegralImageFilter.cpp
 	src/imageprocessing/LbpFilter.cpp
-	src/imageprocessing/MultipleImageFilter.cpp
+	src/imageprocessing/ParallelFilter.cpp
 	src/imageprocessing/ReshapingFilter.cpp
 	src/imageprocessing/ResizingFilter.cpp
 	src/imageprocessing/SpatialHistogramFilter.cpp

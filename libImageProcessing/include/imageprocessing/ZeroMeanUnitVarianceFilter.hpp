@@ -30,8 +30,6 @@ public:
 	using ImageFilter::applyTo;
 
 	Mat applyTo(const Mat& image, Mat& filtered) const;
-
-	void applyInPlace(Mat& image) const;
 };
 
 } /* namespace imageprocessing */

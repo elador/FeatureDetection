@@ -20,8 +20,4 @@ Mat ResizingFilter::applyTo(const Mat& image, Mat& filtered) const {
 	return filtered;
 }
 
-void ResizingFilter::applyInPlace(Mat& image) const {
-	image = applyTo(image);
-}
-
 } /* namespace imageprocessing */

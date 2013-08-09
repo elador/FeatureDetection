@@ -35,8 +35,6 @@ public:
 
 	Mat applyTo(const Mat& image, Mat& filtered) const;
 
-	void applyInPlace(Mat& image) const;
-
 private:
 
 	Size size;         ///< The size of the filtered images.

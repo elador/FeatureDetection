@@ -139,10 +139,10 @@ Mat HaarFeatureFilter::applyTo(const Mat& image, Mat& filtered) const {
 		throw invalid_argument("HaarFeatureFilter: the image must be of type CV_32SC1");
 	filtered.create(1, features.size(), CV_32F);
 	float* data = filtered.ptr<float>(0);
-	for (int i = 0; i < features.size(); ++i) {
+	for (unsigned int i = 0; i < features.size(); ++i) {
 		float value = 0;
 		const HaarFeature& feature = features[i];
-		for (int j = 0; j < feature.rects.size(); ++j) {
+		for (unsigned int j = 0; j < feature.rects.size(); ++j) {
 			const Rect_<float>& rect = feature.rects[j];
 			int x1 = cvRound(rect.x * image.cols);
 			int x2 = cvRound((rect.x + rect.width) * image.cols);
@@ -154,10 +154,6 @@ Mat HaarFeatureFilter::applyTo(const Mat& image, Mat& filtered) const {
 		data[i] = value / (feature.factor * feature.area * image.cols * image.rows);
 	}
 	return filtered;
-}
-
-void HaarFeatureFilter::applyInPlace(Mat& image) const {
-	image = applyTo(image);
 }
 
 } /* namespace imageprocessing */

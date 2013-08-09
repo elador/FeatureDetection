@@ -29,7 +29,7 @@ public:
 	/**
 	 * Constructs a new gradient histogram filter.
 	 *
-	 * @param[in] bins The amount of bins to use.
+	 * @param[in] bins The amount of bins.
 	 * @param[in] signedGradients Flag that indicates whether signed gradients (direction from 0° to 360°) should be used.
 	 */
 	explicit GradientBinningFilter(unsigned int bins, bool signedGradients = false);
@@ -40,14 +40,12 @@ public:
 
 	Mat applyTo(const Mat& image, Mat& filtered) const;
 
-	void applyInPlace(Mat& image) const;
-
 	unsigned int getBinCount() const;
 
 private:
 
 	unsigned int bins;                ///< The amount of bins.
-	array<Vec4b, 256 * 256> binCodes; ///< The look-up tables of the bin codes, the gradient codes are used as the index.
+	array<Vec4b, 256 * 256> binCodes; ///< The look-up table of the bin codes, the gradient codes are used as the index.
 };
 
 } /* namespace imageprocessing */

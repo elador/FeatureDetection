@@ -9,7 +9,7 @@
 #define FILTERINGFEATUREEXTRACTOR_HPP_
 
 #include "imageprocessing/FeatureExtractor.hpp"
-#include "imageprocessing/MultipleImageFilter.hpp"
+#include "imageprocessing/ChainedFilter.hpp"
 #include "imageprocessing/Patch.hpp"
 
 using std::make_shared;
@@ -28,7 +28,7 @@ public:
 	 * @param[in] extractor The underlying feature extractor.
 	 */
 	explicit FilteringFeatureExtractor(shared_ptr<FeatureExtractor> extractor) :
-			extractor(extractor), patchFilter(make_shared<MultipleImageFilter>()) {}
+			extractor(extractor), patchFilter(make_shared<ChainedFilter>()) {}
 
 	~FilteringFeatureExtractor() {}
 
@@ -58,8 +58,8 @@ public:
 
 private:
 
-	shared_ptr<FeatureExtractor> extractor;      ///< The underlying feature extractor.
-	shared_ptr<MultipleImageFilter> patchFilter; ///< Filter that is applied to the patches.
+	shared_ptr<FeatureExtractor> extractor; ///< The underlying feature extractor.
+	shared_ptr<ChainedFilter> patchFilter;  ///< Filter that is applied to the patches.
 };
 
 } /* namespace imageprocessing */

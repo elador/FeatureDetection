@@ -13,10 +13,6 @@ HistogramFilter::HistogramFilter(Normalization normalization) : normalization(no
 
 HistogramFilter::~HistogramFilter() {}
 
-void HistogramFilter::applyInPlace(Mat& image) const {
-	image = applyTo(image);
-}
-
 void HistogramFilter::normalize(Mat& histogram) const {
 	switch (normalization) {
 		case Normalization::L2NORM: normalizeL2(histogram); break;

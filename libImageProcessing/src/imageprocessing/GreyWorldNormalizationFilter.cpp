@@ -28,8 +28,8 @@ Mat GreyWorldNormalizationFilter::applyTo(const Mat& image, Mat& filtered) const
 		cols *= rows;
 		rows = 1;
 	}
-	double blueSum, greenSum, redSum;
-	uchar blueMax, greenMax, redMax;
+	double blueSum = 0, greenSum = 0, redSum = 0;
+	uchar blueMax = 0, greenMax = 0, redMax = 0;
 	for (int row = 0; row < rows; ++row) {
 		const Vec3b* originalRow = image.ptr<Vec3b>(0);
 		for (int col = 0; col < cols; ++col) {

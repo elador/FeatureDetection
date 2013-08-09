@@ -8,7 +8,7 @@
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/ImagePyramidLayer.hpp"
 #include "imageprocessing/VersionedImage.hpp"
-#include "imageprocessing/MultipleImageFilter.hpp"
+#include "imageprocessing/ChainedFilter.hpp"
 #include "logging/LoggerFactory.hpp"
 #include "logging/Logger.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -38,7 +38,7 @@ static T createException(const string& file, int line, const string& message) {
 ImagePyramid::ImagePyramid(double minScaleFactor, double maxScaleFactor, double incrementalScaleFactor) :
 		minScaleFactor(minScaleFactor), maxScaleFactor(maxScaleFactor), incrementalScaleFactor(incrementalScaleFactor),
 		firstLayer(0), layers(), sourceImage(), sourcePyramid(), version(-1),
-		imageFilter(make_shared<MultipleImageFilter>()), layerFilter(make_shared<MultipleImageFilter>()) {
+		imageFilter(make_shared<ChainedFilter>()), layerFilter(make_shared<ChainedFilter>()) {
 	if (incrementalScaleFactor <= 0 || incrementalScaleFactor >= 1)
 		throw createException<invalid_argument>(__FILE__, __LINE__, "the incremental scale factor must be greater than zero and smaller than one");
 	if (maxScaleFactor > 1)
@@ -48,7 +48,7 @@ ImagePyramid::ImagePyramid(double minScaleFactor, double maxScaleFactor, double 
 ImagePyramid::ImagePyramid(shared_ptr<ImagePyramid> pyramid, double minScaleFactor, double maxScaleFactor) :
 		minScaleFactor(minScaleFactor), maxScaleFactor(maxScaleFactor), incrementalScaleFactor(pyramid->incrementalScaleFactor),
 		firstLayer(0), layers(), sourceImage(), sourcePyramid(pyramid), version(-1),
-		imageFilter(make_shared<MultipleImageFilter>()), layerFilter(make_shared<MultipleImageFilter>()) {}
+		imageFilter(make_shared<ChainedFilter>()), layerFilter(make_shared<ChainedFilter>()) {}
 
 ImagePyramid::~ImagePyramid() {}
 
