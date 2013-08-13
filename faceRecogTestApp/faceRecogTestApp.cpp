@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 	path scoreOutDir = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\scores\\";
 	path galleryFirList = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath_firlist.lst";
 
-	shared_ptr<ImageSource> galleryImageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath.lst");
+	shared_ptr<FileListImageSource> galleryImageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath.lst");
 	shared_ptr<ImageSource> probeImageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_probe_fullpath.lst");
 
 	Mat img;
@@ -162,9 +162,33 @@ int main(int argc, char *argv[])
 	}
 	*/
 
+	// Go through each probe and change the "FTE"-files to contain all 0.0's with "FTE"-flag
+	
+	while (probeImageSource->next()) {
+		path probeFirFilepath = path(firOutDir.string() + probeImageSource->getName().stem().string() + ".fir ");
+		if (boost::filesystem::exists(probeFirFilepath)) { // We were able to enroll a probe, so there is a FIR, go and match it against gallery
+			//cmd = fvsdkBins.string() + "match.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-probe " + probeFirFilepath.string() + "-gallery " + galleryFirList.string() + " -out " + scoreOutDir.string() + probeImageSource->getName().stem().string() + ".txt";
+			//int cmdRet = system(cmd.c_str());
+		} else { // We were not able to enroll the probe - create an empty .txt with content "fte".
+			string scoreOutPath = scoreOutDir.string() + probeImageSource->getName().stem().string() + ".txt";
+			ofstream scoresFile;
+			scoresFile.open(scoreOutPath);
+
+			while (galleryImageSource->next()) {
+				string galleryFilename = galleryImageSource->getName().stem().string();
+				scoresFile << galleryFilename+".fir" << " " << "0.0" << " " << "FTE" << endl; // Should not contain .fir but the canonical image name
+			}
+			galleryImageSource->reset();
+			scoresFile.close();
+			
+		}
+	}
+	
+
 	// 
 
 	// Go through each probe image and calculate the statistics.
+	/*
 	int numProbes = 0;
 	int fte = 0;
 	int rank1Matches = 0;
@@ -215,10 +239,8 @@ int main(int argc, char *argv[])
 		
 		
 	}
-
 	cout << numProbes << ", " << fte << ", " << rank1Matches << ", " << noRank1Match << endl;
-
-
+	*/
 	// map flip
 	// unordered map, sortiert einfuegen (letztes element merken)
 	// min/max_element
