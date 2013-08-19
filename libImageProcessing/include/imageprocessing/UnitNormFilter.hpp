@@ -35,8 +35,18 @@ public:
 
 	Mat applyTo(const Mat& image, Mat& filtered) const;
 
+	void applyInPlace(Mat& image) const;
+
 private:
 
+	/**
+	 * Normalizes the given image of type CV_32FC1.
+	 *
+	 * @param[in,out] image The image that will be normalized. Has to be of type CV_32FC1.
+	 */
+	void normalize(Mat& image) const;
+
+	static const float eps; ///< Small value being added to the norm to prevent division by zero.
 	int normType; ///< The norm type (see cv::norm).
 };
 

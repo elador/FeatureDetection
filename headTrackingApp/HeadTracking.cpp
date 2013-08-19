@@ -34,11 +34,14 @@
 #include "imageprocessing/SpatialHistogramFilter.hpp"
 #include "imageprocessing/SpatialPyramidHistogramFilter.hpp"
 #include "imageprocessing/ExtendedHogFilter.hpp"
+#include "imageprocessing/IntegralGradientFilter.hpp"
+#include "imageprocessing/GradientSumFilter.hpp"
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/DirectImageFeatureExtractor.hpp"
 #include "imageprocessing/FilteringFeatureExtractor.hpp"
 #include "imageprocessing/FilteringPyramidFeatureExtractor.hpp"
 #include "imageprocessing/PatchResizingFeatureExtractor.hpp"
+#include "imageprocessing/IntegralFeatureExtractor.hpp"
 #include "classification/ProbabilisticWvmClassifier.hpp"
 #include "classification/ProbabilisticSvmClassifier.hpp"
 #include "classification/RbfKernel.hpp"
@@ -136,10 +139,10 @@ shared_ptr<FeatureExtractor> HeadTracking::createFeatureExtractor(
 	} else if (config.get_value<string>() == "whi") {
 		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(
 				config.get_child("pyramid"), pyramid, true);
-		featureExtractor->addImageFilter(make_shared<WhiteningFilter>());
+		featureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
 		featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
 		featureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0));
-		featureExtractor->addPatchFilter(make_shared<UnitNormFilter>());
+		featureExtractor->addPatchFilter(make_shared<UnitNormFilter>(cv::NORM_L2));
 		return wrapFeatureExtractor(featureExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "haar") {
 		vector<float> sizes;
@@ -179,6 +182,22 @@ shared_ptr<FeatureExtractor> HeadTracking::createFeatureExtractor(
 		featureExtractor->addLayerFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
 		featureExtractor->addPatchFilter(createHistogramFilter(config.get<int>("bins"), config.get_child("histogram")));
 		return wrapFeatureExtractor(featureExtractor, scaleFactor);
+	} else if (config.get_value<string>() == "ihog") {
+		shared_ptr<DirectImageFeatureExtractor> featureExtractor = make_shared<DirectImageFeatureExtractor>();
+		featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+		featureExtractor->addImageFilter(make_shared<IntegralImageFilter>());
+		featureExtractor->addPatchFilter(make_shared<IntegralGradientFilter>(config.get<int>("gradientCount")));
+		featureExtractor->addPatchFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
+		featureExtractor->addPatchFilter(createHistogramFilter(config.get<int>("bins"), config.get_child("histogram")));
+		return wrapFeatureExtractor(make_shared<IntegralFeatureExtractor>(featureExtractor), scaleFactor);
+	} else if (config.get_value<string>() == "surf") {
+		shared_ptr<DirectImageFeatureExtractor> featureExtractor = make_shared<DirectImageFeatureExtractor>();
+		featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+		featureExtractor->addImageFilter(make_shared<IntegralImageFilter>());
+		featureExtractor->addPatchFilter(make_shared<IntegralGradientFilter>(config.get<int>("gradientCount")));
+		featureExtractor->addPatchFilter(make_shared<GradientSumFilter>(config.get<int>("cellCount")));
+		featureExtractor->addPatchFilter(make_shared<UnitNormFilter>(cv::NORM_L2));
+		return wrapFeatureExtractor(make_shared<IntegralFeatureExtractor>(featureExtractor), scaleFactor);
 	} else if (config.get_value<string>() == "ehog") {
 		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(
 				config.get_child("pyramid"), pyramid, true);
@@ -204,7 +223,7 @@ shared_ptr<FeatureExtractor> HeadTracking::createFeatureExtractor(
 		featureExtractor->addPatchFilter(createHistogramFilter(lbpFilter->getBinCount(), config.get_child("histogram")));
 		return wrapFeatureExtractor(featureExtractor, scaleFactor);
 	} else {
-		throw invalid_argument("HeadTracking: invalid feature type: " + config.get<string>("feature"));
+		throw invalid_argument("HeadTracking: invalid feature type: " + config.get_value<string>());
 	}
 }
 
