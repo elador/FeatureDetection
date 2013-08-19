@@ -26,8 +26,8 @@ void HistogramFilter::normalize(Mat& histogram) const {
 const float HistogramFilter::eps = 1e-4;
 
 void HistogramFilter::normalizeL2(Mat& histogram) const {
-	float normSquared = cv::norm(histogram, cv::NORM_L2SQR);
-	histogram = histogram / sqrt(normSquared + eps * eps);
+	float norm = cv::norm(histogram, cv::NORM_L2);
+	histogram = histogram / (norm + eps);
 }
 
 void HistogramFilter::normalizeL2Hys(Mat& histogram) const {

@@ -34,6 +34,7 @@ SET(HEADERS
 	include/imageprocessing/GradientChannelFilter.hpp
 	include/imageprocessing/GradientFilter.hpp
 	include/imageprocessing/GradientMagnitudeFilter.hpp
+	include/imageprocessing/GradientSumFilter.hpp
 	include/imageprocessing/GrayscaleFilter.hpp
 	include/imageprocessing/GreyWorldNormalizationFilter.hpp
 	include/imageprocessing/HaarFeatureFilter.hpp
@@ -46,6 +47,7 @@ SET(HEADERS
 	include/imageprocessing/IntegralChannelFeatureFilter.hpp
 	include/imageprocessing/IntegralChannelHistogramFilter.hpp
 	include/imageprocessing/IntegralFeatureExtractor.hpp
+	include/imageprocessing/IntegralGradientFilter.hpp
 	include/imageprocessing/IntegralImageFilter.hpp
 	include/imageprocessing/LbpFilter.hpp
 	include/imageprocessing/ParallelFilter.hpp
@@ -77,6 +79,7 @@ SET(SOURCE
 	src/imageprocessing/GradientChannelFilter.cpp
 	src/imageprocessing/GradientFilter.cpp
 	src/imageprocessing/GradientMagnitudeFilter.cpp
+	src/imageprocessing/GradientSumFilter.cpp
 	src/imageprocessing/GrayscaleFilter.cpp
 	src/imageprocessing/GreyWorldNormalizationFilter.cpp
 	src/imageprocessing/HaarFeatureFilter.cpp
@@ -87,6 +90,7 @@ SET(SOURCE
 	src/imageprocessing/ImagePyramidLayer.cpp
 	src/imageprocessing/IntegralChannelFeatureFilter.cpp
 	src/imageprocessing/IntegralChannelHistogramFilter.cpp
+	src/imageprocessing/IntegralGradientFilter.cpp
 	src/imageprocessing/IntegralImageFilter.cpp
 	src/imageprocessing/LbpFilter.cpp
 	src/imageprocessing/ParallelFilter.cpp

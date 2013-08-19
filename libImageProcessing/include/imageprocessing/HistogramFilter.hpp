@@ -44,7 +44,7 @@ protected:
 	 */
 	void normalize(Mat& histogram) const;
 
-	static const float eps; ///< The small value being added to the norms to prevent divisions by zero.
+	static const float eps; ///< The small value being added to the norm to prevent division by zero.
 
 	Normalization normalization; ///< The normalization method of the histograms.
 
