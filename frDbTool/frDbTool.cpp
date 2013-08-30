@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 		if(!ret) {
 			cout << query.lastError().text().toStdString() << endl;
 		}
-
+		// rename filepath to canonicalName (and all FK-refs)
 		ret = query.exec("CREATE TABLE images ( \
 							 filepath CLOB NOT NULL, \
 							 subject TEXT(25) NOT NULL, \
