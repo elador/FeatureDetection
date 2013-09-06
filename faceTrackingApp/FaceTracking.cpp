@@ -23,10 +23,13 @@
 #include "imageprocessing/ZeroMeanUnitVarianceFilter.hpp"
 #include "imageprocessing/ReshapingFilter.hpp"
 #include "imageprocessing/ConversionFilter.hpp"
+#include "imageprocessing/UnitNormFilter.hpp"
 #include "classification/WvmClassifier.hpp"
 #include "classification/SvmClassifier.hpp"
+#include "classification/RvmClassifier.hpp"
 #include "classification/ProbabilisticWvmClassifier.hpp"
 #include "classification/ProbabilisticSvmClassifier.hpp"
+#include "classification/ProbabilisticRvmClassifier.hpp"
 #include "condensation/ResamplingSampler.hpp"
 #include "condensation/GridSampler.hpp"
 #include "condensation/LowVarianceSampling.hpp"
@@ -78,11 +81,25 @@ void FaceTracking::initTracking() {
 	shared_ptr<ProbabilisticSvmClassifier> svm = ProbabilisticSvmClassifier::loadFromMatlab(svmConfigFile1, svmConfigFile2);
 	measurementModel = make_shared<WvmSvmModel>(featureExtractor, wvm, svm);
 
+//	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(19, 19, 40, 480, 0.9);
+//	featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+//	featureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
+//	featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
+//	featureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0));
+//	featureExtractor->addPatchFilter(make_shared<UnitNormFilter>(cv::NORM_L2));
+//	string classifierFile = "/home/poschmann/projects/ffd/head1919_rvm_whi/head1919_rvm_r1_c1.mat";
+//	string thresholdsFile = "/home/poschmann/projects/ffd/head1919_rvm_whi/head1919_rvm_r1_c1--head1919_ts_thres_0.5.mat";
+//	shared_ptr<RvmClassifier> rvm = RvmClassifier::loadFromMatlab(classifierFile, thresholdsFile);
+//	pair<double, double> logisticParams = ProbabilisticRvmClassifier::loadSigmoidParamsFromMatlab(thresholdsFile);
+//	shared_ptr<ProbabilisticClassifier> probRvm = make_shared<ProbabilisticRvmClassifier>(rvm, logisticParams.first, logisticParams.second);
+//	measurementModel = make_shared<SingleClassifierModel>(featureExtractor, probRvm);
+
 //	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(31, 31, 80, 480, 0.85);
 //	featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 //	featureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
 //	featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
-//	featureExtractor->addPatchFilter(make_shared<ZeroMeanUnitVarianceFilter>());
+//	featureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0));
+//	featureExtractor->addPatchFilter(make_shared<UnitNormFilter>(cv::NORM_L2));
 //	featureExtractor->addPatchFilter(make_shared<ReshapingFilter>(1));
 //	string svmConfigFile = "/home/poschmann/projects/ffd/whi-head-svm/discGrayscaleWhi";
 //	shared_ptr<ProbabilisticSvmClassifier> svm = make_shared<ProbabilisticSvmClassifier>(SvmClassifier::loadText(svmConfigFile));

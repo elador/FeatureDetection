@@ -41,6 +41,7 @@ SET(HEADERS
 	include/imageprocessing/HistEq64Filter.hpp
 	include/imageprocessing/HistogramEqualizationFilter.hpp
 	include/imageprocessing/HistogramFilter.hpp
+	include/imageprocessing/HogFilter.hpp
 	include/imageprocessing/ImageFilter.hpp
 	include/imageprocessing/ImagePyramid.hpp
 	include/imageprocessing/ImagePyramidLayer.hpp
@@ -54,6 +55,7 @@ SET(HEADERS
 	include/imageprocessing/Patch.hpp
 	include/imageprocessing/PatchResizingFeatureExtractor.hpp
 	include/imageprocessing/PyramidFeatureExtractor.hpp
+	include/imageprocessing/PyramidHogFilter.hpp
 	include/imageprocessing/ReshapingFilter.hpp
 	include/imageprocessing/ResizingFilter.hpp
 	include/imageprocessing/SpatialHistogramFilter.hpp
@@ -86,6 +88,7 @@ SET(SOURCE
 	src/imageprocessing/HistEq64Filter.cpp
 	src/imageprocessing/HistogramEqualizationFilter.cpp
 	src/imageprocessing/HistogramFilter.cpp
+	src/imageprocessing/HogFilter.cpp
 	src/imageprocessing/ImagePyramid.cpp
 	src/imageprocessing/ImagePyramidLayer.cpp
 	src/imageprocessing/IntegralChannelFeatureFilter.cpp
@@ -94,6 +97,7 @@ SET(SOURCE
 	src/imageprocessing/IntegralImageFilter.cpp
 	src/imageprocessing/LbpFilter.cpp
 	src/imageprocessing/ParallelFilter.cpp
+	src/imageprocessing/PyramidHogFilter.cpp
 	src/imageprocessing/ReshapingFilter.cpp
 	src/imageprocessing/ResizingFilter.cpp
 	src/imageprocessing/SpatialHistogramFilter.cpp
