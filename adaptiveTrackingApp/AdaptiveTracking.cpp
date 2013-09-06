@@ -33,6 +33,8 @@
 #include "imageprocessing/GradientBinningFilter.hpp"
 #include "imageprocessing/SpatialHistogramFilter.hpp"
 #include "imageprocessing/SpatialPyramidHistogramFilter.hpp"
+#include "imageprocessing/HogFilter.hpp"
+#include "imageprocessing/PyramidHogFilter.hpp"
 #include "imageprocessing/ExtendedHogFilter.hpp"
 #include "imageprocessing/IntegralGradientFilter.hpp"
 #include "imageprocessing/GradientSumFilter.hpp"
@@ -170,7 +172,7 @@ shared_ptr<FeatureExtractor> AdaptiveTracking::createFeatureExtractor(
 		pyramidExtractor = createPyramidExtractor(config.get_child("pyramid"), pyramid, true);
 		pyramidExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
 		pyramidExtractor->addLayerFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
-		pyramidExtractor->addPatchFilter(createHistogramFilter(config.get<int>("bins"), config.get_child("histogram")));
+		pyramidExtractor->addPatchFilter(createHogFilter(config.get<int>("bins"), config.get_child("histogram")));
 		return wrapFeatureExtractor(pyramidExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "ihog") {
 		shared_ptr<DirectImageFeatureExtractor> featureExtractor = make_shared<DirectImageFeatureExtractor>();
@@ -178,8 +180,25 @@ shared_ptr<FeatureExtractor> AdaptiveTracking::createFeatureExtractor(
 		featureExtractor->addImageFilter(make_shared<IntegralImageFilter>());
 		featureExtractor->addPatchFilter(make_shared<IntegralGradientFilter>(config.get<int>("gradientCount")));
 		featureExtractor->addPatchFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
-		featureExtractor->addPatchFilter(createHistogramFilter(config.get<int>("bins"), config.get_child("histogram")));
+		featureExtractor->addPatchFilter(createHogFilter(config.get<int>("bins"), config.get_child("histogram")));
 		return wrapFeatureExtractor(make_shared<IntegralFeatureExtractor>(featureExtractor), scaleFactor);
+	} else if (config.get_value<string>() == "ehog") {
+		pyramidExtractor = createPyramidExtractor(
+				config.get_child("pyramid"), pyramid, true);
+		pyramidExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
+		pyramidExtractor->addLayerFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
+		pyramidExtractor->addPatchFilter(make_shared<ExtendedHogFilter>(config.get<int>("bins"), config.get<int>("histogram.cellSize"),
+				config.get<bool>("histogram.interpolate"), config.get<bool>("histogram.signedAndUnsigned"), config.get<float>("histogram.alpha")));
+		return wrapFeatureExtractor(pyramidExtractor, scaleFactor);
+	} else if (config.get_value<string>() == "iehog") {
+		shared_ptr<DirectImageFeatureExtractor> featureExtractor = make_shared<DirectImageFeatureExtractor>();
+		featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+		featureExtractor->addImageFilter(make_shared<IntegralImageFilter>());
+		featureExtractor->addPatchFilter(make_shared<IntegralGradientFilter>(config.get<int>("gradientCount")));
+		featureExtractor->addPatchFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
+		featureExtractor->addPatchFilter(make_shared<ExtendedHogFilter>(config.get<int>("bins"), config.get<int>("histogram.cellSize"),
+				config.get<bool>("histogram.interpolate"), config.get<bool>("histogram.signedAndUnsigned"), config.get<float>("histogram.alpha")));
+		return wrapFeatureExtractor(featureExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "surf") {
 		shared_ptr<DirectImageFeatureExtractor> featureExtractor = make_shared<DirectImageFeatureExtractor>();
 		featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
@@ -188,14 +207,6 @@ shared_ptr<FeatureExtractor> AdaptiveTracking::createFeatureExtractor(
 		featureExtractor->addPatchFilter(make_shared<GradientSumFilter>(config.get<int>("cellCount")));
 		featureExtractor->addPatchFilter(make_shared<UnitNormFilter>(cv::NORM_L2));
 		return wrapFeatureExtractor(make_shared<IntegralFeatureExtractor>(featureExtractor), scaleFactor);
-	} else if (config.get_value<string>() == "ehog") {
-		pyramidExtractor = createPyramidExtractor(
-				config.get_child("pyramid"), pyramid, true);
-		pyramidExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
-		pyramidExtractor->addLayerFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
-		pyramidExtractor->addPatchFilter(make_shared<ExtendedHogFilter>(config.get<int>("bins"), config.get<int>("histogram.cellSize"),
-				config.get<bool>("histogram.interpolation"), config.get<bool>("histogram.signedAndUnsigned"), config.get<float>("histogram.alpha")));
-		return wrapFeatureExtractor(pyramidExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "lbp") {
 		pyramidExtractor = createPyramidExtractor(config.get_child("pyramid"), pyramid, true);
 		shared_ptr<LbpFilter> lbpFilter = createLbpFilter(config.get<string>("type"));
@@ -212,6 +223,20 @@ shared_ptr<FeatureExtractor> AdaptiveTracking::createFeatureExtractor(
 		return wrapFeatureExtractor(pyramidExtractor, scaleFactor);
 	} else {
 		throw invalid_argument("AdaptiveTracking: invalid feature type: " + config.get_value<string>());
+	}
+}
+
+shared_ptr<ImageFilter> AdaptiveTracking::createHogFilter(int bins, ptree& config) {
+	if (config.get_value<string>() == "spatial") {
+		if (config.get<int>("blockSize") == 1 && !config.get<bool>("signedAndUnsigned"))
+			return createHistogramFilter(bins, config);
+		else
+			return make_shared<HogFilter>(bins, config.get<int>("cellSize"), config.get<int>("blockSize"),
+					config.get<bool>("interpolate"), config.get<bool>("signedAndUnsigned"));
+	} else if (config.get_value<string>() == "pyramid") {
+		return make_shared<PyramidHogFilter>(bins, config.get<int>("levels"), config.get<bool>("interpolate"), config.get<bool>("signedAndUnsigned"));
+	} else {
+		throw invalid_argument("AdaptiveTracking: invalid histogram type: " + config.get_value<string>());
 	}
 }
 
@@ -246,9 +271,9 @@ shared_ptr<HistogramFilter> AdaptiveTracking::createHistogramFilter(unsigned int
 		throw invalid_argument("AdaptiveTracking: invalid normalization method: " + config.get<string>("normalization"));
 	if (config.get_value<string>() == "spatial")
 		return make_shared<SpatialHistogramFilter>(bins, config.get<int>("cellSize"), config.get<int>("blockSize"),
-				config.get<bool>("interpolation"), config.get<bool>("combine"), normalization);
+				config.get<bool>("interpolate"), config.get<bool>("combine"), normalization);
 	else 	if (config.get_value<string>() == "pyramid")
-		return make_shared<SpatialPyramidHistogramFilter>(bins, config.get<int>("level"), normalization);
+		return make_shared<SpatialPyramidHistogramFilter>(bins, config.get<int>("levels"), config.get<bool>("interpolate"), normalization);
 	else
 		throw invalid_argument("AdaptiveTracking: invalid histogram type: " + config.get_value<string>());
 }
@@ -687,20 +712,21 @@ void AdaptiveTracking::run() {
 					frame.copyTo(image);
 					if (!imageSource->getLandmarks().isEmpty()) {
 						const Landmark& landmark = imageSource->getLandmarks().getLandmark();
-						Rect position = landmark.getRect();
-						if (tries == 0 && pyramidExtractor) {
-							double dimension = pyramidExtractor->getPatchWidth() * pyramidExtractor->getPatchHeight();
-							float aspectRatio = landmark.getHeight() / landmark.getWidth();
-							double patchWidth = sqrt(dimension / aspectRatio);
-							double patchHeight = aspectRatio * patchWidth;
-							pyramidExtractor->setPatchSize(cvRound(patchWidth), cvRound(patchHeight));
-							log.info("Initialized patch size at " + lexical_cast<string>(pyramidExtractor->getPatchWidth())
-									+ " x " + lexical_cast<string>(pyramidExtractor->getPatchHeight()));
+						if (landmark.isVisible()) {
+							if (tries == 0 && pyramidExtractor) {
+								double dimension = pyramidExtractor->getPatchWidth() * pyramidExtractor->getPatchHeight();
+								float aspectRatio = landmark.getHeight() / landmark.getWidth();
+								double patchWidth = sqrt(dimension / aspectRatio);
+								double patchHeight = aspectRatio * patchWidth;
+								pyramidExtractor->setPatchSize(cvRound(patchWidth), cvRound(patchHeight));
+								log.info("Initialized patch size at " + lexical_cast<string>(pyramidExtractor->getPatchWidth())
+										+ " x " + lexical_cast<string>(pyramidExtractor->getPatchHeight()));
+							}
+							tries++;
+							adaptiveUsable = adaptiveTracker->initialize(frame, landmark.getRect());
+							if (adaptiveUsable)
+								log.info("Initialized adaptive tracking after " + lexical_cast<string>(tries) + " tries");
 						}
-						tries++;
-						adaptiveUsable = adaptiveTracker->initialize(frame, position);
-						if (adaptiveUsable)
-							log.info("Initialized adaptive tracking after " + lexical_cast<string>(tries) + " tries");
 					}
 					drawGroundTruth(image, imageSource->getLandmarks());
 					imshow(videoWindowName, image);

@@ -8,7 +8,7 @@
 #ifndef EXTENDEDHOGFILTER_HPP_
 #define EXTENDEDHOGFILTER_HPP_
 
-#include "imageprocessing/ImageFilter.hpp"
+#include "imageprocessing/HistogramFilter.hpp"
 #include <vector>
 
 using std::vector;
@@ -16,8 +16,11 @@ using std::vector;
 namespace imageprocessing {
 
 /**
- * Filter that builds exteded HOG feature vectors. The extended HOG features were described in [1]. HOG descriptors are
- * computed for the inner cells only, so the cells at the border are only used for computing the gradient energies.
+ * Filter that builds extended HOG feature vectors. The extended HOG features were described in [1]. But instead of
+ * computing the HOG descriptors for the inner cells only, we compute the descriptors for the border cells, too. The
+ * necessary gradient energies, that would have computed from cells outside of the image, are taken from the nearest
+ * cells within the image - so the gradient energies of the border cells are repeated for the imaginary cells right
+ * outside the image.
  *
  * The input is an image with depth CV_8U containing bin information (bin indices and optionally weights). It must have
  * one, two or four channels. In case of one channel, it just contains the bin index. The second channel adds a weight
@@ -26,7 +29,7 @@ namespace imageprocessing {
  *
  * [1] Felzenszwalb et al., Object Detection with Discriminatively Trained Part-Based Models, PAMI, 2010.
  */
-class ExtendedHogFilter : public ImageFilter {
+class ExtendedHogFilter : public HistogramFilter {
 public:
 
 	/**
@@ -34,11 +37,11 @@ public:
 	 *
 	 * @param[in] bins The amount of bins inside the histogram.
 	 * @param[in] cellSize The preferred width and height of the cells in pixels (actual size might deviate).
-	 * @param[in] interpolation Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
+	 * @param[in] interpolate Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
 	 * @param[in] signedAndUnsigned Flag that indicates whether signed and unsigned gradients should be used.
 	 * @param[in] alpha Truncation threshold of the orientation bin values (applied after normalization).
 	 */
-	ExtendedHogFilter(unsigned int bins, int cellSize, bool interpolation, bool signedAndUnsigned, float alpha = 0.2);
+	ExtendedHogFilter(int bins, int cellSize, bool interpolate, bool signedAndUnsigned, float alpha = 0.2);
 
 	/**
 	 * Constructs a new extended HOG filter.
@@ -46,11 +49,11 @@ public:
 	 * @param[in] bins The amount of bins inside the histogram.
 	 * @param[in] cellWidth The preferred width of the cells in pixels (actual width might deviate).
 	 * @param[in] cellHeight The preferred height of the cells in pixels (actual height might deviate).
-	 * @param[in] interpolation Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
+	 * @param[in] interpolate Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
 	 * @param[in] signedAndUnsigned Flag that indicates whether signed and unsigned gradients should be used.
 	 * @param[in] alpha Truncation threshold of the orientation bin values (applied after normalization).
 	 */
-	ExtendedHogFilter(unsigned int bins, int cellWidth, int cellHeight, bool interpolation, bool signedAndUnsigned, float alpha = 0.2);
+	ExtendedHogFilter(int bins, int cellWidth, int cellHeight, bool interpolate, bool signedAndUnsigned, float alpha = 0.2);
 
 	~ExtendedHogFilter();
 
@@ -61,31 +64,25 @@ public:
 private:
 
 	/**
-	 * Entry of the cache for the linear interpolation.
-	 */
-	struct CacheEntry {
-		int index;    ///< First index (second one is index + 1).
-		float weight; ///< Weight of the second index (weight of first index is 1 - weight).
-	};
-
-	/**
-	 * Creates the cache contents if the size of the cache does not match the requested size.
+	 * Creates cell descriptors based on a grid of cell histograms.
 	 *
-	 * @param[in] cache The cache.
-	 * @param[in] size The necessary size of the cache.
-	 * @param[in] count The number of cells.
+	 * @param[in] histograms Row vector containing the histogram values of the cells in row-major order.
+	 * @param[out] descriptors Row vector containing the descriptors of the cells in row-major order.
+	 * @param[in] bins Bin count of the histograms.
+	 * @param[in] signedAndUnsigned Flag that indicates whether signed and unsigned gradients should be used.
+	 * @param[in] cellRows Row count of the cell grid.
+	 * @param[in] cellCols Column count of the cell grid.
+	 * @param[in] alpha Truncation threshold of the orientation bin values (applied after normalization).
 	 */
-	void createCache(vector<CacheEntry>& cache, unsigned int size, int count) const;
+	void createDescriptors(const Mat& histograms, Mat& descriptors,
+			int bins, bool signedAndUnsigned, int cellRows, int cellCols, float alpha) const;
 
-	unsigned int bins; ///< The amount of bins inside the histogram.
-	int cellWidth;     ///< The preferred width of the cells in pixels (actual width might deviate).
-	int cellHeight;    ///< The preferred height of the cells in pixels (actual height might deviate).
-	bool interpolation;     ///< Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
+	int binCount;   ///< The amount of bins inside the histogram.
+	int cellWidth;  ///< The preferred width of the cells in pixels (actual width might deviate).
+	int cellHeight; ///< The preferred height of the cells in pixels (actual height might deviate).
+	bool interpolate;       ///< Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
 	bool signedAndUnsigned; ///< Flag that indicates whether signed and unsigned gradients should be used.
 	float alpha; ///< Truncation threshold of the orientation bin values (applied after normalization).
-	mutable vector<CacheEntry> rowCache; ///< Cache for the linear interpolation of the row indices.
-	mutable vector<CacheEntry> colCache; ///< Cache for the linear interpolation of the column indices.
-	static const float eps; ///< The small value being added to the norms to prevent divisions by zero.
 };
 
 } /* namespace imageprocessing */

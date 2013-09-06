@@ -76,6 +76,7 @@ private:
 	shared_ptr<DirectPyramidFeatureExtractor> createPyramidExtractor(
 			ptree& config, shared_ptr<ImagePyramid> pyramid, bool needsLayerFilters);
 	shared_ptr<FeatureExtractor> createFeatureExtractor(shared_ptr<ImagePyramid> pyramid, ptree& config);
+	shared_ptr<ImageFilter> createHogFilter(int bins, ptree& config);
 	shared_ptr<LbpFilter> createLbpFilter(string lbpType);
 	shared_ptr<HistogramFilter> createHistogramFilter(unsigned int bins, ptree& config);
 	shared_ptr<FeatureExtractor> wrapFeatureExtractor(shared_ptr<FeatureExtractor> featureExtractor, float scaleFactor);

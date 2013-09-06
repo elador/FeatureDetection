@@ -33,6 +33,8 @@
 #include "imageprocessing/UnitNormFilter.hpp"
 #include "imageprocessing/SpatialHistogramFilter.hpp"
 #include "imageprocessing/SpatialPyramidHistogramFilter.hpp"
+#include "imageprocessing/HogFilter.hpp"
+#include "imageprocessing/PyramidHogFilter.hpp"
 #include "imageprocessing/ExtendedHogFilter.hpp"
 #include "imageprocessing/IntegralGradientFilter.hpp"
 #include "imageprocessing/GradientSumFilter.hpp"
@@ -180,7 +182,7 @@ shared_ptr<FeatureExtractor> HeadTracking::createFeatureExtractor(
 				config.get_child("pyramid"), pyramid, true);
 		featureExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
 		featureExtractor->addLayerFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
-		featureExtractor->addPatchFilter(createHistogramFilter(config.get<int>("bins"), config.get_child("histogram")));
+		featureExtractor->addPatchFilter(createHogFilter(config.get<int>("bins"), config.get_child("histogram")));
 		return wrapFeatureExtractor(featureExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "ihog") {
 		shared_ptr<DirectImageFeatureExtractor> featureExtractor = make_shared<DirectImageFeatureExtractor>();
@@ -188,8 +190,25 @@ shared_ptr<FeatureExtractor> HeadTracking::createFeatureExtractor(
 		featureExtractor->addImageFilter(make_shared<IntegralImageFilter>());
 		featureExtractor->addPatchFilter(make_shared<IntegralGradientFilter>(config.get<int>("gradientCount")));
 		featureExtractor->addPatchFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
-		featureExtractor->addPatchFilter(createHistogramFilter(config.get<int>("bins"), config.get_child("histogram")));
+		featureExtractor->addPatchFilter(createHogFilter(config.get<int>("bins"), config.get_child("histogram")));
 		return wrapFeatureExtractor(make_shared<IntegralFeatureExtractor>(featureExtractor), scaleFactor);
+	} else if (config.get_value<string>() == "ehog") {
+		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(
+				config.get_child("pyramid"), pyramid, true);
+		featureExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
+		featureExtractor->addLayerFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
+		featureExtractor->addPatchFilter(make_shared<ExtendedHogFilter>(config.get<int>("bins"), config.get<int>("histogram.cellSize"),
+				config.get<bool>("histogram.interpolate"), config.get<bool>("histogram.signedAndUnsigned"), config.get<float>("histogram.alpha")));
+		return wrapFeatureExtractor(featureExtractor, scaleFactor);
+	} else if (config.get_value<string>() == "iehog") {
+		shared_ptr<DirectImageFeatureExtractor> featureExtractor = make_shared<DirectImageFeatureExtractor>();
+		featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+		featureExtractor->addImageFilter(make_shared<IntegralImageFilter>());
+		featureExtractor->addPatchFilter(make_shared<IntegralGradientFilter>(config.get<int>("gradientCount")));
+		featureExtractor->addPatchFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
+		featureExtractor->addPatchFilter(make_shared<ExtendedHogFilter>(config.get<int>("bins"), config.get<int>("histogram.cellSize"),
+				config.get<bool>("histogram.interpolate"), config.get<bool>("histogram.signedAndUnsigned"), config.get<float>("histogram.alpha")));
+		return wrapFeatureExtractor(featureExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "surf") {
 		shared_ptr<DirectImageFeatureExtractor> featureExtractor = make_shared<DirectImageFeatureExtractor>();
 		featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
@@ -198,14 +217,6 @@ shared_ptr<FeatureExtractor> HeadTracking::createFeatureExtractor(
 		featureExtractor->addPatchFilter(make_shared<GradientSumFilter>(config.get<int>("cellCount")));
 		featureExtractor->addPatchFilter(make_shared<UnitNormFilter>(cv::NORM_L2));
 		return wrapFeatureExtractor(make_shared<IntegralFeatureExtractor>(featureExtractor), scaleFactor);
-	} else if (config.get_value<string>() == "ehog") {
-		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(
-				config.get_child("pyramid"), pyramid, true);
-		featureExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradientKernel"), config.get<int>("blurKernel")));
-		featureExtractor->addLayerFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
-		featureExtractor->addPatchFilter(make_shared<ExtendedHogFilter>(config.get<int>("bins"), config.get<int>("histogram.cellSize"),
-				config.get<bool>("histogram.interpolation"), config.get<bool>("histogram.signedAndUnsigned"), config.get<float>("histogram.alpha")));
-		return wrapFeatureExtractor(featureExtractor, scaleFactor);
 	} else if (config.get_value<string>() == "lbp") {
 		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(
 				config.get_child("pyramid"), pyramid, true);
@@ -224,6 +235,20 @@ shared_ptr<FeatureExtractor> HeadTracking::createFeatureExtractor(
 		return wrapFeatureExtractor(featureExtractor, scaleFactor);
 	} else {
 		throw invalid_argument("HeadTracking: invalid feature type: " + config.get_value<string>());
+	}
+}
+
+shared_ptr<ImageFilter> HeadTracking::createHogFilter(int bins, ptree& config) {
+	if (config.get_value<string>() == "spatial") {
+		if (config.get<int>("blockSize") == 1 && !config.get<bool>("signedAndUnsigned"))
+			return createHistogramFilter(bins, config);
+		else
+			return make_shared<HogFilter>(bins, config.get<int>("cellSize"), config.get<int>("blockSize"),
+					config.get<bool>("interpolate"), config.get<bool>("signedAndUnsigned"));
+	} else if (config.get_value<string>() == "pyramid") {
+		return make_shared<PyramidHogFilter>(bins, config.get<int>("levels"), config.get<bool>("interpolate"), config.get<bool>("signedAndUnsigned"));
+	} else {
+		throw invalid_argument("HeadTracking: invalid histogram type: " + config.get_value<string>());
 	}
 }
 
@@ -258,9 +283,9 @@ shared_ptr<HistogramFilter> HeadTracking::createHistogramFilter(unsigned int bin
 		throw invalid_argument("HeadTracking: invalid normalization method: " + config.get<string>("normalization"));
 	if (config.get_value<string>() == "spatial")
 		return make_shared<SpatialHistogramFilter>(bins, config.get<int>("cellSize"), config.get<int>("blockSize"),
-				config.get<bool>("interpolation"), config.get<bool>("combine"), normalization);
+				config.get<bool>("interpolate"), config.get<bool>("concatenate"), normalization);
 	else 	if (config.get_value<string>() == "pyramid")
-		return make_shared<SpatialPyramidHistogramFilter>(bins, config.get<int>("level"), normalization);
+		return make_shared<SpatialPyramidHistogramFilter>(bins, config.get<int>("levels"), config.get<bool>("interpolate"), normalization);
 	else
 		throw invalid_argument("HeadTracking: invalid histogram type: " + config.get_value<string>());
 }

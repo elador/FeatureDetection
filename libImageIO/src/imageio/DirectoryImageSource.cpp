@@ -31,7 +31,26 @@ DirectoryImageSource::DirectoryImageSource(const string& directory) : ImageSourc
 		With plugins, present by default: JPEG (jpeg, jpg, jpe), JPEG 2000 (jp2 (=Jasper)), 
 										  TIFF files (tiff, tif), png.
 		If specified: OpenEXR.
+		Parameter for list of valid file extensions?
+		Parameter for predicate (used by remove_if)?
+		Parameter for single file extension?
+		Unify the different image sources that work with file lists (DirectoryImageSource,
+		FileImageSource, FileListImageSource, RepeatingFileImageSourcec), so the filtering
+		does not have to be repeated in each of them. But not all of them need the filtering
+		anyway (for example if a file list is given explicitly).
+
+		First prototype version of file filtering by extension:
 	*/
+	vector<string> imageExtensions = { "bmp", "dib", "pbm", "pgm", "ppm", "sr", "ras", "jpeg", "jpg", "jpe", "jp2", "png", "tiff", "tif" };
+	auto newFilesEnd = std::remove_if(files.begin(), files.end(), [&](const path& file) {
+		string extension = file.extension().string().substr(1);
+		std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+		return std::none_of(imageExtensions.begin(), imageExtensions.end(), [&](const string& imageExtension) {
+			return imageExtension == extension;
+		});
+	});
+	files.erase(newFilesEnd, files.end());
+
 	sort(files.begin(), files.end());
 }
 
@@ -47,7 +66,7 @@ const Mat DirectoryImageSource::getImage() const
 {
 	if (index < 0 || index >= files.size())
 		return Mat();
-	return imread(files[index].string(), 1);
+	return imread(files[index].string(), CV_LOAD_IMAGE_COLOR);
 }
 
 path DirectoryImageSource::getName() const

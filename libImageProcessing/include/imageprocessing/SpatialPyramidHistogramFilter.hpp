@@ -28,11 +28,12 @@ public:
 	/**
 	 * Constructs a new spatial pyramid histogram filter.
 	 *
-	 * @param[in] bins The amount of bins inside the histogram.
-	 * @param[in] level The amount of levels of the pyramid.
+	 * @param[in] binCount The amount of bins inside the histogram.
+	 * @param[in] levelCount The amount of levels of the pyramid.
+	 * @param[in] interpolate Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
 	 * @param[in] normalization The normalization method of the histograms.
 	 */
-	SpatialPyramidHistogramFilter(unsigned int bins, unsigned int level, Normalization normalization = Normalization::NONE);
+	SpatialPyramidHistogramFilter(int binCount, int levelCount, bool interpolate = false, Normalization normalization = Normalization::NONE);
 
 	~SpatialPyramidHistogramFilter();
 
@@ -40,10 +41,46 @@ public:
 
 	Mat applyTo(const Mat& image, Mat& filtered) const;
 
+protected:
+
+	using HistogramFilter::createCellHistograms;
+
 private:
 
-	unsigned int bins;  ///< The amount of bins inside the histogram.
-	unsigned int level; ///< The amount of levels of the pyramid.
+	/**
+	 * Creates the non-normalized histograms of a pyramid level using an image containing bin information per pixel.
+	 *
+	 * @param[in] image Image containing bin data per pixel.
+	 * @param[out] histogramsValues Concatenated values of the level's histograms in row-major order.
+	 * @param[in] level Level index where zero is the up-most level with only one histogram.
+	 * @param[in] binCount Bin count of the histogram.
+	 * @param[in] interpolate Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
+	 */
+	void createCellHistograms(const Mat& image, float* histogramsValues, int level, int binCount, bool interpolate) const;
+
+	/**
+	 * Creates the histograms of a pyramid level by combining a block of 2x2 histograms of the previous level to one histogram.
+	 *
+	 * @param[in] cellHistogramsValues Concatenated values of the previous level's histograms in row-major order.
+	 * @param[out] blockHistogramsValues Concatenated values of this level's histograms in row-major order.
+	 * @param[in] level Level index where zero is the up-most level with only one histogram.
+	 * @param[in] binCount Bin count of the histograms.
+	 */
+	void combineHistograms(const float* cellHistogramsValues, float* blockHistogramsValues, int level, int binCount) const;
+
+	/**
+	 * Normalizes histograms whose values are concatenated into one vector.
+	 *
+	 * @param[in,out] histogramsValues Concatenated values of the histograms.
+	 * @param[in] histogramCount Histogram count.
+	 * @param[in] binCount Bin count of the histograms.
+	 */
+	void normalizeHistograms(float* histogramsValues, int histogramCount, int binCount) const;
+
+	int binCount;       ///< The amount of bins inside the histogram.
+	int maxLevel;       ///< The index of the lowest pyramid level.
+	int histogramCount; ///< The total amount of histograms.
+	bool interpolate;   ///< Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
 };
 
 } /* namespace imageprocessing */
