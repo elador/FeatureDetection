@@ -43,7 +43,7 @@ public:
 	virtual void update(shared_ptr<VersionedImage> image) = 0;
 
 	/**
-	 * Extracts the feature vector at a certain location (patch) of the current image.
+	 * Extracts the feature vector of a certain location (patch) of the current image.
 	 *
 	 * @param[in] x The x-coordinate of the center position of the patch.
 	 * @param[in] y The y-coordinate of the center position of the patch.

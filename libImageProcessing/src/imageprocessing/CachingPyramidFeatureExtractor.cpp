@@ -8,9 +8,11 @@
 #include "imageprocessing/CachingPyramidFeatureExtractor.hpp"
 #include "imageprocessing/VersionedImage.hpp"
 #include "imageprocessing/Patch.hpp"
+#include <stdexcept>
 
 using cv::Point;
 using std::make_shared;
+using std::invalid_argument;
 
 namespace imageprocessing {
 
@@ -70,18 +72,30 @@ shared_ptr<Patch> CachingPyramidFeatureExtractor::extract(int x, int y, int widt
 	}
 }
 
-vector<shared_ptr<Patch>> CachingPyramidFeatureExtractor::extract(int stepX, int stepY, Rect roi, int firstLayer, int lastLayer) const {
+vector<shared_ptr<Patch>> CachingPyramidFeatureExtractor::extract(int stepX, int stepY, Rect roi,
+		int firstLayer, int lastLayer, int stepLayer) const {
+	if (stepX < 1)
+		throw invalid_argument("CachingPyramidFeatureExtractor: stepX has to be greater than zero");
+	if (stepY < 1)
+		throw invalid_argument("CachingPyramidFeatureExtractor: stepY has to be greater than zero");
+	if (stepLayer < 1)
+		throw invalid_argument("CachingPyramidFeatureExtractor: stepLayer has to be greater than zero");
+	Size imageSize = getImageSize();
 	if (roi.x == 0 && roi.y == 0 && roi.width == 0 && roi.height == 0) {
-		Size size = getImageSize();
-		roi.width = size.width;
-		roi.height = size.height;
+		roi.width = imageSize.width;
+		roi.height = imageSize.height;
+	} else {
+		roi.x = std::max(0, roi.x);
+		roi.y = std::max(0, roi.y);
+		roi.width = std::min(imageSize.width, roi.width + roi.x) - roi.x;
+		roi.height = std::min(imageSize.height, roi.height + roi.y) - roi.y;
 	}
 	vector<shared_ptr<Patch>> patches;
 	if (firstLayer < 0)
 		firstLayer = cache.front().getIndex();
 	if (lastLayer < 0)
 		lastLayer = cache.back().getIndex();
-	for (auto layer = cache.begin(); layer != cache.end(); ++layer) {
+	for (auto layer = cache.begin(); layer != cache.end(); layer += stepLayer) {
 		if (layer->getIndex() < firstLayer)
 			continue;
 		if (layer->getIndex() > lastLayer)

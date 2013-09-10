@@ -58,9 +58,10 @@ public:
 		return patch;
 	}
 
-	vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(), int firstLayer = -1, int lastLayer = -1) const {
-		vector<shared_ptr<Patch>> patches = extractor->extract(stepX, stepY, roi, firstLayer, lastLayer);
-		for (const shared_ptr<Patch>& patch : patches)
+	vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(),
+			int firstLayer = -1, int lastLayer = -1, int stepLayer = 1) const {
+		vector<shared_ptr<Patch>> patches = extractor->extract(stepX, stepY, roi, firstLayer, lastLayer, stepLayer);
+		for (shared_ptr<Patch>& patch : patches)
 			patchFilter->applyInPlace(patch->getData());
 		return patches;
 	}
@@ -90,6 +91,10 @@ public:
 
 	double getIncrementalScaleFactor() const {
 		return extractor->getIncrementalScaleFactor();
+	}
+
+	Size getPatchSize() const {
+		return extractor->getPatchSize();
 	}
 
 	Size getImageSize() const {

@@ -102,9 +102,11 @@ public:
 	 * @param[in] roi The region of interest inside the original image (region will be scaled accordingly to the layers).
 	 * @param[in] firstLayer The index of the first layer to extract patches from.
 	 * @param[in] lastLayer The index of the last layer to extract patches from.
+	 * @param[in] stepLayer The step size for proceeding to the next layer (values greater than one will skip layers).
 	 * @return The extracted patches.
 	 */
-	vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(), int firstLayer = -1, int lastLayer = -1) const;
+	vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(),
+			int firstLayer = -1, int lastLayer = -1, int stepLayer = 1) const;
 
 	/**
 	 * Extracts a single patch from a layer of the corresponding image pyramid.
@@ -151,6 +153,10 @@ public:
 
 	double getIncrementalScaleFactor() const {
 		return pyramid->getIncrementalScaleFactor();
+	}
+
+	Size getPatchSize() const {
+		return Size(getPatchWidth(), getPatchHeight());
 	}
 
 	Size getImageSize() const {

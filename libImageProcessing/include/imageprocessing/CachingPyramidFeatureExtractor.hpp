@@ -126,7 +126,8 @@ public:
 
 	shared_ptr<Patch> extract(int x, int y, int width, int height) const;
 
-	vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(), int firstLayer = -1, int lastLayer = -1) const;
+	vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(),
+			int firstLayer = -1, int lastLayer = -1, int stepLayer = 1) const;
 
 	shared_ptr<Patch> extract(int layer, int x, int y) const;
 
@@ -148,6 +149,10 @@ public:
 
 	double getIncrementalScaleFactor() const {
 		return extractor->getIncrementalScaleFactor();
+	}
+
+	Size getPatchSize() const {
+		return extractor->getPatchSize();
 	}
 
 	Size getImageSize() const {

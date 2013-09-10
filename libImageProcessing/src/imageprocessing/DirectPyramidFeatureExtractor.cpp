@@ -9,10 +9,12 @@
 #include "imageprocessing/Patch.hpp"
 #include "imageprocessing/ChainedFilter.hpp"
 #include "boost/iterator/indirect_iterator.hpp"
+#include <stdexcept>
 
 using cv::Point;
 using boost::make_indirect_iterator;
 using std::make_shared;
+using std::invalid_argument;
 
 namespace imageprocessing {
 
@@ -68,11 +70,23 @@ shared_ptr<Patch> DirectPyramidFeatureExtractor::extract(int x, int y, int width
 	return make_shared<Patch>(originalX, originalY, originalWidth, originalHeight, patchFilter->applyTo(data));
 }
 
-vector<shared_ptr<Patch>> DirectPyramidFeatureExtractor::extract(int stepX, int stepY, Rect roi, int firstLayer, int lastLayer) const {
+vector<shared_ptr<Patch>> DirectPyramidFeatureExtractor::extract(int stepX, int stepY, Rect roi,
+		int firstLayer, int lastLayer, int stepLayer) const {
+	if (stepX < 1)
+		throw invalid_argument("DirectPyramidFeatureExtractor: stepX has to be greater than zero");
+	if (stepY < 1)
+		throw invalid_argument("DirectPyramidFeatureExtractor: stepY has to be greater than zero");
+	if (stepLayer < 1)
+		throw invalid_argument("DirectPyramidFeatureExtractor: stepLayer has to be greater than zero");
+	Size imageSize = getImageSize();
 	if (roi.x == 0 && roi.y == 0 && roi.width == 0 && roi.height == 0) {
-		Size size = getImageSize();
-		roi.width = size.width;
-		roi.height = size.height;
+		roi.width = imageSize.width;
+		roi.height = imageSize.height;
+	} else {
+		roi.x = std::max(0, roi.x);
+		roi.y = std::max(0, roi.y);
+		roi.width = std::min(imageSize.width, roi.width + roi.x) - roi.x;
+		roi.height = std::min(imageSize.height, roi.height + roi.y) - roi.y;
 	}
 	vector<shared_ptr<Patch>> patches;
 	const vector<shared_ptr<ImagePyramidLayer>>& layers = pyramid->getLayers();
@@ -80,7 +94,7 @@ vector<shared_ptr<Patch>> DirectPyramidFeatureExtractor::extract(int stepX, int 
 		firstLayer = layers.front()->getIndex();
 	if (lastLayer < 0)
 		lastLayer = layers.back()->getIndex();
-	for (auto layIt = layers.begin(); layIt != layers.end(); ++layIt) {
+	for (auto layIt = layers.begin(); layIt != layers.end(); layIt += stepLayer) {
 		shared_ptr<ImagePyramidLayer> layer = *layIt;
 		if (layer->getIndex() < firstLayer)
 			continue;
