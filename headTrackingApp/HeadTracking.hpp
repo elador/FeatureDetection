@@ -84,7 +84,8 @@ private:
 	shared_ptr<FeatureExtractor> wrapFeatureExtractor(shared_ptr<FeatureExtractor> featureExtractor, float scaleFactor);
 	shared_ptr<Kernel> createKernel(ptree& config);
 	shared_ptr<TrainableSvmClassifier> createTrainableSvm(shared_ptr<Kernel> kernel, ptree& config);
-	shared_ptr<TrainableProbabilisticClassifier> createClassifier(shared_ptr<TrainableSvmClassifier> trainableSvm, ptree& config);
+	shared_ptr<TrainableProbabilisticClassifier> createTrainableProbabilisticSvm(shared_ptr<TrainableSvmClassifier> trainableSvm, ptree& config);
+	shared_ptr<TrainableProbabilisticClassifier> createTrainableProbabilisticClassifier(shared_ptr<Kernel> kernel, ptree& config);
 	void initTracking(ptree& config);
 	void initGui();
 	void drawDebug(Mat& image, bool usedAdaptive);

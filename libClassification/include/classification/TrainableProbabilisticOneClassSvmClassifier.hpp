@@ -1,12 +1,12 @@
 /*
- * TrainableProbabilisticSvmClassifier.hpp
+ * TrainableProbabilisticOneClassSvmClassifier.hpp
  *
- *  Created on: 08.03.2013
+ *  Created on: 13.09.2013
  *      Author: poschmann
  */
 
-#ifndef TRAINABLEPROBABILISTICSVMCLASSIFIER_HPP_
-#define TRAINABLEPROBABILISTICSVMCLASSIFIER_HPP_
+#ifndef TRAINABLEPROBABILISTICONECLASSSVMCLASSIFIER_HPP_
+#define TRAINABLEPROBABILISTICONECLASSSVMCLASSIFIER_HPP_
 
 #include "classification/TrainableProbabilisticClassifier.hpp"
 #include <memory>
@@ -16,26 +16,28 @@ using std::shared_ptr;
 namespace classification {
 
 class ProbabilisticSvmClassifier;
-class TrainableSvmClassifier;
+class TrainableOneClassSvmClassifier;
 
 /**
- * Probabilistic SVM classifier that can be re-trained. Computes the new parameters of a logistic function by
- * using the mean output of the positive and negative training examples and associated probabilities.
+ * Probabilistic one-class SVM classifier that can be re-trained. Computes the new parameters of a logistic function
+ * on construction assuming fixed mean positive and negative SVM outputs.
  */
-class TrainableProbabilisticSvmClassifier : public TrainableProbabilisticClassifier {
+class TrainableProbabilisticOneClassSvmClassifier : public TrainableProbabilisticClassifier {
 public:
 
 	/**
-	 * Constructs a new trainable probabilistic SVM classifier.
+	 * Constructs a new trainable probabilistic one-class SVM classifier.
 	 *
-	 * @param[in] trainableSvm The trainable SVM classifier.
+	 * @param[in] trainableSvm The trainable one-class SVM classifier.
 	 * @param[in] highProb The probability of the mean output of positive samples.
 	 * @param[in] lowProb The probability of the mean output of negative samples.
+	 * @param[in] The estimated mean SVM output of the positive samples.
+	 * @param[in] The estimated mean SVM output of the negative samples.
 	 */
-	explicit TrainableProbabilisticSvmClassifier(shared_ptr<TrainableSvmClassifier> trainableSvm,
-			double highProb = 0.99, double lowProb = 0.01);
+	explicit TrainableProbabilisticOneClassSvmClassifier(shared_ptr<TrainableOneClassSvmClassifier> trainableSvm,
+			double highProb = 0.95, double lowProb = 0.05, double meanPosOutput = 1.01, double meanNegOutput = -1.01);
 
-	virtual ~TrainableProbabilisticSvmClassifier();
+	~TrainableProbabilisticOneClassSvmClassifier();
 
 	/**
 	 * @return The actual probabilistic SVM classifier.
@@ -82,32 +84,13 @@ public:
 	 */
 	void reset();
 
-protected:
-
-	/**
-	 * Computes the parameters of the logistic function given the trained SVM classifier.
-	 *
-	 * @param[in] trainableSvm The trained SVM classifier.
-	 * @return A pair containing the parameters a and b of the logistic function p(x) = 1 / (1 + exp(a + b * x)).
-	 */
-	virtual pair<double, double> computeLogisticParameters(shared_ptr<TrainableSvmClassifier> trainableSvm) const;
-
-	/**
-	 * Computes the parameters of the logistic function given the mean SVM outputs of the positive and negative training data.
-	 *
-	 * @param[in] meanPosOutput The mean SVM output of the positive data.
-	 * @param[in] meanNegOutput The mean SVM output of the negative data.
-	 * @return A pair containing the parameters a and b of the logistic function p(x) = 1 / (1 + exp(a + b * x)).
-	 */
-	pair<double, double> computeLogisticParameters(double meanPosOutput, double meanNegOutput) const;
-
 private:
 
 	shared_ptr<ProbabilisticSvmClassifier> probabilisticSvm; ///< The actual probabilistic SVM classifier.
-	shared_ptr<TrainableSvmClassifier> trainableSvm;         ///< The trainable SVM classifier.
+	shared_ptr<TrainableOneClassSvmClassifier> trainableSvm; ///< The trainable SVM classifier.
 	double highProb; ///< The probability of the mean output of positive samples.
 	double lowProb;  ///< The probability of the mean output of negative samples.
 };
 
 } /* namespace classification */
-#endif /* TRAINABLEPROBABILISTICSVMCLASSIFIER_HPP_ */
+#endif /* TRAINABLEPROBABILISTICONECLASSSVMCLASSIFIER_HPP_ */

@@ -31,7 +31,7 @@ public:
 	 * @param[in] The estimated mean SVM output of the negative samples.
 	 */
 	FixedTrainableProbabilisticSvmClassifier(shared_ptr<TrainableSvmClassifier> trainableSvm,
-			double highProb = 0.99, double lowProb = 0.01, double meanPosOutput = 1.01, double meanNegOutput = -1.01) :
+			double highProb = 0.95, double lowProb = 0.05, double meanPosOutput = 1.01, double meanNegOutput = -1.01) :
 				TrainableProbabilisticSvmClassifier(trainableSvm, highProb, lowProb) {
 		pair<double, double> logisticParameters = computeLogisticParameters(meanPosOutput, meanNegOutput);
 		logisticA = logisticParameters.first;

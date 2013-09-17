@@ -55,6 +55,8 @@
 #include "classification/TrainableProbabilisticTwoStageClassifier.hpp"
 #include "classification/FixedSizeTrainableSvmClassifier.hpp"
 #include "classification/FixedTrainableProbabilisticSvmClassifier.hpp"
+#include "classification/TrainableOneClassSvmClassifier.hpp"
+#include "classification/TrainableProbabilisticOneClassSvmClassifier.hpp"
 #include "condensation/ResamplingSampler.hpp"
 #include "condensation/GridSampler.hpp"
 #include "condensation/LowVarianceSampling.hpp"
@@ -308,7 +310,7 @@ shared_ptr<TrainableSvmClassifier> AdaptiveTracking::createTrainableSvm(shared_p
 		trainableSvm = make_shared<FrameBasedTrainableSvmClassifier>(kernel, config.get<double>("constraintsViolationCosts"),
 				config.get<int>("frameLength"), config.get<float>("minAvgSamples"));
 	} else {
-		throw invalid_argument("AdaptiveTracking: invalid training type: " + config.get_value<string>());
+		throw invalid_argument("AdaptiveTracking: invalid SVM training type: " + config.get_value<string>());
 	}
 	optional<ptree&> negativesConfig = config.get_child_optional("staticNegatives");
 	if (negativesConfig && negativesConfig->get_value<bool>()) {
@@ -318,14 +320,35 @@ shared_ptr<TrainableSvmClassifier> AdaptiveTracking::createTrainableSvm(shared_p
 	return trainableSvm;
 }
 
-shared_ptr<TrainableProbabilisticClassifier> AdaptiveTracking::createClassifier(
+shared_ptr<TrainableProbabilisticClassifier> AdaptiveTracking::createTrainableProbabilisticSvm(
 		shared_ptr<TrainableSvmClassifier> trainableSvm, ptree& config) {
 	if (config.get_value<string>() == "default")
 		return make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm);
 	else if (config.get_value<string>() == "fixed")
 		return make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm);
 	else
+		throw invalid_argument("AdaptiveTracking: invalid probabilistic SVM type: " + config.get_value<string>());
+}
+
+shared_ptr<TrainableProbabilisticClassifier> AdaptiveTracking::createTrainableProbabilisticClassifier(shared_ptr<Kernel> kernel, ptree& config) {
+	shared_ptr<TrainableProbabilisticClassifier> classifier;
+	shared_ptr<SvmClassifier> svm;
+	if (config.get_value<string>() == "svm") {
+		shared_ptr<TrainableSvmClassifier> trainableSvm = createTrainableSvm(kernel, config.get_child("training"));
+		svm = trainableSvm->getSvm();
+		classifier = createTrainableProbabilisticSvm(trainableSvm, config.get_child("probabilistic"));
+	} else if (config.get_value<string>() == "one-class-svm") {
+		shared_ptr<TrainableOneClassSvmClassifier> trainableSvm = make_shared<TrainableOneClassSvmClassifier>(kernel,
+				config.get<double>("training.nu"), config.get<double>("training.minExamples"), config.get<double>("training.maxExamples"));
+		svm = trainableSvm->getSvm();
+		classifier = make_shared<TrainableProbabilisticOneClassSvmClassifier>(trainableSvm);
+	} else {
 		throw invalid_argument("AdaptiveTracking: invalid classifier type: " + config.get_value<string>());
+	}
+	optional<ptree&> thresholdConfig = config.get_child_optional("threshold");
+	if (thresholdConfig)
+		svm->setThreshold(thresholdConfig->get_value<float>());
+	return classifier;
 }
 
 void AdaptiveTracking::initTracking(ptree& config) {
@@ -344,8 +367,7 @@ void AdaptiveTracking::initTracking(ptree& config) {
 	// create adaptive measurement model
 	adaptiveFeatureExtractor = createFeatureExtractor(pyramid, config.get_child("adaptive.feature"));
 	shared_ptr<Kernel> kernel = createKernel(config.get_child("adaptive.measurement.classifier.kernel"));
-	shared_ptr<TrainableSvmClassifier> trainableSvm = createTrainableSvm(kernel, config.get_child("adaptive.measurement.classifier.training"));
-	shared_ptr<TrainableProbabilisticClassifier> classifier = createClassifier(trainableSvm, config.get_child("adaptive.measurement.classifier.probabilistic"));
+	shared_ptr<TrainableProbabilisticClassifier> classifier = createTrainableProbabilisticClassifier(kernel, config.get_child("adaptive.measurement.classifier"));
 	if (config.get<string>("adaptive.measurement") == "selfLearning") {
 		adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(adaptiveFeatureExtractor, classifier,
 				config.get<double>("adaptive.measurement.positiveThreshold"), config.get<double>("adaptive.measurement.negativeThreshold"));

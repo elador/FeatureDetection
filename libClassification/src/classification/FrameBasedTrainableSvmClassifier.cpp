@@ -56,7 +56,7 @@ void FrameBasedTrainableSvmClassifier::replaceExamples(
 		vector<unique_ptr<struct svm_node[], NodeDeleter>>& examples, const vector<Mat>& newExamples) {
 	examples.clear();
 	for (auto example = newExamples.cbegin(); example != newExamples.cend(); ++example)
-		examples.push_back(move(createNode(*example)));
+		examples.push_back(move(utils.createNode(*example)));
 }
 
 bool FrameBasedTrainableSvmClassifier::isRetrainingReasonable() const {

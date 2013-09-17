@@ -64,7 +64,7 @@ private:
 	float minAvgSamples; ///< The minimum average positive training examples per frame for the training to be reasonable.
 	vector<vector<unique_ptr<struct svm_node[], NodeDeleter>>> positiveExamples; ///< The positive training examples of the last frames.
 	vector<vector<unique_ptr<struct svm_node[], NodeDeleter>>> negativeExamples; ///< The negative training examples of the last frames.
-	int oldestEntry;                                     ///< The index of the oldest example entry.
+	int oldestEntry; ///< The index of the oldest example entry.
 };
 
 } /* namespace classification */
