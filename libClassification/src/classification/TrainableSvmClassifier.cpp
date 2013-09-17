@@ -22,14 +22,14 @@ using std::move;
 namespace classification {
 
 TrainableSvmClassifier::TrainableSvmClassifier(shared_ptr<SvmClassifier> svm, double constraintsViolationCosts) :
-		svm(svm), constraintsViolationCosts(constraintsViolationCosts),
-		usable(false), dimensions(0), node2example(), nodeDeleter(node2example), staticNegativeExamples(), matType(CV_32F) {
+		utils(), svm(svm), constraintsViolationCosts(constraintsViolationCosts),
+		usable(false), staticNegativeExamples(), param(), problem(), model() {
 	createParameters(svm->getKernel(), constraintsViolationCosts);
 }
 
 TrainableSvmClassifier::TrainableSvmClassifier(shared_ptr<Kernel> kernel, double constraintsViolationCosts) :
-		svm(make_shared<SvmClassifier>(kernel)), constraintsViolationCosts(constraintsViolationCosts),
-		usable(false), dimensions(0), node2example(), nodeDeleter(node2example), staticNegativeExamples(), matType(CV_32F) {
+		utils(), svm(make_shared<SvmClassifier>(kernel)), constraintsViolationCosts(constraintsViolationCosts),
+		usable(false), staticNegativeExamples(), param(), problem(), model() {
 	createParameters(kernel, constraintsViolationCosts);
 }
 
@@ -46,10 +46,10 @@ void TrainableSvmClassifier::createParameters(const shared_ptr<Kernel> kernel, d
 	param->cache_size = 100;
 	param->eps = 1e-3;
 	param->nr_weight = 2;
-	param->weight_label = (int*)malloc(2 * sizeof(int));
+	param->weight_label = (int*)malloc(param->nr_weight * sizeof(int));
 	param->weight_label[0] = +1;
 	param->weight_label[1] = -1;
-	param->weight = (double*)malloc(2 * sizeof(double));
+	param->weight = (double*)malloc(param->nr_weight * sizeof(double));
 	param->weight[0] = 1;
 	param->weight[1] = 1;
 	param->shrinking = 0;
@@ -70,6 +70,10 @@ pair<double, double> TrainableSvmClassifier::computeMeanSvmOutputs() {
 	for (; i < totalCount; ++i)
 		negativeOutputSum += computeSvmOutput(problem->x[i]);
 	return make_pair(positiveOutputSum / positiveCount, negativeOutputSum / negativeCount);
+}
+
+double TrainableSvmClassifier::computeSvmOutput(const struct svm_node *x) const {
+	return utils.computeSvmOutput(model.get(), x);
 }
 
 void TrainableSvmClassifier::loadStaticNegatives(const string& negativesFilename, int maxNegatives, double scale) {
@@ -93,7 +97,7 @@ void TrainableSvmClassifier::loadStaticNegatives(const string& negativesFilename
 				values.push_back(value);
 			}
 			// create node
-			unique_ptr<struct svm_node[], NodeDeleter> data(new struct svm_node[values.size() + 1], nodeDeleter);
+			unique_ptr<struct svm_node[], NodeDeleter> data(new struct svm_node[values.size() + 1], utils.getNodeDeleter());
 			for (unsigned int i = 0; i < values.size(); ++i) {
 				data[i].index = i;
 				data[i].value = scale * values[i];
@@ -104,34 +108,7 @@ void TrainableSvmClassifier::loadStaticNegatives(const string& negativesFilename
 	}
 }
 
-unique_ptr<struct svm_node[], NodeDeleter> TrainableSvmClassifier::createNode(const Mat& vector) {
-	unsigned int size = vector.total();
-	unique_ptr<struct svm_node[], NodeDeleter> node(new struct svm_node[size + 1], nodeDeleter);
-	matType = vector.type();
-	if (matType == CV_8U)
-		fillNode<uchar>(node.get(), size, vector);
-	else if (matType == CV_32F)
-		fillNode<float>(node.get(), size, vector);
-	else if (matType == CV_64F)
-		fillNode<double>(node.get(), size, vector);
-	else
-		throw invalid_argument("TrainableSvmClassifier: vector has to be of type CV_8U, CV_32F, or CV_64F to create a node of");
-	node[size].index = -1;
-	node2example.insert(make_pair(node.get(), vector));
-	return move(node);
-}
-
-double TrainableSvmClassifier::computeSvmOutput(const struct svm_node *x) {
-	double* dec_values = new double[1];
-	svm_predict_values(model.get(), x, dec_values);
-	double svmOutput = dec_values[0];
-	delete[] dec_values;
-	return svmOutput;
-}
-
 bool TrainableSvmClassifier::retrain(const vector<Mat>& newPositiveExamples, const vector<Mat>& newNegativeExamples) {
-	if (!newPositiveExamples.empty())
-		dimensions = newPositiveExamples[0].total();
 	if (newPositiveExamples.empty() && newNegativeExamples.empty()) // no new training data available -> no new training necessary
 		return usable;
 	addExamples(newPositiveExamples, newNegativeExamples);
@@ -174,84 +151,10 @@ unique_ptr<struct svm_problem, ProblemDeleter> TrainableSvmClassifier::createPro
 }
 
 void TrainableSvmClassifier::updateSvmParameters() {
-	vector<Mat> supportVectors;
-	vector<float> coefficients;
-	supportVectors.reserve(model->l);
-	coefficients.reserve(model->l);
-	for (int i = 0; i < model->l; ++i) {
-		supportVectors.push_back(getSupportVector(model->SV[i]));
-		coefficients.push_back(model->sv_coef[0][i]);
-	}
-	svm->setSvmParameters(supportVectors, coefficients, model->rho[0]);
-}
-
-Mat TrainableSvmClassifier::getSupportVector(const struct svm_node *node) {
-	Mat& vector = node2example[node];
-	if (vector.empty()) {
-		vector.create(1, dimensions, matType);
-		if (matType == CV_8U)
-			fillMat<uchar>(vector, node);
-		else if (matType == CV_32F)
-			fillMat<float>(vector, node);
-		else if (matType == CV_64F)
-			fillMat<double>(vector, node);
-		else
-			throw invalid_argument("TrainableSvmClassifier: vectors have to be of type CV_8U, CV_32F, or CV_64F");
-	}
-	return vector;
-}
-
-template<class T>
-void TrainableSvmClassifier::fillNode(struct svm_node *node, unsigned int size, const Mat& vector) {
-	if (!vector.isContinuous())
-		throw invalid_argument("TrainableSvmClassifier: vector has to be continuous");
-	const T* values = vector.ptr<T>(0);
-	for (unsigned int i = 0; i < size; ++i) {
-		node[i].index = i;
-		node[i].value = values[i];
-	}
-}
-
-template<class T>
-void TrainableSvmClassifier::fillMat(Mat& vector, const struct svm_node *node) {
-	T* values = vector.ptr<T>(0);
-	for (int i = 0; i < dimensions; ++i) {
-		if (node->index == i) {
-			values[i] = static_cast<T>(node->value);
-			++node;
-		} else {
-			values[i] = 0;
-		}
-	}
-}
-
-NodeDeleter::NodeDeleter(unordered_map<const struct svm_node*, Mat>& map) : map(map) {}
-
-NodeDeleter::NodeDeleter(const NodeDeleter& other) : map(other.map) {}
-
-NodeDeleter& NodeDeleter::operator=(const NodeDeleter& other) {
-	map = other.map;
-	return *this;
-}
-
-void NodeDeleter::operator()(struct svm_node *node) const {
-	map.erase(node);
-	delete[] node;
-}
-
-void ParameterDeleter::operator()(struct svm_parameter *param) const {
-	svm_destroy_param(param);
-	delete param;
-}
-
-void ProblemDeleter::operator()(struct svm_problem *problem) const {
-	delete[] problem->x;
-	delete[] problem->y;
-	delete problem;
-}
-
-void ModelDeleter::operator()(struct svm_model *model) const {
-	svm_free_and_destroy_model(&model);
+	svm->setSvmParameters(
+			utils.extractSupportVectors(model.get()),
+			utils.extractCoefficients(model.get()),
+			utils.extractBias(model.get()));
 }
 
 } /* namespace classification */

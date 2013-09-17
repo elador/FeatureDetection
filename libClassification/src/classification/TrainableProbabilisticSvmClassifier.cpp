@@ -16,8 +16,8 @@ using std::make_pair;
 namespace classification {
 
 TrainableProbabilisticSvmClassifier::TrainableProbabilisticSvmClassifier(
-		shared_ptr<TrainableSvmClassifier> trainable, double highProb, double lowProb) :
-		probabilisticSvm(make_shared<ProbabilisticSvmClassifier>(trainable->getSvm())), trainableSvm(trainable),
+		shared_ptr<TrainableSvmClassifier> trainableSvm, double highProb, double lowProb) :
+		probabilisticSvm(make_shared<ProbabilisticSvmClassifier>(trainableSvm->getSvm())), trainableSvm(trainableSvm),
 		highProb(highProb), lowProb(lowProb) {}
 
 TrainableProbabilisticSvmClassifier::~TrainableProbabilisticSvmClassifier() {}

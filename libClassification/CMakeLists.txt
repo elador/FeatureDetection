@@ -23,47 +23,53 @@ ENDIF(MATLAB_FOUND)
 
 # source and header files
 SET(HEADERS
-	include/classification/TrainableProbabilisticTwoStageClassifier.hpp
-	include/classification/ProbabilisticTwoStageClassifier.hpp
-	include/classification/WvmClassifier.hpp
-	include/classification/IImg.hpp
 	include/classification/BinaryClassifier.hpp
-	include/classification/ProbabilisticClassifier.hpp
-	include/classification/VectorMachineClassifier.hpp
-	include/classification/ProbabilisticWvmClassifier.hpp
-	include/classification/ProbabilisticSvmClassifier.hpp
-	include/classification/ProbabilisticRvmClassifier.hpp
-	include/classification/SvmClassifier.hpp
-	include/classification/RvmClassifier.hpp
-	include/classification/TrainableClassifier.hpp
-	include/classification/TrainableBinaryClassifier.hpp
-	include/classification/TrainableProbabilisticClassifier.hpp
-	include/classification/TrainableSvmClassifier.hpp
-	include/classification/FrameBasedTrainableSvmClassifier.hpp
 	include/classification/FixedSizeTrainableSvmClassifier.hpp
-	include/classification/TrainableProbabilisticSvmClassifier.hpp
 	include/classification/FixedTrainableProbabilisticSvmClassifier.hpp
-	include/classification/Kernel.hpp
-	include/classification/LinearKernel.hpp
-	include/classification/RbfKernel.hpp
-	include/classification/PolynomialKernel.hpp
+	include/classification/FrameBasedTrainableSvmClassifier.hpp
 	include/classification/HikKernel.hpp
+	include/classification/IImg.hpp
+	include/classification/Kernel.hpp
+	include/classification/LibSvmUtils.hpp
+	include/classification/LinearKernel.hpp
+	include/classification/PolynomialKernel.hpp
+	include/classification/ProbabilisticClassifier.hpp
+	include/classification/ProbabilisticRvmClassifier.hpp
+	include/classification/ProbabilisticSvmClassifier.hpp
+	include/classification/ProbabilisticTwoStageClassifier.hpp
+	include/classification/ProbabilisticWvmClassifier.hpp
+	include/classification/RbfKernel.hpp
+	include/classification/RvmClassifier.hpp
+	include/classification/SvmClassifier.hpp
+	include/classification/TrainableBinaryClassifier.hpp
+	include/classification/TrainableClassifier.hpp
+	include/classification/TrainableOneClassSvmClassifier.hpp
+	include/classification/TrainableProbabilisticClassifier.hpp
+	include/classification/TrainableProbabilisticOneClassSvmClassifier.hpp
+	include/classification/TrainableProbabilisticSvmClassifier.hpp
+	include/classification/TrainableProbabilisticTwoStageClassifier.hpp
+	include/classification/TrainableSvmClassifier.hpp
+	include/classification/VectorMachineClassifier.hpp
+	include/classification/WvmClassifier.hpp
 	include/svm.h
 )
 SET(SOURCE
-	src/classification/ProbabilisticTwoStageClassifier.cpp
-	src/classification/WvmClassifier.cpp
+	src/classification/FixedSizeTrainableSvmClassifier.cpp
+	src/classification/FrameBasedTrainableSvmClassifier.cpp
 	src/classification/IImg.cpp
-	src/classification/SvmClassifier.cpp
-	src/classification/RvmClassifier.cpp
-	src/classification/VectorMachineClassifier.cpp
-	src/classification/ProbabilisticWvmClassifier.cpp
+	src/classification/LibSvmUtils.cpp
 	src/classification/ProbabilisticRvmClassifier.cpp
 	src/classification/ProbabilisticSvmClassifier.cpp
-	src/classification/TrainableSvmClassifier.cpp
-	src/classification/FrameBasedTrainableSvmClassifier.cpp
-	src/classification/FixedSizeTrainableSvmClassifier.cpp
+	src/classification/ProbabilisticTwoStageClassifier.cpp
+	src/classification/ProbabilisticWvmClassifier.cpp
+	src/classification/RvmClassifier.cpp
+	src/classification/SvmClassifier.cpp
+	src/classification/TrainableOneClassSvmClassifier.cpp
+	src/classification/TrainableProbabilisticOneClassSvmClassifier.cpp
 	src/classification/TrainableProbabilisticSvmClassifier.cpp
+	src/classification/TrainableSvmClassifier.cpp
+	src/classification/VectorMachineClassifier.cpp
+	src/classification/WvmClassifier.cpp
 	src/svm.cpp
 )
 
