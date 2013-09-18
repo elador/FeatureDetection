@@ -41,6 +41,8 @@ add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature poin
 
 #add_subdirectory(trackerAppERT)		# kind of deprecated, was only a test. But can use this to see how to make a real-time tracker.
 
-add_subdirectory(mergePlaygroundApp)	# Test-app for the refactored/merged code
+#add_subdirectory(mergePlaygroundApp)	# Test-app for the refactored/merged code
 
-add_subdirectory(faceRecogTestApp)		# App for doing face recognition tests with a gallery and probe images
+#add_subdirectory(faceRecogTestApp)		# App for doing face recognition tests with a gallery and probe images
+#add_subdirectory(frDbTool)		# App for managing (creating and populating) the sqlite-database used for face-recognition experiments
+#add_subdirectory(frDbExp)		# App for doing experiments with the face recognition scores in the database

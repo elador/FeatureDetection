@@ -48,6 +48,12 @@ public:
 
 	vector<path> getNames() const;
 
+	/**
+	 * Resets the image source so that it starts again at the first image, if possible.
+	 *
+	 */
+	void reset();
+
 private:
 	vector<path> files; ///< The files of the given directory, ordered by name.
 	unsigned int index; ///< The index of the next file.
