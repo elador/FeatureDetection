@@ -82,97 +82,26 @@ ostream& operator<<(ostream& os, const vector<T>& v)
     return os;
 }
 
-void toMatlab(path filename, vector<float> scores, int numFailureToEnroll, string plotTitle, string curveName, string curveParameters="r-", bool appendToFile=false) {
+void writeAscii(path filename, vector<float> positiveScores, vector<float> negativeScores, int numFailureToEnroll, string experimentTitle, string curveLabel) {
 
-	ofstream file;
-
-	if (appendToFile)
-		file.open(filename.string(), ios::app);
-	else
-		file.open(filename.string());
+	ofstream file(filename.string());
 
 	if (file.is_open()) {
 
-		string matlabVarName = curveName;
-		replace(begin(matlabVarName), end(matlabVarName), ' ', '_');
-		replace(begin(matlabVarName), end(matlabVarName), '-', '_');
-		replace(begin(matlabVarName), end(matlabVarName), '+', '_');
-		replace(begin(matlabVarName), end(matlabVarName), '=', '_');
-		replace(begin(matlabVarName), end(matlabVarName), '(', '_');
-		replace(begin(matlabVarName), end(matlabVarName), ')', '_');
-		replace(begin(matlabVarName), end(matlabVarName), '.', '_');
-		replace(begin(matlabVarName), end(matlabVarName), ',', '_');
-
-		if (appendToFile)
-			file << "hold on;" << endl;
-		if (numFailureToEnroll > 0) {
-			file << matlabVarName << "_y = 0:(1/(size(" << matlabVarName << ", 2)+numFte - 1)):1;" << endl;
-			file << "numFte = " << numFailureToEnroll << ";" << endl; // Todo: Check: If I call this function twice, with different FTE-vals (can that happen?), do I get the right curves?
-			// Todo: Check for FTE = 0?
-			file << "numFteVec = zeros(1, " << numFailureToEnroll << ");" << endl; // or, if the score could get negative, chose the point a little bit behind the lowest point's score
-			file << "fte_yAxisVal = numFte/size([numFteVec, " << matlabVarName << "], 2);" << endl; // the y-value (the FTE-percentage), our curve crosses the y-axis here and starts here
-			file << "fte_yAxisValVec = fte_yAxisVal * ones(1, numFte);" << endl;
-			file << matlabVarName << "_y(1:numFte) = fte_yAxisValVec;" << endl; // Replace the y-axis values by the fte-y-axis-val
-			file << matlabVarName << " = [";
-			copy(begin(scores), end(scores), ostream_iterator<float>(file, " "));
-			file << "];" << endl;
-			file << "plot([numFteVec, " << matlabVarName << "], " << matlabVarName << "_y, '" << curveParameters << "', 'DisplayName', '" << curveName << "');" << endl;
-		} else {
-			file << matlabVarName << "_y = 0:(1/(size(" << matlabVarName << ", 2) - 1)):1;" << endl;
-			file << matlabVarName << " = [";
-			copy(begin(scores), end(scores), ostream_iterator<float>(file, " "));
-			file << "];" << endl;
-			file << "plot(" << matlabVarName << ", " << matlabVarName << "_y, '" << curveParameters << "', 'DisplayName', '" << curveName << "');" << endl;
-		}
-		file << "legend('-DynamicLegend');" << endl;
-		file << "title('" << plotTitle << "');" << endl;
-		file << "xlabel('Score');" << endl;
-		file << "ylabel('Frequency');" << endl; // Percentage of examples
+		file << experimentTitle << endl;
+		file << curveLabel << endl;
+		file << "fte " << numFailureToEnroll << endl;
+		copy(begin(positiveScores), end(positiveScores), ostream_iterator<float>(file, " "));
+		file << endl;
+		copy(begin(negativeScores), end(negativeScores), ostream_iterator<float>(file, " "));
+		file << endl;
 
 		file.close();
 
 	}
 }
 
-void toMatlabDetCurve(path filename, string plotTitle, string curveNameFp, string curveNameFn, string curveParameters="r-") {
 
-	ofstream file;
-	file.open(filename.string(), ios::app);
-	
-	if (file.is_open()) {
-
-		string matlabVarNameFp = curveNameFp;
-		replace(begin(matlabVarNameFp), end(matlabVarNameFp), ' ', '_');
-		replace(begin(matlabVarNameFp), end(matlabVarNameFp), '-', '_');
-		replace(begin(matlabVarNameFp), end(matlabVarNameFp), '+', '_');
-		replace(begin(matlabVarNameFp), end(matlabVarNameFp), '=', '_');
-		replace(begin(matlabVarNameFp), end(matlabVarNameFp), '(', '_');
-		replace(begin(matlabVarNameFp), end(matlabVarNameFp), ')', '_');
-		replace(begin(matlabVarNameFp), end(matlabVarNameFp), '.', '_');
-		replace(begin(matlabVarNameFp), end(matlabVarNameFp), ',', '_');
-
-		string matlabVarNameFn = curveNameFn;
-		replace(begin(matlabVarNameFn), end(matlabVarNameFn), ' ', '_');
-		replace(begin(matlabVarNameFn), end(matlabVarNameFn), '-', '_');
-		replace(begin(matlabVarNameFn), end(matlabVarNameFn), '+', '_');
-		replace(begin(matlabVarNameFn), end(matlabVarNameFn), '=', '_');
-		replace(begin(matlabVarNameFn), end(matlabVarNameFn), '(', '_');
-		replace(begin(matlabVarNameFn), end(matlabVarNameFn), ')', '_');
-		replace(begin(matlabVarNameFn), end(matlabVarNameFn), '.', '_');
-		replace(begin(matlabVarNameFn), end(matlabVarNameFn), ',', '_');
-
-		file << "figure(2);" << endl;
-		file << "[det_fp, det_fn] = fpfn2detCurve(" << matlabVarNameFp << ", " << matlabVarNameFp << "_y, " << matlabVarNameFn << ", " << matlabVarNameFn << "_y);" << endl;
-		file << "plot(det_fp, det_fn, '" << curveParameters << "', 'DisplayName', '" << "DetCurve" << "');" << endl;
-		file << "legend('-DynamicLegend');" << endl;
-		file << "title('" << plotTitle << "');" << endl;
-		file << "xlabel('FP');" << endl;
-		file << "ylabel('FN');" << endl;
-
-		file.close();
-
-	}
-}
 
 
 int main(int argc, char *argv[])
@@ -225,7 +154,8 @@ int main(int argc, char *argv[])
 	int numFailureToEnroll = 0;
 
 	query.setForwardOnly(true);
-	ret = query.exec("SELECT s.* FROM scores s INNER JOIN images ip ON s.probe = ip.filepath INNER JOIN images ig ON s.gallery = ig.filepath WHERE s.algorithm='Full_FVSDK_8_7_0' AND ip.roll=0.0 AND ip.pitch=0.0 AND (ip.yaw=45.0 OR ip.yaw=-45.0) AND ig.roll=0.0 AND ig.pitch=0.0 AND ig.yaw=0.0 AND ip.subject=ig.subject"); // (if I had more images, add WHERE db=multipie, lighting=..., etc.) // AND (ip.yaw=60.0 OR ip.yaw=45) // AND ip.subject=001
+	//ret = query.exec("SELECT s.* FROM scores s INNER JOIN images ip ON s.probe = ip.filepath INNER JOIN images ig ON s.gallery = ig.filepath WHERE s.algorithm='Full_FVSDK_8_7_0' AND ip.roll=0.0 AND ip.pitch=0.0 AND (ip.yaw=15.0 OR ip.yaw=-15.0) AND ig.roll=0.0 AND ig.pitch=0.0 AND ig.yaw=0.0 AND ip.subject=ig.subject"); // (if I had more images, add WHERE db=multipie, lighting=..., etc.) // AND (ip.yaw=60.0 OR ip.yaw=45) // AND ip.subject=001
+	ret = query.exec("SELECT s.* FROM scores s INNER JOIN images ip ON s.probe = ip.filepath INNER JOIN images ig ON s.gallery = ig.filepath WHERE s.algorithm='Full_FVSDK_8_7_0' AND ip.roll=0.0 AND ip.pitch=0.0 AND (ip.yaw=15.0 OR ip.yaw=-15.0 OR ip.yaw=30.0 OR ip.yaw=-30.0 OR ip.yaw=45.0 OR ip.yaw=-45.0 OR ip.yaw=60.0 OR ip.yaw=-60.0) AND ig.roll=0.0 AND ig.pitch=0.0 AND ig.yaw=0.0 AND ip.subject=ig.subject"); // (if I had more images, add WHERE db=multipie, lighting=..., etc.) // AND (ip.yaw=60.0 OR ip.yaw=45) // AND ip.subject=001
 	if (!ret) {
 		cout << query.lastError().text().toStdString() << endl;
 	}
@@ -237,7 +167,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	ret = query.exec("SELECT s.* FROM scores s INNER JOIN images ip ON s.probe = ip.filepath INNER JOIN images ig ON s.gallery = ig.filepath WHERE s.algorithm='Full_FVSDK_8_7_0' AND ip.roll=0.0 AND ip.pitch=0.0 AND (ip.yaw=45.0 OR ip.yaw=-45.0) AND ig.roll=0.0 AND ig.pitch=0.0 AND ig.yaw=0.0 AND ip.subject!=ig.subject"); // (if I had more images, add WHERE db=multipie, lighting=..., etc.) // AND (ip.yaw=60.0 OR ip.yaw=45) // AND ip.subject=001
+	//ret = query.exec("SELECT s.* FROM scores s INNER JOIN images ip ON s.probe = ip.filepath INNER JOIN images ig ON s.gallery = ig.filepath WHERE s.algorithm='Full_FVSDK_8_7_0' AND ip.roll=0.0 AND ip.pitch=0.0 AND (ip.yaw=15.0 OR ip.yaw=-15.0) AND ig.roll=0.0 AND ig.pitch=0.0 AND ig.yaw=0.0 AND ip.subject!=ig.subject"); // (if I had more images, add WHERE db=multipie, lighting=..., etc.) // AND (ip.yaw=60.0 OR ip.yaw=45) // AND ip.subject=001
+	ret = query.exec("SELECT s.* FROM scores s INNER JOIN images ip ON s.probe = ip.filepath INNER JOIN images ig ON s.gallery = ig.filepath WHERE s.algorithm='Full_FVSDK_8_7_0' AND ip.roll=0.0 AND ip.pitch=0.0 AND (ip.yaw=15.0 OR ip.yaw=-15.0 OR ip.yaw=30.0 OR ip.yaw=-30.0 OR ip.yaw=45.0 OR ip.yaw=-45.0 OR ip.yaw=60.0 OR ip.yaw=-60.0) AND ig.roll=0.0 AND ig.pitch=0.0 AND ig.yaw=0.0 AND ip.subject!=ig.subject"); // (if I had more images, add WHERE db=multipie, lighting=..., etc.) // AND (ip.yaw=60.0 OR ip.yaw=45) // AND ip.subject=001
 	if (!ret) {
 		cout << query.lastError().text().toStdString() << endl;
 	}
@@ -253,14 +184,8 @@ int main(int argc, char *argv[])
 	sort(begin(positiveScores), end(positiveScores), less<float>()); // 0 to 1
 	sort(begin(negativeScores), end(negativeScores), greater<float>()); // 1 to 0
 
-	toMatlab("C:/Users/Patrik/Documents/MATLAB/scores.m", positiveScores, numFailureToEnroll, "Cumulative histogram of the scores of the positive and negative ground-truth",  "FRR (positives) y=45", "r-", false);
-	toMatlab("C:/Users/Patrik/Documents/MATLAB/scores.m", negativeScores, 0, "Cumulative histogram of the scores of the positive and negative ground-truth",  "FAR (negatives) y=45", "b-", true);
-
-	toMatlabDetCurve("C:/Users/Patrik/Documents/MATLAB/scores.m", "Det", "FRR (positives) y=45", "FAR (negatives) y=45", "r-");
-
-	// toMatlab(void) (generate a matlab string)
-	// toAscii(string fn) (generate a ascii (csv or similar) to plot in ML)
-	// own plot fuction
+	//writeAscii("C:/Users/Patrik/Documents/MATLAB/probes_pm15_fte.txt", positiveScores, negativeScores, numFailureToEnroll, "Probes yaw = +-15, with FTE's", "yaw=+-15");
+	writeAscii("C:/Users/Patrik/Documents/MATLAB/probes_all.txt", positiveScores, negativeScores, numFailureToEnroll, "Probes -60 to +60 yaw angles (excluding 0)", "yaw -60 to +60 (w/o 0)");
 
 	// in der db: bei  ip.yaw=-60.0 fehlt 1 eintrag
 
