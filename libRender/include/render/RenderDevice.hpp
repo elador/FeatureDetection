@@ -32,6 +32,13 @@ namespace render {
 class RenderDevice
 {
 public:
+	enum class RenderMode {
+		WIREFRAME, ///< Todo
+		VERTEX_COLORING,   ///< Todo
+		TEXTURING   ///< Todo
+	};
+
+
 	// Future Todo: Use c++11 delegating c'tors as soon as VS supports it, i.e. create a viewport with 640x480 default
 	
 	RenderDevice(unsigned int screenWidth, unsigned int screenHeight);

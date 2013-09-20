@@ -80,4 +80,9 @@ vector<path> FileListImageSource::getNames() const
 	return files;
 }
 
+void FileListImageSource::reset()
+{
+	index = -1;
+}
+
 } /* namespace imageio */

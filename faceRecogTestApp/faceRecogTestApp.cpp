@@ -6,8 +6,8 @@
  */
 
 // For memory leak debugging: http://msdn.microsoft.com/en-us/library/x98tx3cf(v=VS.100).aspx
-#define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
+//#define _CRTDBG_MAP_ALLOC
+//#include <stdlib.h>
 
 #ifdef WIN32
 	#include <SDKDDKVer.h>
@@ -28,23 +28,7 @@
 #endif  // _DEBUG
 */
 
-#include <iostream>
-#include <fstream>
-#include <chrono>
-#include <unordered_map>
-
-#include "opencv2/core/core.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/highgui/highgui.hpp"
-
-#ifdef WIN32
-	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
-	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
-#endif
-#include "boost/program_options.hpp"
-#include "boost/iterator/indirect_iterator.hpp"
-#include "boost/property_tree/ptree.hpp"
-#include "boost/property_tree/info_parser.hpp"
+#include "faceRecogTestApp.hpp"
 
 #include "imageio/Landmark.hpp"
 #include "imageio/LandmarksHelper.hpp"
@@ -59,7 +43,25 @@
 
 #include "logging/LoggerFactory.hpp"
 
-#include "faceRecogTestApp.hpp"
+#ifdef WIN32
+#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
+#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
+#endif
+#include "boost/program_options.hpp"
+#include "boost/iterator/indirect_iterator.hpp"
+#include "boost/property_tree/ptree.hpp"
+#include "boost/property_tree/info_parser.hpp"
+
+#include "opencv2/core/core.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
+
+#include <QtSql>
+
+#include <iostream>
+#include <fstream>
+#include <chrono>
+#include <unordered_map>
 
 namespace po = boost::program_options;
 using namespace std;
@@ -78,6 +80,9 @@ ostream& operator<<(ostream& os, const vector<T>& v)
     return os;
 }
 
+bool subjectsMatch(string subject1, string subject2) {
+	return subject1.substr(0, 2) == subject2.substr(0, 2);
+}
 
 int main(int argc, char *argv[])
 {
@@ -116,7 +121,7 @@ int main(int argc, char *argv[])
 	path scoreOutDir = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\scores\\";
 	path galleryFirList = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath_firlist.lst";
 
-	shared_ptr<ImageSource> galleryImageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath.lst");
+	shared_ptr<FileListImageSource> galleryImageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath.lst");
 	shared_ptr<ImageSource> probeImageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_probe_fullpath.lst");
 
 	Mat img;
@@ -128,23 +133,119 @@ int main(int argc, char *argv[])
 		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + galleryImageSource->getName().stem().string() + ".fir " + "-imgs " + galleryImageSource->getName().string();
 		int cmdRet = system(cmd.c_str());
 		cout << cmdRet;
-	}*/
+	}
 
 	// create all FIR's of probes
-	/*
+	
 	while (probeImageSource->next()) {
 		img = probeImageSource->getImage();
 		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + probeImageSource->getName().stem().string() + ".fir " + "-imgs " + probeImageSource->getName().string();
 		int cmdRet = system(cmd.c_str());
 		cout << cmdRet;
-	}*/
+	}
+	*/
 
 	// create the scores of each probe against the whole gallery
+	/*
 	while (probeImageSource->next()) {
-		cmd = fvsdkBins.string() + "match.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-probe " + firOutDir.string() + probeImageSource->getName().stem().string() + ".fir " + "-gallery " + galleryFirList.string() + " -out " + scoreOutDir.string() + probeImageSource->getName().stem().string() + ".fir";
-		int cmdRet = system(cmd.c_str());
+		path probeFirFilepath = path(firOutDir.string() + probeImageSource->getName().stem().string() + ".fir ");
+		if (boost::filesystem::exists(probeFirFilepath)) { // We were able to enroll a probe, so there is a FIR, go and match it against gallery
+			cmd = fvsdkBins.string() + "match.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-probe " + probeFirFilepath.string() + "-gallery " + galleryFirList.string() + " -out " + scoreOutDir.string() + probeImageSource->getName().stem().string() + ".txt";
+			int cmdRet = system(cmd.c_str());
+		} else { // We were not able to enroll the probe - create an empty .txt with content "fte".
+			string scoreOutPath = scoreOutDir.string() + probeImageSource->getName().stem().string() + ".txt";
+			ofstream myfile;
+			myfile.open(scoreOutPath);
+			myfile << "FTE" << endl;
+			myfile.close();
+		}
 	}
+	*/
 
+	// Go through each probe and change the "FTE"-files to contain all 0.0's with "FTE"-flag
+	
+	while (probeImageSource->next()) {
+		path probeFirFilepath = path(firOutDir.string() + probeImageSource->getName().stem().string() + ".fir ");
+		if (boost::filesystem::exists(probeFirFilepath)) { // We were able to enroll a probe, so there is a FIR, go and match it against gallery
+			//cmd = fvsdkBins.string() + "match.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-probe " + probeFirFilepath.string() + "-gallery " + galleryFirList.string() + " -out " + scoreOutDir.string() + probeImageSource->getName().stem().string() + ".txt";
+			//int cmdRet = system(cmd.c_str());
+		} else { // We were not able to enroll the probe - create an empty .txt with content "fte".
+			string scoreOutPath = scoreOutDir.string() + probeImageSource->getName().stem().string() + ".txt";
+			ofstream scoresFile;
+			scoresFile.open(scoreOutPath);
+
+			while (galleryImageSource->next()) {
+				string galleryFilename = galleryImageSource->getName().stem().string();
+				scoresFile << galleryFilename+".fir" << " " << "0.0" << " " << "FTE" << endl; // Should not contain .fir but the canonical image name
+			}
+			galleryImageSource->reset();
+			scoresFile.close();
+			
+		}
+	}
+	
+
+	// 
+
+	// Go through each probe image and calculate the statistics.
+	/*
+	int numProbes = 0;
+	int fte = 0;
+	int rank1Matches = 0;
+	int noRank1Match = 0;
+	while (probeImageSource->next()) {
+		string scoreOutPath = scoreOutDir.string() + probeImageSource->getName().stem().string() + ".txt";
+		ifstream scoreFile(scoreOutPath);
+		string line;
+		if (scoreFile.is_open()) {
+			getline(scoreFile, line);
+			++numProbes;
+			if (line == "FTE") {	// is it a probe that couldn't be enrolled?
+				++fte;
+				scoreFile.close();
+				continue;
+			}
+			// we were able to enroll the probe, go on:
+			//auto comp = [](const pair<string, float>& lhs, const pair<string, float>& rhs) -> bool { return lhs.second < rhs.second; };
+			//auto galleryScores = std::set<pair<string, float>, decltype(comp)>(comp);
+			typedef set< pair<string, float>, function<bool(pair<string, float>, pair<string, float>)> > ScoresSet;
+			ScoresSet galleryScores(
+				[] ( pair<string, float> lhs, pair<string, float> rhs ) { return lhs.second > rhs.second ; } ) ;
+
+			path galleryName;
+			float galleryScore;
+			istringstream lineStream(line);
+			lineStream >> galleryName;
+			lineStream >> galleryScore;
+			galleryScores.insert(make_pair(galleryName.stem().string(), galleryScore));
+			while (scoreFile.good())
+			{
+				getline(scoreFile, line);
+				istringstream lineStream(line);
+				lineStream >> galleryName;
+				lineStream >> galleryScore;
+				galleryScores.insert(make_pair(galleryName.stem().string(), galleryScore));
+			}
+			scoreFile.close();
+
+			// Go see if we got a match (rank-1):
+			cout << "Gallery rank-1 match: " << galleryScores.begin()->first << ", Probe: " << probeImageSource->getName().stem().string() << endl;
+			if (subjectsMatch(galleryScores.begin()->first, probeImageSource->getName().stem().string())) {
+				++rank1Matches;
+			} else {
+				++noRank1Match;
+			}
+		}
+		
+		
+	}
+	cout << numProbes << ", " << fte << ", " << rank1Matches << ", " << noRank1Match << endl;
+	*/
+	// map flip
+	// unordered map, sortiert einfuegen (letztes element merken)
+	// min/max_element
+	// std::set(=ordered) mit pair und custom comparator
+	// boost::bimap
 
 	return 0;
 }
