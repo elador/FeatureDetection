@@ -19,10 +19,8 @@ using std::make_shared;
 
 namespace condensation {
 
-PositionDependentMeasurementModel::PositionDependentMeasurementModel(shared_ptr<FeatureExtractor> featureExtractor,
-		shared_ptr<TrainableProbabilisticClassifier> classifier, int startFrameCount, int stopFrameCount,
-		float targetThreshold, float confidenceThreshold, float positiveOffsetFactor, float negativeOffsetFactor,
-		int sampleNegativesAroundTarget, bool sampleFalsePositives, unsigned int randomNegatives, bool exploitSymmetry) :
+PositionDependentMeasurementModel::PositionDependentMeasurementModel(
+		shared_ptr<FeatureExtractor> featureExtractor, shared_ptr<TrainableProbabilisticClassifier> classifier) :
 				generator(),
 				distribution(),
 				measurementModel(make_shared<SingleClassifierModel>(featureExtractor, classifier)),
@@ -30,22 +28,19 @@ PositionDependentMeasurementModel::PositionDependentMeasurementModel(shared_ptr<
 				classifier(classifier),
 				usable(false),
 				frameCount(0),
-				startFrameCount(startFrameCount),
-				stopFrameCount(stopFrameCount),
-				targetThreshold(targetThreshold),
-				confidenceThreshold(confidenceThreshold),
-				positiveOffsetFactor(positiveOffsetFactor),
-				negativeOffsetFactor(negativeOffsetFactor),
-				sampleNegativesAroundTarget(sampleNegativesAroundTarget),
-				sampleFalsePositives(sampleFalsePositives),
-				randomNegatives(randomNegatives),
-				exploitSymmetry(exploitSymmetry) {}
+				startFrameCount(3),
+				stopFrameCount(0),
+				targetThreshold(0.7),
+				confidenceThreshold(0.95),
+				positiveOffsetFactor(0.05),
+				negativeOffsetFactor(0.5),
+				sampleNegativesAroundTarget(0),
+				sampleAdditionalNegatives(10),
+				sampleTestNegatives(10),
+				exploitSymmetry(false) {}
 
 PositionDependentMeasurementModel::PositionDependentMeasurementModel(shared_ptr<MeasurementModel> measurementModel,
-		shared_ptr<FeatureExtractor> featureExtractor, shared_ptr<TrainableProbabilisticClassifier> classifier,
-		int startFrameCount, int stopFrameCount, float targetThreshold, float confidenceThreshold,
-		float positiveOffsetFactor, float negativeOffsetFactor, int sampleNegativesAroundTarget, bool sampleFalsePositives,
-		unsigned int randomNegatives, bool exploitSymmetry) :
+		shared_ptr<FeatureExtractor> featureExtractor, shared_ptr<TrainableProbabilisticClassifier> classifier) :
 				generator(),
 				distribution(),
 				measurementModel(measurementModel),
@@ -53,16 +48,16 @@ PositionDependentMeasurementModel::PositionDependentMeasurementModel(shared_ptr<
 				classifier(classifier),
 				usable(false),
 				frameCount(0),
-				startFrameCount(startFrameCount),
-				stopFrameCount(stopFrameCount),
-				targetThreshold(targetThreshold),
-				confidenceThreshold(confidenceThreshold),
-				positiveOffsetFactor(positiveOffsetFactor),
-				negativeOffsetFactor(negativeOffsetFactor),
-				sampleNegativesAroundTarget(sampleNegativesAroundTarget),
-				sampleFalsePositives(sampleFalsePositives),
-				randomNegatives(randomNegatives),
-				exploitSymmetry(exploitSymmetry) {}
+				startFrameCount(3),
+				stopFrameCount(0),
+				targetThreshold(0.7),
+				confidenceThreshold(0.95),
+				positiveOffsetFactor(0.05),
+				negativeOffsetFactor(0.5),
+				sampleNegativesAroundTarget(0),
+				sampleAdditionalNegatives(10),
+				sampleTestNegatives(10),
+				exploitSymmetry(false) {}
 
 PositionDependentMeasurementModel::~PositionDependentMeasurementModel() {}
 
@@ -165,26 +160,14 @@ bool PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 		}
 	}
 
-	if (sampleFalsePositives) {
-		for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample) {
-			if (sample->isObject()
-					&& (sample->getX() <= xLowBound || sample->getX() >= xHighBound
-					|| sample->getY() <= yLowBound || sample->getY() >= yHighBound
-					|| sample->getSize() <= sizeLowBound || sample->getSize() >= sizeHighBound)) {
-				negativeSamples.push_back(*sample);
-			}
-		}
-	}
-
-	if (randomNegatives > 0) {
+	if (sampleAdditionalNegatives > 0) {
 		vector<Sample> additionalNegatives;
-		additionalNegatives.reserve(randomNegatives);
+		additionalNegatives.reserve(sampleAdditionalNegatives);
 		for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample) {
-			if ((!sampleFalsePositives || !sample->isObject())
-					&& (sample->getX() <= xLowBound || sample->getX() >= xHighBound
+			if (sample->getX() <= xLowBound || sample->getX() >= xHighBound
 					|| sample->getY() <= yLowBound || sample->getY() >= yHighBound
-					|| sample->getSize() <= sizeLowBound || sample->getSize() >= sizeHighBound)) {
-				if (additionalNegatives.size() < randomNegatives) {
+					|| sample->getSize() <= sizeLowBound || sample->getSize() >= sizeHighBound) {
+				if (additionalNegatives.size() < sampleAdditionalNegatives) {
 					vector<Sample>::iterator low = lower_bound(additionalNegatives.begin(), additionalNegatives.end(), *sample);
 					additionalNegatives.insert(low, *sample);
 				} else if (additionalNegatives.front().getWeight() < sample->getWeight()) {
@@ -198,7 +181,7 @@ bool PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 				}
 			}
 		}
-		while (additionalNegatives.size() < randomNegatives) {
+		while (additionalNegatives.size() < sampleAdditionalNegatives) {
 			Sample sample = createRandomSample(image->getData());
 			if (sample.getX() <= xLowBound || sample.getX() >= xHighBound
 					|| sample.getY() <= yLowBound || sample.getY() >= yHighBound
@@ -210,14 +193,31 @@ bool PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 		negativeSamples.insert(negativeSamples.end(), additionalNegatives.begin(), additionalNegatives.end());
 	}
 
+	vector<Mat> positiveTestExamples;
+	positiveTestExamples.push_back(targetPatch->getData());
+	vector<Mat> negativeTestExamples;
+	negativeTestExamples.reserve(sampleTestNegatives);
+	while (negativeTestExamples.size() < sampleTestNegatives) {
+		Sample sample = createRandomSample(image->getData());
+		if (sample.getX() <= xLowBound || sample.getX() >= xHighBound
+				|| sample.getY() <= yLowBound || sample.getY() >= yHighBound
+				|| sample.getSize() <= sizeLowBound || sample.getSize() >= sizeHighBound) {
+			shared_ptr<Patch> patch = featureExtractor->extract(sample.getX(), sample.getY(), sample.getSize(), sample.getSize());
+			if (patch)
+				negativeTestExamples.push_back(patch->getData());
+		}
+	}
+
 	if (isUsable() && confidenceThreshold > 0)
 		usable = classifier->retrain(
 				getFeatureVectors(positiveSamples, [this](Mat& vector) { return classifier->classify(vector).second < confidenceThreshold; }),
-				getFeatureVectors(negativeSamples, [this](Mat& vector) { return classifier->classify(vector).second > 1 - confidenceThreshold; }));
+				getFeatureVectors(negativeSamples, [this](Mat& vector) { return classifier->classify(vector).second > 1 - confidenceThreshold; }),
+				positiveTestExamples, negativeTestExamples);
 	else
 		usable = classifier->retrain(
 				getFeatureVectors(positiveSamples, [](Mat&) { return true; }),
-				getFeatureVectors(negativeSamples, [](Mat&) { return true; }));
+				getFeatureVectors(negativeSamples, [](Mat&) { return true; }),
+				positiveTestExamples, negativeTestExamples);
 	return true;
 }
 

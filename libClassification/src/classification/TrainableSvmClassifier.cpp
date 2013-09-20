@@ -58,20 +58,6 @@ void TrainableSvmClassifier::createParameters(const shared_ptr<Kernel> kernel, d
 	kernel->setLibSvmParams(param.get());
 }
 
-pair<double, double> TrainableSvmClassifier::computeMeanSvmOutputs() {
-	double positiveOutputSum = 0;
-	double negativeOutputSum = 0;
-	unsigned int positiveCount = getPositiveCount();
-	unsigned int negativeCount = problem->l - positiveCount;
-	unsigned int totalCount = problem->l;
-	unsigned int i = 0;
-	for (; i < positiveCount; ++i)
-		positiveOutputSum += computeSvmOutput(problem->x[i]);
-	for (; i < totalCount; ++i)
-		negativeOutputSum += computeSvmOutput(problem->x[i]);
-	return make_pair(positiveOutputSum / positiveCount, negativeOutputSum / negativeCount);
-}
-
 double TrainableSvmClassifier::computeSvmOutput(const struct svm_node *x) const {
 	return utils.computeSvmOutput(model.get(), x);
 }

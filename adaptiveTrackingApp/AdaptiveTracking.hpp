@@ -16,7 +16,10 @@
 #include "imageprocessing/LbpFilter.hpp"
 #include "imageprocessing/HistogramFilter.hpp"
 #include "classification/Kernel.hpp"
+#include "classification/ProbabilisticSvmClassifier.hpp"
+#include "classification/TrainableClassifier.hpp"
 #include "classification/TrainableSvmClassifier.hpp"
+#include "classification/TrainableOneClassSvmClassifier.hpp"
 #include "classification/TrainableProbabilisticClassifier.hpp"
 #include "condensation/CondensationTracker.hpp"
 #include "condensation/AdaptiveCondensationTracker.hpp"
@@ -82,8 +85,9 @@ private:
 	shared_ptr<FeatureExtractor> wrapFeatureExtractor(shared_ptr<FeatureExtractor> featureExtractor, float scaleFactor);
 	shared_ptr<Kernel> createKernel(ptree& config);
 	shared_ptr<TrainableSvmClassifier> createTrainableSvm(shared_ptr<Kernel> kernel, ptree& config);
-	shared_ptr<TrainableProbabilisticClassifier> createTrainableProbabilisticSvm(shared_ptr<TrainableSvmClassifier> trainableSvm, ptree& config);
 	shared_ptr<TrainableProbabilisticClassifier> createTrainableProbabilisticClassifier(shared_ptr<Kernel> kernel, ptree& config);
+	shared_ptr<TrainableProbabilisticClassifier> createTrainableProbabilisticSvm(
+			shared_ptr<TrainableClassifier> trainableSvm, shared_ptr<ProbabilisticSvmClassifier> probabilisticSvm, ptree& config);
 	void initTracking(ptree& config);
 	void initGui();
 	void drawDebug(Mat& image, bool usedAdaptive);

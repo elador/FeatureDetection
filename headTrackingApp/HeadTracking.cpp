@@ -56,7 +56,6 @@
 #include "classification/FixedSizeTrainableSvmClassifier.hpp"
 #include "classification/FixedTrainableProbabilisticSvmClassifier.hpp"
 #include "classification/TrainableOneClassSvmClassifier.hpp"
-#include "classification/TrainableProbabilisticOneClassSvmClassifier.hpp"
 #include "condensation/ResamplingSampler.hpp"
 #include "condensation/GridSampler.hpp"
 #include "condensation/LowVarianceSampling.hpp"
@@ -332,35 +331,43 @@ shared_ptr<TrainableSvmClassifier> HeadTracking::createTrainableSvm(shared_ptr<K
 	return trainableSvm;
 }
 
-shared_ptr<TrainableProbabilisticClassifier> HeadTracking::createTrainableProbabilisticSvm(
-		shared_ptr<TrainableSvmClassifier> trainableSvm, ptree& config) {
-	if (config.get_value<string>() == "default")
-		return make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm);
-	else if (config.get_value<string>() == "fixed")
-		return make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm);
-	else
-		throw invalid_argument("HeadTracking: invalid probabilistic SVM type: " + config.get_value<string>());
-}
-
 shared_ptr<TrainableProbabilisticClassifier> HeadTracking::createTrainableProbabilisticClassifier(shared_ptr<Kernel> kernel, ptree& config) {
-	shared_ptr<TrainableProbabilisticClassifier> classifier;
 	shared_ptr<SvmClassifier> svm;
+	shared_ptr<TrainableClassifier> trainableClassifier;
 	if (config.get_value<string>() == "svm") {
 		shared_ptr<TrainableSvmClassifier> trainableSvm = createTrainableSvm(kernel, config.get_child("training"));
+		trainableClassifier = trainableSvm;
 		svm = trainableSvm->getSvm();
-		classifier = createTrainableProbabilisticSvm(trainableSvm, config.get_child("probabilistic"));
 	} else if (config.get_value<string>() == "one-class-svm") {
 		shared_ptr<TrainableOneClassSvmClassifier> trainableSvm = make_shared<TrainableOneClassSvmClassifier>(kernel,
 				config.get<double>("training.nu"), config.get<double>("training.minExamples"), config.get<double>("training.maxExamples"));
+		trainableClassifier = trainableSvm;
 		svm = trainableSvm->getSvm();
-		classifier = make_shared<TrainableProbabilisticOneClassSvmClassifier>(trainableSvm);
 	} else {
 		throw invalid_argument("HeadTracking: invalid classifier type: " + config.get_value<string>());
 	}
 	optional<ptree&> thresholdConfig = config.get_child_optional("threshold");
 	if (thresholdConfig)
 		svm->setThreshold(thresholdConfig->get_value<float>());
-	return classifier;
+	return createTrainableProbabilisticSvm(trainableClassifier, make_shared<ProbabilisticSvmClassifier>(svm), config.get_child("probabilistic"));
+}
+
+shared_ptr<TrainableProbabilisticClassifier> HeadTracking::createTrainableProbabilisticSvm(
+		shared_ptr<TrainableClassifier> trainableSvm, shared_ptr<ProbabilisticSvmClassifier> probabilisticSvm, ptree& config) {
+	shared_ptr<TrainableProbabilisticSvmClassifier> svm;
+	if (config.get_value<string>() == "default")
+		svm = make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm, probabilisticSvm,
+				config.get<int>("positiveExamples"), config.get<int>("negativeExamples"),
+				config.get<double>("positiveProbability"), config.get<double>("negativeProbability"));
+	else if (config.get_value<string>() == "fixed")
+		svm = make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm, probabilisticSvm,
+				config.get<double>("positiveProbability"), config.get<double>("negativeProbability"),
+				config.get<double>("positiveMean"), config.get<double>("negativeMean"));
+	else
+		throw invalid_argument("HeadTracking: invalid probabilistic SVM type: " + config.get_value<string>());
+	if (config.get<string>("adjustThreshold") != "no")
+		svm->setAdjustThreshold(config.get<double>("adjustThreshold"));
+	return svm;
 }
 
 void HeadTracking::initTracking(ptree& config) {
@@ -395,13 +402,22 @@ void HeadTracking::initTracking(ptree& config) {
 			throw invalid_argument("HeadTracking: invalid filter type: " + config.get<string>("filter"));
 		}
 	}
-	adaptiveMeasurementModel.reset(new PositionDependentMeasurementModel(
-			measurementModel, adaptiveFeatureExtractor, classifier,
-			config.get<int>("adaptive.measurement.startFrameCount"), config.get<int>("adaptive.measurement.stopFrameCount"),
-			config.get<float>("adaptive.measurement.targetThreshold"), config.get<float>("adaptive.measurement.confidenceThreshold"),
-			config.get<float>("adaptive.measurement.positiveOffsetFactor"), config.get<float>("adaptive.measurement.negativeOffsetFactor"),
-			config.get<int>("adaptive.measurement.sampleNegativesAroundTarget"), config.get<bool>("adaptive.measurement.sampleFalsePositives"),
-			config.get<unsigned int>("adaptive.measurement.randomNegatives"), config.get<bool>("adaptive.measurement.exploitSymmetry")));
+	shared_ptr<PositionDependentMeasurementModel> model = make_shared<PositionDependentMeasurementModel>(measurementModel, adaptiveFeatureExtractor, classifier);
+	model->setFrameCounts(
+			config.get<unsigned int>("adaptive.measurement.startFrameCount"),
+			config.get<unsigned int>("adaptive.measurement.stopFrameCount"));
+	model->setThresholds(
+			config.get<float>("adaptive.measurement.targetThreshold"),
+			config.get<float>("adaptive.measurement.confidenceThreshold"));
+	model->setOffsetFactors(
+			config.get<float>("adaptive.measurement.positiveOffsetFactor"),
+			config.get<float>("adaptive.measurement.negativeOffsetFactor"));
+	model->setSamplingProperties(
+			config.get<unsigned int>("adaptive.measurement.sampleNegativesAroundTarget"),
+			config.get<unsigned int>("adaptive.measurement.sampleAdditionalNegatives"),
+			config.get<unsigned int>("adaptive.measurement.sampleTestNegatives"),
+			config.get<bool>("adaptive.measurement.exploitSymmetry"));
+	adaptiveMeasurementModel = model;
 
 	// create transition model
 	shared_ptr<TransitionModel> transitionModel;

@@ -103,13 +103,6 @@ public:
 	 */
 	void loadStaticNegatives(const string& negativesFilename, int maxNegatives, double scale = 1);
 
-	/**
-	 * Computes the mean SVM outputs of the positive and negative training examples.
-	 *
-	 * @return A pair containing the positive and negative mean SVM outputs.
-	 */
-	pair<double, double> computeMeanSvmOutputs();
-
 protected:
 
 	/**

@@ -45,7 +45,6 @@ SET(HEADERS
 	include/classification/TrainableClassifier.hpp
 	include/classification/TrainableOneClassSvmClassifier.hpp
 	include/classification/TrainableProbabilisticClassifier.hpp
-	include/classification/TrainableProbabilisticOneClassSvmClassifier.hpp
 	include/classification/TrainableProbabilisticSvmClassifier.hpp
 	include/classification/TrainableProbabilisticTwoStageClassifier.hpp
 	include/classification/TrainableSvmClassifier.hpp
@@ -65,7 +64,6 @@ SET(SOURCE
 	src/classification/RvmClassifier.cpp
 	src/classification/SvmClassifier.cpp
 	src/classification/TrainableOneClassSvmClassifier.cpp
-	src/classification/TrainableProbabilisticOneClassSvmClassifier.cpp
 	src/classification/TrainableProbabilisticSvmClassifier.cpp
 	src/classification/TrainableSvmClassifier.cpp
 	src/classification/VectorMachineClassifier.cpp

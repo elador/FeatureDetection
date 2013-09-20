@@ -39,14 +39,29 @@ public:
 	virtual pair<bool, double> classify(const Mat& featureVector) const = 0;
 
 	/**
-	 * Re-trains this classifier incrementally, adding new training examples. May not change the classifier
+	 * Re-trains this classifier incrementally, adding new training examples. The training examples will also
+	 * be used as test examples to determine the parameters of the logistic function for probabilistic output.
+	 * May not change the classifier if there is not enough training data.
+	 *
+	 * @param[in] newPositiveExamples The new positive training and test examples.
+	 * @param[in] newNegativeExamples The new negative training and test examples.
+	 * @return True if this classifier was trained successfully and may be used, false otherwise.
+	 */
+	virtual bool retrain(const vector<Mat>& newPositiveExamples, const vector<Mat>& newNegativeExamples) = 0;
+
+	/**
+	 * Re-trains this classifier incrementally, adding new training examples. The test examples will be used to
+	 * determine the parameters of the logistic function for probabilistic output. May not change the classifier
 	 * if there is not enough training data.
 	 *
 	 * @param[in] newPositiveExamples The new positive training examples.
 	 * @param[in] newNegativeExamples The new negative training examples.
+	 * @param[in] newPositiveTestExamples The new positive test examples.
+	 * @param[in] newNegativeTestExamples The new negative test examples.
 	 * @return True if this classifier was trained successfully and may be used, false otherwise.
 	 */
-	virtual bool retrain(const vector<Mat>& newPositiveExamples, const vector<Mat>& newNegativeExamples) = 0;
+	virtual bool retrain(const vector<Mat>& newPositiveExamples, const vector<Mat>& newNegativeExamples,
+			const vector<Mat>& newPositiveTestExamples, const vector<Mat>& newNegativeTestExamples) = 0;
 
 	/**
 	 * Resets this classifier. May not change the classifier at all, but it should not be used
