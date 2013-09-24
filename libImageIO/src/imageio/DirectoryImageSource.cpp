@@ -41,7 +41,21 @@ DirectoryImageSource::DirectoryImageSource(const string& directory) : ImageSourc
 
 		First prototype version of file filtering by extension:
 	*/
-	vector<string> imageExtensions = { "bmp", "dib", "pbm", "pgm", "ppm", "sr", "ras", "jpeg", "jpg", "jpe", "jp2", "png", "tiff", "tif" };
+	vector<string> imageExtensions;
+	imageExtensions.push_back("bmp");
+	imageExtensions.push_back("dib");
+	imageExtensions.push_back("pbm");
+	imageExtensions.push_back("pgm");
+	imageExtensions.push_back("ppm");
+	imageExtensions.push_back("sr");
+	imageExtensions.push_back("ras");
+	imageExtensions.push_back("jpeg");
+	imageExtensions.push_back("jpg");
+	imageExtensions.push_back("jpe");
+	imageExtensions.push_back("jp2");
+	imageExtensions.push_back("png");
+	imageExtensions.push_back("tiff");
+	imageExtensions.push_back("tif");
 	auto newFilesEnd = std::remove_if(files.begin(), files.end(), [&](const path& file) {
 		string extension = file.extension().string().substr(1);
 		std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);

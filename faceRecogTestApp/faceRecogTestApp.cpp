@@ -63,6 +63,9 @@
 #include <chrono>
 #include <unordered_map>
 
+#include "statismo/StatisticalModel.h"
+#include "Representers/VTK/vtkStandardMeshRepresenter.h"
+
 namespace po = boost::program_options;
 using namespace std;
 using namespace imageio;
