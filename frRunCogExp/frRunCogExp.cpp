@@ -28,7 +28,7 @@
 #endif  // _DEBUG
 */
 
-#include "faceRecogTestApp.hpp"
+#include "frRunCogExp.hpp"
 
 #include "imageio/Landmark.hpp"
 #include "imageio/LandmarksHelper.hpp"
