@@ -46,12 +46,12 @@ find_package(Qt5Sql)
 #MESSAGE(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 #FIND_PACKAGE( HDF5 REQUIRED COMPONENTS C CXX ) # Maybe: FIND_PACKAGE (HDF5 REQURIED), and then, further up, PROJECT (HDF5MyApp C CXX) ? (according to hdf5 docu)
 
-Find_Package(statismo)
-MESSAGE(STATUS "statismo: ${STATISMO_DIR}")
-MESSAGE(STATUS "statismo: ${STATISMO_LIBRARIES}")
-MESSAGE(STATUS "statismo: ${STATISMO_LIBRARY_DIR}")
-MESSAGE(STATUS "statismo: ${STATISMO_INCLUDE_DIRS}")
-include_directories( ${STATISMO_INCLUDE_DIRS} )
+#Find_Package(statismo)
+#MESSAGE(STATUS "statismo: ${STATISMO_DIR}")
+#MESSAGE(STATUS "statismo: ${STATISMO_LIBRARIES}")
+#MESSAGE(STATUS "statismo: ${STATISMO_LIBRARY_DIR}")
+#MESSAGE(STATUS "statismo: ${STATISMO_INCLUDE_DIRS}")
+#include_directories( ${STATISMO_INCLUDE_DIRS} )
 
 #Source and header files:
 SET(SOURCE

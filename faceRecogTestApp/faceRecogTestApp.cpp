@@ -63,8 +63,8 @@
 #include <chrono>
 #include <unordered_map>
 
-#include "statismo/StatisticalModel.h"
-#include "Representers/VTK/vtkStandardMeshRepresenter.h"
+//#include "statismo/StatisticalModel.h"
+//#include "Representers/VTK/vtkStandardMeshRepresenter.h"
 
 namespace po = boost::program_options;
 using namespace std;
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
 	*/
 
 	// Go through each probe and change the "FTE"-files to contain all 0.0's with "FTE"-flag
-	
+	/*
 	while (probeImageSource->next()) {
 		path probeFirFilepath = path(firOutDir.string() + probeImageSource->getName().stem().string() + ".fir ");
 		if (boost::filesystem::exists(probeFirFilepath)) { // We were able to enroll a probe, so there is a FIR, go and match it against gallery
@@ -186,69 +186,7 @@ int main(int argc, char *argv[])
 			
 		}
 	}
-	
-
-	// 
-
-	// Go through each probe image and calculate the statistics.
-	/*
-	int numProbes = 0;
-	int fte = 0;
-	int rank1Matches = 0;
-	int noRank1Match = 0;
-	while (probeImageSource->next()) {
-		string scoreOutPath = scoreOutDir.string() + probeImageSource->getName().stem().string() + ".txt";
-		ifstream scoreFile(scoreOutPath);
-		string line;
-		if (scoreFile.is_open()) {
-			getline(scoreFile, line);
-			++numProbes;
-			if (line == "FTE") {	// is it a probe that couldn't be enrolled?
-				++fte;
-				scoreFile.close();
-				continue;
-			}
-			// we were able to enroll the probe, go on:
-			//auto comp = [](const pair<string, float>& lhs, const pair<string, float>& rhs) -> bool { return lhs.second < rhs.second; };
-			//auto galleryScores = std::set<pair<string, float>, decltype(comp)>(comp);
-			typedef set< pair<string, float>, function<bool(pair<string, float>, pair<string, float>)> > ScoresSet;
-			ScoresSet galleryScores(
-				[] ( pair<string, float> lhs, pair<string, float> rhs ) { return lhs.second > rhs.second ; } ) ;
-
-			path galleryName;
-			float galleryScore;
-			istringstream lineStream(line);
-			lineStream >> galleryName;
-			lineStream >> galleryScore;
-			galleryScores.insert(make_pair(galleryName.stem().string(), galleryScore));
-			while (scoreFile.good())
-			{
-				getline(scoreFile, line);
-				istringstream lineStream(line);
-				lineStream >> galleryName;
-				lineStream >> galleryScore;
-				galleryScores.insert(make_pair(galleryName.stem().string(), galleryScore));
-			}
-			scoreFile.close();
-
-			// Go see if we got a match (rank-1):
-			cout << "Gallery rank-1 match: " << galleryScores.begin()->first << ", Probe: " << probeImageSource->getName().stem().string() << endl;
-			if (subjectsMatch(galleryScores.begin()->first, probeImageSource->getName().stem().string())) {
-				++rank1Matches;
-			} else {
-				++noRank1Match;
-			}
-		}
-		
-		
-	}
-	cout << numProbes << ", " << fte << ", " << rank1Matches << ", " << noRank1Match << endl;
 	*/
-	// map flip
-	// unordered map, sortiert einfuegen (letztes element merken)
-	// min/max_element
-	// std::set(=ordered) mit pair und custom comparator
-	// boost::bimap
 
 	return 0;
 }
