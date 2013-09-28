@@ -41,6 +41,23 @@ vector<shared_ptr<ClassifiedPatch>> SlidingWindowDetector::detect(const Mat& ima
 	return detect();
 }
 
+
+vector<shared_ptr<ClassifiedPatch>> SlidingWindowDetector::detect(const Mat& image, const Mat& mask)
+{
+	featureExtractor->update(image);
+
+	vector<shared_ptr<ClassifiedPatch>> classifiedPatches;
+	vector<shared_ptr<Patch>> pyramidPatches = featureExtractor->extract(stepSizeX, stepSizeY);
+
+	for (unsigned int i = 0; i < pyramidPatches.size(); ++i) {
+		pair<bool, double> res = classifier->classify(pyramidPatches[i]->getData());
+		if(res.first==true)
+			classifiedPatches.push_back(make_shared<ClassifiedPatch>(pyramidPatches[i], res));
+	}
+	return classifiedPatches;
+}
+
+
 vector<shared_ptr<ClassifiedPatch>> SlidingWindowDetector::detect(shared_ptr<VersionedImage> image)
 {
 	featureExtractor->update(image);
