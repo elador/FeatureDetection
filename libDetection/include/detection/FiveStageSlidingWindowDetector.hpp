@@ -45,7 +45,7 @@ public:
 	 */
 	vector<shared_ptr<ClassifiedPatch>> detect(const Mat& image);
 
-	vector<shared_ptr<ClassifiedPatch>> detect(const Mat& image, const Mat& mask);
+	vector<shared_ptr<ClassifiedPatch>> detect(const Mat& image, const Rect& roi);
 
 	/**
 	 * Processes the image in a sliding window fashion.

@@ -66,7 +66,7 @@ public:
 						and "attach" several outputs to one Patch? Implement like in the "before-merge"-Lib ?
 					Returns a vector of _sorted_ patches that got positively classified by detector.
 	 */
-	vector<shared_ptr<ClassifiedPatch>> detect(const Mat& image, const Mat& mask);
+	vector<shared_ptr<ClassifiedPatch>> detect(const Mat& image, const Rect& roi);
 
 	/**
 	 * Processes the image in a sliding window fashion.

@@ -109,7 +109,7 @@ vector<shared_ptr<ClassifiedPatch>> FiveStageSlidingWindowDetector::detect(share
 	return classifiedPatches;
 }
 
-vector<shared_ptr<ClassifiedPatch>> FiveStageSlidingWindowDetector::detect(const Mat& image, const Mat& mask)
+vector<shared_ptr<ClassifiedPatch>> FiveStageSlidingWindowDetector::detect(const Mat& image, const Rect& roi)
 {
 	vector<shared_ptr<ClassifiedPatch>> classifiedPatches;
 
@@ -119,7 +119,7 @@ vector<shared_ptr<ClassifiedPatch>> FiveStageSlidingWindowDetector::detect(const
 	// Log the original image?
 
 	// WVM stage
-	classifiedPatches = slidingWindowDetector->detect(image, mask); // TODO: All the code in this function, except the 'mask' here, is an exact copy of the function above. Improve that!
+	classifiedPatches = slidingWindowDetector->detect(image, roi); // TODO: All the code in this function, except the 'mask' here, is an exact copy of the function above. Improve that!
 	Mat imgWvm = image.clone();
 	imageLogger.intermediate(imgWvm, bind(drawBoxes, imgWvm, classifiedPatches), "01wvm"); // The detector could send a MESSAGE to the logger here, and in the image-logger config we could configure them (which one to output, what filename). E.g. here the message could be something like FIVESTAGE...STAGE1... (is it always a wvm?) and also the name of the detector or feature, but maybe that's not available here. (=>we could set it in the imagelogger externally before the call)
 

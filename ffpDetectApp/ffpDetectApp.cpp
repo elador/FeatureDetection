@@ -566,13 +566,17 @@ int main(int argc, char *argv[])
 		appLogger.debug("Finished face-detection. Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
 		
 		// Create the binary mask (ROI) for the feature detectors:
-		Mat mask = Mat::zeros(img.rows, img.cols, CV_8UC1);
-		mask = patchToMask(facePatches[0]->getPatch(), mask);
+		//Mat mask = Mat::zeros(img.rows, img.cols, CV_8UC1);
+		//mask = patchToMask(facePatches[0]->getPatch(), mask);
+		
+		// Use only a single Rect ROI for now:
+		// Using detect(...) with facePatches[0]->getPatch()->getBounds()
 
 		// Detect all features in the face-box:
 		map<string, vector<shared_ptr<ClassifiedPatch>>> allFeaturePatches;
 		for(const auto& detector : featureDetectors) {
-			vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img, mask);
+			ImageLoggers->getLogger("detection").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
+			vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img, facePatches[0]->getPatch()->getBounds());
 
 			//shared_ptr<PyramidFeatureExtractor> pfe = detector.second->getPyramidFeatureExtractor();
 			//drawScales(ffdResultImg, 20, 20, pfe->getMinScaleFactor(), pfe->getMaxScaleFactor());
