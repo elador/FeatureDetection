@@ -28,7 +28,12 @@ NamedLabeledImageSource::NamedLabeledImageSource(shared_ptr<ImageSource> imageSo
 
 NamedLabeledImageSource::~NamedLabeledImageSource() {}
 
-const bool NamedLabeledImageSource::next()
+void NamedLabeledImageSource::reset()
+{
+	imageSource->reset();
+}
+
+bool NamedLabeledImageSource::next()
 {
 	return imageSource->next();
 }

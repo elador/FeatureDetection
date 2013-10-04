@@ -29,7 +29,9 @@ public:
 
 	virtual ~LabeledImageSource() {}
 
-	virtual const bool next() = 0;
+	virtual void reset() = 0;
+
+	virtual bool next() = 0;
 
 	virtual const Mat getImage() const = 0;
 

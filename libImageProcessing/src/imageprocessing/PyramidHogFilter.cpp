@@ -110,7 +110,6 @@ void PyramidHogFilter::normalizeHistograms(float* histogramsValues, int histogra
 		float normalizer = 1.f / sqrt(energy + eps);
 		for (int binIndex = 0; binIndex < realBinCount; ++binIndex)
 			histogramValues[binIndex] = normalizer * histogramValues[binIndex];
-//			histogramValues[bin] = std::min(0.2f, normalizer * histogramValues[bin]); // TODO with or without?
 		histogramValues += realBinCount;
 	}
 }

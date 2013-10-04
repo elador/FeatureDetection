@@ -56,7 +56,12 @@ DirectoryImageSource::DirectoryImageSource(const string& directory) : ImageSourc
 
 DirectoryImageSource::~DirectoryImageSource() {}
 
-const bool DirectoryImageSource::next()
+void DirectoryImageSource::reset()
+{
+	index = -1;
+}
+
+bool DirectoryImageSource::next()
 {
 	index++;
 	return index < files.size();

@@ -22,11 +22,16 @@ public:
 	virtual ~OrderedLandmarkSource() {}
 
 	/**
+	 * Resets the landmark source to its initial state.
+	 */
+	virtual void reset() = 0;
+
+	/**
 	 * Moves the landmark source forward to the next collection of landmarks.
 	 *
 	 * @return True if the landmark source contains a next collection of landmarks, false otherwise.
 	 */
-	virtual const bool next() = 0;
+	virtual bool next() = 0;
 
 	/**
 	 * Retrieves the current collection of landmarks and moves the landmark source forward to

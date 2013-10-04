@@ -42,7 +42,9 @@ public:
 
 	virtual ~NamedLabeledImageSource();
 
-	const bool next();
+	void reset();
+
+	bool next();
 
 	const Mat getImage() const;
 
@@ -53,6 +55,7 @@ public:
 	const LandmarkCollection& getLandmarks() const;
 
 private:
+
 	shared_ptr<ImageSource> imageSource; ///< The underlying image source.
 	shared_ptr<NamedLandmarkSource> landmarkSource; ///< The underlying landmark source.
 

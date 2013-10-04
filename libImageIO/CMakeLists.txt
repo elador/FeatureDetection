@@ -22,55 +22,58 @@ ENDIF()
 
 # source and header files
 SET(HEADERS
-	include/imageio/ImageSource.hpp
-	include/imageio/FileImageSource.hpp
-	include/imageio/RepeatingFileImageSource.hpp
-	include/imageio/FileListImageSource.hpp
-	include/imageio/DirectoryImageSource.hpp
-	include/imageio/VideoImageSource.hpp
-	include/imageio/KinectImageSource.hpp
-	include/imageio/NamedLabeledImageSource.hpp
-	include/imageio/OrderedLabeledImageSource.hpp
-	include/imageio/ImageSink.hpp
-	include/imageio/DirectoryImageSink.hpp
-	include/imageio/VideoImageSink.hpp
-	include/imageio/Landmark.hpp
-	include/imageio/ModelLandmark.hpp
-	include/imageio/RectLandmark.hpp
-	include/imageio/LandmarkCollection.hpp
-	include/imageio/NamedLandmarkSource.hpp
-	include/imageio/DefaultNamedLandmarkSource.hpp
-	include/imageio/OrderedLandmarkSource.hpp
-	include/imageio/EmptyLandmarkSource.hpp
-	include/imageio/BobotLandmarkSource.hpp
-	include/imageio/OrderedLandmarkSink.hpp
 	include/imageio/BobotLandmarkSink.hpp
+	include/imageio/BobotLandmarkSource.hpp
+	include/imageio/CameraImageSource.hpp
+	include/imageio/DefaultNamedLandmarkSource.hpp
+	include/imageio/DidLandmarkFormatParser.hpp
+	include/imageio/DirectoryImageSink.hpp
+	include/imageio/DirectoryImageSource.hpp
+	include/imageio/EmptyLandmarkSource.hpp
+	include/imageio/FileImageSource.hpp
+	include/imageio/FileListImageSource.hpp
+	include/imageio/ImageSink.hpp
+	include/imageio/ImageSource.hpp
+	include/imageio/KinectImageSource.hpp
+	include/imageio/LabeledImageSource.hpp
+	include/imageio/Landmark.hpp
+	include/imageio/LandmarkCollection.hpp
 	include/imageio/LandmarkFileGatherer.hpp
 	include/imageio/LandmarkFormatParser.hpp
-	include/imageio/DidLandmarkFormatParser.hpp
-	include/imageio/TlmsLandmarkFormatParser.hpp
 	include/imageio/LandmarksHelper.hpp
+	include/imageio/ModelLandmark.hpp
+	include/imageio/NamedLabeledImageSource.hpp
+	include/imageio/NamedLandmarkSource.hpp
+	include/imageio/OrderedLabeledImageSource.hpp
+	include/imageio/OrderedLandmarkSink.hpp
+	include/imageio/OrderedLandmarkSource.hpp
+	include/imageio/RectLandmark.hpp
+	include/imageio/RepeatingFileImageSource.hpp
+	include/imageio/TlmsLandmarkFormatParser.hpp
+	include/imageio/VideoImageSink.hpp
+	include/imageio/VideoImageSource.hpp
 )
 SET(SOURCE
-	src/imageio/FileImageSource.cpp
-	src/imageio/RepeatingFileImageSource.cpp
-	src/imageio/FileListImageSource.cpp
+	src/imageio/BobotLandmarkSink.cpp
+	src/imageio/BobotLandmarkSource.cpp
+	src/imageio/CameraImageSource.cpp
+	src/imageio/DefaultNamedLandmarkSource.cpp
+	src/imageio/DidLandmarkFormatParser.cpp
+	src/imageio/DirectoryImageSink.cpp
 	src/imageio/DirectoryImageSource.cpp
-	src/imageio/VideoImageSource.cpp
+	src/imageio/FileImageSource.cpp
+	src/imageio/FileListImageSource.cpp
 	src/imageio/KinectImageSource.cpp
+	src/imageio/LandmarkCollection.cpp
+	src/imageio/LandmarkFileGatherer.cpp
+	src/imageio/ModelLandmark.cpp
 	src/imageio/NamedLabeledImageSource.cpp
 	src/imageio/OrderedLabeledImageSource.cpp
-	src/imageio/DirectoryImageSink.cpp
-	src/imageio/VideoImageSink.cpp
-	src/imageio/ModelLandmark.cpp
 	src/imageio/RectLandmark.cpp
-	src/imageio/LandmarkCollection.cpp
-	src/imageio/DefaultNamedLandmarkSource.cpp
-	src/imageio/BobotLandmarkSource.cpp
-	src/imageio/BobotLandmarkSink.cpp
-	src/imageio/LandmarkFileGatherer.cpp
-	src/imageio/DidLandmarkFormatParser.cpp
+	src/imageio/RepeatingFileImageSource.cpp
 	src/imageio/TlmsLandmarkFormatParser.cpp
+	src/imageio/VideoImageSink.cpp
+	src/imageio/VideoImageSource.cpp
 )
 
 include_directories( "include" )

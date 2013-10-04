@@ -47,7 +47,11 @@ BobotLandmarkSource::BobotLandmarkSource(shared_ptr<ImageSource> imageSource, co
 
 BobotLandmarkSource::~BobotLandmarkSource() {}
 
-const bool BobotLandmarkSource::next() {
+void BobotLandmarkSource::reset() {
+	index = -1;
+}
+
+bool BobotLandmarkSource::next() {
 	index++;
 	return index < static_cast<int>(positions.size());
 }

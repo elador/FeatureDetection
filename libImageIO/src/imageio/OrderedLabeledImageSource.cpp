@@ -17,7 +17,12 @@ OrderedLabeledImageSource::OrderedLabeledImageSource(
 
 OrderedLabeledImageSource::~OrderedLabeledImageSource() {}
 
-const bool OrderedLabeledImageSource::next() {
+void OrderedLabeledImageSource::reset() {
+	imageSource->reset();
+	landmarkSource->reset();
+}
+
+bool OrderedLabeledImageSource::next() {
 	landmarkSource->next();
 	return imageSource->next();
 }

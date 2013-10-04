@@ -9,27 +9,33 @@
 #include "boost/lexical_cast.hpp"
 #include <iostream>
 #include <string>
+#include <stdexcept>
 
 using boost::lexical_cast;
-using std::string;
+using std::invalid_argument;
+using std::runtime_error;
 
 namespace imageio {
 
-VideoImageSource::VideoImageSource(int device) : ImageSource(lexical_cast<string>(device)), capture(device), frame(), frameCounter(0) {
+VideoImageSource::VideoImageSource(string video) :
+		ImageSource(video), video(video), capture(video), frame(), frameCounter(0) {
 	if (!capture.isOpened())
-		std::cerr << "Could not open stream from device " << device << std::endl;
-}
-
-VideoImageSource::VideoImageSource(string video) : ImageSource(video), capture(video), frame(), frameCounter(0) {
-	if (!capture.isOpened())
-		std::cerr << "Could not open video file '" << video << "'" << std::endl;
+		throw invalid_argument("Could not open video file '" + video + "'");
 }
 
 VideoImageSource::~VideoImageSource() {
 	capture.release();
 }
 
-const bool VideoImageSource::next()
+void VideoImageSource::reset()
+{
+	capture.release();
+	if (!capture.open(video))
+		throw runtime_error("Could not open video file '" + video + "'");
+	frameCounter = 0;
+}
+
+bool VideoImageSource::next()
 {
 	++frameCounter;	// We'll overflow after 2 years at 60fps... guess that's not a problem?
 	return capture.read(frame);

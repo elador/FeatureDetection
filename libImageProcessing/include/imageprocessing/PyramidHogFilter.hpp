@@ -14,7 +14,7 @@ namespace imageprocessing {
 
 /**
  * Filter that creates a spatial pyramid of histograms of oriented gradients (HOG) based on images containing gradient
- * bin information. The normalization method is L2NORM and cannot be changed. TODO evtl L2HYS (auch anpassen in aufruf des basisklassen-konstruktors)
+ * bin information. The normalization method is L2NORM and cannot be changed.
  *
  * The input is an image with depth CV_8U containing bin information (bin indices and optionally weights). It must have
  * one, two or four channels. In case of one channel, it just contains the bin index. The second channel adds a weight

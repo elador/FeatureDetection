@@ -91,12 +91,10 @@ void HogFilter::createBlockHistograms(const Mat& cellHistograms, const Mat& cell
 					const float* cellHistogramValues = cellHistogramsValues + cellRow * cellColumnCount * binCount + cellCol * binCount;
 					for (int binIndex = 0; binIndex < binCount; ++binIndex)
 						blockHistogramValues[binIndex] = normalizer * cellHistogramValues[binIndex];
-//						blockHistogramValues[bin] = std::min(0.2f, normalizer * cellHistogramValues[bin]); // TODO with or without?
 					blockHistogramValues += binCount;
 					if (signedAndUnsigned) { // sum up opposing gradients to get unsigned gradients and add to histogram
 						for (int binIndex = 0; binIndex < binHalfCount; ++binIndex)
 							blockHistogramValues[binIndex] = normalizer * (cellHistogramValues[binIndex] + cellHistogramValues[binHalfCount + binIndex]);
-//							blockHistogramValues[bin] = std::min(0.2f, normalizer * (cellHistogramValues[bin] + cellHistogramValues[binHalfCount + bin])); // TODO with or without?
 						blockHistogramValues += binHalfCount;
 					}
 				}

@@ -48,7 +48,12 @@ FileImageSource::FileImageSource(vector<string> filePaths) : ImageSource(filePat
 
 FileImageSource::~FileImageSource() {}
 
-const bool FileImageSource::next()
+void FileImageSource::reset()
+{
+	index = -1;
+}
+
+bool FileImageSource::next()
 {
 	index++;
 	return index < files.size();

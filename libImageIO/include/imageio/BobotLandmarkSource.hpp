@@ -45,7 +45,9 @@ public:
 
 	~BobotLandmarkSource();
 
-	const bool next();
+	void reset();
+
+	bool next();
 
 	const LandmarkCollection& get();
 

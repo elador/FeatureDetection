@@ -32,7 +32,11 @@ RepeatingFileImageSource::RepeatingFileImageSource(string filePath) : ImageSourc
 
 RepeatingFileImageSource::~RepeatingFileImageSource() {}
 
-const bool RepeatingFileImageSource::next()
+void RepeatingFileImageSource::reset()
+{
+}
+
+bool RepeatingFileImageSource::next()
 {
 	return true;
 }

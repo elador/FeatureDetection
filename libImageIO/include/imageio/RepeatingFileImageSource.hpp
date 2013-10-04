@@ -39,7 +39,9 @@ public:
 
 	virtual ~RepeatingFileImageSource();
 
-	const bool next();
+	void reset();
+
+	bool next();
 
 	const Mat getImage() const;
 

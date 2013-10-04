@@ -98,7 +98,11 @@ KinectImageSource::~KinectImageSource() {
 #endif
 }
 
-const bool KinectImageSource::next() {
+void KinectImageSource::reset() {
+	// TODO release and re-initialize Kinect camera
+}
+
+bool KinectImageSource::next() {
 
 #ifdef WIN32
 	// Attempt to get the color frame

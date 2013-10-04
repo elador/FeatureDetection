@@ -1,35 +1,34 @@
 /*
- * VideoImageSource.hpp
+ * CameraImageSource.hpp
  *
- *  Created on: 20.08.2012
+ *  Created on: 27.09.2013
  *      Author: poschmann
  */
 
-#ifndef VIDEOIMAGESOURCE_HPP_
-#define VIDEOIMAGESOURCE_HPP_
+#ifndef CAMERAIMAGESOURCE_HPP_
+#define CAMERAIMAGESOURCE_HPP_
 
 #include "imageio/ImageSource.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
 using cv::VideoCapture;
-using std::string;
 
 namespace imageio {
 
 /**
- * Image source that takes images from a video file.
+ * Image source that takes images from a camera device.
  */
-class VideoImageSource : public ImageSource {
+class CameraImageSource : public ImageSource {
 public:
 
 	/**
-	 * Constructs a new video image source.
+	 * Constructs a new camera image source.
 	 *
-	 * @param[in] video The name of the video file.
+	 * @param[in] device ID of the video capturing device.
 	 */
-	explicit VideoImageSource(string video);
+	explicit CameraImageSource(int device);
 
-	virtual ~VideoImageSource();
+	virtual ~CameraImageSource();
 
 	void reset();
 
@@ -43,11 +42,11 @@ public:
 
 private:
 
-	string video;         ///< The name of the video file.
+	int device;           ///< ID of the video capturing device.
 	VideoCapture capture; ///< The video capture.
 	Mat frame;            ///< The current frame.
 	unsigned long frameCounter; ///< The current frame number since the capture was started.
 };
 
 } /* namespace imageio */
-#endif /* VIDEOIMAGESOURCE_HPP_ */
+#endif /* CAMERAIMAGESOURCE_HPP_ */

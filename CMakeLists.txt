@@ -29,6 +29,7 @@ add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 #add_subdirectory(libRender)				# A software renderer to render vertices and 3D-meshes
 #add_subdirectory(libShapeModels)		# Head/face specific things; 2D/3D models; Combining feature points
 
+add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.
 add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
 add_subdirectory(adaptiveTrackingApp)	# Adaptive tracking app.
 #add_subdirectory(partiallyAdaptiveTrackingApp)	# Old adaptive tracking app.

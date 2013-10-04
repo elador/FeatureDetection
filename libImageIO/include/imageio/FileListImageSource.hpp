@@ -40,19 +40,15 @@ public:
 
 	~FileListImageSource();
 
-	const bool next();
+	void reset();
+
+	bool next();
 
 	const Mat getImage() const;
 
 	path getName() const;
 
 	vector<path> getNames() const;
-
-	/**
-	 * Resets the image source so that it starts again at the first image, if possible.
-	 *
-	 */
-	void reset();
 
 private:
 	vector<path> files; ///< The files of the given directory, ordered by name.

@@ -113,14 +113,10 @@ void ExtendedHogFilter::createDescriptors(const Mat& histograms, Mat& descriptor
 
 				// signed orientation features (aka contrast-sensitive)
 				for (int bin = 0; bin < binCount; ++bin) {
-					float h1 = std::min(alpha, cellHistogramValues[bin] * n1); // TODO
+					float h1 = std::min(alpha, cellHistogramValues[bin] * n1);
 					float h2 = std::min(alpha, cellHistogramValues[bin] * n2);
 					float h3 = std::min(alpha, cellHistogramValues[bin] * n3);
 					float h4 = std::min(alpha, cellHistogramValues[bin] * n4);
-//					float h1 = cellHistogramValues[bin] * n1;
-//					float h2 = cellHistogramValues[bin] * n2;
-//					float h3 = cellHistogramValues[bin] * n3;
-//					float h4 = cellHistogramValues[bin] * n4;
 					values[bin] = 0.5 * (h1 + h2 + h3 + h4);
 					t1 += h1;
 					t2 += h2;
@@ -132,14 +128,10 @@ void ExtendedHogFilter::createDescriptors(const Mat& histograms, Mat& descriptor
 				// unsigned orientation features (aka contrast-insensitive)
 				for (int bin = 0; bin < halfBins; ++bin) {
 					float sum = cellHistogramValues[bin] + cellHistogramValues[bin + halfBins];
-					float h1 = std::min(alpha, sum * n1); // TODO
+					float h1 = std::min(alpha, sum * n1);
 					float h2 = std::min(alpha, sum * n2);
 					float h3 = std::min(alpha, sum * n3);
 					float h4 = std::min(alpha, sum * n4);
-//					float h1 = sum * n1;
-//					float h2 = sum * n2;
-//					float h3 = sum * n3;
-//					float h4 = sum * n4;
 					values[bin] = 0.5 * (h1 + h2 + h3 + h4);
 				}
 				values += halfBins;

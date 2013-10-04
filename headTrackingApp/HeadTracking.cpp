@@ -12,6 +12,7 @@
 #include "imageio/OrderedLandmarkSource.hpp"
 #include "imageio/BobotLandmarkSource.hpp"
 #include "imageio/EmptyLandmarkSource.hpp"
+#include "imageio/CameraImageSource.hpp"
 #include "imageio/VideoImageSource.hpp"
 #include "imageio/KinectImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
@@ -209,7 +210,7 @@ shared_ptr<FeatureExtractor> HeadTracking::createFeatureExtractor(
 		featureExtractor->addPatchFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
 		featureExtractor->addPatchFilter(make_shared<ExtendedHogFilter>(config.get<int>("bins"), config.get<int>("histogram.cellSize"),
 				config.get<bool>("histogram.interpolate"), config.get<bool>("histogram.signedAndUnsigned"), config.get<float>("histogram.alpha")));
-		return wrapFeatureExtractor(featureExtractor, scaleFactor);
+		return wrapFeatureExtractor(make_shared<IntegralFeatureExtractor>(featureExtractor), scaleFactor);
 	} else if (config.get_value<string>() == "surf") {
 		shared_ptr<DirectImageFeatureExtractor> featureExtractor = make_shared<DirectImageFeatureExtractor>();
 		featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
@@ -850,7 +851,7 @@ int main(int argc, char *argv[]) {
 
 	shared_ptr<ImageSource> imageSource;
 	if (useCamera)
-		imageSource.reset(new VideoImageSource(deviceId));
+		imageSource.reset(new CameraImageSource(deviceId));
 	else if (useKinect)
 		imageSource.reset(new KinectImageSource(kinectId));
 	else if (useFile)

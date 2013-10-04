@@ -55,7 +55,12 @@ FileListImageSource::FileListImageSource(const string& filelist) : ImageSource(f
 
 FileListImageSource::~FileListImageSource() {}
 
-const bool FileListImageSource::next()
+void FileListImageSource::reset()
+{
+	index = -1;
+}
+
+bool FileListImageSource::next()
 {
 	index++;
 	return index < files.size();
@@ -78,11 +83,6 @@ path FileListImageSource::getName() const
 vector<path> FileListImageSource::getNames() const
 {
 	return files;
-}
-
-void FileListImageSource::reset()
-{
-	index = -1;
 }
 
 } /* namespace imageio */

@@ -9,6 +9,7 @@
 #include "logging/LoggerFactory.hpp"
 #include "logging/Logger.hpp"
 #include "logging/ConsoleAppender.hpp"
+#include "imageio/CameraImageSource.hpp"
 #include "imageio/VideoImageSource.hpp"
 #include "imageio/KinectImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
@@ -205,7 +206,6 @@ void FaceTracking::run() {
 	running = true;
 	paused = false;
 
-	bool first = true;
 	cv::Mat frame, image;
 	cv::Scalar red(0, 0, 255); // blue, green, red
 	cv::Scalar green(0, 255, 0); // blue, green, red
@@ -328,7 +328,7 @@ int main(int argc, char *argv[]) {
 
 	unique_ptr<ImageSource> imageSource;
 	if (useCamera)
-		imageSource.reset(new VideoImageSource(deviceId));
+		imageSource.reset(new CameraImageSource(deviceId));
 	else if (useKinect)
 		imageSource.reset(new KinectImageSource(kinectId));
 	else if (useFile)

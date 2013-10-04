@@ -60,11 +60,16 @@ public:
 	}
 
 	/**
+	 * Resets this source to its initial state.
+	 */
+	virtual void reset() = 0;
+
+	/**
 	 * Proceeds to the next image of this source.
 	 *
 	 * @return True if successful (so there was another image), false otherwise.
 	 */
-	virtual const bool next() = 0;
+	virtual bool next() = 0;
 
 	/**
 	 * Retrieves the current image.

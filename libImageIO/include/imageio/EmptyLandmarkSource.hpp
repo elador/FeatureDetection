@@ -27,7 +27,9 @@ public:
 
 	~EmptyLandmarkSource() {}
 
-	const bool next() {
+	void reset() {}
+
+	bool next() {
 		return true;
 	}
 
