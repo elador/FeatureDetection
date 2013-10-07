@@ -16,6 +16,7 @@
 #include <string>
 
 using cv::Mat;
+using cv::Rect;
 using std::vector;
 using std::shared_ptr;
 using std::pair;
@@ -56,6 +57,15 @@ public:
 	 * @return A list of the patches that were positively classified by the detector.
 	 */
 	virtual vector<shared_ptr<ClassifiedPatch>> detect(const Mat& image) = 0;
+
+	/**
+	 * Detect on an image, but only in the region where the mask is non-zero.
+	 *
+	 * @param[in] image The image that the detector should run on.
+	 * @param[in] image The mask .
+	 * @return A list of the patches that were positively classified by the detector.
+	 */
+	virtual vector<shared_ptr<ClassifiedPatch>> detect(const Mat& image, const Rect& roi) = 0;
 
 	/**
 	 * Detect on an image.

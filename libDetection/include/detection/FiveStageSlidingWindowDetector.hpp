@@ -45,6 +45,8 @@ public:
 	 */
 	vector<shared_ptr<ClassifiedPatch>> detect(const Mat& image);
 
+	vector<shared_ptr<ClassifiedPatch>> detect(const Mat& image, const Rect& roi);
+
 	/**
 	 * Processes the image in a sliding window fashion.
 	 *
@@ -65,7 +67,7 @@ public:
 
 private:
 
-	shared_ptr<SlidingWindowDetector> slidingWindowDetector;	///< The SlidingWindowDetector that is used as the first stage of this detector.
+	shared_ptr<SlidingWindowDetector> slidingWindowDetector;	///< The SlidingWindowDetector that is used as the first stage of this detector. TODO: Think about the inheritance and this.
 	shared_ptr<OverlapElimination> overlapElimination;	///< The ...
 	shared_ptr<ProbabilisticClassifier> strongClassifier;	///< The strong classifier used for the remaining patches in stage 3.
 

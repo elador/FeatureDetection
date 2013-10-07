@@ -31,12 +31,7 @@ public:
 
 
 private:
-	std::vector<float> modelMeanShp;	// the 3DMM mean shape loaded into memory. Data is XYZXYZXYZ...
-	std::vector<float> modelMeanTex;
-	std::map<std::string, int> featurePointsMap;	// Holds the translation from feature point name (e.g. reye) to the vertex number in the model
 
-	void loadModel(std::string);
-	void loadFeaturePoints(std::string);
 
 
 	//void fitModelToPoints(void* landmarks);	// project the points into the model (=the same as fitting the model to the points?)

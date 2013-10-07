@@ -13,11 +13,12 @@
    #endif
 #endif  // _DEBUG
 
-#include "render/MorphableModel.hpp"
 #include "render/MeshUtils.hpp"
 #include "render/MatrixUtils.hpp"
 #include "render/RenderDevice.hpp"
 #include "render/Camera.hpp"
+
+#include "shapemodels/MorphableModel.hpp"
 
 #include "imageio/LandmarkCollection.hpp"
 #include "imageio/ModelLandmark.hpp"
@@ -129,7 +130,7 @@ int main(int argc, char *argv[])
 	}
 
 	//render::Mesh morphableModel = render::utils::MeshUtils::readFromHdf5("D:\\model2012_l6_rms.h5");
-	render::MorphableModel morphableModel = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
+	shapemodels::MorphableModel morphableModel = shapemodels::MorphableModel::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
 	render::Mesh cube = render::utils::MeshUtils::createCube();
 	render::Mesh pyramid = render::utils::MeshUtils::createPyramid();
 	render::Mesh plane = render::utils::MeshUtils::createPlane();

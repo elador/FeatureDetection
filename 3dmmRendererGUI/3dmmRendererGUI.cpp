@@ -13,11 +13,12 @@
    #endif
 #endif  // _DEBUG
 
-#include "render/MorphableModel.hpp"
 #include "render/MeshUtils.hpp"
 #include "render/MatrixUtils.hpp"
 #include "render/RenderDevice.hpp"
 #include "render/Camera.hpp"
+
+#include "shapemodels/MorphableModel.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -50,7 +51,7 @@ static string controlWindowName = "Controls";
 static std::array<float, 55> pcVals;
 static std::array<int, 55> pcValsInt;
 
-static render::MorphableModel mm;
+static shapemodels::MorphableModel mm;
 
 static string windowName = "RenderOutput";
 static float horizontalAngle = 0.0f;
@@ -145,7 +146,7 @@ int main(int argc, char *argv[])
 	render::Mesh plane = render::utils::MeshUtils::createPlane();
 	shared_ptr<render::Mesh> tri = render::utils::MeshUtils::createTriangle();
 	
-	mm = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
+	mm = shapemodels::MorphableModel::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
 
 	int screenWidth = 640;
 	int screenHeight = 480;

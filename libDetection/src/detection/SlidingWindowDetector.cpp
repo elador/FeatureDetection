@@ -41,6 +41,29 @@ vector<shared_ptr<ClassifiedPatch>> SlidingWindowDetector::detect(const Mat& ima
 	return detect();
 }
 
+
+vector<shared_ptr<ClassifiedPatch>> SlidingWindowDetector::detect(const Mat& image, const Rect& roi)
+{
+	/* We have a few different use-cases:
+		- operate on the whole image
+		- operate on a Rect, one ROI. Can call featureExtractor->extract(stepSizeX, stepSizeY, Rect);
+		- operate on a ROI that is not a Rect but a Mat mask
+		- instead of a static 0/1 mask, a dynamic mask that's connected with the FD probability. That goes a little bit into the direction of condensation.
+	*/
+	featureExtractor->update(image);
+
+	vector<shared_ptr<ClassifiedPatch>> classifiedPatches;
+	vector<shared_ptr<Patch>> pyramidPatches = featureExtractor->extract(stepSizeX, stepSizeY, roi);
+
+	for (unsigned int i = 0; i < pyramidPatches.size(); ++i) {
+		pair<bool, double> res = classifier->classify(pyramidPatches[i]->getData());
+		if(res.first==true)
+			classifiedPatches.push_back(make_shared<ClassifiedPatch>(pyramidPatches[i], res));
+	}
+	return classifiedPatches;
+}
+
+
 vector<shared_ptr<ClassifiedPatch>> SlidingWindowDetector::detect(shared_ptr<VersionedImage> image)
 {
 	featureExtractor->update(image);

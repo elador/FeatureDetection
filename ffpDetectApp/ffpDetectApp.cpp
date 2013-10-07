@@ -60,6 +60,7 @@
 #include "imageio/FileImageSource.hpp"
 #include "imageio/FileListImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
+#include "imageio/RectLandmark.hpp"
 
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
@@ -79,6 +80,12 @@
 #include "detection/ClassifiedPatch.hpp"
 #include "detection/OverlapElimination.hpp"
 #include "detection/FiveStageSlidingWindowDetector.hpp"
+
+#include "shapemodels/MorphableModel.hpp"
+#include "shapemodels/FeaturePointsModelRANSACtmp.hpp"
+#include "shapemodels/RansacFeaturePointsModel.hpp"
+#include "shapemodels/FeaturePointsSelector.hpp"
+#include "shapemodels/FeaturePointsEvaluator.hpp"
 
 #include "logging/LoggerFactory.hpp"
 #include "imagelogging/ImageLoggerFactory.hpp"
@@ -108,6 +115,66 @@ void drawBoxes(Mat image, vector<shared_ptr<ClassifiedPatch>> patches)
 		shared_ptr<Patch> patch = cpatch->getPatch();
 		cv::rectangle(image, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((cpatch->getProbability())/1.0)   ));
 	}
+}
+
+/**
+ * Takes a list of classified patches and creates a single probability map of face region locations.
+ *
+ * Note/TODO: We could increase the probability of a region when nearby patches (in x/y and scale)
+ *            also say it's a face. But that might be very difficult with this current approach.
+ *            27.09.2013 16:49
+ * 
+ * @param[in] width The width of the original image where the classifier was run.
+ * @param[in] height The height of the original image where the classifier was run.
+ * @return A probability map for face regions with float values between 0 and 1.
+ */
+Mat getFaceRegionProbabilityMapFromPatchlist(vector<shared_ptr<ClassifiedPatch>> patches, int width, int height)
+{
+	Mat faceRegionProbabilityMap(height, width, CV_32FC1, cv::Scalar(0.0f));
+	
+	for (auto patch : patches) {
+		const unsigned int pw = patch->getPatch()->getBounds().width;
+		const unsigned int ph = patch->getPatch()->getBounds().height;
+		const unsigned int px = patch->getPatch()->getBounds().x;
+		const unsigned int py = patch->getPatch()->getBounds().y;
+		for (unsigned int currX = px; currX < px+pw-1; ++currX) {	// Note: I'm not exactly sure why the "-1" is necessary,
+			for (unsigned int currY = py; currY < py+ph-1; ++currY) { // but without it, it goes beyond the image bounds
+
+				if(currX>=faceRegionProbabilityMap.cols) {
+					cv::imwrite("TEST.png", patch->getPatch()->getData());
+				}
+
+				if(currX < faceRegionProbabilityMap.cols && currY < faceRegionProbabilityMap.rows) { // Note: This is a temporary check, as long as we
+					if (patch->getProbability() > faceRegionProbabilityMap.at<float>(currY, currX)) { // haven't fixed that up/downscaling rounding problem
+						faceRegionProbabilityMap.at<float>(currY, currX) = patch->getProbability();   // that patches can be outside the original image.
+					}
+				}
+			}
+		}
+	}
+	/* Idea for improvement:
+		Create a probability map for each scale first (the centers, not the region).
+		Then, weight each point with the surrounding 8 (or more, or also in scale-dir)
+		detections. This is a re-weighting of the probabilities. Then calculate the new
+		face-region-probMap. (or do/combine this directly?)
+	*/
+
+	return faceRegionProbabilityMap;
+}
+
+Mat patchToMask(shared_ptr<const Patch> patch, Mat mask)
+{
+	//cv::rectangle(mask, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((cpatch->getProbability())/1.0)   ));
+	unsigned int ty = patch->getY() - patch->getHeight()/2.0f;
+	unsigned int by = patch->getY() + patch->getHeight()/2.0f;
+	unsigned int lx = patch->getX() - patch->getWidth()/2.0f;
+	unsigned int rx = patch->getX() + patch->getWidth()/2.0f;
+	for (unsigned int y = ty; y < by; ++y) {
+		for (unsigned int x = lx; x < rx; ++x) { // Note: Might suffer from the same out-of-range problem than getFaceRegionProbabilityMapFromPatchlist(...).
+			mask.at<uchar>(y, x) = 1;
+		}
+	}
+	return mask;
 }
 
 template<class T>
@@ -215,6 +282,7 @@ int main(int argc, char *argv[])
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("imageprocessing").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("detection").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("shapemodels").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("ffpDetectApp").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("ffpDetectApp");
 
@@ -222,12 +290,12 @@ int main(int argc, char *argv[])
 	appLogger.debug("Verbose level for image output: " + imagelogging::loglevelToString(imageLogLevel));
 	appLogger.debug("Using config: " + configFilename.string());
 	appLogger.debug("Using output directory: " + outputPicsDir.string());
-	if(outputPicsDir.empty()) {
-		appLogger.info("Output directory not set. Writing images into current directory.");
+	if(outputPicsDir == ".") {
+		appLogger.info("Writing output images into current directory.");
 	}
 
 	ImageLoggers->getLogger("detection").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir));
-	ImageLoggers->getLogger("mergePlaygroundApp").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir));
+	ImageLoggers->getLogger("mergePlaygroundApp").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir)); // TODO delete?
 
 	if(inputPaths.size() > 1) {
 		// We assume the user has given several, valid images
@@ -253,7 +321,7 @@ int main(int argc, char *argv[])
 
 	if(useFileList==true) {
 		appLogger.info("Using file-list as input: " + inputFilelist.string());
-		shared_ptr<ImageSource> fileListImgSrc;
+		shared_ptr<ImageSource> fileListImgSrc; // TODO VS2013 change to unique_ptr, rest below also
 		try {
 			fileListImgSrc = make_shared<FileListImageSource>(inputFilelist.string());
 		} catch(const std::runtime_error& e) {
@@ -319,9 +387,17 @@ int main(int argc, char *argv[])
 	unordered_map<string, shared_ptr<Detector>> faceDetectors;
 	unordered_map<string, shared_ptr<Detector>> featureDetectors;
 
+	shapemodels::MorphableModel mm = shapemodels::MorphableModel::load("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\featurePoints_head_newfmt.txt");
+
+	shapemodels::FeaturePointsRANSAC rnsc;
+
+	unique_ptr<shapemodels::FeaturePointsSelector> sel(new shapemodels::FeaturePointsSelector());
+	unique_ptr<shapemodels::FeaturePointsEvaluator> eva(new shapemodels::FeaturePointsEvaluator(mm));
+	shapemodels::RansacFeaturePointsModel rnscnew(std::move(sel), std::move(eva));
+
 	try {
 		ptree ptDetectors = pt.get_child("detectors");
-		for_each(begin(ptDetectors), end(ptDetectors), [&faceDetectors, &featureDetectors](ptree::value_type kv) {
+		for (const auto& kv : ptDetectors) { // kv is of type ptree::value_type
 
 			string landmarkName = kv.second.get<string>("landmark");
 			string type = kv.second.get<string>("type");
@@ -333,7 +409,7 @@ int main(int argc, char *argv[])
 				ptree imgpyr = kv.second.get_child("pyramid");
 				ptree oeCfg = kv.second.get_child("overlapElimination");
 
-				shared_ptr<ProbabilisticWvmClassifier> firstClassifier = ProbabilisticWvmClassifier::load(firstClassifierNode);
+				shared_ptr<ProbabilisticWvmClassifier> firstClassifier = ProbabilisticWvmClassifier::load(firstClassifierNode); // TODO: Lots of todos here with numUsedFilters, bias, ...
 				shared_ptr<ProbabilisticSvmClassifier> secondClassifier = ProbabilisticSvmClassifier::load(secondClassifierNode);
 
 				//pwvm->getWvm()->setLimitReliabilityFilter(-0.5f);
@@ -349,6 +425,7 @@ int main(int argc, char *argv[])
 				//shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"), config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"), config.get<double>("pyramid.scaleFactor"));
 				//featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 
+				// TODO: Make this read from the config file, see code below in 'single'
 				featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
 
 				shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(firstClassifier, featureExtractor);
@@ -436,7 +513,7 @@ int main(int argc, char *argv[])
 				}
 			}
 
-		});
+		}
 	} catch(const boost::property_tree::ptree_error& error) {
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
@@ -465,6 +542,13 @@ int main(int argc, char *argv[])
 	//      moment, in 1 FiveStageDet., I believe there cannot be 2 different feature spaces. 
 	//      (the second classifier just gets a list of patches - theoretically, he could go extract them again?)
 	//      Should we make this all way more dynamic?
+	// test what happens when I delete the whole config content and run it. where does it take default values, where errors, etc.
+	//
+	// Note concerning SlidingWindowDetector and FiveStageSlidingWindowDetector: Theoretically we only need SlidingWindowDetector and
+	//      we could give it a Two/FiveStageClassifier instead of just the WVM. This way we would only need one SlidingWindowDetector
+	//      for all. But the detector would lose the capability to do smart things like using the second-best face-box etc.?
+	//      No, the detector only needs something to classify ONE point and get a result.
+	//      But a FiveStageClassifier cannot go into libClassification as it works on more than just 1 feature vector. It is not a classifier for one point.
 
 	/* Note: We could change/write/add something to the config with
 	pt.put("detection.svm.threshold", -0.5f);
@@ -476,32 +560,92 @@ int main(int argc, char *argv[])
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img;
 	while(imageSource->next()) {
-
-		img = imageSource->getImage();
 		start = std::chrono::system_clock::now();
+		appLogger.info("Starting to process " + imageSource->getName().string());
+		img = imageSource->getImage();
 		
-		for(auto detector : faceDetectors) {
-
+		// Do the face-detection:
+		vector<shared_ptr<ClassifiedPatch>> facePatches;
+		for(const auto& detector : faceDetectors) {
 			ImageLoggers->getLogger("detection").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
-			vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img);
+			facePatches = detector.second->detect(img);
 
-			ImageLoggers->getLogger("mergePlaygroundApp").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
-			ImageLogger imageLogger = ImageLoggers->getLogger("mergePlaygroundApp");
-			Mat imgWvm = img.clone();
-			imageLogger.intermediate(imgWvm, bind(drawBoxes, imgWvm, resultingPatches), "rvm_casc_whi");
-
+			// For now, only work with 1 detector and the static facebox. Later:
+			//    - allow left/right profile detectors
+			//    - be smarter than just using the max-facebox.
 
 		} // end for each face detector
 
 		end = std::chrono::system_clock::now();
-
-		int elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(end-start).count();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-		std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+		appLogger.debug("Finished face-detection. Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
+		
+		// Create the binary mask (ROI) for the feature detectors:
+		//Mat mask = Mat::zeros(img.rows, img.cols, CV_8UC1);
+		//mask = patchToMask(facePatches[0]->getPatch(), mask);
+		
+		// Use only a single Rect ROI for now:
+		// Using detect(...) with facePatches[0]->getPatch()->getBounds()
 
-		stringstream ss;
-		ss << std::ctime(&end_time);
-		appLogger.info("finished computation at " + ss.str() + "elapsed time: " + lexical_cast<string>(elapsed_seconds) + "s or exactly " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
+		// Detect all features in the face-box:
+		map<string, vector<shared_ptr<ClassifiedPatch>>> allFeaturePatches;
+		for (const auto& detector : featureDetectors) {
+			ImageLoggers->getLogger("detection").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
+			vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img, facePatches[0]->getPatch()->getBounds());
+
+			//shared_ptr<PyramidFeatureExtractor> pfe = detector.second->getPyramidFeatureExtractor();
+			//drawScales(ffdResultImg, 20, 20, pfe->getMinScaleFactor(), pfe->getMaxScaleFactor());
+			allFeaturePatches.insert(make_pair(detector.second->landmark, resultingPatches)); // be careful if we want to use detector.first (its name) or detector.second->landmark
+		}
+
+		// Tmp: Convert the patches into the "old" RANSAC format
+		vector<pair<string, vector<shared_ptr<imageprocessing::Patch>>>> landmarkData;
+		for (const auto& feature : allFeaturePatches) {
+			vector<shared_ptr<imageprocessing::Patch>> tmp;
+			for (const auto& patch : feature.second) {
+				tmp.push_back(patch->getPatch());
+			}
+			landmarkData.push_back(make_pair(feature.first, tmp));
+		}
+
+		// Tmp2: Convert it to current map<string, vector<shared_ptr<imageprocessing::Patch>>> format
+		map<string, vector<shared_ptr<imageprocessing::Patch>>> landmarkData2;
+		for (const auto& feature : allFeaturePatches) {
+			vector<shared_ptr<imageprocessing::Patch>> tmp;
+			for (const auto& patch : feature.second) {
+				tmp.push_back(patch->getPatch());
+			}
+			landmarkData2.insert(make_pair(feature.first, tmp));
+		}
+
+		rnscnew.setLandmarks(landmarkData2); // Should better use .run(landmarkData2); Clarity etc
+		map<string, shared_ptr<imageprocessing::Patch>> resultLms = rnscnew.run(img, 30.0f, 1000, 5, 4); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this  with only the STL? (probably)
+
+
+		
+		//rnsc.runRANSAC(img, landmarkData, mm, 30.0f);
+
+		/*
+		//Mat ffdResultImg = img.clone();
+		for (const auto& features : allFeaturePatches) {
+			for (const auto& patch : features.second) {
+				// patch to landmark
+				// add a function in libDetection, either Patch.getLandmark or Helper...::PatchToLandmark(...) (not ClassifiedPatch!)
+				// Anmerkung von peter: libDetection/libImageProcessing hat bisher keine Abhängigkeit von libImageIO, aber Patch.getLandmark/ClassifiedPatch.getLandmark würde dazu führen
+				// Anmerkung von peter: (ebenso umgekehrt, wenn der Helper in libImageIO läge - die Abhängigkeit (von libImageProcessing) wäre dann sogar sehr unschön)
+				RectLandmark lm(features.first, patch->getPatch()->getX(), patch->getPatch()->getY(), patch->getPatch()->getWidth(), patch->getPatch()->getHeight());
+				lm.draw(ffdResultImg);
+			}
+			Mat tmp = img.clone();
+			drawFaceBoxes(tmp, features.second);
+
+		}
+		*/
+
+		
+		end = std::chrono::system_clock::now();
+		elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
+		appLogger.info("Finished processing " + imageSource->getName().string() + ". Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
 
 		TOT++;
 		vector<string> resultingPatches;

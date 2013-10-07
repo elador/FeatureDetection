@@ -82,6 +82,10 @@ ostream& operator<<(ostream& os, const vector<T>& v)
     return os;
 }
 
+bool subjectsMatch(string subject1, string subject2) {
+	return subject1.substr(0, 2) == subject2.substr(0, 2);
+}
+
 void writeAscii(path filename, vector<float> positiveScores, vector<float> negativeScores, int numFailureToEnroll, string experimentTitle, string curveLabel) {
 
 	ofstream file(filename.string());
@@ -178,16 +182,56 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	db.close();
-	QSqlDatabase::removeDatabase("QSQLITE");
-
+	
+	// For the DET figure and verification rates
 	sort(begin(positiveScores), end(positiveScores), less<float>()); // 0 to 1
 	sort(begin(negativeScores), end(negativeScores), greater<float>()); // 1 to 0
 
 	//writeAscii("C:/Users/Patrik/Documents/MATLAB/probes_pm15_fte.txt", positiveScores, negativeScores, numFailureToEnroll, "Probes yaw = +-15, with FTE's", "yaw=+-15");
-	writeAscii("C:/Users/Patrik/Documents/MATLAB/probes_all.txt", positiveScores, negativeScores, numFailureToEnroll, "Probes -60 to +60 yaw angles (excluding 0)", "yaw -60 to +60 (w/o 0)");
+	//writeAscii("C:/Users/Patrik/Documents/MATLAB/probes_all.txt", positiveScores, negativeScores, numFailureToEnroll, "Probes -60 to +60 yaw angles (excluding 0)", "yaw -60 to +60 (w/o 0)");
+
+	// Calculate the rank-1 identification rate
+	ret = query.exec("SELECT s.*, MAX(s.score) FROM scores s INNER JOIN images ip ON s.probe = ip.filepath INNER JOIN images ig ON s.gallery = ig.filepath WHERE s.algorithm='Full_FVSDK_8_7_0' AND ip.roll=0.0 AND ip.pitch=0.0 AND (ip.yaw=15.0 OR ip.yaw=-15.0 OR ip.yaw=30.0 OR ip.yaw=-30.0 OR ip.yaw=45.0 OR ip.yaw=-45.0 OR ip.yaw=60.0 OR ip.yaw=-60.0) AND ig.roll=0.0 AND ig.pitch=0.0 AND ig.yaw=0.0 GROUP BY s.probe");
+	if (!ret) {
+		cout << query.lastError().text().toStdString() << endl;
+	}
+	int numProbes = 0;
+	int fte = 0;
+	int rank1Matches = 0;
+	int noRank1Match = 0;
+	while (query.next()) {
+		++numProbes;
+		path probe = query.value(0).toString().toStdString();
+		path gallery = query.value(1).toString().toStdString();
+		if (query.value(3).toInt() == 1) {
+			++fte;
+			continue;
+		}
+		if (subjectsMatch(probe.stem().string(), gallery.stem().string())) {
+			++rank1Matches;
+		} else {
+			++noRank1Match;
+		}
+	}
+
+	cout << "Probes: " << numProbes << ", FTE: " << fte << ", rank-1 matches: " << rank1Matches << ", no rank-1 matches: " << noRank1Match << endl;
+	cout << "rank-1 id percent with fte: " << (float)rank1Matches / (float)numProbes << endl;
+	cout << "rank-1 id percent without fte: " << (float)rank1Matches / ((float)numProbes - (float)fte) << endl;
+
+	// For rank-n: SELECT TOP 5, or SELECT x from Y LIMIT 5, ... Not so easy. Better do it in the C++ code.
+	// http://www.xaprb.com/blog/2006/12/07/how-to-select-the-firstleastmax-row-per-group-in-sql/
+	// http://stackoverflow.com/questions/176964/select-top-10-records-for-each-category
+	// http://stackoverflow.com/questions/2129693/mysql-using-limit-within-group-by-to-get-n-results-per-group
+	// http://stackoverflow.com/questions/13091457/order-by-and-limit-in-group-by
+	// http://pratchev.blogspot.co.uk/2008/11/top-n-by-group.html
+	// http://stackoverflow.com/questions/16047394/trouble-with-parenthesis-in-ms-access-for-sql-inner-joins
+	// http://stackoverflow.com/questions/4886448/mysql-group-by-max-value
+	// http://stackoverflow.com/questions/1591909/group-by-behavior-when-no-aggregate-functions-are-present-in-the-select-clause
+	// http://www.artfulsoftware.com/infotree/qrytip.php?id=104
+
+	db.close();
+	QSqlDatabase::removeDatabase("QSQLITE");
 
 	// in der db: bei  ip.yaw=-60.0 fehlt 1 eintrag
-
 	return 0;
 }

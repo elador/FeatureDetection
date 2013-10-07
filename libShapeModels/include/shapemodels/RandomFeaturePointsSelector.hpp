@@ -1,5 +1,5 @@
 /*
- * RansacFeaturePointsSelector.hpp
+ * RandomFeaturePointsSelector.hpp
  *
  *  Created on: 22.02.2013
  *      Author: Patrik Huber
@@ -7,8 +7,8 @@
 
 #pragma once
 
-#ifndef RANSACFEATUREPOINTSSELECTOR_HPP_
-#define RANSACFEATUREPOINTSSELECTOR_HPP_
+#ifndef RANDOMFEATUREPOINTSSELECTOR_HPP_
+#define RANDOMFEATUREPOINTSSELECTOR_HPP_
 
 #include "shapemodels/FeaturePointsSelector.hpp"
 
@@ -18,12 +18,9 @@ namespace shapemodels {
 /**
  * A ... .
  */
-class RansacFeaturePointsSelector : public FeaturePointsSelector {
+class RandomFeaturePointsSelector : public FeaturePointsSelector {
 public:
 
-	explicit RansacFeaturePointsSelector();
-
-	virtual ~RansacFeaturePointsSelector();
 
 	/**
 	 * Does xyz
@@ -43,4 +40,4 @@ public:
 };
 
 } /* namespace shapemodels */
-#endif // RANSACFEATUREPOINTSSELECTOR_HPP_
+#endif // RANDOMFEATUREPOINTSSELECTOR_HPP_

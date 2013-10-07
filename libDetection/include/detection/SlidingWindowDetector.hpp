@@ -55,6 +55,20 @@ public:
 	vector<shared_ptr<ClassifiedPatch>> detect(const Mat& image);
 
 	/**
+	 * Processes the image in a sliding window fashion, but only in the region where the mask is non-zero.
+	 *
+	 * @param[in] image The image to process.
+	 * @param[in] image The mask .
+	 * @return TODO - Should we return all patches or only the ones that pass the classifier?
+	 *				- We should return those patches and their classifier output. It should be in some kind
+						of structure that it can be sorted by the OverlapElimination! vector, unordered_map, unordered_set?
+						A wrapper-class around Patch? What do we do when we want to re-use Patch-data for different classifiers
+						and "attach" several outputs to one Patch? Implement like in the "before-merge"-Lib ?
+					Returns a vector of _sorted_ patches that got positively classified by detector.
+	 */
+	vector<shared_ptr<ClassifiedPatch>> detect(const Mat& image, const Rect& roi);
+
+	/**
 	 * Processes the image in a sliding window fashion.
 	 *
 	 * @param[in] image The image to process.

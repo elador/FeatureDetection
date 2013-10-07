@@ -5,7 +5,7 @@ SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 #OpenCV:
-FIND_PACKAGE( OpenCV 2.3.1 REQUIRED core imgproc highgui)
+FIND_PACKAGE( OpenCV 2.3.1 REQUIRED core imgproc highgui calib3d)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
@@ -44,7 +44,14 @@ include_directories( ${ImageLogging_SOURCE_DIR}/include )
 include_directories( ${ImageIO_SOURCE_DIR}/include )
 include_directories( ${ImageProcessing_SOURCE_DIR}/include )
 include_directories( ${Classification_SOURCE_DIR}/include )
+include_directories( ${Render_SOURCE_DIR}/include )
+include_directories( ${ShapeModels_SOURCE_DIR}/include )
 include_directories( ${Detection_SOURCE_DIR}/include )
 
+# Hdf5 "hack":
+INCLUDE_DIRECTORIES("C:\\Users\\Patrik\\Cloud\\PhD\\HDF5\\include\\hdf5\\")
+link_directories( "C:\\Users\\Patrik\\Cloud\\PhD\\HDF5\\lib\\hdf5\\" )
+set(HDF5_LIBRARIES debug hdf5d debug hdf5_cppd optimized hdf5; optimized hdf5_cpp)
+
 #Make the app depend on the libraries
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection ImageIO ${KINECT_LIBNAME} ImageProcessing Classification ImageLogging Logging ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} )
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection ImageIO ${KINECT_LIBNAME} ImageProcessing Classification ShapeModels Render ImageLogging Logging ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} ${HDF5_LIBRARIES} )

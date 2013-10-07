@@ -103,6 +103,7 @@ ostream& operator<<(ostream& os, const vector<T>& v)
  *
  * Note/TODO: We could increase the probability of a region when nearby patches (in x/y and scale)
  *            also say it's a face. But that might be very difficult with this current approach.
+ *            27.09.2013 16:49
  * 
  * @param[in] width The width of the original image where the classifier was run.
  * @param[in] height The height of the original image where the classifier was run.
