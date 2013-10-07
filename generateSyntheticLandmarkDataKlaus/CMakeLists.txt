@@ -31,10 +31,12 @@ SET(HEADERS
 )
 
 include_directories( ${Render_SOURCE_DIR}/include )
+include_directories( ${ShapeModels_SOURCE_DIR}/include )
 include_directories( ${ImageIO_SOURCE_DIR}/include )
+include_directories( ${Logging_SOURCE_DIR}/include )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES("C:\\Users\\Patrik\\Cloud\\PhD\\HDF5\\include\\hdf5\\")
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
+INCLUDE_DIRECTORIES( "C:\\Users\\Patrik\\Cloud\\PhD\\HDF5\\include\\hdf5\\" )
 
 link_directories( "C:\\Users\\Patrik\\Cloud\\PhD\\HDF5\\lib\\hdf5\\" )
 set(HDF5_LIBRARIES debug hdf5d debug hdf5_cppd optimized hdf5; optimized hdf5_cpp)
@@ -46,7 +48,7 @@ ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
 #include_directories( ${libFeatureDetection_SOURCE_DIR} )
 #Make the app depend on the libraries
 #TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} libFeatureDetection ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${HDF5_LIBRARIES} )
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Render ImageIO ${OpenCV_LIBS} ${Boost_LIBRARIES} ${HDF5_LIBRARIES} )
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Render ShapeModels ImageIO Logging ${OpenCV_LIBS} ${Boost_LIBRARIES} ${HDF5_LIBRARIES} )
 MESSAGE(STATUS "APP HDF5 lib dir: ${HDF5_LIBRARY_DIR}")
 MESSAGE(STATUS "APP HDF5 libs: ${HDF5_LIBRARIES}")
 MESSAGE(STATUS "APP HDF5 include dir: a ${HDF5_INCLUDE_DIR} b ${HDF5_INCLUDE_DIR_CPP}")

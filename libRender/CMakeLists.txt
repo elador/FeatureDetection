@@ -42,7 +42,6 @@ SET(SOURCE
 	src/render/MatrixUtils.cpp
 	src/render/MeshUtils.cpp
 	src/render/Hdf5Utils.cpp
-	src/render/MorphableModel.cpp
 )
 
 SET(HEADERS
@@ -58,7 +57,6 @@ SET(HEADERS
 	include/render/MatrixUtils.hpp
 	include/render/MeshUtils.hpp
 	include/render/Hdf5Utils.hpp
-	include/render/MorphableModel.hpp
 )
 
 include_directories( "include" )

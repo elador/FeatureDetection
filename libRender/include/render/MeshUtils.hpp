@@ -10,7 +10,6 @@
 #define MESHUTILS_HPP_
 
 #include "render/Mesh.hpp"
-#include "render/MorphableModel.hpp"
 
 #include "opencv2/core/core.hpp"
 
@@ -33,8 +32,6 @@ namespace render {
 			static shared_ptr<Mesh> createTriangle();
 
 			static Mesh readFromHdf5(std::string filename);
-			static MorphableModel readFromScm(std::string filename);
-
 		};
 
 	} /* namespace utils */
