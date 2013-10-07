@@ -62,10 +62,6 @@ double TrainableSvmClassifier::computeSvmOutput(const struct svm_node *x) const 
 	return utils.computeSvmOutput(model.get(), x);
 }
 
-double TrainableSvmClassifier::computeSvmOutput(const struct svm_node *x) const {
-	return utils.computeSvmOutput(model.get(), x);
-}
-
 void TrainableSvmClassifier::loadStaticNegatives(const string& negativesFilename, int maxNegatives, double scale) {
 	staticNegativeExamples.reserve(maxNegatives);
 	int negatives = 0;
