@@ -48,4 +48,4 @@ add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stage
 #add_subdirectory(frDbTool)		# App for managing (creating and populating) the sqlite-database used for face-recognition experiments
 #add_subdirectory(frDbExp)		# App for doing experiments with the face recognition scores in the database
 
-add_subdirectory(ffpDetectAppExp)		# Experimental playground for FFD with the 3DMM/POSIT
+#add_subdirectory(ffpDetectAppExp)		# Experimental playground for FFD with the 3DMM/POSIT
