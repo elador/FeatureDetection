@@ -1,5 +1,5 @@
 /*
- * ffpDetectApp.cpp
+ * ffpDetectAppExp.cpp
  *
  *  Created on: 22.03.2013
  *      Author: Patrik Huber
@@ -60,9 +60,7 @@
 #include "imageio/FileImageSource.hpp"
 #include "imageio/FileListImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
-#include "imageio/LandmarkCollection.hpp"
 #include "imageio/RectLandmark.hpp"
-#include "imageio/BobotLandmarkSink.hpp"
 
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
@@ -82,6 +80,12 @@
 #include "detection/ClassifiedPatch.hpp"
 #include "detection/OverlapElimination.hpp"
 #include "detection/FiveStageSlidingWindowDetector.hpp"
+
+#include "shapemodels/MorphableModel.hpp"
+#include "shapemodels/FeaturePointsModelRANSACtmp.hpp"
+#include "shapemodels/RansacFeaturePointsModel.hpp"
+#include "shapemodels/FeaturePointsSelector.hpp"
+#include "shapemodels/FeaturePointsEvaluator.hpp"
 
 #include "logging/LoggerFactory.hpp"
 #include "imagelogging/ImageLoggerFactory.hpp"
@@ -278,6 +282,7 @@ int main(int argc, char *argv[])
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("imageprocessing").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("detection").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("shapemodels").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("ffpDetectApp").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("ffpDetectApp");
 
@@ -290,6 +295,7 @@ int main(int argc, char *argv[])
 	}
 
 	ImageLoggers->getLogger("detection").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir));
+	ImageLoggers->getLogger("mergePlaygroundApp").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir)); // TODO delete?
 
 	if(inputPaths.size() > 1) {
 		// We assume the user has given several, valid images
@@ -380,6 +386,14 @@ int main(int argc, char *argv[])
 
 	unordered_map<string, shared_ptr<Detector>> faceDetectors;
 	unordered_map<string, shared_ptr<Detector>> featureDetectors;
+
+	shapemodels::MorphableModel mm = shapemodels::MorphableModel::load("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\featurePoints_head_newfmt.txt");
+
+	shapemodels::FeaturePointsRANSAC rnsc;
+
+	unique_ptr<shapemodels::FeaturePointsSelector> sel(new shapemodels::FeaturePointsSelector());
+	unique_ptr<shapemodels::FeaturePointsEvaluator> eva(new shapemodels::FeaturePointsEvaluator(mm));
+	shapemodels::RansacFeaturePointsModel rnscnew(std::move(sel), std::move(eva));
 
 	try {
 		ptree ptDetectors = pt.get_child("detectors");
@@ -560,18 +574,6 @@ int main(int argc, char *argv[])
 			//    - allow left/right profile detectors
 			//    - be smarter than just using the max-facebox.
 
-			if (facePatches.size()>0) {
-				imageio::LandmarkCollection lmc;
-				shared_ptr<imageio::RectLandmark> mostProbablyFace = make_shared<imageio::RectLandmark>(detector.first, facePatches[0]->getPatch()->getBounds());
-				lmc.insert(mostProbablyFace);
-
-				imageio::BobotLandmarkSink lms;
-				lms.open("C:\\Users\\Patrik\\Documents\\GitHub\\outzhenhua\\" + imageSource->getName().stem().string() + ".txt", imageSource->getName().string(), img.cols, img.rows);
-				lms.add(lmc);
-				lms.close();
-			}
-			
-
 		} // end for each face detector
 
 		end = std::chrono::system_clock::now();
@@ -596,6 +598,32 @@ int main(int argc, char *argv[])
 			allFeaturePatches.insert(make_pair(detector.second->landmark, resultingPatches)); // be careful if we want to use detector.first (its name) or detector.second->landmark
 		}
 
+		// Tmp: Convert the patches into the "old" RANSAC format
+		vector<pair<string, vector<shared_ptr<imageprocessing::Patch>>>> landmarkData;
+		for (const auto& feature : allFeaturePatches) {
+			vector<shared_ptr<imageprocessing::Patch>> tmp;
+			for (const auto& patch : feature.second) {
+				tmp.push_back(patch->getPatch());
+			}
+			landmarkData.push_back(make_pair(feature.first, tmp));
+		}
+
+		// Tmp2: Convert it to current map<string, vector<shared_ptr<imageprocessing::Patch>>> format
+		map<string, vector<shared_ptr<imageprocessing::Patch>>> landmarkData2;
+		for (const auto& feature : allFeaturePatches) {
+			vector<shared_ptr<imageprocessing::Patch>> tmp;
+			for (const auto& patch : feature.second) {
+				tmp.push_back(patch->getPatch());
+			}
+			landmarkData2.insert(make_pair(feature.first, tmp));
+		}
+
+		rnscnew.setLandmarks(landmarkData2); // Should better use .run(landmarkData2); Clarity etc
+		map<string, shared_ptr<imageprocessing::Patch>> resultLms = rnscnew.run(img, 30.0f, 1000, 5, 4); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this  with only the STL? (probably)
+
+
+		
+		//rnsc.runRANSAC(img, landmarkData, mm, 30.0f);
 
 		/*
 		//Mat ffdResultImg = img.clone();

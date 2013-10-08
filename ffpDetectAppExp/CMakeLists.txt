@@ -1,4 +1,4 @@
-SET( SUBPROJECT_NAME ffpDetectApp )	# my own variable, not cmake's
+SET( SUBPROJECT_NAME ffpDetectAppExp )	# my own variable, not cmake's
 PROJECT( ${SUBPROJECT_NAME} )
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
@@ -28,7 +28,7 @@ ENDIF()
 
 #Source and header files:
 SET(SOURCE
-	ffpDetectApp.cpp
+	ffpDetectAppExp.cpp
 )
 
 SET(HEADERS
@@ -44,7 +44,14 @@ include_directories( ${ImageLogging_SOURCE_DIR}/include )
 include_directories( ${ImageIO_SOURCE_DIR}/include )
 include_directories( ${ImageProcessing_SOURCE_DIR}/include )
 include_directories( ${Classification_SOURCE_DIR}/include )
+include_directories( ${Render_SOURCE_DIR}/include )
+include_directories( ${ShapeModels_SOURCE_DIR}/include )
 include_directories( ${Detection_SOURCE_DIR}/include )
 
+# Hdf5 "hack":
+INCLUDE_DIRECTORIES("C:\\Users\\Patrik\\Cloud\\PhD\\HDF5\\include\\hdf5\\")
+link_directories( "C:\\Users\\Patrik\\Cloud\\PhD\\HDF5\\lib\\hdf5\\" )
+set(HDF5_LIBRARIES debug hdf5d debug hdf5_cppd optimized hdf5; optimized hdf5_cpp)
+
 #Make the app depend on the libraries
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection ImageIO ${KINECT_LIBNAME} ImageProcessing Classification ImageLogging Logging ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} )
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection ImageIO ${KINECT_LIBNAME} ImageProcessing Classification ShapeModels Render ImageLogging Logging ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} ${HDF5_LIBRARIES} )
