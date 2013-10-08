@@ -55,6 +55,7 @@ IF(WIN32)
   
   # Directory name depending on whether the Windows architecture is 32
   # bit or 64 bit
+  set(CMAKE_SIZEOF_VOID_P 8) # Note: For some wierd reason this variable is undefined in my system...
   IF(CMAKE_SIZEOF_VOID_P MATCHES "4")
     SET(WINDIR "win32")
   ELSEIF(CMAKE_SIZEOF_VOID_P MATCHES "8")
