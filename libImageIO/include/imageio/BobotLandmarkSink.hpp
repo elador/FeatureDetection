@@ -35,7 +35,7 @@ public:
 	~BobotLandmarkSink();
 
 	/**
-	 * Determines whether this landmark since is open.
+	 * Determines whether this landmark sink is open.
 	 *
 	 * @return True if this landmark sink was opened (and not closed since), false otherwise.
 	 */
@@ -59,6 +59,8 @@ public:
 	void add(const LandmarkCollection& collection);
 
 private:
+	BobotLandmarkSink(BobotLandmarkSink& other);        // Copy c'tor and assignment operator private
+	BobotLandmarkSink operator=(BobotLandmarkSink rhs); // since we own an ofstream object.
 
 	/**
 	 * Extracts the landmark that should be written to the file. If the landmark name is an empty string, the first

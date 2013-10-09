@@ -62,7 +62,7 @@
 #include "imageio/DirectoryImageSource.hpp"
 #include "imageio/LandmarkCollection.hpp"
 #include "imageio/RectLandmark.hpp"
-#include "imageio/BobotLandmarkSink.hpp"
+#include "imageio/DefaultLandmarkSink.hpp"
 
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
@@ -565,10 +565,9 @@ int main(int argc, char *argv[])
 				shared_ptr<imageio::RectLandmark> mostProbablyFace = make_shared<imageio::RectLandmark>(detector.first, facePatches[0]->getPatch()->getBounds());
 				lmc.insert(mostProbablyFace);
 
-				imageio::BobotLandmarkSink lms;
-				lms.open("C:\\Users\\Patrik\\Documents\\GitHub\\outzhenhua\\" + imageSource->getName().stem().string() + ".txt", imageSource->getName().string(), img.cols, img.rows);
-				lms.add(lmc);
-				lms.close();
+				imageio::DefaultLandmarkSink lms("Y:\\raidbuf\\lfpw_landmarks_patrik\\");
+				lms.write(lmc, imageSource->getName().stem().string());
+
 			}
 			
 
