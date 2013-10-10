@@ -565,8 +565,8 @@ int main(int argc, char *argv[])
 				shared_ptr<imageio::RectLandmark> mostProbablyFace = make_shared<imageio::RectLandmark>(detector.first, facePatches[0]->getPatch()->getBounds());
 				lmc.insert(mostProbablyFace);
 
-				imageio::DefaultLandmarkSink lms("Y:\\raidbuf\\lfpw_landmarks_patrik\\");
-				lms.write(lmc, imageSource->getName().stem().string());
+				//imageio::DefaultLandmarkSink lms("Y:\\raidbuf\\lfpw_landmarks_patrik\\");
+				//lms.write(lmc, imageSource->getName().stem().string());
 
 			}
 			
