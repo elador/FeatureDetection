@@ -50,7 +50,7 @@ public:
 	 */
 	//virtual const int getter() const;
 
-	float evaluate(map<string, shared_ptr<imageprocessing::Patch>> landmarkPoints) {
+	std::pair<Mat, Mat> evaluate(map<string, shared_ptr<imageprocessing::Patch>> landmarkPoints, Mat img) { // img for debug purposes
 		float error = 0.0f;
 
 		// Convert patch to Point2f
@@ -90,8 +90,26 @@ public:
 		Mat translation_vector(1, 3, CV_32FC1); // 1 row, 3 columns
 		CvTermCriteria criteria = cvTermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 100, 1.0e-4f);
 		cvPOSIT(positObject.get(), &srcImagePoints[0], 1000, criteria, rotation_matrix.ptr<float>(0), translation_vector.ptr<float>(0)); // 1000 = focal length
+
+		// Visualize the image
+		// - the 4 selected 2D landmarks
+		// - the 4 3D 3dmm landmarks projected with T and R to 2D
+		// - evtl overlay the whole model
+
+		for (const auto& p : landmarkPoints) {
+			cv::rectangle(img, cv::Point(cvRound(p.second->getX()-2.0f), cvRound(p.second->getY()-2.0f)), cv::Point(cvRound(p.second->getX()+2.0f), cvRound(p.second->getY()+2.0f)), cv::Scalar(255, 0, 0));
+		}
+		for (const auto& v : mmVertices) {
+			cv::Mat vertex3d(v.second);
+			cv::Mat vertex3dproj = rotation_matrix * vertex3d;
+			vertex3dproj = vertex3dproj + translation_vector;
+			cv::Point2f projpoint();
+			//projpoint.x
+			//cv::rectangle(img, cv::Point(cvRound(p.second->getX()-2.0f), cvRound(p.second->getY()-2.0f)), cv::Point(cvRound(p.second->getX()+2.0f), cvRound(p.second->getY()+2.0f)), cv::Scalar(255, 0, 0));
+		}
+		
 			
-		return error;
+		return std::make_pair(translation_vector, rotation_matrix);
 	};
 
 private:

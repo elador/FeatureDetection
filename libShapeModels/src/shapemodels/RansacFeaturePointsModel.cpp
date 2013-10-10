@@ -56,7 +56,7 @@ map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Ma
 		// == maybeInliers
 		// maybe_model := model parameters fitted to maybeInliers
 		// Use the 3DMM and POSIT:
-		float error = evaluator->evaluate(maybeInliersPatches);
+		pair<Mat, Mat> transRot = evaluator->evaluate(maybeInliersPatches, img);
 
 		vector<pair<string, Point2f>> maybeInliers;
 
