@@ -34,8 +34,8 @@ map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Ma
 	//	featureSelection = selector->select();
 	//} while (evaluator->evaluate(featureSelection));
 	
-	numIter = 7;
-	minPointsToFitModel = 4;
+	numIter = 100;
+	minPointsToFitModel = 3;
 	bool useSVD = false; // => to eval.
 	thresholdForDatapointFitsModel = 30.0f; // same ?
 
@@ -50,7 +50,7 @@ map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Ma
 		map<string, vector<shared_ptr<imageprocessing::Patch>>> landmarks = selector->getAllLandmarks();
 
 		// maybe_inliers := #minPointsToFitModel randomly selected values from data
-		map<string, shared_ptr<imageprocessing::Patch>> maybeInliersPatches = selector->getDistinctRandomPointsTEST(minPointsToFitModel);
+		map<string, shared_ptr<imageprocessing::Patch>> maybeInliersPatches = selector->getDistinctRandomPoints(minPointsToFitModel);
 
 		for (const auto& l : maybeInliersPatches) {
 			landmarks.erase(l.first);
@@ -90,15 +90,18 @@ map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Ma
 			for (const auto& p : l.second) {
 				// if point fits maybe_model with an error smaller than t
 				// Fit the point with current model:
-				string thePointLMName = l.first;	// The LM we took (e.g. reye_c)
+				string thePointLMName = l.first;	// The LM we took (e.g. reye_c) // Todo always the same in each iteration
 				shared_ptr<imageprocessing::Patch> thePointPatch = p;	// The patch (with 2D-coords) we took // // CHANGED TO PATCH
 				
 				Mat newPointImg = img.clone();
 				float error = evaluator->evaluateNewPointPnP(l.first, p, transRot.first, transRot.second, newPointImg);
-				currentFfpDistances.push_back(error);
+				currentFfpDistances.push_back(error); // Todo: we don't need to save the point if the error is >t
 			}
-			// Do we accept the point or not?
+			// Do we accept any of the points or not?
 			// if point fits maybe_model with an error smaller than t, add point to consensus_set
+			if (currentFfpDistances.empty()) {
+				continue;
+			}
 			vector<double>::iterator beforeItr = min_element(currentFfpDistances.begin(), currentFfpDistances.end());
 			if(*beforeItr > thresholdForDatapointFitsModel) {
 				// None of the candidates for the current Ffp fit the model well. Don't add anything to the consensusSet.

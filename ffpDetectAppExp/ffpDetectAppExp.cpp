@@ -117,6 +117,28 @@ void drawBoxes(Mat image, vector<shared_ptr<ClassifiedPatch>> patches)
 	}
 }
 
+
+void drawFfpsCircle(Mat image, pair<string, Point2f> landmarks)
+{
+	cv::Point center(cvRound(landmarks.second.x), cvRound(landmarks.second.y));
+	int radius = cvRound(3);
+	circle(image, center, 1, cv::Scalar(0,255,0), 1, 8, 0 );	// draw the circle center
+	circle(image, center, radius, cv::Scalar(0,0,255), 1, 8, 0 );	// draw the circle outline
+
+}
+
+void drawFfpsText(Mat image, pair<string, Point2f> landmarks)
+{
+	cv::Point center(cvRound(landmarks.second.x), cvRound(landmarks.second.y));
+	std::ostringstream text;
+	int fontFace = cv::FONT_HERSHEY_PLAIN;
+	double fontScale = 0.7;
+	int thickness = 1;  
+	text << landmarks.first << std::ends;
+	putText(image, text.str(), center, fontFace, fontScale, cv::Scalar::all(0), thickness, 8);
+	text.str("");
+}
+
 /**
  * Takes a list of classified patches and creates a single probability map of face region locations.
  *
@@ -565,7 +587,7 @@ int main(int argc, char *argv[])
 		img = imageSource->getImage();
 		
 		
-		map<string, shared_ptr<imageprocessing::Patch>> resultLms2 = rnscnew.run(img, 30.0f, 1000, 5, 4); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this  with only the STL? (probably)
+		//map<string, shared_ptr<imageprocessing::Patch>> resultLms2 = rnscnew.run(img, 30.0f, 1000, 5, 4); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this  with only the STL? (probably)
 		
 		// Do the face-detection:
 		vector<shared_ptr<ClassifiedPatch>> facePatches;
@@ -621,12 +643,17 @@ int main(int argc, char *argv[])
 			landmarkData2.insert(make_pair(feature.first, tmp));
 		}
 
-		//rnscnew.setLandmarks(landmarkData2); // Should better use .run(landmarkData2); Clarity etc
-		//map<string, shared_ptr<imageprocessing::Patch>> resultLms = rnscnew.run(img, 30.0f, 1000, 5, 4); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this  with only the STL? (probably)
+		rnscnew.setLandmarks(landmarkData2); // Should better use .run(landmarkData2); Clarity etc
+		Mat rnsacImg = img.clone();
+		map<string, shared_ptr<imageprocessing::Patch>> resultLms = rnscnew.run(rnsacImg, 30.0f, 1000, 4, 3); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this  with only the STL? (probably)
 
-
-		
 		//rnsc.runRANSAC(img, landmarkData, mm, 30.0f);
+
+		for (const auto& lm : resultLms) {
+			drawFfpsCircle(img, make_pair(lm.first, Point2f(lm.second->getX(), lm.second->getY())));
+			drawFfpsText(img, make_pair(lm.first, Point2f(lm.second->getX(), lm.second->getY())));
+			imwrite("C:/Users/Patrik/Documents/Github/RANSAC.png", img);
+		}
 
 		/*
 		//Mat ffdResultImg = img.clone();

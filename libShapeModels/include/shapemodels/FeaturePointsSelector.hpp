@@ -128,7 +128,7 @@ public:
 
 	// Needed for now, not sure this whole Selector thing makes sense
 	map<string, vector<shared_ptr<imageprocessing::Patch>>> getAllLandmarks() {
-		map<string, vector<shared_ptr<imageprocessing::Patch>>> testLms;
+/*		map<string, vector<shared_ptr<imageprocessing::Patch>>> testLms;
 		
 		vector<shared_ptr<imageprocessing::Patch>> lm1;
 		lm1.push_back(std::make_shared<imageprocessing::Patch>(260, 207, 20, 20, cv::Mat()));
@@ -153,8 +153,8 @@ public:
 		lm5.push_back(std::make_shared<imageprocessing::Patch>(317, 272, 20, 20, cv::Mat()));
 		testLms.insert(make_pair("center.nose.tip", lm5));
 
-		return testLms;
-		//return landmarks;
+		return testLms;*/
+		return landmarks;
 	}
 
 private:
