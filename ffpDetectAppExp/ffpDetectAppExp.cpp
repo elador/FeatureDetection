@@ -564,6 +564,9 @@ int main(int argc, char *argv[])
 		appLogger.info("Starting to process " + imageSource->getName().string());
 		img = imageSource->getImage();
 		
+		
+		map<string, shared_ptr<imageprocessing::Patch>> resultLms2 = rnscnew.run(img, 30.0f, 1000, 5, 4); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this  with only the STL? (probably)
+		
 		// Do the face-detection:
 		vector<shared_ptr<ClassifiedPatch>> facePatches;
 		for(const auto& detector : faceDetectors) {

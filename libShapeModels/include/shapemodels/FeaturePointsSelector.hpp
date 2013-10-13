@@ -63,9 +63,19 @@ public:
 
 	map<string, shared_ptr<imageprocessing::Patch>> getDistinctRandomPoints(int numPoints) {
 		if (numPoints > landmarks.size()) { // We cannot return more distinct points than the number of features we detected
+			// TEMP:
+			map<string, shared_ptr<imageprocessing::Patch>> testLms;
+			testLms.insert(make_pair("right.eye.pupil.center", std::make_shared<imageprocessing::Patch>(260, 207, 20, 20, cv::Mat())));
+			testLms.insert(make_pair("left.eye.pupil.center", std::make_shared<imageprocessing::Patch>(345, 214, 20, 20, cv::Mat())));
+			testLms.insert(make_pair("right.lips.corner", std::make_shared<imageprocessing::Patch>(261, 320, 20, 20, cv::Mat())));
+			//testLms.insert(make_pair("left.lips.corner", std::make_shared<imageprocessing::Patch>(334, 333, 20, 20, cv::Mat())));
+			testLms.insert(make_pair("center.nose.tip", std::make_shared<imageprocessing::Patch>(320, 270, 20, 20, cv::Mat())));
+
+			return testLms;
+			
 			// Logger warning
 			// throw or return empty map
-			return map<string, shared_ptr<imageprocessing::Patch>>();
+			//return map<string, shared_ptr<imageprocessing::Patch>>();
 		}
 		
 		// Convert map to vec. Maybe use vec everywhere instead of map!
@@ -90,9 +100,6 @@ public:
 			// we selected a landmark and a point, so delete the landmark
 			landmarksVector.erase(begin(landmarksVector) + featureIdx);
 		}
-
-
-
 
 		return distinctLandmarks;
 	};
@@ -121,7 +128,33 @@ public:
 
 	// Needed for now, not sure this whole Selector thing makes sense
 	map<string, vector<shared_ptr<imageprocessing::Patch>>> getAllLandmarks() {
-		return landmarks;
+		map<string, vector<shared_ptr<imageprocessing::Patch>>> testLms;
+		
+		vector<shared_ptr<imageprocessing::Patch>> lm1;
+		lm1.push_back(std::make_shared<imageprocessing::Patch>(260, 207, 20, 20, cv::Mat()));
+		lm1.push_back(std::make_shared<imageprocessing::Patch>(263, 205, 20, 20, cv::Mat()));
+		testLms.insert(make_pair("right.eye.pupil.center", lm1));
+
+		vector<shared_ptr<imageprocessing::Patch>> lm2;
+		lm2.push_back(std::make_shared<imageprocessing::Patch>(345, 214, 20, 20, cv::Mat()));
+		testLms.insert(make_pair("left.eye.pupil.center", lm2));
+		
+		vector<shared_ptr<imageprocessing::Patch>> lm3;
+		lm3.push_back(std::make_shared<imageprocessing::Patch>(261, 320, 20, 20, cv::Mat()));
+		lm3.push_back(std::make_shared<imageprocessing::Patch>(220, 325, 20, 20, cv::Mat()));
+		testLms.insert(make_pair("right.lips.corner", lm3));
+		
+		vector<shared_ptr<imageprocessing::Patch>> lm4;
+		lm4.push_back(std::make_shared<imageprocessing::Patch>(334, 333, 20, 20, cv::Mat()));
+		testLms.insert(make_pair("left.lips.corner", lm4));
+		
+		vector<shared_ptr<imageprocessing::Patch>> lm5;
+		lm5.push_back(std::make_shared<imageprocessing::Patch>(320, 270, 20, 20, cv::Mat()));
+		lm5.push_back(std::make_shared<imageprocessing::Patch>(317, 272, 20, 20, cv::Mat()));
+		testLms.insert(make_pair("center.nose.tip", lm5));
+
+		return testLms;
+		//return landmarks;
 	}
 
 private:

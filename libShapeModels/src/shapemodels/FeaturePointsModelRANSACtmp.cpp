@@ -52,7 +52,6 @@ void drawFfpsSmallSquare(Mat img, vector<pair<string, Point2f>> points)
 }
 
 
-
 void FeaturePointsRANSAC::runRANSAC(Mat img, vector<pair<string, vector<shared_ptr<imageprocessing::Patch>>>> landmarkData, MorphableModel mm, float thresholdForDatapointFitsModel, int numIter/*=0*/, int numClosePointsRequiredForGoodFit/*=4*/, int minPointsToFitModel/*=3*/)
 {
 	if(numIter==0) {

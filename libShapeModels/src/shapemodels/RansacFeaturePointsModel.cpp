@@ -21,6 +21,8 @@ using std::make_pair;
 
 namespace shapemodels {
 
+// Idea: in evaluateNewPoint, we could use the pixel-data in the patch as an additional indicator if it's a good fit
+
 map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Mat img, float thresholdForDatapointFitsModel/*=30.0f*/, int numIter/*=0*/, int numClosePointsRequiredForGoodFit/*=4*/, int minPointsToFitModel/*=3*/)
 {
 	//The whole algorithm here. evaluator only evaluates 1 combo. All logic here. Selector provides functions to get random items (1 or several) etc.
@@ -56,7 +58,7 @@ map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Ma
 		// == maybeInliers
 		// maybe_model := model parameters fitted to maybeInliers
 		// Use the 3DMM and POSIT:
-		pair<Mat, Mat> transRot = evaluator->evaluate(maybeInliersPatches, img);
+		pair<Mat, Mat> transRot = evaluator->doPosit(maybeInliersPatches, img);
 
 		vector<pair<string, Point2f>> maybeInliers;
 
@@ -69,11 +71,12 @@ map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Ma
 
 		// consensus_set := maybe_inliers
 		vector<pair<string, Point2f>> consensusSet = maybeInliers;
+		// Todo: We could do a fast rejection here, see how good our points are and
+		// if bad, directly reject them? That's not possible when we work with 3 points
+		// as then the combination is always good!
 
 		// (TODO? get the IED of the current projection, to calculate the threshold. Hmm - what if I dont have the eye-LMs... Somehow make thresh dynamic (because of different face-sizes! absolute Pixels not good!))
 		// But the FaceDetector knows the face-box size!!!
-
-		
 
 		// for every point in data not in maybe_inliers
 		for (const auto& l : landmarks) { // better: choose randomly
@@ -85,56 +88,45 @@ map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Ma
 				// Fit the point with current model:
 				string thePointLMName = l.first;	// The LM we took (e.g. reye_c)
 				shared_ptr<imageprocessing::Patch> thePointPatch = p;	// The patch (with 2D-coords) we took // // CHANGED TO PATCH
-				// get the new vertex from 3DMM, project into 2D with trans and rot matrix calculated by cvPOSIT
-				// vector<pair<string, Point2f> > theNewLmInImage = projectVerticesToImage(theNewLmToProject, lmVertPairAtOrigin.verticesMean, lmVertPairAtOrigin.landmarksMean, s, t, mm);
-				// Do we accept the point or not? error of theNewLmInImage[0] - thePointPatch < t ?
-				// if point fits maybe_model with an error smaller than t, add point to consensus_set
-/*				cv::Vec2f theNewLm(theNewLmInImage[0].second.x, theNewLmInImage[0].second.y);
-				cv::Vec2f theNewPointPatch((float)thePointPatch->getX(), (float)thePointPatch->getY());
-				double distance = cv::norm(theNewLm, theNewPointPatch, cv::NORM_L2);
-				currentFfpDistances.push_back(distance);*/
+				
+				float error = evaluator->evaluateNewPoint(l.first, p, transRot.first, transRot.second, img);
+				currentFfpDistances.push_back(error);
 			}
+			// Do we accept the point or not?
+			// if point fits maybe_model with an error smaller than t, add point to consensus_set
 			vector<double>::iterator beforeItr = min_element(currentFfpDistances.begin(), currentFfpDistances.end());
 			if(*beforeItr > thresholdForDatapointFitsModel) {
 				// None of the candidates for the current Ffp fit the model well. Don't add anything to the consensusSet.
 			} else {
 				// We found a candidate that fits the model, add it to the consensusSet! (and continue with the next Ffp)
-/*				int positionOfMinimumElement = distance(currentFfpDistances.begin(), beforeItr);
-				shared_ptr<imageprocessing::Patch> thePointPatch = landmarkData[whichFfp].second[positionOfMinimumElement]; // CHANGED TO PATCH
+				int positionOfMinimumElement = distance(currentFfpDistances.begin(), beforeItr);
+				shared_ptr<imageprocessing::Patch> thePointPatch = l.second[positionOfMinimumElement];
 				Point2f theNewPointPatch((float)thePointPatch->getX(), (float)thePointPatch->getY());
-				consensusSet.push_back(make_pair(landmarkData[whichFfp].first, theNewPointPatch)); */
+				consensusSet.push_back(make_pair(l.first, theNewPointPatch));
 			}
-			
-		}
+			//landmarks.erase(l.first); // we're finished with this landmark, delete it from the list. Produces an iterator error. But we don't have to do this anyway, just loop through the map. We could use erase if we looped through it randomly.
+		} // end for all landmarks
 		// We went through all Ffp's.
 		// if the number of elements in consensus_set is > d (this implies that we may have found a good model, now test how good it is)
 		if (consensusSet.size()<numClosePointsRequiredForGoodFit) {
 			continue;	// We didn't find a good model, the consensusSet only consists of the points projected (e.g. 3).
 		}
+		// (this implies that we may have found a good model, now test how good it is)
 		// this_model := model parameters fitted to all points in consensus_set
 
-/*		LandmarksVerticesPair consensusSetLmVertPairAtOrigin = getCorrespondingLandmarkpointsAtOriginFrom3DMM(consensusSet, mm);	// Todo: It's kind of not clear if this expects centered 2D LMs or not-centered (it's not-centered)
-		// Todo: Using this method, we don't check if the face is facing us or not. Somehow check this.
-		pair<Mat, Mat> projectionC = calculateProjection(consensusSetLmVertPairAtOrigin.landmarks, consensusSetLmVertPairAtOrigin.vertices);
-		Mat sc = projectionC.first;
-		Mat tc = projectionC.second;
+		// Todo: We don't check if the face is facing us or not. Somehow check this?
 
-		Mat outimgConsensus = img.clone(); // TODO 2013 changed
-		drawFull3DMMProjection(outimgConsensus, consensusSetLmVertPairAtOrigin.verticesMean, consensusSetLmVertPairAtOrigin.landmarksMean, sc, tc, mm);
-		vector<pair<string, Point2f> > pointsInImageC = projectVerticesToImage(modelPointsToRender, consensusSetLmVertPairAtOrigin.verticesMean, consensusSetLmVertPairAtOrigin.landmarksMean, sc, tc, mm);
-		drawAndPrintLandmarksInImage(outimgConsensus, pointsInImageC);
+		// Do POSIT with ALL the points in the consensus set!
+		//pair<Mat, Mat> transRot = evaluator->doPosit(maybeInliersPatches, img);
 
-		// TODO 2013 CHANGED
-		drawFfpsSmallSquare(outimgConsensus, consensusSet);		// TODO: Should not call this directly! Make a LogImg... function!
-		drawLandmarksText(outimgConsensus, consensusSet);
-		imwrite("out\\a_ransac_ConsensusSet.png", outimgConsensus);
-		// END
-*/
 		// this_error := a measure of how well this_model fits these points
 		// TODO
-		// we could check how many of the 3dmm LMs projected into the model with s and t are inside the actual image. If they are far off, the model is not good. (?)
-		// also check this for the three initial points?
-		// or better use some kind of matrix/projection/regularisation, that those transformations doesn't exist in the first place...
+		// The line above contains the bug. This_error should be replaced by a score that is either the size of the consensus set, or the robust error norm computed on ALL samples (not just the consensus set).
+		// if this_error < best_error // = (we have found a model which is better than any of the previous ones; keep it until a better one is found)
+		// best_model := this_model
+		// best_consensus_set := consensus_set
+		// best_error := this_error
+		// increment iterations
 
 		// Check for number of points AND some kind of error measure?
 		if(bestConsensusSets.empty()) {
