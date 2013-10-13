@@ -621,8 +621,8 @@ int main(int argc, char *argv[])
 			landmarkData2.insert(make_pair(feature.first, tmp));
 		}
 
-		rnscnew.setLandmarks(landmarkData2); // Should better use .run(landmarkData2); Clarity etc
-		map<string, shared_ptr<imageprocessing::Patch>> resultLms = rnscnew.run(img, 30.0f, 1000, 5, 4); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this  with only the STL? (probably)
+		//rnscnew.setLandmarks(landmarkData2); // Should better use .run(landmarkData2); Clarity etc
+		//map<string, shared_ptr<imageprocessing::Patch>> resultLms = rnscnew.run(img, 30.0f, 1000, 5, 4); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this  with only the STL? (probably)
 
 
 		

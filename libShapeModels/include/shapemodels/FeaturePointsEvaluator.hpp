@@ -37,6 +37,14 @@ namespace shapemodels {
  * around it.
  * Note2: The first point is always used as camera center I think. Try using 3 points and
  * the center of those 3 in the model as a 4th (first) ?
+ *
+ * Note 3: Try render it with R=id, t=0. Points flipped. Bc OCV image origin is up-left. Look
+ *         in our renderer code, cam-matrix y has to be flipped.
+ *
+ * Problem with POSIT. 3 solutions:
+ *  - use solvePnP (does only estimate R and T, not the cam-matrix (e.g. focal length)
+ *  - try with 3 points + their center
+ *  - analyze the problem, draw the model, ...
  */
 class FeaturePointsEvaluator {
 public:
@@ -59,7 +67,6 @@ public:
 	//virtual const int getter() const;
 
 	std::pair<Mat, Mat> doPosit(map<string, shared_ptr<imageprocessing::Patch>> landmarkPoints, Mat img) { // img for debug purposes
-		float error = 0.0f;
 
 		// Convert patch to Point2f
 		map<string, Point2f> landmarkPointsAsPoint2f;
@@ -141,10 +148,107 @@ public:
 		return distance;
 	};
 
+
+	std::pair<Mat, Mat> doPnP(map<string, shared_ptr<imageprocessing::Patch>> landmarkPoints, Mat img) { // img for debug purposes
+
+		// Convert patch to Point2f
+		map<string, Point2f> landmarkPointsAsPoint2f;
+		vector<Point2f> imagePoints;
+		for (const auto& p : landmarkPoints) {
+			landmarkPointsAsPoint2f.insert(make_pair(p.first, Point2f(p.second->getX(), p.second->getY())));
+			imagePoints.emplace_back(Point2f(p.second->getX(), p.second->getY()));
+		}
+
+		// Get and create the model points
+		map<string, Point3f> mmVertices = get3dmmLmsFromFfps(landmarkPointsAsPoint2f, mm);
+		vector<Point3f> modelPoints;
+		for (const auto& v : mmVertices) {
+			modelPoints.push_back(Point3f(v.second.x, v.second.y, v.second.z));
+		}
+
+		//Estimate the pose
+		int max_d = std::max(img.rows,img.cols); // should be the focal length? (don't forget the aspect ratio!)
+		Mat camMatrix = (cv::Mat_<double>(3,3) << max_d, 0,		img.cols/2.0,
+												  0,	 max_d, img.rows/2.0,
+												  0,	 0,		1.0);
+		Mat rvec(3, 1, CV_64FC1);
+		Mat tvec(3, 1, CV_64FC1);
+		solvePnP(modelPoints, imagePoints, camMatrix, vector<float>(), rvec, tvec, false, CV_ITERATIVE); // CV_ITERATIVE (3pts) | CV_P3P (4pts) | CV_EPNP (4pts)
+		//solvePnPRansac(modelPoints, imagePoints, camMatrix, distortion, rvec, tvec, false); // min 4 points
+
+		Mat rotation_matrix(3, 3, CV_64FC1);
+		Rodrigues(rvec, rotation_matrix);
+		rotation_matrix.convertTo(rotation_matrix, CV_32FC1);
+		Mat translation_vector = tvec;
+		translation_vector.convertTo(translation_vector, CV_32FC1);
+
+		camMatrix.convertTo(camMatrix, CV_32FC1);
+
+		cameraMatrix = camMatrix;
+		rodrRotVec = rvec;
+		rodrTransVec = tvec;
+
+		// Visualize the image
+		// - the 4 selected 2D landmarks
+		// - the 4 3D 3dmm landmarks projected with T and R to 2D
+		// - evtl overlay the whole model
+
+		for (const auto& p : landmarkPoints) {
+			cv::rectangle(img, cv::Point(cvRound(p.second->getX()-2.0f), cvRound(p.second->getY()-2.0f)), cv::Point(cvRound(p.second->getX()+2.0f), cvRound(p.second->getY()+2.0f)), cv::Scalar(255, 0, 0));
+			drawFfpsText(img, make_pair(p.first, Point2f(p.second->getX(), p.second->getY())));
+		}
+		//vector<Point2f> projectedPoints;
+		//projectPoints(modelPoints, rvec, tvec, camMatrix, vector<float>(), projectedPoints); // same result as below
+		for (const auto& v : mmVertices) {
+			Mat vertex(v.second);
+			Mat v2 = rotation_matrix * vertex;
+			Mat v3 = v2 + translation_vector;
+			Mat v4 = camMatrix * v3;
+			Point3f v4p(v4);
+			Point2f v4p2d(v4p.x/v4p.z, v4p.y/v4p.z); // if != 0
+			drawFfpsCircle(img, make_pair(v.first, v4p2d));
+			drawFfpsText(img, make_pair(v.first, v4p2d));
+		}
+
+		return std::make_pair(translation_vector, rotation_matrix);
+	};
+
+	float evaluateNewPointPnP(string landmarkName, shared_ptr<imageprocessing::Patch> patch, Mat trans, Mat rot, Mat img) {
+		// Get the new vertex from 3DMM, project into 2D with trans and rot matrix calculated by cvPOSIT
+		// Convert patch to Point2f
+		map<string, Point2f> landmarkPointAsPoint2f;
+		landmarkPointAsPoint2f.insert(make_pair(landmarkName, Point2f(patch->getX(), patch->getY())));
+
+		// Get the vertex from the 3dmm
+		map<string, Point3f> vertex = get3dmmLmsFromFfps(landmarkPointAsPoint2f, mm);
+		vector<Point3f> modelPoint;
+		modelPoint.emplace_back((*begin(vertex)).second);
+
+		// calculate the distance between the projected point and the given landmark
+		vector<Point2f> projectedPoints;
+		projectPoints(modelPoint, rodrRotVec, rodrTransVec, cameraMatrix, vector<float>(), projectedPoints); // same result as below
+		Point2f projPoint = projectedPoints[0];
+
+		// draw the original landmark
+		cv::rectangle(img, cv::Point(cvRound(patch->getX()-2.0f), cvRound(patch->getY()-2.0f)), cv::Point(cvRound(patch->getX()+2.0f), cvRound(patch->getY()+2.0f)), cv::Scalar(255, 0, 0));
+		drawFfpsText(img, make_pair(landmarkName, Point2f(patch->getX(), patch->getY())));
+		// draw the projected vertex
+		drawFfpsCircle(img, make_pair(landmarkName, projPoint));
+		drawFfpsText(img, make_pair(landmarkName, projPoint));
+
+		float distance = 0.0f;
+		distance = cv::norm(projPoint - (*begin(landmarkPointAsPoint2f)).second);
+		return distance;
+	};
+
+
 private:
 	MorphableModel mm;
 
 	Point3f originVertex;
+
+	Mat cameraMatrix;
+	Mat rodrRotVec, rodrTransVec;
 
 	map<string, Point3f> movePoints(map<string, Point3f> points, Point3f offset)
 	{
