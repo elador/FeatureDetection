@@ -21,6 +21,7 @@
 
 using logging::LoggerFactory;
 using cv::Mat;
+using cv::Vec3f;
 using boost::lexical_cast;
 using std::string;
 
@@ -106,7 +107,7 @@ PcaModel PcaModel::loadOldBaselH5Model(string h5file, string landmarkVertexMappi
 
 
 
-PcaModel PcaModel::loadScmModel(std::string modelFile, std::string landmarkVertexMappingFile, PcaModel::ModelType modelType)
+PcaModel PcaModel::loadScmModel(string modelFile, string landmarkVertexMappingFile, PcaModel::ModelType modelType)
 {
 	/*
 	MorphableModel mm;
@@ -279,14 +280,32 @@ PcaModel PcaModel::loadScmModel(std::string modelFile, std::string landmarkVerte
 	return PcaModel();
 }
 
-void PcaModel::setLandmarkVertexMap(std::map<std::string, int> landmarkVertexMap)
+void PcaModel::setLandmarkVertexMap(map<string, int> landmarkVertexMap)
 {
 	this->landmarkVertexMap = landmarkVertexMap;
 }
 
-void PcaModel::setMean( cv::Mat modelMean )
+void PcaModel::setMean(Mat modelMean)
 {
 	mean = modelMean;
+}
+
+Mat PcaModel::getMean() const
+{
+	return mean;
+}
+
+Vec3f PcaModel::getMeanAtPoint(string landmarkIdentifier) const
+{
+	int vertexId = landmarkVertexMap.at(landmarkIdentifier);
+	vertexId *= 3;
+	return Vec3f(mean.at<float>(vertexId), mean.at<float>(vertexId+1), mean.at<float>(vertexId+2)); // we could use Vec3f(mean(Range(), Range())), maybe then we don't copy the data?
+}
+
+Vec3f PcaModel::getMeanAtPoint(unsigned int vertexIndex) const
+{
+	vertexIndex *= 3;
+	return Vec3f(mean.at<float>(vertexIndex), mean.at<float>(vertexIndex+1), mean.at<float>(vertexIndex+2));
 }
 
 

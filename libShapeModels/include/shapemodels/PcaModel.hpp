@@ -75,7 +75,7 @@ public:
 	 * @param[in] modelType The type of PCA model to load (SHAPE or COLOR).
 	 * @return A shape- or color model from the given file.
 	 */
-	// static PcaModel loadOldBaselH5Model(std::string h5file, ModelType modelType); // TODO!
+	// static PcaModel loadStatismoModel(std::string h5file, ModelType modelType); // TODO!
 
 
 	/**
@@ -90,19 +90,33 @@ public:
 	 *
 	 * @return The mean of the model.
 	 */
-	cv::Mat drawMean() const; // Returning Mesh here makes no sense since the PCA model doesn't know if it's color or shape. Only the MorphableModel can return a Mesh.
+	cv::Mat getMean() const; // Returning Mesh here makes no sense since the PCA model doesn't know if it's color or shape. Only the MorphableModel can return a Mesh.
 
-	cv::Vec3f drawMeanAtPoint(std::string landmarkIdentifier) const;
-	cv::Vec3f drawMeanAtPoint(unsigned int vertexIndex) const;
+	/**
+	 * Return the value of the mean at a given landmark.
+	 *
+	 * @param[in] landmarkIdentifier A landmark identifier (e.g. "center.nose.tip").
+	 * @return A Vec3f containing the values at the given landmark.
+	 * @throws out_of_range exception if the landmarkIdentifier does not exist in the model. // TODO test the javadoc!
+	 */
+	cv::Vec3f getMeanAtPoint(std::string landmarkIdentifier) const;
+
+	/**
+	 * Return the value of the mean at a given vertex id.
+	 *
+	 * @param[in] vertexIndex A vertex id.
+	 * @return A Vec3f containing the values at the given vertex id.
+	 */
+	cv::Vec3f getMeanAtPoint(unsigned int vertexIndex) const;
 
 	/**
 	 * Draws a random sample from the model, where the coefficients are drawn
 	 * from a standard normal (or with the given standard deviation).
 	 *
-	 * @param[in] sigma The standard deviation.
+	 * @param[in] sigma The standard deviation. (TODO find out which one, sigma=var, sigmaSq=sdev)
 	 * @return A random sample from the model.
 	 */
-	int drawSample(float sigma = 1.0f) const;
+	cv::Mat drawSample(float sigma = 1.0f) const;
 
 	/**
 	 * Returns a sample from the model with the given PCA coefficients.
@@ -110,10 +124,10 @@ public:
 	 * @param[in] coefficients The PCA coefficients used to generate the sample.
 	 * @return A model instance with given coefficients.
 	 */
-	int drawSample(std::vector<float> coefficients) const;
+	cv::Mat drawSample(std::vector<float> coefficients) const;
 
+	// The following functions are only used to load a model.
 	void setLandmarkVertexMap(std::map<std::string, int> landmarkVertexMap);
-
 	void setMean(cv::Mat modelMean);
 
 private:
@@ -121,7 +135,7 @@ private:
 	// All from the old RANSAC code:
 	std::vector<float> modelMeanShp;	// the 3DMM mean shape loaded into memory. Data is XYZXYZXYZ...
 	std::vector<float> modelMeanTex;
-	//std::map<std::string, int> featurePointsMap;	// Holds the translation from feature point name (e.g. reye) to the vertex number in the model
+	//std::map<std::string, int> featurePointsMap;	
 
 	// From MorphableModel, SCM (?):
 	cv::Mat matPcaBasisShp; // m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
@@ -132,9 +146,9 @@ private:
 	cv::Mat matMeanTex;
 	cv::Mat matEigenvalsTex;
 
-	std::mt19937 engine; // Mersenne twister MT19937
-	std::map<std::string, int> landmarkVertexMap;
-	cv::Mat mean; // 3m x 1 col-vector (xyzxyz...)', where m is the number of model-vertices
+	std::mt19937 engine; ///< A Mersenne twister MT19937 engine
+	std::map<std::string, int> landmarkVertexMap; ///< Holds the translation from feature point name (e.g. "center.nose.tip") to the vertex number in the model
+	cv::Mat mean; ///< A 3m x 1 col-vector (xyzxyz...)', where m is the number of model-vertices
 
 	
 

@@ -32,6 +32,16 @@ shapemodels::MorphableModel MorphableModel::loadOldBaselH5Model(std::string h5fi
 	return model;
 }
 
+shapemodels::PcaModel MorphableModel::getShapeModel() const
+{
+	return shapeModel;
+}
+
+shapemodels::PcaModel MorphableModel::getColorModel() const
+{
+	return colorModel;
+}
+
 void MorphableModel::setShapeModel(PcaModel shapeModel)
 {
 	this->shapeModel = shapeModel;

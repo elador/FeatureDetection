@@ -25,7 +25,7 @@ class MorphableModel  {
 public:
 
 	/**
-	 * Constructs a new a.
+	 * Constructs a new Morphable Model.
 	 *
 	 * @param[in] a b
 	 */
@@ -50,14 +50,17 @@ public:
 	void drawNewVertexPositions(cv::Mat coefficients);
 	void drawNewVertexColor();*/
 	// End libRender
-	
-	void setShapeModel(PcaModel shapeModel);
 
+	PcaModel getShapeModel() const;
+	PcaModel getColorModel() const;
+	
+	// The following functions are only used to load a model.
+	void setShapeModel(PcaModel shapeModel);
 	void setColorModel(PcaModel colorModel);
 
 private:
-	PcaModel shapeModel;
-	PcaModel colorModel;
+	PcaModel shapeModel; ///< 
+	PcaModel colorModel; ///< 
 
 };
 

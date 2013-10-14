@@ -294,13 +294,12 @@ private:
 	map<string, Point3f> get3dmmLmsFromFfps(map<string, Point2f> ffps, MorphableModel mm)
 	{
 		map<string, Point3f> mmPoints;
-/*
 		for (const auto& p : ffps) {
-			int theVertexToGet = mm.getShapeModel().getFeaturePointsMap()[p.first];
-			Point3f tmp(mm.getShapeModel().getMean()[3*theVertexToGet+0], mm.getShapeModel().getMean()[3*theVertexToGet+1], mm.getShapeModel().getMean()[3*theVertexToGet+2]); // TODO! Does this start to count at 0 or 1 ? At 0. (99.999% sure)
-			mmPoints.insert(std::make_pair(p.first, tmp));
+			//int theVertexToGet = mm.getShapeModel().getFeaturePointsMap()[p.first];
+			//Point3f tmp(mm.getShapeModel().getMean()[3*theVertexToGet+0], mm.getShapeModel().getMean()[3*theVertexToGet+1], mm.getShapeModel().getMean()[3*theVertexToGet+2]); // TODO! Does this start to count at 0 or 1 ? At 0. (99.999% sure)
+			//mmPoints.insert(std::make_pair(p.first, tmp));
+			mmPoints.insert(std::make_pair(p.first, mm.getShapeModel().getMeanAtPoint(p.first)));
 		}
-*/
 		return mmPoints;
 	}
 
