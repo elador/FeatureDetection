@@ -18,8 +18,6 @@
 #include <string>
 #include <memory>
 
-using std::shared_ptr;
-
 namespace render {
 
 /**
@@ -48,7 +46,7 @@ public:
 	bool hasTexture;
 	std::string textureName;
 
-	shared_ptr<render::Texture> texture; // optimally, we'd use a TextureManager, or maybe a smart pointer, to not load/store a texture twice if two models use the same texture.
+	std::shared_ptr<render::Texture> texture; // optimally, we'd use a TextureManager, or maybe a smart pointer, to not load/store a texture twice if two models use the same texture.
 
 };
 

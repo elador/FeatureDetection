@@ -9,13 +9,13 @@
 
 namespace render {
 
-Mesh::Mesh(void)
+Mesh::Mesh()
 {
 	hasTexture = false;
 }
 
 
-Mesh::~Mesh(void)
+Mesh::~Mesh()
 {
 }
 

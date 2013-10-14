@@ -27,6 +27,9 @@ using cv::Point3f;
 
 using std::unique_ptr;
 using std::pair;
+using std::map;
+using std::string;
+using std::vector;
 
 namespace shapemodels {
 
@@ -66,7 +69,7 @@ public:
 	 */
 	//virtual const int getter() const;
 
-	std::pair<Mat, Mat> doPosit(map<string, shared_ptr<imageprocessing::Patch>> landmarkPoints, Mat img) { // img for debug purposes
+	std::pair<Mat, Mat> doPosit(map<string, std::shared_ptr<imageprocessing::Patch>> landmarkPoints, Mat img) { // img for debug purposes
 
 		// Convert patch to Point2f
 		map<string, Point2f> landmarkPointsAsPoint2f;
@@ -121,7 +124,7 @@ public:
 		return std::make_pair(translation_vector, rotation_matrix);
 	};
 
-	float evaluateNewPoint(string landmarkName, shared_ptr<imageprocessing::Patch> patch, Mat trans, Mat rot, Mat img) {
+	float evaluateNewPoint(string landmarkName, std::shared_ptr<imageprocessing::Patch> patch, Mat trans, Mat rot, Mat img) {
 		// Get the new vertex from 3DMM, project into 2D with trans and rot matrix calculated by cvPOSIT
 		// Convert patch to Point2f
 		map<string, Point2f> landmarkPointAsPoint2f;
@@ -149,7 +152,7 @@ public:
 	};
 
 
-	std::pair<Mat, Mat> doPnP(map<string, shared_ptr<imageprocessing::Patch>> landmarkPoints, Mat img) { // img for debug purposes
+	std::pair<Mat, Mat> doPnP(map<string, std::shared_ptr<imageprocessing::Patch>> landmarkPoints, Mat img) { // img for debug purposes
 
 		// Convert patch to Point2f
 		map<string, Point2f> landmarkPointsAsPoint2f;
@@ -213,7 +216,7 @@ public:
 		return std::make_pair(translation_vector, rotation_matrix);
 	};
 
-	float evaluateNewPointPnP(string landmarkName, shared_ptr<imageprocessing::Patch> patch, Mat trans, Mat rot, Mat img) {
+	float evaluateNewPointPnP(string landmarkName, std::shared_ptr<imageprocessing::Patch> patch, Mat trans, Mat rot, Mat img) {
 		// Get the new vertex from 3DMM, project into 2D with trans and rot matrix calculated by cvPOSIT
 		// Convert patch to Point2f
 		map<string, Point2f> landmarkPointAsPoint2f;
@@ -291,12 +294,13 @@ private:
 	map<string, Point3f> get3dmmLmsFromFfps(map<string, Point2f> ffps, MorphableModel mm)
 	{
 		map<string, Point3f> mmPoints;
+/*
 		for (const auto& p : ffps) {
 			int theVertexToGet = mm.getShapeModel().getFeaturePointsMap()[p.first];
 			Point3f tmp(mm.getShapeModel().getMean()[3*theVertexToGet+0], mm.getShapeModel().getMean()[3*theVertexToGet+1], mm.getShapeModel().getMean()[3*theVertexToGet+2]); // TODO! Does this start to count at 0 or 1 ? At 0. (99.999% sure)
 			mmPoints.insert(std::make_pair(p.first, tmp));
 		}
-
+*/
 		return mmPoints;
 	}
 

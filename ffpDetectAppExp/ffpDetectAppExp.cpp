@@ -409,7 +409,7 @@ int main(int argc, char *argv[])
 	unordered_map<string, shared_ptr<Detector>> faceDetectors;
 	unordered_map<string, shared_ptr<Detector>> featureDetectors;
 
-	shapemodels::MorphableModel mm = shapemodels::MorphableModel::load("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\featurePoints_head_newfmt.txt");
+	shapemodels::MorphableModel mm = shapemodels::MorphableModel::loadOldBaselH5Model("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\featurePoints_head_newfmt.txt");
 
 	shapemodels::FeaturePointsRANSAC rnsc;
 

@@ -15,11 +15,7 @@
 #include <string>
 #include <vector>
 #include <map>
-
-using cv::Mat;
-using std::string;
-using std::vector;
-using std::map;
+#include <random>
 
 namespace shapemodels {
 
@@ -36,32 +32,109 @@ namespace shapemodels {
  */
 class PcaModel {
 public:
+	
+	/**
+	 * Specifies the type of the PCA model.
+	 * Mainly used so that the loading function knows which part of the data to read.
+	 */
+	enum class ModelType {
+		SHAPE,  ///< A model where the data corresponds to shape information (vertex positions)
+		COLOR ///< A model where the data corresponds to color information (vertex-coloring)
+	};
+
+	PcaModel();
 
 	/**
-	 * Computes the kernel value (dot product in a potentially high dimensional space) of two given vectors.
+	 * Load a shape or color model from a .scm file containing
+	 * a Morphable Model in the Surrey format.
 	 *
-	 * @param[in] lhs The first vector.
-	 * @param[in] rhs The second vector.
-	 * @return The kernel value of the two vectors.
+	 * @param[in] modelFile A binary .scm-file containing the model.
+	 * @param[in] landmarkVertexMappingFile A file containing a mapping from landmarks to vertex ids.
+	 * @param[in] modelType The type of PCA model to load (SHAPE or COLOR).
+	 * @return A shape- or color model from the given file.
 	 */
-	//virtual double compute(const Mat& lhs, const Mat& rhs) const = 0;
+	static PcaModel loadScmModel(std::string modelFile, std::string landmarkVertexMappingFile, ModelType modelType);
 
-	//static PcaModel load(string h5file, string featurePointsMapping);
+	/**
+	 * Load a shape or color model from a .h5 file containing a Morphable Model 
+	 * from Basel. The format is deprecated, it's more or less the one that
+	 * was used during my MSc. thesis.
+	 *
+	 * @param[in] h5file A HDF5 file containing the model.
+	 * @param[in] landmarkVertexMappingFile A file containing a mapping from landmarks to vertex ids.
+	 * @param[in] modelType The type of PCA model to load (SHAPE or COLOR).
+	 * @return A shape- or color model from the given file.
+	 */
+	static PcaModel loadOldBaselH5Model(std::string h5file, std::string landmarkVertexMappingFile, ModelType modelType);
 
-	void loadModel(string h5file, string h5group);
-	void loadFeaturePoints(string filename); // Hmm, we already have something like this in libImageIO, with DidLandmarkMapping etc.
+	/**
+	 * Load a shape or color model from a .h5 file containing a
+	 * statismo-compatible model.
+	 *
+	 * @param[in] h5file A HDF5 file containing the model.
+	 * @param[in] modelType The type of PCA model to load (SHAPE or COLOR).
+	 * @return A shape- or color model from the given file.
+	 */
+	// static PcaModel loadOldBaselH5Model(std::string h5file, ModelType modelType); // TODO!
 
-	vector<float>& getMean(); // Todo: No ref, but move?
-	map<string, int>& getFeaturePointsMap();
+
+	/**
+	 * Returns the number of principal components in the model.
+	 *
+	 * @return The number of principal components in the model.
+	 */
+	unsigned int getNumberOfPrincipalComponents() const;
+
+	/**
+	 * Returns the mean of the model.
+	 *
+	 * @return The mean of the model.
+	 */
+	cv::Mat drawMean() const; // Returning Mesh here makes no sense since the PCA model doesn't know if it's color or shape. Only the MorphableModel can return a Mesh.
+
+	cv::Vec3f drawMeanAtPoint(std::string landmarkIdentifier) const;
+	cv::Vec3f drawMeanAtPoint(unsigned int vertexIndex) const;
+
+	/**
+	 * Draws a random sample from the model, where the coefficients are drawn
+	 * from a standard normal (or with the given standard deviation).
+	 *
+	 * @param[in] sigma The standard deviation.
+	 * @return A random sample from the model.
+	 */
+	int drawSample(float sigma = 1.0f) const;
+
+	/**
+	 * Returns a sample from the model with the given PCA coefficients.
+	 *
+	 * @param[in] coefficients The PCA coefficients used to generate the sample.
+	 * @return A model instance with given coefficients.
+	 */
+	int drawSample(std::vector<float> coefficients) const;
+
+	void setLandmarkVertexMap(std::map<std::string, int> landmarkVertexMap);
+
+	void setMean(cv::Mat modelMean);
 
 private:
 
 	// All from the old RANSAC code:
-	vector<float> modelMeanShp;	// the 3DMM mean shape loaded into memory. Data is XYZXYZXYZ...
-	vector<float> modelMeanTex;
-	map<string, int> featurePointsMap;	// Holds the translation from feature point name (e.g. reye) to the vertex number in the model
+	std::vector<float> modelMeanShp;	// the 3DMM mean shape loaded into memory. Data is XYZXYZXYZ...
+	std::vector<float> modelMeanTex;
+	//std::map<std::string, int> featurePointsMap;	// Holds the translation from feature point name (e.g. reye) to the vertex number in the model
 
+	// From MorphableModel, SCM (?):
+	cv::Mat matPcaBasisShp; // m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
+	cv::Mat matMeanShp;
+	cv::Mat matEigenvalsShp;
 
+	cv::Mat matPcaBasisTex;
+	cv::Mat matMeanTex;
+	cv::Mat matEigenvalsTex;
+
+	std::mt19937 engine; // Mersenne twister MT19937
+	std::map<std::string, int> landmarkVertexMap;
+	cv::Mat mean; // 3m x 1 col-vector (xyzxyz...)', where m is the number of model-vertices
 
 	
 
