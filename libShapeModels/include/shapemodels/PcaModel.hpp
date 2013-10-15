@@ -43,6 +43,10 @@ public:
 		COLOR ///< A model where the data corresponds to color information (vertex-coloring)
 	};
 
+	/**
+	 * Constructs an empty PCA model.
+	 * It is recommended to use one of the static load methods instead.
+	 */
 	PcaModel();
 
 	/**
@@ -128,12 +132,6 @@ public:
 	cv::Mat drawSample(std::vector<float> coefficients) const;
 
 private:
-
-	// from the old RANSAC code:
-	//std::vector<float> modelMeanShp;	// the 3DMM mean shape loaded into memory. Data is XYZXYZXYZ...
-	//std::vector<float> modelMeanTex;
-
-
 	std::mt19937 engine; ///< A Mersenne twister MT19937 engine
 	std::map<std::string, int> landmarkVertexMap; ///< Holds the translation from feature point name (e.g. "center.nose.tip") to the vertex number in the model
 	

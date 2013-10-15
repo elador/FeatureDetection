@@ -32,32 +32,24 @@ public:
 	MorphableModel();
 	
 	/**
-	 * Computes the kernel value (dot product in a potentially high dimensional space) of two given vectors.
+	 * Todo.
 	 *
-	 * @param[in] lhs The first vector.
-	 * @param[in] rhs The second vector.
-	 * @return The kernel value of the two vectors.
+	 * @param[in] h5file Todo.
+	 * @param[in] landmarkVertexMappingFile Todo.
+	 * @return TODO.
 	 */
-	//virtual double compute(const Mat& lhs, const Mat& rhs) const = 0;
-
 	static MorphableModel loadOldBaselH5Model(std::string h5file, std::string landmarkVertexMappingFile);
+
 	static MorphableModel loadScmModel(std::string h5file, std::string landmarkVertexMappingFile);
 	
-
-	// The following is from libRender:
-	//render::Mesh mesh;
-	/*
-	void drawNewVertexPositions();
-	void drawNewVertexPositions(cv::Mat coefficients);
-	void drawNewVertexColor();*/
-	// End libRender
-
 	PcaModel getShapeModel() const;
 	PcaModel getColorModel() const;
+
+	// drawSample()... get Shp+Col sample, combine, return Mesh?
 	
 private:
-	PcaModel shapeModel; ///< 
-	PcaModel colorModel; ///< 
+	PcaModel shapeModel; ///< A PCA model over the shape
+	PcaModel colorModel; ///< A PCA model over vertex color information
 
 };
 

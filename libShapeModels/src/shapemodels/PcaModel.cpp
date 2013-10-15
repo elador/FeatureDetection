@@ -102,8 +102,6 @@ PcaModel PcaModel::loadOldBaselH5Model(string h5file, string landmarkVertexMappi
 	return model;
 }
 
-
-
 PcaModel PcaModel::loadScmModel(string modelFilename, string landmarkVertexMappingFile, PcaModel::ModelType modelType)
 {
 	logging::Logger logger = Loggers->getLogger("shapemodels");
@@ -198,7 +196,7 @@ PcaModel PcaModel::loadScmModel(string modelFilename, string landmarkVertexMappi
 	if (numMean != numShapeDims) {
 		logger.warn("Warning: Number of shape dimensions is not equal to the number of dimensions of the mean. Something will probably go wrong during the loading.");
 	}
-	Mat meanShape = cv::Mat(numMean, 1, CV_32FC1); // -> to memb.var
+	Mat meanShape = cv::Mat(numMean, 1, CV_32FC1);
 	unsigned int counter = 0;
 	double vd0, vd1, vd2;
 	for (unsigned int i=0; i < numMean/3; ++i) {
@@ -206,7 +204,7 @@ PcaModel PcaModel::loadScmModel(string modelFilename, string landmarkVertexMappi
 		modelFile.read(reinterpret_cast<char*>(&vd0), 8);
 		modelFile.read(reinterpret_cast<char*>(&vd1), 8);
 		modelFile.read(reinterpret_cast<char*>(&vd2), 8);
-		meanShape.at<float>(counter, 0) = vd0;
+		meanShape.at<float>(counter, 0) = vd0; // TODO static_cast<float>. TODO change rest also to 32FC1!!!
 		++counter;
 		meanShape.at<float>(counter, 0) = vd1;
 		++counter;
@@ -299,6 +297,12 @@ PcaModel PcaModel::loadScmModel(string modelFilename, string landmarkVertexMappi
 	//return model;
 }
 
+unsigned int PcaModel::getNumberOfPrincipalComponents() const
+{
+	return pcaBasis.cols; // TODO verify this
+}
+
+
 Mat PcaModel::getMean() const
 {
 	return mean;
@@ -317,6 +321,50 @@ Vec3f PcaModel::getMeanAtPoint(unsigned int vertexIndex) const
 	return Vec3f(mean.at<float>(vertexIndex), mean.at<float>(vertexIndex+1), mean.at<float>(vertexIndex+2));
 }
 
+Mat PcaModel::drawSample(float sigma /*= 1.0f*/) const
+{
+	std::normal_distribution<float> distribution(0.0, sigma);
 
+	Mat alphas = Mat::zeros(55, 1, CV_32FC1);
+	for (int row=0; row < alphas.rows; ++row) {
+		alphas.at<float>(row, 0) = distribution(engine);
+	}
+
+	//Mat smallBasis = matPcaBasisShp(cv::Rect(0, 0, 55, 100));
+
+	Mat sqrtOfEigenvalues = eigenvalues.clone();
+	for (unsigned int i = 0; i < eigenvalues.rows; ++i)	{
+		sqrtOfEigenvalues.at<float>(i) = std::sqrt(eigenvalues.at<float>(i));
+	}
+
+	Mat modelSample = mean + pcaBasis * alphas.mul(sqrtOfEigenvalues);
+
+/*	unsigned int matIdx = 0;
+	for (auto& v : mesh.vertex) {
+		v.position = Vec4f(modelSample.at<double>(matIdx), modelSample.at<double>(matIdx+1), modelSample.at<double>(matIdx+2), 1.0f);
+		matIdx += 3;
+	} */
+	return modelSample;
+}
+
+Mat PcaModel::drawSample(std::vector<float> coefficients) const
+{
+	/*
+	Mat coefficients; // == Input
+	Mat matSqrtEigenvalsShp = matEigenvalsShp.clone();
+	for (unsigned int i=0; i<matEigenvalsShp.rows; ++i)	{
+	matSqrtEigenvalsShp.at<double>(i) = std::sqrt(matEigenvalsShp.at<double>(i));
+	}
+
+	Mat vertices = matMeanShp + matPcaBasisShp * coefficients.mul(matSqrtEigenvalsShp);
+
+	unsigned int matIdx = 0;
+	for (auto& v : mesh.vertex) {
+	v.position = Vec4f(vertices.at<double>(matIdx), vertices.at<double>(matIdx+1), vertices.at<double>(matIdx+2), 1.0f);
+	matIdx += 3;
+	}
+	*/
+	return Mat(); // TODO not implemented yet
+}
 
 }
