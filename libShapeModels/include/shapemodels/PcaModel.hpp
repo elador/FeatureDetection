@@ -14,6 +14,7 @@
 
 #include <string>
 #include <vector>
+#include <array>
 #include <map>
 #include <random>
 
@@ -53,7 +54,7 @@ public:
 	 * @param[in] modelType The type of PCA model to load (SHAPE or COLOR).
 	 * @return A shape- or color model from the given file.
 	 */
-	static PcaModel loadScmModel(std::string modelFile, std::string landmarkVertexMappingFile, ModelType modelType);
+	static PcaModel loadScmModel(std::string modelFilename, std::string landmarkVertexMappingFile, ModelType modelType);
 
 	/**
 	 * Load a shape or color model from a .h5 file containing a Morphable Model 
@@ -126,31 +127,21 @@ public:
 	 */
 	cv::Mat drawSample(std::vector<float> coefficients) const;
 
-	// The following functions are only used to load a model.
-	void setLandmarkVertexMap(std::map<std::string, int> landmarkVertexMap);
-	void setMean(cv::Mat modelMean);
-
 private:
 
-	// All from the old RANSAC code:
-	std::vector<float> modelMeanShp;	// the 3DMM mean shape loaded into memory. Data is XYZXYZXYZ...
-	std::vector<float> modelMeanTex;
-	//std::map<std::string, int> featurePointsMap;	
+	// from the old RANSAC code:
+	//std::vector<float> modelMeanShp;	// the 3DMM mean shape loaded into memory. Data is XYZXYZXYZ...
+	//std::vector<float> modelMeanTex;
 
-	// From MorphableModel, SCM (?):
-	cv::Mat matPcaBasisShp; // m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
-	cv::Mat matMeanShp;
-	cv::Mat matEigenvalsShp;
-
-	cv::Mat matPcaBasisTex;
-	cv::Mat matMeanTex;
-	cv::Mat matEigenvalsTex;
 
 	std::mt19937 engine; ///< A Mersenne twister MT19937 engine
 	std::map<std::string, int> landmarkVertexMap; ///< Holds the translation from feature point name (e.g. "center.nose.tip") to the vertex number in the model
-	cv::Mat mean; ///< A 3m x 1 col-vector (xyzxyz...)', where m is the number of model-vertices
-
 	
+	cv::Mat mean; ///< A 3m x 1 col-vector (xyzxyz...)', where m is the number of model-vertices
+	cv::Mat pcaBasis; // m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
+	cv::Mat eigenvalues;
+
+	std::vector<std::array<int, 3>> triangleList; ///< List of triangles that make up the mesh of the model. (Note: Does every PCA model has a triangle-list? Use Mesh here instead?)
 
 };
 

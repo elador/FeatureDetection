@@ -317,9 +317,8 @@ int main(int argc, char *argv[])
 	}
 
 	ImageLoggers->getLogger("detection").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir));
-	ImageLoggers->getLogger("mergePlaygroundApp").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir)); // TODO delete?
 
-	if(inputPaths.size() > 1) {
+	if (inputPaths.size() > 1) {
 		// We assume the user has given several, valid images
 		useImgs = true;
 		inputFilenames = inputPaths;
@@ -340,8 +339,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-
-	if(useFileList==true) {
+	if (useFileList==true) {
 		appLogger.info("Using file-list as input: " + inputFilelist.string());
 		shared_ptr<ImageSource> fileListImgSrc; // TODO VS2013 change to unique_ptr, rest below also
 		try {
@@ -356,7 +354,7 @@ int main(int argc, char *argv[])
 		//imageSource = make_shared<NamedLabeledImageSource>(fileImgSrc, lmSrc);
 		imageSource = fileListImgSrc;
 	}
-	if(useImgs==true) {
+	if (useImgs==true) {
 		//imageSource = make_shared<FileImageSource>(inputFilenames);
 		//imageSource = make_shared<RepeatingFileImageSource>("C:\\Users\\Patrik\\GitHub\\data\\firstrun\\ws_8.png");
 		appLogger.info("Using input images: ");
@@ -378,7 +376,7 @@ int main(int argc, char *argv[])
 		//imageSource = make_shared<NamedLabeledImageSource>(fileImgSrc, lmSrc);
 		imageSource = fileImgSrc;
 	}
-	if(useDirectory==true) {
+	if (useDirectory==true) {
 		appLogger.info("Using input images from directory: " + inputDirectory.string());
 		try {
 			imageSource = make_shared<DirectoryImageSource>(inputDirectory.string());
@@ -409,7 +407,8 @@ int main(int argc, char *argv[])
 	unordered_map<string, shared_ptr<Detector>> faceDetectors;
 	unordered_map<string, shared_ptr<Detector>> featureDetectors;
 
-	shapemodels::MorphableModel mm = shapemodels::MorphableModel::loadOldBaselH5Model("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\featurePoints_head_newfmt.txt");
+	//shapemodels::MorphableModel mm = shapemodels::MorphableModel::loadOldBaselH5Model("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\featurePoints_head_newfmt.txt");
+	shapemodels::MorphableModel mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
 
 	shapemodels::FeaturePointsRANSAC rnsc;
 

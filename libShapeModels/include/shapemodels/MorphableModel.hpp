@@ -41,6 +41,7 @@ public:
 	//virtual double compute(const Mat& lhs, const Mat& rhs) const = 0;
 
 	static MorphableModel loadOldBaselH5Model(std::string h5file, std::string landmarkVertexMappingFile);
+	static MorphableModel loadScmModel(std::string h5file, std::string landmarkVertexMappingFile);
 	
 
 	// The following is from libRender:
@@ -54,10 +55,6 @@ public:
 	PcaModel getShapeModel() const;
 	PcaModel getColorModel() const;
 	
-	// The following functions are only used to load a model.
-	void setShapeModel(PcaModel shapeModel);
-	void setColorModel(PcaModel colorModel);
-
 private:
 	PcaModel shapeModel; ///< 
 	PcaModel colorModel; ///< 

@@ -27,10 +27,19 @@ MorphableModel::MorphableModel()
 shapemodels::MorphableModel MorphableModel::loadOldBaselH5Model(std::string h5file, std::string landmarkVertexMappingFile)
 {
 	MorphableModel model;
-	model.setShapeModel(PcaModel::loadOldBaselH5Model(h5file, landmarkVertexMappingFile, PcaModel::ModelType::SHAPE));
-	model.setColorModel(PcaModel::loadOldBaselH5Model(h5file, landmarkVertexMappingFile, PcaModel::ModelType::COLOR));
+	model.shapeModel = PcaModel::loadOldBaselH5Model(h5file, landmarkVertexMappingFile, PcaModel::ModelType::SHAPE);
+	model.colorModel = PcaModel::loadOldBaselH5Model(h5file, landmarkVertexMappingFile, PcaModel::ModelType::COLOR);
 	return model;
 }
+
+shapemodels::MorphableModel MorphableModel::loadScmModel(std::string h5file, std::string landmarkVertexMappingFile)
+{
+	MorphableModel model;
+	model.shapeModel = PcaModel::loadScmModel(h5file, landmarkVertexMappingFile, PcaModel::ModelType::SHAPE);
+	model.colorModel = PcaModel::loadScmModel(h5file, landmarkVertexMappingFile, PcaModel::ModelType::COLOR);
+	return model;
+}
+
 
 shapemodels::PcaModel MorphableModel::getShapeModel() const
 {
@@ -40,16 +49,6 @@ shapemodels::PcaModel MorphableModel::getShapeModel() const
 shapemodels::PcaModel MorphableModel::getColorModel() const
 {
 	return colorModel;
-}
-
-void MorphableModel::setShapeModel(PcaModel shapeModel)
-{
-	this->shapeModel = shapeModel;
-}
-
-void MorphableModel::setColorModel(PcaModel colorModel)
-{
-	this->colorModel = colorModel;
 }
 
 /*

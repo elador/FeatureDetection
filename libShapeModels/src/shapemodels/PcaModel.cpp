@@ -24,6 +24,8 @@ using cv::Mat;
 using cv::Vec3f;
 using boost::lexical_cast;
 using std::string;
+using std::vector;
+using std::array;
 
 namespace shapemodels {
 
@@ -38,7 +40,6 @@ PcaModel PcaModel::loadOldBaselH5Model(string h5file, string landmarkVertexMappi
 	PcaModel model;
 
 	// Load the landmarks mappings
-	std::map<std::string, int> landmarkVertexMap;
 	std::ifstream ffpList;
 	ffpList.open(landmarkVertexMappingFile.c_str(), std::ios::in);
 	if (!ffpList.is_open()) {
@@ -49,7 +50,7 @@ PcaModel PcaModel::loadOldBaselH5Model(string h5file, string landmarkVertexMappi
 	string line;
 	while (ffpList.good()) {
 		std::getline(ffpList, line);
-		if(line=="") {
+		if (line == "") {
 			continue;
 		}
 		string currFfp; // Have a buffer string
@@ -57,12 +58,10 @@ PcaModel PcaModel::loadOldBaselH5Model(string h5file, string landmarkVertexMappi
 		std::stringstream ss(line); // Insert the string into a stream
 		ss >> currFfp;
 		ss >> currVertex;
-		landmarkVertexMap.insert(make_pair(currFfp, currVertex));
+		model.landmarkVertexMap.insert(make_pair(currFfp, currVertex));
 		currFfp.clear();
 	}
 	ffpList.close();
-	model.setLandmarkVertexMap(landmarkVertexMap);
-	
 
 	// Load the shape or color model from the .h5 file
 	string h5GroupType;
@@ -93,12 +92,10 @@ PcaModel PcaModel::loadOldBaselH5Model(string h5file, string landmarkVertexMappi
 	//H5::DataSpace dsp = dsMean.getSpace();
 	//dsp.close();
 	Loggers->getLogger("shapemodels").debug("Dimensions of the model mean: " + lexical_cast<string>(dims[0]));
-	Mat modelMean(1, dims[0], CV_32FC1); // Use a row-vector, because of faster memory access and I'm not sure the memory block is allocated contiguously if we have multiple rows. Maybe change to col-vec later, it's more natural in the calculations.
-	dsMean.read(modelMean.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
-	modelMean = modelMean.t(); // Okay, transpose it now
+	model.mean = Mat(1, dims[0], CV_32FC1); // Use a row-vector, because of faster memory access and I'm not sure the memory block is allocated contiguously if we have multiple rows. Maybe change to col-vec later, it's more natural in the calculations.
+	dsMean.read(model.mean.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
+	model.mean = model.mean.t(); // Okay, transpose it now
 	dsMean.close();
-
-	model.setMean(modelMean);
 
 	h5Model.close();
 
@@ -107,187 +104,199 @@ PcaModel PcaModel::loadOldBaselH5Model(string h5file, string landmarkVertexMappi
 
 
 
-PcaModel PcaModel::loadScmModel(string modelFile, string landmarkVertexMappingFile, PcaModel::ModelType modelType)
+PcaModel PcaModel::loadScmModel(string modelFilename, string landmarkVertexMappingFile, PcaModel::ModelType modelType)
 {
-	/*
-	MorphableModel mm;
-	render::Mesh mesh;
+	logging::Logger logger = Loggers->getLogger("shapemodels");
+	PcaModel model;
 
-	// Shape:
-	unsigned int numVertices = 0;
-	unsigned int numTriangles = 0;
-	std::vector<unsigned int> triangles;
-	unsigned int numShapePcaCoeffs = 0;
-	unsigned int numShapeDims = 0;	// what's that?
-	std::vector<double> pcaBasisMatrixShp;	// numShapePcaCoeffs * numShapeDims
-	unsigned int numMean = 0; // what's that?
-	//std::vector<double> meanVertices;
-	unsigned int numEigenVals = 0;
-	std::vector<double> eigenVals;
-
-	// Texture:
-	unsigned int numTexturePcaCoeffs = 0;
-	unsigned int numTextureDims = 0;
-	std::vector<double> pcaBasisMatrixTex;	// numTexturePcaCoeffs * numTextureDims
-	unsigned int numMeanTex = 0; // what's that?
-	//std::vector<double> meanVerticesTex; // color mean for each vertex of the mean
-	unsigned int numEigenValsTex = 0;
-	std::vector<double> eigenValsTex;
-
-	if(sizeof(unsigned int) != 4) {
-		std::cout << "Warning: We're reading 4 Bytes from the file but sizeof(unsigned int) != 4. Check the code/behaviour." << std::endl;
+	// Load the landmarks mappings
+	std::ifstream ffpList;
+	ffpList.open(landmarkVertexMappingFile.c_str(), std::ios::in);
+	if (!ffpList.is_open()) {
+		string errorMessage = "Error opening feature points file " + landmarkVertexMappingFile + ".";
+		logger.error(errorMessage);
+		throw std::runtime_error(errorMessage);
 	}
-	if(sizeof(double) != 8) {
-		std::cout << "Warning: We're reading 8 Bytes from the file but sizeof(double) != 8. Check the code/behaviour." << std::endl;
+	string line;
+	while (ffpList.good()) {
+		std::getline(ffpList, line);
+		if (line == "" || line.substr(0, 2) == "//") { // empty line or starting with a '//'
+			continue;
+		}
+		string currFfp; // Have a buffer string
+		int currVertex = 0;
+		std::stringstream ss(line); // Insert the string into a stream
+		ss >> currFfp;
+		ss >> currVertex;
+		model.landmarkVertexMap.insert(make_pair(currFfp, currVertex));
+		currFfp.clear();
+	}
+	ffpList.close();
+
+	// Load the model
+	if (sizeof(unsigned int) != 4) {
+		logger.warn("Warning: We're reading 4 Bytes from the file but sizeof(unsigned int) != 4. Check the code/behaviour.");
+	}
+	if (sizeof(double) != 8) {
+		logger.warn("Warning: We're reading 8 Bytes from the file but sizeof(double) != 8. Check the code/behaviour.");
 	}
 
 	std::ifstream modelFile;
-	modelFile.open(filename, std::ios::binary);
+	modelFile.open(modelFilename, std::ios::binary);
 	if (!modelFile.is_open()) {
-		std::cout << "Could not open model file: " << filename << std::endl;
-		exit(EXIT_FAILURE); // Todo use the logger & stuff
+		logger.warn("Could not open model file: " + modelFilename);
+		exit(EXIT_FAILURE);
 	}
 
-	// make a MM and load both the shape and color models (maybe in another function). For now, we only load the mesh & color info.
-
-	// 1 char = 1 byte. uint32=4bytes. float64=8bytes.
-
-	//READING SHAPE MODEL
+	// Reading the shape model
 	// Read (reference?) num triangles and vertices
-	modelFile.read(reinterpret_cast<char*>(&numVertices), 4);
+	unsigned int numVertices = 0;
+	unsigned int numTriangles = 0;
+	modelFile.read(reinterpret_cast<char*>(&numVertices), 4); // 1 char = 1 byte. uint32=4bytes. float64=8bytes.
 	modelFile.read(reinterpret_cast<char*>(&numTriangles), 4);
 
-	//Read triangles
-	mesh.tvi.resize(numTriangles);
-	mesh.tci.resize(numTriangles);
+	// Read triangles
+	std::vector<std::array<int, 3>> triangleList;
+
+	triangleList.resize(numTriangles);
 	unsigned int v0, v1, v2;
 	for (unsigned int i=0; i < numTriangles; ++i) {
 		v0 = v1 = v2 = 0;
 		modelFile.read(reinterpret_cast<char*>(&v0), 4);	// would be nice to pass a &vector and do it in one
 		modelFile.read(reinterpret_cast<char*>(&v1), 4);	// go, but didn't work. Maybe a cv::Mat would work?
 		modelFile.read(reinterpret_cast<char*>(&v2), 4);
-		mesh.tvi[i][0] = v0;
-		mesh.tvi[i][1] = v1;
-		mesh.tvi[i][2] = v2;	// do probably the same for tci
-
-		mesh.tci[i][0] = v0;
-		mesh.tci[i][1] = v1;
-		mesh.tci[i][2] = v2;
-
+		triangleList[i][0] = v0;
+		triangleList[i][1] = v1;
+		triangleList[i][2] = v2;
 	}
 
-	//Read number of rows and columns of the shape projection matrix (pcaBasis)
+	// Read number of rows and columns of the shape projection matrix (pcaBasis)
+	unsigned int numShapePcaCoeffs = 0;
+	unsigned int numShapeDims = 0;	// dimension of the shape vector (3*numVertices)
 	modelFile.read(reinterpret_cast<char*>(&numShapePcaCoeffs), 4);
 	modelFile.read(reinterpret_cast<char*>(&numShapeDims), 4);
 
-	//Read shape projection matrix
-	mm.matPcaBasisShp = cv::Mat(numShapeDims, numShapePcaCoeffs, CV_64FC1);
+	if (3*numVertices != numShapeDims) {
+		logger.warn("Warning: Number of shape dimensions is not equal to three times the number of vertices. Something will probably go wrong during the loading.");
+	}
+
+	// Read shape projection matrix
+	Mat pcaBasisShape = cv::Mat(numShapeDims, numShapePcaCoeffs, CV_64FC1); // -> to memb.var
 	// m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
-	std::cout << mm.matPcaBasisShp.rows << ", " << mm.matPcaBasisShp.cols << std::endl;
+	logger.debug("Loading PCA basis matrix with " + lexical_cast<string>(pcaBasisShape.rows) + " rows and " + lexical_cast<string>(pcaBasisShape.cols) + "cols.");
 	for (unsigned int col = 0; col < numShapePcaCoeffs; ++col) {
 		for (unsigned int row = 0; row < numShapeDims; ++row) {
 			double var = 0.0;
 			modelFile.read(reinterpret_cast<char*>(&var), 8);
-			mm.matPcaBasisShp.at<double>(row, col) = var;
+			pcaBasisShape.at<double>(row, col) = var;
 		}
 	}
 
-	//Read mean shape vector
+	// Read mean shape vector
+	unsigned int numMean = 0; // dimension of the mean (3*numVertices)
 	modelFile.read(reinterpret_cast<char*>(&numMean), 4);
-	mm.matMeanShp = cv::Mat(numMean, 1, CV_64FC1);
-	unsigned int matCounter = 0;
-	mesh.vertex.resize(numMean/3);
+	if (numMean != numShapeDims) {
+		logger.warn("Warning: Number of shape dimensions is not equal to the number of dimensions of the mean. Something will probably go wrong during the loading.");
+	}
+	Mat meanShape = cv::Mat(numMean, 1, CV_32FC1); // -> to memb.var
+	unsigned int counter = 0;
 	double vd0, vd1, vd2;
 	for (unsigned int i=0; i < numMean/3; ++i) {
 		vd0 = vd1 = vd2 = 0.0;
 		modelFile.read(reinterpret_cast<char*>(&vd0), 8);
 		modelFile.read(reinterpret_cast<char*>(&vd1), 8);
 		modelFile.read(reinterpret_cast<char*>(&vd2), 8);
-		//meanVertices.push_back(var);
-		mesh.vertex[i].position = cv::Vec4f(vd0, vd1, vd2, 1.0f);
-
-		mm.matMeanShp.at<double>(matCounter, 0) = vd0;
-		++matCounter;
-		mm.matMeanShp.at<double>(matCounter, 0) = vd1;
-		++matCounter;
-		mm.matMeanShp.at<double>(matCounter, 0) = vd2;
-		++matCounter;
+		meanShape.at<float>(counter, 0) = vd0;
+		++counter;
+		meanShape.at<float>(counter, 0) = vd1;
+		++counter;
+		meanShape.at<float>(counter, 0) = vd2;
+		++counter;
 	}
 
-	//Read shape eigenvalues
-	modelFile.read(reinterpret_cast<char*>(&numEigenVals), 4);
-	mm.matEigenvalsShp = cv::Mat(numEigenVals, 1, CV_64FC1);
-	for (unsigned int i=0; i < numEigenVals; ++i) {
+	// Read shape eigenvalues
+	unsigned int numEigenValsShape = 0;
+	modelFile.read(reinterpret_cast<char*>(&numEigenValsShape), 4);
+	if (numEigenValsShape != numShapePcaCoeffs) {
+		logger.warn("Warning: Number of coefficients in the PCA basis matrix is not equal to the number of eigenvalues. Something will probably go wrong during the loading.");
+	}
+	Mat eigenvaluesShape = Mat(numEigenValsShape, 1, CV_64FC1); // -> to memb.var
+	for (unsigned int i=0; i < numEigenValsShape; ++i) {
 		double var = 0.0;
 		modelFile.read(reinterpret_cast<char*>(&var), 8);
-		eigenVals.push_back(var);
-		mm.matEigenvalsShp.at<double>(i, 0) = var;
+		eigenvaluesShape.at<double>(i, 0) = var;
 	}
 
-	//READING TEXTURE MODEL
-	//Read number of rows and columns of projection matrix 
+	if (modelType == ModelType::SHAPE) {
+		model.mean = meanShape;
+		model.pcaBasis = pcaBasisShape;
+		model.eigenvalues = eigenvaluesShape;
+		model.triangleList = triangleList;
+
+		modelFile.close();
+
+		return model;
+	}
+
+	// Reading the color model
+	// Read number of rows and columns of projection matrix
+	unsigned int numTexturePcaCoeffs = 0;
+	unsigned int numTextureDims = 0;
 	modelFile.read(reinterpret_cast<char*>(&numTexturePcaCoeffs), 4);
 	modelFile.read(reinterpret_cast<char*>(&numTextureDims), 4);
-	//Read texture projection matrix
-	mm.matPcaBasisTex = cv::Mat(numTextureDims, numTexturePcaCoeffs, CV_64FC1);
-	std::cout << mm.matPcaBasisTex.rows << ", " << mm.matPcaBasisTex.cols << std::endl;
+	// Read color projection matrix
+	Mat pcaBasisColor = cv::Mat(numTextureDims, numTexturePcaCoeffs, CV_64FC1);  // -> to memb.var
+	logger.debug("Loading PCA basis matrix with " + lexical_cast<string>(pcaBasisShape.rows) + " rows and " + lexical_cast<string>(pcaBasisShape.cols) + "cols.");
 	for (unsigned int col = 0; col < numTexturePcaCoeffs; ++col) {
 		for (unsigned int row = 0; row < numTextureDims; ++row) {
 			double var = 0.0;
 			modelFile.read(reinterpret_cast<char*>(&var), 8);
-			mm.matPcaBasisTex.at<double>(row, col) = var;
+			pcaBasisColor.at<double>(row, col) = var;
 		}
 	}
 
-	//Read mean texture vector
-	modelFile.read(reinterpret_cast<char*>(&numMeanTex), 4);
-	mm.matMeanTex = cv::Mat(numMeanTex, 1, CV_64FC1);
-	matCounter = 0;
-	for (unsigned int i=0; i < numMeanTex/3; ++i) {
-		//double var = 0.0;
+	// Read mean color vector
+	unsigned int numMeanColor = 0; // dimension of the mean (3*numVertices)
+	modelFile.read(reinterpret_cast<char*>(&numMeanColor), 4);
+	Mat meanColor = cv::Mat(numMeanColor, 1, CV_64FC1);  // -> to memb.var
+	counter = 0;
+	for (unsigned int i=0; i < numMeanColor/3; ++i) {
 		vd0 = vd1 = vd2 = 0.0;
-		modelFile.read(reinterpret_cast<char*>(&vd0), 8);
+		modelFile.read(reinterpret_cast<char*>(&vd0), 8); // order in hdf5: RGB. Order in OCV: BGR. But order in vertex.color: RGB
 		modelFile.read(reinterpret_cast<char*>(&vd1), 8);
 		modelFile.read(reinterpret_cast<char*>(&vd2), 8);
-		//meanVerticesTex.push_back(var);
-		mesh.vertex[i].color = cv::Vec3f(vd0, vd1, vd2);	// order in hdf5: RGB. Order in OCV: BGR. But order in vertex.color: RGB
-
-		mm.matMeanTex.at<double>(matCounter, 0) = vd0;
-		++matCounter;
-		mm.matMeanTex.at<double>(matCounter, 0) = vd1;
-		++matCounter;
-		mm.matMeanTex.at<double>(matCounter, 0) = vd2;
-		++matCounter;
+		meanColor.at<double>(counter, 0) = vd0;
+		++counter;
+		meanColor.at<double>(counter, 0) = vd1;
+		++counter;
+		meanColor.at<double>(counter, 0) = vd2;
+		++counter;
 	}
 
-	//Read texture eigenvalues
-	modelFile.read(reinterpret_cast<char*>(&numEigenValsTex), 4);
-	mm.matEigenvalsTex = cv::Mat(numEigenValsTex, 1, CV_64FC1);
-	for (unsigned int i=0; i < numEigenValsTex; ++i) {
+	// Read color eigenvalues
+	unsigned int numEigenValsColor = 0;
+	modelFile.read(reinterpret_cast<char*>(&numEigenValsColor), 4);
+	Mat eigenvaluesColor = cv::Mat(numEigenValsColor, 1, CV_64FC1); // -> to memb.var
+	for (unsigned int i=0; i < numEigenValsColor; ++i) {
 		double var = 0.0;
 		modelFile.read(reinterpret_cast<char*>(&var), 8);
-		eigenValsTex.push_back(var);
-		mm.matEigenvalsTex.at<double>(i, 0) = var;
+		eigenvaluesColor.at<double>(i, 0) = var;
 	}
 
-	modelFile.close();
+	if (modelType == ModelType::COLOR) {
+		model.mean = meanColor;
+		model.pcaBasis = pcaBasisColor;
+		model.eigenvalues = eigenvaluesColor;
+		model.triangleList = triangleList;
 
-	mesh.hasTexture = false;
+		modelFile.close();
 
-	mm.mesh = mesh;
-	return mm; // pReference
-	*/
-	return PcaModel();
-}
+		return model;
+	}
 
-void PcaModel::setLandmarkVertexMap(map<string, int> landmarkVertexMap)
-{
-	this->landmarkVertexMap = landmarkVertexMap;
-}
-
-void PcaModel::setMean(Mat modelMean)
-{
-	mean = modelMean;
+	logger.error("Unknown ModelType, should never reach here.");
+	//modelFile.close();
+	//return model;
 }
 
 Mat PcaModel::getMean() const

@@ -76,7 +76,7 @@ shared_ptr<ModelLandmark> DidLandmarkFormatParser::readFromDidLine(const string&
 
 map<int, string> DidLandmarkFormatParser::didLmMapping;
 
-string DidLandmarkFormatParser::didToTlmsName(int didVertexId) {
+string DidLandmarkFormatParser::didToTlmsName(int didVertexId) { // Todo: Remove that, use the file
 	if (didLmMapping.empty()) {
 		didLmMapping.insert(make_pair( 177, "right.eye.corner_outer"));
 		didLmMapping.insert(make_pair( 610, "left.eye.corner_outer"));
