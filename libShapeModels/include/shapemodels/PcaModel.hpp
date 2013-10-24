@@ -65,6 +65,8 @@ public:
 	 * from Basel. The format is deprecated, it's more or less the one that
 	 * was used during my MSc. thesis.
 	 *
+	 * TODO: Only loads the mean-vector at the moment, no vertex-list or PCA-stuff!
+	 *
 	 * @param[in] h5file A HDF5 file containing the model.
 	 * @param[in] landmarkVertexMappingFile A file containing a mapping from landmarks to vertex ids.
 	 * @param[in] modelType The type of PCA model to load (SHAPE or COLOR).
@@ -89,6 +91,20 @@ public:
 	 * @return The number of principal components in the model.
 	 */
 	unsigned int getNumberOfPrincipalComponents() const;
+
+	/**
+	 * Returns the number of principal components in the model.
+	 *
+	 * @return The number of principal components in the model.
+	 */
+	unsigned int getDataDimension() const;
+
+	/**
+	 * Returns the TODO.
+	 *
+	 * @return The TODO.
+	 */
+	std::vector<std::array<int, 3>> getTriangleList() const;
 
 	/**
 	 * Returns the mean of the model.
@@ -118,10 +134,10 @@ public:
 	 * Draws a random sample from the model, where the coefficients are drawn
 	 * from a standard normal (or with the given standard deviation).
 	 *
-	 * @param[in] sigma The standard deviation. (TODO find out which one, sigma=var, sigmaSq=sdev)
+	 * @param[in] sigma The standard deviation.
 	 * @return A random sample from the model.
 	 */
-	cv::Mat drawSample(float sigma = 1.0f) const;
+	cv::Mat drawSample(float sigma = 1.0f);
 
 	/**
 	 * Returns a sample from the model with the given PCA coefficients.
@@ -129,15 +145,15 @@ public:
 	 * @param[in] coefficients The PCA coefficients used to generate the sample.
 	 * @return A model instance with given coefficients.
 	 */
-	cv::Mat drawSample(std::vector<float> coefficients) const;
+	cv::Mat drawSample(std::vector<float> coefficients);
 
 private:
 	std::mt19937 engine; ///< A Mersenne twister MT19937 engine
 	std::map<std::string, int> landmarkVertexMap; ///< Holds the translation from feature point name (e.g. "center.nose.tip") to the vertex number in the model
 	
 	cv::Mat mean; ///< A 3m x 1 col-vector (xyzxyz...)', where m is the number of model-vertices
-	cv::Mat pcaBasis; // m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
-	cv::Mat eigenvalues;
+	cv::Mat pcaBasis; ///< m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
+	cv::Mat eigenvalues; ///< A TODO(col/row)-vector of the eigenvalues.
 
 	std::vector<std::array<int, 3>> triangleList; ///< List of triangles that make up the mesh of the model. (Note: Does every PCA model has a triangle-list? Use Mesh here instead?)
 

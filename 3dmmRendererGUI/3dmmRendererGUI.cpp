@@ -52,6 +52,7 @@ static std::array<float, 55> pcVals;
 static std::array<int, 55> pcValsInt;
 
 static shapemodels::MorphableModel mm;
+static shared_ptr<Mesh> meshToDraw;
 
 static string windowName = "RenderOutput";
 static float horizontalAngle = 0.0f;
@@ -100,7 +101,8 @@ static void controlWinOnMouse(int test, void* userdata)
 	for (int row=0; row < coefficients.rows; ++row) {
 		coefficients.at<double>(row, 0) = pcVals[row];
 	}
-	mm.drawNewVertexPositions(coefficients);
+	meshToDraw.reset();
+	meshToDraw = make_shared<Mesh>(mm.drawSample(coefficients, vector<float>())); // Todo Ok?
 }
 
 int main(int argc, char *argv[])
@@ -146,7 +148,10 @@ int main(int argc, char *argv[])
 	render::Mesh plane = render::utils::MeshUtils::createPlane();
 	shared_ptr<render::Mesh> tri = render::utils::MeshUtils::createTriangle();
 	
-	mm = shapemodels::MorphableModel::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
+	//mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
+	mm = shapemodels::MorphableModel::loadOldBaselH5Model("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\featurePoints_head_newfmt.txt");
+	
+	meshToDraw = std::make_shared<Mesh>(mm.getMean());
 
 	int screenWidth = 640;
 	int screenHeight = 480;
@@ -229,7 +234,8 @@ int main(int argc, char *argv[])
 			freeCamera = !freeCamera;
 		}
 		if (key == 'n') {
-			mm.drawNewVertexPositions();
+			meshToDraw.reset();
+			meshToDraw = make_shared<Mesh>(mm.drawSample(1.0f)); // Todo Ok?
 		}
 		
 		r.resetBuffers();
@@ -274,12 +280,11 @@ int main(int argc, char *argv[])
 		*/
 		//r.draw(tri, tri->texture);
 		
-		shared_ptr<Mesh> mmMesh = std::make_shared<Mesh>(mm.mesh);
 		Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
 		Mat rot = Mat::eye(4, 4, CV_32FC1);
 		Mat modelMatrix = rot * modelScaling;
 		r.setWorldTransform(modelMatrix);
-		r.draw(mmMesh, nullptr);
+		r.draw(meshToDraw, nullptr);
 		
 		r.setWorldTransform(Mat::eye(4, 4, CV_32FC1));
 		// End test

@@ -154,7 +154,7 @@ PcaModel PcaModel::loadScmModel(string modelFilename, string landmarkVertexMappi
 	modelFile.read(reinterpret_cast<char*>(&numTriangles), 4);
 
 	// Read triangles
-	std::vector<std::array<int, 3>> triangleList;
+	vector<array<int, 3>> triangleList;
 
 	triangleList.resize(numTriangles);
 	unsigned int v0, v1, v2;
@@ -179,14 +179,13 @@ PcaModel PcaModel::loadScmModel(string modelFilename, string landmarkVertexMappi
 	}
 
 	// Read shape projection matrix
-	Mat pcaBasisShape = cv::Mat(numShapeDims, numShapePcaCoeffs, CV_64FC1); // -> to memb.var
-	// m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
+	Mat pcaBasisShape(numShapeDims, numShapePcaCoeffs, CV_32FC1); // m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
 	logger.debug("Loading PCA basis matrix with " + lexical_cast<string>(pcaBasisShape.rows) + " rows and " + lexical_cast<string>(pcaBasisShape.cols) + "cols.");
 	for (unsigned int col = 0; col < numShapePcaCoeffs; ++col) {
 		for (unsigned int row = 0; row < numShapeDims; ++row) {
 			double var = 0.0;
 			modelFile.read(reinterpret_cast<char*>(&var), 8);
-			pcaBasisShape.at<double>(row, col) = var;
+			pcaBasisShape.at<float>(row, col) = static_cast<float>(var);
 		}
 	}
 
@@ -196,7 +195,7 @@ PcaModel PcaModel::loadScmModel(string modelFilename, string landmarkVertexMappi
 	if (numMean != numShapeDims) {
 		logger.warn("Warning: Number of shape dimensions is not equal to the number of dimensions of the mean. Something will probably go wrong during the loading.");
 	}
-	Mat meanShape = cv::Mat(numMean, 1, CV_32FC1);
+	Mat meanShape(numMean, 1, CV_32FC1);
 	unsigned int counter = 0;
 	double vd0, vd1, vd2;
 	for (unsigned int i=0; i < numMean/3; ++i) {
@@ -204,11 +203,11 @@ PcaModel PcaModel::loadScmModel(string modelFilename, string landmarkVertexMappi
 		modelFile.read(reinterpret_cast<char*>(&vd0), 8);
 		modelFile.read(reinterpret_cast<char*>(&vd1), 8);
 		modelFile.read(reinterpret_cast<char*>(&vd2), 8);
-		meanShape.at<float>(counter, 0) = vd0; // TODO static_cast<float>. TODO change rest also to 32FC1!!!
+		meanShape.at<float>(counter, 0) = static_cast<float>(vd0);
 		++counter;
-		meanShape.at<float>(counter, 0) = vd1;
+		meanShape.at<float>(counter, 0) = static_cast<float>(vd1);
 		++counter;
-		meanShape.at<float>(counter, 0) = vd2;
+		meanShape.at<float>(counter, 0) = static_cast<float>(vd2);
 		++counter;
 	}
 
@@ -218,11 +217,11 @@ PcaModel PcaModel::loadScmModel(string modelFilename, string landmarkVertexMappi
 	if (numEigenValsShape != numShapePcaCoeffs) {
 		logger.warn("Warning: Number of coefficients in the PCA basis matrix is not equal to the number of eigenvalues. Something will probably go wrong during the loading.");
 	}
-	Mat eigenvaluesShape = Mat(numEigenValsShape, 1, CV_64FC1); // -> to memb.var
+	Mat eigenvaluesShape(numEigenValsShape, 1, CV_32FC1);
 	for (unsigned int i=0; i < numEigenValsShape; ++i) {
 		double var = 0.0;
 		modelFile.read(reinterpret_cast<char*>(&var), 8);
-		eigenvaluesShape.at<double>(i, 0) = var;
+		eigenvaluesShape.at<float>(i, 0) = static_cast<float>(var);
 	}
 
 	if (modelType == ModelType::SHAPE) {
@@ -243,42 +242,42 @@ PcaModel PcaModel::loadScmModel(string modelFilename, string landmarkVertexMappi
 	modelFile.read(reinterpret_cast<char*>(&numTexturePcaCoeffs), 4);
 	modelFile.read(reinterpret_cast<char*>(&numTextureDims), 4);
 	// Read color projection matrix
-	Mat pcaBasisColor = cv::Mat(numTextureDims, numTexturePcaCoeffs, CV_64FC1);  // -> to memb.var
+	Mat pcaBasisColor(numTextureDims, numTexturePcaCoeffs, CV_32FC1);
 	logger.debug("Loading PCA basis matrix with " + lexical_cast<string>(pcaBasisShape.rows) + " rows and " + lexical_cast<string>(pcaBasisShape.cols) + "cols.");
 	for (unsigned int col = 0; col < numTexturePcaCoeffs; ++col) {
 		for (unsigned int row = 0; row < numTextureDims; ++row) {
 			double var = 0.0;
 			modelFile.read(reinterpret_cast<char*>(&var), 8);
-			pcaBasisColor.at<double>(row, col) = var;
+			pcaBasisColor.at<float>(row, col) = static_cast<float>(var);
 		}
 	}
 
 	// Read mean color vector
 	unsigned int numMeanColor = 0; // dimension of the mean (3*numVertices)
 	modelFile.read(reinterpret_cast<char*>(&numMeanColor), 4);
-	Mat meanColor = cv::Mat(numMeanColor, 1, CV_64FC1);  // -> to memb.var
+	Mat meanColor(numMeanColor, 1, CV_32FC1);
 	counter = 0;
 	for (unsigned int i=0; i < numMeanColor/3; ++i) {
 		vd0 = vd1 = vd2 = 0.0;
 		modelFile.read(reinterpret_cast<char*>(&vd0), 8); // order in hdf5: RGB. Order in OCV: BGR. But order in vertex.color: RGB
 		modelFile.read(reinterpret_cast<char*>(&vd1), 8);
 		modelFile.read(reinterpret_cast<char*>(&vd2), 8);
-		meanColor.at<double>(counter, 0) = vd0;
+		meanColor.at<float>(counter, 0) = static_cast<float>(vd0);
 		++counter;
-		meanColor.at<double>(counter, 0) = vd1;
+		meanColor.at<float>(counter, 0) = static_cast<float>(vd1);
 		++counter;
-		meanColor.at<double>(counter, 0) = vd2;
+		meanColor.at<float>(counter, 0) = static_cast<float>(vd2);
 		++counter;
 	}
 
 	// Read color eigenvalues
 	unsigned int numEigenValsColor = 0;
 	modelFile.read(reinterpret_cast<char*>(&numEigenValsColor), 4);
-	Mat eigenvaluesColor = cv::Mat(numEigenValsColor, 1, CV_64FC1); // -> to memb.var
+	Mat eigenvaluesColor(numEigenValsColor, 1, CV_32FC1);
 	for (unsigned int i=0; i < numEigenValsColor; ++i) {
 		double var = 0.0;
 		modelFile.read(reinterpret_cast<char*>(&var), 8);
-		eigenvaluesColor.at<double>(i, 0) = var;
+		eigenvaluesColor.at<float>(i, 0) = static_cast<float>(var);
 	}
 
 	if (modelType == ModelType::COLOR) {
@@ -299,9 +298,20 @@ PcaModel PcaModel::loadScmModel(string modelFilename, string landmarkVertexMappi
 
 unsigned int PcaModel::getNumberOfPrincipalComponents() const
 {
-	return pcaBasis.cols; // TODO verify this
+	return pcaBasis.cols;
 }
 
+
+unsigned int PcaModel::getDataDimension() const
+{
+	return pcaBasis.rows;
+}
+
+
+std::vector<std::array<int, 3>> PcaModel::getTriangleList() const
+{
+	return triangleList;
+}
 
 Mat PcaModel::getMean() const
 {
@@ -321,11 +331,11 @@ Vec3f PcaModel::getMeanAtPoint(unsigned int vertexIndex) const
 	return Vec3f(mean.at<float>(vertexIndex), mean.at<float>(vertexIndex+1), mean.at<float>(vertexIndex+2));
 }
 
-Mat PcaModel::drawSample(float sigma /*= 1.0f*/) const
+Mat PcaModel::drawSample(float sigma /*= 1.0f*/)
 {
-	std::normal_distribution<float> distribution(0.0, sigma);
+	std::normal_distribution<float> distribution(0.0f, sigma);
 
-	Mat alphas = Mat::zeros(55, 1, CV_32FC1);
+	Mat alphas = Mat::zeros(getNumberOfPrincipalComponents(), 1, CV_32FC1);
 	for (int row=0; row < alphas.rows; ++row) {
 		alphas.at<float>(row, 0) = distribution(engine);
 	}
@@ -347,24 +357,23 @@ Mat PcaModel::drawSample(float sigma /*= 1.0f*/) const
 	return modelSample;
 }
 
-Mat PcaModel::drawSample(std::vector<float> coefficients) const
+Mat PcaModel::drawSample(vector<float> coefficients)
 {
-	/*
-	Mat coefficients; // == Input
-	Mat matSqrtEigenvalsShp = matEigenvalsShp.clone();
-	for (unsigned int i=0; i<matEigenvalsShp.rows; ++i)	{
-	matSqrtEigenvalsShp.at<double>(i) = std::sqrt(matEigenvalsShp.at<double>(i));
+	Mat alphas(coefficients);
+	Mat sqrtOfEigenvalues = eigenvalues.clone();
+	for (unsigned int i = 0; i < eigenvalues.rows; ++i)	{
+		sqrtOfEigenvalues.at<float>(i) = std::sqrt(eigenvalues.at<float>(i));
 	}
 
-	Mat vertices = matMeanShp + matPcaBasisShp * coefficients.mul(matSqrtEigenvalsShp);
+	Mat modelSample = mean + pcaBasis * alphas.mul(sqrtOfEigenvalues);
 
-	unsigned int matIdx = 0;
+/*	unsigned int matIdx = 0;
 	for (auto& v : mesh.vertex) {
-	v.position = Vec4f(vertices.at<double>(matIdx), vertices.at<double>(matIdx+1), vertices.at<double>(matIdx+2), 1.0f);
-	matIdx += 3;
-	}
-	*/
-	return Mat(); // TODO not implemented yet
+		v.position = Vec4f(vertices.at<double>(matIdx), vertices.at<double>(matIdx+1), vertices.at<double>(matIdx+2), 1.0f);
+		matIdx += 3;
+	} */
+
+	return modelSample;
 }
 
 }
