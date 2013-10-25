@@ -20,6 +20,8 @@
 
 #include "shapemodels/MorphableModel.hpp"
 
+#include "logging/LoggerFactory.hpp"
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -35,6 +37,9 @@
 #include <fstream>
 
 namespace po = boost::program_options;
+using logging::Logger;
+using logging::LoggerFactory;
+using logging::loglevel;
 using namespace std;
 using namespace cv;
 using namespace render;
@@ -94,21 +99,23 @@ static void winOnMouse(int event, int x, int y, int, void* userdata)
 
 static void controlWinOnMouse(int test, void* userdata)
 {
+	// TODO: This breaks when the has less than 55 PCA comps. Make more dynamic...
 	for (int i = 0; i < pcValsInt.size(); ++i) {
 		pcVals[i] = 0.1f * static_cast<float>(pcValsInt[i]) - 5.0f;
 	}
-	Mat coefficients = Mat::zeros(55, 1, CV_64FC1);
-	for (int row=0; row < coefficients.rows; ++row) {
-		coefficients.at<double>(row, 0) = pcVals[row];
+	Mat coefficients = Mat::zeros(mm.getShapeModel().getNumberOfPrincipalComponents(), 1, CV_32FC1);
+	for (int row=0; row < pcVals.size(); ++row) {
+		coefficients.at<float>(row, 0) = pcVals[row];
 	}
+
 	meshToDraw.reset();
-	meshToDraw = make_shared<Mesh>(mm.drawSample(coefficients, vector<float>())); // Todo Ok?
+	meshToDraw = make_shared<Mesh>(mm.drawSample(coefficients, vector<float>()));
 }
 
 int main(int argc, char *argv[])
 {
 	#ifdef WIN32
-	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF ); // dump leaks at return
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); // dump leaks at return
 	//_CrtSetBreakAlloc(3759128);
 	#endif
 
@@ -137,11 +144,13 @@ int main(int argc, char *argv[])
 			filename = vm["input-file"].as<string>();
 		}
 	}
-	catch(std::exception& e) {
-		cout << e.what() << "\n";
+	catch (std::exception& e) {
+		cout << e.what() << endl;
 		return 1;
 	}
 	
+	Loggers->getLogger("shapemodels").addAppender(std::make_shared<logging::ConsoleAppender>(loglevel::TRACE));
+
 	//render::MorphableModel mmHeadL4 = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
 	render::Mesh cube = render::utils::MeshUtils::createCube();
 	render::Mesh pyramid = render::utils::MeshUtils::createPyramid();
@@ -149,7 +158,8 @@ int main(int argc, char *argv[])
 	shared_ptr<render::Mesh> tri = render::utils::MeshUtils::createTriangle();
 	
 	//mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
-	mm = shapemodels::MorphableModel::loadOldBaselH5Model("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\featurePoints_head_newfmt.txt");
+	//mm = shapemodels::MorphableModel::loadOldBaselH5Model("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "featurePoints_head_newfmt.txt");
+	mm = shapemodels::MorphableModel::loadOldBaselH5StatismoModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\statismo_l5.h5");
 	
 	meshToDraw = std::make_shared<Mesh>(mm.getMean());
 
@@ -235,7 +245,7 @@ int main(int argc, char *argv[])
 		}
 		if (key == 'n') {
 			meshToDraw.reset();
-			meshToDraw = make_shared<Mesh>(mm.drawSample(1.0f)); // Todo Ok?
+			meshToDraw = make_shared<Mesh>(mm.drawSample(1.0f));
 		}
 		
 		r.resetBuffers();
@@ -281,8 +291,10 @@ int main(int argc, char *argv[])
 		//r.draw(tri, tri->texture);
 		
 		Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
+		//Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(7.0f, 7.0f, 7.0f);
+		Mat modelTrans = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -1.5f);
 		Mat rot = Mat::eye(4, 4, CV_32FC1);
-		Mat modelMatrix = rot * modelScaling;
+		Mat modelMatrix = modelTrans * rot * modelScaling;
 		r.setWorldTransform(modelMatrix);
 		r.draw(meshToDraw, nullptr);
 		
@@ -299,7 +311,6 @@ int main(int argc, char *argv[])
 		putText(screen, "eye: " + lexical_cast<string>(r.camera.eye[0]) + ", " + lexical_cast<string>(r.camera.eye[1]) + ", " + lexical_cast<string>(r.camera.eye[2]), Point(10, 92), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		imshow(windowName, screen);
 
-		// n and f have no influence at the moment because I do no clipping?
 	}
 	
 	return 0;

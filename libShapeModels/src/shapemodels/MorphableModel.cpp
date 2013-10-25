@@ -6,13 +6,19 @@
  */
 
 #include "shapemodels/MorphableModel.hpp"
-
+#include "logging/LoggerFactory.hpp"
 #include "opencv2/core/core.hpp"
+#include "boost/lexical_cast.hpp"
+#include <exception>
+#include <fstream>
 
+using logging::LoggerFactory;
 using cv::Mat;
 using cv::Vec3f;
 using cv::Vec4f;
+using boost::lexical_cast;
 using std::vector;
+using std::string;
 
 namespace shapemodels {
 
@@ -26,6 +32,14 @@ shapemodels::MorphableModel MorphableModel::loadOldBaselH5Model(std::string h5fi
 	MorphableModel model;
 	model.shapeModel = PcaModel::loadOldBaselH5Model(h5file, landmarkVertexMappingFile, PcaModel::ModelType::SHAPE);
 	model.colorModel = PcaModel::loadOldBaselH5Model(h5file, landmarkVertexMappingFile, PcaModel::ModelType::COLOR);
+	return model;
+}
+
+shapemodels::MorphableModel MorphableModel::loadOldBaselH5StatismoModel(std::string h5file)
+{
+	MorphableModel model;
+	model.shapeModel = PcaModel::loadOldBaselH5StatismoModel(h5file, PcaModel::ModelType::SHAPE);
+	model.colorModel = PcaModel::loadOldBaselH5StatismoModel(h5file, PcaModel::ModelType::COLOR);
 	return model;
 }
 
@@ -89,7 +103,9 @@ render::Mesh MorphableModel::drawSample(float sigma /*= 1.0f*/)
 	unsigned int numVertices = shapeModel.getDataDimension() / 3;
 	unsigned int numVerticesColor = colorModel.getDataDimension() / 3;
 	if (numVertices != numVerticesColor) {
-		// TODO throw ERROR!
+		string msg("MorphableModel: The number of vertices of the shape and color models are not the same: " + lexical_cast<string>(numVertices) + " != " + lexical_cast<string>(numVerticesColor));
+		Loggers->getLogger("shapemodels").debug(msg);
+		throw std::runtime_error(msg);
 	}
 
 	mean.vertex.resize(numVertices);
@@ -128,7 +144,9 @@ render::Mesh MorphableModel::drawSample(vector<float> shapeCoefficients, vector<
 	unsigned int numVertices = shapeModel.getDataDimension() / 3;
 	unsigned int numVerticesColor = colorModel.getDataDimension() / 3;
 	if (numVertices != numVerticesColor) {
-		// TODO throw ERROR!
+		string msg("MorphableModel: The number of vertices of the shape and color models are not the same: " + lexical_cast<string>(numVertices) + " != " + lexical_cast<string>(numVerticesColor));
+		Loggers->getLogger("shapemodels").debug(msg);
+		throw std::runtime_error(msg);
 	}
 
 	mean.vertex.resize(numVertices);

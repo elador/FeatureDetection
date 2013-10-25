@@ -86,19 +86,135 @@ PcaModel PcaModel::loadOldBaselH5Model(string h5file, string landmarkVertexMappi
 	string h5Group = "/" + h5GroupType + "/ReconstructiveModel/model";
 	H5::Group modelReconstructive = h5Model.openGroup(h5Group);
 
+	// Read the mean
 	H5::DataSet dsMean = modelReconstructive.openDataSet("./mean");
 	hsize_t dims[1];
 	dsMean.getSpace().getSimpleExtentDims(dims, NULL);	// dsMean.getSpace() leaks memory... maybe a hdf5 bug, maybe vlenReclaim(...) could be a fix. No idea.
 	//H5::DataSpace dsp = dsMean.getSpace();
 	//dsp.close();
 	Loggers->getLogger("shapemodels").debug("Dimensions of the model mean: " + lexical_cast<string>(dims[0]));
-	model.mean = Mat(1, dims[0], CV_32FC1); // Use a row-vector, because of faster memory access and I'm not sure the memory block is allocated contiguously if we have multiple rows. Maybe change to col-vec later, it's more natural in the calculations.
+	model.mean = Mat(1, dims[0], CV_32FC1); // Use a row-vector, because of faster memory access and I'm not sure the memory block is allocated contiguously if we have multiple rows.
 	dsMean.read(model.mean.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
-	model.mean = model.mean.t(); // Okay, transpose it now
+	model.mean = model.mean.t(); // Transpose it to a col-vector
 	dsMean.close();
 
-	h5Model.close();
+	// Read the eigenvalues
+	dsMean = modelReconstructive.openDataSet("./pcaVariance");
+	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
+	Loggers->getLogger("shapemodels").debug("Dimensions of the pcaVariance: " + lexical_cast<string>(dims[0]));
+	model.eigenvalues = Mat(1, dims[0], CV_32FC1);
+	dsMean.read(model.eigenvalues.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
+	model.eigenvalues = model.eigenvalues.t();
+	dsMean.close();
 
+	// Read the PCA basis matrix
+	dsMean = modelReconstructive.openDataSet("./pcaBasis");
+	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
+	Loggers->getLogger("shapemodels").debug("Dimensions of the PCA basis matrix: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
+	model.pcaBasis = Mat(dims[0], dims[1], CV_32FC1);
+	dsMean.read(model.pcaBasis.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
+	dsMean.close();
+
+	// Read the noise variance (not implemented)
+	/*dsMean = modelReconstructive.openDataSet("./noiseVariance");
+	float noiseVariance = 10.0f;
+	dsMean.read(&noiseVariance, H5::PredType::NATIVE_FLOAT);
+	dsMean.close(); */
+
+	// Read the triangle-list
+	// It's not in the .h5 file. Where is the correct one?
+
+	h5Model.close();
+	return model;
+}
+
+PcaModel PcaModel::loadOldBaselH5StatismoModel(string h5file, PcaModel::ModelType modelType)
+{
+	logging::Logger logger = Loggers->getLogger("shapemodels");
+	PcaModel model;
+
+	// Load the landmarks mappings
+	// TODO: Read the landmark data, convert the text to vector/tuples, then find the vertex-id.
+	//model.landmarkVertexMap.insert(make_pair(currFfp, currVertex));
+
+
+	// Load the shape or color model from the .h5 file
+	string h5GroupType;
+	if (modelType == ModelType::SHAPE) {
+		h5GroupType = "shape";
+	} else if (modelType == ModelType::COLOR) {
+		h5GroupType = "color";
+	}
+
+	H5::H5File h5Model;
+
+	try {
+		h5Model = H5::H5File(h5file, H5F_ACC_RDONLY);
+	}
+	catch (H5::Exception& e) {
+		string errorMessage = "Could not open HDF5 file: " + string(e.getCDetailMsg());
+		logger.error(errorMessage);
+		throw errorMessage;
+	}
+
+	// Load either the shape or texture mean
+	string h5Group = "/" + h5GroupType + "/model";
+	H5::Group modelReconstructive = h5Model.openGroup(h5Group);
+
+	// Read the mean
+	H5::DataSet dsMean = modelReconstructive.openDataSet("./mean");
+	hsize_t dims[2];
+	dsMean.getSpace().getSimpleExtentDims(dims, NULL);	// dsMean.getSpace() leaks memory... maybe a hdf5 bug, maybe vlenReclaim(...) could be a fix. No idea.
+	//H5::DataSpace dsp = dsMean.getSpace();
+	//dsp.close();
+	Loggers->getLogger("shapemodels").debug("Dimensions of the model mean: " + lexical_cast<string>(dims[0]));
+	model.mean = Mat(1, dims[0], CV_32FC1); // Use a row-vector, because of faster memory access and I'm not sure the memory block is allocated contiguously if we have multiple rows.
+	dsMean.read(model.mean.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
+	model.mean = model.mean.t(); // Transpose it to a col-vector
+	dsMean.close();
+
+	// Read the eigenvalues
+	dsMean = modelReconstructive.openDataSet("./pcaVariance");
+	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
+	Loggers->getLogger("shapemodels").debug("Dimensions of the pcaVariance: " + lexical_cast<string>(dims[0]));
+	model.eigenvalues = Mat(1, dims[0], CV_32FC1);
+	dsMean.read(model.eigenvalues.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
+	model.eigenvalues = model.eigenvalues.t();
+	dsMean.close();
+
+	// Read the PCA basis matrix
+	dsMean = modelReconstructive.openDataSet("./pcaBasis");
+	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
+	Loggers->getLogger("shapemodels").debug("Dimensions of the PCA basis matrix: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
+	model.pcaBasis = Mat(dims[0], dims[1], CV_32FC1);
+	dsMean.read(model.pcaBasis.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
+	dsMean.close();
+
+	modelReconstructive.close(); // close the model-group
+
+	// Read the noise variance (not implemented)
+	/*dsMean = modelReconstructive.openDataSet("./noiseVariance");
+	float noiseVariance = 10.0f;
+	dsMean.read(&noiseVariance, H5::PredType::NATIVE_FLOAT);
+	dsMean.close(); */
+
+	// Read the triangle-list
+	H5::Group representerGroup = h5Model.openGroup("/" + h5GroupType + "/representer");
+	dsMean = representerGroup.openDataSet("./reference-mesh/triangle-list");
+	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
+	Loggers->getLogger("shapemodels").debug("Dimensions of the triangle-list: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
+	Mat triangles(dims[0], dims[1], CV_32SC1);
+	dsMean.read(triangles.ptr<int>(0), H5::PredType::NATIVE_INT32);
+	dsMean.close();
+	model.triangleList.resize(triangles.rows);
+	for (unsigned int i = 0; i < model.triangleList.size(); ++i) {
+		model.triangleList[i][0] = triangles.at<int>(i, 0);
+		model.triangleList[i][1] = triangles.at<int>(i, 1);
+		model.triangleList[i][2] = triangles.at<int>(i, 2);
+	}
+	representerGroup.close();
+
+	h5Model.close();
 	return model;
 }
 
@@ -335,26 +451,26 @@ Mat PcaModel::drawSample(float sigma /*= 1.0f*/)
 {
 	std::normal_distribution<float> distribution(0.0f, sigma);
 
+	vector<float> alphas(getNumberOfPrincipalComponents());
+
+	for (auto& a : alphas) {
+		a = distribution(engine);
+	}
+
+	return drawSample(alphas);
+
+	/* without calling drawSample(alphas): (maybe if we add noise)
 	Mat alphas = Mat::zeros(getNumberOfPrincipalComponents(), 1, CV_32FC1);
 	for (int row=0; row < alphas.rows; ++row) {
 		alphas.at<float>(row, 0) = distribution(engine);
 	}
+	*/
 
-	//Mat smallBasis = matPcaBasisShp(cv::Rect(0, 0, 55, 100));
-
-	Mat sqrtOfEigenvalues = eigenvalues.clone();
-	for (unsigned int i = 0; i < eigenvalues.rows; ++i)	{
-		sqrtOfEigenvalues.at<float>(i) = std::sqrt(eigenvalues.at<float>(i));
-	}
-
-	Mat modelSample = mean + pcaBasis * alphas.mul(sqrtOfEigenvalues);
-
-/*	unsigned int matIdx = 0;
-	for (auto& v : mesh.vertex) {
-		v.position = Vec4f(modelSample.at<double>(matIdx), modelSample.at<double>(matIdx+1), modelSample.at<double>(matIdx+2), 1.0f);
-		matIdx += 3;
-	} */
-	return modelSample;
+	/* with noise: (does the noise make sense in drawSample(vector<float> coefficients)?)
+	unsigned int vsize = mean.size();
+	vector epsilon = Utils::generateNormalVector(vectorSize) * sqrt(m_noiseVariance);
+	return m_mean + m_pcaBasisMatrix * coefficients + epsilon;
+	*/
 }
 
 Mat PcaModel::drawSample(vector<float> coefficients)
@@ -365,13 +481,11 @@ Mat PcaModel::drawSample(vector<float> coefficients)
 		sqrtOfEigenvalues.at<float>(i) = std::sqrt(eigenvalues.at<float>(i));
 	}
 
-	Mat modelSample = mean + pcaBasis * alphas.mul(sqrtOfEigenvalues);
+	//Mat smallBasis = pcaBasis(cv::Rect(0, 0, 55, 100));
+	//Mat smallMean = mean(cv::Rect(0, 0, 1, 100));
 
-/*	unsigned int matIdx = 0;
-	for (auto& v : mesh.vertex) {
-		v.position = Vec4f(vertices.at<double>(matIdx), vertices.at<double>(matIdx+1), vertices.at<double>(matIdx+2), 1.0f);
-		matIdx += 3;
-	} */
+	//Mat modelSample = mean + pcaBasis * alphas.mul(sqrtOfEigenvalues); // Surr
+	Mat modelSample = mean + pcaBasis * alphas; // Bsl .h5 old
 
 	return modelSample;
 }

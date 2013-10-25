@@ -65,7 +65,8 @@ public:
 	 * from Basel. The format is deprecated, it's more or less the one that
 	 * was used during my MSc. thesis.
 	 *
-	 * TODO: Only loads the mean-vector at the moment, no vertex-list or PCA-stuff!
+	 * TODO: Only loads the mean-vector and PCA basis/EV at the moment. PCA-stuff untested.
+	 * No vertex-list atm (has to come from file), and we don't have a triangle-list! So this is kind of useless.
 	 *
 	 * @param[in] h5file A HDF5 file containing the model.
 	 * @param[in] landmarkVertexMappingFile A file containing a mapping from landmarks to vertex ids.
@@ -73,6 +74,22 @@ public:
 	 * @return A shape- or color model from the given file.
 	 */
 	static PcaModel loadOldBaselH5Model(std::string h5file, std::string landmarkVertexMappingFile, ModelType modelType);
+
+	/**
+	 * Load a shape or color model from a .h5 file containing a Morphable Model 
+	 * from Basel. The format is deprecated, it's more or less the one that
+	 * was used during my MSc. thesis, but newer than above "OldBaselH5Model".
+	 *
+	 * TODO: Only loads the mean-vector and PCA basis/EV at the moment. PCA-stuff untested.
+	 * No vertex-list atm (has to come from file), and we don't have a triangle-list!!
+	 *
+	 * @param[in] h5file A HDF5 file containing the model.
+	 * @param[in] landmarkVertexMappingFile A file containing a mapping from landmarks to vertex ids.
+	 * @param[in] modelType The type of PCA model to load (SHAPE or COLOR).
+	 * @return A shape- or color model from the given file.
+	 */
+	static PcaModel loadOldBaselH5StatismoModel(std::string h5file, ModelType modelType);
+
 
 	/**
 	 * Load a shape or color model from a .h5 file containing a
@@ -153,7 +170,7 @@ private:
 	
 	cv::Mat mean; ///< A 3m x 1 col-vector (xyzxyz...)', where m is the number of model-vertices
 	cv::Mat pcaBasis; ///< m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
-	cv::Mat eigenvalues; ///< A TODO(col/row)-vector of the eigenvalues.
+	cv::Mat eigenvalues; ///< A col-vector of the eigenvalues (variances in the PCA space).
 
 	std::vector<std::array<int, 3>> triangleList; ///< List of triangles that make up the mesh of the model. (Note: Does every PCA model has a triangle-list? Use Mesh here instead?)
 
