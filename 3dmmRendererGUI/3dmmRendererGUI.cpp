@@ -158,8 +158,9 @@ int main(int argc, char *argv[])
 	shared_ptr<render::Mesh> tri = render::utils::MeshUtils::createTriangle();
 	
 	//mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
+	mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\SurreyLowResGuosheng\\NON3448\\ShpVtxModelBin_NON3448.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
 	//mm = shapemodels::MorphableModel::loadOldBaselH5Model("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "featurePoints_head_newfmt.txt");
-	mm = shapemodels::MorphableModel::loadOldBaselH5StatismoModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\statismo_l5.h5");
+	//mm = shapemodels::MorphableModel::loadStatismoModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\2012.2\\head\\model2012_l4_head.h5");
 	
 	meshToDraw = std::make_shared<Mesh>(mm.getMean());
 

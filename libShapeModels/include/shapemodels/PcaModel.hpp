@@ -53,6 +53,14 @@ public:
 	 * Load a shape or color model from a .scm file containing
 	 * a Morphable Model in the Surrey format.
 	 *
+	 * Note on multi-resolution models: The landmarks to vertex-id mapping is
+	 * always the same. The lowest resolution model has all the landmarks defined
+	 * and for the higher resolutions, the mesh is divided from that on.
+	 * Note: For new landmarks we add, this might not be the case if we add them
+	 * in the highest resolution model, so take care!
+	 *
+	 * - The pcaBasis matrix stored in the file and loaded is the orthogonal PCA basis, i.e. it is not normalized by the eigenvalues.
+	 *
 	 * @param[in] modelFile A binary .scm-file containing the model.
 	 * @param[in] landmarkVertexMappingFile A file containing a mapping from landmarks to vertex ids.
 	 * @param[in] modelType The type of PCA model to load (SHAPE or COLOR).
@@ -61,46 +69,23 @@ public:
 	static PcaModel loadScmModel(std::string modelFilename, std::string landmarkVertexMappingFile, ModelType modelType);
 
 	/**
-	 * Load a shape or color model from a .h5 file containing a Morphable Model 
-	 * from Basel. The format is deprecated, it's more or less the one that
-	 * was used during my MSc. thesis.
-	 *
-	 * TODO: Only loads the mean-vector and PCA basis/EV at the moment. PCA-stuff untested.
-	 * No vertex-list atm (has to come from file), and we don't have a triangle-list! So this is kind of useless.
-	 *
-	 * @param[in] h5file A HDF5 file containing the model.
-	 * @param[in] landmarkVertexMappingFile A file containing a mapping from landmarks to vertex ids.
-	 * @param[in] modelType The type of PCA model to load (SHAPE or COLOR).
-	 * @return A shape- or color model from the given file.
-	 */
-	static PcaModel loadOldBaselH5Model(std::string h5file, std::string landmarkVertexMappingFile, ModelType modelType);
-
-	/**
-	 * Load a shape or color model from a .h5 file containing a Morphable Model 
-	 * from Basel. The format is deprecated, it's more or less the one that
-	 * was used during my MSc. thesis, but newer than above "OldBaselH5Model".
-	 *
-	 * TODO: Only loads the mean-vector and PCA basis/EV at the moment. PCA-stuff untested.
-	 * No vertex-list atm (has to come from file), and we don't have a triangle-list!!
-	 *
-	 * @param[in] h5file A HDF5 file containing the model.
-	 * @param[in] landmarkVertexMappingFile A file containing a mapping from landmarks to vertex ids.
-	 * @param[in] modelType The type of PCA model to load (SHAPE or COLOR).
-	 * @return A shape- or color model from the given file.
-	 */
-	static PcaModel loadOldBaselH5StatismoModel(std::string h5file, ModelType modelType);
-
-
-	/**
 	 * Load a shape or color model from a .h5 file containing a
 	 * statismo-compatible model.
 	 *
+	 * Notes: 
+	 * - With multi-level models, the reference always has the same (smaller)
+	 *   number of vertices than the model
+	 * - The landmarks are defined on the reference in l7 and are an exact match. For the lower resolution
+	 *   models, the closest approximate vertex in the lower resolution reference is found and stored in the
+	 *   model file (at training-time), so every level always contains landmark coordinates that can be exactly
+	 *   matched to the reference of the respective level.
+	 * - The pcaBasis matrix stored in the file and loaded is already normalized by the eigenvalues.
+	 *
 	 * @param[in] h5file A HDF5 file containing the model.
 	 * @param[in] modelType The type of PCA model to load (SHAPE or COLOR).
 	 * @return A shape- or color model from the given file.
 	 */
-	// static PcaModel loadStatismoModel(std::string h5file, ModelType modelType); // TODO!
-
+	static PcaModel loadStatismoModel(std::string h5file, ModelType modelType);
 
 	/**
 	 * Returns the number of principal components in the model.
@@ -117,9 +102,9 @@ public:
 	unsigned int getDataDimension() const;
 
 	/**
-	 * Returns the TODO.
+	 * Returns a list of triangles  on how to assemble the vertices into a mesh.
 	 *
-	 * @return The TODO.
+	 * @return The list of triangles to build a mesh.
 	 */
 	std::vector<std::array<int, 3>> getTriangleList() const;
 

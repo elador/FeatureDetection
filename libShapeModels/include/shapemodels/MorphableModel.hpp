@@ -36,11 +36,9 @@ public:
 	 * @param[in] landmarkVertexMappingFile Todo.
 	 * @return TODO.
 	 */
-	static MorphableModel loadOldBaselH5Model(std::string h5file, std::string landmarkVertexMappingFile);
-
-	static MorphableModel loadOldBaselH5StatismoModel(std::string h5file);
-
 	static MorphableModel loadScmModel(std::string h5file, std::string landmarkVertexMappingFile);
+
+	static MorphableModel loadStatismoModel(std::string h5file);
 	
 	PcaModel getShapeModel() const;
 	PcaModel getColorModel() const;

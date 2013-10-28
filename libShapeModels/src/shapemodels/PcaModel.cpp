@@ -16,6 +16,7 @@
 #endif
 //#include "hdf5.h"
 #include "boost/lexical_cast.hpp"
+#include "boost/algorithm/string.hpp"
 
 #include <fstream>
 
@@ -34,109 +35,10 @@ PcaModel::PcaModel()
 	engine.seed();
 }
 
-PcaModel PcaModel::loadOldBaselH5Model(string h5file, string landmarkVertexMappingFile, PcaModel::ModelType modelType)
+PcaModel PcaModel::loadStatismoModel(string h5file, PcaModel::ModelType modelType)
 {
 	logging::Logger logger = Loggers->getLogger("shapemodels");
 	PcaModel model;
-
-	// Load the landmarks mappings
-	std::ifstream ffpList;
-	ffpList.open(landmarkVertexMappingFile.c_str(), std::ios::in);
-	if (!ffpList.is_open()) {
-		string errorMessage = "Error opening feature points file " + landmarkVertexMappingFile + ".";
-		logger.error(errorMessage);
-		throw std::runtime_error(errorMessage);
-	}
-	string line;
-	while (ffpList.good()) {
-		std::getline(ffpList, line);
-		if (line == "") {
-			continue;
-		}
-		string currFfp; // Have a buffer string
-		int currVertex = 0;
-		std::stringstream ss(line); // Insert the string into a stream
-		ss >> currFfp;
-		ss >> currVertex;
-		model.landmarkVertexMap.insert(make_pair(currFfp, currVertex));
-		currFfp.clear();
-	}
-	ffpList.close();
-
-	// Load the shape or color model from the .h5 file
-	string h5GroupType;
-	if (modelType == ModelType::SHAPE) {
-		h5GroupType = "shape";
-	} else if (modelType == ModelType::COLOR) {
-		h5GroupType = "color";
-	}
-
-	H5::H5File h5Model;
-
-	try {
-		h5Model = H5::H5File(h5file, H5F_ACC_RDONLY);
-	}
-	catch (H5::Exception& e) {
-		string errorMessage = "Could not open HDF5 file: " + string(e.getCDetailMsg());
-		logger.error(errorMessage);
-		throw errorMessage;
-	}
-
-	// Load either the shape or texture mean
-	string h5Group = "/" + h5GroupType + "/ReconstructiveModel/model";
-	H5::Group modelReconstructive = h5Model.openGroup(h5Group);
-
-	// Read the mean
-	H5::DataSet dsMean = modelReconstructive.openDataSet("./mean");
-	hsize_t dims[1];
-	dsMean.getSpace().getSimpleExtentDims(dims, NULL);	// dsMean.getSpace() leaks memory... maybe a hdf5 bug, maybe vlenReclaim(...) could be a fix. No idea.
-	//H5::DataSpace dsp = dsMean.getSpace();
-	//dsp.close();
-	Loggers->getLogger("shapemodels").debug("Dimensions of the model mean: " + lexical_cast<string>(dims[0]));
-	model.mean = Mat(1, dims[0], CV_32FC1); // Use a row-vector, because of faster memory access and I'm not sure the memory block is allocated contiguously if we have multiple rows.
-	dsMean.read(model.mean.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
-	model.mean = model.mean.t(); // Transpose it to a col-vector
-	dsMean.close();
-
-	// Read the eigenvalues
-	dsMean = modelReconstructive.openDataSet("./pcaVariance");
-	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
-	Loggers->getLogger("shapemodels").debug("Dimensions of the pcaVariance: " + lexical_cast<string>(dims[0]));
-	model.eigenvalues = Mat(1, dims[0], CV_32FC1);
-	dsMean.read(model.eigenvalues.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
-	model.eigenvalues = model.eigenvalues.t();
-	dsMean.close();
-
-	// Read the PCA basis matrix
-	dsMean = modelReconstructive.openDataSet("./pcaBasis");
-	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
-	Loggers->getLogger("shapemodels").debug("Dimensions of the PCA basis matrix: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
-	model.pcaBasis = Mat(dims[0], dims[1], CV_32FC1);
-	dsMean.read(model.pcaBasis.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
-	dsMean.close();
-
-	// Read the noise variance (not implemented)
-	/*dsMean = modelReconstructive.openDataSet("./noiseVariance");
-	float noiseVariance = 10.0f;
-	dsMean.read(&noiseVariance, H5::PredType::NATIVE_FLOAT);
-	dsMean.close(); */
-
-	// Read the triangle-list
-	// It's not in the .h5 file. Where is the correct one?
-
-	h5Model.close();
-	return model;
-}
-
-PcaModel PcaModel::loadOldBaselH5StatismoModel(string h5file, PcaModel::ModelType modelType)
-{
-	logging::Logger logger = Loggers->getLogger("shapemodels");
-	PcaModel model;
-
-	// Load the landmarks mappings
-	// TODO: Read the landmark data, convert the text to vector/tuples, then find the vertex-id.
-	//model.landmarkVertexMap.insert(make_pair(currFfp, currVertex));
-
 
 	// Load the shape or color model from the .h5 file
 	string h5GroupType;
@@ -206,13 +108,66 @@ PcaModel PcaModel::loadOldBaselH5StatismoModel(string h5file, PcaModel::ModelTyp
 	Mat triangles(dims[0], dims[1], CV_32SC1);
 	dsMean.read(triangles.ptr<int>(0), H5::PredType::NATIVE_INT32);
 	dsMean.close();
+	representerGroup.close();
 	model.triangleList.resize(triangles.rows);
 	for (unsigned int i = 0; i < model.triangleList.size(); ++i) {
 		model.triangleList[i][0] = triangles.at<int>(i, 0);
 		model.triangleList[i][1] = triangles.at<int>(i, 1);
 		model.triangleList[i][2] = triangles.at<int>(i, 2);
 	}
+
+	// Load the landmarks mappings:
+	// load the reference-mesh
+	representerGroup = h5Model.openGroup("/" + h5GroupType + "/representer");
+	dsMean = representerGroup.openDataSet("./reference-mesh/vertex-coordinates");
+	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
+	Loggers->getLogger("shapemodels").debug("Dimensions of the reference-mesh vertex-coordinates matrix: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
+	Mat referenceMesh(dims[0], dims[1], CV_32FC1);
+	dsMean.read(referenceMesh.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
+	dsMean.close();
 	representerGroup.close();
+
+	// convert to 3 vectors with the x, y and z coordinates for easy searching
+	vector<float> refx(referenceMesh.col(0).clone());
+	vector<float> refy(referenceMesh.col(1).clone());
+	vector<float> refz(referenceMesh.col(2).clone());
+
+	// load the landmarks info (mapping name <-> reference (x, y, z)-coords)
+	H5::Group landmarksGroup = h5Model.openGroup("/metadata/landmarks");
+	dsMean = landmarksGroup.openDataSet("./text");
+	
+	H5std_string outputString;
+	Loggers->getLogger("shapemodels").debug("Reading landmark information from the model.");
+	dsMean.read(outputString, dsMean.getStrType());
+	dsMean.close();
+	landmarksGroup.close();
+	vector<string> landmarkLines;
+	boost::split(landmarkLines, outputString, boost::is_any_of("\n"), boost::token_compress_on);
+	for (const auto& l : landmarkLines) {
+		if (l == "") {
+			continue;
+		}
+		vector<string> line;
+		boost::split(line, l, boost::is_any_of(" "), boost::token_compress_on);
+		string name = line[0];
+		int visibility = lexical_cast<int>(line[1]);
+		float x = lexical_cast<float>(line[2]);
+		float y = lexical_cast<float>(line[3]);
+		float z = lexical_cast<float>(line[4]);
+		// Find the x, y and z values in the reference
+		const auto ivx = std::find(begin(refx), end(refx), x);
+		const auto ivy = std::find(begin(refy), end(refy), y);
+		const auto ivz = std::find(begin(refz), end(refz), z);
+		// TODO Check for .end()!
+		const auto vertexIdX = std::distance(begin(refx), ivx);
+		const auto vertexIdY = std::distance(begin(refy), ivy);
+		const auto vertexIdZ = std::distance(begin(refz), ivz);
+		// assert vx=vy=vz
+		// Hmm this is not perfect. If there's another vertex where 1 or 2 coords are the same, it fails.
+		// We should do the search differently: Find _all_ the vertices that are equal, then take the one that has the right x, y and z.
+		model.landmarkVertexMap.insert(make_pair(name, vertexIdX));
+	
+	}
 
 	h5Model.close();
 	return model;
@@ -484,8 +439,8 @@ Mat PcaModel::drawSample(vector<float> coefficients)
 	//Mat smallBasis = pcaBasis(cv::Rect(0, 0, 55, 100));
 	//Mat smallMean = mean(cv::Rect(0, 0, 1, 100));
 
-	//Mat modelSample = mean + pcaBasis * alphas.mul(sqrtOfEigenvalues); // Surr
-	Mat modelSample = mean + pcaBasis * alphas; // Bsl .h5 old
+	Mat modelSample = mean + pcaBasis * alphas.mul(sqrtOfEigenvalues); // Surr
+	//Mat modelSample = mean + pcaBasis * alphas; // Bsl .h5 old
 
 	return modelSample;
 }

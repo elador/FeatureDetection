@@ -27,27 +27,19 @@ MorphableModel::MorphableModel()
 	
 }
 
-shapemodels::MorphableModel MorphableModel::loadOldBaselH5Model(std::string h5file, std::string landmarkVertexMappingFile)
-{
-	MorphableModel model;
-	model.shapeModel = PcaModel::loadOldBaselH5Model(h5file, landmarkVertexMappingFile, PcaModel::ModelType::SHAPE);
-	model.colorModel = PcaModel::loadOldBaselH5Model(h5file, landmarkVertexMappingFile, PcaModel::ModelType::COLOR);
-	return model;
-}
-
-shapemodels::MorphableModel MorphableModel::loadOldBaselH5StatismoModel(std::string h5file)
-{
-	MorphableModel model;
-	model.shapeModel = PcaModel::loadOldBaselH5StatismoModel(h5file, PcaModel::ModelType::SHAPE);
-	model.colorModel = PcaModel::loadOldBaselH5StatismoModel(h5file, PcaModel::ModelType::COLOR);
-	return model;
-}
-
 shapemodels::MorphableModel MorphableModel::loadScmModel(std::string h5file, std::string landmarkVertexMappingFile)
 {
 	MorphableModel model;
 	model.shapeModel = PcaModel::loadScmModel(h5file, landmarkVertexMappingFile, PcaModel::ModelType::SHAPE);
 	model.colorModel = PcaModel::loadScmModel(h5file, landmarkVertexMappingFile, PcaModel::ModelType::COLOR);
+	return model;
+}
+
+shapemodels::MorphableModel MorphableModel::loadStatismoModel(std::string h5file)
+{
+	MorphableModel model;
+	model.shapeModel = PcaModel::loadStatismoModel(h5file, PcaModel::ModelType::SHAPE);
+	model.colorModel = PcaModel::loadStatismoModel(h5file, PcaModel::ModelType::COLOR);
 	return model;
 }
 
