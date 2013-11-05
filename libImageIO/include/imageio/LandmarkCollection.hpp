@@ -25,6 +25,8 @@ namespace imageio {
 /**
  * A collection of landmarks, i.e. all landmarks given in a
  * landmarks-file for a certain image.
+ * The landmarks have to be unique, i.e. each landmark may only
+ * exist once in the collection.
  */
 class LandmarkCollection {
 public:

@@ -24,8 +24,8 @@ namespace render {
 
 /**
  * Desc
- */ /*
-class OpenGlDevice : public RenderDevice
+ */
+class OpenGlDevice
 {
 
 public:
@@ -45,8 +45,22 @@ public:
 	void setBackgroundImage(Mat background);
 
 	void updateWindow();
+
+	void saveOpenGLBuffer();
+	void resize(int width, int height);
+	void drawAxesNew();
+	void display();
+	vector<double> tv;
+
+	void setMatrices(Mat t, Mat r) {
+		this->t = t;
+		this->r = r;
+	};
+	Mat t, r;
 	
 private:
+	float aspect; // from RenderDevice
+
 	enum class RenderTypeState { NONE, VERTEX, VERTEXLIST, MESH };
 	RenderTypeState renderTypeState;
 
@@ -55,9 +69,9 @@ private:
 
 	string windowName;
 	static void openGlDrawCallback(void* userdata);
-	void openGlDrawCallbackReal();
+	void openGlDrawCallbackInstance();
 
-	cv::GlTexture2D backgroundTex; // shared_ptr?
+	cv::GlTexture2D backgroundTex; // shared_ptr? // git 2.4.9
 
 	void drawAxes(float scale=1); // 1 = unit axes
 	void drawBackground();
@@ -68,7 +82,7 @@ private:
 	Mesh meshToDraw; // 1) make shared_ptr. 2) Problems as soon as we want to draw more than 1 object
 	void drawVertex(Vertex v);
 };
-*/
+
 } /* namespace render */
 
 #endif /* OPENGLDEVICE_HPP_ */

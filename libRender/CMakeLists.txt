@@ -57,6 +57,7 @@ SET(HEADERS
 	include/render/MatrixUtils.hpp
 	include/render/MeshUtils.hpp
 	include/render/Hdf5Utils.hpp
+	include/render/OGLDevNew.hpp
 )
 
 include_directories( "include" )

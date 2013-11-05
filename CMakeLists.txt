@@ -39,6 +39,7 @@ add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature poin
 
 add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
 add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
+add_subdirectory(openGlRendererGUI)		# Same as above, but with OpenGL rendering. Playground - in the end, will all be merged into one.
 
 #add_subdirectory(trackerAppERT)		# kind of deprecated, was only a test. But can use this to see how to make a real-time tracker.
 

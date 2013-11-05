@@ -62,7 +62,7 @@ void ModelLandmark::draw(Mat& image, const Scalar& color, float width) const
 						image.at<cv::Vec3b>(currRow, currCol)[0] = (uchar)cvRound(255.0f * color.val[0]);
 						image.at<cv::Vec3b>(currRow, currCol)[1] = (uchar)cvRound(255.0f * color.val[1]);
 						image.at<cv::Vec3b>(currRow, currCol)[2] = (uchar)cvRound(255.0f * color.val[2]);
-					}
+					} // TODO could add chans=1?
 				}
 				++pos;
 			}

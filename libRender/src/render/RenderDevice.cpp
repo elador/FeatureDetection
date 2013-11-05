@@ -108,7 +108,7 @@ void RenderDevice::setViewport(unsigned int screenWidth, unsigned int screenHeig
 
 Vec2f RenderDevice::projectVertex(Vec4f vertex)
 {
-	// After renderVertexList is final, remove this wrapper to be more efficient.
+	// TODO After renderVertexList is final, remove this wrapper to be more efficient.
 	vector<Vec4f> list;
 	list.push_back(vertex);
 	vector<Vec2f> rendered = projectVertexList(list);
