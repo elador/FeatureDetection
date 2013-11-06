@@ -54,6 +54,7 @@ void TrainableSvmClassifier::createParameters(const shared_ptr<Kernel> kernel, d
 	param->weight[1] = 1;
 	param->shrinking = 0;
 	param->probability = 0;
+	param->gamma = 0; // necessary for kernels that do not use this parameter
 	param->degree = 0; // necessary for kernels that do not use this parameter
 	kernel->setLibSvmParams(param.get());
 }
