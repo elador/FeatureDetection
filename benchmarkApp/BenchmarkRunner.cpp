@@ -30,6 +30,7 @@
 #include "imageprocessing/IntegralGradientFilter.hpp"
 #include "imageprocessing/IntegralImageFilter.hpp"
 #include "imageprocessing/PyramidHogFilter.hpp"
+#include "imageprocessing/ResizingFilter.hpp"
 #include "imageprocessing/SpatialHistogramFilter.hpp"
 #include "imageprocessing/SpatialPyramidHistogramFilter.hpp"
 #include "imageprocessing/UnitNormFilter.hpp"
@@ -130,27 +131,63 @@ shared_ptr<DirectPyramidFeatureExtractor> createPyramidExtractor(ptree& config, 
 	return pyramidExtractor;
 }
 
+shared_ptr<DirectImageFeatureExtractor> createImageExtractor(ptree& config) {
+	shared_ptr<DirectImageFeatureExtractor> extractor = make_shared<DirectImageFeatureExtractor>();
+	extractor->addImageFilter(make_shared<GrayscaleFilter>());
+	extractor->addPatchFilter(make_shared<ResizingFilter>(Size(config.get<int>("patch.width"), config.get<int>("patch.height"))));
+	return extractor;
+}
+
+shared_ptr<FeatureExtractor> createExtractor(ptree& config, float sizeScale, vector<shared_ptr<ImageFilter>> filters) {
+	if (config.get_value<string>() == "image") {
+		shared_ptr<DirectImageFeatureExtractor> extractor = createImageExtractor(config);
+		for (shared_ptr<ImageFilter>& filter : filters)
+			extractor->addPatchFilter(filter);
+		return extractor;
+	} else if (config.get_value<string>() == "pyramid") {
+		shared_ptr<DirectPyramidFeatureExtractor> extractor = createPyramidExtractor(config, sizeScale);
+		for (shared_ptr<ImageFilter>& filter : filters)
+			extractor->addPatchFilter(filter);
+		return extractor;
+	} else {
+		throw invalid_argument("invalid base extractor type: " + config.get_value<string>());
+	}
+}
+
+shared_ptr<FeatureExtractor> createGrayscaleExtractor(ptree& config, float sizeScale) {
+	return createExtractor(config.get_child("base"), sizeScale, {});
+}
+
 shared_ptr<FeatureExtractor> createHistEqExtractor(ptree& config, float sizeScale) {
-	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(config.get_child("pyramid"), sizeScale);
-	featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
-	return featureExtractor;
+	return createExtractor(config.get_child("base"), sizeScale, {
+			make_shared<HistogramEqualizationFilter>()
+	});
 }
 
 shared_ptr<FeatureExtractor> createWhiExtractor(ptree& config, float sizeScale) {
-	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(config.get_child("pyramid"), sizeScale);
-	featureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
-	featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
-	featureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0));
-	featureExtractor->addPatchFilter(make_shared<UnitNormFilter>(cv::NORM_L2));
-	return featureExtractor;
+	return createExtractor(config.get_child("base"), sizeScale, {
+			make_shared<WhiteningFilter>(),
+			make_shared<HistogramEqualizationFilter>(),
+			make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0),
+			make_shared<UnitNormFilter>(cv::NORM_L2)
+	});
 }
 
 shared_ptr<FeatureExtractor> createLbpExtractor(ptree& config, float sizeScale) {
-	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(config.get_child("pyramid"), sizeScale);
 	shared_ptr<LbpFilter> lbpFilter = make_shared<LbpFilter>(getLbpType(config.get<string>("type")));
-	featureExtractor->addLayerFilter(lbpFilter);
-	featureExtractor->addPatchFilter(createHistogramFilter(lbpFilter->getBinCount(), config.get_child("histogram")));
-	return featureExtractor;
+	if (config.get<string>("base") == "pyramid") {
+		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(config.get_child("base"), sizeScale);
+		featureExtractor->addLayerFilter(lbpFilter);
+		featureExtractor->addPatchFilter(createHistogramFilter(lbpFilter->getBinCount(), config.get_child("histogram")));
+		return featureExtractor;
+	} else if (config.get<string>("base") == "image") {
+		shared_ptr<DirectImageFeatureExtractor> featureExtractor = createImageExtractor(config.get_child("base"));
+		featureExtractor->addPatchFilter(lbpFilter);
+		featureExtractor->addPatchFilter(createHistogramFilter(lbpFilter->getBinCount(), config.get_child("histogram")));
+		return featureExtractor;
+	} else {
+		throw invalid_argument("invalid base extractor type: " + config.get_value<string>());
+	}
 }
 
 shared_ptr<FeatureExtractor> createHaarExtractor(ptree& config, float sizeScale) {
@@ -186,46 +223,47 @@ shared_ptr<FeatureExtractor> createHaarExtractor(ptree& config, float sizeScale)
 	return featureExtractor;
 }
 
-shared_ptr<FeatureExtractor> createHogExtractor(ptree& config, float sizeScale) {
-	if (config.get<string>("gradients") == "pyramid") {
-		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(config.get_child("gradients.pyramid"), sizeScale);
-		featureExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradients.gradientKernel"), config.get<int>("gradients.blurKernel")));
-		featureExtractor->addLayerFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
-		featureExtractor->addPatchFilter(createHogFilter(config.get<int>("bins"), config.get_child("histogram")));
-		return featureExtractor;
+shared_ptr<FeatureExtractor> createHogExtractor(ptree& config, float sizeScale, shared_ptr<ImageFilter> hogFilter) {
+	if (config.get<string>("gradients") == "patch") {
+		if (config.get<string>("base") == "pyramid") {
+			shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(config.get_child("gradients.base"), sizeScale);
+			featureExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradients.gradientKernel"), config.get<int>("gradients.blurKernel")));
+			featureExtractor->addLayerFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
+			featureExtractor->addPatchFilter(hogFilter);
+			return featureExtractor;
+		} else if (config.get<string>("base") == "image") {
+			shared_ptr<DirectImageFeatureExtractor> featureExtractor = createImageExtractor(config.get_child("gradients.base"));
+			featureExtractor->addPatchFilter(make_shared<GradientFilter>(config.get<int>("gradients.gradientKernel"), config.get<int>("gradients.blurKernel")));
+			featureExtractor->addPatchFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
+			featureExtractor->addPatchFilter(hogFilter);
+			return featureExtractor;
+		} else {
+			throw invalid_argument("invalid base extractor type: " + config.get_value<string>());
+		}
 	} else if (config.get<string>("gradients") == "integral") {
 		shared_ptr<DirectImageFeatureExtractor> featureExtractor = make_shared<DirectImageFeatureExtractor>();
 		featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 		featureExtractor->addImageFilter(make_shared<IntegralImageFilter>());
 		featureExtractor->addPatchFilter(make_shared<IntegralGradientFilter>(config.get<int>("gradients.count")));
 		featureExtractor->addPatchFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
-		featureExtractor->addPatchFilter(createHogFilter(config.get<int>("bins"), config.get_child("histogram")));
+		featureExtractor->addPatchFilter(hogFilter);
 		return featureExtractor;
 	} else {
 		throw invalid_argument("invalid gradients type: " + config.get<string>("gradients"));
 	}
 }
 
+shared_ptr<FeatureExtractor> createHogExtractor(ptree& config, float sizeScale) {
+	return createHogExtractor(config, sizeScale, createHogFilter(config.get<int>("bins"), config.get_child("histogram")));
+}
+
 shared_ptr<FeatureExtractor> createEHogExtractor(ptree& config, float sizeScale) {
-	if (config.get<string>("gradients") == "pyramid") {
-		shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = createPyramidExtractor(config.get_child("gradients.pyramid"), sizeScale);
-		featureExtractor->addLayerFilter(make_shared<GradientFilter>(config.get<int>("gradients.gradientKernel"), config.get<int>("gradients.blurKernel")));
-		featureExtractor->addLayerFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
-		featureExtractor->addPatchFilter(make_shared<ExtendedHogFilter>(config.get<int>("bins"), config.get<int>("histogram.cellSize"),
-				config.get<bool>("histogram.interpolate"), config.get<bool>("histogram.signedAndUnsigned"), config.get<float>("histogram.alpha")));
-		return featureExtractor;
-	} else if (config.get<string>("gradients") == "integral") {
-		shared_ptr<DirectImageFeatureExtractor> featureExtractor = make_shared<DirectImageFeatureExtractor>();
-		featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
-		featureExtractor->addImageFilter(make_shared<IntegralImageFilter>());
-		featureExtractor->addPatchFilter(make_shared<IntegralGradientFilter>(config.get<int>("gradients.count")));
-		featureExtractor->addPatchFilter(make_shared<GradientBinningFilter>(config.get<int>("bins"), config.get<bool>("signed")));
-		featureExtractor->addPatchFilter(make_shared<ExtendedHogFilter>(config.get<int>("bins"), config.get<int>("histogram.cellSize"),
-				config.get<bool>("histogram.interpolate"), config.get<bool>("histogram.signedAndUnsigned"), config.get<float>("histogram.alpha")));
-		return featureExtractor;
-	} else {
-		throw invalid_argument("invalid gradients type: " + config.get<string>("gradients"));
-	}
+	return createHogExtractor(config, sizeScale, make_shared<ExtendedHogFilter>(
+					config.get<int>("bins"),
+					config.get<int>("histogram.cellSize"),
+					config.get<bool>("histogram.interpolate"),
+					config.get<bool>("histogram.signedAndUnsigned"),
+					config.get<float>("histogram.alpha")));
 }
 
 shared_ptr<FeatureExtractor> createSurfExtractor(ptree& config, float sizeScale) {
@@ -240,7 +278,9 @@ shared_ptr<FeatureExtractor> createSurfExtractor(ptree& config, float sizeScale)
 
 shared_ptr<FeatureExtractor> createFeatureExtractor(ptree& config, float sizeScale) {
 	shared_ptr<FeatureExtractor> featureExtractor;
-	if (config.get_value<string>() == "histeq") {
+	if (config.get_value<string>() == "grayscale") {
+		featureExtractor = createGrayscaleExtractor(config, sizeScale);
+	} else if (config.get_value<string>() == "histeq") {
 		featureExtractor = createHistEqExtractor(config, sizeScale);
 	} else if (config.get_value<string>() == "whi") {
 		featureExtractor = createWhiExtractor(config, sizeScale);
