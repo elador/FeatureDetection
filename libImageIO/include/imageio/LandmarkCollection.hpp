@@ -70,7 +70,7 @@ public:
 	 * @param[in] name The name of the landmark.
 	 * @return The landmark with the given name.
 	 */
-	const Landmark& getLandmark(const string& name) const;
+	const shared_ptr<Landmark> getLandmark(const string& name) const;
 
 	/**
 	 * Retrieves the first landmark of this collection. Throws an exception if there is not landmark.
@@ -78,7 +78,7 @@ public:
 	 *
 	 * @return The first landmark of this collection.
 	 */
-	const Landmark& getLandmark() const;
+	const shared_ptr<Landmark> getLandmark() const;
 
 	/**
 	 * @return The landmarks.

@@ -43,18 +43,18 @@ bool LandmarkCollection::hasLandmark(const string& name) const
 	return landmarksMap.find(name) != landmarksMap.end();
 }
 
-const Landmark& LandmarkCollection::getLandmark(const string& name) const
+const shared_ptr<Landmark> LandmarkCollection::getLandmark(const string& name) const
 {
 	if (!hasLandmark(name))
 		throw std::invalid_argument("there is no landmark with name '" + name + "'");
-	return *landmarks.at(landmarksMap.find(name)->second);
+	return landmarks.at(landmarksMap.find(name)->second);
 }
 
-const Landmark& LandmarkCollection::getLandmark() const
+const shared_ptr<Landmark> LandmarkCollection::getLandmark() const
 {
 	if (isEmpty())
 		throw std::invalid_argument("there is no landmark within the collection");
-	return *landmarks.front();
+	return landmarks.front();
 }
 
 const vector<shared_ptr<Landmark>>& LandmarkCollection::getLandmarks() const

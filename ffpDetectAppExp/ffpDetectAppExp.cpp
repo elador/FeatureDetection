@@ -393,12 +393,6 @@ int main(int argc, char *argv[])
 	const float DETECT_MAX_DIST_Y = 0.33f;
 	const float DETECT_MAX_DIFF_W = 0.33f;
 
-	int TOT = 0;
-	int TACC = 0;
-	int FACC = 0;
-	int NOCAND = 0;
-	int DONTKNOW = 0;
-
 	ptree pt;
 	try {
 		read_info(configFilename.string(), pt);
@@ -581,6 +575,27 @@ int main(int argc, char *argv[])
 	write_info("C:\\Users\\Patrik\\Documents\\GitHub\\ffpDetectApp.cfg", pt);
 	*/
 
+	enum class DetectionType {
+		TACC, ///< todo
+		FACC,
+		TREJ,
+		FREJ
+	};
+	struct imageStatistic 
+	{
+		/* Face */
+		bool haveFaceGroundtruth;
+		size_t numFaceCandidates;
+		DetectionType faceDetectionResults;
+		/* Landmarks */
+		bool haveLandmarkGroundtruth;
+		vector<float> landmarkPixelError;
+		vector<DetectionType> landmarkDetectionResult;
+		vector<string> landmarkNames;
+
+	};
+	map<path, imageStatistic> detectionResults;
+
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img;
 	while(labeledImageSource->next()) {
@@ -655,50 +670,40 @@ int main(int argc, char *argv[])
 			drawFfpsCircle(img, make_pair(lm.first, Point2f(lm.second->getX(), lm.second->getY())));
 			drawFfpsText(img, make_pair(lm.first, Point2f(lm.second->getX(), lm.second->getY())));
 			imwrite("C:/Users/Patrik/Documents/Github/RANSAC.png", img);
-
 			imageio::ModelLandmark l(lm.first, lm.second->getX(), lm.second->getY());
 			l.draw(img);
 		}
 		
-
-
 		// ImageLogger has the Draw etc functions for Patches... and landmarks also have draw...
 		// The detectors always log face-boxes. But they should log boxes when it's a face and landmark-points when it's a landmark. Think about how to solve this, together with the other problems.
 		// Why does the landmark class work with Vec3f and not Point3f?
 		// Landmark class only needed for a) logging b) comparing & evaluation. (?) (search Peter's code)
-		/*
-		//Mat ffdResultImg = img.clone();
-		for (const auto& features : allFeaturePatches) {
-			for (const auto& patch : features.second) {
-				// patch to landmark
-				// add a function in libDetection, either Patch.getLandmark or Helper...::PatchToLandmark(...) (not ClassifiedPatch!)
-				// Anmerkung von peter: libDetection/libImageProcessing hat bisher keine Abhängigkeit von libImageIO, aber Patch.getLandmark/ClassifiedPatch.getLandmark würde dazu führen
-				// Anmerkung von peter: (ebenso umgekehrt, wenn der Helper in libImageIO läge - die Abhängigkeit (von libImageProcessing) wäre dann sogar sehr unschön)
-				RectLandmark lm(features.first, patch->getPatch()->getX(), patch->getPatch()->getY(), patch->getPatch()->getWidth(), patch->getPatch()->getHeight());
-				lm.draw(ffdResultImg);
-			}
-			Mat tmp = img.clone();
-			drawFaceBoxes(tmp, features.second);
-
-		}
-		*/
-
 		
 		end = std::chrono::system_clock::now();
 		elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
 		appLogger.info("Finished processing " + labeledImageSource->getName().string() + ". Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
 
-		TOT++;
-		vector<string> resultingPatches;
-		if(resultingPatches.size()<1) {
-			//std::cout << "[ffpDetectApp] No face-candidates at all found:  " << filenames[i] << std::endl;
-			NOCAND++;
-		} else {
+		size_t numImages = labeledImageSource->getNames().size();
+
+		imageStatistic stats;
+		stats.numFaceCandidates = facePatches.size();
+		if (facePatches.size() < 1) {
+			stats.faceDetectionResults = DetectionType::FREJ;
+		} else { // we detected a face
+			// check if it's the right face
+
+			for (const auto& lm : resultLms) {
+				stats.landmarkNames.push_back(lm.first);
+				shared_ptr<imageprocessing::Patch> p = lm.second;
+
+				shared_ptr<imageio::Landmark> gt = groundtruth.getLandmark(lm.first); // throws when LM not found
+			}
+		}
 			// TODO Check if the LM exists or it will crash! Currently broken!
-			if(false) { //no groundtruth
+			//if(false) { //no groundtruth
 				//std::cout << "[ffpDetectApp] No ground-truth available, not counting anything: " << filenames[i] << std::endl;
-				++DONTKNOW;
-			} else { //we have groundtruth
+			//	++DONTKNOW;
+			//} else { //we have groundtruth
 				/*int gt_w = groundtruthFaceBoxes[i].getWidth();
 				int gt_h = groundtruthFaceBoxes[i].getHeight();
 				int gt_cx = groundtruthFaceBoxes[i].getX();
@@ -714,34 +719,16 @@ int main(int argc, char *argv[])
 					std::cout << "[ffpDetectApp] Face not found, wrong position:  " << filenames[i] << std::endl;
 					FACC++;
 				}*/
-			} // end no groundtruth
-		}
-
-		std::cout << std::endl;
-		std::cout << "[ffpDetectApp] -------------------------------------" << std::endl;
-		std::cout << "[ffpDetectApp] TOT:  " << TOT << std::endl;
-		std::cout << "[ffpDetectApp] TACC:  " << TACC << std::endl;
-		std::cout << "[ffpDetectApp] FACC:  " << FACC << std::endl;
-		std::cout << "[ffpDetectApp] NOCAND:  " << NOCAND << std::endl;
-		std::cout << "[ffpDetectApp] DONTKNOW:  " << DONTKNOW << std::endl;
-		std::cout << "[ffpDetectApp] -------------------------------------" << std::endl;
-
+		//	} // end no groundtruth
+		//}
+		detectionResults.insert(make_pair(labeledImageSource->getName(), stats));
+		// log stats for this image
 	}
 
-	std::cout << std::endl;
-	std::cout << "[ffpDetectApp] =====================================" << std::endl;
-	std::cout << "[ffpDetectApp] =====================================" << std::endl;
-	std::cout << "[ffpDetectApp] TOT:  " << TOT << std::endl;
-	std::cout << "[ffpDetectApp] TACC:  " << TACC << std::endl;
-	std::cout << "[ffpDetectApp] FACC:  " << FACC << std::endl;
-	std::cout << "[ffpDetectApp] NOCAND:  " << NOCAND << std::endl;
-	std::cout << "[ffpDetectApp] DONTKNOW:  " << DONTKNOW << std::endl;
-	std::cout << "[ffpDetectApp] =====================================" << std::endl;
+	//Log stats for all images
 	
 	return 0;
 }
-
-	// My cmdline-arguments: -f C:\Users\Patrik\Documents\GitHub\data\firstrun\theRealWorld_png2.lst
 
 	// TODO important:
 	// getPatchesROI Bug bei skalen, schraeg verschoben (?) bei x,y=0, s=1 sichtbar. No, I think I looked at this with MR, and the code was actually correct?
