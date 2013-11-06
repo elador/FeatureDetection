@@ -26,7 +26,7 @@ namespace imageio {
 
 /**
  * Image source that reads a text file containing an image filename on each line
- * and creates and image source from it.
+ * and creates an image source from it.
  */
 class FileListImageSource : public ImageSource {
 public:

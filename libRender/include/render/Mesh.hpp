@@ -18,18 +18,17 @@
 #include <string>
 #include <memory>
 
-using std::shared_ptr;
-
 namespace render {
 
 /**
  * Desc
+ * TODO: Make stuff private?
  */
 class Mesh
 {
 public:
-	Mesh(void);
-	~Mesh(void);
+	Mesh();
+	~Mesh();
 
 	std::vector<render::Vertex> vertex;
 	//std::vector<cv::Vec3f> vertex;	// g: cv::Vec3f
@@ -38,17 +37,17 @@ public:
 	//std::vector<cv::Vec4f> color;	// g: cv::Vec4f, RGBA
 	//material
 
-	std::vector< std::array<int, 3> > tvi;	// std::tuple<int, int, int> doesn't work. Use std::array<int, 3> or cv::Vec3i.
+	std::vector<std::array<int, 3>> tvi;	// std::tuple<int, int, int> doesn't work. Use std::array<int, 3> or cv::Vec3i.
 	//std::vector< std::array<int, 3> > tni;
 	//std::vector< std::array<int, 3> > tti;	// triangle texcrd indices
-	std::vector< std::array<int, 3> > tci;
+	std::vector<std::array<int, 3>> tci;
 	//tmi
 	
 	//bool hasVertexColor;
 	bool hasTexture;
 	std::string textureName;
 
-	shared_ptr<render::Texture> texture; // optimally, we'd use a TextureManager, or maybe a smart pointer, to not load/store a texture twice if two models use the same texture.
+	std::shared_ptr<render::Texture> texture; // optimally, we'd use a TextureManager, or maybe a smart pointer, to not load/store a texture twice if two models use the same texture.
 
 };
 

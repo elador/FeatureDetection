@@ -14,12 +14,9 @@
 
 #include <string>
 #include <vector>
+#include <array>
 #include <map>
-
-using cv::Mat;
-using std::string;
-using std::vector;
-using std::map;
+#include <random>
 
 namespace shapemodels {
 
@@ -36,34 +33,131 @@ namespace shapemodels {
  */
 class PcaModel {
 public:
+	
+	/**
+	 * Specifies the type of the PCA model.
+	 * Mainly used so that the loading function knows which part of the data to read.
+	 */
+	enum class ModelType {
+		SHAPE,  ///< A model where the data corresponds to shape information (vertex positions)
+		COLOR ///< A model where the data corresponds to color information (vertex-coloring)
+	};
 
 	/**
-	 * Computes the kernel value (dot product in a potentially high dimensional space) of two given vectors.
-	 *
-	 * @param[in] lhs The first vector.
-	 * @param[in] rhs The second vector.
-	 * @return The kernel value of the two vectors.
+	 * Constructs an empty PCA model.
+	 * It is recommended to use one of the static load methods instead.
 	 */
-	//virtual double compute(const Mat& lhs, const Mat& rhs) const = 0;
+	PcaModel();
 
-	//static PcaModel load(string h5file, string featurePointsMapping);
+	/**
+	 * Load a shape or color model from a .scm file containing
+	 * a Morphable Model in the Surrey format.
+	 *
+	 * Note on multi-resolution models: The landmarks to vertex-id mapping is
+	 * always the same. The lowest resolution model has all the landmarks defined
+	 * and for the higher resolutions, the mesh is divided from that on.
+	 * Note: For new landmarks we add, this might not be the case if we add them
+	 * in the highest resolution model, so take care!
+	 *
+	 * - The pcaBasis matrix stored in the file and loaded is the orthogonal PCA basis, i.e. it is not normalized by the eigenvalues.
+	 *
+	 * @param[in] modelFile A binary .scm-file containing the model.
+	 * @param[in] landmarkVertexMappingFile A file containing a mapping from landmarks to vertex ids.
+	 * @param[in] modelType The type of PCA model to load (SHAPE or COLOR).
+	 * @return A shape- or color model from the given file.
+	 */
+	static PcaModel loadScmModel(std::string modelFilename, std::string landmarkVertexMappingFile, ModelType modelType);
 
-	void loadModel(string h5file, string h5group);
-	void loadFeaturePoints(string filename); // Hmm, we already have something like this in libImageIO, with DidLandmarkMapping etc.
+	/**
+	 * Load a shape or color model from a .h5 file containing a
+	 * statismo-compatible model.
+	 *
+	 * Notes: 
+	 * - With multi-level models, the reference always has the same (smaller)
+	 *   number of vertices than the model
+	 * - The landmarks are defined on the reference in l7 and are an exact match. For the lower resolution
+	 *   models, the closest approximate vertex in the lower resolution reference is found and stored in the
+	 *   model file (at training-time), so every level always contains landmark coordinates that can be exactly
+	 *   matched to the reference of the respective level.
+	 * - The pcaBasis matrix stored in the file and loaded is already normalized by the eigenvalues.
+	 *
+	 * @param[in] h5file A HDF5 file containing the model.
+	 * @param[in] modelType The type of PCA model to load (SHAPE or COLOR).
+	 * @return A shape- or color model from the given file.
+	 */
+	static PcaModel loadStatismoModel(std::string h5file, ModelType modelType);
 
-	vector<float>& getMean(); // Todo: No ref, but move?
-	map<string, int>& getFeaturePointsMap();
+	/**
+	 * Returns the number of principal components in the model.
+	 *
+	 * @return The number of principal components in the model.
+	 */
+	unsigned int getNumberOfPrincipalComponents() const;
+
+	/**
+	 * Returns the number of principal components in the model.
+	 *
+	 * @return The number of principal components in the model.
+	 */
+	unsigned int getDataDimension() const;
+
+	/**
+	 * Returns a list of triangles  on how to assemble the vertices into a mesh.
+	 *
+	 * @return The list of triangles to build a mesh.
+	 */
+	std::vector<std::array<int, 3>> getTriangleList() const;
+
+	/**
+	 * Returns the mean of the model.
+	 *
+	 * @return The mean of the model.
+	 */
+	cv::Mat getMean() const; // Returning Mesh here makes no sense since the PCA model doesn't know if it's color or shape. Only the MorphableModel can return a Mesh.
+
+	/**
+	 * Return the value of the mean at a given landmark.
+	 *
+	 * @param[in] landmarkIdentifier A landmark identifier (e.g. "center.nose.tip").
+	 * @return A Vec3f containing the values at the given landmark.
+	 * @throws out_of_range exception if the landmarkIdentifier does not exist in the model. // TODO test the javadoc!
+	 */
+	cv::Vec3f getMeanAtPoint(std::string landmarkIdentifier) const;
+
+	/**
+	 * Return the value of the mean at a given vertex id.
+	 *
+	 * @param[in] vertexIndex A vertex id.
+	 * @return A Vec3f containing the values at the given vertex id.
+	 */
+	cv::Vec3f getMeanAtPoint(unsigned int vertexIndex) const;
+
+	/**
+	 * Draws a random sample from the model, where the coefficients are drawn
+	 * from a standard normal (or with the given standard deviation).
+	 *
+	 * @param[in] sigma The standard deviation.
+	 * @return A random sample from the model.
+	 */
+	cv::Mat drawSample(float sigma = 1.0f);
+
+	/**
+	 * Returns a sample from the model with the given PCA coefficients.
+	 *
+	 * @param[in] coefficients The PCA coefficients used to generate the sample.
+	 * @return A model instance with given coefficients.
+	 */
+	cv::Mat drawSample(std::vector<float> coefficients);
 
 private:
-
-	// All from the old RANSAC code:
-	vector<float> modelMeanShp;	// the 3DMM mean shape loaded into memory. Data is XYZXYZXYZ...
-	vector<float> modelMeanTex;
-	map<string, int> featurePointsMap;	// Holds the translation from feature point name (e.g. reye) to the vertex number in the model
-
-
-
+	std::mt19937 engine; ///< A Mersenne twister MT19937 engine
+	std::map<std::string, int> landmarkVertexMap; ///< Holds the translation from feature point name (e.g. "center.nose.tip") to the vertex number in the model
 	
+	cv::Mat mean; ///< A 3m x 1 col-vector (xyzxyz...)', where m is the number of model-vertices
+	cv::Mat pcaBasis; ///< m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
+	cv::Mat eigenvalues; ///< A col-vector of the eigenvalues (variances in the PCA space).
+
+	std::vector<std::array<int, 3>> triangleList; ///< List of triangles that make up the mesh of the model. (Note: Does every PCA model has a triangle-list? Use Mesh here instead?)
 
 };
 

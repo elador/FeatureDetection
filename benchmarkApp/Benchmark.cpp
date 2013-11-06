@@ -110,14 +110,14 @@ void Benchmark::run(
 		const LandmarkCollection landmarks = source->getLandmarks();
 		if (landmarks.isEmpty())
 			continue;
-		const Landmark& landmark = landmarks.getLandmark();
-		bool hasGroundTruth = landmark.isVisible();
+		const shared_ptr<Landmark> landmark = landmarks.getLandmark();
+		bool hasGroundTruth = landmark->isVisible();
 		if (!hasGroundTruth && !initialized)
 			continue;
 
 		Rect_<float> groundTruth;
 		if (hasGroundTruth) {
-			groundTruth = landmark.getRect();
+			groundTruth = landmark->getRect();
 			aspectRatio = groundTruth.width / groundTruth.height;
 			if (!initialized) {
 				DirectPyramidFeatureExtractor* pyramidExtractor = dynamic_cast<DirectPyramidFeatureExtractor*>(extractor.get());

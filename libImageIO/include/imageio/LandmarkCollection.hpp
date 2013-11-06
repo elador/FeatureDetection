@@ -25,6 +25,8 @@ namespace imageio {
 /**
  * A collection of landmarks, i.e. all landmarks given in a
  * landmarks-file for a certain image.
+ * The landmarks have to be unique, i.e. each landmark may only
+ * exist once in the collection.
  */
 class LandmarkCollection {
 public:
@@ -33,8 +35,6 @@ public:
 	 * Constructs a new empty landmark collection.
 	 */
 	LandmarkCollection();
-
-	~LandmarkCollection();
 
 	/**
 	 * Removes all landmarks.
@@ -70,7 +70,7 @@ public:
 	 * @param[in] name The name of the landmark.
 	 * @return The landmark with the given name.
 	 */
-	const Landmark& getLandmark(const string& name) const;
+	const shared_ptr<Landmark> getLandmark(const string& name) const;
 
 	/**
 	 * Retrieves the first landmark of this collection. Throws an exception if there is not landmark.
@@ -78,7 +78,7 @@ public:
 	 *
 	 * @return The first landmark of this collection.
 	 */
-	const Landmark& getLandmark() const;
+	const shared_ptr<Landmark> getLandmark() const;
 
 	/**
 	 * @return The landmarks.

@@ -24,8 +24,11 @@ using std::string;
 namespace imageio {
 
 /**
- * Takes a path to a landmarks file as input and returns a map with one LandmarkCollection
- * entry (TODO in tlms format) for each image that contains all the landmarks found.
+ * Takes a path to a landmarks file as input and returns a map with one
+ * LandmarkCollection entry for each image with all the landmarks found.
+ * The landmark files stored are identified only by their basename (because
+ * landmark files could be stored in another folder and have a different
+ * file extension than the image).
  */
 class LandmarkFormatParser {
 public:
@@ -33,10 +36,10 @@ public:
 	virtual ~LandmarkFormatParser() {}
 
 	/**
-	 * Reads the landmark data from a file returns all its landmarks (TODO in tlms format).
+	 * Reads the landmark data from a file returns all its landmarks.
 	 *
 	 * @param[in] landmarkFilePath A path to a file containing landmarks to one or several images/frames.
-	 * @return All the landmarks that are present in the input (TODO in tlms format). The path is
+	 * @return All the landmarks that are present in the input. The path is
 	 *         stripped to only contain the basename.
 	 */
 	virtual const map<path, LandmarkCollection> read(path landmarkFilePath) = 0;

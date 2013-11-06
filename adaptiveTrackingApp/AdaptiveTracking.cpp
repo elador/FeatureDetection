@@ -629,7 +629,7 @@ void AdaptiveTracking::drawBox(Mat& image) {
 
 void AdaptiveTracking::drawGroundTruth(Mat& image, const LandmarkCollection& landmarks) {
 	if (!landmarks.isEmpty())
-		landmarks.getLandmark().draw(image, cv::Scalar(255, 153, 102), 2);
+		landmarks.getLandmark()->draw(image, cv::Scalar(255, 153, 102), 2);
 }
 
 void AdaptiveTracking::drawTarget(Mat& image, optional<Rect> target, optional<Sample> state, bool usedAdaptive, bool adapted) {
@@ -751,11 +751,11 @@ void AdaptiveTracking::run() {
 					frame = imageSource->getImage();
 					frame.copyTo(image);
 					if (!imageSource->getLandmarks().isEmpty()) {
-						const Landmark& landmark = imageSource->getLandmarks().getLandmark();
-						if (landmark.isVisible()) {
+						const shared_ptr<Landmark> landmark = imageSource->getLandmarks().getLandmark();
+						if (landmark->isVisible()) {
 							if (tries == 0 && pyramidExtractor) {
 								double dimension = pyramidExtractor->getPatchWidth() * pyramidExtractor->getPatchHeight();
-								float aspectRatio = landmark.getHeight() / landmark.getWidth();
+								float aspectRatio = landmark->getHeight() / landmark->getWidth();
 								double patchWidth = sqrt(dimension / aspectRatio);
 								double patchHeight = aspectRatio * patchWidth;
 								pyramidExtractor->setPatchSize(cvRound(patchWidth), cvRound(patchHeight));
@@ -763,7 +763,7 @@ void AdaptiveTracking::run() {
 										+ " x " + lexical_cast<string>(pyramidExtractor->getPatchHeight()));
 							}
 							tries++;
-							adaptiveUsable = adaptiveTracker->initialize(frame, landmark.getRect());
+							adaptiveUsable = adaptiveTracker->initialize(frame, landmark->getRect());
 							if (adaptiveUsable)
 								log.info("Initialized adaptive tracking after " + lexical_cast<string>(tries) + " tries");
 						}

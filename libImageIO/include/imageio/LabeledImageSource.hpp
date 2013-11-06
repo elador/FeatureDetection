@@ -16,6 +16,10 @@ class LandmarkCollection;
 
 /**
  * Image source with associated landmarks.
+ *
+ * Note: We could move common stuff from Ordered/Named here.
+ * Also, it seems bad practice to derive from ImageSource and then
+ * contain one (we already are one)? 
  */
 class LabeledImageSource : public ImageSource {
 public:

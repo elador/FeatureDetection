@@ -13,11 +13,6 @@
 #include "shapemodels/PcaModel.hpp"
 
 #include "render/Mesh.hpp"
-//#include "opencv2/core/core.hpp"
-
-#include <random>
-
-//using cv::Mat;
 
 namespace shapemodels {
 
@@ -28,49 +23,75 @@ class MorphableModel  {
 public:
 
 	/**
-	 * Constructs a new a.
+	 * Constructs a new Morphable Model.
 	 *
 	 * @param[in] a b
 	 */
 	MorphableModel();
 	
 	/**
-	 * Computes the kernel value (dot product in a potentially high dimensional space) of two given vectors.
+	 * Todo.
 	 *
-	 * @param[in] lhs The first vector.
-	 * @param[in] rhs The second vector.
-	 * @return The kernel value of the two vectors.
+	 * @param[in] h5file Todo.
+	 * @param[in] landmarkVertexMappingFile Todo.
+	 * @return TODO.
 	 */
-	//virtual double compute(const Mat& lhs, const Mat& rhs) const = 0;
+	static MorphableModel loadScmModel(std::string h5file, std::string landmarkVertexMappingFile);
 
-	static MorphableModel load(string h5file, string featurePointsMapping);
+	static MorphableModel loadStatismoModel(std::string h5file);
+	
+	PcaModel getShapeModel() const;
+	PcaModel getColorModel() const;
 
-	PcaModel& getShapeModel(); // Todo: No ref, but move?
+	/**
+	 * Returns the mean of the shape- and color model
+	 * as a Mesh.
+	 *
+	 * @return The mean of the model.
+	 */
+	render::Mesh getMean() const;
 
-	// The following is from libRender:
-	render::Mesh mesh;
+	/**
+	 * Return the value of the mean at a given landmark.
+	 *
+	 * @param[in] landmarkIdentifier A landmark identifier (e.g. "center.nose.tip").
+	 * @return A Vec3f containing the values at the given landmark.
+	 * @throws out_of_range exception if the landmarkIdentifier does not exist in the model. // TODO test the javadoc!
+	 */
+	//cv::Vec3f getMeanAtPoint(std::string landmarkIdentifier) const;
 
-	cv::Mat matPcaBasisShp; // m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
-	cv::Mat matMeanShp;
-	cv::Mat matEigenvalsShp;
+	/**
+	 * Return the value of the mean at a given vertex id.
+	 *
+	 * @param[in] vertexIndex A vertex id.
+	 * @return A Vec3f containing the values at the given vertex id.
+	 */
+	//cv::Vec3f getMeanAtPoint(unsigned int vertexIndex) const;
 
-	cv::Mat matPcaBasisTex;
-	cv::Mat matMeanTex;
-	cv::Mat matEigenvalsTex;
+	/**
+	 * Draws a random sample from the model, where the coefficients
+	 * for the shape- and color models are both drawn from a standard
+	 * normal (or with the given standard deviation).
+	 *
+	 * @param[in] sigma The standard deviation. (TODO find out which one, sigma=var, sigmaSq=sdev)
+	 * @return A random sample from the model.
+	 */
+	render::Mesh drawSample(float sigma = 1.0f); // Todo sigmaShape, sigmaColor? or 2 functions?
 
-	void drawNewVertexPositions();
-	void drawNewVertexPositions(cv::Mat coefficients);
-	void drawNewVertexColor();
-	// End libRender
-	static MorphableModel readFromScm(string filename); // from librender::MeshUtils
-
+	/**
+	 * Returns a sample from the model with the given shape- and
+	 * color PCA coefficients. 
+	 * If a vector is empty, the mean is used.
+	 *
+	 * @param[in] shapeCoefficients The PCA coefficients used to generate the shape sample.
+	 * @param[in] colorCoefficients The PCA coefficients used to generate the shape sample.
+	 * @return A model instance with given coefficients.
+	 */
+	render::Mesh drawSample(std::vector<float> shapeCoefficients, std::vector<float> colorCoefficients);
+	
 private:
-	PcaModel shapeModel;
-	PcaModel colorModel;
-
-
-	// libRender
-	std::mt19937 engine; // Mersenne twister MT19937
+	PcaModel shapeModel; ///< A PCA model over the shape
+	PcaModel colorModel; ///< A PCA model over vertex color information
 
 };
 

@@ -65,8 +65,6 @@ public:
 	 */
 	ModelLandmark(const string& name, const Vec3f& position, bool visible);
 
-	~ModelLandmark();
-
 	Vec2f getPosition2D() const {
 		return Vec2f(getX(), getY());
 	}

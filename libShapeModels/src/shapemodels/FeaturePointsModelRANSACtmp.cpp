@@ -52,7 +52,6 @@ void drawFfpsSmallSquare(Mat img, vector<pair<string, Point2f>> points)
 }
 
 
-
 void FeaturePointsRANSAC::runRANSAC(Mat img, vector<pair<string, vector<shared_ptr<imageprocessing::Patch>>>> landmarkData, MorphableModel mm, float thresholdForDatapointFitsModel, int numIter/*=0*/, int numClosePointsRequiredForGoodFit/*=4*/, int minPointsToFitModel/*=3*/)
 {
 	if(numIter==0) {
@@ -386,7 +385,7 @@ void FeaturePointsRANSAC::printPointsConsole(string text, vector<pair<string, Po
 vector<pair<string, Point2f> > FeaturePointsRANSAC::projectVerticesToImage(vector<string> landmarknames, Point3f centerIn3dmm, Point2f centerInImage, Mat s, Mat t, MorphableModel mm)
 {
 	vector<pair<string, Point2f> > pointsInImage;
-	
+/*
 	Mat pointsIn3dCentered(landmarknames.size(), 3, CV_32F);	// As many rows as Ffp's, and 3 cols (x, y, z)
 	for (unsigned int i=0; i<landmarknames.size(); ++i) {
 		int theVertexToGet = mm.getShapeModel().getFeaturePointsMap()[landmarknames[i]];
@@ -397,7 +396,7 @@ vector<pair<string, Point2f> > FeaturePointsRANSAC::projectVerticesToImage(vecto
 		float y = pointsIn3dCentered.row(i).t().dot(t) + centerInImage.y;
 		pointsInImage.push_back(make_pair(landmarknames[i], Point2f(x, y)));
 	}
-
+*/
 	return pointsInImage;
 }
 
@@ -442,7 +441,7 @@ void FeaturePointsRANSAC::drawLandmarksText(Mat image, vector<pair<string, Point
 void FeaturePointsRANSAC::drawFull3DMMProjection(Mat img, Point3f centerIn3dmm, Point2f centerInImage, Mat s, Mat t, MorphableModel mm)
 {
 	vector<pair<string, Point2f> > pointsInImage;
-
+/*
 	Mat zbuffer(img.rows, img.cols, CV_32FC1, Scalar::all(0.0f));
 	
 	Mat pointsIn3dCentered(mm.getShapeModel().getMean().size()/3, 3, CV_32F);	// As many rows as Ffp's, and 3 cols (x, y, z)
@@ -465,18 +464,19 @@ void FeaturePointsRANSAC::drawFull3DMMProjection(Mat img, Point3f centerIn3dmm, 
 			img.at<cv::Vec3b>(y,x)[2] = (uchar)(255.0f * mm.getShapeModel().getMean()[3*theVertexToGet+0]);
 		}
 	}
-	
+*/	
 }
 
 vector<pair<string, Point3f> > FeaturePointsRANSAC::get3dmmLmsFromFfps(vector<pair<string, Point2f>> ffps, MorphableModel mm)
 {
 	vector<pair<string, Point3f> > mmPoints;
+/*	
 	for (unsigned int i=0; i<ffps.size(); ++i) {
 		int theVertexToGet = mm.getShapeModel().getFeaturePointsMap()[ffps[i].first];
 		Point3f tmp(mm.getShapeModel().getMean()[3*theVertexToGet+0], mm.getShapeModel().getMean()[3*theVertexToGet+1], mm.getShapeModel().getMean()[3*theVertexToGet+2]); // TODO! Does this start to count at 0 or 1 ? At 0. (99.999% sure)
 		mmPoints.push_back(make_pair(ffps[i].first, tmp));
 	}
-
+*/
 	return mmPoints;
 }
 

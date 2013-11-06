@@ -37,7 +37,7 @@ void BobotLandmarkSink::close() {
 }
 
 void BobotLandmarkSink::add(const LandmarkCollection& collection) {
-	Rect_<float> rect = getLandmark(collection).getRect();
+	Rect_<float> rect = getLandmark(collection)->getRect();
 	float x = rect.x / imageWidth;
 	float y = rect.y / imageHeight;
 	float width = rect.width / imageWidth;
@@ -45,7 +45,7 @@ void BobotLandmarkSink::add(const LandmarkCollection& collection) {
 	output << index++ << ' ' << x << ' ' << y << ' ' << width << ' ' << height << '\n';
 }
 
-const Landmark& BobotLandmarkSink::getLandmark(const LandmarkCollection& collection) {
+const shared_ptr<Landmark> BobotLandmarkSink::getLandmark(const LandmarkCollection& collection) {
 	if (landmarkName.empty())
 		return collection.getLandmark();
 	return collection.getLandmark(landmarkName);

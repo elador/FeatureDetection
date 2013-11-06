@@ -61,6 +61,12 @@
 #include "imageio/FileListImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
 #include "imageio/RectLandmark.hpp"
+#include "imageio/ModelLandmark.hpp"
+#include "imageio/IbugLandmarkFormatParser.hpp"
+#include "imageio/EmptyLandmarkSource.hpp"
+#include "imageio/DefaultNamedLandmarkSource.hpp"
+#include "imageio/NamedLabeledImageSource.hpp"
+#include "imageio/LandmarkFileGatherer.hpp"
 
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
@@ -115,6 +121,28 @@ void drawBoxes(Mat image, vector<shared_ptr<ClassifiedPatch>> patches)
 		shared_ptr<Patch> patch = cpatch->getPatch();
 		cv::rectangle(image, cv::Point(patch->getX() - patch->getWidth()/2, patch->getY() - patch->getHeight()/2), cv::Point(patch->getX() + patch->getWidth()/2, patch->getY() + patch->getHeight()/2), cv::Scalar(0, 0, (float)255 * ((cpatch->getProbability())/1.0)   ));
 	}
+}
+
+
+void drawFfpsCircle(Mat image, pair<string, Point2f> landmarks)
+{
+	cv::Point center(cvRound(landmarks.second.x), cvRound(landmarks.second.y));
+	int radius = cvRound(3);
+	circle(image, center, 1, cv::Scalar(0,255,0), 1, 8, 0 );	// draw the circle center
+	circle(image, center, radius, cv::Scalar(0,0,255), 1, 8, 0 );	// draw the circle outline
+
+}
+
+void drawFfpsText(Mat image, pair<string, Point2f> landmarks)
+{
+	cv::Point center(cvRound(landmarks.second.x), cvRound(landmarks.second.y));
+	std::ostringstream text;
+	int fontFace = cv::FONT_HERSHEY_PLAIN;
+	double fontScale = 0.7;
+	int thickness = 1;  
+	text << landmarks.first << std::ends;
+	putText(image, text.str(), center, fontFace, fontScale, cv::Scalar::all(0), thickness, 8);
+	text.str("");
 }
 
 /**
@@ -196,13 +224,16 @@ int main(int argc, char *argv[])
 	bool useFileList = false;
 	bool useImgs = false;
 	bool useDirectory = false;
+	bool useGroundtruth = false;
 	vector<path> inputPaths;
 	path inputFilelist;
 	path inputDirectory;
 	vector<path> inputFilenames;
 	path configFilename;
 	shared_ptr<ImageSource> imageSource;
-	path outputPicsDir;
+	path outputPicsDir; // TODO: ImageLogger vs ImageSinks? (see AdaptiveTracking.cpp)
+	path groundtruthDir; // TODO: Make more dynamic wrt landmark format. a) What about the loading-flags (1_Per_Folder etc) we have? b) Expose those flags to cmdline? c) Make a LmSourceLoader and he knows about a LM_TYPE (each corresponds to a Parser/Loader class?)
+	// TODO Also, sometimes we might have the face-box annotated but not LMs, sometimes only LMs and no Facebox.
 
 	try {
 		po::options_description desc("Allowed options");
@@ -213,11 +244,13 @@ int main(int argc, char *argv[])
 				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
 			("verbose-images,w", po::value<string>(&verboseLevelImages)->implicit_value("INTERMEDIATE")->default_value("FINAL","write images with FINAL loglevel or below."),
 				  "specify the verbosity of the image output: FINAL, INTERMEDIATE, INFO, DEBUG or TRACE")
-			("config,c", po::value<path>()->required(), 
+			("config,c", po::value<path>(&configFilename)->required(), 
 				"path to a config (.cfg) file")
-			("input,i", po::value<vector<path>>()->required(), 
+			("input,i", po::value<vector<path>>(&inputPaths)->required(), 
 				"input from one or more files, a directory, or a  .lst-file containing a list of images")
-			("output-dir,o", po::value<path>()->default_value("."),
+			("groundtruth,g", po::value<path>(&groundtruthDir), 
+				"load ground truth landmarks from the given folder along with the images and output statistics of the detection results")
+			("output-dir,o", po::value<path>(&outputPicsDir)->default_value("."),
 				"output directory for the result images")
 		;
 
@@ -227,30 +260,17 @@ int main(int argc, char *argv[])
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
 		po::notify(vm);
-	
+
 		if (vm.count("help")) {
 			cout << "Usage: ffpDetectApp [options]\n";
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
-		if (vm.count("verbose")) {
-			verboseLevelConsole = vm["verbose"].as<string>();
+	
+		if (vm.count("groundtruth")) {
+			useGroundtruth = true;
 		}
-		if (vm.count("verbose-images")) {
-			verboseLevelImages = vm["verbose-images"].as<string>();
-		}
-		if (vm.count("input"))
-		{
-			inputPaths = vm["input"].as<vector<path>>();
-		}
-		if (vm.count("config"))
-		{
-			configFilename = vm["config"].as<path>();
-		}
-		if (vm.count("output-dir"))
-		{
-			outputPicsDir = vm["output-dir"].as<path>();
-		}
+
 	} catch(std::exception& e) {
 		cout << e.what() << endl;
 		return EXIT_FAILURE;
@@ -295,9 +315,8 @@ int main(int argc, char *argv[])
 	}
 
 	ImageLoggers->getLogger("detection").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir));
-	ImageLoggers->getLogger("mergePlaygroundApp").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir)); // TODO delete?
 
-	if(inputPaths.size() > 1) {
+	if (inputPaths.size() > 1) {
 		// We assume the user has given several, valid images
 		useImgs = true;
 		inputFilenames = inputPaths;
@@ -305,10 +324,10 @@ int main(int argc, char *argv[])
 		// We assume the user has given either an image, directory, or a .lst-file
 		if (inputPaths[0].extension().string() == ".lst") { // check for .lst first
 			useFileList = true;
-			inputFilelist = inputPaths[0];
+			inputFilelist = inputPaths.front();
 		} else if (boost::filesystem::is_directory(inputPaths[0])) { // check if it's a directory
 			useDirectory = true;
-			inputDirectory = inputPaths[0];
+			inputDirectory = inputPaths.front();
 		} else { // it must be an image
 			useImgs = true;
 			inputFilenames = inputPaths;
@@ -318,8 +337,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-
-	if(useFileList==true) {
+	if (useFileList==true) {
 		appLogger.info("Using file-list as input: " + inputFilelist.string());
 		shared_ptr<ImageSource> fileListImgSrc; // TODO VS2013 change to unique_ptr, rest below also
 		try {
@@ -328,13 +346,9 @@ int main(int argc, char *argv[])
 			appLogger.error(e.what());
 			return EXIT_FAILURE;
 		}
-		//shared_ptr<DidLandmarkFormatParser> didParser= make_shared<DidLandmarkFormatParser>();
-		//vector<path> landmarkDir; landmarkDir.push_back(path("C:\\Users\\Patrik\\Github\\data\\labels\\xm2vts\\guosheng\\"));
-		//shared_ptr<DefaultNamedLandmarkSource> lmSrc = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
-		//imageSource = make_shared<NamedLabeledImageSource>(fileImgSrc, lmSrc);
 		imageSource = fileListImgSrc;
 	}
-	if(useImgs==true) {
+	if (useImgs==true) {
 		//imageSource = make_shared<FileImageSource>(inputFilenames);
 		//imageSource = make_shared<RepeatingFileImageSource>("C:\\Users\\Patrik\\GitHub\\data\\firstrun\\ws_8.png");
 		appLogger.info("Using input images: ");
@@ -350,13 +364,9 @@ int main(int argc, char *argv[])
 			appLogger.error(e.what());
 			return EXIT_FAILURE;
 		}
-		//shared_ptr<DidLandmarkFormatParser> didParser= make_shared<DidLandmarkFormatParser>();
-		//vector<path> landmarkDir; landmarkDir.push_back(path("C:\\Users\\Patrik\\Github\\data\\labels\\xm2vts\\guosheng\\"));
-		//shared_ptr<DefaultNamedLandmarkSource> lmSrc = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(fileImgSrc, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, landmarkDir), didParser);
-		//imageSource = make_shared<NamedLabeledImageSource>(fileImgSrc, lmSrc);
 		imageSource = fileImgSrc;
 	}
-	if(useDirectory==true) {
+	if (useDirectory==true) {
 		appLogger.info("Using input images from directory: " + inputDirectory.string());
 		try {
 			imageSource = make_shared<DirectoryImageSource>(inputDirectory.string());
@@ -366,15 +376,22 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	// Load the ground truth
+	// Either a) use if/else for imageSource or labeledImageSource, or b) use an EmptyLandmarkSoure
+	shared_ptr<LabeledImageSource> labeledImageSource;
+	shared_ptr<NamedLandmarkSource> landmarkSource;
+	if (useGroundtruth) {
+		shared_ptr<IbugLandmarkFormatParser> iBugParser= make_shared<IbugLandmarkFormatParser>();
+		vector<path> groundtruthDirs; groundtruthDirs.push_back(groundtruthDir); // Todo: Make cmdline use a vector<path>
+		landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".pts", GatherMethod::ONE_FILE_PER_IMAGE_SAME_DIR, groundtruthDirs), iBugParser);
+	} else {
+		landmarkSource = make_shared<EmptyLandmarkSource>();
+	}
+	labeledImageSource = make_shared<NamedLabeledImageSource>(imageSource, landmarkSource);
+
 	const float DETECT_MAX_DIST_X = 0.33f;	// --> Config / Landmarks
 	const float DETECT_MAX_DIST_Y = 0.33f;
 	const float DETECT_MAX_DIFF_W = 0.33f;
-
-	int TOT = 0;
-	int TACC = 0;
-	int FACC = 0;
-	int NOCAND = 0;
-	int DONTKNOW = 0;
 
 	ptree pt;
 	try {
@@ -387,7 +404,8 @@ int main(int argc, char *argv[])
 	unordered_map<string, shared_ptr<Detector>> faceDetectors;
 	unordered_map<string, shared_ptr<Detector>> featureDetectors;
 
-	shapemodels::MorphableModel mm = shapemodels::MorphableModel::load("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\featurePoints_head_newfmt.txt");
+	//shapemodels::MorphableModel mm = shapemodels::MorphableModel::loadOldBaselH5Model("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\featurePoints_head_newfmt.txt");
+	shapemodels::MorphableModel mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
 
 	shapemodels::FeaturePointsRANSAC rnsc;
 
@@ -557,17 +575,41 @@ int main(int argc, char *argv[])
 	write_info("C:\\Users\\Patrik\\Documents\\GitHub\\ffpDetectApp.cfg", pt);
 	*/
 
+	enum class DetectionType {
+		TACC, ///< todo
+		FACC,
+		TREJ,
+		FREJ
+	};
+	struct imageStatistic 
+	{
+		/* Face */
+		bool haveFaceGroundtruth;
+		size_t numFaceCandidates;
+		DetectionType faceDetectionResults;
+		/* Landmarks */
+		bool haveLandmarkGroundtruth;
+		vector<float> landmarkPixelError;
+		vector<DetectionType> landmarkDetectionResult;
+		vector<string> landmarkNames;
+
+	};
+	map<path, imageStatistic> detectionResults;
+
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img;
-	while(imageSource->next()) {
+	while(labeledImageSource->next()) {
 		start = std::chrono::system_clock::now();
-		appLogger.info("Starting to process " + imageSource->getName().string());
-		img = imageSource->getImage();
+		appLogger.info("Starting to process " + labeledImageSource->getName().string());
+		img = labeledImageSource->getImage();
+		
+		
+		//map<string, shared_ptr<imageprocessing::Patch>> resultLms2 = rnscnew.run(img, 30.0f, 1000, 5, 4); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this  with only the STL? (probably)
 		
 		// Do the face-detection:
 		vector<shared_ptr<ClassifiedPatch>> facePatches;
 		for(const auto& detector : faceDetectors) {
-			ImageLoggers->getLogger("detection").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
+			ImageLoggers->getLogger("detection").setCurrentImageName(labeledImageSource->getName().stem().string() + "_" + detector.first);
 			facePatches = detector.second->detect(img);
 
 			// For now, only work with 1 detector and the static facebox. Later:
@@ -590,7 +632,7 @@ int main(int argc, char *argv[])
 		// Detect all features in the face-box:
 		map<string, vector<shared_ptr<ClassifiedPatch>>> allFeaturePatches;
 		for (const auto& detector : featureDetectors) {
-			ImageLoggers->getLogger("detection").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
+			ImageLoggers->getLogger("detection").setCurrentImageName(labeledImageSource->getName().stem().string() + "_" + detector.first);
 			vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img, facePatches[0]->getPatch()->getBounds());
 
 			//shared_ptr<PyramidFeatureExtractor> pfe = detector.second->getPyramidFeatureExtractor();
@@ -598,17 +640,7 @@ int main(int argc, char *argv[])
 			allFeaturePatches.insert(make_pair(detector.second->landmark, resultingPatches)); // be careful if we want to use detector.first (its name) or detector.second->landmark
 		}
 
-		// Tmp: Convert the patches into the "old" RANSAC format
-		vector<pair<string, vector<shared_ptr<imageprocessing::Patch>>>> landmarkData;
-		for (const auto& feature : allFeaturePatches) {
-			vector<shared_ptr<imageprocessing::Patch>> tmp;
-			for (const auto& patch : feature.second) {
-				tmp.push_back(patch->getPatch());
-			}
-			landmarkData.push_back(make_pair(feature.first, tmp));
-		}
-
-		// Tmp2: Convert it to current map<string, vector<shared_ptr<imageprocessing::Patch>>> format
+		// Tmp: Convert it to current map<string, vector<shared_ptr<imageprocessing::Patch>>> format
 		map<string, vector<shared_ptr<imageprocessing::Patch>>> landmarkData2;
 		for (const auto& feature : allFeaturePatches) {
 			vector<shared_ptr<imageprocessing::Patch>> tmp;
@@ -619,45 +651,59 @@ int main(int argc, char *argv[])
 		}
 
 		rnscnew.setLandmarks(landmarkData2); // Should better use .run(landmarkData2); Clarity etc
-		map<string, shared_ptr<imageprocessing::Patch>> resultLms = rnscnew.run(img, 30.0f, 1000, 5, 4); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this  with only the STL? (probably)
+		Mat rnsacImg = img.clone();
+		//map<string, shared_ptr<imageprocessing::Patch>> resultLms = rnscnew.run(rnsacImg, 30.0f, 1000, 4, 3); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this with only the STL? (probably)
 
+		map<string, shared_ptr<imageprocessing::Patch>> resultLms;
+		resultLms.insert(make_pair("left.lips.corner", landmarkData2.at("left.lips.corner")[0]));
+		resultLms.insert(make_pair("right.lips.corner", landmarkData2.at("right.lips.corner")[0]));
+		resultLms.insert(make_pair("left.eye.pupil.center", landmarkData2.at("left.eye.pupil.center")[0]));
+		resultLms.insert(make_pair("right.eye.pupil.center", landmarkData2.at("right.eye.pupil.center")[0]));
 
-		
-		//rnsc.runRANSAC(img, landmarkData, mm, 30.0f);
-
-		/*
-		//Mat ffdResultImg = img.clone();
-		for (const auto& features : allFeaturePatches) {
-			for (const auto& patch : features.second) {
-				// patch to landmark
-				// add a function in libDetection, either Patch.getLandmark or Helper...::PatchToLandmark(...) (not ClassifiedPatch!)
-				// Anmerkung von peter: libDetection/libImageProcessing hat bisher keine Abhängigkeit von libImageIO, aber Patch.getLandmark/ClassifiedPatch.getLandmark würde dazu führen
-				// Anmerkung von peter: (ebenso umgekehrt, wenn der Helper in libImageIO läge - die Abhängigkeit (von libImageProcessing) wäre dann sogar sehr unschön)
-				RectLandmark lm(features.first, patch->getPatch()->getX(), patch->getPatch()->getY(), patch->getPatch()->getWidth(), patch->getPatch()->getHeight());
-				lm.draw(ffdResultImg);
-			}
-			Mat tmp = img.clone();
-			drawFaceBoxes(tmp, features.second);
-
+		LandmarkCollection groundtruth = labeledImageSource->getLandmarks();
+		for (const auto& lm : groundtruth.getLandmarks()) {
+			lm->draw(img);
+			drawFfpsText(img, make_pair(lm->getName(), lm->getPoint2D()));
 		}
-		*/
 
+		for (const auto& lm : resultLms) {
+			drawFfpsCircle(img, make_pair(lm.first, Point2f(lm.second->getX(), lm.second->getY())));
+			drawFfpsText(img, make_pair(lm.first, Point2f(lm.second->getX(), lm.second->getY())));
+			imwrite("C:/Users/Patrik/Documents/Github/RANSAC.png", img);
+			imageio::ModelLandmark l(lm.first, lm.second->getX(), lm.second->getY());
+			l.draw(img);
+		}
+		
+		// ImageLogger has the Draw etc functions for Patches... and landmarks also have draw...
+		// The detectors always log face-boxes. But they should log boxes when it's a face and landmark-points when it's a landmark. Think about how to solve this, together with the other problems.
+		// Why does the landmark class work with Vec3f and not Point3f?
+		// Landmark class only needed for a) logging b) comparing & evaluation. (?) (search Peter's code)
 		
 		end = std::chrono::system_clock::now();
 		elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-		appLogger.info("Finished processing " + imageSource->getName().string() + ". Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
+		appLogger.info("Finished processing " + labeledImageSource->getName().string() + ". Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
 
-		TOT++;
-		vector<string> resultingPatches;
-		if(resultingPatches.size()<1) {
-			//std::cout << "[ffpDetectApp] No face-candidates at all found:  " << filenames[i] << std::endl;
-			NOCAND++;
-		} else {
+		size_t numImages = labeledImageSource->getNames().size();
+
+		imageStatistic stats;
+		stats.numFaceCandidates = facePatches.size();
+		if (facePatches.size() < 1) {
+			stats.faceDetectionResults = DetectionType::FREJ;
+		} else { // we detected a face
+			// check if it's the right face
+
+			for (const auto& lm : resultLms) {
+				stats.landmarkNames.push_back(lm.first);
+				shared_ptr<imageprocessing::Patch> p = lm.second;
+
+				shared_ptr<imageio::Landmark> gt = groundtruth.getLandmark(lm.first); // throws when LM not found
+			}
+		}
 			// TODO Check if the LM exists or it will crash! Currently broken!
-			if(false) { //no groundtruth
+			//if(false) { //no groundtruth
 				//std::cout << "[ffpDetectApp] No ground-truth available, not counting anything: " << filenames[i] << std::endl;
-				++DONTKNOW;
-			} else { //we have groundtruth
+			//	++DONTKNOW;
+			//} else { //we have groundtruth
 				/*int gt_w = groundtruthFaceBoxes[i].getWidth();
 				int gt_h = groundtruthFaceBoxes[i].getHeight();
 				int gt_cx = groundtruthFaceBoxes[i].getX();
@@ -673,34 +719,16 @@ int main(int argc, char *argv[])
 					std::cout << "[ffpDetectApp] Face not found, wrong position:  " << filenames[i] << std::endl;
 					FACC++;
 				}*/
-			} // end no groundtruth
-		}
-
-		std::cout << std::endl;
-		std::cout << "[ffpDetectApp] -------------------------------------" << std::endl;
-		std::cout << "[ffpDetectApp] TOT:  " << TOT << std::endl;
-		std::cout << "[ffpDetectApp] TACC:  " << TACC << std::endl;
-		std::cout << "[ffpDetectApp] FACC:  " << FACC << std::endl;
-		std::cout << "[ffpDetectApp] NOCAND:  " << NOCAND << std::endl;
-		std::cout << "[ffpDetectApp] DONTKNOW:  " << DONTKNOW << std::endl;
-		std::cout << "[ffpDetectApp] -------------------------------------" << std::endl;
-
+		//	} // end no groundtruth
+		//}
+		detectionResults.insert(make_pair(labeledImageSource->getName(), stats));
+		// log stats for this image
 	}
 
-	std::cout << std::endl;
-	std::cout << "[ffpDetectApp] =====================================" << std::endl;
-	std::cout << "[ffpDetectApp] =====================================" << std::endl;
-	std::cout << "[ffpDetectApp] TOT:  " << TOT << std::endl;
-	std::cout << "[ffpDetectApp] TACC:  " << TACC << std::endl;
-	std::cout << "[ffpDetectApp] FACC:  " << FACC << std::endl;
-	std::cout << "[ffpDetectApp] NOCAND:  " << NOCAND << std::endl;
-	std::cout << "[ffpDetectApp] DONTKNOW:  " << DONTKNOW << std::endl;
-	std::cout << "[ffpDetectApp] =====================================" << std::endl;
+	//Log stats for all images
 	
 	return 0;
 }
-
-	// My cmdline-arguments: -f C:\Users\Patrik\Documents\GitHub\data\firstrun\theRealWorld_png2.lst
 
 	// TODO important:
 	// getPatchesROI Bug bei skalen, schraeg verschoben (?) bei x,y=0, s=1 sichtbar. No, I think I looked at this with MR, and the code was actually correct?

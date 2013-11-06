@@ -11,6 +11,7 @@
 #include "imageio/OrderedLandmarkSink.hpp"
 #include <string>
 #include <fstream>
+#include <memory>
 
 using std::string;
 using std::ofstream;
@@ -70,7 +71,7 @@ private:
 	 * @param[in] collection The landmark collection.
 	 * @return The landmark.
 	 */
-	const Landmark& getLandmark(const LandmarkCollection& collection);
+	const std::shared_ptr<Landmark> getLandmark(const LandmarkCollection& collection);
 
 	const string landmarkName; ///< The name of the landmark.
 	ofstream output; ///< The file output stream.
