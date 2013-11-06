@@ -62,7 +62,8 @@
 #include "imageio/DirectoryImageSource.hpp"
 #include "imageio/RectLandmark.hpp"
 #include "imageio/ModelLandmark.hpp"
-#include "imageio/LfpwLandmarkFormatParser.hpp"
+#include "imageio/IbugLandmarkFormatParser.hpp"
+#include "imageio/EmptyLandmarkSource.hpp"
 #include "imageio/DefaultNamedLandmarkSource.hpp"
 #include "imageio/NamedLabeledImageSource.hpp"
 #include "imageio/LandmarkFileGatherer.hpp"
@@ -259,11 +260,15 @@ int main(int argc, char *argv[])
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
 		po::notify(vm);
-	
+
 		if (vm.count("help")) {
 			cout << "Usage: ffpDetectApp [options]\n";
 			cout << desc;
 			return EXIT_SUCCESS;
+		}
+	
+		if (vm.count("groundtruth")) {
+			useGroundtruth = true;
 		}
 
 	} catch(std::exception& e) {
@@ -373,11 +378,16 @@ int main(int argc, char *argv[])
 
 	// Load the ground truth
 	// Either a) use if/else for imageSource or labeledImageSource, or b) use an EmptyLandmarkSoure
-	shared_ptr<LfpwLandmarkFormatParser> lfpwParser= make_shared<LfpwLandmarkFormatParser>();
-	vector<path> groundtruthDirs; groundtruthDirs.push_back(groundtruthDir); // Todo: Make cmdline use a vector<path>
-	shared_ptr<DefaultNamedLandmarkSource> lmSrc = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".did", GatherMethod::SEPARATE_FILES, groundtruthDirs), lfpwParser);
-	shared_ptr<ImageSource> labeledImageSource = make_shared<NamedLabeledImageSource>(imageSource, lmSrc);
-
+	shared_ptr<LabeledImageSource> labeledImageSource;
+	shared_ptr<NamedLandmarkSource> landmarkSource;
+	if (useGroundtruth) {
+		shared_ptr<IbugLandmarkFormatParser> iBugParser= make_shared<IbugLandmarkFormatParser>();
+		vector<path> groundtruthDirs; groundtruthDirs.push_back(groundtruthDir); // Todo: Make cmdline use a vector<path>
+		landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".pts", GatherMethod::ONE_FILE_PER_IMAGE_SAME_DIR, groundtruthDirs), iBugParser);
+	} else {
+		landmarkSource = make_shared<EmptyLandmarkSource>();
+	}
+	labeledImageSource = make_shared<NamedLabeledImageSource>(imageSource, landmarkSource);
 
 	const float DETECT_MAX_DIST_X = 0.33f;	// --> Config / Landmarks
 	const float DETECT_MAX_DIST_Y = 0.33f;
@@ -573,10 +583,10 @@ int main(int argc, char *argv[])
 
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img;
-	while(imageSource->next()) {
+	while(labeledImageSource->next()) {
 		start = std::chrono::system_clock::now();
-		appLogger.info("Starting to process " + imageSource->getName().string());
-		img = imageSource->getImage();
+		appLogger.info("Starting to process " + labeledImageSource->getName().string());
+		img = labeledImageSource->getImage();
 		
 		
 		//map<string, shared_ptr<imageprocessing::Patch>> resultLms2 = rnscnew.run(img, 30.0f, 1000, 5, 4); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this  with only the STL? (probably)
@@ -584,7 +594,7 @@ int main(int argc, char *argv[])
 		// Do the face-detection:
 		vector<shared_ptr<ClassifiedPatch>> facePatches;
 		for(const auto& detector : faceDetectors) {
-			ImageLoggers->getLogger("detection").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
+			ImageLoggers->getLogger("detection").setCurrentImageName(labeledImageSource->getName().stem().string() + "_" + detector.first);
 			facePatches = detector.second->detect(img);
 
 			// For now, only work with 1 detector and the static facebox. Later:
@@ -607,7 +617,7 @@ int main(int argc, char *argv[])
 		// Detect all features in the face-box:
 		map<string, vector<shared_ptr<ClassifiedPatch>>> allFeaturePatches;
 		for (const auto& detector : featureDetectors) {
-			ImageLoggers->getLogger("detection").setCurrentImageName(imageSource->getName().stem().string() + "_" + detector.first);
+			ImageLoggers->getLogger("detection").setCurrentImageName(labeledImageSource->getName().stem().string() + "_" + detector.first);
 			vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img, facePatches[0]->getPatch()->getBounds());
 
 			//shared_ptr<PyramidFeatureExtractor> pfe = detector.second->getPyramidFeatureExtractor();
@@ -634,6 +644,12 @@ int main(int argc, char *argv[])
 		resultLms.insert(make_pair("right.lips.corner", landmarkData2.at("right.lips.corner")[0]));
 		resultLms.insert(make_pair("left.eye.pupil.center", landmarkData2.at("left.eye.pupil.center")[0]));
 		resultLms.insert(make_pair("right.eye.pupil.center", landmarkData2.at("right.eye.pupil.center")[0]));
+
+		LandmarkCollection groundtruth = labeledImageSource->getLandmarks();
+		for (const auto& lm : groundtruth.getLandmarks()) {
+			lm->draw(img);
+			drawFfpsText(img, make_pair(lm->getName(), lm->getPoint2D()));
+		}
 
 		for (const auto& lm : resultLms) {
 			drawFfpsCircle(img, make_pair(lm.first, Point2f(lm.second->getX(), lm.second->getY())));
@@ -670,7 +686,7 @@ int main(int argc, char *argv[])
 		
 		end = std::chrono::system_clock::now();
 		elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-		appLogger.info("Finished processing " + imageSource->getName().string() + ". Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
+		appLogger.info("Finished processing " + labeledImageSource->getName().string() + ". Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
 
 		TOT++;
 		vector<string> resultingPatches;

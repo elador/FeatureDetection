@@ -16,10 +16,6 @@ LandmarkCollection::LandmarkCollection()
 {
 }
 
-LandmarkCollection::~LandmarkCollection()
-{
-}
-
 void LandmarkCollection::clear()
 {
 	landmarks.clear();

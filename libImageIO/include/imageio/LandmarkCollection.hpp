@@ -36,8 +36,6 @@ public:
 	 */
 	LandmarkCollection();
 
-	~LandmarkCollection();
-
 	/**
 	 * Removes all landmarks.
 	 */

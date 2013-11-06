@@ -26,8 +26,6 @@ ModelLandmark::ModelLandmark(const string& name, const Vec3f& position) :
 ModelLandmark::ModelLandmark(const string& name, const Vec3f& position, bool visible) :
 		Landmark(LandmarkType::MODEL, name, visible), position(position) {}
 
-ModelLandmark::~ModelLandmark() {}
-
 bool ModelLandmark::isEqual(const Landmark& landmark) const
 {
 	if (landmark.getType() != LandmarkType::MODEL)

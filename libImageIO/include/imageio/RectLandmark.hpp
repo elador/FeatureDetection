@@ -90,8 +90,6 @@ public:
 	 */
 	RectLandmark(const string& name, const Vec2f& position, const Size2f& size, bool visible);
 
-	~RectLandmark();
-
 	Vec2f getPosition2D() const {
 		return position;
 	}

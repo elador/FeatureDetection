@@ -37,8 +37,6 @@ RectLandmark::RectLandmark(const string& name, const Vec2f& position, const Size
 RectLandmark::RectLandmark(const string& name, const Vec2f& position, const Size2f& size, bool visible) :
 		Landmark(LandmarkType::RECT, name, visible), position(position), size(size) {}
 
-RectLandmark::~RectLandmark() {}
-
 bool RectLandmark::isEqual(const Landmark& landmark) const {
 	if (landmark.getType() != LandmarkType::RECT)
 		return false;

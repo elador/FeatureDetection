@@ -33,6 +33,7 @@ SET(HEADERS
 	include/imageio/EmptyLandmarkSource.hpp
 	include/imageio/FileImageSource.hpp
 	include/imageio/FileListImageSource.hpp
+	include/imageio/IbugLandmarkFormatParser.hpp
 	include/imageio/ImageSink.hpp
 	include/imageio/ImageSource.hpp
 	include/imageio/KinectImageSource.hpp
@@ -66,6 +67,7 @@ SET(SOURCE
 	src/imageio/DirectoryImageSource.cpp
 	src/imageio/FileImageSource.cpp
 	src/imageio/FileListImageSource.cpp
+	src/imageio/IbugLandmarkFormatParser.cpp
 	src/imageio/KinectImageSource.cpp
 	src/imageio/LandmarkCollection.cpp
 	src/imageio/LandmarkFileGatherer.cpp

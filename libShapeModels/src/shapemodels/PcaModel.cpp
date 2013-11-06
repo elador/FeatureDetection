@@ -439,8 +439,8 @@ Mat PcaModel::drawSample(vector<float> coefficients)
 	//Mat smallBasis = pcaBasis(cv::Rect(0, 0, 55, 100));
 	//Mat smallMean = mean(cv::Rect(0, 0, 1, 100));
 
-	Mat modelSample = mean + pcaBasis * alphas.mul(sqrtOfEigenvalues); // Surr
-	//Mat modelSample = mean + pcaBasis * alphas; // Bsl .h5 old
+	//Mat modelSample = mean + pcaBasis * alphas.mul(sqrtOfEigenvalues); // Surr
+	Mat modelSample = mean + pcaBasis * alphas; // Bsl .h5 old
 
 	return modelSample;
 }
