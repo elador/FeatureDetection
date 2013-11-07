@@ -14,7 +14,9 @@
 
 //#include "boost/bind.hpp"
 
-#include <windows.h> // #idef WIN32....
+#ifdef WIN32
+	#include <windows.h>
+#endif
 #include <GL/gl.h>
 #include <GL/glu.h>
 
