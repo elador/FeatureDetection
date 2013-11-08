@@ -43,9 +43,7 @@ public:
 	 */
 	DefaultNamedLandmarkSource(vector<path> landmarkFiles, shared_ptr<LandmarkFormatParser> fileParser);
 	
-	~DefaultNamedLandmarkSource();
-
-	const LandmarkCollection& get(const path& imagePath);
+	LandmarkCollection get(const path& imagePath);
 
 private:
 	map<path, LandmarkCollection> landmarkCollections; ///< Holds all the landmarks for all images.

@@ -45,8 +45,6 @@ BobotLandmarkSource::BobotLandmarkSource(shared_ptr<ImageSource> imageSource, co
 	}
 }
 
-BobotLandmarkSource::~BobotLandmarkSource() {}
-
 void BobotLandmarkSource::reset() {
 	index = -1;
 }
@@ -56,12 +54,12 @@ bool BobotLandmarkSource::next() {
 	return index < static_cast<int>(positions.size());
 }
 
-const LandmarkCollection& BobotLandmarkSource::get() {
+LandmarkCollection BobotLandmarkSource::get() {
 	next();
 	return getLandmarks();
 }
 
-const LandmarkCollection& BobotLandmarkSource::get(const path& imagePath) {
+LandmarkCollection BobotLandmarkSource::get(const path& imagePath) {
 	auto iterator = name2index.find(imagePath.string());
 	if (iterator == name2index.end())
 		index = -1;
@@ -70,8 +68,8 @@ const LandmarkCollection& BobotLandmarkSource::get(const path& imagePath) {
 	return getLandmarks();
 }
 
-const LandmarkCollection& BobotLandmarkSource::getLandmarks() const {
-	collection.clear();
+LandmarkCollection BobotLandmarkSource::getLandmarks() const {
+	collection.clear(); // Todo: As we don't return a reference anymore, I think this could now be a local variable.
 	if (index >= 0 && index < static_cast<int>(positions.size())) {
 		const cv::Mat& image = imageSource->getImage();
 		const Rect_<float>& relativePosition = positions[index];

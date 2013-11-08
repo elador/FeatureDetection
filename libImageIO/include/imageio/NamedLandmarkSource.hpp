@@ -38,7 +38,7 @@ public:
 	 * @param imagePatch The full patch name of the image.
 	 * @return The landmarks (that may be empty if no data could be retrieved).
 	 */
-	virtual const LandmarkCollection& get(const path& imagePath) = 0;
+	virtual LandmarkCollection get(const path& imagePath) = 0;
 };
 
 } /* namespace imageio */

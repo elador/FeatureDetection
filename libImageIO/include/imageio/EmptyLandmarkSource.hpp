@@ -25,23 +25,21 @@ public:
 	 */
 	EmptyLandmarkSource() : empty() {}
 
-	~EmptyLandmarkSource() {}
-
 	void reset() {}
 
 	bool next() {
 		return true;
 	}
 
-	const LandmarkCollection& get() {
+	LandmarkCollection get() {
 		return empty;
 	}
 
-	const LandmarkCollection& get(const path& imagePath) {
+	LandmarkCollection get(const path& imagePath) {
 		return empty;
 	}
 
-	const LandmarkCollection& getLandmarks() const {
+	LandmarkCollection getLandmarks() const {
 		return empty;
 	}
 

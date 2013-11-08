@@ -683,8 +683,6 @@ int main(int argc, char *argv[])
 		elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
 		appLogger.info("Finished processing " + labeledImageSource->getName().string() + ". Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
 
-		size_t numImages = labeledImageSource->getNames().size();
-
 		imageStatistic stats;
 		stats.numFaceCandidates = facePatches.size();
 		if (facePatches.size() < 1) {
@@ -726,7 +724,8 @@ int main(int argc, char *argv[])
 	}
 
 	//Log stats for all images
-	
+	size_t numImages = labeledImageSource->getNames().size();
+
 	return 0;
 }
 

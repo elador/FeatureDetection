@@ -39,14 +39,14 @@ public:
 	 *
 	 * @return The collection of landmarks (that may be empty if no data could be retrieved).
 	 */
-	virtual const LandmarkCollection& get() = 0;
+	virtual LandmarkCollection get() = 0;
 
 	/**
 	 * Retrieves the current collection of landmarks.
 	 *
 	 * @return The collection of landmarks (that may be empty if no data could be retrieved).
 	 */
-	virtual const LandmarkCollection& getLandmarks() const = 0;
+	virtual LandmarkCollection getLandmarks() const = 0;
 };
 
 } /* namespace imageio */

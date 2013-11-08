@@ -43,17 +43,15 @@ public:
 	 */
 	BobotLandmarkSource(shared_ptr<ImageSource> imageSource, const string& filename);
 
-	~BobotLandmarkSource();
-
 	void reset();
 
 	bool next();
 
-	const LandmarkCollection& get();
+	LandmarkCollection get();
 
-	const LandmarkCollection& get(const path& imagePath);
+	LandmarkCollection get(const path& imagePath); 	// Note: Modifies the LandmarkSource
 
-	const LandmarkCollection& getLandmarks() const;
+	LandmarkCollection getLandmarks() const;
 
 private:
 
