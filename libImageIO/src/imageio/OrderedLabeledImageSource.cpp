@@ -39,7 +39,7 @@ vector<path> OrderedLabeledImageSource::getNames() const {
 	return imageSource->getNames();
 }
 
-const LandmarkCollection& OrderedLabeledImageSource::getLandmarks() const {
+const LandmarkCollection OrderedLabeledImageSource::getLandmarks() const {
 	return landmarkSource->getLandmarks();
 }
 

@@ -97,8 +97,10 @@ public:
 		return 0;
 	}
 
+	// Todo doc: Compare two ModelLandmarks. If landmark is not model, returns...
 	bool isEqual(const Landmark& landmark) const;
 
+	// Todo doc: Compare two ModelLandmarks. If landmark is not model, returns...
 	bool isClose(const Landmark& landmark, const float similarity) const;
 
 	// Note: Expects a 3-channel image.

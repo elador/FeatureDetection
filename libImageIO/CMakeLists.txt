@@ -44,6 +44,7 @@ SET(HEADERS
 	include/imageio/LandmarkFormatParser.hpp
 	include/imageio/LandmarksHelper.hpp
 	include/imageio/LfpwLandmarkFormatParser.hpp
+	include/imageio/LstLandmarkFormatParser.hpp
 	include/imageio/ModelLandmark.hpp
 	include/imageio/NamedLabeledImageSource.hpp
 	include/imageio/NamedLandmarkSource.hpp
@@ -72,6 +73,7 @@ SET(SOURCE
 	src/imageio/LandmarkCollection.cpp
 	src/imageio/LandmarkFileGatherer.cpp
 	src/imageio/LfpwLandmarkFormatParser.cpp
+	src/imageio/LstLandmarkFormatParser.cpp
 	src/imageio/ModelLandmark.cpp
 	src/imageio/NamedLabeledImageSource.cpp
 	src/imageio/OrderedLabeledImageSource.cpp

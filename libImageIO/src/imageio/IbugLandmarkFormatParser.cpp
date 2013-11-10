@@ -51,6 +51,9 @@ const map<path, LandmarkCollection> IbugLandmarkFormatParser::read(path landmark
 		if (!(ssLine >> position[0] >> position[1])) {
 			throw std::runtime_error("Landmark format error while parsing a line.");
 		}
+		// Todo: Incorporate this:
+		// "Please note that the re-annotated data for this challenge are saved in the matlab convention of 1 being 
+		// the first index, i.e. the coordinates of the top left pixel in an image are x=1, y=1."
 		
 		string tlmsName = iBugToTlmsName(landmarkId);
 		bool visible = true; // In comparison to the original LFPW, this information is not available anymore.
@@ -59,9 +62,18 @@ const map<path, LandmarkCollection> IbugLandmarkFormatParser::read(path landmark
 			landmarks.insert(lm);
 		}
 		
-		
 		++landmarkId;
 	}
+	// Slightly hacky: Create landmarks for the right and left pupil center by taking the middle between the corners:
+	Point2f rEyeCo = landmarks.getLandmark("right.eye.corner_outer")->getPoint2D();
+	Point2f rEyeCi = landmarks.getLandmark("right.eye.corner_inner")->getPoint2D();
+	shared_ptr<Landmark> rEyeCenter = make_shared<ModelLandmark>("right.eye.pupil.center", Vec2f((rEyeCo.x+rEyeCi.x)/2.0f, (rEyeCo.y+rEyeCi.y)/2.0f));
+	landmarks.insert(rEyeCenter);
+	Point2f lEyeCo = landmarks.getLandmark("left.eye.corner_outer")->getPoint2D();
+	Point2f lEyeCi = landmarks.getLandmark("left.eye.corner_inner")->getPoint2D();
+	shared_ptr<Landmark> lEyeCenter = make_shared<ModelLandmark>("left.eye.pupil.center", Vec2f((lEyeCo.x+lEyeCi.x)/2.0f, (lEyeCo.y+lEyeCi.y)/2.0f));
+	landmarks.insert(lEyeCenter);
+
 	path imageName = landmarkFilePath.stem();
 	allLandmarks.insert(make_pair(imageName, landmarks));
 	return allLandmarks;

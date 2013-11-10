@@ -43,7 +43,7 @@ public:
 
 	vector<path> getNames() const;
 
-	const LandmarkCollection& getLandmarks() const;
+	const LandmarkCollection getLandmarks() const;
 
 private:
 

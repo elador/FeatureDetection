@@ -53,7 +53,7 @@ vector<path> NamedLabeledImageSource::getNames() const
 	return imageSource->getNames();
 }
 
-const LandmarkCollection& NamedLabeledImageSource::getLandmarks() const {
+const LandmarkCollection NamedLabeledImageSource::getLandmarks() const {
 	return landmarkSource->get(imageSource->getName());
 }
 

@@ -48,7 +48,7 @@ public:
 	 *
 	 * @return The landmarks of the current image (that may be empty if no data could be retrieved).
 	 */
-	virtual const LandmarkCollection& getLandmarks() const = 0;
+	virtual const LandmarkCollection getLandmarks() const = 0;
 };
 
 } /* namespace imageio */
