@@ -11,7 +11,7 @@
 #include "imagelogging/ImageLoggerFactory.hpp"
 
 #include "opencv2/highgui/highgui.hpp"
-//#include "boost/iterator/indirect_iterator.hpp"
+
 #include <algorithm>
 #include <functional>
 
@@ -19,7 +19,6 @@ using logging::Logger;
 using logging::LoggerFactory;
 using imagelogging::ImageLogger;
 using imagelogging::ImageLoggerFactory;
-//using boost::make_indirect_iterator;
 using std::sort;
 using std::greater;
 
@@ -58,7 +57,7 @@ vector<shared_ptr<ClassifiedPatch>> FiveStageSlidingWindowDetector::detect(const
 	ImageLogger imageLogger = ImageLoggers->getLogger("detection");
 
 	// Log the original image?
-	
+
 	// WVM stage
 	classifiedPatches = slidingWindowDetector->detect(image);
 	Mat imgWvm = image.clone();
@@ -147,7 +146,6 @@ vector<shared_ptr<ClassifiedPatch>> FiveStageSlidingWindowDetector::detect(const
 	imageLogger.intermediate(imgSvmPos, bind(drawBoxes, imgSvmPos, svmPatchesPositive), "03svmpos");
 
 	// The highest one of all the positively classified SVM patches
-	//sort(make_indirect_iterator(svmPatches.begin()), make_indirect_iterator(svmPatches.end()), greater<ClassifiedPatch>());
 	// TODO: Move to a function NMS or similar...? Similar than OE? Is there a family of functions that work on a vector of patches or classifiedPatches?
 	sort(svmPatchesPositive.begin(), svmPatchesPositive.end(), [](shared_ptr<ClassifiedPatch> a, shared_ptr<ClassifiedPatch> b) { return *a > *b; });
 	vector<shared_ptr<ClassifiedPatch>> svmPatchesMaxPositive;

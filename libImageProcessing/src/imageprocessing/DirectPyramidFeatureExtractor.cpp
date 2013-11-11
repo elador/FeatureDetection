@@ -8,11 +8,9 @@
 #include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
 #include "imageprocessing/Patch.hpp"
 #include "imageprocessing/ChainedFilter.hpp"
-#include "boost/iterator/indirect_iterator.hpp"
 #include <stdexcept>
 
 using cv::Point;
-using boost::make_indirect_iterator;
 using std::make_shared;
 using std::invalid_argument;
 
@@ -42,8 +40,8 @@ void DirectPyramidFeatureExtractor::addPatchFilter(shared_ptr<ImageFilter> filte
 vector<Size> DirectPyramidFeatureExtractor::getPatchSizes() const {
 	const vector<shared_ptr<ImagePyramidLayer>>& layers = pyramid->getLayers();
 	vector<Size> sizes;
-	sizes.resize(layers.size());
-	for (auto layer = make_indirect_iterator(layers.begin()); layer != make_indirect_iterator(layers.end()); ++layer)
+	sizes.reserve(layers.size());
+	for (const auto& layer : layers)
 		sizes.push_back(Size(layer->getOriginal(patchWidth), layer->getOriginal(patchHeight)));
 	return sizes;
 }

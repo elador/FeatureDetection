@@ -88,7 +88,8 @@ public:
 	 */
 	vector<Mat> calculateProbabilityMaps(const Mat& image);
 
-
+	// Todo: I think we shouldn't expose this function, because the featureExtractor is not up-to-date, as
+	// long as detect(...) is not called? Why was this needed in the first place?
 	const shared_ptr<PyramidFeatureExtractor> getPyramidFeatureExtractor() const {
 		return featureExtractor;
 	}
