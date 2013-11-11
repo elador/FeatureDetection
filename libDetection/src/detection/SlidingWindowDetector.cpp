@@ -11,14 +11,15 @@
 #include "imageprocessing/VersionedImage.hpp"
 #include "classification/ProbabilisticClassifier.hpp"
 #include "detection/ClassifiedPatch.hpp"
+#include "imagelogging/ImageLoggerFactory.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
-#include <iostream>
-
 using imageprocessing::PyramidFeatureExtractor;
+using imagelogging::ImageLogger;
+using imagelogging::ImageLoggerFactory;
 using std::make_shared;
 
 namespace detection {
@@ -29,15 +30,22 @@ SlidingWindowDetector::SlidingWindowDetector(shared_ptr<ProbabilisticClassifier>
 
 }
 
+void drawRects(Mat image, vector<cv::Size> patchSizes)
+{
+	for (const auto& p : patchSizes) {
+		cv::rectangle(image, cv::Rect(0, 0, p.width, p.height), cv::Scalar(0.0, 0.0, 0.0));
+	}
+}
+
 vector<shared_ptr<ClassifiedPatch>> SlidingWindowDetector::detect(const Mat& image)
 {
 	featureExtractor->update(image);
-	// hacked-in to show the patch-sizes: TODO: Better solution (ImgLogger)
+	// Log the scales on which we are detecting:
 	vector<cv::Size> patchSizes = featureExtractor->getPatchSizes();
-	Mat tmp = image.clone();
-	for (const auto& p : patchSizes) {
-		cv::rectangle(tmp, cv::Rect(0, 0, p.width, p.height), cv::Scalar(0.0f, 0.0f, 0.0f));
-	}
+	ImageLogger imageLogger = ImageLoggers->getLogger("detection");
+	Mat scalesImage = image.clone();
+	imageLogger.intermediate(scalesImage, bind(drawRects, scalesImage, patchSizes), "00scales"); // Note: Another option: We could "send" the logger the scale-info here. It could then draw it into the output image, depending on a config-flag if it should draw it. Optimally: Only get & send the scale-info if loglevel>xyz... i.e. the info is actually outputted. But that kind of is another concept than the current loglevels, e.g. it is a separate switch...
+
 	return detect();
 }
 

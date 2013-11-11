@@ -107,7 +107,7 @@ void ImagePyramid::update() {
 			incrementalScaleFactor = sourcePyramid->incrementalScaleFactor;
 			layers.clear();
 			const vector<shared_ptr<ImagePyramidLayer>>& sourceLayers = sourcePyramid->layers;
-			for (auto layer = make_indirect_iterator(sourceLayers.begin()); layer != make_indirect_iterator(sourceLayers.end()); ++layer) {
+			for (auto layer = make_indirect_iterator(sourceLayers.begin()); layer != make_indirect_iterator(sourceLayers.end()); ++layer) { // Todo: make_indirect_iterator could be replaced by C++11 range-based for-loop?
 				if (layer->getScaleFactor() > maxScaleFactor)
 					continue;
 				if (layer->getScaleFactor() < minScaleFactor)
@@ -175,8 +175,8 @@ const shared_ptr<ImagePyramidLayer> ImagePyramid::getLayer(double scaleFactor) c
 
 vector<Size> ImagePyramid::getLayerSizes() const {
 	vector<Size> sizes;
-	sizes.resize(layers.size());
-	for (auto layer = make_indirect_iterator(layers.begin()); layer != make_indirect_iterator(layers.end()); ++layer)
+	sizes.reserve(layers.size());
+	for (const auto& layer : layers)
 		sizes.push_back(layer->getSize());
 	return sizes;
 }

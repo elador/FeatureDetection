@@ -419,7 +419,8 @@ int main(int argc, char *argv[])
 	unordered_map<string, shared_ptr<Detector>> featureDetectors;
 
 	//shapemodels::MorphableModel mm = shapemodels::MorphableModel::loadOldBaselH5Model("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\featurePoints_head_newfmt.txt");
-	shapemodels::MorphableModel mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
+	//shapemodels::MorphableModel mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
+	shapemodels::MorphableModel mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\SurreyLowResGuosheng\\NON3448\\ShpVtxModelBin_NON3448.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
 
 	shapemodels::FeaturePointsRANSAC rnsc;
 
