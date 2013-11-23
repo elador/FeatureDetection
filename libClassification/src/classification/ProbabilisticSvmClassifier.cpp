@@ -72,6 +72,7 @@ shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadFromMatla
 				logisticB = matdata[0];
 				logisticA = matdata[1];
 			}
+			// TODO delete *matdata and *dim? -> No I don't think so, no 'new'
 			mxDestroyArray(pmxarray);
 		}
 		matClose(pmatfile);

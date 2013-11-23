@@ -137,6 +137,29 @@ vector<Vec2f> RenderDevice::projectVertexList(vector<Vec4f> vertexList)
 	return pointList;
 }
 
+std::pair<Vec2f, bool> RenderDevice::projectVertexVis(Vec4f vertex)
+{
+	Mat worldSpace = worldTransform * Mat(vertex);
+	Mat camSpace = viewTransform * worldSpace;
+	Mat normalizedViewingVolume = projectionTransform * camSpace;
+
+	// project from 4D to 2D window position with depth value in z coordinate
+	Vec4f normViewVolVec = matToColVec4f(normalizedViewingVolume);
+	normViewVolVec = normViewVolVec / normViewVolVec[3];	// divide by w
+	Mat windowCoords = windowTransform * Mat(normViewVolVec);	// places the vec as a column in the matrix
+	Vec4f windowCoordsVec = matToColVec4f(windowCoords);
+
+	bool visibility = true;
+	double zAtVertexLocation = depthBuffer.at<double>(static_cast<int>(windowCoordsVec[1]), static_cast<int>(windowCoordsVec[0]));
+	if (windowCoordsVec[3] < zAtVertexLocation) {
+		visibility = false;
+	}
+
+	Vec2f p = Vec2f(windowCoordsVec[0], windowCoordsVec[1]);
+
+	return std::make_pair(p, visibility);
+}
+
 void RenderDevice::resetBuffers()
 {
 	colorBuffer = Mat::zeros(screenHeight, screenWidth, CV_8UC4);

@@ -59,6 +59,7 @@ public:
 	// Render... Does not do any clipping.
 	Vec2f projectVertex(Vec4f vertex);
 	vector<Vec2f> projectVertexList(vector<Vec4f> vertexList);
+	std::pair<Vec2f, bool> projectVertexVis(Vec4f vertex);
 	void renderLine(Vec4f p0, Vec4f p1, Scalar color);
 	void renderLM(Vec4f p0, Scalar color);
 	void renderMesh(Mesh mesh);

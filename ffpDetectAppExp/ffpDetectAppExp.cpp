@@ -44,7 +44,6 @@
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
 #include "boost/program_options.hpp"
-#include "boost/iterator/indirect_iterator.hpp"
 #include "boost/property_tree/ptree.hpp"
 #include "boost/property_tree/info_parser.hpp"
 #include "boost/algorithm/string.hpp"
@@ -110,7 +109,6 @@ using logging::LoggerFactory;
 using logging::loglevel;
 using imagelogging::ImageLogger;
 using imagelogging::ImageLoggerFactory;
-using boost::make_indirect_iterator;
 using boost::property_tree::ptree;
 using boost::property_tree::info_parser::read_info;
 using boost::filesystem::path;
@@ -206,6 +204,8 @@ Mat patchToMask(shared_ptr<const Patch> patch, Mat mask)
 	}
 	return mask;
 }
+
+void doNothing() {};
 
 template<class T>
 ostream& operator<<(ostream& os, const vector<T>& v)
@@ -446,7 +446,7 @@ int main(int argc, char *argv[])
 				shared_ptr<ProbabilisticSvmClassifier> secondClassifier = ProbabilisticSvmClassifier::load(secondClassifierNode);
 
 				//pwvm->getWvm()->setLimitReliabilityFilter(-0.5f);
-				//psvm->getSvm()->setThreshold(-1.0f);	// TODO read this from the config
+				secondClassifier->getSvm()->setThreshold(-1.2f);	// TODO read this from the config
 
 				shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(oeCfg.get<float>("dist", 5.0f), oeCfg.get<float>("ratio", 0.0f));
 
@@ -687,15 +687,22 @@ int main(int argc, char *argv[])
 		map<string, shared_ptr<imageprocessing::Patch>> resultLms;
 		if (facePatches.size() > 1 && featureDetectors.size() > 0) {
 		
+			Mat ffdMaxPosImg = img.clone();
 			map<string, vector<shared_ptr<ClassifiedPatch>>> allFeaturePatches;
 			for (const auto& detector : featureDetectors) {
 				ImageLoggers->getLogger("detection").setCurrentImageName(labeledImageSource->getName().stem().string() + "_" + detector.first);
 				vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img, facePatches[0]->getPatch()->getBounds());
 
-				//shared_ptr<PyramidFeatureExtractor> pfe = detector.second->getPyramidFeatureExtractor();
-				//drawScales(ffdResultImg, 20, 20, pfe->getMinScaleFactor(), pfe->getMaxScaleFactor());
-				allFeaturePatches.insert(make_pair(detector.second->landmark, resultingPatches)); // be careful if we want to use detector.first (its name) or detector.second->landmark
+				allFeaturePatches.insert(make_pair(detector.second->landmark, resultingPatches)); // be careful whether we want to use detector.first (its name) or detector.second->landmark
+				if (resultingPatches.size() > 0) {
+					shared_ptr<ModelLandmark> maxPos = make_shared<ModelLandmark>(detector.second->landmark, resultingPatches[0]->getPatch()->getX(), resultingPatches[0]->getPatch()->getY());
+					maxPos->draw(ffdMaxPosImg);
+				}	
 			}
+			// Log the image with the max positive of every feature
+			ImageLogger appImageLogger = ImageLoggers->getLogger("app");
+			appImageLogger.setCurrentImageName(labeledImageSource->getName().stem().string());
+			appImageLogger.intermediate(ffdMaxPosImg, doNothing, "AllFfpMaxPos");
 
 			// Tmp: Convert it to current map<string, vector<shared_ptr<imageprocessing::Patch>>> format
 			map<string, vector<shared_ptr<imageprocessing::Patch>>> landmarkData2;
@@ -709,14 +716,14 @@ int main(int argc, char *argv[])
 
 			rnscnew.setLandmarks(landmarkData2); // Should better use .run(landmarkData2); Clarity etc
 			Mat rnsacImg = img.clone();
-			//map<string, shared_ptr<imageprocessing::Patch>> resultLms = rnscnew.run(rnsacImg, 30.0f, 1000, 4, 3); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this with only the STL? (probably)
+			map<string, shared_ptr<imageprocessing::Patch>> resultLms = rnscnew.run(rnsacImg, 30.0f, 1000, 4, 3); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this with only the STL? (probably)
 
-			
+			/*
 			resultLms.insert(make_pair("left.lips.corner", landmarkData2.at("left.lips.corner")[0]));
 			resultLms.insert(make_pair("right.lips.corner", landmarkData2.at("right.lips.corner")[0]));
 			resultLms.insert(make_pair("left.eye.pupil.center", landmarkData2.at("left.eye.pupil.center")[0]));
 			resultLms.insert(make_pair("right.eye.pupil.center", landmarkData2.at("right.eye.pupil.center")[0]));
-
+			*/
 			for (const auto& lm : resultLms) {
 				drawFfpsCircle(img, make_pair(lm.first, Point2f(lm.second->getX(), lm.second->getY())));
 				drawFfpsText(img, make_pair(lm.first, Point2f(lm.second->getX(), lm.second->getY())));
@@ -777,21 +784,25 @@ int main(int argc, char *argv[])
 			// Loop through our detected landmarks (top candidate), calculate the error w.r.t. the ground truth
 			// What if we detect a LM (false-positive), but it's not in the ground truth?
 			for (const auto& lm : resultLms) {
-				stats.landmarkNames.push_back(lm.first);
 				shared_ptr<imageprocessing::Patch> p = lm.second;
 				shared_ptr<imageio::ModelLandmark> detected = make_shared<imageio::ModelLandmark>(lm.first, p->getX(), p->getY());
-				shared_ptr<imageio::Landmark> gt = groundtruth.getLandmark(lm.first); // throws when LM not found
-				float pixelError = cv::norm(detected->getPosition2D(), gt->getPosition2D(), cv::NORM_L2);
-				stats.landmarkPixelError.emplace_back(pixelError);
-				if (stats.interEyeDistance > 0.0f) { // we could/should use detected->isClose(gt, ied?); ? Or maybe calculate that later?
-					if (pixelError <= stats.interEyeDistance/(10.0f)) { // is the error less than 10% of the ied? (should be <5 or something)
+				try {
+					shared_ptr<imageio::Landmark> gt = groundtruth.getLandmark(lm.first); // throws when LM not found
+					stats.landmarkNames.push_back(lm.first);
+					float pixelError = cv::norm(detected->getPosition2D(), gt->getPosition2D(), cv::NORM_L2);
+					stats.landmarkPixelError.emplace_back(pixelError);
+					if (stats.interEyeDistance > 0.0f) { // we could/should use detected->isClose(gt, ied?); ? Or maybe calculate that later?
+						if (pixelError <= stats.interEyeDistance/(10.0f)) { // is the error less than 10% of the ied? (should be <5 or something)
+							stats.landmarkDetectionResult.push_back(imageStatistic::DetectionType::TACC);
+						} else {
+							stats.landmarkDetectionResult.push_back(imageStatistic::DetectionType::FACC);
+						}
+					} else { // no IED available, just use a static value of 10 (?) pixel
+						// TODO
 						stats.landmarkDetectionResult.push_back(imageStatistic::DetectionType::TACC);
-					} else {
-						stats.landmarkDetectionResult.push_back(imageStatistic::DetectionType::FACC);
 					}
-				} else { // no IED available, just use a static value of 10 (?) pixel
-					// TODO
-					stats.landmarkDetectionResult.push_back(imageStatistic::DetectionType::TACC);
+				} catch(invalid_argument& e) { // a ground truth landmark was not found
+					// just don't record the stats for it
 				}
 			}
 		}

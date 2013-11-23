@@ -60,6 +60,12 @@ vector<shared_ptr<ClassifiedPatch>> SlidingWindowDetector::detect(const Mat& ima
 	*/
 	featureExtractor->update(image);
 
+	// Log the scales on which we are detecting: (Note: 1) code-duplication, see above. 2) This could even go into the extactor?)
+	vector<cv::Size> patchSizes = featureExtractor->getPatchSizes();
+	ImageLogger imageLogger = ImageLoggers->getLogger("detection");
+	Mat scalesImage = image.clone();
+	imageLogger.intermediate(scalesImage, bind(drawRects, scalesImage, patchSizes), "00scales"); // Note: Another option: We could "send" the logger the scale-info here. It could then draw it into the output image, depending on a config-flag if it should draw it. Optimally: Only get & send the scale-info if loglevel>xyz... i.e. the info is actually outputted. But that kind of is another concept than the current loglevels, e.g. it is a separate switch...
+
 	vector<shared_ptr<ClassifiedPatch>> classifiedPatches;
 	vector<shared_ptr<Patch>> pyramidPatches = featureExtractor->extract(stepSizeX, stepSizeY, roi);
 

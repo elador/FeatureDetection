@@ -81,6 +81,7 @@ shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadFromMatla
 			logisticB = matdata[0];
 			logisticA = matdata[1];
 		}
+		// Todo: delete *matdata and *dim??
 		mxDestroyArray(pmxarray);
 	}
 	matClose(pmatfile);
