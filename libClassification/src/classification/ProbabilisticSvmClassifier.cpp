@@ -42,7 +42,7 @@ void ProbabilisticSvmClassifier::setLogisticParameters(double logisticA, double 
 	this->logisticB = logisticB;
 }
 
-shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadFromMatlab(const string& classifierFilename, const string& logisticFilename)
+pair<double, double> ProbabilisticSvmClassifier::loadSigmoidParamsFromMatlab(const string& logisticFilename)
 {
 	// Load sigmoid stuff:
 	double logisticA = 0;
@@ -78,9 +78,15 @@ shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadFromMatla
 		matClose(pmatfile);
 	}
 
+	return make_pair(logisticA, logisticB);
+}
+
+shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadFromMatlab(const string& classifierFilename, const string& logisticFilename)
+{
+	pair<double, double> sigmoidParams = loadSigmoidParamsFromMatlab(logisticFilename);
 	// Load the detector and thresholds:
 	shared_ptr<SvmClassifier> svm = SvmClassifier::loadFromMatlab(classifierFilename);
-	return make_shared<ProbabilisticSvmClassifier>(svm, logisticA, logisticB);
+	return make_shared<ProbabilisticSvmClassifier>(svm, sigmoidParams.first, sigmoidParams.second);
 }
 
 shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::load(const ptree& subtree)
