@@ -24,7 +24,7 @@ namespace shapemodels {
 
 // Idea: in evaluateNewPoint, we could use the pixel-data in the patch as an additional indicator if it's a good fit
 
-map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Mat img, float thresholdForDatapointFitsModel/*=30.0f*/, int numIter/*=0*/, int numClosePointsRequiredForGoodFit/*=4*/, int minPointsToFitModel/*=3*/)
+map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Mat img, float thresholdForDatapointFitsModel/*=10.0f*/, int numIter/*=5000*/, int numClosePointsRequiredForGoodFit/*=4*/, int minPointsToFitModel/*=3*/)
 {
 	//The whole algorithm here. evaluator only evaluates 1 combo. All logic here. Selector provides functions to get random items (1 or several) etc.
 
@@ -34,11 +34,6 @@ map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Ma
 	//	featureSelection = selector->select();
 	//} while (evaluator->evaluate(featureSelection));
 	
-	numIter = 100;
-	minPointsToFitModel = 3;
-	bool useSVD = false; // => to eval.
-	thresholdForDatapointFitsModel = 30.0f; // same ?
-
 	unsigned int iterations = 0;
 	vector<vector<pair<string, Point2f>>> bestConsensusSets;
 	float best_error = std::numeric_limits<float>::max();

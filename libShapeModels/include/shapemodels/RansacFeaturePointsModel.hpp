@@ -41,7 +41,7 @@ public:
 	 *
 	 * @param[in] param The parameter.
 	 */
-	map<string, shared_ptr<imageprocessing::Patch>> run(Mat img, float thresholdForDatapointFitsModel/*=30.0f*/, int numIter/*=0*/, int numClosePointsRequiredForGoodFit/*=4*/, int minPointsToFitModel/*=3*/);
+	map<string, shared_ptr<imageprocessing::Patch>> run(Mat img, float thresholdForDatapointFitsModel=10.0f, int numIter=5000, int numClosePointsRequiredForGoodFit=4, int minPointsToFitModel=3);
 
 private:
 

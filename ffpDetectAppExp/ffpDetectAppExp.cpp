@@ -422,8 +422,6 @@ int main(int argc, char *argv[])
 	//shapemodels::MorphableModel mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
 	shapemodels::MorphableModel mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\SurreyLowResGuosheng\\NON3448\\ShpVtxModelBin_NON3448.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
 
-	shapemodels::FeaturePointsRANSAC rnsc;
-
 	unique_ptr<shapemodels::FeaturePointsSelector> sel(new shapemodels::FeaturePointsSelector());
 	unique_ptr<shapemodels::FeaturePointsEvaluator> eva(new shapemodels::FeaturePointsEvaluator(mm));
 	shapemodels::RansacFeaturePointsModel rnscnew(std::move(sel), std::move(eva));
@@ -711,7 +709,7 @@ int main(int argc, char *argv[])
 
 			rnscnew.setLandmarks(landmarkData2); // Should better use .run(landmarkData2); Clarity etc
 			Mat rnsacImg = img.clone();
-			map<string, shared_ptr<imageprocessing::Patch>> resultLms = rnscnew.run(rnsacImg, 30.0f, 1000, 4, 3); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this with only the STL? (probably)
+			map<string, shared_ptr<imageprocessing::Patch>> resultLms = rnscnew.run(rnsacImg, 10.0f, 5000); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this with only the STL? (probably)
 
 			/*
 			resultLms.insert(make_pair("left.lips.corner", landmarkData2.at("left.lips.corner")[0]));

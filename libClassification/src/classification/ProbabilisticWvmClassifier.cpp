@@ -104,7 +104,6 @@ shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::load(const pt
 	shared_ptr<WvmClassifier> wvm = WvmClassifier::loadFromMatlab(subtree.get<string>("classifierFile"), subtree.get<string>("thresholdsFile"));
 	shared_ptr<ProbabilisticWvmClassifier> pwvm = make_shared<ProbabilisticWvmClassifier>(wvm, sigmoidParams.first, sigmoidParams.second);
 
-	//pwvm->getWvm()->setThreshold(0.0f);
 	pwvm->getWvm()->setLimitReliabilityFilter(subtree.get("threshold", 0.0f));
 
 	return pwvm;
