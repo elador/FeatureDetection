@@ -92,20 +92,28 @@ shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::loadFromMatla
 shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::load(const ptree& subtree)
 {
 	path classifierFile = subtree.get<path>("classifierFile");
+	shared_ptr<ProbabilisticSvmClassifier> psvm;
 	if (classifierFile.extension() == ".mat") {
-		return loadFromMatlab(classifierFile.string(), subtree.get<string>("thresholdsFile"));
+		psvm = loadFromMatlab(classifierFile.string(), subtree.get<string>("thresholdsFile"));
 	} else {
-		shared_ptr<SvmClassifier> svm = SvmClassifier::loadFromText(classifierFile.string());
-		svm->setThreshold(subtree.get("threshold", 0.0f)); // TODO SvmClassifier::loadText should do that
-		double logisticA = subtree.get("logisticA", 0.0);
-		double logisticB = subtree.get("logisticB", 0.0);
-		if (logisticA == 0.0 || logisticB == 0.0) {
+		shared_ptr<SvmClassifier> svm = SvmClassifier::loadFromText(classifierFile.string()); // Todo: Make a ProbabilisticSvmClassifier::loadFromText(...)
+		if (subtree.get("logisticA", 0.0) == 0.0 || subtree.get("logisticB", 0.0) == 0.0) {
 			std::cout << "Warning, one or both sigmoid parameters not set in config, using default sigmoid parameters." << std::endl; // TODO use logger
-			return make_shared<ProbabilisticSvmClassifier>(svm);
-		} else {
-			return make_shared<ProbabilisticSvmClassifier>(svm, logisticA, logisticB);
 		}
+		psvm = make_shared<ProbabilisticSvmClassifier>(svm);
 	}
+
+	// If the user sets the logistic parameters in the config, overwrite the current settings with it
+	double logisticA = subtree.get("logisticA", 0.0); // TODO: This is not so good, better use the try/catch of get(...). Because: What if the user actually sets a value of 0.0 in the config...
+	double logisticB = subtree.get("logisticB", 0.0);
+	if (logisticA != 0.0 && logisticB != 0.0) {
+		psvm->setLogisticParameters(logisticA, logisticB);
+	}
+
+	psvm->getSvm()->setThreshold(subtree.get("threshold", 0.0f));
+
+	return psvm;
+
 }
 
 } /* namespace classification */

@@ -445,9 +445,6 @@ int main(int argc, char *argv[])
 				shared_ptr<ProbabilisticWvmClassifier> firstClassifier = ProbabilisticWvmClassifier::load(firstClassifierNode); // TODO: Lots of todos here with numUsedFilters, bias, ...
 				shared_ptr<ProbabilisticSvmClassifier> secondClassifier = ProbabilisticSvmClassifier::load(secondClassifierNode);
 
-				//pwvm->getWvm()->setLimitReliabilityFilter(-0.5f);
-				secondClassifier->getSvm()->setThreshold(-1.2f);	// TODO read this from the config
-
 				shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(oeCfg.get<float>("dist", 5.0f), oeCfg.get<float>("ratio", 0.0f));
 
 				// This:
@@ -534,8 +531,6 @@ int main(int argc, char *argv[])
 					classifier = ProbabilisticSvmClassifier::load(classifierNode);
 				} 
 				
-				//psvm->getSvm()->setThreshold(-1.0f);	// TODO read this from the config
-
 				shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(classifier, featureExtractor);
 
 				det->landmark = landmarkName;
