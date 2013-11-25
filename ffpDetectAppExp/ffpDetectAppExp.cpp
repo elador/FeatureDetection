@@ -705,11 +705,12 @@ int main(int argc, char *argv[])
 					tmp.push_back(patch->getPatch());
 				}
 				landmarkData2.insert(make_pair(feature.first, tmp));
+				appLogger.debug(feature.first + " #cand: " + lexical_cast<string>(feature.second.size()));
 			}
 
 			rnscnew.setLandmarks(landmarkData2); // Should better use .run(landmarkData2); Clarity etc
 			Mat rnsacImg = img.clone();
-			map<string, shared_ptr<imageprocessing::Patch>> resultLms = rnscnew.run(rnsacImg, 10.0f, 5000); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this with only the STL? (probably)
+			map<string, shared_ptr<imageprocessing::Patch>> resultLms = rnscnew.run(rnsacImg, 10.0f, 500); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this with only the STL? (probably)
 
 			/*
 			resultLms.insert(make_pair("left.lips.corner", landmarkData2.at("left.lips.corner")[0]));

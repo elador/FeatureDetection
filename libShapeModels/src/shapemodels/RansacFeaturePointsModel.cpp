@@ -7,6 +7,7 @@
 #include "shapemodels/RansacFeaturePointsModel.hpp"
 
 #include "logging/LoggerFactory.hpp"
+#include "boost/lexical_cast.hpp"
 
 #include <random>
 #include <set>
@@ -40,6 +41,7 @@ map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Ma
 
 	while (iterations < numIter) {
 		++iterations;
+		Loggers->getLogger("shapemodels").debug("Iteration " + boost::lexical_cast<string>(iterations));
 
 		//set<string> alreadyChosenFfps;
 		map<string, vector<shared_ptr<imageprocessing::Patch>>> landmarks = selector->getAllLandmarks();
@@ -154,8 +156,6 @@ map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Ma
 				best_error = this_error;
 			}
 		}
-		
-		Loggers->getLogger("shapemodels").debug("Finished one iteration.");
 	}
 
 	// Hmm, the bestConsensusSets is not unique? Doubled sets? (print them?) Write a comparator for two landmarks (make a landmark class?), then for two LM-sets, etc.
