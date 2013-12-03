@@ -57,7 +57,9 @@ DirectoryImageSource::DirectoryImageSource(const string& directory) : ImageSourc
 	imageExtensions.push_back("tiff");
 	imageExtensions.push_back("tif");
 	auto newFilesEnd = std::remove_if(files.begin(), files.end(), [&](const path& file) {
-		string extension = file.extension().string().substr(1);
+		string extension = file.extension().string();
+		if (extension.size() > 0)
+			extension = extension.substr(1);
 		std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
 		return std::none_of(imageExtensions.begin(), imageExtensions.end(), [&](const string& imageExtension) {
 			return imageExtension == extension;
