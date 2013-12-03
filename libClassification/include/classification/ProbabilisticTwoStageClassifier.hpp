@@ -33,7 +33,11 @@ public:
 
 	virtual ~ProbabilisticTwoStageClassifier();
 
-	pair<bool, double> classify(const Mat& featureVector) const;
+	bool classify(const Mat& featureVector) const;
+
+	pair<bool, double> getConfidence(const Mat& featureVector) const;
+
+	pair<bool, double> getProbability(const Mat& featureVector) const;
 
 private:
 

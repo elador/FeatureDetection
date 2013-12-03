@@ -9,7 +9,9 @@
 #define LINEARKERNEL_HPP_
 
 #include "classification/Kernel.hpp"
-#include "svm.h"
+#include "classification/KernelVisitor.hpp"
+
+using cv::Mat;
 
 namespace classification {
 
@@ -30,8 +32,8 @@ public:
 		return lhs.dot(rhs);
 	}
 
-	void setLibSvmParams(struct svm_parameter *param) const {
-		param->kernel_type = LINEAR;
+	void accept(KernelVisitor& visitor) const {
+		visitor.visit(*this);
 	}
 };
 

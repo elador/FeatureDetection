@@ -41,7 +41,7 @@ void SingleClassifierModel::evaluate(Sample& sample) {
 pair<bool, double> SingleClassifierModel::classify(shared_ptr<Patch> patch) {
 	auto resIt = cache.find(patch);
 	if (resIt == cache.end()) {
-		pair<bool, double> result = classifier->classify(patch->getData());
+		pair<bool, double> result = classifier->getProbability(patch->getData());
 		cache.emplace(patch, result);
 		return result;
 	}

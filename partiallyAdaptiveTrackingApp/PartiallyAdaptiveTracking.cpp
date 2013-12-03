@@ -9,6 +9,7 @@
 #include "logging/LoggerFactory.hpp"
 #include "logging/Logger.hpp"
 #include "logging/ConsoleAppender.hpp"
+#include "imageio/CameraImageSource.hpp"
 #include "imageio/VideoImageSource.hpp"
 #include "imageio/KinectImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
@@ -26,10 +27,12 @@
 #include "classification/ProbabilisticSvmClassifier.hpp"
 #include "classification/RbfKernel.hpp"
 #include "classification/PolynomialKernel.hpp"
-#include "classification/FrameBasedTrainableSvmClassifier.hpp"
+#include "classification/AgeBasedExampleManagement.hpp"
+#include "classification/ConfidenceBasedExampleManagement.hpp"
+#include "classification/FrameBasedExampleManagement.hpp"
 #include "classification/TrainableProbabilisticTwoStageClassifier.hpp"
-#include "classification/FixedSizeTrainableSvmClassifier.hpp"
 #include "classification/FixedTrainableProbabilisticSvmClassifier.hpp"
+#include "libsvm/LibSvmClassifier.hpp"
 #include "condensation/ResamplingSampler.hpp"
 #include "condensation/GridSampler.hpp"
 #include "condensation/LowVarianceSampling.hpp"
@@ -51,6 +54,7 @@
 using namespace logging;
 using namespace imageprocessing;
 using namespace classification;
+using namespace libsvm;
 using namespace std::chrono;
 using boost::property_tree::info_parser::read_info;
 using std::milli;
@@ -82,13 +86,22 @@ shared_ptr<Kernel> PartiallyAdaptiveTracking::createKernel(ptree config) {
 }
 
 shared_ptr<TrainableSvmClassifier> PartiallyAdaptiveTracking::createTrainableSvm(shared_ptr<Kernel> kernel, ptree config) {
-	shared_ptr<TrainableSvmClassifier> trainableSvm;
+	shared_ptr<LibSvmClassifier> trainableSvm;
 	if (config.get_value<string>() == "fixedsize") {
-		trainableSvm = make_shared<FixedSizeTrainableSvmClassifier>(kernel, config.get<double>("constraintsViolationCosts"),
-				config.get<unsigned int>("positiveExamples"), config.get<unsigned int>("negativeExamples"), config.get<unsigned int>("minPositiveExamples"));
+		trainableSvm = make_shared<LibSvmClassifier>(
+					kernel, config.get<double>("constraintsViolationCosts"));
+		trainableSvm->setPositiveExampleManagement(unique_ptr<ExampleManagement>(
+				new ConfidenceBasedExampleManagement(trainableSvm, config.get<size_t>("positiveExamples"), config.get<size_t>("minPositiveExamples"))));
+		trainableSvm->setNegativeExampleManagement(unique_ptr<ExampleManagement>(
+				new AgeBasedExampleManagement(config.get<size_t>("negativeExamples"))));
 	} else if (config.get_value<string>() == "framebased") {
-		trainableSvm = make_shared<FrameBasedTrainableSvmClassifier>(kernel, config.get<double>("constraintsViolationCosts"),
-				config.get<int>("frameLength"), config.get<float>("minAvgSamples"));
+		size_t frameLength = config.get<size_t>("frameLength");
+		size_t minExamples = round(frameLength * config.get<float>("minAvgSamples"));
+		trainableSvm = make_shared<LibSvmClassifier>(kernel, config.get<double>("constraintsViolationCosts"));
+		trainableSvm->setPositiveExampleManagement(
+				unique_ptr<ExampleManagement>(new FrameBasedExampleManagement(frameLength, minExamples)));
+		trainableSvm->setNegativeExampleManagement(
+				unique_ptr<ExampleManagement>(new FrameBasedExampleManagement(frameLength, 0)));
 	} else {
 		throw invalid_argument("PartiallyAdaptiveTracking: invalid training type: " + config.get_value<string>());
 	}
@@ -103,7 +116,7 @@ shared_ptr<TrainableSvmClassifier> PartiallyAdaptiveTracking::createTrainableSvm
 shared_ptr<TrainableProbabilisticClassifier> PartiallyAdaptiveTracking::createClassifier(
 		shared_ptr<TrainableSvmClassifier> trainableSvm, ptree config) {
 	if (config.get_value<string>() == "default")
-		return make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm);
+		return make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm, 20, 50);
 	else if (config.get_value<string>() == "fixed")
 		return make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm);
 	else
@@ -150,12 +163,22 @@ void PartiallyAdaptiveTracking::initTracking(ptree config) {
 		adaptiveMeasurementModel = make_shared<SelfLearningMeasurementModel>(adaptiveFeatureExtractor, classifier,
 				config.get<double>("measurement.adaptive.positiveThreshold"), config.get<double>("measurement.adaptive.negativeThreshold"));
 	} else if (config.get<string>("measurement.adaptive") == "positionDependent") {
-		adaptiveMeasurementModel = make_shared<PositionDependentMeasurementModel>(adaptiveFeatureExtractor, classifier,
-				config.get<int>("measurement.adaptive.startFrameCount"), config.get<int>("measurement.adaptive.stopFrameCount"),
-				config.get<float>("measurement.adaptive.targetThreshold"), config.get<float>("measurement.adaptive.confidenceThreshold"),
-				config.get<float>("measurement.adaptive.positiveOffsetFactor"), config.get<float>("measurement.adaptive.negativeOffsetFactor"),
-				config.get<bool>("measurement.adaptive.sampleNegativesAroundTarget"), config.get<bool>("measurement.adaptive.sampleFalsePositives"),
-				config.get<unsigned int>("measurement.adaptive.randomNegatives"), config.get<bool>("adaptive.measurement.exploitSymmetry"));
+		shared_ptr<PositionDependentMeasurementModel> model = make_shared<PositionDependentMeasurementModel>(adaptiveFeatureExtractor, classifier);
+		model->setFrameCounts(
+				config.get<int>("measurement.adaptive.startFrameCount"),
+				config.get<int>("measurement.adaptive.stopFrameCount"));
+		model->setThresholds(
+				config.get<float>("measurement.adaptive.targetThreshold"),
+				config.get<float>("measurement.adaptive.confidenceThreshold"));
+		model->setOffsetFactors(
+				config.get<float>("measurement.adaptive.positiveOffsetFactor"),
+				config.get<float>("measurement.adaptive.negativeOffsetFactor"));
+		model->setSamplingProperties(
+				config.get<unsigned int>("measurement.adaptive.sampleNegativesAroundTarget"),
+				config.get<unsigned int>("measurement.adaptive.sampleAdditionalNegatives"),
+				config.get<unsigned int>("measurement.adaptive.sampleTestNegatives"),
+				config.get<bool>("measurement.adaptive.exploitSymmetry"));
+		adaptiveMeasurementModel = model;
 	} else {
 		throw invalid_argument("PartiallyAdaptiveTracking: invalid adaptive measurement model type: " + config.get<string>("measurement.adaptive"));
 	}
@@ -392,7 +415,7 @@ int main(int argc, char *argv[]) {
 
 	unique_ptr<ImageSource> imageSource;
 	if (useCamera)
-		imageSource.reset(new VideoImageSource(deviceId));
+		imageSource.reset(new CameraImageSource(deviceId));
 	else if (useKinect)
 		imageSource.reset(new KinectImageSource(kinectId));
 	else if (useFile)

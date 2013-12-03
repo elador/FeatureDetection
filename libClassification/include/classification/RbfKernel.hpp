@@ -11,9 +11,10 @@
 #define RBFKERNEL_HPP_
 
 #include "classification/Kernel.hpp"
-#include "svm.h"
+#include "classification/KernelVisitor.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using std::invalid_argument;
 
 namespace classification {
@@ -43,9 +44,15 @@ public:
 		return exp(-gamma * computeSumOfSquaredDifferences(lhs, rhs));
 	}
 
-	void setLibSvmParams(struct svm_parameter *param) const {
-		param->kernel_type = RBF;
-		param->gamma = gamma;
+	void accept(KernelVisitor& visitor) const {
+		visitor.visit(*this);
+	}
+
+	/**
+	 * @return The parameter &gamma; of the radial basis function exp(-&gamma; * |u - v|²).
+	 */
+	double getGamma() const {
+		return gamma;
 	}
 
 private:

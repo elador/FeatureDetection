@@ -45,8 +45,9 @@ include_directories( ${Logging_SOURCE_DIR}/include )
 include_directories( ${ImageIO_SOURCE_DIR}/include )
 include_directories( ${ImageProcessing_SOURCE_DIR}/include )
 include_directories( ${Classification_SOURCE_DIR}/include )
+include_directories( ${SVM_SOURCE_DIR}/include )
 include_directories( ${Detection_SOURCE_DIR}/include )
 
 # make executable
 ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection Classification ImageProcessing ImageIO ${KINECT_LIBNAME} Logging ${OpenCV_LIBS} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${Boost_LIBRARIES} )
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection SVM Classification ImageProcessing ImageIO ${KINECT_LIBNAME} Logging ${OpenCV_LIBS} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${Boost_LIBRARIES} )

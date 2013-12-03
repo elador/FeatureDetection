@@ -27,12 +27,22 @@ public:
 	virtual ~BinaryClassifier() {}
 
 	/**
-	 * Classifies a feature vector.
+	 * Determines whether a feature vector belongs to the positive class.
 	 *
 	 * @param[in] featureVector The feature vector.
 	 * @return True if the feature vector was positively classified, false otherwise.
 	 */
 	virtual bool classify(const Mat& featureVector) const = 0;
+
+	/**
+	 * Computes the classification confidence of a feature vector. The confidence value will
+	 * be high for confident classifications and low for not so confident ones, independent
+	 * of the classification result (whether positive or negative).
+	 *
+	 * @param[in] featureVector The feature vector.
+	 * @return A pair containing the binary classification result and the confidence of the classification.
+	 */
+	virtual pair<bool, double> getConfidence(const Mat& featureVector) const = 0;
 };
 
 } /* namespace classification */

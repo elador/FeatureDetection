@@ -44,8 +44,7 @@ public:
 	virtual bool retrain(const vector<Mat>& newPositiveExamples, const vector<Mat>& newNegativeExamples) = 0;
 
 	/**
-	 * Resets this classifier. May not change the classifier at all, but it should not be used
-	 * afterwards until it is re-trained.
+	 * Resets this classifier.
 	 */
 	virtual void reset() = 0;
 };

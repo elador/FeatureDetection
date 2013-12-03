@@ -13,17 +13,16 @@
 #include <memory>
 #include <vector>
 
-using cv::Mat;
-using std::unordered_map;
-using std::unique_ptr;
-using std::vector;
-
 struct svm_node;
 struct svm_parameter;
 struct svm_problem;
 struct svm_model;
 
 namespace classification {
+class Kernel;
+} /* namespace classification */
+
+namespace libsvm {
 
 /**
  * Deleter of libSVM nodes also removes the cv::Mat representation of that node within a map.
@@ -35,12 +34,12 @@ public:
 	 *
 	 * @param[in] map The map the nodes should be removed from on deletion.
 	 */
-	NodeDeleter(unordered_map<const struct svm_node*, Mat>& map);
+	NodeDeleter(std::unordered_map<const struct svm_node*, cv::Mat>& map);
 	NodeDeleter(const NodeDeleter& other);
 	NodeDeleter& operator=(const NodeDeleter& other);
 	void operator()(struct svm_node *node) const;
 private:
-	unordered_map<const struct svm_node*, Mat>& map; ///< The map the nodes should be removed from on deletion.
+	std::unordered_map<const struct svm_node*, cv::Mat>& map; ///< The map the nodes should be removed from on deletion.
 };
 
 /**
@@ -90,7 +89,7 @@ public:
 	 * @param[in] vector The feature vector.
 	 * @return The newly created libSVM node.
 	 */
-	unique_ptr<struct svm_node[], NodeDeleter> createNode(const Mat& vector) const;
+	std::unique_ptr<struct svm_node[], NodeDeleter> createNode(const cv::Mat& vector) const;
 
 	/**
 	 * Retrieves the vector to the given libSVM node. Will have a look into the map of stored vectors first. If the vector
@@ -100,7 +99,15 @@ public:
 	 * @param[in] node The libSVM node.
 	 * @return The feature vector.
 	 */
-	Mat getVector(const struct svm_node *node) const;
+	cv::Mat getVector(const struct svm_node *node) const;
+
+	/**
+	 * Sets the kernel parameters for libSVM training.
+	 *
+	 * @param[in] kernel The kernel.
+	 * @param[in] params The libSVM parameters.
+	 */
+	void setKernelParams(const classification::Kernel& kernel, struct svm_parameter *params) const;
 
 	/**
 	 * Computes the SVM output given a libSVM node.
@@ -117,7 +124,7 @@ public:
 	 * @param[in] model The libSVM model.
 	 * @return The support vectors.
 	 */
-	vector<Mat> extractSupportVectors(struct svm_model *model) const;
+	std::vector<cv::Mat> extractSupportVectors(struct svm_model *model) const;
 
 	/**
 	 * Extracts the coefficients from a libSVM model.
@@ -125,7 +132,7 @@ public:
 	 * @param[in] model The libSVM model.
 	 * @return The coefficients.
 	 */
-	vector<float> extractCoefficients(struct svm_model *model) const;
+	std::vector<float> extractCoefficients(struct svm_model *model) const;
 
 	/**
 	 * Extracts the bias from a libSVM model.
@@ -145,7 +152,7 @@ private:
 	 * @param[in] size The size of the data.
 	 */
 	template<class T>
-	void fillNode(struct svm_node *node, const Mat& vector, int size) const;
+	void fillNode(struct svm_node *node, const cv::Mat& vector, int size) const;
 
 	/**
 	 * Fills a vector with the data of a libSVM node.
@@ -155,15 +162,15 @@ private:
 	 * @param[in] size The size of the data.
 	 */
 	template<class T>
-	void fillMat(Mat& vector, const struct svm_node *node, int size) const;
+	void fillMat(cv::Mat& vector, const struct svm_node *node, int size) const;
 
 	mutable int matType; ///< The type of the support vector data.
 	mutable int dimensions; ///< The amount of dimensions of the feature vectors.
-	mutable unordered_map<const struct svm_node*, Mat> node2example; ///< Maps libSVM nodes to the training examples they were created with.
+	mutable std::unordered_map<const struct svm_node*, cv::Mat> node2example; ///< Maps libSVM nodes to the training examples they were created with.
 	NodeDeleter nodeDeleter; ///< Deleter of libSVM nodes that removes the node from the map.
 };
 
-} /* namespace classification */
+} /* namespace libsvm */
 
 
 #endif /* LIBSVMUTILS_HPP_ */

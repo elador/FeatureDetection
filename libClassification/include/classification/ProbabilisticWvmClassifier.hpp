@@ -41,21 +41,11 @@ public:
 
 	~ProbabilisticWvmClassifier();
 
-	/**
-	 * @return The actual WVM.
-	 */
-	shared_ptr<WvmClassifier> getWvm() {
-		return wvm;
-	}
+	bool classify(const Mat& featureVector) const;
 
-	/**
-	 * @return The actual WVM.
-	 */
-	const shared_ptr<WvmClassifier> getWvm() const {
-		return wvm;
-	}
+	pair<bool, double> getConfidence(const Mat& featureVector) const;
 
-	pair<bool, double> classify(const Mat& featureVector) const;
+	pair<bool, double> getProbability(const Mat& featureVector) const;
 
 	/**
 	 * Creates a new probabilistic WVM classifier from the parameters given in some Matlab file. Loads the logistic function's
@@ -77,6 +67,20 @@ public:
 	 * @return The newly created probabilistic WVM classifier.
 	 */
 	static shared_ptr<ProbabilisticWvmClassifier> load(const ptree& subtree);
+
+	/**
+	 * @return The actual WVM.
+	 */
+	shared_ptr<WvmClassifier> getWvm() {
+		return wvm;
+	}
+
+	/**
+	 * @return The actual WVM.
+	 */
+	const shared_ptr<WvmClassifier> getWvm() const {
+		return wvm;
+	}
 
 private:
 

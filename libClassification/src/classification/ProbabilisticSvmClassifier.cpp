@@ -31,7 +31,15 @@ ProbabilisticSvmClassifier::ProbabilisticSvmClassifier(shared_ptr<SvmClassifier>
 
 ProbabilisticSvmClassifier::~ProbabilisticSvmClassifier() {}
 
-pair<bool, double> ProbabilisticSvmClassifier::classify(const Mat& featureVector) const {
+bool ProbabilisticSvmClassifier::classify(const Mat& featureVector) const {
+	return svm->classify(featureVector);
+}
+
+pair<bool, double> ProbabilisticSvmClassifier::getConfidence(const Mat& featureVector) const {
+	return svm->getConfidence(featureVector);
+}
+
+pair<bool, double> ProbabilisticSvmClassifier::getProbability(const Mat& featureVector) const {
 	double hyperplaneDistance = svm->computeHyperplaneDistance(featureVector);
 	double probability = 1.0f / (1.0f + exp(logisticA + logisticB * hyperplaneDistance));
 	return make_pair(svm->classify(hyperplaneDistance), probability);

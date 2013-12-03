@@ -11,9 +11,10 @@
 #define POLYNOMIALKERNEL_HPP_
 
 #include "classification/Kernel.hpp"
-#include "svm.h"
+#include "classification/KernelVisitor.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using std::invalid_argument;
 
 namespace classification {
@@ -40,11 +41,29 @@ public:
 		return powi(alpha * lhs.dot(rhs) + constant, degree);
 	}
 
-	void setLibSvmParams(struct svm_parameter *param) const {
-		param->kernel_type = POLY;
-		param->degree = degree;
-		param->coef0 = constant;
-		param->gamma = alpha;
+	void accept(KernelVisitor& visitor) const {
+		visitor.visit(*this);
+	}
+
+	/**
+	 * @return The slope &alpha of the polynomial kernel function (&alpha; * x<sup>T</sup>y + c)<sup>d</sup>.
+	 */
+	double getAlpha() const {
+		return alpha;
+	}
+
+	/**
+	 * @return The constant term c of the polynomial kernel function (&alpha; * x<sup>T</sup>y + c)<sup>d</sup>.
+	 */
+	double getConstant() const {
+		return constant;
+	}
+
+	/**
+	 * @return The degree d of the polynomial kernel function (&alpha; * x<sup>T</sup>y + c)<sup>d</sup>.
+	 */
+	int getDegree() const {
+		return degree;
 	}
 
 private:

@@ -25,10 +25,16 @@ namespace classification {
 SvmClassifier::SvmClassifier(shared_ptr<Kernel> kernel) :
 		VectorMachineClassifier(kernel), supportVectors(), coefficients() {}
 
-SvmClassifier::~SvmClassifier() {}
-
 bool SvmClassifier::classify(const Mat& featureVector) const {
 	return classify(computeHyperplaneDistance(featureVector));
+}
+
+pair<bool, double> SvmClassifier::getConfidence(const Mat& featureVector) const {
+	double hyperplaneDistance = computeHyperplaneDistance(featureVector);
+	if (classify(hyperplaneDistance))
+		return make_pair(true, hyperplaneDistance);
+	else
+		return make_pair(false, -hyperplaneDistance);
 }
 
 bool SvmClassifier::classify(double hyperplaneDistance) const {

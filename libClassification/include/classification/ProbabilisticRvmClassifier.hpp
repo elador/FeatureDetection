@@ -47,21 +47,11 @@ public:
 
 	~ProbabilisticRvmClassifier();
 
-	/**
-	 * @return The actual RVM.
-	 */
-	shared_ptr<RvmClassifier> getRvm() {
-		return rvm;
-	}
+	bool classify(const Mat& featureVector) const;
 
-	/**
-	 * @return The actual RVM.
-	 */
-	const shared_ptr<RvmClassifier> getRvm() const {
-		return rvm;
-	}
+	pair<bool, double> getConfidence(const Mat& featureVector) const;
 
-	pair<bool, double> classify(const Mat& featureVector) const;
+	pair<bool, double> getProbability(const Mat& featureVector) const;
 
 	pair<bool, double> classifyCached(const Mat& featureVector);
 
@@ -90,6 +80,20 @@ public:
 	 * @return The newly created probabilistic RVM classifier.
 	 */
 	static shared_ptr<ProbabilisticRvmClassifier> load(const ptree& subtree);
+
+	/**
+	 * @return The actual RVM.
+	 */
+	shared_ptr<RvmClassifier> getRvm() {
+		return rvm;
+	}
+
+	/**
+	 * @return The actual RVM.
+	 */
+	const shared_ptr<RvmClassifier> getRvm() const {
+		return rvm;
+	}
 
 private:
 

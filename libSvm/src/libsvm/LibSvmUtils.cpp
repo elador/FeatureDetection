@@ -5,13 +5,20 @@
  *      Author: poschmann
  */
 
-#include "classification/LibSvmUtils.hpp"
+#include "libsvm/LibSvmUtils.hpp"
+#include "libsvm/LibSvmKernelParamSetter.hpp"
+#include "classification/Kernel.hpp"
 #include "svm.h"
 #include <stdexcept>
 
+using classification::Kernel;
+using cv::Mat;
+using std::vector;
+using std::unique_ptr;
+using std::unordered_map;
 using std::invalid_argument;
 
-namespace classification {
+namespace libsvm {
 
 LibSvmUtils::LibSvmUtils() :
 		matType(CV_32F), dimensions(0), node2example(), nodeDeleter(node2example) {}
@@ -33,7 +40,7 @@ unique_ptr<struct svm_node[], NodeDeleter> LibSvmUtils::createNode(const Mat& ve
 	else if (matType == CV_64F)
 		fillNode<double>(node.get(), vector, dimensions);
 	else
-		throw invalid_argument("TrainableSvmClassifier: vector has to be of type CV_8U, CV_32F, or CV_64F to create a node of");
+		throw invalid_argument("LibSvmUtils: vector has to be of type CV_8U, CV_32F, or CV_64F to create a node of");
 	node[dimensions].index = -1;
 	node2example.emplace(node.get(), vector);
 	return move(node);
@@ -50,9 +57,14 @@ Mat LibSvmUtils::getVector(const struct svm_node *node) const {
 		else if (matType == CV_64F)
 			fillMat<double>(vector, node, dimensions);
 		else
-			throw invalid_argument("TrainableSvmClassifier: vectors have to be of type CV_8U, CV_32F, or CV_64F");
+			throw invalid_argument("LibSvmUtils: vectors have to be of type CV_8U, CV_32F, or CV_64F");
 	}
 	return vector;
+}
+
+void LibSvmUtils::setKernelParams(const Kernel& kernel, struct svm_parameter *params) const {
+	LibSvmKernelParamSetter paramSetter(params);
+	kernel.accept(paramSetter);
 }
 
 double LibSvmUtils::computeSvmOutput(struct svm_model *model, const struct svm_node *x) const {
@@ -86,7 +98,7 @@ double LibSvmUtils::extractBias(struct svm_model *model) const {
 template<class T>
 void LibSvmUtils::fillNode(struct svm_node *node, const Mat& vector, int size) const {
 	if (!vector.isContinuous())
-		throw invalid_argument("TrainableSvmClassifier: vector has to be continuous");
+		throw invalid_argument("LibSvmUtils: vector has to be continuous");
 	const T* values = vector.ptr<T>();
 	for (int i = 0; i < size; ++i) {
 		node[i].index = i;
@@ -136,4 +148,4 @@ void ModelDeleter::operator()(struct svm_model *model) const {
 	svm_free_and_destroy_model(&model);
 }
 
-} /* namespace classification */
+} /* namespace libsvm */

@@ -53,7 +53,7 @@ void SelfLearningMeasurementModel::evaluate(Sample& sample) {
 		pair<bool, double> result;
 		auto resIt = cache.find(patch);
 		if (resIt == cache.end()) {
-			result = classifier->classify(patch->getData());
+			result = classifier->getProbability(patch->getData());
 			cache.emplace(patch, result);
 		} else {
 			result = resIt->second;

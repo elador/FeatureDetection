@@ -71,6 +71,14 @@ bool WvmClassifier::classify(const Mat& featureVector) const {
 	return classify(computeHyperplaneDistance(featureVector));
 }
 
+pair<bool, double> WvmClassifier::getConfidence(const Mat& featureVector) const {
+	pair<int, double> hyperplaneDistance = computeHyperplaneDistance(featureVector);
+	if (classify(hyperplaneDistance))
+		return make_pair(true, hyperplaneDistance.second);
+	else
+		return make_pair(false, -hyperplaneDistance.second);
+}
+
 bool WvmClassifier::classify(pair<int, double> levelAndDistance) const {
 	// TODO the following todo was moved here from the end of the getHyperplaneDistance function (was in classify before)
 	// TODO: filter statistics, nDropedOutAsNonFace[filter_level]++;

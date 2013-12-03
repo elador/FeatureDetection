@@ -48,14 +48,24 @@ public:
 
 	bool classify(const Mat& featureVector) const;
 
+	pair<bool, double> getConfidence(const Mat& featureVector) const;
+
 	/**
 	 * Determines the classification result given the distance of a feature vector to the decision hyperplane.
 	 *
-	 * @param[in] hyperplaneDistance The distance of a feature vector to the decision hyperplane.
-	 * @param[in] filterLevel The filter-level (i.e. the reduced vector in the cascade) at which to classify.
+	 * @param[in] levelAndDistance The index of the last used filter and distance of that filter level.
 	 * @return True if feature vectors of the given distance would be classified positively, false otherwise.
 	 */
-	bool classify(double hyperplaneDistance, const int filterLevel) const;
+	bool classify(pair<int, double> levelAndDistance) const;
+
+	/**
+	 * Computes the distance of a feature vector to the decision hyperplane. This is the real distance without
+	 * any influence by the offset for configuring the operating point of the RVM.
+	 *
+	 * @param[in] featureVector The feature vector.
+	 * @return A pair with the index of the last used filter and the distance to the decision hyperplane of that filter level.
+	 */
+	pair<int, double> computeHyperplaneDistance(const Mat& featureVector) const;
 
 	/**
 	 * Computes the distance of a feature vector to the decision hyperplane. This is the real distance without
@@ -65,9 +75,9 @@ public:
 	 * @param[in] filterLevel The filter-level (i.e. the reduced vector in the cascade) at which to classify.
 	 * @return The distance of the feature vector to the decision hyperplane.
 	 */
-	double computeHyperplaneDistance(const Mat& featureVector, const int filterLevel) const;
+	double computeHyperplaneDistance(const Mat& featureVector, const size_t filterLevel) const;
 
-	double computeHyperplaneDistanceCached(const Mat& featureVector, const int filterLevel, vector<double>& filterEvalCache) const;
+	double computeHyperplaneDistanceCached(const Mat& featureVector, const size_t filterLevel, vector<double>& filterEvalCache) const;
 
 	/**
 	 * Returns the number of filters (RSVs) this RVM is currently using for classifying.

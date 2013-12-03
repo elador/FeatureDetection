@@ -1,17 +1,18 @@
 /*
- * HikKernel.hpp
+ * HistogramIntersectionKernel.hpp
  *
  *  Created on: 10.06.2013
  *      Author: poschmann
  */
 
-#ifndef HIKKERNEL_HPP_
-#define HIKKERNEL_HPP_
+#ifndef HISTOGRAMINTERSECTIONKERNEL_HPP_
+#define HISTOGRAMINTERSECTIONKERNEL_HPP_
 
 #include "classification/Kernel.hpp"
-#include "svm.h"
+#include "classification/KernelVisitor.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using std::invalid_argument;
 
 namespace classification {
@@ -19,28 +20,28 @@ namespace classification {
 /**
  * Histogram intersection kernel of the form k(x, y) = sum<sub>i</sub>(min(x<sub>i</sub>, y<sub>i</sub>)).
  */
-class HikKernel : public Kernel {
+class HistogramIntersectionKernel : public Kernel {
 public:
 
 	/**
 	 * Constructs a new histogram intersection kernel.
 	 */
-	HikKernel() {}
+	HistogramIntersectionKernel() {}
 
-	~HikKernel() {}
+	~HistogramIntersectionKernel() {}
 
 	double compute(const Mat& lhs, const Mat& rhs) const {
 		if (lhs.channels() > 1 || rhs.channels() > 1)
-			throw invalid_argument("HikKernel: arguments have to have only one channel");
+			throw invalid_argument("HistogramIntersectionKernel: arguments have to have only one channel");
 		if (lhs.flags != rhs.flags)
-			throw invalid_argument("HikKernel: arguments have to have the same type");
+			throw invalid_argument("HistogramIntersectionKernel: arguments have to have the same type");
 		if (lhs.rows * lhs.cols != rhs.rows * rhs.cols)
-			throw invalid_argument("HikKernel: arguments have to have the same length");
+			throw invalid_argument("HistogramIntersectionKernel: arguments have to have the same length");
 		return computeSumOfMinimums(lhs, rhs);
 	}
 
-	void setLibSvmParams(struct svm_parameter *param) const {
-		param->kernel_type = HIK;
+	void accept(KernelVisitor& visitor) const {
+		visitor.visit(*this);
 	}
 
 private:
@@ -58,7 +59,7 @@ private:
 			case CV_32S: return computeSumOfMinimums_any<int>(lhs, rhs);
 			case CV_32F: return computeSumOfMinimums_any<float>(lhs, rhs);
 		}
-		throw invalid_argument("HikKernel: arguments have to be of type CV_8U, CV_32S or CV_32F");
+		throw invalid_argument("HistogramIntersectionKernel: arguments have to be of type CV_8U, CV_32S or CV_32F");
 	}
 
 	/**
@@ -96,4 +97,4 @@ private:
 };
 
 } /* namespace classification */
-#endif /* HIKKERNEL_HPP_ */
+#endif /* HISTOGRAMINTERSECTIONKERNEL_HPP_ */

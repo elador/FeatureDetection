@@ -10,8 +10,6 @@
 
 #include "classification/TrainableProbabilisticSvmClassifier.hpp"
 
-using std::make_pair;
-
 namespace classification {
 
 /**
@@ -22,53 +20,17 @@ class FixedTrainableProbabilisticSvmClassifier : public TrainableProbabilisticSv
 public:
 
 	/**
-	 * Constructs a new fixed trainable probabilistic SVM classifier based on an ordinary SVM.
-	 *
-	 * @param[in] trainableSvm The trainable SVM classifier.
-	 * @param[in] highProb The probability of the mean output of positive samples.
-	 * @param[in] lowProb The probability of the mean output of negative samples.
-	 * @param[in] The estimated mean SVM output of the positive samples.
-	 * @param[in] The estimated mean SVM output of the negative samples.
-	 */
-	FixedTrainableProbabilisticSvmClassifier(shared_ptr<TrainableSvmClassifier> trainableSvm,
-			double highProb = 0.95, double lowProb = 0.05, double meanPosOutput = 1.01, double meanNegOutput = -1.01) :
-				TrainableProbabilisticSvmClassifier(trainableSvm, 0, 0, highProb, lowProb) {
-		pair<double, double> logisticParameters = computeLogisticParameters(meanPosOutput, meanNegOutput);
-		logisticA = logisticParameters.first;
-		logisticB = logisticParameters.second;
-	}
-
-	/**
-	 * Constructs a new fixed trainable probabilistic SVM classifier based on a one-class SVM.
-	 *
-	 * @param[in] trainableSvm The trainable one-class SVM classifier.
-	 * @param[in] highProb The probability of the mean output of positive samples.
-	 * @param[in] lowProb The probability of the mean output of negative samples.
-	 * @param[in] The estimated mean SVM output of the positive samples.
-	 * @param[in] The estimated mean SVM output of the negative samples.
-	 */
-	FixedTrainableProbabilisticSvmClassifier(shared_ptr<TrainableOneClassSvmClassifier> trainableSvm,
-			double highProb = 0.95, double lowProb = 0.05, double meanPosOutput = 1.01, double meanNegOutput = -1.01) :
-				TrainableProbabilisticSvmClassifier(trainableSvm, 0, 0, highProb, lowProb) {
-		pair<double, double> logisticParameters = computeLogisticParameters(meanPosOutput, meanNegOutput);
-		logisticA = logisticParameters.first;
-		logisticB = logisticParameters.second;
-	}
-
-	/**
 	 * Constructs a new fixed trainable probabilistic SVM classifier.
 	 *
 	 * @param[in] trainableSvm The trainable SVM classifier.
-	 * @param[in] probabilisticSvm The actual probabilistic SVM classifier.
 	 * @param[in] highProb The probability of the mean output of positive samples.
 	 * @param[in] lowProb The probability of the mean output of negative samples.
 	 * @param[in] The estimated mean SVM output of the positive samples.
 	 * @param[in] The estimated mean SVM output of the negative samples.
 	 */
-	FixedTrainableProbabilisticSvmClassifier(
-			shared_ptr<TrainableClassifier> trainableSvm, shared_ptr<ProbabilisticSvmClassifier> probabilisticSvm,
+	FixedTrainableProbabilisticSvmClassifier(std::shared_ptr<TrainableSvmClassifier> trainableSvm,
 			double highProb = 0.95, double lowProb = 0.05, double meanPosOutput = 1.01, double meanNegOutput = -1.01) :
-				TrainableProbabilisticSvmClassifier(trainableSvm, probabilisticSvm, 0, 0, highProb, lowProb) {
+					TrainableProbabilisticSvmClassifier(trainableSvm, 0, 0, highProb, lowProb) {
 		pair<double, double> logisticParameters = computeLogisticParameters(meanPosOutput, meanNegOutput);
 		logisticA = logisticParameters.first;
 		logisticB = logisticParameters.second;
@@ -80,8 +42,8 @@ protected:
 
 	using TrainableProbabilisticSvmClassifier::computeLogisticParameters;
 
-	pair<double, double> computeLogisticParameters(shared_ptr<SvmClassifier> trainableSvm) const {
-		return make_pair(logisticA, logisticB);
+	std::pair<double, double> computeLogisticParameters(std::shared_ptr<SvmClassifier> trainableSvm) const {
+		return std::make_pair(logisticA, logisticB);
 	}
 
 private:

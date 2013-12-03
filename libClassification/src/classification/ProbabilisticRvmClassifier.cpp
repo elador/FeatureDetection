@@ -33,27 +33,23 @@ ProbabilisticRvmClassifier::ProbabilisticRvmClassifier(shared_ptr<RvmClassifier>
 
 ProbabilisticRvmClassifier::~ProbabilisticRvmClassifier() {}
 
+bool ProbabilisticRvmClassifier::classify(const Mat& featureVector) const {
+	return rvm->classify(featureVector);
+}
 
-pair<bool, double> ProbabilisticRvmClassifier::classify(const Mat& featureVector) const {
-	// Would be great if this could be made simpler (as in ProbabilisticSvmClassifier) and less
-	// code duplication with RvmClassifier::classify(...).
-	bool isFeature = false;
-	vector<double> filterEvalCache;
-	bool useCache = true;
-	unsigned int filterLevel = 0;
-	double hyperplaneDistance = 0;
-	do {
-		if (useCache) {
-			hyperplaneDistance = rvm->computeHyperplaneDistanceCached(featureVector, filterLevel, filterEvalCache);
-		} else {
-			hyperplaneDistance = rvm->computeHyperplaneDistance(featureVector, filterLevel);
-		}
-		isFeature = rvm->classify(hyperplaneDistance, filterLevel);
-		++filterLevel;
-	} while (isFeature && filterLevel < rvm->getNumFiltersToUse()); // TODO check the logic of this...
+pair<bool, double> ProbabilisticRvmClassifier::getConfidence(const Mat& featureVector) const {
+	return rvm->getConfidence(featureVector);
+}
 
-	double probability = 1.0f / (1.0f + exp(logisticA + logisticB * hyperplaneDistance));
-	return make_pair(isFeature, probability);
+pair<bool, double> ProbabilisticRvmClassifier::getProbability(const Mat& featureVector) const {
+	pair<int, double> levelAndDistance = rvm->computeHyperplaneDistance(featureVector);
+	// Do sigmoid stuff:
+	// NOTE Patrik: Here we calculate the probability for all RVM patches, also of those that
+	//      did not run up to the last filter. Those probabilities are wrong, but for the face-
+	//      detector it seems to work out ok. However, for the eye-detector, the probability-maps
+	//      don't look good. See below for the code.
+	double probability = 1.0f / (1.0f + exp(logisticA + logisticB * levelAndDistance.second));
+	return make_pair(rvm->classify(levelAndDistance), probability);
 }
 
 void ProbabilisticRvmClassifier::setLogisticParameters(double logisticA, double logisticB) {

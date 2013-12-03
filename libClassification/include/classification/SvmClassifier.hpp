@@ -33,9 +33,9 @@ public:
 	 */
 	explicit SvmClassifier(shared_ptr<Kernel> kernel);
 
-	~SvmClassifier();
-
 	bool classify(const Mat& featureVector) const;
+
+	pair<bool, double> getConfidence(const Mat& featureVector) const;
 
 	/**
 	 * Determines the classification result given the distance of a feature vector to the decision hyperplane.

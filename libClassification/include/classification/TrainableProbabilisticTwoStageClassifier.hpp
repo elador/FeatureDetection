@@ -31,16 +31,29 @@ public:
 
 	~TrainableProbabilisticTwoStageClassifier() {}
 
+	bool classify(const Mat& featureVector) const {
+		return ProbabilisticTwoStageClassifier::classify(featureVector);
+	}
+
+	pair<bool, double> getConfidence(const Mat& featureVector) const {
+		return ProbabilisticTwoStageClassifier::getConfidence(featureVector);
+	}
+
+	pair<bool, double> getProbability(const Mat& featureVector) const {
+		return ProbabilisticTwoStageClassifier::getProbability(featureVector);
+	}
+
 	bool isUsable() const {
 		return trainable->isUsable();
 	}
 
-	pair<bool, double> classify(const Mat& featureVector) const {
-		return ProbabilisticTwoStageClassifier::classify(featureVector);
+	bool retrain(const vector<Mat>& newPositiveExamples, const vector<Mat>& newNegativeExamples) {
+		return trainable->retrain(newPositiveExamples, newNegativeExamples);
 	}
 
-	bool retrain(const vector<Mat>& positiveExamples, const vector<Mat>& negativeExamples) {
-		return trainable->retrain(positiveExamples, negativeExamples);
+	bool retrain(const vector<Mat>& newPositiveExamples, const vector<Mat>& newNegativeExamples,
+			const vector<Mat>& newPositiveTestExamples, const vector<Mat>& newNegativeTestExamples) {
+		return trainable->retrain(newPositiveExamples, newNegativeExamples, newPositiveTestExamples, newNegativeTestExamples);
 	}
 
 	void reset() {

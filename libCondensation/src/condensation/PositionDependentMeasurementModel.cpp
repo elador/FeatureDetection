@@ -95,7 +95,7 @@ bool PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 	shared_ptr<Patch> targetPatch = featureExtractor->extract(target.getX(), target.getY(), target.getWidth(), target.getHeight());
 	if (!targetPatch)
 		return false;
-	if (isUsable() && classifier->classify(targetPatch->getData()).second < targetThreshold)
+	if (isUsable() && classifier->getProbability(targetPatch->getData()).second < targetThreshold)
 		return false;
 
 	vector<Sample> positiveSamples;
@@ -210,8 +210,8 @@ bool PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 
 	if (isUsable() && confidenceThreshold > 0)
 		usable = classifier->retrain(
-				getFeatureVectors(positiveSamples, [this](Mat& vector) { return classifier->classify(vector).second < confidenceThreshold; }),
-				getFeatureVectors(negativeSamples, [this](Mat& vector) { return classifier->classify(vector).second > 1 - confidenceThreshold; }),
+				getFeatureVectors(positiveSamples, [this](Mat& vector) { return classifier->getProbability(vector).second < confidenceThreshold; }),
+				getFeatureVectors(negativeSamples, [this](Mat& vector) { return classifier->getProbability(vector).second > 1 - confidenceThreshold; }),
 				positiveTestExamples, negativeTestExamples);
 	else
 		usable = classifier->retrain(

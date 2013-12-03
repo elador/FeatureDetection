@@ -40,30 +40,46 @@ RvmClassifier::RvmClassifier(shared_ptr<Kernel> kernel, bool cascadedCoefficient
 RvmClassifier::~RvmClassifier() {}
 
 bool RvmClassifier::classify(const Mat& featureVector) const {
-	bool isFeature = false;
-	unsigned int filterLevel = 0;
+	return classify(computeHyperplaneDistance(featureVector));
+}
+
+pair<bool, double> RvmClassifier::getConfidence(const Mat& featureVector) const {
+	pair<int, double> levelAndDistance = computeHyperplaneDistance(featureVector);
+	if (classify(levelAndDistance))
+		return make_pair(true, levelAndDistance.second);
+	else
+		return make_pair(false, -levelAndDistance.second);
+}
+
+bool RvmClassifier::classify(pair<int, double> levelAndDistance) const {
+	// TODO the following todo was moved here from the end of the getHyperplaneDistance function (was in classify before)
+	// TODO: filter statistics, nDropedOutAsNonFace[filter_level]++;
+	// We ran till the REAL LAST filter (not just the numUsedFilters one), save the certainty
+	int filterLevel = levelAndDistance.first;
+	double hyperplaneDistance = levelAndDistance.second;
+	return filterLevel + 1 == this->numFiltersToUse && hyperplaneDistance >= this->hierarchicalThresholds[filterLevel];
+}
+
+pair<int, double> RvmClassifier::computeHyperplaneDistance(const Mat& featureVector) const {
+	int filterLevel = -1;
+	double hyperplaneDistance = 0;
 	vector<double> filterEvalCache(this->numFiltersToUse);
 	do {
-//		isFeature = classify(computeHyperplaneDistance(featureVector, filterLevel), filterLevel);
-		isFeature = classify(computeHyperplaneDistanceCached(featureVector, filterLevel, filterEvalCache), filterLevel);
 		++filterLevel;
-	} while (isFeature && filterLevel < this->numFiltersToUse); // TODO check the logic of this...
-	return isFeature;
+//		hyperplaneDistance = computeHyperplaneDistance(featureVector, filterLevel);
+		hyperplaneDistance = computeHyperplaneDistanceCached(featureVector, filterLevel, filterEvalCache);
+	} while (hyperplaneDistance >= hierarchicalThresholds[filterLevel] && filterLevel + 1 < this->numFiltersToUse); // TODO check the logic of this... may have a look at the WvmClassifier
+	return make_pair(filterLevel, hyperplaneDistance);
 }
 
-bool RvmClassifier::classify(double hyperplaneDistance, const int filterLevel) const {
-	return hyperplaneDistance >= hierarchicalThresholds[filterLevel];
-}
-
-double RvmClassifier::computeHyperplaneDistance(const Mat& featureVector, const int filterLevel) const {
+double RvmClassifier::computeHyperplaneDistance(const Mat& featureVector, const size_t filterLevel) const {
 	double distance = -bias;
-	for (unsigned int i=0; i<=filterLevel; ++i) {
+	for (size_t i = 0; i <= filterLevel; ++i)
 		distance += coefficients[filterLevel][i] * kernel->compute(featureVector, supportVectors[i]);
-	}
 	return distance;
 }
 
-double RvmClassifier::computeHyperplaneDistanceCached(const Mat& featureVector, const int filterLevel, vector<double>& filterEvalCache) const {
+double RvmClassifier::computeHyperplaneDistanceCached(const Mat& featureVector, const size_t filterLevel, vector<double>& filterEvalCache) const {
 	
 	if (filterEvalCache.size() == filterLevel && filterLevel != 0) {
 		double distance = filterEvalCache[filterLevel-1];
@@ -75,7 +91,7 @@ double RvmClassifier::computeHyperplaneDistanceCached(const Mat& featureVector, 
 	filterEvalCache.clear();
 
 	double distance = -bias;
-	for (unsigned int i=0; i<=filterLevel; ++i) {
+	for (size_t i=0; i<=filterLevel; ++i) {
 		distance += coefficients[filterLevel][i] * kernel->compute(featureVector, supportVectors[i]);
 	}
 
@@ -131,6 +147,9 @@ shared_ptr<RvmClassifier> RvmClassifier::loadFromMatlab(const string& classifier
 			polyPower		= (int)matdata[3];
 			divisor			= (float)matdata[4];
 			mxDestroyArray(pmxarray);
+		} else {
+			throw runtime_error("RvmClassifier: Could not find kernel parameters and bias.");
+			// TODO tidying up?!
 		}
 	}
 	shared_ptr<Kernel> kernel;

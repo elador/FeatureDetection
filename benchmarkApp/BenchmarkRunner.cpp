@@ -35,16 +35,18 @@
 #include "imageprocessing/SpatialPyramidHistogramFilter.hpp"
 #include "imageprocessing/UnitNormFilter.hpp"
 #include "imageprocessing/WhiteningFilter.hpp"
-#include "classification/HikKernel.hpp"
+#include "classification/HistogramIntersectionKernel.hpp"
 #include "classification/LinearKernel.hpp"
 #include "classification/PolynomialKernel.hpp"
 #include "classification/RbfKernel.hpp"
 #include "classification/SvmClassifier.hpp"
+#include "classification/UnlimitedExampleManagement.hpp"
+#include "classification/AgeBasedExampleManagement.hpp"
+#include "classification/ConfidenceBasedExampleManagement.hpp"
 #include "classification/ProbabilisticSvmClassifier.hpp"
-#include "classification/FixedSizeTrainableSvmClassifier.hpp"
-#include "classification/TrainableOneClassSvmClassifier.hpp"
 #include "classification/TrainableProbabilisticSvmClassifier.hpp"
 #include "classification/FixedTrainableProbabilisticSvmClassifier.hpp"
+#include "libsvm/LibSvmClassifier.hpp"
 #include "boost/property_tree/ptree.hpp"
 #include "boost/property_tree/info_parser.hpp"
 #include "boost/optional/optional.hpp"
@@ -56,6 +58,7 @@
 using namespace imageio;
 using namespace imageprocessing;
 using namespace classification;
+using namespace libsvm;
 using boost::property_tree::ptree;
 using boost::property_tree::info_parser::read_info;
 using boost::optional;
@@ -63,6 +66,7 @@ using boost::filesystem::path;
 using boost::filesystem::exists;
 using boost::filesystem::is_regular_file;
 using boost::filesystem::create_directory;
+using std::unique_ptr;
 using std::shared_ptr;
 using std::make_shared;
 using std::istringstream;
@@ -321,7 +325,7 @@ shared_ptr<Kernel> createKernel(ptree& config) {
 		return make_shared<PolynomialKernel>(
 				config.get<double>("alpha"), config.get<double>("constant"), config.get<double>("degree"));
 	} else if (config.get_value<string>() == "hik") {
-		return make_shared<HikKernel>();
+		return make_shared<HistogramIntersectionKernel>();
 	} else if (config.get_value<string>() == "linear") {
 		return make_shared<LinearKernel>();
 	} else {
@@ -329,39 +333,58 @@ shared_ptr<Kernel> createKernel(ptree& config) {
 	}
 }
 
+unique_ptr<ExampleManagement> createExampleManagement(ptree& config, shared_ptr<BinaryClassifier> classifier) {
+	if (config.get_value<string>() == "unlimited") {
+		return unique_ptr<ExampleManagement>(new UnlimitedExampleManagement(config.get<size_t>("required")));
+	} else if (config.get_value<string>() == "agebased") {
+		return unique_ptr<ExampleManagement>(new AgeBasedExampleManagement(config.get<size_t>("capacity"), config.get<size_t>("required")));
+	} else if (config.get_value<string>() == "confidencebased") {
+		return unique_ptr<ExampleManagement>(new ConfidenceBasedExampleManagement(classifier, config.get<size_t>("capacity"), config.get<size_t>("required")));
+	} else {
+		throw invalid_argument("AdaptiveTracking: invalid example management type: " + config.get_value<string>());
+	}
+}
+
 shared_ptr<TrainableProbabilisticClassifier> createClassifier(ptree& config) {
-	shared_ptr<SvmClassifier> svm;
-	shared_ptr<TrainableClassifier> trainableSvm;
-	shared_ptr<Kernel> kernel = createKernel(config.get_child("kernel"));
 	if (config.get_value<string>() == "svm") {
-		shared_ptr<TrainableSvmClassifier> trainableBinarySvm = make_shared<FixedSizeTrainableSvmClassifier>(kernel,
-				config.get<double>("training.constraintsViolationCosts"), config.get<unsigned int>("training.positiveExamples"),
-				config.get<unsigned int>("training.negativeExamples"), config.get<unsigned int>("training.minPositiveExamples"));
-		trainableSvm = trainableBinarySvm;
-		svm = trainableBinarySvm->getSvm();
-	} else if (config.get_value<string>() == "one-class-svm") {
-		shared_ptr<TrainableOneClassSvmClassifier> trainableOneClassSvm = make_shared<TrainableOneClassSvmClassifier>(kernel,
-				config.get<double>("training.nu"), config.get<double>("training.minExamples"), config.get<double>("training.maxExamples"));
-		trainableSvm = trainableOneClassSvm;
-		svm = trainableOneClassSvm->getSvm();
+		shared_ptr<TrainableSvmClassifier> trainableSvm;
+		shared_ptr<Kernel> kernel = createKernel(config.get_child("kernel"));
+		if (config.get<string>("training") == "libSvm") {
+			if (config.get<string>("training.type") == "binary") {
+				shared_ptr<LibSvmClassifier> trainableBinarySvm = make_shared<LibSvmClassifier>(kernel, config.get<double>("training.C"));
+				trainableBinarySvm->setPositiveExampleManagement(
+						unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("training.positiveExamples"), trainableBinarySvm)));
+				trainableBinarySvm->setNegativeExampleManagement(
+						unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("training.negativeExamples"), trainableBinarySvm)));
+				trainableSvm = trainableBinarySvm;
+			} else if (config.get<string>("training.type") == "one-class") {
+				shared_ptr<LibSvmClassifier> trainableOneClassSvm = make_shared<LibSvmClassifier>(kernel, config.get<double>("training.nu"), true);
+				trainableOneClassSvm->setPositiveExampleManagement(
+						unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("training.positiveExamples"), trainableOneClassSvm)));
+				trainableSvm = trainableOneClassSvm;
+			} else {
+				throw invalid_argument("invalid libSVM type: " + config.get<string>("training.type"));
+			}
+		} else {
+			throw invalid_argument("invalid training type: " + config.get<string>("training"));
+		}
+		shared_ptr<TrainableProbabilisticSvmClassifier> trainableProbabilisticSvm;
+		if (config.get<string>("probabilistic") == "default")
+			trainableProbabilisticSvm = make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm,
+					config.get<int>("probabilistic.positiveExamples"), config.get<int>("probabilistic.negativeExamples"),
+					config.get<double>("probabilistic.positiveProbability"), config.get<double>("probabilistic.negativeProbability"));
+		else if (config.get<string>("probabilistic") == "fixed")
+			trainableProbabilisticSvm = make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm,
+					config.get<double>("probabilistic.positiveProbability"), config.get<double>("probabilistic.negativeProbability"),
+					config.get<double>("probabilistic.positiveMean"), config.get<double>("probabilistic.negativeMean"));
+		else
+			throw invalid_argument("invalid probabilistic SVM type: " + config.get<string>("probabilistic"));
+		if (config.get<string>("probabilistic.adjustThreshold", "no") != "no")
+			trainableProbabilisticSvm->setAdjustThreshold(config.get<double>("probabilistic.adjustThreshold"));
+		return trainableProbabilisticSvm;
 	} else {
 		throw invalid_argument("invalid classifier type: " + config.get_value<string>());
 	}
-	shared_ptr<ProbabilisticSvmClassifier> probabilisticSvm = make_shared<ProbabilisticSvmClassifier>(svm);
-	shared_ptr<TrainableProbabilisticSvmClassifier> trainableProbabilisticSvm;
-	if (config.get<string>("probabilistic") == "default")
-		trainableProbabilisticSvm = make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm, probabilisticSvm,
-				config.get<int>("probabilistic.positiveExamples"), config.get<int>("probabilistic.negativeExamples"),
-				config.get<double>("probabilistic.positiveProbability"), config.get<double>("probabilistic.negativeProbability"));
-	else if (config.get<string>("probabilistic") == "fixed")
-		trainableProbabilisticSvm = make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm, probabilisticSvm,
-				config.get<double>("probabilistic.positiveProbability"), config.get<double>("probabilistic.negativeProbability"),
-				config.get<double>("probabilistic.positiveMean"), config.get<double>("probabilistic.negativeMean"));
-	else
-		throw invalid_argument("invalid probabilistic SVM type: " + config.get<string>("probabilistic"));
-	if (config.get<string>("probabilistic.adjustThreshold", "no") != "no")
-		trainableProbabilisticSvm->setAdjustThreshold(config.get<double>("probabilistic.adjustThreshold"));
-	return trainableProbabilisticSvm;
 }
 
 void addAlgorithm(Benchmark& benchmark, ptree& config, string directory) {

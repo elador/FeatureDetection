@@ -15,13 +15,24 @@ ProbabilisticTwoStageClassifier::ProbabilisticTwoStageClassifier(
 
 ProbabilisticTwoStageClassifier::~ProbabilisticTwoStageClassifier() {}
 
-pair<bool, double> ProbabilisticTwoStageClassifier::classify(const Mat& featureVector) const {
-	pair<bool, double> result = first->classify(featureVector);
-	if (result.first) {
+bool ProbabilisticTwoStageClassifier::classify(const Mat& featureVector) const {
+	if (first->classify(featureVector))
 		return second->classify(featureVector);
-	} else {
-		return result;
-	}
+	return false;
+}
+
+pair<bool, double> ProbabilisticTwoStageClassifier::getConfidence(const Mat& featureVector) const {
+	pair<bool, double> result = first->getConfidence(featureVector);
+	if (result.first)
+		return second->getConfidence(featureVector);
+	return result;
+}
+
+pair<bool, double> ProbabilisticTwoStageClassifier::getProbability(const Mat& featureVector) const {
+	pair<bool, double> result = first->getProbability(featureVector);
+	if (result.first)
+		return second->getConfidence(featureVector);
+	return result;
 }
 
 } /* namespace classification */

@@ -21,12 +21,14 @@ add_subdirectory(libImageLogging)		# Image logging
 
 add_subdirectory(libImageIO)			# Input-library for cameras, Kinect and hard-drive images.
 add_subdirectory(libImageProcessing)	# Image pyramids, patch extraction, feature transformation
+add_subdirectory(libSvm)				# libSVM (support vector classification and regression)
+add_subdirectory(libLinear)				# liblinear (linear classification with SVM and regression)
 add_subdirectory(libClassification)		# Classification and regression library
 
 add_subdirectory(libDetection)			# Sliding-window detection, Skin detection
 add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 
-add_subdirectory(libRender)				# A software renderer to render vertices and 3D-meshes
+#add_subdirectory(libRender)				# A software renderer to render vertices and 3D-meshes
 add_subdirectory(libShapeModels)		# Head/face specific things; 2D/3D models; Combining feature points
 
 add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.

@@ -6,13 +6,12 @@
  */
 
 #include "classification/TrainableProbabilisticSvmClassifier.hpp"
-#include "classification/TrainableClassifier.hpp"
 #include "classification/TrainableSvmClassifier.hpp"
-#include "classification/TrainableOneClassSvmClassifier.hpp"
 #include "classification/ProbabilisticSvmClassifier.hpp"
 #include "classification/SvmClassifier.hpp"
 #include <cmath>
 
+using std::shared_ptr;
 using std::make_shared;
 using std::make_pair;
 
@@ -27,33 +26,22 @@ TrainableProbabilisticSvmClassifier::TrainableProbabilisticSvmClassifier(
 	negativeTestExamples.reserve(negativeCount);
 }
 
-TrainableProbabilisticSvmClassifier::TrainableProbabilisticSvmClassifier(
-		shared_ptr<TrainableOneClassSvmClassifier> trainableSvm, int positiveCount, int negativeCount, double highProb, double lowProb) :
-				probabilisticSvm(make_shared<ProbabilisticSvmClassifier>(trainableSvm->getSvm())), trainableSvm(trainableSvm),
-				positiveTestExamples(), negativeTestExamples(), positiveInsertPosition(0), negativeInsertPosition(0),
-				highProb(highProb), lowProb(lowProb), adjustThreshold(false), targetProbability(0.5) {
-	positiveTestExamples.reserve(positiveCount);
-	negativeTestExamples.reserve(negativeCount);
-}
-
-TrainableProbabilisticSvmClassifier::TrainableProbabilisticSvmClassifier(
-		shared_ptr<TrainableClassifier> trainableSvm, shared_ptr<ProbabilisticSvmClassifier> probabilisticSvm,
-		int positiveCount, int negativeCount, double highProb, double lowProb) :
-				probabilisticSvm(probabilisticSvm), trainableSvm(trainableSvm), positiveTestExamples(), negativeTestExamples(),
-				positiveInsertPosition(0), negativeInsertPosition(0), highProb(highProb), lowProb(lowProb),
-				adjustThreshold(false), targetProbability(0.5) {
-	positiveTestExamples.reserve(positiveCount);
-	negativeTestExamples.reserve(negativeCount);
-}
-
 TrainableProbabilisticSvmClassifier::~TrainableProbabilisticSvmClassifier() {}
 
 bool TrainableProbabilisticSvmClassifier::isUsable() const {
 	return trainableSvm->isUsable();
 }
 
-pair<bool, double> TrainableProbabilisticSvmClassifier::classify(const Mat& featureVector) const {
+bool TrainableProbabilisticSvmClassifier::classify(const Mat& featureVector) const {
 	return probabilisticSvm->classify(featureVector);
+}
+
+pair<bool, double> TrainableProbabilisticSvmClassifier::getConfidence(const Mat& featureVector) const {
+	return probabilisticSvm->getConfidence(featureVector);
+}
+
+pair<bool, double> TrainableProbabilisticSvmClassifier::getProbability(const Mat& featureVector) const {
+	return probabilisticSvm->getProbability(featureVector);
 }
 
 bool TrainableProbabilisticSvmClassifier::retrain(const vector<Mat>& newPositiveExamples, const vector<Mat>& newNegativeExamples) {
@@ -78,7 +66,7 @@ bool TrainableProbabilisticSvmClassifier::retrain(const vector<Mat>& newPositive
 	return false;
 }
 
-void TrainableProbabilisticSvmClassifier::addTestExamples(vector<Mat>& examples, const vector<Mat>& newExamples, unsigned int& insertPosition) {
+void TrainableProbabilisticSvmClassifier::addTestExamples(vector<Mat>& examples, const vector<Mat>& newExamples, size_t& insertPosition) {
 	// add new examples as long as there is space available
 	auto example = newExamples.cbegin();
 	for (; examples.size() < examples.capacity() && example != newExamples.cend(); ++example)

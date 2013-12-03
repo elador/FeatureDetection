@@ -24,8 +24,15 @@ ProbabilisticWvmClassifier::ProbabilisticWvmClassifier(shared_ptr<WvmClassifier>
 
 ProbabilisticWvmClassifier::~ProbabilisticWvmClassifier() {}
 
-pair<bool, double> ProbabilisticWvmClassifier::classify( const Mat& featureVector ) const
-{
+bool ProbabilisticWvmClassifier::classify(const Mat& featureVector) const {
+	return wvm->classify(featureVector);
+}
+
+pair<bool, double> ProbabilisticWvmClassifier::getConfidence(const Mat& featureVector) const {
+	return wvm->getConfidence(featureVector);
+}
+
+pair<bool, double> ProbabilisticWvmClassifier::getProbability(const Mat& featureVector) const {
 	pair<int, double> levelAndDistance = wvm->computeHyperplaneDistance(featureVector);
 	// Do sigmoid stuff:
 	// NOTE Patrik: Here we calculate the probability for all WVM patches, also of those that

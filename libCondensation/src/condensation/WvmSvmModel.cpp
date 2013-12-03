@@ -43,13 +43,13 @@ void WvmSvmModel::evaluate(Sample& sample) {
 		pair<bool, double> wvmResult;
 		auto resIt = cache.find(patch);
 		if (resIt == cache.end()) {
-			wvmResult = wvm->classify(patch->getData());
+			wvmResult = wvm->getProbability(patch->getData());
 			cache.emplace(patch, wvmResult);
 		} else {
 			wvmResult = resIt->second;
 		}
 		if (wvmResult.first) {
-			pair<bool, double> svmResult = svm->classify(patch->getData());
+			pair<bool, double> svmResult = svm->getProbability(patch->getData());
 			sample.setObject(svmResult.first);
 			sample.setWeight(wvmResult.second * svmResult.second);
 		} else {
@@ -72,7 +72,7 @@ void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& sam
 			pair<bool, double> result;
 			auto resIt = cache.find(patch);
 			if (resIt == cache.end()) {
-				result = wvm->classify(patch->getData());
+				result = wvm->getProbability(patch->getData());
 				if (result.first)
 					remainingPatches.push_back(make_shared<ClassifiedPatch>(patch, result));
 				cache.emplace(patch, result);
@@ -92,7 +92,7 @@ void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& sam
 		}
 		for (auto patchWithProb = remainingPatches.cbegin(); patchWithProb != remainingPatches.cend(); ++patchWithProb) {
 			shared_ptr<Patch> patch = (*patchWithProb)->getPatch();
-			pair<bool, double> result = svm->classify(patch->getData());
+			pair<bool, double> result = svm->getProbability(patch->getData());
 			vector<Sample*>& patchSamples = patch2samples[patch];
 			for (auto sit = patchSamples.begin(); sit != patchSamples.end(); ++sit) {
 				Sample* sample = (*sit);

@@ -45,21 +45,11 @@ public:
 
 	~ProbabilisticSvmClassifier();
 
-	/**
-	 * @return The actual SVM.
-	 */
-	shared_ptr<SvmClassifier> getSvm() {
-		return svm;
-	}
+	bool classify(const Mat& featureVector) const;
 
-	/**
-	 * @return The actual SVM.
-	 */
-	const shared_ptr<SvmClassifier> getSvm() const {
-		return svm;
-	}
+	pair<bool, double> getConfidence(const Mat& featureVector) const;
 
-	pair<bool, double> classify(const Mat& featureVector) const;
+	pair<bool, double> getProbability(const Mat& featureVector) const;
 
 	/**
 	 * Changes the logistic parameters of this probabilistic SVM.
@@ -89,6 +79,20 @@ public:
 	 * @return The newly created probabilistic WVM classifier.
 	 */
 	static shared_ptr<ProbabilisticSvmClassifier> load(const ptree& subtree);
+
+	/**
+	 * @return The actual SVM.
+	 */
+	shared_ptr<SvmClassifier> getSvm() {
+		return svm;
+	}
+
+	/**
+	 * @return The actual SVM.
+	 */
+	const shared_ptr<SvmClassifier> getSvm() const {
+		return svm;
+	}
 
 private:
 

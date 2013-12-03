@@ -12,11 +12,9 @@
 
 #include "opencv2/core/core.hpp"
 
-using cv::Mat;
-
-struct svm_parameter; // forward decleration from svm.h
-
 namespace classification {
+
+class KernelVisitor;
 
 /**
  * A kernel function that computes the dot product of two vectors in a potentially high or infinite dimensional space.
@@ -33,14 +31,14 @@ public:
 	 * @param[in] rhs The second vector.
 	 * @return The kernel value of the two vectors.
 	 */
-	virtual double compute(const Mat& lhs, const Mat& rhs) const = 0;
+	virtual double compute(const cv::Mat& lhs, const cv::Mat& rhs) const = 0;
 
 	/**
-	 * Sets the kernel parameters of a given parameter set for libSVM training.
+	 * Accepts a visitor.
 	 *
-	 * @param[in] param The libSVM parameters.
+	 * @param[in] visitor The visitor.
 	 */
-	virtual void setLibSvmParams(struct svm_parameter *param) const = 0;
+	virtual void accept(KernelVisitor& visitor) const = 0;
 };
 
 } /* namespace classification */
