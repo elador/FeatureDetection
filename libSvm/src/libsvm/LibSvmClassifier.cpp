@@ -130,7 +130,7 @@ bool LibSvmClassifier::train() {
 			positiveExamples, negativeExamples, staticNegativeExamples));
 	const char* message = svm_check_parameter(problem.get(), param.get());
 	if (message != 0)
-		throw invalid_argument(string("invalid SVM parameters: ") + message);
+		throw invalid_argument(string("LibSvmClassifier: invalid SVM parameters: ") + message);
 	unique_ptr<struct svm_model, ModelDeleter> model(svm_train(problem.get(), param.get()));
 	svm->setSvmParameters(
 			utils.extractSupportVectors(model.get()),

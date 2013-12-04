@@ -83,7 +83,8 @@ private:
 	shared_ptr<FeatureExtractor> wrapFeatureExtractor(shared_ptr<FeatureExtractor> featureExtractor, float scaleFactor);
 	shared_ptr<Kernel> createKernel(ptree& config);
 	unique_ptr<ExampleManagement> createExampleManagement(ptree& config, shared_ptr<BinaryClassifier> classifier);
-	shared_ptr<TrainableSvmClassifier> createTrainableSvm(ptree& config, shared_ptr<Kernel> kernel);
+	shared_ptr<TrainableSvmClassifier> createLibSvmClassifier(ptree& config, shared_ptr<Kernel> kernel);
+	shared_ptr<TrainableSvmClassifier> createLibLinearClassifier(ptree& config);
 	shared_ptr<TrainableProbabilisticClassifier> createTrainableProbabilisticClassifier(ptree& config);
 	shared_ptr<TrainableProbabilisticClassifier> createTrainableProbabilisticSvm(
 			shared_ptr<TrainableSvmClassifier> trainableSvm, ptree& config);

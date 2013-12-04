@@ -57,6 +57,7 @@
 #include "classification/UnlimitedExampleManagement.hpp"
 #include "classification/FixedTrainableProbabilisticSvmClassifier.hpp"
 #include "libsvm/LibSvmClassifier.hpp"
+#include "liblinear/LibLinearClassifier.hpp"
 #include "condensation/ResamplingSampler.hpp"
 #include "condensation/GridSampler.hpp"
 #include "condensation/LowVarianceSampling.hpp"
@@ -82,8 +83,9 @@
 
 using namespace logging;
 using namespace classification;
-using namespace libsvm;
 using namespace std::chrono;
+using libsvm::LibSvmClassifier;
+using liblinear::LibLinearClassifier;
 using cv::Point;
 using boost::property_tree::info_parser::read_info;
 using boost::lexical_cast;
@@ -326,37 +328,54 @@ unique_ptr<ExampleManagement> HeadTracking::createExampleManagement(ptree& confi
 	}
 }
 
-shared_ptr<TrainableSvmClassifier> HeadTracking::createTrainableSvm(ptree& config, shared_ptr<Kernel> kernel) {
-	if (config.get_value<string>() == "libSvm") {
-		if (config.get<string>("type") == "binary") {
-			shared_ptr<LibSvmClassifier> trainableSvm = make_shared<LibSvmClassifier>(kernel, config.get<double>("C"));
-			trainableSvm->setPositiveExampleManagement(
-					unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm)));
-			trainableSvm->setNegativeExampleManagement(
-					unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("negativeExamples"), trainableSvm)));
-			optional<ptree&> negativesConfig = config.get_child_optional("staticNegativeExamples");
-			if (negativesConfig && negativesConfig->get_value<bool>()) {
-				trainableSvm->loadStaticNegatives(negativesConfig->get<string>("filename"),
-						negativesConfig->get<int>("amount"), negativesConfig->get<double>("scale"));
-			}
-			return trainableSvm;
-		} else if (config.get<string>("type") == "one-class") {
-			shared_ptr<LibSvmClassifier> trainableSvm = make_shared<LibSvmClassifier>(kernel, config.get<double>("nu"), true);
-			trainableSvm->setPositiveExampleManagement(
-					unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm)));
-			return trainableSvm;
-		} else {
-			throw invalid_argument("HeadTracking: invalid libSVM type: " + config.get_value<string>());
+shared_ptr<TrainableSvmClassifier> HeadTracking::createLibSvmClassifier(ptree& config, shared_ptr<Kernel> kernel) {
+	if (config.get_value<string>() == "binary") {
+		shared_ptr<LibSvmClassifier> trainableSvm = make_shared<LibSvmClassifier>(kernel, config.get<double>("C"));
+		trainableSvm->setPositiveExampleManagement(
+				unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm)));
+		trainableSvm->setNegativeExampleManagement(
+				unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("negativeExamples"), trainableSvm)));
+		optional<ptree&> negativesConfig = config.get_child_optional("staticNegativeExamples");
+		if (negativesConfig && negativesConfig->get_value<bool>()) {
+			trainableSvm->loadStaticNegatives(negativesConfig->get<string>("filename"),
+					negativesConfig->get<int>("amount"), negativesConfig->get<double>("scale"));
 		}
+		return trainableSvm;
+	} else if (config.get_value<string>() == "one-class") {
+		shared_ptr<LibSvmClassifier> trainableSvm = make_shared<LibSvmClassifier>(kernel, config.get<double>("nu"), true);
+		trainableSvm->setPositiveExampleManagement(
+				unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm)));
+		return trainableSvm;
 	} else {
-		throw invalid_argument("HeadTracking: invalid SVM training type: " + config.get_value<string>());
+		throw invalid_argument("HeadTracking: invalid libSVM training type: " + config.get_value<string>());
 	}
 }
 
+shared_ptr<TrainableSvmClassifier> HeadTracking::createLibLinearClassifier(ptree& config) {
+	shared_ptr<LibLinearClassifier> trainableSvm = make_shared<LibLinearClassifier>(config.get<double>("C"), config.get<bool>("bias"));
+	trainableSvm->setPositiveExampleManagement(
+			unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm)));
+	trainableSvm->setNegativeExampleManagement(
+			unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("negativeExamples"), trainableSvm)));
+	optional<ptree&> negativesConfig = config.get_child_optional("staticNegativeExamples");
+	if (negativesConfig && negativesConfig->get_value<bool>()) {
+		trainableSvm->loadStaticNegatives(negativesConfig->get<string>("filename"),
+				negativesConfig->get<int>("amount"), negativesConfig->get<double>("scale"));
+	}
+	return trainableSvm;
+}
+
 shared_ptr<TrainableProbabilisticClassifier> HeadTracking::createTrainableProbabilisticClassifier(ptree& config) {
-	if (config.get_value<string>() == "svm") {
+	if (config.get_value<string>() == "libSvm") {
 		shared_ptr<Kernel> kernel = createKernel(config.get_child("kernel"));
-		shared_ptr<TrainableSvmClassifier> trainableSvm = createTrainableSvm(config.get_child("training"), kernel);
+		shared_ptr<TrainableSvmClassifier> trainableSvm = createLibSvmClassifier(config.get_child("training"), kernel);
+		shared_ptr<SvmClassifier> svm = trainableSvm->getSvm();
+		optional<ptree&> thresholdConfig = config.get_child_optional("threshold");
+		if (thresholdConfig)
+			svm->setThreshold(thresholdConfig->get_value<float>());
+		return createTrainableProbabilisticSvm(trainableSvm, config.get_child("probabilistic"));
+	} else if (config.get_value<string>() == "libLinear") {
+		shared_ptr<TrainableSvmClassifier> trainableSvm = createLibLinearClassifier(config.get_child("training"));
 		shared_ptr<SvmClassifier> svm = trainableSvm->getSvm();
 		optional<ptree&> thresholdConfig = config.get_child_optional("threshold");
 		if (thresholdConfig)

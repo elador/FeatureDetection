@@ -47,6 +47,7 @@
 #include "classification/TrainableProbabilisticSvmClassifier.hpp"
 #include "classification/FixedTrainableProbabilisticSvmClassifier.hpp"
 #include "libsvm/LibSvmClassifier.hpp"
+#include "liblinear/LibLinearClassifier.hpp"
 #include "boost/property_tree/ptree.hpp"
 #include "boost/property_tree/info_parser.hpp"
 #include "boost/optional/optional.hpp"
@@ -58,7 +59,8 @@
 using namespace imageio;
 using namespace imageprocessing;
 using namespace classification;
-using namespace libsvm;
+using libsvm::LibSvmClassifier;
+using liblinear::LibLinearClassifier;
 using boost::property_tree::ptree;
 using boost::property_tree::info_parser::read_info;
 using boost::optional;
@@ -341,47 +343,81 @@ unique_ptr<ExampleManagement> createExampleManagement(ptree& config, shared_ptr<
 	} else if (config.get_value<string>() == "confidencebased") {
 		return unique_ptr<ExampleManagement>(new ConfidenceBasedExampleManagement(classifier, config.get<size_t>("capacity"), config.get<size_t>("required")));
 	} else {
-		throw invalid_argument("AdaptiveTracking: invalid example management type: " + config.get_value<string>());
+		throw invalid_argument("invalid example management type: " + config.get_value<string>());
 	}
 }
 
-shared_ptr<TrainableProbabilisticClassifier> createClassifier(ptree& config) {
-	if (config.get_value<string>() == "svm") {
-		shared_ptr<TrainableSvmClassifier> trainableSvm;
-		shared_ptr<Kernel> kernel = createKernel(config.get_child("kernel"));
-		if (config.get<string>("training") == "libSvm") {
-			if (config.get<string>("training.type") == "binary") {
-				shared_ptr<LibSvmClassifier> trainableBinarySvm = make_shared<LibSvmClassifier>(kernel, config.get<double>("training.C"));
-				trainableBinarySvm->setPositiveExampleManagement(
-						unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("training.positiveExamples"), trainableBinarySvm)));
-				trainableBinarySvm->setNegativeExampleManagement(
-						unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("training.negativeExamples"), trainableBinarySvm)));
-				trainableSvm = trainableBinarySvm;
-			} else if (config.get<string>("training.type") == "one-class") {
-				shared_ptr<LibSvmClassifier> trainableOneClassSvm = make_shared<LibSvmClassifier>(kernel, config.get<double>("training.nu"), true);
-				trainableOneClassSvm->setPositiveExampleManagement(
-						unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("training.positiveExamples"), trainableOneClassSvm)));
-				trainableSvm = trainableOneClassSvm;
-			} else {
-				throw invalid_argument("invalid libSVM type: " + config.get<string>("training.type"));
-			}
-		} else {
-			throw invalid_argument("invalid training type: " + config.get<string>("training"));
+shared_ptr<TrainableSvmClassifier> createLibSvmClassifier(ptree& config, shared_ptr<Kernel> kernel) {
+	if (config.get_value<string>() == "binary") {
+		shared_ptr<LibSvmClassifier> trainableSvm = make_shared<LibSvmClassifier>(kernel, config.get<double>("C"));
+		trainableSvm->setPositiveExampleManagement(
+				unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm)));
+		trainableSvm->setNegativeExampleManagement(
+				unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("negativeExamples"), trainableSvm)));
+		optional<ptree&> negativesConfig = config.get_child_optional("staticNegativeExamples");
+		if (negativesConfig && negativesConfig->get_value<bool>()) {
+			trainableSvm->loadStaticNegatives(negativesConfig->get<string>("filename"),
+					negativesConfig->get<int>("amount"), negativesConfig->get<double>("scale"));
 		}
-		shared_ptr<TrainableProbabilisticSvmClassifier> trainableProbabilisticSvm;
-		if (config.get<string>("probabilistic") == "default")
-			trainableProbabilisticSvm = make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm,
-					config.get<int>("probabilistic.positiveExamples"), config.get<int>("probabilistic.negativeExamples"),
-					config.get<double>("probabilistic.positiveProbability"), config.get<double>("probabilistic.negativeProbability"));
-		else if (config.get<string>("probabilistic") == "fixed")
-			trainableProbabilisticSvm = make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm,
-					config.get<double>("probabilistic.positiveProbability"), config.get<double>("probabilistic.negativeProbability"),
-					config.get<double>("probabilistic.positiveMean"), config.get<double>("probabilistic.negativeMean"));
-		else
-			throw invalid_argument("invalid probabilistic SVM type: " + config.get<string>("probabilistic"));
-		if (config.get<string>("probabilistic.adjustThreshold", "no") != "no")
-			trainableProbabilisticSvm->setAdjustThreshold(config.get<double>("probabilistic.adjustThreshold"));
-		return trainableProbabilisticSvm;
+		return trainableSvm;
+	} else if (config.get_value<string>() == "one-class") {
+		shared_ptr<LibSvmClassifier> trainableSvm = make_shared<LibSvmClassifier>(kernel, config.get<double>("nu"), true);
+		trainableSvm->setPositiveExampleManagement(
+				unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm)));
+		return trainableSvm;
+	} else {
+		throw invalid_argument("invalid libSVM training type: " + config.get_value<string>());
+	}
+}
+
+shared_ptr<TrainableSvmClassifier> createLibLinearClassifier(ptree& config) {
+	shared_ptr<LibLinearClassifier> trainableSvm = make_shared<LibLinearClassifier>(config.get<double>("C"), config.get<bool>("bias"));
+	trainableSvm->setPositiveExampleManagement(
+			unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm)));
+	trainableSvm->setNegativeExampleManagement(
+			unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("negativeExamples"), trainableSvm)));
+	optional<ptree&> negativesConfig = config.get_child_optional("staticNegativeExamples");
+	if (negativesConfig && negativesConfig->get_value<bool>()) {
+		trainableSvm->loadStaticNegatives(negativesConfig->get<string>("filename"),
+				negativesConfig->get<int>("amount"), negativesConfig->get<double>("scale"));
+	}
+	return trainableSvm;
+}
+
+shared_ptr<TrainableProbabilisticClassifier> createTrainableProbabilisticSvm(
+		shared_ptr<TrainableSvmClassifier> trainableSvm, ptree& config) {
+	shared_ptr<TrainableProbabilisticSvmClassifier> svm;
+	if (config.get_value<string>() == "default")
+		svm = make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm,
+				config.get<int>("positiveExamples"), config.get<int>("negativeExamples"),
+				config.get<double>("positiveProbability"), config.get<double>("negativeProbability"));
+	else if (config.get_value<string>() == "fixed")
+		svm = make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm,
+				config.get<double>("positiveProbability"), config.get<double>("negativeProbability"),
+				config.get<double>("positiveMean"), config.get<double>("negativeMean"));
+	else
+		throw invalid_argument("invalid probabilistic SVM type: " + config.get_value<string>());
+	if (config.get<string>("adjustThreshold") != "no")
+		svm->setAdjustThreshold(config.get<double>("adjustThreshold"));
+	return svm;
+}
+
+shared_ptr<TrainableProbabilisticClassifier> createClassifier(ptree& config) {
+	if (config.get_value<string>() == "libSvm") {
+		shared_ptr<Kernel> kernel = createKernel(config.get_child("kernel"));
+		shared_ptr<TrainableSvmClassifier> trainableSvm = createLibSvmClassifier(config.get_child("training"), kernel);
+		shared_ptr<SvmClassifier> svm = trainableSvm->getSvm();
+		optional<ptree&> thresholdConfig = config.get_child_optional("threshold");
+		if (thresholdConfig)
+			svm->setThreshold(thresholdConfig->get_value<float>());
+		return createTrainableProbabilisticSvm(trainableSvm, config.get_child("probabilistic"));
+	} else if (config.get_value<string>() == "libLinear") {
+		shared_ptr<TrainableSvmClassifier> trainableSvm = createLibLinearClassifier(config.get_child("training"));
+		shared_ptr<SvmClassifier> svm = trainableSvm->getSvm();
+		optional<ptree&> thresholdConfig = config.get_child_optional("threshold");
+		if (thresholdConfig)
+			svm->setThreshold(thresholdConfig->get_value<float>());
+		return createTrainableProbabilisticSvm(trainableSvm, config.get_child("probabilistic"));
 	} else {
 		throw invalid_argument("invalid classifier type: " + config.get_value<string>());
 	}
