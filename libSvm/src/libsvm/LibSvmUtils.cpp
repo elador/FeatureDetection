@@ -100,6 +100,32 @@ double LibSvmUtils::computeSvmOutput(struct svm_model *model, const struct svm_n
 }
 
 vector<Mat> LibSvmUtils::extractSupportVectors(struct svm_model *model) const {
+	if (model->param.kernel_type == LINEAR && (matType == CV_32F || matType == CV_64F)) {
+		vector<Mat> supportVectors(1);
+		supportVectors[0] = Mat::zeros(1, dimensions, matType);
+		if (matType == CV_32F) {
+			float* values = supportVectors[0].ptr<float>();
+			for (int i = 0; i < model->l; ++i) {
+				double coeff = model->sv_coef[0][i];
+				svm_node *node = model->SV[i];
+				while (node->index != -1) {
+					values[node->index - 1] += static_cast<float>(coeff * node->value);
+					++node;
+				}
+			}
+		} else if (matType == CV_64F) {
+			double* values = supportVectors[0].ptr<double>();
+			for (int i = 0; i < model->l; ++i) {
+				double coeff = model->sv_coef[0][i];
+				svm_node *node = model->SV[i];
+				while (node->index != -1) {
+					values[node->index - 1] += coeff * node->value;
+					++node;
+				}
+			}
+		}
+		return supportVectors;
+	}
 	vector<Mat> supportVectors;
 	supportVectors.reserve(model->l);
 	for (int i = 0; i < model->l; ++i)
@@ -108,6 +134,11 @@ vector<Mat> LibSvmUtils::extractSupportVectors(struct svm_model *model) const {
 }
 
 vector<float> LibSvmUtils::extractCoefficients(struct svm_model *model) const {
+	if (model->param.kernel_type == LINEAR && (matType == CV_32F || matType == CV_64F)) {
+		vector<float> coefficients(1);
+		coefficients[0] = 1;
+		return coefficients;
+	}
 	vector<float> coefficients;
 	coefficients.reserve(model->l);
 	for (int i = 0; i < model->l; ++i)
