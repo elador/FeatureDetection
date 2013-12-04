@@ -46,6 +46,17 @@ unique_ptr<struct svm_node[], NodeDeleter> LibSvmUtils::createNode(const Mat& ve
 	return move(node);
 }
 
+template<class T>
+void LibSvmUtils::fillNode(struct svm_node *node, const Mat& vector, int size) const {
+	if (!vector.isContinuous())
+		throw invalid_argument("LibSvmUtils: vector has to be continuous");
+	const T* values = vector.ptr<T>();
+	for (int i = 0; i < size; ++i) {
+		node[i].index = i + 1;
+		node[i].value = values[i];
+	}
+}
+
 Mat LibSvmUtils::getVector(const struct svm_node *node) const {
 	Mat& vector = node2example[node];
 	if (vector.empty()) {
@@ -60,6 +71,19 @@ Mat LibSvmUtils::getVector(const struct svm_node *node) const {
 			throw invalid_argument("LibSvmUtils: vectors have to be of type CV_8U, CV_32F, or CV_64F");
 	}
 	return vector;
+}
+
+template<class T>
+void LibSvmUtils::fillMat(Mat& vector, const struct svm_node *node, int size) const {
+	T* values = vector.ptr<T>();
+	for (int i = 0; i < size; ++i) {
+		if (node->index == i + 1) {
+			values[i] = static_cast<T>(node->value);
+			++node;
+		} else {
+			values[i] = 0;
+		}
+	}
 }
 
 void LibSvmUtils::setKernelParams(const Kernel& kernel, struct svm_parameter *params) const {
@@ -93,30 +117,6 @@ vector<float> LibSvmUtils::extractCoefficients(struct svm_model *model) const {
 
 double LibSvmUtils::extractBias(struct svm_model *model) const {
 	return model->rho[0];
-}
-
-template<class T>
-void LibSvmUtils::fillNode(struct svm_node *node, const Mat& vector, int size) const {
-	if (!vector.isContinuous())
-		throw invalid_argument("LibSvmUtils: vector has to be continuous");
-	const T* values = vector.ptr<T>();
-	for (int i = 0; i < size; ++i) {
-		node[i].index = i;
-		node[i].value = values[i];
-	}
-}
-
-template<class T>
-void LibSvmUtils::fillMat(Mat& vector, const struct svm_node *node, int size) const {
-	T* values = vector.ptr<T>();
-	for (int i = 0; i < size; ++i) {
-		if (node->index == i) {
-			values[i] = static_cast<T>(node->value);
-			++node;
-		} else {
-			values[i] = 0;
-		}
-	}
 }
 
 NodeDeleter::NodeDeleter(unordered_map<const struct svm_node*, Mat>& map) : map(map) {}
