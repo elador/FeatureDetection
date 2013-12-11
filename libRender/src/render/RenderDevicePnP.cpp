@@ -22,7 +22,7 @@ RenderDevicePnP::RenderDevicePnP(unsigned int screenWidth, unsigned int screenHe
 	this->colorBuffer = Mat::zeros(screenHeight, screenWidth, CV_8UC4);
 	this->depthBuffer = Mat::ones(screenHeight, screenWidth, CV_64FC1)*1000000;
 
-	setWorldTransform(Mat::eye(4, 4, CV_32FC1));
+	setModelTransform(Mat::eye(4, 4, CV_32FC1));
 	updateViewTransform();
 	updateProjectionTransform(false);
 	setViewport(screenWidth, screenHeight);
@@ -40,7 +40,7 @@ RenderDevicePnP::RenderDevicePnP(unsigned int screenWidth, unsigned int screenHe
 	this->colorBuffer = Mat::zeros(screenHeight, screenWidth, CV_8UC4);
 	this->depthBuffer = Mat::ones(screenHeight, screenWidth, CV_64FC1)*1000000;
 
-	setWorldTransform(Mat::eye(4, 4, CV_32FC1));
+	setModelTransform(Mat::eye(4, 4, CV_32FC1));
 	updateViewTransform();
 	updateProjectionTransform(false);
 	setViewport(screenWidth, screenHeight);
@@ -60,9 +60,9 @@ Mat RenderDevicePnP::getDepthBuffer()
 	return depthBuffer;
 }
 
-void RenderDevicePnP::setWorldTransform(Mat worldTransform)
+void RenderDevicePnP::setModelTransform(Mat modelTransform)
 {
-	this->worldTransform = worldTransform;
+	this->worldTransform = modelTransform;
 }
 
 void RenderDevicePnP::updateViewTransform()
@@ -242,6 +242,18 @@ void RenderDevicePnP::runVertexProcessor()
 				//triangle.vertex[k] = runVertexShader(drawCalls[i].transform, drawCalls[i].trianglesBuffer[j].vertices[k]);
 			}
 
+			processProspectiveTriangleToRasterize(	// does nothing with the texture, only copy either NULL or the texcoords
+				triangle.vertex[0],
+				triangle.vertex[1],
+				triangle.vertex[2],
+				drawCalls[i].texture);
+
+			continue;
+			// PnP: Instead of skipping the visibility check, we could scale the LMs so our PnP outputs NDC.
+			// Also, fix the stuff in processProspectiveTriangleToRasterize(...): We devide by w in one case
+			// and by z in the other. Unify this (think how to do it best in PnP case... change the cam-matrices, ...)
+			/*
+
 			// Hmm I transform many vertices twice or even more, because they are used in more than one triangle.
 			// Maybe make that better, eg a loop over mesh.vertices instead of tvi, or maybe make a new list with all transformed triangles, in same order, then use this plus mesh.tvi
 			// this way I can also transform them all at once!
@@ -315,6 +327,7 @@ void RenderDevicePnP::runVertexProcessor()
 						drawCalls[i].texture);
 				}
 			}
+		*/
 		}
 	}
 }
@@ -330,8 +343,9 @@ Vertex RenderDevicePnP::runVertexShader(shared_ptr<Mesh> mesh, const cv::Mat& tr
 	output.position[3] = tmp.at<float>(3, 0);
 	*/
 	
-	Mat worldToViewVol = projectionTransform * viewTransform * worldTransform;
-	output.position = matToColVec4f(worldToViewVol * Mat(mesh->vertex[vertexNum].position));
+	//Mat worldToViewVol = projectionTransform * viewTransform * worldTransform;
+	//output.position = matToColVec4f(worldToViewVol * Mat(mesh->vertex[vertexNum].position));
+	output.position = matToColVec4f(intrinsicCameraTransform * extrinsicCameraTransform * Mat(mesh->vertex[vertexNum].position));
 	
 	/*
 	Mat worldSpace = worldTransform * Mat(mesh->vertex[vertexNum].position);
@@ -362,22 +376,28 @@ void RenderDevicePnP::processProspectiveTriangleToRasterize(const Vertex& _v0, c
 	t.one_over_z2 = 1.0 / (double)t.v2.position[3];
 
 	// project from 4D to 2D window position with depth value in z coordinate
-	t.v0.position = t.v0.position / t.v0.position[3];	// divide by w
-	cv::Mat tmp = windowTransform * cv::Mat(t.v0.position);	// places the vec as a column in the matrix
+	//t.v0.position = t.v0.position / t.v0.position[3];	// divide by w
+	t.v0.position = t.v0.position / t.v0.position[2];	// divide by w
+	//cv::Mat tmp = windowTransform * cv::Mat(t.v0.position);	// places the vec as a column in the matrix
+	cv::Mat tmp = cv::Mat(t.v0.position);	// places the vec as a column in the matrix
 	t.v0.position[0] = tmp.at<float>(0, 0);
 	t.v0.position[1] = tmp.at<float>(1, 0);
 	t.v0.position[2] = tmp.at<float>(2, 0);
 	t.v0.position[3] = tmp.at<float>(3, 0);
 
-	t.v1.position = t.v1.position / t.v1.position[3];
-	tmp = windowTransform * cv::Mat(t.v1.position);	// places the vec as a column in the matrix
+	//t.v1.position = t.v1.position / t.v1.position[3];
+	t.v1.position = t.v1.position / t.v1.position[2];
+	//tmp = windowTransform * cv::Mat(t.v1.position);	// places the vec as a column in the matrix
+	tmp = cv::Mat(t.v1.position);	// places the vec as a column in the matrix
 	t.v1.position[0] = tmp.at<float>(0, 0);
 	t.v1.position[1] = tmp.at<float>(1, 0);
 	t.v1.position[2] = tmp.at<float>(2, 0);
 	t.v1.position[3] = tmp.at<float>(3, 0);
 
-	t.v2.position = t.v2.position / t.v2.position[3];
-	tmp = windowTransform * cv::Mat(t.v2.position);	// places the vec as a column in the matrix
+	//t.v2.position = t.v2.position / t.v2.position[3];
+	t.v2.position = t.v2.position / t.v2.position[2];
+	//tmp = windowTransform * cv::Mat(t.v2.position);	// places the vec as a column in the matrix
+	tmp = cv::Mat(t.v2.position);	// places the vec as a column in the matrix
 	t.v2.position[0] = tmp.at<float>(0, 0);
 	t.v2.position[1] = tmp.at<float>(1, 0);
 	t.v2.position[2] = tmp.at<float>(2, 0);

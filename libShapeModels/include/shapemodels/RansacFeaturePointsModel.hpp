@@ -26,7 +26,9 @@ namespace shapemodels {
 class RansacFeaturePointsModel : public FeaturePointsModel {
 
 public:
-	RansacFeaturePointsModel(unique_ptr<FeaturePointsSelector> selector, unique_ptr<FeaturePointsEvaluator> evaluator) : FeaturePointsModel(std::move(selector), std::move(evaluator)) {
+	RansacFeaturePointsModel() {};
+
+	RansacFeaturePointsModel(FeaturePointsSelector selector, FeaturePointsEvaluator evaluator) : FeaturePointsModel(selector, evaluator) {
 
 	};
 	/**
@@ -42,6 +44,10 @@ public:
 	 * @param[in] param The parameter.
 	 */
 	map<string, shared_ptr<imageprocessing::Patch>> run(Mat img, float thresholdForDatapointFitsModel=10.0f, int numIter=5000, int numClosePointsRequiredForGoodFit=4, int minPointsToFitModel=3);
+
+	cv::Rect evaluatorGetFaceCenter(map<string, shared_ptr<imageprocessing::Patch>> landmarkPoints, Mat img) {
+		return evaluator.getFaceCenter(landmarkPoints, img);
+	};
 
 private:
 

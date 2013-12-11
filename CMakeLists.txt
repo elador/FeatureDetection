@@ -50,3 +50,4 @@ add_subdirectory(frDbTool)		# App for managing (creating and populating) the sql
 add_subdirectory(frDbExp)		# App for doing experiments with the face recognition scores in the database
 
 add_subdirectory(ffpDetectAppExp)		# Experimental playground for FFD with the 3DMM/POSIT
+add_subdirectory(ransacTestApp)		# Experimental playground for RANSAC

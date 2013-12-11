@@ -20,7 +20,7 @@ using std::runtime_error;
 
 namespace imageio {
 
-FileListImageSource::FileListImageSource(const string& filelist) : ImageSource(filelist), files(), index(-1) {
+FileListImageSource::FileListImageSource(const string& filelist, const string& pathPrefix, const string& alternativeExtension) : ImageSource(filelist), files(), index(-1) {
 	path path(filelist);
 	if (!exists(path))
 		throw runtime_error("File '" + filelist + "' does not exist");
@@ -38,8 +38,16 @@ FileListImageSource::FileListImageSource(const string& filelist) : ImageSource(f
 		}
 		string buf;
 		std::stringstream ss(line);
-		ss >> buf;	
-		files.push_back(boost::filesystem::path(buf));	// Insert the image filename, just ignore the rest of the line
+		ss >> buf;
+		boost::filesystem::path pathToImage(buf);
+		if (!pathPrefix.empty()) {
+			pathToImage = boost::filesystem::path(pathPrefix) / pathToImage;
+		}
+		if (!alternativeExtension.empty()) {
+			pathToImage.replace_extension(boost::filesystem::path(alternativeExtension));
+		}
+		// Todo: We could check that this file exists before adding it. Although that doesn't guarantee the image can be loaded successfully, so maybe check in getImage()?
+		files.push_back(pathToImage);	// Insert the image filename, just ignore the rest of the line
 	}
 	listfileStream.close();
 

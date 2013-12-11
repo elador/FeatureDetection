@@ -64,7 +64,14 @@ public:
 	void renderLM(Vec4f p0, Scalar color);
 	void renderMesh(Mesh mesh);
 
-	void setWorldTransform(Mat worldTransform);
+	void setModelTransform(Mat modelTransform);
+
+	void setExtrinsicCameraTransform(Mat extrinsicCameraTransform) {
+		this->extrinsicCameraTransform = extrinsicCameraTransform;
+	}
+	void setIntrinsicCameraTransform(Mat intrinsicCameraTransform) {
+		this->intrinsicCameraTransform = intrinsicCameraTransform;	
+	};
 
 	void resetBuffers();
 
@@ -87,6 +94,9 @@ protected:
 	Mat viewTransform;			// Camera-transform
 	Mat projectionTransform;	// Orthogonal or projective transform
 	Mat windowTransform;	// Transform to window coordinates, 4 x 4 float
+
+	Mat extrinsicCameraTransform; // From PnP algos
+	Mat intrinsicCameraTransform; // From PnP algos
 
 	void setViewport(unsigned int screenWidth, unsigned int screenHeight);
 
