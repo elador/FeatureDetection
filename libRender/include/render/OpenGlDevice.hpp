@@ -71,7 +71,7 @@ private:
 	static void openGlDrawCallback(void* userdata);
 	void openGlDrawCallbackInstance();
 
-	cv::GlTexture2D backgroundTex; // shared_ptr? // git 2.4.9
+	//cv::GlTexture2D backgroundTex; // shared_ptr? // git 2.4.9
 
 	void drawAxes(float scale=1); // 1 = unit axes
 	void drawBackground();

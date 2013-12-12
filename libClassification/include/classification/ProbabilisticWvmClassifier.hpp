@@ -78,7 +78,7 @@ public:
 	 * @param[in] thresholdsFilename The name of the file containing the thresholds of the filter levels and the logistic function's parameters.
 	 * @return The newly created probabilistic WVM classifier.
 	 */
-	static shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadFromMatlab(const string& classifierFilename, const string& thresholdsFilename);
+	static shared_ptr<ProbabilisticWvmClassifier> loadFromMatlab(const string& classifierFilename, const string& thresholdsFilename);
 
 	/**
 	 * Creates a new probabilistic WVM classifier from the parameters given in the ptree sub-tree. Loads the logistic function's

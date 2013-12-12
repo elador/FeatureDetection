@@ -283,7 +283,7 @@ void OpenGlDevice::openGlDrawCallbackInstance()
 	//glTranslatef(0.5f, 0.5f, 0.0f);
 	// //gluLookAt(-0.5f, 0.5f, 3.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f); ?
 
-	if (!backgroundTex.empty()) {
+/*	if (!backgroundTex.empty()) {
 		glEnable(GL_TEXTURE_2D);
 		glColor3f(1.0f, 1.0f, 1.0f);
 		backgroundTex.bind();
@@ -295,7 +295,7 @@ void OpenGlDevice::openGlDrawCallbackInstance()
 		glEnd();
 		glDisable(GL_TEXTURE_2D);
 	}
-
+*/
 	drawAxes();
 	//drawPlaneXY(1.0f, 1.0f, 1.0f);
 
@@ -430,7 +430,7 @@ void OpenGlDevice::drawCube(float x, float y, float z, float scale/*=1*/)
 
 void OpenGlDevice::setBackgroundImage(Mat background)
 {
-	backgroundTex.copyFrom(background);
+	//backgroundTex.copyFrom(background);
 }
 
 void OpenGlDevice::updateWindow()

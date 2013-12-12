@@ -617,7 +617,7 @@ int main(int argc, char *argv[])
 	class imageStatistic 
 	{
 		public:
-		static enum class DetectionType {
+		enum class DetectionType {
 			TACC, ///< todo
 			FACC,
 			TREJ,
