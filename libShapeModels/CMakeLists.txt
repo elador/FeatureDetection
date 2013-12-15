@@ -12,6 +12,7 @@ FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core calib3d)
 SET(HEADERS
 	include/shapemodels/PcaModel.hpp
 	include/shapemodels/MorphableModel.hpp
+	include/shapemodels/CameraEstimation.hpp
 	include/shapemodels/FeaturePointsModelRANSACtmp.hpp
 	include/shapemodels/FeaturePointsModel.hpp
 	include/shapemodels/FeaturePointsSelector.hpp
@@ -27,6 +28,7 @@ SET(HEADERS
 SET(SOURCE
 	src/shapemodels/PcaModel.cpp
 	src/shapemodels/MorphableModel.cpp
+	src/shapemodels/CameraEstimation.cpp
 	src/shapemodels/RandomFeaturePointsSelector.cpp
 	src/shapemodels/FeaturePointsModelRANSACtmp.cpp
 	src/shapemodels/PositFeaturePointsEvaluator.cpp
