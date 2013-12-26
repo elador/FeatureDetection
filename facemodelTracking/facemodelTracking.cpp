@@ -465,7 +465,7 @@ int main(int argc, char *argv[])
 			//buff.convertTo(buffWithoutAlpha, CV_BGRA2BGR);
 			cvtColor(buff, buffWithoutAlpha, cv::COLOR_BGRA2BGR);
 			Mat weighted = img2.clone(); // get the right size
-			cv::addWeighted(img2, 0.3, buffWithoutAlpha, 0.7, 0.0, weighted);
+			cv::addWeighted(img2, 0.7, buffWithoutAlpha, 0.3, 0.0, weighted);
 			//return std::make_pair(translation_vector, rotation_matrix);
 			img2 = weighted;
 		}

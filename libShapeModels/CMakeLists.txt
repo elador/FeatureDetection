@@ -8,6 +8,15 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 FIND_PACKAGE(Boost 1.48.0 REQUIRED)
 FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core calib3d)
 
+#IF(WIN32)
+	#FIND_PACKAGE (HDF5 NAMES hdf5) # puts it in Config-mode
+	#FIND_PACKAGE (HDF5 REQUIRED CONFIG) # same
+	FIND_PACKAGE (HDF5 REQUIRED COMPONENTS C CXX) # works on windows as well
+#ENDIF()
+#message(STATUS "Hdf5 include dir: ${HDF5_INCLUDE_DIR}") # According to hdf5 cmake file, should use *_DIRS, but they don't define it in hdf5-config.cmake. Ok if find_packaged used as above (now), it works.
+message(STATUS "HDF5 includes at: ${HDF5_INCLUDE_DIRS}")
+message(STATUS "HDF5 libraries at: ${HDF5_LIBRARIES}")
+
 # source and header files
 SET(HEADERS
 	include/shapemodels/PcaModel.hpp
@@ -40,7 +49,7 @@ include_directories( "include" )
 # add dependencies
 include_directories( ${Boost_INCLUDE_DIRS} )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
-INCLUDE_DIRECTORIES("C:\\Users\\Patrik\\Cloud\\PhD\\HDF5\\include\\hdf5\\")
+include_directories( ${HDF5_INCLUDE_DIRS} )
 include_directories( ${ImageProcessing_SOURCE_DIR}/include )
 include_directories( ${ImageIO_SOURCE_DIR}/include )
 include_directories( ${Render_SOURCE_DIR}/include )
