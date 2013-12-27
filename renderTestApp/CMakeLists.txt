@@ -1,6 +1,6 @@
 SET( SUBPROJECT_NAME renderTestApp )	# my own variable, not cmake's
 PROJECT( ${SUBPROJECT_NAME} )
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
@@ -10,6 +10,17 @@ find_package(OpenGL)
 FIND_PACKAGE( OpenCV 2.3.1 REQUIRED core imgproc highgui calib3d )
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
+
+#Hdf5:
+#IF(WIN32)
+	#FIND_PACKAGE (HDF5 NAMES hdf5) # puts it in Config-mode
+	FIND_PACKAGE (HDF5 REQUIRED COMPONENTS C CXX NAMES hdf5) # COMPONENTS doesn't seem to work
+	set (HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIR}) # According to hdf5 cmake file, should use *_DIRS, but they don't define it in hdf5-config.cmake. So if we use the Config-mode with NAMES, it isn't set, but it is, when used as in linux.
+	#FIND_PACKAGE (HDF5 REQUIRED CONFIG) # same
+	#LX: FIND_PACKAGE (HDF5 REQUIRED COMPONENTS C CXX) # works on windows as well but links to dll's instead of lib's...
+#ENDIF()
+message(STATUS "HDF5 includes at: ${HDF5_INCLUDE_DIRS}")
+message(STATUS "HDF5 libraries at: ${HDF5_LIBRARIES}")
 
 #Matlab:
 SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
@@ -28,12 +39,24 @@ ELSE(Boost_FOUND)
   MESSAGE(FATAL_ERROR "Boost not found")
 ENDIF()
 
+#Qt:
+# Find includes in corresponding build directories
+#set(CMAKE_INCLUDE_CURRENT_DIR ON)
+# Instruct CMake to run moc automatically when needed.
+set(CMAKE_AUTOMOC ON)
+# Find the Qt5Sql library
+find_package(Qt5Core)
+find_package(Qt5Gui)
+# See http://qt-project.org/doc/qt-5.1/qtdoc/cmake-manual.html
+
 #Source and header files:
 SET(SOURCE
 	renderTestApp.cpp
+	openglwindow.cpp
 )
 
 SET(HEADERS
+	openglwindow.h
 )
 
 ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
@@ -41,6 +64,7 @@ ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
 INCLUDE_DIRECTORIES( ${MATLAB_INCLUDE_DIR} )
 include_directories( ${Boost_INCLUDE_DIRS} )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
+include_directories( ${HDF5_INCLUDE_DIRS} )
 include_directories( ${Logging_SOURCE_DIR}/include )
 include_directories( ${ImageLogging_SOURCE_DIR}/include )
 include_directories( ${ImageIO_SOURCE_DIR}/include )
@@ -50,10 +74,5 @@ include_directories( ${Render_SOURCE_DIR}/include )
 include_directories( ${ShapeModels_SOURCE_DIR}/include )
 include_directories( ${Detection_SOURCE_DIR}/include )
 
-# Hdf5 "hack":
-INCLUDE_DIRECTORIES("C:\\Users\\Patrik\\Cloud\\PhD\\HDF5\\include\\hdf5\\")
-link_directories( "C:\\Users\\Patrik\\Cloud\\PhD\\HDF5\\lib\\hdf5\\" )
-set(HDF5_LIBRARIES debug hdf5d debug hdf5_cppd optimized hdf5; optimized hdf5_cpp)
-
 #Make the app depend on the libraries
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection ImageIO ${KINECT_LIBNAME} ImageProcessing Classification ShapeModels Render ImageLogging Logging ${OPENGL_LIBRARIES} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} ${HDF5_LIBRARIES} )
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection ImageIO ${KINECT_LIBNAME} ImageProcessing Classification ShapeModels Render ImageLogging Logging ${OPENGL_LIBRARIES} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} ${HDF5_LIBRARIES} Qt5::Gui Qt5::Core )

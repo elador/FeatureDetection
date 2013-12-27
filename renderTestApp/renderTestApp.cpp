@@ -6,7 +6,7 @@
  */
 
 // For memory leak debugging: http://msdn.microsoft.com/en-us/library/x98tx3cf(v=VS.100).aspx
-#define _CRTDBG_MAP_ALLOC
+//#define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 
 #ifdef WIN32
@@ -37,7 +37,7 @@
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/highgui/highgui.hpp"
+//#include "opencv2/highgui/highgui.hpp"
 
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
@@ -55,11 +55,20 @@
 
 #include "logging/LoggerFactory.hpp"
 
-#define WIN32_LEAN_AND_MEAN
-#define NOGDI
-#include <windows.h>
+#include "openglwindow.h"
+
+#include <QtGui/QGuiApplication>
+#include <QtGui/QMatrix4x4>
+#include <QtGui/QOpenGLShaderProgram>
+#include <QtGui/QScreen>
+
+#include <QtCore/qmath.h>
+
+//#define WIN32_LEAN_AND_MEAN
+//#define NOGDI
+/*#include <windows.h>
 #include <GL/GL.h>
-#include <GL/GLU.h>
+#include <GL/GLU.h>*/
 
 namespace po = boost::program_options;
 using namespace std;
@@ -79,7 +88,7 @@ ostream& operator<<(ostream& os, const vector<T>& v)
 	copy(v.begin(), v.end(), ostream_iterator<T>(cout, " ")); 
 	return os;
 }
-
+/*
 void on_opengl(void* param)
 {
 	glLoadIdentity();
@@ -108,12 +117,37 @@ void on_opengl(void* param)
 		glEnd();
 	}
 }
+*/
 
+class TriangleWindow : public OpenGLWindow
+{
+public:
+	TriangleWindow();
+
+	void initialize();
+	void render();
+
+private:
+	GLuint loadShader(GLenum type, const char *source);
+
+	GLuint m_posAttr;
+	GLuint m_colAttr;
+	GLuint m_matrixUniform;
+
+	QOpenGLShaderProgram *m_program;
+	int m_frame;
+};
+
+TriangleWindow::TriangleWindow()
+: m_program(0)
+, m_frame(0)
+{
+}
 
 int main(int argc, char *argv[])
 {
 	#ifdef WIN32
-	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF ); // dump leaks at return
+	//_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF ); // dump leaks at return
 	//_CrtSetBreakAlloc(287);
 	#endif
 	
@@ -149,7 +183,7 @@ int main(int argc, char *argv[])
 
 	loglevel logLevel;
 	if(boost::iequals(verboseLevelConsole, "PANIC")) logLevel = loglevel::PANIC;
-	else if(boost::iequals(verboseLevelConsole, "ERROR")) logLevel = loglevel::ERROR;
+//	else if(boost::iequals(verboseLevelConsole, "ERROR")) logLevel = loglevel::ERROR;
 	else if(boost::iequals(verboseLevelConsole, "WARN")) logLevel = loglevel::WARN;
 	else if(boost::iequals(verboseLevelConsole, "INFO")) logLevel = loglevel::INFO;
 	else if(boost::iequals(verboseLevelConsole, "DEBUG")) logLevel = loglevel::DEBUG;
@@ -190,32 +224,112 @@ int main(int argc, char *argv[])
 	
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img = Mat::zeros(640, 480, CV_8UC1);
-	const string windowName = "oglWin";
 
-	cv::namedWindow(windowName, CV_WINDOW_OPENGL | CV_WINDOW_AUTOSIZE);
-	cv::setOpenGlDrawCallback(windowName, on_opengl);
-	
-	cv::imshow(windowName, img);
 
-	
+	QGuiApplication app(argc, argv);
+
+	QSurfaceFormat format;
+	format.setSamples(16);
+
+	TriangleWindow window;
+	window.setFormat(format);
+	window.resize(640, 480);
+	window.show();
+
+	window.setAnimating(true);
+
+	return app.exec();
+
 
 	while (true) {
 		start = std::chrono::system_clock::now();
-		cv::waitKey(5);
-		//cv::updateWindow(windowName);
+
 		end = std::chrono::system_clock::now();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
 		appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
 
 	}
 
-	
-
-	
-
-
-
 
 
 	return 0;
+}
+
+static const char *vertexShaderSource =
+"attribute highp vec4 posAttr;\n"
+"attribute lowp vec4 colAttr;\n"
+"varying lowp vec4 col;\n"
+"uniform highp mat4 matrix;\n"
+"void main() {\n"
+"   col = colAttr;\n"
+"   gl_Position = matrix * posAttr;\n"
+"}\n";
+
+static const char *fragmentShaderSource =
+"varying lowp vec4 col;\n"
+"void main() {\n"
+"   gl_FragColor = col;\n"
+"}\n";
+
+GLuint TriangleWindow::loadShader(GLenum type, const char *source)
+{
+	GLuint shader = glCreateShader(type);
+	glShaderSource(shader, 1, &source, 0);
+	glCompileShader(shader);
+	return shader;
+}
+
+void TriangleWindow::initialize()
+{
+	m_program = new QOpenGLShaderProgram(this);
+	m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
+	m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
+	m_program->link();
+	m_posAttr = m_program->attributeLocation("posAttr");
+	m_colAttr = m_program->attributeLocation("colAttr");
+	m_matrixUniform = m_program->uniformLocation("matrix");
+}
+
+void TriangleWindow::render()
+{
+	const qreal retinaScale = devicePixelRatio();
+	glViewport(0, 0, width() * retinaScale, height() * retinaScale);
+
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	m_program->bind();
+
+	QMatrix4x4 matrix;
+	matrix.perspective(60, 4.0 / 3.0, 0.1, 100.0);
+	matrix.translate(0, 0, -2);
+	//matrix.rotate(100.0f * m_frame / screen()->refreshRate(), 0, 1, 0);
+
+	m_program->setUniformValue(m_matrixUniform, matrix);
+
+	GLfloat vertices[] = {
+		0.0f, 0.707f,
+		-0.5f, -0.5f,
+		0.5f, -0.5f
+	};
+
+	GLfloat colors[] = {
+		1.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 1.0f
+	};
+
+	glVertexAttribPointer(m_posAttr, 2, GL_FLOAT, GL_FALSE, 0, vertices);
+	glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, colors);
+
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(0);
+
+	m_program->release();
+
+	++m_frame;
 }

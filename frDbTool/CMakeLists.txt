@@ -40,13 +40,6 @@ set(CMAKE_AUTOMOC ON)
 find_package(Qt5Sql)
 # See http://qt-project.org/doc/qt-5.1/qtdoc/cmake-manual.html
 
-#HDF5:
-#MESSAGE(STATUS "HDF5_ROOT: ${HDF5_ROOT}")
-#SET( CMAKE_MODULE_PATH ${HDF5_ROOT}/cmake/hdf5 )
-#MESSAGE(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
-#FIND_PACKAGE( HDF5 REQUIRED COMPONENTS C CXX ) # Maybe: FIND_PACKAGE (HDF5 REQURIED), and then, further up, PROJECT (HDF5MyApp C CXX) ? (according to hdf5 docu)
-
-
 #Source and header files:
 SET(SOURCE
 	frDbTool.cpp
@@ -69,10 +62,7 @@ include_directories( ${Classification_SOURCE_DIR}/include )
 include_directories( ${Detection_SOURCE_DIR}/include )
 
 #Make the app depend on the libraries
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection ImageIO ${KINECT_LIBNAME} ImageProcessing Classification Logging ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} Qt5::Sql) # ${HDF5_LIBRARIES}
-#MESSAGE(STATUS "HDF5_CXX_LIBRARIES: ${HDF5_CXX_LIBRARIES}")
-#MESSAGE(STATUS "HDF5_C_LIBRARIES: ${HDF5_C_LIBRARIES}")
-#MESSAGE(STATUS "HDF5_LIBRARIES: ${HDF5_LIBRARIES}")
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection ImageIO ${KINECT_LIBNAME} ImageProcessing Classification Logging ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} Qt5::Sql)
 
 MESSAGE(STATUS "Finished configuring ${SUBPROJECT_NAME}")
 MESSAGE(STATUS "===============================")

@@ -37,8 +37,8 @@ add_subdirectory(libShapeModels)		# Head/face specific things; 2D/3D models; Com
 #add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe).
 #add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature point detection app.
 
-add_subdirectory(facemodelTracking)		# Todo
-#add_subdirectory(renderTestApp)			# Todo
+#add_subdirectory(facemodelTracking)		# Todo
+add_subdirectory(renderTestApp)			# Todo
 
 #add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
 #add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components

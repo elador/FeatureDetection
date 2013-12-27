@@ -17,7 +17,6 @@ MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 	#FIND_PACKAGE (HDF5 REQUIRED CONFIG) # same
 	#LX: FIND_PACKAGE (HDF5 REQUIRED COMPONENTS C CXX) # works on windows as well but links to dll's instead of lib's...
 #ENDIF()
-
 message(STATUS "HDF5 includes at: ${HDF5_INCLUDE_DIRS}")
 message(STATUS "HDF5 libraries at: ${HDF5_LIBRARIES}")
 
