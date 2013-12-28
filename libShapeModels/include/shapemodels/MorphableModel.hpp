@@ -14,6 +14,12 @@
 
 #include "render/Mesh.hpp"
 
+#ifdef WIN32
+	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
+	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
+#endif
+#include "boost/property_tree/ptree.hpp"
+
 namespace shapemodels {
 
 /**
@@ -28,6 +34,17 @@ public:
 	 * @param[in] a b
 	 */
 	MorphableModel();
+
+	/**
+	* Load a morphable model from a property tree node in a config file.
+	* The function uses the file extension to determine which load
+	* function to call.
+	* Throws a std::runtime_exception of the extension is unrecognised.
+	*
+	* @param[in] configTree A node of a ptree.
+	* @return A morphable model.
+	*/
+	static MorphableModel load(boost::property_tree::ptree configTree);
 	
 	/**
 	 * Todo.

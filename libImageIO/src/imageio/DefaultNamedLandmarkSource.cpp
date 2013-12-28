@@ -44,7 +44,7 @@ LandmarkCollection DefaultNamedLandmarkSource::get(const path& imagePath) {
 		try {
 			landmarks = landmarkCollections.at(imagePath.stem());
 		} catch (std::out_of_range& e) {
-			logger.info("The LandmarkSource does not contain landmarks for the given image. Is this expected?");
+			logger.warn("Landmarks for the given image could not be found, returning an empty LandmarkCollection. Is this expected?");
 		}
 		// we succeeded using the basename
 	}

@@ -9,6 +9,7 @@
 #include "logging/LoggerFactory.hpp"
 #include "opencv2/core/core.hpp"
 #include "boost/lexical_cast.hpp"
+#include "boost/filesystem/path.hpp"
 #include <exception>
 #include <fstream>
 
@@ -25,6 +26,24 @@ namespace shapemodels {
 MorphableModel::MorphableModel()
 {
 	
+}
+
+shapemodels::MorphableModel MorphableModel::load(boost::property_tree::ptree configTree)
+{
+	MorphableModel morphableModel;
+	boost::filesystem::path filename = configTree.get<string>("filename");
+	if (filename.extension().string() == ".scm") {
+		string vertexMappingFile = configTree.get<string>("vertexMapping");
+		morphableModel = shapemodels::MorphableModel::loadScmModel(filename.string(), vertexMappingFile);
+	}
+	else if (filename.extension().string() == ".h5") {
+		morphableModel = shapemodels::MorphableModel::loadStatismoModel(filename.string());
+	}
+	else
+	{
+		throw std::runtime_error("MorphableModel: Unknown file extension. Neither .scm nor .h5.");
+	}
+	return morphableModel;
 }
 
 shapemodels::MorphableModel MorphableModel::loadScmModel(std::string h5file, std::string landmarkVertexMappingFile)
