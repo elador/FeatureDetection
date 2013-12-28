@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
 		ptree ptFeaturePointValidation = pt.get_child("featurePointValidation");
 		morphableModelFile = ptFeaturePointValidation.get<string>("morphableModel");
 		morphableModelVertexMappingFile = ptFeaturePointValidation.get<string>("morphableModelVertexMapping");
-		mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\SurreyLowResGuosheng\\NON3448\\ShpVtxModelBin_NON3448.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
+		mm = shapemodels::MorphableModel::loadScmModel(morphableModelFile, morphableModelVertexMappingFile);
 	} catch (const boost::property_tree::ptree_error& error) {
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
@@ -302,7 +302,7 @@ void TriangleWindow::render()
 	QMatrix4x4 matrix;
 	matrix.perspective(60, 4.0 / 3.0, 0.1, 100.0);
 	matrix.translate(0, 0, -2);
-	//matrix.rotate(100.0f * m_frame / screen()->refreshRate(), 0, 1, 0);
+	matrix.rotate(100.0f * m_frame / screen()->refreshRate(), 0, 1, 0);
 
 	m_program->setUniformValue(m_matrixUniform, matrix);
 
