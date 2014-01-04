@@ -21,7 +21,8 @@ message(STATUS "HDF5 libraries at: ${HDF5_LIBRARIES}")
 SET(HEADERS
 	include/shapemodels/PcaModel.hpp
 	include/shapemodels/MorphableModel.hpp
-	include/shapemodels/CameraEstimation.hpp
+	include/shapemodels/CameraEstimation.hpp # Should rename to OpenCvCameraEstimation
+	include/shapemodels/AffineCameraEstimation.hpp
 	include/shapemodels/FeaturePointsModelRANSACtmp.hpp
 	include/shapemodels/FeaturePointsModel.hpp
 	include/shapemodels/FeaturePointsSelector.hpp
@@ -38,6 +39,7 @@ SET(SOURCE
 	src/shapemodels/PcaModel.cpp
 	src/shapemodels/MorphableModel.cpp
 	src/shapemodels/CameraEstimation.cpp
+	src/shapemodels/AffineCameraEstimation.cpp
 	src/shapemodels/RandomFeaturePointsSelector.cpp
 	src/shapemodels/FeaturePointsModelRANSACtmp.cpp
 	src/shapemodels/PositFeaturePointsEvaluator.cpp

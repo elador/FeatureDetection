@@ -33,8 +33,9 @@
 #include <iostream>
 
 #include "opencv2/core/core.hpp"
-//#include "opencv2/imgproc/imgproc.hpp"
-//#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/calib3d/calib3d.hpp"
 
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
@@ -48,7 +49,10 @@
 #include "boost/lexical_cast.hpp"
 
 #include "shapemodels/MorphableModel.hpp"
-//#include "shapemodels/CameraEstimation.hpp"
+#include "shapemodels/CameraEstimation.hpp"
+#include "shapemodels/AffineCameraEstimation.hpp"
+#include "render/Camera.hpp"
+#include "render/RenderDevicePnP.hpp"
 
 #include "imageio/ImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
@@ -252,9 +256,9 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	shapemodels::MorphableModel mm;
+	shapemodels::MorphableModel morphableModel;
 	try {
-		mm = shapemodels::MorphableModel::load(pt.get_child("morphableModel"));
+		morphableModel = shapemodels::MorphableModel::load(pt.get_child("morphableModel"));
 	} catch (const boost::property_tree::ptree_error& error) {
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
@@ -266,17 +270,196 @@ int main(int argc, char *argv[])
 	
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img;
+	const string windowName = "win";
+
+	shapemodels::CameraEstimation cameraEstimation(morphableModel);
+	shapemodels::AffineCameraEstimation affineCameraEstimation(morphableModel);
+	vector<imageio::ModelLandmark> landmarks;
+
+	cv::namedWindow(windowName);
+	
+
+
 
 	while(labeledImageSource->next()) {
 		start = std::chrono::system_clock::now();
 		appLogger.info("Starting to process " + labeledImageSource->getName().string());
 		img = labeledImageSource->getImage();
-
+		
 		LandmarkCollection lms = labeledImageSource->getLandmarks();
 		vector<shared_ptr<Landmark>> lmsv = lms.getLandmarks();
+		landmarks.clear();
+		Mat landmarksImage = img.clone(); // blue rect = the used landmarks
 		for (const auto& lm : lmsv) {
-			lm->draw(img);
+			lm->draw(landmarksImage);
+			if (lm->getName() == "right.eye.corner_outer" || lm->getName() == "right.eye.corner_inner" || lm->getName() == "left.eye.corner_outer" || lm->getName() == "left.eye.corner_inner" || lm->getName() == "center.nose.tip" || lm->getName() == "right.lips.corner" || lm->getName() == "left.lips.corner") {
+				landmarks.emplace_back(imageio::ModelLandmark(lm->getName(), lm->getPosition2D()));
+				cv::rectangle(landmarksImage, cv::Point(cvRound(lm->getX() - 2.0f), cvRound(lm->getY() - 2.0f)), cv::Point(cvRound(lm->getX() + 2.0f), cvRound(lm->getY() + 2.0f)), cv::Scalar(255, 0, 0));
+			}
 		}
+
+		// Start affine camera estimation (Aldrian paper)
+		Mat affineCamLandmarksProjectionImage = landmarksImage.clone(); // the affine LMs are currently not used (don't know how to render without z-vals)
+		Mat affineCam = affineCameraEstimation.estimate(landmarks);
+		for (const auto& lm : landmarks) {
+			Vec3f tmp = morphableModel.getShapeModel().getMeanAtPoint(lm.getName());
+			Mat p(4, 1, CV_32FC1);
+			p.at<float>(0, 0) = tmp[0];
+			p.at<float>(1, 0) = tmp[1];
+			p.at<float>(2, 0) = tmp[2];
+			p.at<float>(3, 0) = 1;
+			Mat p2d = affineCam * p;
+			Point2f pp({ p2d.at<float>(0, 0), p2d.at<float>(1, 0) });
+			cv::circle(affineCamLandmarksProjectionImage, pp, 4.0f, Scalar(0.0f, 255.0f, 0.0f));
+		}
+		// End Affine est.
+		// Estimate the shape coefficients
+
+		// $\hat{V} \in R^{3N\times m-1}$, subselect the rows of the eigenvector matrix $V$ associated with the $N$ feature points
+		// And we insert a row of zeros after every third row, resulting in matrix $\hat{V}_h \in R^{4N\times m-1}$:
+		Mat V_hat_h = Mat::zeros(4 * landmarks.size(), morphableModel.getShapeModel().getNumberOfPrincipalComponents(), CV_32FC1);
+		int rowIndex = 0;
+		for (const auto& lm : landmarks) {
+			Mat basisRows = morphableModel.getShapeModel().getPcaBasis(lm.getName()); // getPcaBasis should return the not-normalized basis I think
+			Mat submatrixToReplace = V_hat_h.rowRange(rowIndex, rowIndex + 3); // submatrixToReplace is just a pointer to V_hat_h
+			basisRows.copyTo(submatrixToReplace);
+			rowIndex += 4; // replace 3 rows and skip the 4th one, it has all zeros
+		}
+		// Form a block diagonal matrix $P \in R^{3N\times 4N}$ in which the camera matrix C (P_Affine, affineCam) is placed on the diagonal:
+		Mat P = Mat::zeros(3 * landmarks.size(), 4 * landmarks.size(), CV_32FC1);
+		for (int i = 0; i < landmarks.size(); ++i) {
+			Mat submatrixToReplace = P.colRange(4*i, (4*i)+4).rowRange(3*i, (3*i)+3);
+			//Mat submatrixToReplace2 = P.;
+			affineCam.copyTo(submatrixToReplace);
+		}
+		// The variances: We set the 3D and 2D variances to one static value for now. $sigma^2_2D = sqrt(1) + sqrt(3)^2 = 4$
+		float sigma_2D = std::sqrt(4);
+		Mat Sigma = Mat::zeros(3 * landmarks.size(), 3 * landmarks.size(), CV_32FC1);
+		for (int i = 0; i < 3 * landmarks.size(); ++i) {
+			Sigma.at<float>(i, i) = 1.0f / sigma_2D;
+		}
+		Mat Omega = Sigma.t() * Sigma;
+		// The landmarks in matrix notation (in homogeneous coordinates), $3N\times 1$
+		Mat y = Mat::ones(3 * landmarks.size(), 1, CV_32FC1);
+		for (int i = 0; i < landmarks.size(); ++i) {
+			y.at<float>(3*i, 0) = landmarks[i].getX();
+			y.at<float>((3*i)+1, 0) = landmarks[i].getY();
+			// the position (3*i)+2 stays 1 (homogeneous coordinate)
+		}
+		// The mean, with an added homogeneous coordinate (x_1, y_1, z_1, 1, x_2, ...)^t
+		Mat v_bar = Mat::ones(4 * landmarks.size(), 1, CV_32FC1);
+		for (int i = 0; i < landmarks.size(); ++i) {
+			Vec3f modelMean = morphableModel.getShapeModel().getMeanAtPoint(landmarks[i].getName());
+			v_bar.at<float>(4 * i, 0) = modelMean[0];
+			v_bar.at<float>((4 * i) + 1, 0) = modelMean[1];
+			v_bar.at<float>((4 * i) + 2, 0) = modelMean[2];
+			// the position (4*i)+3 stays 1 (homogeneous coordinate)
+		}
+		
+		// Bring into standard regularised quadratic form with diagonal distance matrix Omega
+		Mat A = P * V_hat_h;
+		Mat b = P * v_bar - y;
+		//Mat c_s; // The x, we solve for this! (the variance-normalized shape parameter vector, $c_s = [a_1/sigma_{s,1} , ..., a_m-1/sigma_{s,m-1}]^t$
+		float lambda = 0.01f; // The weight of the regularisation
+		int numShapePc = morphableModel.getShapeModel().getNumberOfPrincipalComponents();
+		Mat AtOmegaA = A.t() * Omega * A;
+		Mat AtOmegaAReg = AtOmegaA + lambda * Mat::eye(numShapePc, numShapePc, CV_32FC1);
+		Mat AtOmegaARegInv = AtOmegaAReg.inv(/*cv::DECOMP_SVD*/);
+		Mat AtOmegatb = A.t() * Omega.t() * b;
+		Mat c_s = -AtOmegaARegInv * AtOmegatb;
+		vector<float> fittedCoeffs(c_s);
+
+		// End estimate the shape coefficients
+
+		// Start solvePnP & display
+		int max_d = std::max(img.rows, img.cols); // should be the focal length? (don't forget the aspect ratio!). TODO Read in Hartley-Zisserman what this is
+		//int max_d = 700;
+		Mat camMatrix = (cv::Mat_<double>(3, 3) << max_d, 0, img.cols / 2.0,
+			0, max_d, img.rows / 2.0,
+			0, 0, 1.0);
+
+		std::pair<Mat, Mat> rotTransRodr = cameraEstimation.estimate(landmarks, camMatrix);
+		Mat rvec = rotTransRodr.first;
+		Mat tvec = rotTransRodr.second;
+
+		Mat rotation_matrix(3, 3, CV_64FC1);
+		cv::Rodrigues(rvec, rotation_matrix);
+		rotation_matrix.convertTo(rotation_matrix, CV_32FC1);
+		Mat translation_vector = tvec;
+		translation_vector.convertTo(translation_vector, CV_32FC1);
+
+		camMatrix.convertTo(camMatrix, CV_32FC1);
+
+		//vector<Point2f> projectedPoints;
+		//projectPoints(modelPoints, rvec, tvec, camMatrix, vector<float>(), projectedPoints); // same result as below
+		Mat extrinsicCameraMatrix = Mat::zeros(4, 4, CV_32FC1);
+		Mat extrRot = extrinsicCameraMatrix(cv::Range(0, 3), cv::Range(0, 3));
+		rotation_matrix.copyTo(extrRot);
+		Mat extrTrans = extrinsicCameraMatrix(cv::Range(0, 3), cv::Range(3, 4));
+		translation_vector.copyTo(extrTrans);
+		extrinsicCameraMatrix.at<float>(3, 3) = 1;
+
+		Mat intrinsicCameraMatrix = Mat::zeros(4, 4, CV_32FC1);
+		Mat intrinsicCameraMatrixMain = intrinsicCameraMatrix(cv::Range(0, 3), cv::Range(0, 3));
+		camMatrix.copyTo(intrinsicCameraMatrixMain);
+		intrinsicCameraMatrix.at<float>(3, 3) = 1;
+
+		vector<Point3f> points3d;
+		for (const auto& landmark : landmarks) {
+			points3d.emplace_back(morphableModel.getShapeModel().getMeanAtPoint(landmark.getName()));
+		}
+		Mat pnpCamLandmarksProjectionImage = landmarksImage.clone();
+		for (const auto& v : points3d) {
+			Mat vertex(v);
+			Mat vertex_homo = Mat::ones(4, 1, CV_32FC1);
+			Mat vertex_homo_coords = vertex_homo(cv::Range(0, 3), cv::Range(0, 1));
+			vertex.copyTo(vertex_homo_coords);
+			Mat v2 = rotation_matrix * vertex;
+			Mat v3 = v2 + translation_vector;
+			Mat v3_mat = extrinsicCameraMatrix * vertex_homo;
+
+			Mat v4 = camMatrix * v3;
+			Mat v4_mat = intrinsicCameraMatrix * v3_mat;
+
+			Point3f v4p(v4);
+			Point2f v4p2d(v4p.x / v4p.z, v4p.y / v4p.z); // if != 0
+			Point3f v4p_homo(v4_mat(cv::Range(0, 3), cv::Range(0, 1)));
+			Point2f v4p2d_homo(v4p_homo.x / v4p_homo.z, v4p_homo.y / v4p_homo.z); // if != 0
+			cv::circle(pnpCamLandmarksProjectionImage, v4p2d_homo, 4.0f, Scalar(0.0f, 255.0f, 0.0f));
+		}
+
+		std::shared_ptr<render::Mesh> meshToDraw = std::make_shared<render::Mesh>(morphableModel.getMean());
+
+		const float aspect = (float)img.cols / (float)img.rows; // 640/480
+		render::Camera camera(Vec3f(0.0f, 0.0f, 0.0f), /*horizontalAngle*/0.0f*(CV_PI / 180.0f), /*verticalAngle*/0.0f*(CV_PI / 180.0f), render::Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, /*zNear*/-0.1f, /*zFar*/-100.0f));
+		render::RenderDevicePnP r(img.cols, img.rows, camera); // 640, 480
+		//r.setModelTransform(render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f));
+		r.setIntrinsicCameraTransform(intrinsicCameraMatrix);
+		r.setExtrinsicCameraTransform(extrinsicCameraMatrix);
+		r.draw(meshToDraw, nullptr);
+		Mat buff = r.getImage();
+		Mat buffWithoutAlpha;
+		cvtColor(buff, buffWithoutAlpha, cv::COLOR_BGRA2BGR);
+		Mat weighted = img.clone(); // get the right size
+		cv::addWeighted(pnpCamLandmarksProjectionImage, 0.2, buffWithoutAlpha, 0.8, 0.0, weighted);
+		//return std::make_pair(translation_vector, rotation_matrix);
+		//img = weighted;
+		Mat buffMean = buff.clone();
+		Mat weightedMean = weighted.clone();
+
+		meshToDraw = std::make_shared<render::Mesh>(morphableModel.drawSample(fittedCoeffs, vector<float>(morphableModel.getColorModel().getNumberOfPrincipalComponents(), 0.0f)));
+		r.resetBuffers();
+		r.draw(meshToDraw, nullptr);
+		buff = r.getImage();
+		cvtColor(buff, buffWithoutAlpha, cv::COLOR_BGRA2BGR);
+		weighted = img.clone(); // get the right size
+		cv::addWeighted(pnpCamLandmarksProjectionImage, 0.2, buffWithoutAlpha, 0.8, 0.0, weighted);
+
+		cv::imshow(windowName, img);
+		cv::waitKey(5);
+
+
+
 
 		end = std::chrono::system_clock::now();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();

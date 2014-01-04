@@ -435,10 +435,22 @@ Mat PcaModel::drawSample(vector<float> coefficients)
 	//Mat smallBasis = pcaBasis(cv::Rect(0, 0, 55, 100));
 	//Mat smallMean = mean(cv::Rect(0, 0, 1, 100));
 
-	//Mat modelSample = mean + pcaBasis * alphas.mul(sqrtOfEigenvalues); // Surr
-	Mat modelSample = mean + pcaBasis * alphas; // Bsl .h5 old
+	Mat modelSample = mean + pcaBasis * alphas.mul(sqrtOfEigenvalues); // Surr
+	//Mat modelSample = mean + pcaBasis * alphas; // Bsl .h5 old
 
 	return modelSample;
+}
+
+cv::Mat PcaModel::getPcaBasis() const
+{
+	return pcaBasis;
+}
+
+cv::Mat PcaModel::getPcaBasis(std::string landmarkIdentifier) const
+{
+	int vertexId = landmarkVertexMap.at(landmarkIdentifier);
+	vertexId *= 3;
+	return pcaBasis.rowRange(vertexId, vertexId + 3);
 }
 
 }
