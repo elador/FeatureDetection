@@ -173,6 +173,14 @@ const shared_ptr<ImagePyramidLayer> ImagePyramid::getLayer(double scaleFactor) c
 	return getLayer(cvRound(power));
 }
 
+vector<pair<int, double>> ImagePyramid::getLayerScales() const {
+	vector<pair<int, double>> scales;
+	scales.reserve(layers.size());
+	for (size_t i = 0; i < layers.size(); ++i)
+		scales.emplace_back(i + firstLayer, layers[i]->getScaleFactor());
+	return scales;
+}
+
 vector<Size> ImagePyramid::getLayerSizes() const {
 	vector<Size> sizes;
 	sizes.reserve(layers.size());

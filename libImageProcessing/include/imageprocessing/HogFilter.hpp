@@ -79,10 +79,12 @@ private:
 	 * @param[in] cellHistograms Row vector containing the histogram values of the cells in row-major order.
 	 * @param[out] cellEnergies Row vector containing the gradient energies of the cells in row-major order.
 	 * @param[in] binCount Bin count of the histograms.
-	 * @param[in] cellCount Cell count.
+	 * @param[in] cellRowCount Row count of the cell grid.
+	 * @param[in] cellColumnCount Column count of the cell grid.
 	 * @param[in] signedAndUnsigned Flag that indicates whether signed and unsigned gradients should be used.
 	 */
-	void computeCellEnergies(const Mat& cellHistograms, Mat& cellEnergies, int binCount, int cellCount, bool signedAndUnsigned) const;
+	void computeCellEnergies(const Mat& cellHistograms, Mat& cellEnergies,
+			int binCount, int cellRowCount, int cellColumnCount, bool signedAndUnsigned) const;
 
 	int binCount;    ///< The amount of bins inside the histogram.
 	int cellWidth;   ///< The preferred width of the cells in pixels (actual width might deviate).

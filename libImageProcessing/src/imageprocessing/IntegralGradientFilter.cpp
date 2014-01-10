@@ -29,8 +29,8 @@ Mat IntegralGradientFilter::applyTo(const Mat& image, Mat& filtered) const {
 	int width = image.cols - 1;
 	int height = image.rows - 1;
 
-	int radiusX = std::max(1, cvRound((width - 1) / (cols + 2)));
-	int radiusY = std::max(1, cvRound((height - 1) / (rows + 2)));
+	int radiusX = std::max(1, cvRound(static_cast<double>(width - 1) / static_cast<double>(cols + 2)));
+	int radiusY = std::max(1, cvRound(static_cast<double>(height - 1) / static_cast<double>(rows + 2)));
 	double spacingX = static_cast<double>(width - 3 * radiusX) / static_cast<double>(cols - 1);
 	double spacingY = static_cast<double>(height - 3 * radiusY) / static_cast<double>(rows - 1);
 	int gradientHalfArea = radiusY * radiusX;

@@ -13,11 +13,13 @@
 #include "opencv2/core/core.hpp"
 #include <vector>
 #include <memory>
+#include <utility>
 
 using cv::Mat;
 using cv::Size;
 using std::vector;
 using std::shared_ptr;
+using std::pair;
 
 namespace imageprocessing {
 
@@ -138,6 +140,13 @@ public:
 	 * @return The pointer to a pyramid layer that may be empty if no layer has an appropriate scale factor.
 	 */
 	const shared_ptr<ImagePyramidLayer> getLayer(double scaleFactor) const;
+
+	/**
+	 * Determines the scale factors of each pyramid layer.
+	 *
+	 * @return Pairs containing the index and scale factor of each pyramid layer, beginning from the largest layer.
+	 */
+	vector<pair<int, double>> getLayerScales() const;
 
 	/**
 	 * Determines the size of the scaled image of each pyramid layer.

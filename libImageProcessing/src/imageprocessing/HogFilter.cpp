@@ -61,7 +61,7 @@ Mat HogFilter::applyTo(const Mat& image, Mat& filtered) const {
 	int cellColumnCount = cvRound(static_cast<double>(image.cols) / static_cast<double>(cellWidth));
 	Mat cellHistograms, cellEnergies;
 	createCellHistograms(image, cellHistograms, binCount, cellRowCount, cellColumnCount, interpolate);
-	computeCellEnergies(cellHistograms, cellEnergies, binCount, cellRowCount * cellColumnCount, signedAndUnsigned);
+	computeCellEnergies(cellHistograms, cellEnergies, binCount, cellRowCount, cellColumnCount, signedAndUnsigned);
 	createBlockHistograms(cellHistograms, cellEnergies, filtered, binCount,
 			cellRowCount, cellColumnCount, blockWidth, blockHeight, signedAndUnsigned);
 	return filtered;
@@ -69,26 +69,23 @@ Mat HogFilter::applyTo(const Mat& image, Mat& filtered) const {
 
 void HogFilter::createBlockHistograms(const Mat& cellHistograms, const Mat& cellEnergies, Mat& blockHistograms,
 		int binCount, int cellRowCount, int cellColumnCount, int blockWidth, int blockHeight, bool signedAndUnsigned) const {
-	const float* cellHistogramsValues = cellHistograms.ptr<float>();
-	const float* cellEnergyValues = cellEnergies.ptr<float>();
 	int binHalfCount = binCount / 2;
 	int blockHistogramSize = signedAndUnsigned ? blockWidth * blockHeight * (binCount + binHalfCount) : blockWidth * blockHeight * binCount;
 	int blockRowCount = cellRowCount - blockHeight + 1;
 	int blockColumnCount = cellColumnCount - blockWidth + 1;
-	blockHistograms.create(1, blockRowCount * blockColumnCount * blockHistogramSize, CV_32F);
+	blockHistograms.create(blockRowCount, blockColumnCount, CV_32FC(blockHistogramSize));
 	float* blockHistogramValues = blockHistograms.ptr<float>();
 	for (int blockRow = 0; blockRow < blockRowCount; ++blockRow) {
 		for (int blockCol = 0; blockCol < blockColumnCount; ++blockCol) {
-			Mat blockHistogram(1, blockHistogramSize, CV_32F, blockHistogramValues);
 			float energy = 0;
 			for (int cellRow = blockRow; cellRow < blockRow + blockHeight; ++cellRow) {
 				for (int cellCol = blockCol; cellCol < blockCol + blockWidth; ++cellCol)
-					energy += cellEnergyValues[cellRow * cellColumnCount + cellCol];
+					energy += cellEnergies.at<float>(cellRow, cellCol);
 			}
 			float normalizer = 1.f / sqrt(energy + eps);
 			for (int cellRow = blockRow; cellRow < blockRow + blockHeight; ++cellRow) {
 				for (int cellCol = blockCol; cellCol < blockCol + blockWidth; ++cellCol) {
-					const float* cellHistogramValues = cellHistogramsValues + cellRow * cellColumnCount * binCount + cellCol * binCount;
+					const float* cellHistogramValues = cellHistograms.ptr<float>(cellRow, cellCol);
 					for (int binIndex = 0; binIndex < binCount; ++binIndex)
 						blockHistogramValues[binIndex] = normalizer * cellHistogramValues[binIndex];
 					blockHistogramValues += binCount;
@@ -103,12 +100,13 @@ void HogFilter::createBlockHistograms(const Mat& cellHistograms, const Mat& cell
 	}
 }
 
-void HogFilter::computeCellEnergies(const Mat& cellHistograms, Mat& cellEnergies, int binCount, int cellCount, bool signedAndUnsigned) const {
-	cellEnergies.create(1, cellCount, CV_32F);
+void HogFilter::computeCellEnergies(const Mat& cellHistograms, Mat& cellEnergies,
+		int binCount, int cellRowCount, int cellColumnCount, bool signedAndUnsigned) const {
+	cellEnergies.create(cellRowCount, cellColumnCount, CV_32F);
 	float* energyValues = cellEnergies.ptr<float>();
 	const float* cellHistogramValues = cellHistograms.ptr<float>();
 	int binHalfCount = binCount / 2;
-	for (int cellIndex = 0; cellIndex < cellCount; ++cellIndex) {
+	for (int cellIndex = 0; cellIndex < cellRowCount * cellColumnCount; ++cellIndex) {
 		float energy = 0;
 		if (signedAndUnsigned) {
 			for (int binIndex = 0; binIndex < binHalfCount; ++binIndex) {

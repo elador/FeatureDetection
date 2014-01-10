@@ -101,6 +101,10 @@ public:
 		return extractor->getImageSize();
 	}
 
+	vector<pair<int, double>> getLayerScales() const {
+		return extractor->getLayerScales();
+	}
+
 	vector<Size> getLayerSizes() const {
 		return extractor->getLayerSizes();
 	}

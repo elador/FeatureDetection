@@ -87,6 +87,7 @@ using namespace std::chrono;
 using libsvm::LibSvmClassifier;
 using liblinear::LibLinearClassifier;
 using cv::Point;
+using cv::Rect;
 using boost::property_tree::info_parser::read_info;
 using boost::lexical_cast;
 using std::milli;

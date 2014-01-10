@@ -12,10 +12,12 @@
 #include "imageprocessing/FeatureExtractor.hpp"
 //#include "imageprocessing/ImagePyramid.hpp"
 #include <vector>
+#include <utility>
 
 using cv::Rect;
 using cv::Size;
 using std::vector;
+using std::pair;
 
 namespace imageprocessing {
 
@@ -85,7 +87,7 @@ public:
 	 * @param[in] height The height of the patches.
 	 * @return The index of the pyramid layer or -1 if there is no layer with an appropriate patch size.
 	 */
-	virtual int getLayerIndex(int width, int height) const  = 0;
+	virtual int getLayerIndex(int width, int height) const = 0;
 
 	/**
 	 * @return The minimum scale factor (the scale factor of the smallest scaled (last) image is bigger or equal).
@@ -111,6 +113,13 @@ public:
 	 * @return The size of the original image.
 	 */
 	virtual Size getImageSize() const = 0;
+
+	/**
+	 * Determines the scale factors of each pyramid layer.
+	 *
+	 * @return Pairs containing the index and scale factor of each pyramid layer, beginning from the largest layer.
+	 */
+	virtual vector<pair<int, double>> getLayerScales() const = 0;
 
 	/**
 	 * Determines the size of the scaled image of each pyramid layer.

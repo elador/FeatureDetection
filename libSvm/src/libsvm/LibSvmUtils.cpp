@@ -21,7 +21,7 @@ using std::invalid_argument;
 namespace libsvm {
 
 LibSvmUtils::LibSvmUtils() :
-		matType(CV_32F), dimensions(0), node2example(), nodeDeleter(node2example) {}
+		matRows(-1), matCols(-1), matType(CV_32FC1), matDepth(CV_32F), dimensions(0), node2example(), nodeDeleter(node2example) {}
 
 LibSvmUtils::~LibSvmUtils() {}
 
@@ -30,17 +30,20 @@ NodeDeleter LibSvmUtils::getNodeDeleter() const {
 }
 
 unique_ptr<struct svm_node[], NodeDeleter> LibSvmUtils::createNode(const Mat& vector) const {
+	matRows = vector.rows;
+	matCols = vector.cols;
 	matType = vector.type();
-	dimensions = vector.total();
+	matDepth = vector.depth();
+	dimensions = vector.total() * vector.channels();
 	unique_ptr<struct svm_node[], NodeDeleter> node(new struct svm_node[dimensions + 1], nodeDeleter);
-	if (matType == CV_8U)
+	if (matDepth == CV_8U)
 		fillNode<uchar>(node.get(), vector, dimensions);
-	else if (matType == CV_32F)
+	else if (matDepth == CV_32F)
 		fillNode<float>(node.get(), vector, dimensions);
-	else if (matType == CV_64F)
+	else if (matDepth == CV_64F)
 		fillNode<double>(node.get(), vector, dimensions);
 	else
-		throw invalid_argument("LibSvmUtils: vector has to be of type CV_8U, CV_32F, or CV_64F to create a node of");
+		throw invalid_argument("LibSvmUtils: vector has to be of depth CV_8U, CV_32F, or CV_64F to create a node of");
 	node[dimensions].index = -1;
 	node2example.emplace(node.get(), vector);
 	return move(node);
@@ -60,15 +63,15 @@ void LibSvmUtils::fillNode(struct svm_node *node, const Mat& vector, int size) c
 Mat LibSvmUtils::getVector(const struct svm_node *node) const {
 	Mat& vector = node2example[node];
 	if (vector.empty()) {
-		vector.create(1, dimensions, matType);
-		if (matType == CV_8U)
+		vector.create(matRows, matCols, matType);
+		if (matDepth == CV_8U)
 			fillMat<uchar>(vector, node, dimensions);
-		else if (matType == CV_32F)
+		else if (matDepth == CV_32F)
 			fillMat<float>(vector, node, dimensions);
-		else if (matType == CV_64F)
+		else if (matDepth == CV_64F)
 			fillMat<double>(vector, node, dimensions);
 		else
-			throw invalid_argument("LibSvmUtils: vectors have to be of type CV_8U, CV_32F, or CV_64F");
+			throw invalid_argument("LibSvmUtils: vectors have to be of depth CV_8U, CV_32F, or CV_64F");
 	}
 	return vector;
 }
@@ -100,10 +103,10 @@ double LibSvmUtils::computeSvmOutput(struct svm_model *model, const struct svm_n
 }
 
 vector<Mat> LibSvmUtils::extractSupportVectors(struct svm_model *model) const {
-	if (model->param.kernel_type == LINEAR && (matType == CV_32F || matType == CV_64F)) {
+	if (model->param.kernel_type == LINEAR && (matDepth == CV_32F || matDepth == CV_64F)) {
 		vector<Mat> supportVectors(1);
-		supportVectors[0] = Mat::zeros(1, dimensions, matType);
-		if (matType == CV_32F) {
+		supportVectors[0] = Mat::zeros(matRows, matCols, matType);
+		if (matDepth == CV_32F) {
 			float* values = supportVectors[0].ptr<float>();
 			for (int i = 0; i < model->l; ++i) {
 				double coeff = model->sv_coef[0][i];
@@ -113,7 +116,7 @@ vector<Mat> LibSvmUtils::extractSupportVectors(struct svm_model *model) const {
 					++node;
 				}
 			}
-		} else if (matType == CV_64F) {
+		} else if (matDepth == CV_64F) {
 			double* values = supportVectors[0].ptr<double>();
 			for (int i = 0; i < model->l; ++i) {
 				double coeff = model->sv_coef[0][i];
@@ -134,7 +137,7 @@ vector<Mat> LibSvmUtils::extractSupportVectors(struct svm_model *model) const {
 }
 
 vector<float> LibSvmUtils::extractCoefficients(struct svm_model *model) const {
-	if (model->param.kernel_type == LINEAR && (matType == CV_32F || matType == CV_64F)) {
+	if (model->param.kernel_type == LINEAR && (matDepth == CV_32F || matDepth == CV_64F)) {
 		vector<float> coefficients(1);
 		coefficients[0] = 1;
 		return coefficients;

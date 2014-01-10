@@ -17,7 +17,7 @@ using std::invalid_argument;
 
 namespace liblinear {
 
-LibLinearUtils::LibLinearUtils() : matType(CV_32F), dimensions(0) {}
+LibLinearUtils::LibLinearUtils() : matRows(-1), matCols(-1), matType(CV_32FC1), matDepth(CV_32F), dimensions(0) {}
 
 LibLinearUtils::~LibLinearUtils() {}
 
@@ -26,15 +26,18 @@ size_t LibLinearUtils::getDimensions() const {
 }
 
 unique_ptr<struct feature_node[]> LibLinearUtils::createNode(const Mat& vector, bool bias) const {
+	matRows = vector.rows;
+	matCols = vector.cols;
 	matType = vector.type();
-	dimensions = vector.total();
+	matDepth = vector.depth();
+	dimensions = vector.total() * vector.channels();
 	unique_ptr<struct feature_node[]> node(new struct feature_node[dimensions + (bias ? 2 : 1)]);
-	if (matType == CV_32F)
+	if (matDepth == CV_32F)
 		fillNode<float>(node.get(), vector, dimensions);
-	else if (matType == CV_64F)
+	else if (matDepth == CV_64F)
 		fillNode<double>(node.get(), vector, dimensions);
 	else
-		throw invalid_argument("LibLinearUtils: vector has to be of type CV_32F or CV_64F to create a node of");
+		throw invalid_argument("LibLinearUtils: vector has to be of depth CV_32F or CV_64F to create a node of");
 	if (bias) {
 		node[dimensions].index = dimensions + 1;
 		node[dimensions].value = 1;
@@ -66,10 +69,10 @@ double LibLinearUtils::computeSvmOutput(struct model *model, const struct featur
 
 vector<Mat> LibLinearUtils::extractSupportVectors(struct model *model) const {
 	vector<Mat> supportVectors(1);
-	supportVectors[0].create(1, model->nr_feature, matType);
-	if (matType == CV_32F)
+	supportVectors[0].create(matRows, matCols, matType);
+	if (matDepth == CV_32F)
 		extractWeightVector<float>(supportVectors[0], model);
-	else if (matType == CV_64F)
+	else if (matDepth == CV_64F)
 		extractWeightVector<double>(supportVectors[0], model);
 	return supportVectors;
 }

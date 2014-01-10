@@ -163,6 +163,10 @@ public:
 		return pyramid->getImageSize();
 	}
 
+	vector<pair<int, double>> getLayerScales() const {
+		return pyramid->getLayerScales();
+	}
+
 	vector<Size> getLayerSizes() const {
 		return pyramid->getLayerSizes();
 	}

@@ -18,10 +18,12 @@ SET(HEADERS
 	include/imageprocessing/BinningFilter.hpp
 	include/imageprocessing/CachingFeatureExtractor.hpp
 	include/imageprocessing/CachingPyramidFeatureExtractor.hpp
+	include/imageprocessing/CellBasedPyramidFeatureExtractor.hpp
 	include/imageprocessing/ChainedFilter.hpp
 	include/imageprocessing/ColorBinningFilter.hpp
 	include/imageprocessing/ColorChannelFilter.hpp
 	include/imageprocessing/ColorSpaceConversionFilter.hpp
+	include/imageprocessing/CompleteExtendedHogFilter.hpp
 	include/imageprocessing/ConversionFilter.hpp
 	include/imageprocessing/DirectImageFeatureExtractor.hpp
 	include/imageprocessing/DirectPyramidFeatureExtractor.hpp
@@ -68,10 +70,12 @@ SET(HEADERS
 SET(SOURCE
 	src/imageprocessing/CachingFeatureExtractor.cpp
 	src/imageprocessing/CachingPyramidFeatureExtractor.cpp
+	src/imageprocessing/CellBasedPyramidFeatureExtractor.cpp
 	src/imageprocessing/ChainedFilter.cpp
 	src/imageprocessing/ColorBinningFilter.cpp
 	src/imageprocessing/ColorChannelFilter.cpp
 	src/imageprocessing/ColorSpaceConversionFilter.cpp
+	src/imageprocessing/CompleteExtendedHogFilter.cpp
 	src/imageprocessing/ConversionFilter.cpp
 	src/imageprocessing/DirectImageFeatureExtractor.cpp
 	src/imageprocessing/DirectPyramidFeatureExtractor.cpp

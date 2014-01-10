@@ -35,7 +35,7 @@ SpatialPyramidHistogramFilter::SpatialPyramidHistogramFilter(
 SpatialPyramidHistogramFilter::~SpatialPyramidHistogramFilter() {}
 
 Mat SpatialPyramidHistogramFilter::applyTo(const Mat& image, Mat& filtered) const {
-	filtered = Mat::zeros(1, histogramCount * binCount, CV_32F);
+	filtered = Mat::zeros(1, histogramCount, CV_32FC(binCount));
 	float* cellHistogramsValues = filtered.ptr<float>() + histogramCount * binCount - (1 << (2 * maxLevel)) * binCount;
 	createCellHistograms(image, cellHistogramsValues, maxLevel, binCount, interpolate);
 	for (int level = maxLevel - 1; level >= 0; --level) {
@@ -50,7 +50,7 @@ Mat SpatialPyramidHistogramFilter::applyTo(const Mat& image, Mat& filtered) cons
 void SpatialPyramidHistogramFilter::createCellHistograms(
 		const Mat& image, float* histogramsValues, int level, int binCount, bool interpolate) const {
 	int histogramCount = 1 << level;
-	Mat cellHistograms(1, histogramCount * histogramCount * binCount, CV_32F, histogramsValues);
+	Mat cellHistograms(histogramCount, histogramCount, CV_32FC(binCount), histogramsValues);
 	createCellHistograms(image, cellHistograms, binCount, histogramCount, histogramCount, interpolate);
 }
 

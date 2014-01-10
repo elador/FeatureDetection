@@ -124,7 +124,10 @@ private:
 	template<class T>
 	void extractWeightVector(cv::Mat& vector, const struct model *model) const;
 
-	mutable int matType;       ///< The type of the support vector data.
+	mutable int matRows;  ///< The row count of the support vector data.
+	mutable int matCols;  ///< The column count of the support vector data.
+	mutable int matType;  ///< The type of the support vector data.
+	mutable int matDepth; ///< The depth of the support vector data.
 	mutable size_t dimensions; ///< The amount of dimensions of the feature vectors.
 };
 

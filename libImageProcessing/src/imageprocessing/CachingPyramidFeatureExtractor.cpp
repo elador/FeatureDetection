@@ -23,19 +23,11 @@ CachingPyramidFeatureExtractor::~CachingPyramidFeatureExtractor() {}
 
 void CachingPyramidFeatureExtractor::buildCache() {
 	cache.clear();
-	double minScaleFactor = getMinScaleFactor();
-	double maxScaleFactor = getMaxScaleFactor();
-	double incrementalScaleFactor = extractor->getIncrementalScaleFactor();
-	double scaleFactor = 1;
-	for (int i = 0; ; ++i, scaleFactor *= incrementalScaleFactor) {
-		if (scaleFactor > maxScaleFactor)
-			continue;
-		if (scaleFactor < minScaleFactor)
-			break;
-		if (cache.empty())
-			firstCacheIndex = i;
-		cache.push_back(CacheLayer(i, scaleFactor));
-	}
+	vector<pair<int, double>> scales = getLayerScales();
+	if (!scales.empty())
+		firstCacheIndex = scales[0].first;
+	for (const pair<int, double>& scale : scales)
+		cache.push_back(CacheLayer(scale.first, scale.second));
 }
 
 void CachingPyramidFeatureExtractor::update(const Mat& image) {
