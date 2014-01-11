@@ -52,7 +52,7 @@
 #include "shapemodels/CameraEstimation.hpp"
 #include "shapemodels/AffineCameraEstimation.hpp"
 #include "render/Camera.hpp"
-#include "render/RenderDevicePnP.hpp"
+#include "render/SoftwareRenderer.hpp"
 
 #include "imageio/ImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
@@ -472,8 +472,8 @@ int main(int argc, char *argv[])
 
 		const float aspect = (float)img.cols / (float)img.rows; // 640/480
 		render::Camera camera(Vec3f(0.0f, 0.0f, 0.0f), /*horizontalAngle*/0.0f*(CV_PI / 180.0f), /*verticalAngle*/0.0f*(CV_PI / 180.0f), render::Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, /*zNear*/-0.1f, /*zFar*/-100.0f));
-		render::RenderDevicePnP r(img.cols, img.rows, camera); // 640, 480
-		r.perspectiveDivision = render::RenderDevicePnP::PerspectiveDivision::None;
+		render::SoftwareRenderer r(img.cols, img.rows, camera); // 640, 480
+		r.perspectiveDivision = render::SoftwareRenderer::PerspectiveDivision::None;
 		r.doClippingInNDC = false;
 		r.directToScreenTransform = true;
 		r.doWindowTransform = false;
@@ -484,7 +484,7 @@ int main(int argc, char *argv[])
 
 		
 		//r.setModelTransform(render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f));
-		r.perspectiveDivision = render::RenderDevicePnP::PerspectiveDivision::Z;
+		r.perspectiveDivision = render::SoftwareRenderer::PerspectiveDivision::Z;
 		r.setObjectToScreenTransform(intrinsicCameraMatrix * extrinsicCameraMatrix);
 		r.resetBuffers();
 		r.draw(meshToDraw, nullptr);

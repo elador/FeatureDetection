@@ -71,7 +71,7 @@
 #include "shapemodels/CameraEstimation.hpp"
 
 #include "render/Camera.hpp"
-#include "render/RenderDevicePnP.hpp"
+#include "render/SoftwareRenderer.hpp"
 
 #include "logging/LoggerFactory.hpp"
 #include "imagelogging/ImageLoggerFactory.hpp"
@@ -455,10 +455,9 @@ int main(int argc, char *argv[])
 
 			const float aspect = (float)img2.cols/(float)img2.rows; // 640/480
 			render::Camera camera(Vec3f(0.0f, 0.0f, 0.0f), /*horizontalAngle*/0.0f*(CV_PI/180.0f), /*verticalAngle*/0.0f*(CV_PI/180.0f), render::Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, /*zNear*/-0.1f, /*zFar*/-100.0f));
-			render::RenderDevicePnP r(img2.cols, img2.rows, camera); // 640, 480
+			render::SoftwareRenderer r(img2.cols, img2.rows, camera); // 640, 480
 			//r.setModelTransform(render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f));
-			r.setIntrinsicCameraTransform(intrinsicCameraMatrix);
-			r.setExtrinsicCameraTransform(extrinsicCameraMatrix);
+			r.setObjectToScreenTransform(intrinsicCameraMatrix * extrinsicCameraMatrix);
 			r.draw(meshToDraw, nullptr);
 			Mat buff = r.getImage();
 			Mat buffWithoutAlpha;

@@ -15,7 +15,7 @@
 
 #include "render/MeshUtils.hpp"
 #include "render/MatrixUtils.hpp"
-#include "render/RenderDevicePnP.hpp"
+#include "render/SoftwareRenderer.hpp"
 #include "render/Camera.hpp"
 
 #include "shapemodels/MorphableModel.hpp"
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 	Camera camera(Vec3f(0.0f, 0.0f, 0.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 
-	RenderDevicePnP r(screenWidth, screenHeight, camera);
+	SoftwareRenderer r(screenWidth, screenHeight, camera);
 
 	namedWindow(windowName, WINDOW_AUTOSIZE);
 	setMouseCallback(windowName, winOnMouse);

@@ -15,7 +15,7 @@
 
 #include "render/MeshUtils.hpp"
 #include "render/MatrixUtils.hpp"
-#include "render/RenderDevice.hpp"
+#include "render/SoftwareRenderer.hpp"
 #include "render/Camera.hpp"
 
 #include "shapemodels/MorphableModel.hpp"
@@ -132,8 +132,8 @@ int main(int argc, char *argv[])
 	//mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\SurreyLowResGuosheng\\NON3448\\ShpVtxModelBin_NON3448.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
 	//mm = shapemodels::MorphableModel::loadOldBaselH5Model("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "featurePoints_head_newfmt.txt");
 	//mm = shapemodels::MorphableModel::loadStatismoModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\2012.2\\head\\model2012_l7_head.h5");
-	//shapemodels::MorphableModel morphableModel = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
-	shapemodels::MorphableModel morphableModel = shapemodels::MorphableModel::loadScmModel(".\\ShpVtxModelBin.scm", ".\\featurePoints_SurreyScm.txt");
+	shapemodels::MorphableModel morphableModel = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
+	//shapemodels::MorphableModel morphableModel = shapemodels::MorphableModel::loadScmModel(".\\ShpVtxModelBin.scm", ".\\featurePoints_SurreyScm.txt");
 	//render::Mesh cube = render::utils::MeshUtils::createCube();
 	//render::Mesh pyramid = render::utils::MeshUtils::createPyramid();
 	//render::Mesh plane = render::utils::MeshUtils::createPlane();
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 	Camera camera(Vec3f(0.0f, 0.0f, 3.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 
-	RenderDevice r(screenWidth, screenHeight, camera);
+	SoftwareRenderer r(screenWidth, screenHeight, camera);
 
 	//namedWindow(windowName, WINDOW_AUTOSIZE);
 	//setMouseCallback(windowName, winOnMouse);
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
 
 	ofstream outputFile;
 	//outputFile.open("C:/Users/Patrik/Documents/Github/syndata/data_3dmm_landmarks_random_sd0.5_batch4_600000k.txt");
-	outputFile.open("./data_3dmm_landmarks_random_sd0.5_batch4_600000k.txt");
+	outputFile.open("./data_3dmm_landmarks_random_sd0.5_batch5_600000k.txt");
 	outputFile << "frontal_rndvtx_x " << "frontal_rndvtx_y " << "frontal_lel_x " << "frontal_lel_y " << "frontal_ler_x " << "frontal_ler_y " << "frontal_rel_x " << "frontal_rel_y " << "frontal_rer_x " << "frontal_rer_y " << "frontal_ml_x " << "frontal_ml_y " << "frontal_mr_x " << "frontal_mr_y " << "frontal_bn_x " << "frontal_bn_y " << "frontal_nt_x " << "frontal_nt_y " << "frontal_ns_x " << "frontal_ns_y " << "frontal_la_x " << "frontal_la_y " << "frontal_ra_x " << "frontal_ra_y " << "pose_rndvtx_x " << "pose_rndvtx_y " << "pose_lel_x " << "pose_lel_y " << "pose_ler_x " << "pose_ler_y " << "pose_rel_x " << "pose_rel_y " << "pose_rer_x " << "pose_rer_y " << "pose_ml_x " << "pose_ml_y " << "pose_mr_x " << "pose_mr_y " << "pose_bn_x " << "pose_bn_y " << "pose_nt_x " << "pose_nt_y " << "pose_ns_x " << "pose_ns_y " << "pose_la_x " << "pose_la_y " << "pose_ra_x " << "pose_ra_y " << "yaw " << "pitch " << "roll " << "rndvtx_id" << std::endl;
 	
 	int numVertices = morphableModel.getShapeModel().getDataDimension() / 3;
@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
 		Mat rotYawY = Mat::eye(4, 4, CV_32FC1);
 		Mat rotRollZ = Mat::eye(4, 4, CV_32FC1);
 		Mat modelMatrix = rotYawY * rotPitchX * rotRollZ * modelScaling;
-		r.setWorldTransform(modelMatrix);
+		r.setModelTransform(modelMatrix);
 		Vec2f res = r.projectVertex(newSampleMesh.vertex[randomVertex].position);
 		string name = "randomVertexFrontal";
 		pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
 		// 2) Render all LMs in frontal pose
 		for (const auto& vid : vertexIds) {
 			modelMatrix = rotYawY * rotPitchX * rotRollZ * modelScaling; // same as before in 1)
-			r.setWorldTransform(modelMatrix);
+			r.setModelTransform(modelMatrix);
 			res = r.projectVertex(newSampleMesh.vertex[vid].position);
 			//r.renderLM(newSampleMesh.vertex[vid].position, Scalar(255.0f, 0.0f, 0.0f));
 			name = DidLandmarkFormatParser::didToTlmsName(vid);
@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
 		rotYawY = render::utils::MatrixUtils::createRotationMatrixY(yaw * (CV_PI/180.0f));
 		rotRollZ = render::utils::MatrixUtils::createRotationMatrixZ(roll * (CV_PI/180.0f));
 		modelMatrix = rotYawY * rotPitchX * rotRollZ * modelScaling;
-		r.setWorldTransform(modelMatrix);
+		r.setModelTransform(modelMatrix);
 		// tmp:
 		shared_ptr<Mesh> mmMesh = std::make_shared<Mesh>(newSampleMesh);
 		r.draw(mmMesh, nullptr);
@@ -255,7 +255,7 @@ int main(int argc, char *argv[])
 		// 4) Render all LMs in pose angle
 		for (const auto& vid : vertexIds) {
 			modelMatrix = rotYawY * rotPitchX * rotRollZ * modelScaling; // same as before in 3)
-			r.setWorldTransform(modelMatrix);
+			r.setModelTransform(modelMatrix);
 			res = r.projectVertex(newSampleMesh.vertex[vid].position);
 			//r.renderLM(morphableModel.mesh.vertex[vid].position, Scalar(255.0f, 0.0f, 0.0f));
 			name = DidLandmarkFormatParser::didToTlmsName(vid);

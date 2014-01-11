@@ -1,11 +1,11 @@
 /*
- * RenderDevicePnP.cpp
+ * SoftwareRenderer.cpp
  *
  *  Created on: 25.11.2013
  *      Author: Patrik Huber
  */
 
-#include "render/RenderDevicePnP.hpp"
+#include "render/SoftwareRenderer.hpp"
 #include "render/MatrixUtils.hpp"
 
 using cv::Point2f;
@@ -13,7 +13,7 @@ using cv::Scalar;
 
 namespace render {
 
-RenderDevicePnP::RenderDevicePnP(unsigned int screenWidth, unsigned int screenHeight)
+SoftwareRenderer::SoftwareRenderer(unsigned int screenWidth, unsigned int screenHeight)
 {
 	this->screenWidth = screenWidth;
 	this->screenHeight = screenHeight;
@@ -33,7 +33,7 @@ RenderDevicePnP::RenderDevicePnP(unsigned int screenWidth, unsigned int screenHe
 	perspectiveDivision = PerspectiveDivision::W;
 }
 
-RenderDevicePnP::RenderDevicePnP(unsigned int screenWidth, unsigned int screenHeight, Camera camera)
+SoftwareRenderer::SoftwareRenderer(unsigned int screenWidth, unsigned int screenHeight, Camera camera)
 {
 	this->camera = camera;
 
@@ -56,26 +56,26 @@ RenderDevicePnP::RenderDevicePnP(unsigned int screenWidth, unsigned int screenHe
 	perspectiveDivision = PerspectiveDivision::W;
 }
 
-RenderDevicePnP::~RenderDevicePnP()
+SoftwareRenderer::~SoftwareRenderer()
 {
 }
 
-Mat RenderDevicePnP::getImage()
+Mat SoftwareRenderer::getImage()
 {
 	return colorBuffer;
 }
 
-Mat RenderDevicePnP::getDepthBuffer()
+Mat SoftwareRenderer::getDepthBuffer()
 {
 	return depthBuffer;
 }
 
-void RenderDevicePnP::setModelTransform(Mat modelTransform)
+void SoftwareRenderer::setModelTransform(Mat modelTransform)
 {
 	this->worldTransform = modelTransform;
 }
 
-void RenderDevicePnP::updateViewTransform()
+void SoftwareRenderer::updateViewTransform()
 {
 	Mat translate = render::utils::MatrixUtils::createTranslationMatrix(-camera.getEye()[0], -camera.getEye()[1], -camera.getEye()[2]);
 	
@@ -88,7 +88,7 @@ void RenderDevicePnP::updateViewTransform()
 }
 
 
-void RenderDevicePnP::updateProjectionTransform(bool perspective/*=true*/)
+void SoftwareRenderer::updateProjectionTransform(bool perspective/*=true*/)
 {
 	Mat orthogonal = (cv::Mat_<float>(4,4) << 
 		2.0f / (camera.frustum.r - camera.frustum.l),	0.0f,											0.0f,											-(camera.frustum.r + camera.frustum.l) / (camera.frustum.r - camera.frustum.l),
@@ -107,7 +107,7 @@ void RenderDevicePnP::updateProjectionTransform(bool perspective/*=true*/)
 	}
 }
 
-void RenderDevicePnP::setViewport(unsigned int screenWidth, unsigned int screenHeight)
+void SoftwareRenderer::setViewport(unsigned int screenWidth, unsigned int screenHeight)
 {
 	windowTransform = (cv::Mat_<float>(4,4) << 
 		(float)screenWidth/2.0f,		0.0f,						0.0f,	(float)screenWidth/2.0f, // CG book says (screenWidth-1)/2.0f for second value?
@@ -116,7 +116,7 @@ void RenderDevicePnP::setViewport(unsigned int screenWidth, unsigned int screenH
 		0.0f,							0.0f,						0.0f,	1.0f);
 }
 
-Vec2f RenderDevicePnP::projectVertex(Vec4f vertex)
+Vec2f SoftwareRenderer::projectVertex(Vec4f vertex)
 {
 	// TODO After renderVertexList is final, remove this wrapper to be more efficient.
 	vector<Vec4f> list;
@@ -125,7 +125,7 @@ Vec2f RenderDevicePnP::projectVertex(Vec4f vertex)
 	return rendered[0];
 }
 
-vector<Vec2f> RenderDevicePnP::projectVertexList(vector<Vec4f> vertexList)
+vector<Vec2f> SoftwareRenderer::projectVertexList(vector<Vec4f> vertexList)
 {
 	vector<Vec2f> pointList;
 
@@ -147,7 +147,7 @@ vector<Vec2f> RenderDevicePnP::projectVertexList(vector<Vec4f> vertexList)
 	return pointList;
 }
 
-std::pair<Vec2f, bool> RenderDevicePnP::projectVertexVis(Vec4f vertex)
+std::pair<Vec2f, bool> SoftwareRenderer::projectVertexVis(Vec4f vertex)
 {
 	Mat worldSpace = worldTransform * Mat(vertex);
 	Mat camSpace = viewTransform * worldSpace;
@@ -170,13 +170,13 @@ std::pair<Vec2f, bool> RenderDevicePnP::projectVertexVis(Vec4f vertex)
 	return std::make_pair(p, visibility);
 }
 
-void RenderDevicePnP::resetBuffers()
+void SoftwareRenderer::resetBuffers()
 {
 	colorBuffer = Mat::zeros(screenHeight, screenWidth, CV_8UC4);
 	depthBuffer = Mat::ones(screenHeight, screenWidth, CV_64FC1)*1000000;
 }
 
-void RenderDevicePnP::renderLine(Vec4f p0, Vec4f p1, Scalar color)
+void SoftwareRenderer::renderLine(Vec4f p0, Vec4f p1, Scalar color)
 {
 	Mat worldSpace = worldTransform * Mat(p0);
 	Mat camSpace = viewTransform * worldSpace;
@@ -199,7 +199,7 @@ void RenderDevicePnP::renderLine(Vec4f p0, Vec4f p1, Scalar color)
 	line(colorBuffer, p0Screen, p1Screen, color);
 }
 
-void RenderDevicePnP::renderLM(Vec4f p0, Scalar color)
+void SoftwareRenderer::renderLM(Vec4f p0, Scalar color)
 {
 	Mat worldSpace = worldTransform * Mat(p0);
 	Mat camSpace = viewTransform * worldSpace;
@@ -213,7 +213,7 @@ void RenderDevicePnP::renderLM(Vec4f p0, Scalar color)
 	circle(colorBuffer, p0Screen, 3, color);
 }
 
-void RenderDevicePnP::draw(shared_ptr<Mesh> mesh, shared_ptr<Texture> texture)
+void SoftwareRenderer::draw(shared_ptr<Mesh> mesh, shared_ptr<Texture> texture)
 {
 	DrawCall drawCall;
 
@@ -238,7 +238,7 @@ void RenderDevicePnP::draw(shared_ptr<Mesh> mesh, shared_ptr<Texture> texture)
 
 // below: all "old" rasterizing functions
 
-void RenderDevicePnP::runVertexProcessor()
+void SoftwareRenderer::runVertexProcessor()
 {
 	for (unsigned int i = 0; i < drawCalls.size(); i++)
 	{
@@ -345,7 +345,7 @@ void RenderDevicePnP::runVertexProcessor()
 	}
 }
 
-Vertex RenderDevicePnP::runVertexShader(shared_ptr<Mesh> mesh, const cv::Mat& transform, const int vertexNum)
+Vertex SoftwareRenderer::runVertexShader(shared_ptr<Mesh> mesh, const cv::Mat& transform, const int vertexNum)
 {
 	Vertex output;
 	
@@ -373,7 +373,7 @@ Vertex RenderDevicePnP::runVertexShader(shared_ptr<Mesh> mesh, const cv::Mat& tr
 	return output;
 }
 
-void RenderDevicePnP::processProspectiveTriangleToRasterize(const Vertex& _v0, const Vertex& _v1, const Vertex& _v2, shared_ptr<Texture> _texture)
+void SoftwareRenderer::processProspectiveTriangleToRasterize(const Vertex& _v0, const Vertex& _v1, const Vertex& _v2, shared_ptr<Texture> _texture)
 {
 	TriangleToRasterize t;
 
@@ -513,7 +513,7 @@ void RenderDevicePnP::processProspectiveTriangleToRasterize(const Vertex& _v0, c
 	trianglesToRasterize.push_back(t);
 }
 
-std::vector<Vertex> RenderDevicePnP::clipPolygonToPlaneIn4D(const std::vector<Vertex>& vertices, const cv::Vec4f& planeNormal)
+std::vector<Vertex> SoftwareRenderer::clipPolygonToPlaneIn4D(const std::vector<Vertex>& vertices, const cv::Vec4f& planeNormal)
 {
 	std::vector<Vertex> clippedVertices;
 
@@ -557,7 +557,7 @@ std::vector<Vertex> RenderDevicePnP::clipPolygonToPlaneIn4D(const std::vector<Ve
 	return clippedVertices;
 }
 
-bool RenderDevicePnP::areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2)
+bool SoftwareRenderer::areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2)
 {
 	float dx01 = v1.position[0] - v0.position[0];
 	float dy01 = v1.position[1] - v0.position[1];
@@ -567,13 +567,13 @@ bool RenderDevicePnP::areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex
 	return (dx01*dy02 - dy01*dx02 < 0.0f); // Original: (dx01*dy02 - dy01*dx02 > 0.0f). But: OpenCV has origin top-left, y goes down
 }
 
-double RenderDevicePnP::implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2)
+double SoftwareRenderer::implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2)
 {
 	return ((double)v1[1] - (double)v2[1])*(double)x + ((double)v2[0] - (double)v1[0])*(double)y + (double)v1[0]*(double)v2[1] - (double)v2[0]*(double)v1[1];
 }
 
 
-void RenderDevicePnP::runPixelProcessor()
+void SoftwareRenderer::runPixelProcessor()
 {
 	// clear buffers
 	//this->colorBuffer = cv::Mat::zeros(screenHeight, screenWidth, CV_8UC4);
@@ -680,7 +680,7 @@ void RenderDevicePnP::runPixelProcessor()
 
 }
 
-cv::Vec3f RenderDevicePnP::runPixelShader(shared_ptr<Texture> texture, const cv::Vec3f& color, const cv::Vec2f& texCoord, bool useTexturing)
+cv::Vec3f SoftwareRenderer::runPixelShader(shared_ptr<Texture> texture, const cv::Vec3f& color, const cv::Vec2f& texCoord, bool useTexturing)
 {
 	if(useTexturing) {
 		//return color.mul(tex2D(texture, texCoord));	// element-wise multiplication
@@ -690,12 +690,12 @@ cv::Vec3f RenderDevicePnP::runPixelShader(shared_ptr<Texture> texture, const cv:
 	}
 }
 
-cv::Vec3f RenderDevicePnP::tex2D(shared_ptr<Texture> texture, const cv::Vec2f& texCoord)
+cv::Vec3f SoftwareRenderer::tex2D(shared_ptr<Texture> texture, const cv::Vec2f& texCoord)
 {
 	return (1.0f / 255.0f) * tex2D_linear_mipmap_linear(texture, texCoord);
 }
 
-cv::Vec3f RenderDevicePnP::tex2D_linear_mipmap_linear(shared_ptr<Texture> texture, const cv::Vec2f& texCoord)
+cv::Vec3f SoftwareRenderer::tex2D_linear_mipmap_linear(shared_ptr<Texture> texture, const cv::Vec2f& texCoord)
 {
 	float px = std::sqrt(std::pow(dudx, 2) + std::pow(dvdx, 2));
 	float py = std::sqrt(std::pow(dudy, 2) + std::pow(dvdy, 2));
@@ -721,12 +721,12 @@ cv::Vec3f RenderDevicePnP::tex2D_linear_mipmap_linear(shared_ptr<Texture> textur
 	return color;
 }
 
-cv::Vec2f RenderDevicePnP::texCoord_wrap(const cv::Vec2f& texCoord)
+cv::Vec2f SoftwareRenderer::texCoord_wrap(const cv::Vec2f& texCoord)
 {
 	return cv::Vec2f(texCoord[0]-(int)texCoord[0], texCoord[1]-(int)texCoord[1]);
 }
 
-cv::Vec3f RenderDevicePnP::tex2D_linear(shared_ptr<Texture> texture, const cv::Vec2f& imageTexCoord, unsigned char mipmapIndex)
+cv::Vec3f SoftwareRenderer::tex2D_linear(shared_ptr<Texture> texture, const cv::Vec2f& imageTexCoord, unsigned char mipmapIndex)
 {
 	int x = (int)imageTexCoord[0];
 	int y = (int)imageTexCoord[1];
@@ -774,7 +774,7 @@ cv::Vec3f RenderDevicePnP::tex2D_linear(shared_ptr<Texture> texture, const cv::V
 	return color;
 }
 
-float RenderDevicePnP::clamp(float x, float a, float b)
+float SoftwareRenderer::clamp(float x, float a, float b)
 {
 	return std::max(std::min(x, b), a);
 }

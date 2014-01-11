@@ -30,8 +30,7 @@ message(STATUS "HDF5 libraries at: ${HDF5_LIBRARIES}")
 
 #Source and header files:
 SET(SOURCE
-	src/render/RenderDevice.cpp
-	src/render/RenderDevicePnP.cpp
+	src/render/SoftwareRenderer.cpp
 	src/render/Vertex.cpp
 	src/render/Triangle.cpp
 	src/render/Camera.cpp
@@ -43,8 +42,7 @@ SET(SOURCE
 )
 
 SET(HEADERS
-	include/render/RenderDevice.hpp
-	include/render/RenderDevicePnP.hpp
+	include/render/SoftwareRenderer.hpp
 	include/render/Vertex.hpp
 	include/render/Triangle.hpp
 	include/render/Camera.hpp
