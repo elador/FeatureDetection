@@ -38,16 +38,15 @@ add_subdirectory(libShapeModels)		# Head/face specific things; 2D/3D models; Com
 #add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature point detection app.
 
 #add_subdirectory(facemodelTracking)		# Todo
-add_subdirectory(renderTestApp)			# Todo
+#add_subdirectory(renderTestApp)			# Todo
 add_subdirectory(fitter)			# Todo
 
-#add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
-#add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
-#add_subdirectory(openGlRendererGUI)		# Same as above, but with OpenGL rendering. Playground - in the end, will all be merged into one.
+add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
+add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
 
 #add_subdirectory(trackerAppERT)		# kind of deprecated, was only a test. But can use this to see how to make a real-time tracker.
 
-#add_subdirectory(mergePlaygroundApp)	# Test-app for the refactored/merged code
+add_subdirectory(mergePlaygroundApp)	# Test-app for the refactored/merged code
 
 #add_subdirectory(frRunCogExp)		# App for doing face recognition tests with a gallery and probe images
 #add_subdirectory(frDbTool)		# App for managing (creating and populating) the sqlite-database used for face-recognition experiments

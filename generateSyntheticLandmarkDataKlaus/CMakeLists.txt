@@ -19,8 +19,16 @@ ELSE(Boost_FOUND)
   MESSAGE(FATAL_ERROR "Boost not found")
 ENDIF()
 
-#HDF5:
-#FIND_PACKAGE( HDF5 REQUIRED COMPONENTS C CXX )
+#Hdf5:
+#IF(WIN32)
+	#FIND_PACKAGE (HDF5 NAMES hdf5) # puts it in Config-mode
+	FIND_PACKAGE (HDF5 REQUIRED COMPONENTS C CXX NAMES hdf5) # COMPONENTS doesn't seem to work
+	set (HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIR}) # According to hdf5 cmake file, should use *_DIRS, but they don't define it in hdf5-config.cmake. So if we use the Config-mode with NAMES, it isn't set, but it is, when used as in linux.
+	#FIND_PACKAGE (HDF5 REQUIRED CONFIG) # same
+	#LX: FIND_PACKAGE (HDF5 REQUIRED COMPONENTS C CXX) # works on windows as well but links to dll's instead of lib's...
+#ENDIF()
+message(STATUS "HDF5 includes at: ${HDF5_INCLUDE_DIRS}")
+message(STATUS "HDF5 libraries at: ${HDF5_LIBRARIES}")
 
 #Source and header files:
 SET(SOURCE
@@ -36,10 +44,7 @@ include_directories( ${ImageIO_SOURCE_DIR}/include )
 include_directories( ${Logging_SOURCE_DIR}/include )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
-INCLUDE_DIRECTORIES( "C:\\Users\\Patrik\\Cloud\\PhD\\HDF5\\include\\hdf5\\" )
-
-link_directories( "C:\\Users\\Patrik\\Cloud\\PhD\\HDF5\\lib\\hdf5\\" )
-set(HDF5_LIBRARIES debug hdf5d debug hdf5_cppd optimized hdf5; optimized hdf5_cpp)
+include_directories( ${HDF5_INCLUDE_DIRS} )
 
 #Make the library
 ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
@@ -49,9 +54,3 @@ ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
 #Make the app depend on the libraries
 #TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} libFeatureDetection ${OpenCV_LIBS} ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${HDF5_LIBRARIES} )
 TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Render ShapeModels ImageIO Logging ${OpenCV_LIBS} ${Boost_LIBRARIES} ${HDF5_LIBRARIES} )
-MESSAGE(STATUS "APP HDF5 lib dir: ${HDF5_LIBRARY_DIR}")
-MESSAGE(STATUS "APP HDF5 libs: ${HDF5_LIBRARIES}")
-MESSAGE(STATUS "APP HDF5 include dir: a ${HDF5_INCLUDE_DIR} b ${HDF5_INCLUDE_DIR_CPP}")
-#MESSAGE(STATUS "HDF5_CXX_LIBRARIES: ${HDF5_CXX_LIBRARIES}")
-#MESSAGE(STATUS "HDF5_C_LIBRARIES: ${HDF5_C_LIBRARIES}")
-#MESSAGE(STATUS "HDF5_LIBRARIES: ${HDF5_LIBRARIES}")

@@ -161,6 +161,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	
+	Loggers->getLogger("shapemodels").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("render").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("fitter").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("fitter");
@@ -313,6 +314,42 @@ int main(int argc, char *argv[])
 			cv::circle(affineCamLandmarksProjectionImage, pp, 4.0f, Scalar(0.0f, 255.0f, 0.0f));
 		}
 		// End Affine est.
+		/* affineCam = (cv::Mat_<float>(3, 4) << 1, 0, 0, 0, 
+											  0, 1, 0, 0,
+											  0, 0, 0, 1); */
+		Mat affineCamZ = affineCam.row(0).colRange(0, 3).cross(affineCam.row(1).colRange(0, 3));
+		affineCamZ /= cv::norm(affineCamZ, cv::NORM_L2);
+
+		// Replace the third row with the camera-direction (z)
+		// Todo: Take care of sign
+		Mat affineCamSubMat = affineCam.row(2).colRange(0, 3);
+		affineCamZ.copyTo(affineCamSubMat);
+		affineCam.at<float>(2, 3) = 0;
+
+		Mat affineCamFull = Mat::zeros(4, 4, CV_32FC1);
+		Mat affineCamFullSub = affineCamFull.rowRange(0, 2);
+		affineCam.rowRange(0, 2).copyTo(affineCamFullSub);
+		affineCamFullSub = affineCamFull.row(2).colRange(0, 3);
+		affineCamZ.copyTo(affineCamFullSub);
+		affineCamFull.at<float>(2, 3) = 0.0f;
+		affineCamFull.at<float>(3, 3) = 1.0f; // 4th row is (0, 0, 0, 1)
+
+		Vec4f p1(-10.0f, -5.0f, -3.0f, 1.0f);
+		Vec4f p2( 10.0f, -5.0f, -3.0f, 1.0f);
+		Vec4f p3( 10.0f, -5.0f,  0.0f, 1.0f);
+		Vec4f p4( 10.0f, -5.0f,  3.0f, 1.0f);
+		Vec4f p5( 10.0f, -5.0f, 30.0f, 1.0f);
+		Point3f pp1(Mat(affineCam * Mat(p1)));
+		float pp1z = Mat(affineCamZ * Mat(p1).rowRange(0, 3)).at<float>(0, 0);
+		Point3f pp2(Mat(affineCam * Mat(p2)));
+		float pp2z = Mat(affineCamZ * Mat(p2).rowRange(0, 3)).at<float>(0, 0);
+		Point3f pp3(Mat(affineCam * Mat(p3)));
+		float pp3z = Mat(affineCamZ * Mat(p3).rowRange(0, 3)).at<float>(0, 0);
+		Point3f pp4(Mat(affineCam * Mat(p4)));
+		float pp4z = Mat(affineCamZ * Mat(p4).rowRange(0, 3)).at<float>(0, 0);
+		Point3f pp5(Mat(affineCam * Mat(p5)));
+		float pp5z = Mat(affineCamZ * Mat(p5).rowRange(0, 3)).at<float>(0, 0);
+
 		// Estimate the shape coefficients
 
 		// $\hat{V} \in R^{3N\times m-1}$, subselect the rows of the eigenvector matrix $V$ associated with the $N$ feature points
@@ -360,7 +397,7 @@ int main(int argc, char *argv[])
 		Mat A = P * V_hat_h;
 		Mat b = P * v_bar - y;
 		//Mat c_s; // The x, we solve for this! (the variance-normalized shape parameter vector, $c_s = [a_1/sigma_{s,1} , ..., a_m-1/sigma_{s,m-1}]^t$
-		float lambda = 0.01f; // The weight of the regularisation
+		float lambda = 0.005f; // The weight of the regularisation
 		int numShapePc = morphableModel.getShapeModel().getNumberOfPrincipalComponents();
 		Mat AtOmegaA = A.t() * Omega * A;
 		Mat AtOmegaAReg = AtOmegaA + lambda * Mat::eye(numShapePc, numShapePc, CV_32FC1);
@@ -429,36 +466,51 @@ int main(int argc, char *argv[])
 		}
 
 		std::shared_ptr<render::Mesh> meshToDraw = std::make_shared<render::Mesh>(morphableModel.getMean());
+		render::Mesh::writeObj(*meshToDraw.get(), "C:\\Users\\Patrik\\Documents\\GitHub\\test.obj");
+
+
 
 		const float aspect = (float)img.cols / (float)img.rows; // 640/480
 		render::Camera camera(Vec3f(0.0f, 0.0f, 0.0f), /*horizontalAngle*/0.0f*(CV_PI / 180.0f), /*verticalAngle*/0.0f*(CV_PI / 180.0f), render::Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, /*zNear*/-0.1f, /*zFar*/-100.0f));
 		render::RenderDevicePnP r(img.cols, img.rows, camera); // 640, 480
-		//r.setModelTransform(render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f));
-		r.setIntrinsicCameraTransform(intrinsicCameraMatrix);
-		r.setExtrinsicCameraTransform(extrinsicCameraMatrix);
+		r.perspectiveDivision = render::RenderDevicePnP::PerspectiveDivision::None;
+		r.doClippingInNDC = false;
+		r.directToScreenTransform = true;
+		r.doWindowTransform = false;
+		r.setObjectToScreenTransform(affineCamFull);
 		r.draw(meshToDraw, nullptr);
 		Mat buff = r.getImage();
+		Mat buffA = buff.clone();
+
+		
+		//r.setModelTransform(render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f));
+		r.perspectiveDivision = render::RenderDevicePnP::PerspectiveDivision::Z;
+		r.setObjectToScreenTransform(intrinsicCameraMatrix * extrinsicCameraMatrix);
+		r.resetBuffers();
+		r.draw(meshToDraw, nullptr);
+		Mat buffB = r.getImage();
 		Mat buffWithoutAlpha;
-		cvtColor(buff, buffWithoutAlpha, cv::COLOR_BGRA2BGR);
+		cvtColor(buffB, buffWithoutAlpha, cv::COLOR_BGRA2BGR);
 		Mat weighted = img.clone(); // get the right size
 		cv::addWeighted(pnpCamLandmarksProjectionImage, 0.2, buffWithoutAlpha, 0.8, 0.0, weighted);
 		//return std::make_pair(translation_vector, rotation_matrix);
 		//img = weighted;
-		Mat buffMean = buff.clone();
+		Mat buffMean = buffB.clone();
 		Mat weightedMean = weighted.clone();
 
 		meshToDraw = std::make_shared<render::Mesh>(morphableModel.drawSample(fittedCoeffs, vector<float>(morphableModel.getColorModel().getNumberOfPrincipalComponents(), 0.0f)));
+		render::Mesh::writeObj(*meshToDraw.get(), "C:\\Users\\Patrik\\Documents\\GitHub\\testf.obj");
 		r.resetBuffers();
 		r.draw(meshToDraw, nullptr);
-		buff = r.getImage();
-		cvtColor(buff, buffWithoutAlpha, cv::COLOR_BGRA2BGR);
+		buffB = r.getImage();
+		cvtColor(buffB, buffWithoutAlpha, cv::COLOR_BGRA2BGR);
 		weighted = img.clone(); // get the right size
 		cv::addWeighted(pnpCamLandmarksProjectionImage, 0.2, buffWithoutAlpha, 0.8, 0.0, weighted);
 
 		cv::imshow(windowName, img);
 		cv::waitKey(5);
 
-
+		// TODO: REPROJECT THE POINTS FROM THE C_S MODEL HERE AND SEE IF THE LMS REALLY GO FURTHER OUT OR JUST THE REST OF THE MESH
 
 
 		end = std::chrono::system_clock::now();

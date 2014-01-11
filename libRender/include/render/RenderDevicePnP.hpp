@@ -66,12 +66,9 @@ public:
 
 	void setModelTransform(Mat modelTransform);
 
-	void setExtrinsicCameraTransform(Mat extrinsicCameraTransform) {
-		this->extrinsicCameraTransform = extrinsicCameraTransform;
+	void setObjectToScreenTransform(Mat objectToScreenTransform) {
+		this->objectToScreenTransform = objectToScreenTransform;
 	}
-	void setIntrinsicCameraTransform(Mat intrinsicCameraTransform) {
-		this->intrinsicCameraTransform = intrinsicCameraTransform;	
-	};
 
 	void resetBuffers();
 
@@ -82,7 +79,9 @@ public:
 
 	void draw(shared_ptr<Mesh> mesh, shared_ptr<Texture> texture);
 
-protected:
+	
+
+private:
 	Mat colorBuffer;
 	Mat depthBuffer;
 	unsigned int screenWidth;
@@ -91,12 +90,26 @@ protected:
 	
 
 	Mat worldTransform;			// Model-matrix. We should have/save one per object if we start rendering more than 1 object.
+								// TODO: Rename to "modelTransform"! (the setter is already named model...)
 	Mat viewTransform;			// Camera-transform
 	Mat projectionTransform;	// Orthogonal or projective transform
 	Mat windowTransform;	// Transform to window coordinates, 4 x 4 float
 
-	Mat extrinsicCameraTransform; // From PnP algos
-	Mat intrinsicCameraTransform; // From PnP algos
+	Mat objectToScreenTransform;
+
+public:
+	enum class PerspectiveDivision {
+		None, // Affine
+		W,
+		Z
+	};
+
+	PerspectiveDivision perspectiveDivision;
+	bool doClippingInNDC;
+	bool directToScreenTransform; // rename to "do...xyzTransform" ?
+	bool doWindowTransform;
+
+private:
 
 	void setViewport(unsigned int screenWidth, unsigned int screenHeight);
 

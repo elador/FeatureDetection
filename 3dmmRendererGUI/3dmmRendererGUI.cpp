@@ -15,7 +15,7 @@
 
 #include "render/MeshUtils.hpp"
 #include "render/MatrixUtils.hpp"
-#include "render/RenderDevice.hpp"
+#include "render/RenderDevicePnP.hpp"
 #include "render/Camera.hpp"
 
 #include "shapemodels/MorphableModel.hpp"
@@ -157,8 +157,8 @@ int main(int argc, char *argv[])
 	render::Mesh plane = render::utils::MeshUtils::createPlane();
 	shared_ptr<render::Mesh> tri = render::utils::MeshUtils::createTriangle();
 	
-	mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
-	//mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\SurreyLowResGuosheng\\NON3448\\ShpVtxModelBin_NON3448.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
+	//mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
+	mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\SurreyLowResGuosheng\\NON3448\\ShpVtxModelBin_NON3448.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
 	//mm = shapemodels::MorphableModel::loadOldBaselH5Model("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "featurePoints_head_newfmt.txt");
 	//mm = shapemodels::MorphableModel::loadStatismoModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\2012.2\\head\\model2012_l7_head.h5");
 	
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 	Camera camera(Vec3f(0.0f, 0.0f, 0.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 
-	RenderDevice r(screenWidth, screenHeight, camera);
+	RenderDevicePnP r(screenWidth, screenHeight, camera);
 
 	namedWindow(windowName, WINDOW_AUTOSIZE);
 	setMouseCallback(windowName, winOnMouse);
@@ -296,10 +296,10 @@ int main(int argc, char *argv[])
 		Mat modelTrans = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -1.5f);
 		Mat rot = Mat::eye(4, 4, CV_32FC1);
 		Mat modelMatrix = modelTrans * rot * modelScaling;
-		r.setWorldTransform(modelMatrix);
+		r.setModelTransform(modelMatrix);
 		r.draw(meshToDraw, nullptr);
 		
-		r.setWorldTransform(Mat::eye(4, 4, CV_32FC1));
+		r.setModelTransform(Mat::eye(4, 4, CV_32FC1));
 		// End test
 		
 		//r.renderLine(Vec4f(1.5f, 0.0f, 0.5f, 1.0f), Vec4f(-1.5f, 0.0f, 0.5f, 1.0f), Scalar(0.0f, 0.0f, 255.0f));

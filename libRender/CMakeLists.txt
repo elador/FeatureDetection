@@ -30,11 +30,8 @@ message(STATUS "HDF5 libraries at: ${HDF5_LIBRARIES}")
 
 #Source and header files:
 SET(SOURCE
-	src/render/Renderer.cpp
 	src/render/RenderDevice.cpp
 	src/render/RenderDevicePnP.cpp
-	src/render/OpenGlDevice.cpp
-	src/render/SoftwareDevice.cpp
 	src/render/Vertex.cpp
 	src/render/Triangle.cpp
 	src/render/Camera.cpp
@@ -46,11 +43,8 @@ SET(SOURCE
 )
 
 SET(HEADERS
-	include/render/Renderer.hpp
 	include/render/RenderDevice.hpp
 	include/render/RenderDevicePnP.hpp
-	include/render/OpenGlDevice.hpp
-	include/render/SoftwareDevice.hpp
 	include/render/Vertex.hpp
 	include/render/Triangle.hpp
 	include/render/Camera.hpp
@@ -59,7 +53,6 @@ SET(HEADERS
 	include/render/MatrixUtils.hpp
 	include/render/MeshUtils.hpp
 	include/render/Hdf5Utils.hpp
-	include/render/OGLDevNew.hpp
 )
 
 include_directories( "include" )

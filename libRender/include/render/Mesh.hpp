@@ -49,6 +49,9 @@ public:
 
 	std::shared_ptr<render::Texture> texture; // optimally, we'd use a TextureManager, or maybe a smart pointer, to not load/store a texture twice if two models use the same texture.
 
+	// TODO Doc
+	static void writeObj(Mesh mesh, std::string filename);
+
 };
 
 } /* namespace render */

@@ -97,7 +97,8 @@ PcaModel PcaModel::loadStatismoModel(string h5file, PcaModel::ModelType modelTyp
 	dsMean.close(); */
 
 	// Read the triangle-list
-	H5::Group representerGroup = h5Model.openGroup("/" + h5GroupType + "/representer");
+	string representerGroupName = "/" + h5GroupType + "/representer";
+	H5::Group representerGroup = h5Model.openGroup(representerGroupName);
 	dsMean = representerGroup.openDataSet("./reference-mesh/triangle-list");
 	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
 	Loggers->getLogger("shapemodels").debug("Dimensions of the triangle-list: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
@@ -114,7 +115,7 @@ PcaModel PcaModel::loadStatismoModel(string h5file, PcaModel::ModelType modelTyp
 
 	// Load the landmarks mappings:
 	// load the reference-mesh
-	representerGroup = h5Model.openGroup("/" + h5GroupType + "/representer");
+	representerGroup = h5Model.openGroup(representerGroupName);
 	dsMean = representerGroup.openDataSet("./reference-mesh/vertex-coordinates");
 	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
 	Loggers->getLogger("shapemodels").debug("Dimensions of the reference-mesh vertex-coordinates matrix: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
@@ -400,7 +401,7 @@ Vec3f PcaModel::getMeanAtPoint(unsigned int vertexIndex) const
 
 Mat PcaModel::drawSample(float sigma /*= 1.0f*/)
 {
-	std::normal_distribution<float> distribution(0.0f, sigma);
+	std::normal_distribution<float> distribution(0.0f, sigma); // TODO: c'tor takes the stddev. Update all the documentation!!!
 
 	vector<float> alphas(getNumberOfPrincipalComponents());
 

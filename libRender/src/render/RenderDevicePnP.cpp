@@ -26,6 +26,11 @@ RenderDevicePnP::RenderDevicePnP(unsigned int screenWidth, unsigned int screenHe
 	updateViewTransform();
 	updateProjectionTransform(false);
 	setViewport(screenWidth, screenHeight);
+
+	doClippingInNDC = true;
+	directToScreenTransform = false;
+	doWindowTransform = true;
+	perspectiveDivision = PerspectiveDivision::W;
 }
 
 RenderDevicePnP::RenderDevicePnP(unsigned int screenWidth, unsigned int screenHeight, Camera camera)
@@ -44,6 +49,11 @@ RenderDevicePnP::RenderDevicePnP(unsigned int screenWidth, unsigned int screenHe
 	updateViewTransform();
 	updateProjectionTransform(false);
 	setViewport(screenWidth, screenHeight);
+
+	doClippingInNDC = true;
+	directToScreenTransform = false;
+	doWindowTransform = true;
+	perspectiveDivision = PerspectiveDivision::W;
 }
 
 RenderDevicePnP::~RenderDevicePnP()
@@ -242,17 +252,20 @@ void RenderDevicePnP::runVertexProcessor()
 				//triangle.vertex[k] = runVertexShader(drawCalls[i].transform, drawCalls[i].trianglesBuffer[j].vertices[k]);
 			}
 
-			processProspectiveTriangleToRasterize(	// does nothing with the texture, only copy either NULL or the texcoords
-				triangle.vertex[0],
-				triangle.vertex[1],
-				triangle.vertex[2],
-				drawCalls[i].texture);
+			if (!doClippingInNDC) {
+				processProspectiveTriangleToRasterize(	// does nothing with the texture, only copy either NULL or the texcoords
+					triangle.vertex[0],
+					triangle.vertex[1],
+					triangle.vertex[2],
+					drawCalls[i].texture);
 
-			continue;
+				continue;
+			}
 			// PnP: Instead of skipping the visibility check, we could scale the LMs so our PnP outputs NDC.
 			// Also, fix the stuff in processProspectiveTriangleToRasterize(...): We devide by w in one case
 			// and by z in the other. Unify this (think how to do it best in PnP case... change the cam-matrices, ...)
-			/*
+			
+			// Else, do clipping in NDC: (traditional CG rendering pipeline)
 
 			// Hmm I transform many vertices twice or even more, because they are used in more than one triangle.
 			// Maybe make that better, eg a loop over mesh.vertices instead of tvi, or maybe make a new list with all transformed triangles, in same order, then use this plus mesh.tvi
@@ -327,7 +340,7 @@ void RenderDevicePnP::runVertexProcessor()
 						drawCalls[i].texture);
 				}
 			}
-		*/
+
 		}
 	}
 }
@@ -335,17 +348,15 @@ void RenderDevicePnP::runVertexProcessor()
 Vertex RenderDevicePnP::runVertexShader(shared_ptr<Mesh> mesh, const cv::Mat& transform, const int vertexNum)
 {
 	Vertex output;
-	/*
-	cv::Mat tmp =  transform * cv::Mat(mesh->vertex[vertexNum].position);	// places the vec as a row in the matrix. This is viewProjTransform * worldTransform
-	output.position[0] = tmp.at<float>(0, 0);
-	output.position[1] = tmp.at<float>(1, 0);
-	output.position[2] = tmp.at<float>(2, 0);
-	output.position[3] = tmp.at<float>(3, 0);
-	*/
 	
-	//Mat worldToViewVol = projectionTransform * viewTransform * worldTransform;
-	//output.position = matToColVec4f(worldToViewVol * Mat(mesh->vertex[vertexNum].position));
-	output.position = matToColVec4f(intrinsicCameraTransform * extrinsicCameraTransform * Mat(mesh->vertex[vertexNum].position));
+	if (!directToScreenTransform) {
+		// MVP rendering pipeline
+		Mat worldToViewVol = projectionTransform * viewTransform * worldTransform;
+		output.position = matToColVec4f(worldToViewVol * Mat(mesh->vertex[vertexNum].position));
+	} else {
+		// direct object to screen matrix (solvePnP or Affine camera est.)
+		output.position = matToColVec4f(objectToScreenTransform * Mat(mesh->vertex[vertexNum].position));
+	}
 	
 	/*
 	Mat worldSpace = worldTransform * Mat(mesh->vertex[vertexNum].position);
@@ -375,29 +386,83 @@ void RenderDevicePnP::processProspectiveTriangleToRasterize(const Vertex& _v0, c
 	t.one_over_z1 = 1.0 / (double)t.v1.position[3];
 	t.one_over_z2 = 1.0 / (double)t.v2.position[3];
 
-	// project from 4D to 2D window position with depth value in z coordinate
-	//t.v0.position = t.v0.position / t.v0.position[3];	// divide by w
-	t.v0.position = t.v0.position / t.v0.position[2];	// divide by w
-	//cv::Mat tmp = windowTransform * cv::Mat(t.v0.position);	// places the vec as a column in the matrix
-	cv::Mat tmp = cv::Mat(t.v0.position);	// places the vec as a column in the matrix
-	t.v0.position[0] = tmp.at<float>(0, 0);
+	switch (perspectiveDivision)
+	{
+	case PerspectiveDivision::None:
+		// No division: Affine cam matrix case
+		break;
+	case PerspectiveDivision::W:
+		// project from 4D to 2D window position with depth value in z coordinate
+		t.v0.position = t.v0.position / t.v0.position[3];	// divide by w: standard CG case
+		break; // 
+	case PerspectiveDivision::Z:
+		t.v0.position = t.v0.position / t.v0.position[2];	// divide by z: extr/intrin solvePnP case
+		break;
+	default:
+		// Error!!! and no default value set.
+		break;
+	}
+
+	cv::Mat tmp;
+	if (doWindowTransform) {
+		tmp = windowTransform * cv::Mat(t.v0.position);	// places the vec as a column in the matrix
+	} else {
+		tmp = cv::Mat(t.v0.position);	// places the vec as a column in the matrix
+	}
+	t.v0.position[0] = tmp.at<float>(0, 0); // not neccesary in NONE case
 	t.v0.position[1] = tmp.at<float>(1, 0);
 	t.v0.position[2] = tmp.at<float>(2, 0);
 	t.v0.position[3] = tmp.at<float>(3, 0);
 
-	//t.v1.position = t.v1.position / t.v1.position[3];
-	t.v1.position = t.v1.position / t.v1.position[2];
-	//tmp = windowTransform * cv::Mat(t.v1.position);	// places the vec as a column in the matrix
-	tmp = cv::Mat(t.v1.position);	// places the vec as a column in the matrix
+	switch (perspectiveDivision)
+	{
+	case PerspectiveDivision::None:
+		// No division: Affine cam matrix case
+		break;
+	case PerspectiveDivision::W:
+		// project from 4D to 2D window position with depth value in z coordinate
+		t.v1.position = t.v1.position / t.v1.position[3];	// divide by w: standard CG case
+		break; // 
+	case PerspectiveDivision::Z:
+		t.v1.position = t.v1.position / t.v1.position[2];	// divide by w (z?): extr/intrin solvePnP case
+		break;
+	default:
+		// Error!!! and no default value set.
+		break;
+	}
+	if (doWindowTransform) {
+		tmp = windowTransform * cv::Mat(t.v1.position);	// places the vec as a column in the matrix
+	}
+	else {
+		tmp = cv::Mat(t.v1.position);	// places the vec as a column in the matrix
+	}
 	t.v1.position[0] = tmp.at<float>(0, 0);
 	t.v1.position[1] = tmp.at<float>(1, 0);
 	t.v1.position[2] = tmp.at<float>(2, 0);
 	t.v1.position[3] = tmp.at<float>(3, 0);
 
-	//t.v2.position = t.v2.position / t.v2.position[3];
-	t.v2.position = t.v2.position / t.v2.position[2];
-	//tmp = windowTransform * cv::Mat(t.v2.position);	// places the vec as a column in the matrix
-	tmp = cv::Mat(t.v2.position);	// places the vec as a column in the matrix
+	switch (perspectiveDivision)
+	{
+	case PerspectiveDivision::None:
+		// No division: Affine cam matrix case
+		break;
+	case PerspectiveDivision::W:
+		// project from 4D to 2D window position with depth value in z coordinate
+		t.v2.position = t.v2.position / t.v2.position[3];	// divide by w: standard CG case
+		break; // 
+	case PerspectiveDivision::Z:
+		t.v2.position = t.v2.position / t.v2.position[2];	// divide by w (z?): extr/intrin solvePnP case
+		break;
+	default:
+		// Error!!! and no default value set.
+		break;
+	}
+	if (doWindowTransform) {
+		tmp = windowTransform * cv::Mat(t.v2.position);	// places the vec as a column in the matrix
+	}
+	else {
+		tmp = cv::Mat(t.v2.position);	// places the vec as a column in the matrix
+	}
 	t.v2.position[0] = tmp.at<float>(0, 0);
 	t.v2.position[1] = tmp.at<float>(1, 0);
 	t.v2.position[2] = tmp.at<float>(2, 0);
@@ -540,13 +605,27 @@ void RenderDevicePnP::runPixelProcessor()
 					int pixelIndexCol = xi;
 
 					double z_affine = alpha*(double)t.v0.position[2] + beta*(double)t.v1.position[2] + gamma*(double)t.v2.position[2];	// z
-
-					if (z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol) && z_affine <= 1.0)
+					bool isZTestSuccessful = false;
+					switch (perspectiveDivision)
+					{
+					case PerspectiveDivision::None:
+						isZTestSuccessful = z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol);
+						break;
+					case PerspectiveDivision::W:
+						isZTestSuccessful = z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol) && z_affine <= 1.0;
+						break;
+					case PerspectiveDivision::Z:
+						isZTestSuccessful = z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol) && z_affine <= 1.0;
+						break;
+					default:
+						break;
+					}
+					if (isZTestSuccessful)
 					{
 						// perspective-correct barycentric weights
 						double d = alpha*t.one_over_z0 + beta*t.one_over_z1 + gamma*t.one_over_z2;
 						d = 1.0 / d;
-						alpha *= d*t.one_over_z0;
+						alpha *= d*t.one_over_z0; // In case of affine cam matrix, everything is 1 and a/b/g don't get changed.
 						beta *= d*t.one_over_z1;
 						gamma *= d*t.one_over_z2;
 
