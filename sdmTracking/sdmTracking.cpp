@@ -399,23 +399,30 @@ int main(int argc, char *argv[])
 		vector<shared_ptr<Landmark>> lmsv = lms.getLandmarks();
 		landmarks.clear();
 		Mat landmarksImage = img.clone(); // blue rect = the used landmarks
+		/*
 		for (const auto& lm : lmsv) {
 			lm->draw(landmarksImage);
 			landmarks.emplace_back(imageio::ModelLandmark(lm->getName(), lm->getPosition2D()));
 			cv::rectangle(landmarksImage, cv::Point(cvRound(lm->getX() - 2.0f), cvRound(lm->getY() - 2.0f)), cv::Point(cvRound(lm->getX() + 2.0f), cvRound(lm->getY() + 2.0f)), cv::Scalar(255, 0, 0));
-		}
+		}*/
 
 		vector<cv::Rect> faces;
 		float score, notFace = 0.5;
 		// face detection
-		//faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
-		faces.push_back({ 172, 199, 278, 278 });
+		faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
+		//faces.push_back({ 172, 199, 278, 278 });
+
+		if (faces.empty()) {
+			cv::imshow(windowName, landmarksImage);
+			cv::waitKey(5);
+			continue;
+		}
 
 		for (const auto& f : faces) {
 			cv::rectangle(landmarksImage, f, cv::Scalar(0.0f, 0.0f, 255.0f));
 		}
 		Mat imgGray;
-		cvtColor(img, imgGray, cv::COLOR_RGB2GRAY);
+		cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);
 
 	/*	std::vector<cv::Point2f> mlms = m.getLandmarksAsPoints();
 		for (const auto& l : mlms) {
@@ -429,7 +436,7 @@ int main(int argc, char *argv[])
 		double minX, maxX, minY, maxY;
 		cv::minMaxLoc(xCoords, &minX, &maxX);
 		cv::minMaxLoc(yCoords, &minY, &maxY);
-		float faceboxScaleFactor = 1.25f;
+		float faceboxScaleFactor = 1.35f; // 1.25f; // value of Zhenhua Matlab FD
 		float modelWidth = maxX - minX;
 		float modelHeight = maxY - minY;
 		// scale it:
@@ -441,7 +448,7 @@ int main(int argc, char *argv[])
 		double meanYd = meanY[0];
 		// move it:
 		xCoords += faces[0].x + faces[0].width / 2.0f - meanXd;
-		yCoords += faces[0].y + faces[0].height / 2.0f - meanYd;
+		yCoords += faces[0].y + faces[0].height / 1.8f - meanYd; // we use another value for y because we don't want to center the model right in the middle of the face-box
 
 		for (int i = 0; i < m.getNumLandmarks(); ++i) {
 			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + m.getNumLandmarks(), 0)), 3, Scalar(255.0f, 0.0f, 255.0f));
@@ -480,7 +487,7 @@ int main(int argc, char *argv[])
 			int hogCellSize = 12;
 			int hogDim1 = (numNeighbours * 2) / hogCellSize; // i.e. how many times does the hogCellSize fit into our patch
 			int hogDim2 = hogDim1; // as our patch is quadratic, those two are the same
-			int hogDim3 = 16; // I don't know yet where this comes from, maybe numOrientations*numOrientations?
+			int hogDim3 = 16; // VlHogVariantUoctti: Creates 4+3*numOrientations dimensions
 			int hogDims = hogDim1 * hogDim2 * hogDim3;
 			Mat currentFeatures(m.getNumLandmarks() * hogDims, 1, CV_32FC1);
 
@@ -488,24 +495,36 @@ int main(int argc, char *argv[])
 				// get the (x, y) location and w/h of the current patch
 				int x = cvRound(modelShape.at<float>(i, 0));
 				int y = cvRound(modelShape.at<float>(i+m.getNumLandmarks(), 0));
-				cv::Rect roi(x, y, numNeighbours * 2, numNeighbours * 2); // x y w h
+				cv::Rect roi(x - numNeighbours, y - numNeighbours, numNeighbours * 2, numNeighbours * 2); // x y w h. Rect: x and y are top-left corner. Our x and y are center. Convert.
+																										  // we have exactly the same window as the matlab code.
 				// extract the patch and supply it to vl_hog
 				Mat roiImg = imgGray(roi).clone(); // clone because we need a continuous memory block
 				roiImg.convertTo(roiImg, CV_32FC1); // because vl_hog_put_image expects a float* (values 0.f-255.f)
-				VlHog* hog = vl_hog_new(VlHogVariant::VlHogVariantUoctti, /*numOrientations=*/numBins, true); // VlHogVariantUoctti seems to be default in Matlab
+				VlHog* hog = vl_hog_new(VlHogVariant::VlHogVariantUoctti, /*numOrientations=*/numBins, /*transposed (=col-major):*/false); // VlHogVariantUoctti seems to be default in Matlab.
 				vl_hog_put_image(hog, (float*)roiImg.data, roiImg.cols, roiImg.rows, /*numChannels=*/1, hogCellSize);
 				vl_size ww = vl_hog_get_width(hog);
 				vl_size hh = vl_hog_get_height(hog);
 				vl_size dd = vl_hog_get_dimension(hog); // assert ww=hogDim1, hh=hogDim2, dd=hogDim3
 				float* hogArray = (float*)vl_malloc(ww*hh*dd*sizeof(float));
-				vl_hog_extract(hog, hogArray);
+				vl_hog_extract(hog, hogArray); // just interpret hogArray in col-major order to get the same n x 1 vector as in matlab. (w * h * d)
 				vl_hog_delete(hog);
-				Mat hogFeatures(ww*hh*dd, 1, CV_32FC1, hogArray);
+				Mat hogDescriptor(hh*ww*dd, 1, CV_32FC1);
+				for (int j = 0; j < dd; ++j) {
+					Mat hogFeatures(hh, ww, CV_32FC1, hogArray + j*ww*hh); // Creates the same array as in Matlab. I might have to check this again if hh!=ww (non-square)
+					hogFeatures = hogFeatures.t(); // Necessary because the Matlab reshape() takes column-wise from the matrix while the OpenCV reshape() takes row-wise.
+					hogFeatures = hogFeatures.reshape(0, hh*ww); // make it to a column-vector
+					Mat currentDimSubMat = hogDescriptor.rowRange(j*ww*hh, j*ww*hh + ww*hh);
+					hogFeatures.copyTo(currentDimSubMat);
+				}
+				
 
 				//features = [features; double(reshape(tmp, [], 1))];
 				// B = reshape(A,m,n) returns the m-by-n matrix B whose elements are taken column-wise from A
-				Mat currentFeaturesSubrange = currentFeatures.rowRange(i * hogDims, i * hogDims + hogDims);
-				hogFeatures.copyTo(currentFeaturesSubrange);
+				// Matlab (& Eigen, OpenGL): Column-major.
+				// OpenCV: Row-major.
+				// (access is always (r, c).)
+				Mat currentFeaturesSubrange = currentFeatures.rowRange(i*hogDims, i*hogDims+hogDims);
+				hogDescriptor.copyTo(currentFeaturesSubrange);
 				// currentFeatures needs to have dimensions n x 1, where n = numLandmarks * hogFeaturesDimension, e.g. n = 22 * (3*3*16=144) = 3168 (for the first hog Scale)
 			}
 			
@@ -520,6 +539,10 @@ int main(int argc, char *argv[])
 				cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + m.getNumLandmarks(), 0)), 6 - hogScale, Scalar(51.0f*(float)hogScale, 51.0f*(float)hogScale, 0.0f));
 			}*/
 
+		}
+
+		for (int i = 0; i < m.getNumLandmarks(); ++i) {
+			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + m.getNumLandmarks(), 0)), 3, Scalar(0.0f, 0.0f, 255.0f));
 		}
 		
 		end = std::chrono::system_clock::now();
