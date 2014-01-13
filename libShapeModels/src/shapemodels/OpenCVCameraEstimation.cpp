@@ -1,23 +1,16 @@
 /*
- * CameraEstimation.cpp
+ * OpenCVCameraEstimation.cpp
  *
  *  Created on: 15.12.2013
  *      Author: Patrik Huber
  */
 
-#include "shapemodels/CameraEstimation.hpp"
+#include "shapemodels/OpenCVCameraEstimation.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
 #include "opencv2/calib3d/calib3d.hpp"
-/*
-#include "boost/lexical_cast.hpp"
-#include <exception>
 
-using cv::Vec3f;
-using boost::lexical_cast;
-using std::string;
-*/
 using logging::LoggerFactory;
 using cv::Mat;
 using std::vector;
@@ -25,12 +18,12 @@ using std::pair;
 
 namespace shapemodels {
 
-CameraEstimation::CameraEstimation(/* const? shared_ptr? */MorphableModel morphableModel) : morphableModel(morphableModel)
+OpenCVCameraEstimation::OpenCVCameraEstimation(/* const? shared_ptr? */MorphableModel morphableModel) : morphableModel(morphableModel)
 {
 
 }
 
-std::pair<cv::Mat, cv::Mat> CameraEstimation::estimate(std::vector<imageio::ModelLandmark> imagePoints, cv::Mat intrinsicCameraMatrix, std::vector<int> vertexIds /*= std::vector<int>()*/)
+cv::Mat OpenCVCameraEstimation::estimate(std::vector<imageio::ModelLandmark> imagePoints, cv::Mat intrinsicCameraMatrix, std::vector<int> vertexIds /*= std::vector<int>()*/)
 {
 	if (imagePoints.size() < 3) {
 		Loggers->getLogger("shapemodels").error("CameraEstimation: Number of points given is smaller than 3.");
@@ -56,7 +49,30 @@ std::pair<cv::Mat, cv::Mat> CameraEstimation::estimate(std::vector<imageio::Mode
 		// cv::solvePnPRansac(modelPoints, imagePoints, camMatrix, distortion, rvec, tvec, false); // min 4 points
 		// has an optional argument 'inliers' - might be useful
 	}
-	return std::make_pair(rvec, tvec);
+
+	// Convert rvec/tvec to matrices, etc... return 4x4 extrinsic camera matrix
+	Mat rotation_matrix(3, 3, CV_64FC1);
+	cv::Rodrigues(rvec, rotation_matrix);
+	rotation_matrix.convertTo(rotation_matrix, CV_32FC1);
+	Mat translation_vector = tvec;
+	translation_vector.convertTo(translation_vector, CV_32FC1);
+
+	Mat extrinsicCameraMatrix = Mat::zeros(4, 4, CV_32FC1);
+	Mat extrRot = extrinsicCameraMatrix(cv::Range(0, 3), cv::Range(0, 3));
+	rotation_matrix.copyTo(extrRot);
+	Mat extrTrans = extrinsicCameraMatrix(cv::Range(0, 3), cv::Range(3, 4));
+	translation_vector.copyTo(extrTrans);
+	extrinsicCameraMatrix.at<float>(3, 3) = 1; // maybe set (3, 2) = 1 here instead so that the renderer can do divByW as well? (see Todo in libRender)
+
+	return extrinsicCameraMatrix;
+}
+
+cv::Mat OpenCVCameraEstimation::createIntrinsicCameraMatrix(float f, int w, int h)
+{
+	Mat camMatrix = (cv::Mat_<double>(3, 3) << f, 0, w / 2.0,
+											   0, f, h / 2.0,
+											   0, 0, 1.0    );
+	return camMatrix;
 }
 
 }

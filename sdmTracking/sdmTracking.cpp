@@ -1,7 +1,7 @@
 /*
- * fitter.cpp
+ * sdmTracking.cpp
  *
- *  Created on: 28.12.2013
+ *  Created on: 11.01.2014
  *      Author: Patrik Huber
  */
 
@@ -32,10 +32,14 @@
 #include <memory>
 #include <iostream>
 
+extern "C" {
+	#include "vl/hog.h"
+}
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
-#include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/objdetect/objdetect.hpp"
 
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
@@ -85,6 +89,105 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 	std::copy(v.begin(), v.end(), std::ostream_iterator<T>(cout, " "));
 	return os;
 }
+
+
+
+/*
+#include <fstream>
+#include "opencv2/core/core.hpp"
+#ifdef WIN32
+#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
+#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
+#endif
+#include "boost/algorithm/string.hpp"
+#include "boost/filesystem/path.hpp"
+#include "boost/lexical_cast.hpp"
+
+using boost::lexical_cast;
+*/
+class HogSdmModel
+{
+public:
+	HogSdmModel() {
+	};
+
+	// interface
+	int getNumLandmarks() const {
+		return meanLandmarks.rows/2;
+	};
+
+	// only HOG models
+	int getNumHogScales() const {
+		return regressorData.size();
+	};
+
+	// returns a copy
+	cv::Mat getMeanShape() const {
+		return meanLandmarks.clone();
+	};
+	// returns  a header that points to the original data
+	cv::Mat getRegressorData(int hogScaleLevel) {
+		return regressorData[hogScaleLevel];
+	}
+
+	//std::vector<cv::Point2f> getLandmarksAsPoints(cv::Mat or vector<float> alphas or empty(=mean));
+	std::vector<cv::Point2f> getLandmarksAsPoints() const {
+		std::vector<cv::Point2f> landmarks;
+		for (int i = 0; i < getNumLandmarks(); ++i) {
+			landmarks.push_back({ meanLandmarks.at<float>(i, 0), meanLandmarks.at<float>(i+getNumLandmarks(), 0) });
+		}
+		return landmarks;
+	};
+
+	static HogSdmModel load(boost::filesystem::path filename) {
+		HogSdmModel model;
+		std::ifstream file(filename.string());
+		std::string line;
+		vector<string> stringContainer;
+		std::getline(file, line); // skip the first line, it's the description
+		std::getline(file, line); // numLandmarks 22
+		boost::split(stringContainer, line, boost::is_any_of(" "));
+		int numLandmarks = lexical_cast<int>(stringContainer[1]);
+		// read the mean landmarks
+		model.meanLandmarks = Mat(numLandmarks*2, 1, CV_32FC1);
+		// First all the x-coordinates, then all the  y-coordinates.
+		for (int i = 0; i < numLandmarks*2; ++i) {
+			std::getline(file, line);
+			model.meanLandmarks.at<float>(i, 0) = lexical_cast<float>(line);
+		}
+		// read the numHogScales
+		std::getline(file, line); // numHogScales 5
+		boost::split(stringContainer, line, boost::is_any_of(" "));
+		int numHogScales = lexical_cast<int>(stringContainer[1]);
+		// for every HOG scale, read a header line and then the matrix data
+		for (int i = 0; i < numHogScales; ++i) {
+			// read the header line
+			std::getline(file, line); // scale 1 rows 3169 cols 44
+			boost::split(stringContainer, line, boost::is_any_of(" "));
+			int numRows = lexical_cast<int>(stringContainer[3]); // = numHogDimensions
+			int numCols = lexical_cast<int>(stringContainer[5]); // = numLandmarks * 2
+			Mat regressorData(numRows, numCols, CV_32FC1);
+			// read numRows lines
+			for (int j = 0; j < numRows; ++j) {
+				std::getline(file, line); // float1 float2 float3 ... float44
+				boost::split(stringContainer, line, boost::is_any_of(" "));
+				for (int col = 0; col < numCols; ++col) { // stringContainer contains one more entry than numCols, but we just skip it, it's a whitespace
+					regressorData.at<float>(j, col) = lexical_cast<float>(stringContainer[col]);
+				}
+				
+			}
+
+			model.regressorData.push_back(regressorData);
+		}
+
+		return model;
+	};
+
+private:
+	cv::Mat meanLandmarks; // numLandmarks*2 x 1. First all the x-coordinates, then all the y-coordinates.
+	std::vector<cv::Mat> regressorData; // Holds the training data, one cv::Mat for each Hog scale level. Every Mat is numFeatureDim x numLandmarks*2 (for x & y)
+
+};
 
 int main(int argc, char *argv[])
 {
@@ -256,7 +359,7 @@ int main(int argc, char *argv[])
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
 	}
-
+	/*
 	shapemodels::MorphableModel morphableModel;
 	try {
 		morphableModel = shapemodels::MorphableModel::load(pt.get_child("morphableModel"));
@@ -267,17 +370,25 @@ int main(int argc, char *argv[])
 	catch (const std::runtime_error& error) {
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
-	}
+	}*/
 	
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img;
 	const string windowName = "win";
 
-	shapemodels::OpenCVCameraEstimation epnpCameraEstimation(morphableModel);
-	shapemodels::AffineCameraEstimation affineCameraEstimation(morphableModel);
 	vector<imageio::ModelLandmark> landmarks;
 
 	cv::namedWindow(windowName);
+
+	HogSdmModel m = HogSdmModel::load("C:\\Users\\Patrik\\Documents\\GitHub\\SGD_Zhenhua_11012014\\SDM_Model_HOG_Zhenhua_11012014.txt");
+	
+	string faceDetectionModel("C:\\opencv\\2.4.7.2_prebuilt\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt2.xml"); // sgd: "../models/haarcascade_frontalface_alt2.xml"
+	cv::CascadeClassifier faceCascade;
+	if (!faceCascade.load(faceDetectionModel))
+	{
+		cout << "Error loading face detection model." << endl;
+		return EXIT_FAILURE;
+	}
 	
 	while(labeledImageSource->next()) {
 		start = std::chrono::system_clock::now();
@@ -290,164 +401,135 @@ int main(int argc, char *argv[])
 		Mat landmarksImage = img.clone(); // blue rect = the used landmarks
 		for (const auto& lm : lmsv) {
 			lm->draw(landmarksImage);
-			if (lm->getName() == "right.eye.corner_outer" || lm->getName() == "right.eye.corner_inner" || lm->getName() == "left.eye.corner_outer" || lm->getName() == "left.eye.corner_inner" || lm->getName() == "center.nose.tip" || lm->getName() == "right.lips.corner" || lm->getName() == "left.lips.corner") {
-				landmarks.emplace_back(imageio::ModelLandmark(lm->getName(), lm->getPosition2D()));
-				cv::rectangle(landmarksImage, cv::Point(cvRound(lm->getX() - 2.0f), cvRound(lm->getY() - 2.0f)), cv::Point(cvRound(lm->getX() + 2.0f), cvRound(lm->getY() + 2.0f)), cv::Scalar(255, 0, 0));
+			landmarks.emplace_back(imageio::ModelLandmark(lm->getName(), lm->getPosition2D()));
+			cv::rectangle(landmarksImage, cv::Point(cvRound(lm->getX() - 2.0f), cvRound(lm->getY() - 2.0f)), cv::Point(cvRound(lm->getX() + 2.0f), cvRound(lm->getY() + 2.0f)), cv::Scalar(255, 0, 0));
+		}
+
+		vector<cv::Rect> faces;
+		float score, notFace = 0.5;
+		// face detection
+		//faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
+		faces.push_back({ 172, 199, 278, 278 });
+
+		for (const auto& f : faces) {
+			cv::rectangle(landmarksImage, f, cv::Scalar(0.0f, 0.0f, 255.0f));
+		}
+		Mat imgGray;
+		cvtColor(img, imgGray, cv::COLOR_RGB2GRAY);
+
+	/*	std::vector<cv::Point2f> mlms = m.getLandmarksAsPoints();
+		for (const auto& l : mlms) {
+			cv::circle(landmarksImage, l, 3, Scalar(0.0f, 0.0f, 255.0f));
+		}*/
+
+		Mat modelShape = m.getMeanShape();
+		Mat xCoords = modelShape.rowRange(0, modelShape.rows / 2);
+		Mat yCoords = modelShape.rowRange(modelShape.rows / 2, modelShape.rows);
+		// scale the model:
+		double minX, maxX, minY, maxY;
+		cv::minMaxLoc(xCoords, &minX, &maxX);
+		cv::minMaxLoc(yCoords, &minY, &maxY);
+		float faceboxScaleFactor = 1.25f;
+		float modelWidth = maxX - minX;
+		float modelHeight = maxY - minY;
+		// scale it:
+		modelShape = modelShape * (faces[0].width / modelWidth + faces[0].height / modelHeight) / (2.0f * faceboxScaleFactor);
+		// translate the model:
+		Scalar meanX = cv::mean(xCoords);
+		double meanXd = meanX[0];
+		Scalar meanY = cv::mean(yCoords);
+		double meanYd = meanY[0];
+		// move it:
+		xCoords += faces[0].x + faces[0].width / 2.0f - meanXd;
+		yCoords += faces[0].y + faces[0].height / 2.0f - meanYd;
+
+		for (int i = 0; i < m.getNumLandmarks(); ++i) {
+			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + m.getNumLandmarks(), 0)), 3, Scalar(255.0f, 0.0f, 255.0f));
+		}
+
+		for (int hogScale = 0; hogScale < m.getNumHogScales(); ++hogScale) {
+			//feature_current = obtain_features(double(TestImg), New_Shape, 'HOG', hogScale);
+			int cellSize, numBins;
+			switch (hogScale) // should go into the model or a "hogOptimizer"
+			{
+			case 0:
+				cellSize = 3;
+				numBins = 4;
+				break;
+			case 1:
+				cellSize = 3;
+				numBins = 4;
+				break;
+			case 2:
+				cellSize = 2;
+				numBins = 4;
+				break;
+			case 3:
+				cellSize = 2;
+				numBins = 4;
+				break;
+			case 4:
+				cellSize = 1;
+				numBins = 4;
+				break;
+			default:
+				break; // should never happen
 			}
+			int numNeighbours = cellSize * 6; // this cellSize has nothing to do with HOG. It's the number of "cells", i.e. image-windows/patches.
+											  // if cellSize=1, our window is 12x12, and because our HOG-cellsize is 12, it means we will have 1 cell (the minimum).
+			int hogCellSize = 12;
+			int hogDim1 = (numNeighbours * 2) / hogCellSize; // i.e. how many times does the hogCellSize fit into our patch
+			int hogDim2 = hogDim1; // as our patch is quadratic, those two are the same
+			int hogDim3 = 16; // I don't know yet where this comes from, maybe numOrientations*numOrientations?
+			int hogDims = hogDim1 * hogDim2 * hogDim3;
+			Mat currentFeatures(m.getNumLandmarks() * hogDims, 1, CV_32FC1);
+
+			for (int i = 0; i < m.getNumLandmarks(); ++i) {
+				// get the (x, y) location and w/h of the current patch
+				int x = cvRound(modelShape.at<float>(i, 0));
+				int y = cvRound(modelShape.at<float>(i+m.getNumLandmarks(), 0));
+				cv::Rect roi(x, y, numNeighbours * 2, numNeighbours * 2); // x y w h
+				// extract the patch and supply it to vl_hog
+				Mat roiImg = imgGray(roi).clone(); // clone because we need a continuous memory block
+				roiImg.convertTo(roiImg, CV_32FC1); // because vl_hog_put_image expects a float* (values 0.f-255.f)
+				VlHog* hog = vl_hog_new(VlHogVariant::VlHogVariantUoctti, /*numOrientations=*/numBins, true); // VlHogVariantUoctti seems to be default in Matlab
+				vl_hog_put_image(hog, (float*)roiImg.data, roiImg.cols, roiImg.rows, /*numChannels=*/1, hogCellSize);
+				vl_size ww = vl_hog_get_width(hog);
+				vl_size hh = vl_hog_get_height(hog);
+				vl_size dd = vl_hog_get_dimension(hog); // assert ww=hogDim1, hh=hogDim2, dd=hogDim3
+				float* hogArray = (float*)vl_malloc(ww*hh*dd*sizeof(float));
+				vl_hog_extract(hog, hogArray);
+				vl_hog_delete(hog);
+				Mat hogFeatures(ww*hh*dd, 1, CV_32FC1, hogArray);
+
+				//features = [features; double(reshape(tmp, [], 1))];
+				// B = reshape(A,m,n) returns the m-by-n matrix B whose elements are taken column-wise from A
+				Mat currentFeaturesSubrange = currentFeatures.rowRange(i * hogDims, i * hogDims + hogDims);
+				hogFeatures.copyTo(currentFeaturesSubrange);
+				// currentFeatures needs to have dimensions n x 1, where n = numLandmarks * hogFeaturesDimension, e.g. n = 22 * (3*3*16=144) = 3168 (for the first hog Scale)
+			}
+			
+
+			//delta_shape = AAM.RF(1).Regressor(hogScale).A(1:end - 1, : )' * feature_current + AAM.RF(1).Regressor(hogScale).A(end,:)';
+			Mat regressorData = m.getRegressorData(hogScale);
+			Mat deltaShape = regressorData.rowRange(0, regressorData.rows - 1).t() * currentFeatures + regressorData.row(regressorData.rows - 1).t();
+
+			modelShape = modelShape + deltaShape;
+			/*
+			for (int i = 0; i < m.getNumLandmarks(); ++i) {
+				cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + m.getNumLandmarks(), 0)), 6 - hogScale, Scalar(51.0f*(float)hogScale, 51.0f*(float)hogScale, 0.0f));
+			}*/
+
 		}
-
-		// Start affine camera estimation (Aldrian paper)
-		Mat affineCamLandmarksProjectionImage = landmarksImage.clone(); // the affine LMs are currently not used (don't know how to render without z-vals)
-		Mat affineCam = affineCameraEstimation.estimate(landmarks);
-		for (const auto& lm : landmarks) {
-			Vec3f tmp = morphableModel.getShapeModel().getMeanAtPoint(lm.getName());
-			Mat p(4, 1, CV_32FC1);
-			p.at<float>(0, 0) = tmp[0];
-			p.at<float>(1, 0) = tmp[1];
-			p.at<float>(2, 0) = tmp[2];
-			p.at<float>(3, 0) = 1;
-			Mat p2d = affineCam * p;
-			Point2f pp({ p2d.at<float>(0, 0), p2d.at<float>(1, 0) });
-			cv::circle(affineCamLandmarksProjectionImage, pp, 4.0f, Scalar(0.0f, 255.0f, 0.0f));
-		}
-		// End Affine est.
-
-		// Estimate the shape coefficients
-
-		// $\hat{V} \in R^{3N\times m-1}$, subselect the rows of the eigenvector matrix $V$ associated with the $N$ feature points
-		// And we insert a row of zeros after every third row, resulting in matrix $\hat{V}_h \in R^{4N\times m-1}$:
-		Mat V_hat_h = Mat::zeros(4 * landmarks.size(), morphableModel.getShapeModel().getNumberOfPrincipalComponents(), CV_32FC1);
-		int rowIndex = 0;
-		for (const auto& lm : landmarks) {
-			Mat basisRows = morphableModel.getShapeModel().getPcaBasis(lm.getName()); // getPcaBasis should return the not-normalized basis I think
-			Mat submatrixToReplace = V_hat_h.rowRange(rowIndex, rowIndex + 3); // submatrixToReplace is just a pointer to V_hat_h
-			basisRows.copyTo(submatrixToReplace);
-			rowIndex += 4; // replace 3 rows and skip the 4th one, it has all zeros
-		}
-		// Form a block diagonal matrix $P \in R^{3N\times 4N}$ in which the camera matrix C (P_Affine, affineCam) is placed on the diagonal:
-		Mat P = Mat::zeros(3 * landmarks.size(), 4 * landmarks.size(), CV_32FC1);
-		for (int i = 0; i < landmarks.size(); ++i) {
-			Mat submatrixToReplace = P.colRange(4*i, (4*i)+4).rowRange(3*i, (3*i)+3);
-			//Mat submatrixToReplace2 = P.;
-			affineCam.copyTo(submatrixToReplace);
-		}
-		// The variances: We set the 3D and 2D variances to one static value for now. $sigma^2_2D = sqrt(1) + sqrt(3)^2 = 4$
-		float sigma_2D = std::sqrt(4);
-		Mat Sigma = Mat::zeros(3 * landmarks.size(), 3 * landmarks.size(), CV_32FC1);
-		for (int i = 0; i < 3 * landmarks.size(); ++i) {
-			Sigma.at<float>(i, i) = 1.0f / sigma_2D;
-		}
-		Mat Omega = Sigma.t() * Sigma;
-		// The landmarks in matrix notation (in homogeneous coordinates), $3N\times 1$
-		Mat y = Mat::ones(3 * landmarks.size(), 1, CV_32FC1);
-		for (int i = 0; i < landmarks.size(); ++i) {
-			y.at<float>(3*i, 0) = landmarks[i].getX();
-			y.at<float>((3*i)+1, 0) = landmarks[i].getY();
-			// the position (3*i)+2 stays 1 (homogeneous coordinate)
-		}
-		// The mean, with an added homogeneous coordinate (x_1, y_1, z_1, 1, x_2, ...)^t
-		Mat v_bar = Mat::ones(4 * landmarks.size(), 1, CV_32FC1);
-		for (int i = 0; i < landmarks.size(); ++i) {
-			Vec3f modelMean = morphableModel.getShapeModel().getMeanAtPoint(landmarks[i].getName());
-			v_bar.at<float>(4 * i, 0) = modelMean[0];
-			v_bar.at<float>((4 * i) + 1, 0) = modelMean[1];
-			v_bar.at<float>((4 * i) + 2, 0) = modelMean[2];
-			// the position (4*i)+3 stays 1 (homogeneous coordinate)
-		}
-		
-		// Bring into standard regularised quadratic form with diagonal distance matrix Omega
-		Mat A = P * V_hat_h;
-		Mat b = P * v_bar - y;
-		//Mat c_s; // The x, we solve for this! (the variance-normalized shape parameter vector, $c_s = [a_1/sigma_{s,1} , ..., a_m-1/sigma_{s,m-1}]^t$
-		float lambda = 0.1; //0.005f; // The weight of the regularisation
-		int numShapePc = morphableModel.getShapeModel().getNumberOfPrincipalComponents();
-		Mat AtOmegaA = A.t() * Omega * A;
-		Mat AtOmegaAReg = AtOmegaA + lambda * Mat::eye(numShapePc, numShapePc, CV_32FC1);
-		Mat AtOmegaARegInv = AtOmegaAReg.inv(/*cv::DECOMP_SVD*/);
-		Mat AtOmegatb = A.t() * Omega.t() * b;
-		Mat c_s = -AtOmegaARegInv * AtOmegatb;
-		vector<float> fittedCoeffs(c_s);
-
-		// End estimate the shape coefficients
-
-		std::shared_ptr<render::Mesh> meshToDraw = std::make_shared<render::Mesh>(morphableModel.getMean());
-		render::Mesh::writeObj(*meshToDraw.get(), "C:\\Users\\Patrik\\Documents\\GitHub\\test.obj");
-
-		const float aspect = (float)img.cols / (float)img.rows; // 640/480
-		render::Camera camera(Vec3f(0.0f, 0.0f, 0.0f), /*horizontalAngle*/0.0f*(CV_PI / 180.0f), /*verticalAngle*/0.0f*(CV_PI / 180.0f), render::Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, /*zNear*/-0.1f, /*zFar*/-100.0f));
-		render::SoftwareRenderer r(img.cols, img.rows, camera); // 640, 480
-		r.perspectiveDivision = render::SoftwareRenderer::PerspectiveDivision::None;
-		r.doClippingInNDC = false;
-		r.directToScreenTransform = true;
-		r.doWindowTransform = false;
-		r.setObjectToScreenTransform(shapemodels::AffineCameraEstimation::calculateFullMatrix(affineCam));
-		r.draw(meshToDraw, nullptr);
-		Mat buff = r.getImage();
-	
-		meshToDraw = std::make_shared<render::Mesh>(morphableModel.drawSample(fittedCoeffs, vector<float>(morphableModel.getColorModel().getNumberOfPrincipalComponents(), 0.0f)));
-		render::Mesh::writeObj(*meshToDraw.get(), "C:\\Users\\Patrik\\Documents\\GitHub\\testf.obj");
-		r.resetBuffers();
-		r.draw(meshToDraw, nullptr);
-		// TODO: REPROJECT THE POINTS FROM THE C_S MODEL HERE AND SEE IF THE LMS REALLY GO FURTHER OUT OR JUST THE REST OF THE MESH
-
-		cv::imshow(windowName, img);
-		cv::waitKey(5);
-
 		
 		end = std::chrono::system_clock::now();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
 		appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
+		
+		cv::imshow(windowName, landmarksImage);
+		cv::waitKey();
 
 	}
 
 	return 0;
 }
-/*
-// Start solvePnP & display (e.g. instead of the affine estimation)
-int max_d = std::max(img.rows, img.cols); // should be the focal length? (don't forget the aspect ratio!). TODO Read in Hartley-Zisserman what this is
-Mat intrCamMatrixTmp = shapemodels::OpenCVCameraEstimation::createIntrinsicCameraMatrix(max_d, img.cols, img.rows);
-Mat extrinsicCameraMatrix = epnpCameraEstimation.estimate(landmarks, intrCamMatrixTmp);
-intrCamMatrixTmp.convertTo(intrCamMatrixTmp, CV_32FC1);
-//vector<Point2f> projectedPoints;
-//projectPoints(modelPoints, rvec, tvec, camMatrix, vector<float>(), projectedPoints); // same result as below
-Mat intrinsicCameraMatrix = Mat::zeros(4, 4, CV_32FC1);
-Mat intrinsicCameraMatrixMain = intrinsicCameraMatrix(cv::Range(0, 3), cv::Range(0, 3));
-intrCamMatrixTmp.copyTo(intrinsicCameraMatrixMain);
-intrinsicCameraMatrix.at<float>(3, 3) = 1;
-
-vector<Point3f> points3d;
-for (const auto& landmark : landmarks) {
-points3d.emplace_back(morphableModel.getShapeModel().getMeanAtPoint(landmark.getName()));
-}
-Mat pnpCamLandmarksProjectionImage = landmarksImage.clone();
-for (const auto& v : points3d) {
-Mat vertex(v);
-Mat vertex_homo = Mat::ones(4, 1, CV_32FC1);
-Mat vertex_homo_coords = vertex_homo(cv::Range(0, 3), cv::Range(0, 1));
-vertex.copyTo(vertex_homo_coords);
-Mat vertex_projected = intrinsicCameraMatrix * extrinsicCameraMatrix * vertex_homo;
-Point3f v4p_homo(vertex_projected(cv::Range(0, 3), cv::Range(0, 1)));
-Point2f v4p2d_homo(v4p_homo.x / v4p_homo.z, v4p_homo.y / v4p_homo.z); // if != 0
-cv::circle(pnpCamLandmarksProjectionImage, v4p2d_homo, 4.0f, Scalar(0.0f, 255.0f, 0.0f));
-}
-*/
-
-/*
-// render with solvePnP:
-r.perspectiveDivision = render::SoftwareRenderer::PerspectiveDivision::Z;
-r.setObjectToScreenTransform(intrinsicCameraMatrix * extrinsicCameraMatrix);
-r.resetBuffers();
-r.draw(meshToDraw, nullptr);
-Mat buffB = r.getImage();
-Mat buffWithoutAlpha;
-cvtColor(buffB, buffWithoutAlpha, cv::COLOR_BGRA2BGR);
-Mat weighted = img.clone(); // get the right size
-cv::addWeighted(pnpCamLandmarksProjectionImage, 0.2, buffWithoutAlpha, 0.8, 0.0, weighted);
-//return std::make_pair(translation_vector, rotation_matrix);
-//img = weighted;
-Mat buffMean = buffB.clone();
-Mat weightedMean = weighted.clone();
-*/
-/*
-//r.setModelTransform(render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f));
-*/

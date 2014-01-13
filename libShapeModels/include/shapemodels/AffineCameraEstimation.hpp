@@ -52,6 +52,9 @@ public:
 	 */
 	cv::Mat estimate(std::vector<imageio::ModelLandmark> imagePoints, std::vector<int> vertexIds = std::vector<int>());
 
+	// in: 3x4. Out: 4x4 (z-dir from cross-product)
+	static cv::Mat calculateFullMatrix(cv::Mat affineCameraMatrix);
+
 private:
 	MorphableModel morphableModel;
 };

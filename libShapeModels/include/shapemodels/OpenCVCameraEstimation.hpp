@@ -1,5 +1,5 @@
 /*
- * CameraEstimation.hpp
+ * OpenCVCameraEstimation.hpp
  *
  *  Created on: 15.12.2013
  *      Author: Patrik Huber
@@ -7,8 +7,8 @@
 
 #pragma once
 
-#ifndef CAMERAESTIMATION_HPP_
-#define CAMERAESTIMATION_HPP_
+#ifndef OPENCVCAMERAESTIMATION_HPP_
+#define OPENCVCAMERAESTIMATION_HPP_
 
 #include "imageio/ModelLandmark.hpp"
 
@@ -28,7 +28,7 @@ namespace shapemodels {
  * The wrapper takes landmarks in 2D coordinates and finds the
  * corresponding points in a 3DMM using the metadata in the model.
  */
-class CameraEstimation  {
+class OpenCVCameraEstimation  {
 public:
 
 	/**
@@ -37,11 +37,12 @@ public:
 	 * @param[in] MorphableModel The Morphable Model whose shape-model
 	 *                           is used to estimate the camera pose.
 	 */
-	CameraEstimation(/* const? shared_ptr? */MorphableModel morphableModel);
+	OpenCVCameraEstimation(/* const? shared_ptr? */MorphableModel morphableModel);
 
 	/**
 	 * Takes 2D landmarks, finds the corresponding landmarks in the
-	 * 3D model and estimates camera rotation and translation.
+	 * 3D model and estimates camera rotation and translation (extrinsic
+	 * camera parameters).
 	 * Optionally, a vector of vertex-ids can be given for landmarks
 	 * not defined in the Morphable Model (e.g. face-contour vertices).
 	 *
@@ -50,11 +51,13 @@ public:
 	 * @param[in] vertexIds Bla
 	 * @return Bla R, t
 	 */
-	std::pair<cv::Mat, cv::Mat> estimate(std::vector<imageio::ModelLandmark> imagePoints, cv::Mat intrinsicCameraMatrix, std::vector<int> vertexIds = std::vector<int>());
+	cv::Mat estimate(std::vector<imageio::ModelLandmark> imagePoints, cv::Mat intrinsicCameraMatrix, std::vector<int> vertexIds = std::vector<int>());
+
+	static cv::Mat createIntrinsicCameraMatrix(float f, int w, int h);
 
 private:
 	MorphableModel morphableModel;
 };
 
 } /* namespace shapemodels */
-#endif /* CAMERAESTIMATION_HPP_ */
+#endif /* OPENCVCAMERAESTIMATION_HPP_ */

@@ -155,4 +155,30 @@ cv::Mat AffineCameraEstimation::estimate(std::vector<imageio::ModelLandmark> ima
 	return P_Affine;
 }
 
+cv::Mat AffineCameraEstimation::calculateFullMatrix(cv::Mat affineCameraMatrix)
+{
+	//affineCameraMatrix is the original 3x4 affine matrix. But we return a 4x4 matrix with a z - rotation(viewing - direction) as well(for the z - buffering)
+	/* affineCam = (cv::Mat_<float>(3, 4) << 1, 0, 0, 0,
+	0, 1, 0, 0,
+	0, 0, 0, 1); */
+	Mat affineCamZ = affineCameraMatrix.row(0).colRange(0, 3).cross(affineCameraMatrix.row(1).colRange(0, 3));
+	affineCamZ /= cv::norm(affineCamZ, cv::NORM_L2);
+
+	// Replace the third row with the camera-direction (z)
+	// Todo: Take care of sign
+	Mat affineCamSubMat = affineCameraMatrix.row(2).colRange(0, 3);
+	affineCamZ.copyTo(affineCamSubMat);
+	affineCameraMatrix.at<float>(2, 3) = 0;
+
+	Mat affineCamFull = Mat::zeros(4, 4, CV_32FC1);
+	Mat affineCamFullSub = affineCamFull.rowRange(0, 2);
+	affineCameraMatrix.rowRange(0, 2).copyTo(affineCamFullSub);
+	affineCamFullSub = affineCamFull.row(2).colRange(0, 3);
+	affineCamZ.copyTo(affineCamFullSub);
+	affineCamFull.at<float>(2, 3) = 0.0f;
+	affineCamFull.at<float>(3, 3) = 1.0f; // 4th row is (0, 0, 0, 1)
+
+	return affineCamFull;
+}
+
 }
