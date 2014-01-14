@@ -62,6 +62,7 @@ extern "C" {
 #include "imageio/FileImageSource.hpp"
 #include "imageio/FileListImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
+#include "imageio/CameraImageSource.hpp"
 #include "imageio/NamedLabeledImageSource.hpp"
 #include "imageio/DefaultNamedLandmarkSource.hpp"
 #include "imageio/EmptyLandmarkSource.hpp"
@@ -111,6 +112,12 @@ public:
 	HogSdmModel() {
 	};
 
+	struct HogParameter
+	{
+		int cellSize;
+		int numBins;
+	};
+
 	// interface
 	int getNumLandmarks() const {
 		return meanLandmarks.rows/2;
@@ -120,6 +127,10 @@ public:
 	int getNumHogScales() const {
 		return regressorData.size();
 	};
+
+	HogParameter getHogParameters(int hogScaleLevel) {
+		return hogParameters[hogScaleLevel];
+	}
 
 	// returns a copy
 	cv::Mat getMeanShape() const {
@@ -166,6 +177,10 @@ public:
 			boost::split(stringContainer, line, boost::is_any_of(" "));
 			int numRows = lexical_cast<int>(stringContainer[3]); // = numHogDimensions
 			int numCols = lexical_cast<int>(stringContainer[5]); // = numLandmarks * 2
+			HogParameter params;
+			params.cellSize = lexical_cast<int>(stringContainer[7]); // = cellSize
+			params.numBins = lexical_cast<int>(stringContainer[9]); // = numBins
+			model.hogParameters.push_back(params);
 			Mat regressorData(numRows, numCols, CV_32FC1);
 			// read numRows lines
 			for (int j = 0; j < numRows; ++j) {
@@ -187,6 +202,115 @@ private:
 	cv::Mat meanLandmarks; // numLandmarks*2 x 1. First all the x-coordinates, then all the y-coordinates.
 	std::vector<cv::Mat> regressorData; // Holds the training data, one cv::Mat for each Hog scale level. Every Mat is numFeatureDim x numLandmarks*2 (for x & y)
 
+	std::vector<HogParameter> hogParameters;
+
+};
+
+class HogSdmModelFitting
+{
+public:
+	HogSdmModelFitting(HogSdmModel model)/* : model(model)*/ {
+		this->model = model;
+	};
+	
+	// out: aligned modelShape
+	// in: Rect, ocv with tl x, tl y, w, h (?) and calcs center
+	// directly modifies modelShape
+	// could move to parent-class
+	cv::Mat alignRigid(cv::Mat modelShape, cv::Rect faceBox) const {
+		
+		Mat xCoords = modelShape.rowRange(0, modelShape.rows / 2);
+		Mat yCoords = modelShape.rowRange(modelShape.rows / 2, modelShape.rows);
+		// scale the model:
+		double minX, maxX, minY, maxY;
+		cv::minMaxLoc(xCoords, &minX, &maxX);
+		cv::minMaxLoc(yCoords, &minY, &maxY);
+		float faceboxScaleFactor = 1.25f; // 1.25f: value of Zhenhua Matlab FD. Mine: 1.35f
+		float modelWidth = maxX - minX;
+		float modelHeight = maxY - minY;
+		// scale it:
+		modelShape = modelShape * (faceBox.width / modelWidth + faceBox.height / modelHeight) / (2.0f * faceboxScaleFactor);
+		// translate the model:
+		Scalar meanX = cv::mean(xCoords);
+		double meanXd = meanX[0];
+		Scalar meanY = cv::mean(yCoords);
+		double meanYd = meanY[0];
+		// move it:
+		xCoords += faceBox.x + faceBox.width / 2.0f - meanXd;
+		yCoords += faceBox.y + faceBox.height / 1.8f - meanYd; // we use another value for y because we don't want to center the model right in the middle of the face-box
+
+		return modelShape;
+	};
+
+	// out: optimized model-shape
+	// in: GRAY img
+	// in: evtl zusaetzlicher param um scale-level/iter auszuwaehlen
+	// calculates shape updates (deltaShape) for one or more iter/scales and returns...
+	cv::Mat optimize(cv::Mat modelShape, cv::Mat image) {
+		
+		for (int hogScale = 0; hogScale < model.getNumHogScales(); ++hogScale) {
+			//feature_current = obtain_features(double(TestImg), New_Shape, 'HOG', hogScale);
+			HogSdmModel::HogParameter hogParameter = model.getHogParameters(hogScale);
+			int numNeighbours = hogParameter.cellSize * 6; // this cellSize has nothing to do with HOG. It's the number of "cells", i.e. image-windows/patches.
+			// if cellSize=1, our window is 12x12, and because our HOG-cellsize is 12, it means we will have 1 cell (the minimum).
+			int hogCellSize = 12;
+			int hogDim1 = (numNeighbours * 2) / hogCellSize; // i.e. how many times does the hogCellSize fit into our patch
+			int hogDim2 = hogDim1; // as our patch is quadratic, those two are the same
+			int hogDim3 = 16; // VlHogVariantUoctti: Creates 4+3*numOrientations dimensions
+			int hogDims = hogDim1 * hogDim2 * hogDim3;
+			Mat currentFeatures(model.getNumLandmarks() * hogDims, 1, CV_32FC1);
+
+			for (int i = 0; i < model.getNumLandmarks(); ++i) {
+				// get the (x, y) location and w/h of the current patch
+				int x = cvRound(modelShape.at<float>(i, 0));
+				int y = cvRound(modelShape.at<float>(i + model.getNumLandmarks(), 0));
+				cv::Rect roi(x - numNeighbours, y - numNeighbours, numNeighbours * 2, numNeighbours * 2); // x y w h. Rect: x and y are top-left corner. Our x and y are center. Convert.
+				// we have exactly the same window as the matlab code.
+				// extract the patch and supply it to vl_hog
+				Mat roiImg = image(roi).clone(); // clone because we need a continuous memory block
+				roiImg.convertTo(roiImg, CV_32FC1); // because vl_hog_put_image expects a float* (values 0.f-255.f)
+				VlHog* hog = vl_hog_new(VlHogVariant::VlHogVariantUoctti, /*numOrientations=*/hogParameter.numBins, /*transposed (=col-major):*/false); // VlHogVariantUoctti seems to be default in Matlab.
+				vl_hog_put_image(hog, (float*)roiImg.data, roiImg.cols, roiImg.rows, /*numChannels=*/1, hogCellSize);
+				vl_size ww = vl_hog_get_width(hog);
+				vl_size hh = vl_hog_get_height(hog);
+				vl_size dd = vl_hog_get_dimension(hog); // assert ww=hogDim1, hh=hogDim2, dd=hogDim3
+				float* hogArray = (float*)vl_malloc(ww*hh*dd*sizeof(float));
+				vl_hog_extract(hog, hogArray); // just interpret hogArray in col-major order to get the same n x 1 vector as in matlab. (w * h * d)
+				vl_hog_delete(hog);
+				Mat hogDescriptor(hh*ww*dd, 1, CV_32FC1);
+				for (int j = 0; j < dd; ++j) {
+					Mat hogFeatures(hh, ww, CV_32FC1, hogArray + j*ww*hh); // Creates the same array as in Matlab. I might have to check this again if hh!=ww (non-square)
+					hogFeatures = hogFeatures.t(); // Necessary because the Matlab reshape() takes column-wise from the matrix while the OpenCV reshape() takes row-wise.
+					hogFeatures = hogFeatures.reshape(0, hh*ww); // make it to a column-vector
+					Mat currentDimSubMat = hogDescriptor.rowRange(j*ww*hh, j*ww*hh + ww*hh);
+					hogFeatures.copyTo(currentDimSubMat);
+				}
+				//features = [features; double(reshape(tmp, [], 1))];
+				// B = reshape(A,m,n) returns the m-by-n matrix B whose elements are taken column-wise from A
+				// Matlab (& Eigen, OpenGL): Column-major.
+				// OpenCV: Row-major.
+				// (access is always (r, c).)
+				Mat currentFeaturesSubrange = currentFeatures.rowRange(i*hogDims, i*hogDims + hogDims);
+				hogDescriptor.copyTo(currentFeaturesSubrange);
+				// currentFeatures needs to have dimensions n x 1, where n = numLandmarks * hogFeaturesDimension, e.g. n = 22 * (3*3*16=144) = 3168 (for the first hog Scale)
+			}
+
+			//delta_shape = AAM.RF(1).Regressor(hogScale).A(1:end - 1, : )' * feature_current + AAM.RF(1).Regressor(hogScale).A(end,:)';
+			Mat regressorData = model.getRegressorData(hogScale);
+			Mat deltaShape = regressorData.rowRange(0, regressorData.rows - 1).t() * currentFeatures + regressorData.row(regressorData.rows - 1).t();
+
+			modelShape = modelShape + deltaShape;
+			/*
+			for (int i = 0; i < m.getNumLandmarks(); ++i) {
+			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + m.getNumLandmarks(), 0)), 6 - hogScale, Scalar(51.0f*(float)hogScale, 51.0f*(float)hogScale, 0.0f));
+			}*/
+		}
+
+		return modelShape;
+	};
+
+private:
+	HogSdmModel model;
 };
 
 int main(int argc, char *argv[])
@@ -197,6 +321,8 @@ int main(int argc, char *argv[])
 	#endif
 	
 	string verboseLevelConsole;
+	int deviceId, kinectId;
+	bool useCamera = false, useKinect = false;
 	bool useFileList = false;
 	bool useImgs = false;
 	bool useDirectory = false;
@@ -219,8 +345,12 @@ int main(int argc, char *argv[])
 				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
 			("config,c", po::value<path>(&configFilename)->required(), 
 				"path to a config (.cfg) file")
-			("input,i", po::value<vector<path>>(&inputPaths)->required(), 
+			("input,i", po::value<vector<path>>(&inputPaths)/*->required()*/, 
 				"input from one or more files, a directory, or a  .lst/.txt-file containing a list of images")
+			("device,d", po::value<int>(&deviceId)->implicit_value(0), 
+				"A camera device ID for use with the OpenCV camera driver")
+			("kinect,k", po::value<int>(&kinectId)->implicit_value(0), 
+				"Windows only: Use a Kinect as camera. Optionally specify a device ID.")
 			("landmarks,l", po::value<path>(&landmarksDir), 
 				"load landmark files from the given folder")
 			("landmark-type,t", po::value<string>(&landmarkType), 
@@ -289,8 +419,10 @@ int main(int argc, char *argv[])
 			inputFilenames = inputPaths;
 		}
 	} else {
-		appLogger.error("Please either specify one or several files, a directory, or a .lst-file containing a list of images to run the program!");
-		return EXIT_FAILURE;
+		// todo see HeadTracking.cpp
+		useCamera = true;
+		//appLogger.error("Please either specify one or several files, a directory, or a .lst-file containing a list of images to run the program!");
+		//return EXIT_FAILURE;
 	}
 
 	if (useFileList==true) {
@@ -330,6 +462,9 @@ int main(int argc, char *argv[])
 			appLogger.error(e.what());
 			return EXIT_FAILURE;
 		}
+	}
+	if (useCamera) {
+		imageSource = make_shared<CameraImageSource>(deviceId);
 	}
 	// Load the ground truth
 	// Either a) use if/else for imageSource or labeledImageSource, or b) use an EmptyLandmarkSoure
@@ -380,8 +515,9 @@ int main(int argc, char *argv[])
 
 	cv::namedWindow(windowName);
 
-	HogSdmModel m = HogSdmModel::load("C:\\Users\\Patrik\\Documents\\GitHub\\SGD_Zhenhua_11012014\\SDM_Model_HOG_Zhenhua_11012014.txt");
-	
+	HogSdmModel hogModel = HogSdmModel::load("C:\\Users\\Patrik\\Documents\\GitHub\\SGD_Zhenhua_11012014\\SDM_Model_HOG_Zhenhua_11012014.txt");
+	HogSdmModelFitting modelFitter(hogModel);
+
 	string faceDetectionModel("C:\\opencv\\2.4.7.2_prebuilt\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt2.xml"); // sgd: "../models/haarcascade_frontalface_alt2.xml"
 	cv::CascadeClassifier faceCascade;
 	if (!faceCascade.load(faceDetectionModel))
@@ -409,8 +545,8 @@ int main(int argc, char *argv[])
 		vector<cv::Rect> faces;
 		float score, notFace = 0.5;
 		// face detection
-		faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
-		//faces.push_back({ 172, 199, 278, 278 });
+		//faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
+		faces.push_back({ 172, 199, 278, 278 });
 
 		if (faces.empty()) {
 			cv::imshow(windowName, landmarksImage);
@@ -429,120 +565,31 @@ int main(int argc, char *argv[])
 			cv::circle(landmarksImage, l, 3, Scalar(0.0f, 0.0f, 255.0f));
 		}*/
 
-		Mat modelShape = m.getMeanShape();
-		Mat xCoords = modelShape.rowRange(0, modelShape.rows / 2);
-		Mat yCoords = modelShape.rowRange(modelShape.rows / 2, modelShape.rows);
-		// scale the model:
-		double minX, maxX, minY, maxY;
-		cv::minMaxLoc(xCoords, &minX, &maxX);
-		cv::minMaxLoc(yCoords, &minY, &maxY);
-		float faceboxScaleFactor = 1.35f; // 1.25f; // value of Zhenhua Matlab FD
-		float modelWidth = maxX - minX;
-		float modelHeight = maxY - minY;
-		// scale it:
-		modelShape = modelShape * (faces[0].width / modelWidth + faces[0].height / modelHeight) / (2.0f * faceboxScaleFactor);
-		// translate the model:
-		Scalar meanX = cv::mean(xCoords);
-		double meanXd = meanX[0];
-		Scalar meanY = cv::mean(yCoords);
-		double meanYd = meanY[0];
-		// move it:
-		xCoords += faces[0].x + faces[0].width / 2.0f - meanXd;
-		yCoords += faces[0].y + faces[0].height / 1.8f - meanYd; // we use another value for y because we don't want to center the model right in the middle of the face-box
-
-		for (int i = 0; i < m.getNumLandmarks(); ++i) {
+		Mat modelShape = hogModel.getMeanShape();
+		modelShape = modelFitter.alignRigid(modelShape, faces[0]);
+		// print the mean initialization
+		/*for (int i = 0; i < m.getNumLandmarks(); ++i) {
 			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + m.getNumLandmarks(), 0)), 3, Scalar(255.0f, 0.0f, 255.0f));
+		}*/
+		modelShape = modelFitter.optimize(modelShape, imgGray);
+		for (int i = 0; i < hogModel.getNumLandmarks(); ++i) {
+			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + hogModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 0.0f, 50.0f));
 		}
-
-		for (int hogScale = 0; hogScale < m.getNumHogScales(); ++hogScale) {
-			//feature_current = obtain_features(double(TestImg), New_Shape, 'HOG', hogScale);
-			int cellSize, numBins;
-			switch (hogScale) // should go into the model or a "hogOptimizer"
-			{
-			case 0:
-				cellSize = 3;
-				numBins = 4;
-				break;
-			case 1:
-				cellSize = 3;
-				numBins = 4;
-				break;
-			case 2:
-				cellSize = 2;
-				numBins = 4;
-				break;
-			case 3:
-				cellSize = 2;
-				numBins = 4;
-				break;
-			case 4:
-				cellSize = 1;
-				numBins = 4;
-				break;
-			default:
-				break; // should never happen
-			}
-			int numNeighbours = cellSize * 6; // this cellSize has nothing to do with HOG. It's the number of "cells", i.e. image-windows/patches.
-											  // if cellSize=1, our window is 12x12, and because our HOG-cellsize is 12, it means we will have 1 cell (the minimum).
-			int hogCellSize = 12;
-			int hogDim1 = (numNeighbours * 2) / hogCellSize; // i.e. how many times does the hogCellSize fit into our patch
-			int hogDim2 = hogDim1; // as our patch is quadratic, those two are the same
-			int hogDim3 = 16; // VlHogVariantUoctti: Creates 4+3*numOrientations dimensions
-			int hogDims = hogDim1 * hogDim2 * hogDim3;
-			Mat currentFeatures(m.getNumLandmarks() * hogDims, 1, CV_32FC1);
-
-			for (int i = 0; i < m.getNumLandmarks(); ++i) {
-				// get the (x, y) location and w/h of the current patch
-				int x = cvRound(modelShape.at<float>(i, 0));
-				int y = cvRound(modelShape.at<float>(i+m.getNumLandmarks(), 0));
-				cv::Rect roi(x - numNeighbours, y - numNeighbours, numNeighbours * 2, numNeighbours * 2); // x y w h. Rect: x and y are top-left corner. Our x and y are center. Convert.
-																										  // we have exactly the same window as the matlab code.
-				// extract the patch and supply it to vl_hog
-				Mat roiImg = imgGray(roi).clone(); // clone because we need a continuous memory block
-				roiImg.convertTo(roiImg, CV_32FC1); // because vl_hog_put_image expects a float* (values 0.f-255.f)
-				VlHog* hog = vl_hog_new(VlHogVariant::VlHogVariantUoctti, /*numOrientations=*/numBins, /*transposed (=col-major):*/false); // VlHogVariantUoctti seems to be default in Matlab.
-				vl_hog_put_image(hog, (float*)roiImg.data, roiImg.cols, roiImg.rows, /*numChannels=*/1, hogCellSize);
-				vl_size ww = vl_hog_get_width(hog);
-				vl_size hh = vl_hog_get_height(hog);
-				vl_size dd = vl_hog_get_dimension(hog); // assert ww=hogDim1, hh=hogDim2, dd=hogDim3
-				float* hogArray = (float*)vl_malloc(ww*hh*dd*sizeof(float));
-				vl_hog_extract(hog, hogArray); // just interpret hogArray in col-major order to get the same n x 1 vector as in matlab. (w * h * d)
-				vl_hog_delete(hog);
-				Mat hogDescriptor(hh*ww*dd, 1, CV_32FC1);
-				for (int j = 0; j < dd; ++j) {
-					Mat hogFeatures(hh, ww, CV_32FC1, hogArray + j*ww*hh); // Creates the same array as in Matlab. I might have to check this again if hh!=ww (non-square)
-					hogFeatures = hogFeatures.t(); // Necessary because the Matlab reshape() takes column-wise from the matrix while the OpenCV reshape() takes row-wise.
-					hogFeatures = hogFeatures.reshape(0, hh*ww); // make it to a column-vector
-					Mat currentDimSubMat = hogDescriptor.rowRange(j*ww*hh, j*ww*hh + ww*hh);
-					hogFeatures.copyTo(currentDimSubMat);
-				}
-				
-
-				//features = [features; double(reshape(tmp, [], 1))];
-				// B = reshape(A,m,n) returns the m-by-n matrix B whose elements are taken column-wise from A
-				// Matlab (& Eigen, OpenGL): Column-major.
-				// OpenCV: Row-major.
-				// (access is always (r, c).)
-				Mat currentFeaturesSubrange = currentFeatures.rowRange(i*hogDims, i*hogDims+hogDims);
-				hogDescriptor.copyTo(currentFeaturesSubrange);
-				// currentFeatures needs to have dimensions n x 1, where n = numLandmarks * hogFeaturesDimension, e.g. n = 22 * (3*3*16=144) = 3168 (for the first hog Scale)
-			}
-			
-
-			//delta_shape = AAM.RF(1).Regressor(hogScale).A(1:end - 1, : )' * feature_current + AAM.RF(1).Regressor(hogScale).A(end,:)';
-			Mat regressorData = m.getRegressorData(hogScale);
-			Mat deltaShape = regressorData.rowRange(0, regressorData.rows - 1).t() * currentFeatures + regressorData.row(regressorData.rows - 1).t();
-
-			modelShape = modelShape + deltaShape;
-			/*
-			for (int i = 0; i < m.getNumLandmarks(); ++i) {
-				cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + m.getNumLandmarks(), 0)), 6 - hogScale, Scalar(51.0f*(float)hogScale, 51.0f*(float)hogScale, 0.0f));
-			}*/
-
+		modelShape = modelFitter.optimize(modelShape, imgGray);
+		for (int i = 0; i < hogModel.getNumLandmarks(); ++i) {
+			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + hogModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 0.0f, 100.0f));
 		}
-
-		for (int i = 0; i < m.getNumLandmarks(); ++i) {
-			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + m.getNumLandmarks(), 0)), 3, Scalar(0.0f, 0.0f, 255.0f));
+		modelShape = modelFitter.optimize(modelShape, imgGray);
+		for (int i = 0; i < hogModel.getNumLandmarks(); ++i) {
+			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + hogModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 0.0f, 150.0f));
+		}
+		modelShape = modelFitter.optimize(modelShape, imgGray);
+		for (int i = 0; i < hogModel.getNumLandmarks(); ++i) {
+			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + hogModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 0.0f, 200.0f));
+		}
+		modelShape = modelFitter.optimize(modelShape, imgGray);
+		for (int i = 0; i < hogModel.getNumLandmarks(); ++i) {
+			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + hogModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 0.0f, 255.0f));
 		}
 		
 		end = std::chrono::system_clock::now();
@@ -550,7 +597,7 @@ int main(int argc, char *argv[])
 		appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
 		
 		cv::imshow(windowName, landmarksImage);
-		cv::waitKey();
+		cv::waitKey(5);
 
 	}
 
