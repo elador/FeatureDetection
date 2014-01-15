@@ -37,18 +37,22 @@ ELSE(Boost_FOUND)
   MESSAGE(FATAL_ERROR "Boost not found")
 ENDIF()
 
-find_path(VLFEAT_INCLUDE_DIR vl/sift.h HINTS "C:\\Users\\Patrik\\Documents\\GitHub\\vlfeat\\vlfeat-0.9.17")
-find_library(VLFEAT_LIBRARY NAMES vl HINTS "C:\\Users\\Patrik\\Documents\\GitHub\\vlfeat\\vlfeat-0.9.17\\bin\\win64")
-find_package_message(VLFEAT "VLFEAT: ${VLFEAT_LIBRARY}" "[${VLFEAT_LIBRARY}][${VLFEAT_INCLUDE_DIR}]")
+#find_path(VLFEAT_INCLUDE_DIR vl/sift.h HINTS "C:\\Users\\Patrik\\Documents\\GitHub\\vlfeat\\vlfeat-0.9.17")
+#find_library(VLFEAT_LIBRARY NAMES vl HINTS "C:\\Users\\Patrik\\Documents\\GitHub\\vlfeat\\vlfeat-0.9.17\\bin\\win64")
+#find_package_message(VLFEAT "VLFEAT: ${VLFEAT_LIBRARY}" "[${VLFEAT_LIBRARY}][${VLFEAT_INCLUDE_DIR}]")
 MESSAGE(STATUS "VLFEAT ${VLFEAT_INCLUDE_DIR}")
 MESSAGE(STATUS "VLFEAT ${VLFEAT_LIBRARY}")
 
 #Source and header files:
 SET(SOURCE
 	sdmTracking.cpp
+	hog.c
+	#generic.c
 )
 
 SET(HEADERS
+	hog.h
+	#generic.h
 )
 
 ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )

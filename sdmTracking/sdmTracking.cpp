@@ -33,7 +33,8 @@
 #include <iostream>
 
 extern "C" {
-	#include "vl/hog.h"
+	//#include "vl/hog.h"
+	#include "hog.h"
 }
 
 #include "opencv2/core/core.hpp"
@@ -105,6 +106,23 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 #include "boost/lexical_cast.hpp"
 
 using boost::lexical_cast;
+*/
+
+/*
+Some notes:
+ - The current model ('SDM_Model_HOG_Zhenhua_11012014.txt') uses roughly 1/10 of
+   the training data of the original model from the paper, and has no expressions
+
+ - One problem: Running the optimization several times doesn't result in better
+   performance. Two possible reasons:
+     * In the training, what we train is the step from the mean to the groundtruth.
+	   So we only train a big step.
+	     - Actually, that means that it's very important to get the rigid alignment
+		   right to get the first update-step right?
+	 * The update-step for one landmark is dependent on the other landmarks
+
+ Test: To calculate the face-box (Zhenhua): Take all 68 LMs; Take the min/max x and y
+ for the face-box. (so the face-box is quite small)
 */
 class HogSdmModel
 {
@@ -274,17 +292,21 @@ public:
 				vl_size ww = vl_hog_get_width(hog);
 				vl_size hh = vl_hog_get_height(hog);
 				vl_size dd = vl_hog_get_dimension(hog); // assert ww=hogDim1, hh=hogDim2, dd=hogDim3
-				float* hogArray = (float*)vl_malloc(ww*hh*dd*sizeof(float));
-				vl_hog_extract(hog, hogArray); // just interpret hogArray in col-major order to get the same n x 1 vector as in matlab. (w * h * d)
+				//float* hogArray = (float*)malloc(ww*hh*dd*sizeof(float));
+				Mat hogArray(1, ww*hh*dd, CV_32FC1); // safer & same result. Don't use C-style memory management.
+				//vl_hog_extract(hog, hogArray); // just interpret hogArray in col-major order to get the same n x 1 vector as in matlab. (w * h * d)
+				vl_hog_extract(hog, hogArray.ptr<float>(0));
 				vl_hog_delete(hog);
 				Mat hogDescriptor(hh*ww*dd, 1, CV_32FC1);
 				for (int j = 0; j < dd; ++j) {
-					Mat hogFeatures(hh, ww, CV_32FC1, hogArray + j*ww*hh); // Creates the same array as in Matlab. I might have to check this again if hh!=ww (non-square)
+					//Mat hogFeatures(hh, ww, CV_32FC1, hogArray + j*ww*hh);
+					Mat hogFeatures(hh, ww, CV_32FC1, hogArray.ptr<float>(0) + j*ww*hh); // Creates the same array as in Matlab. I might have to check this again if hh!=ww (non-square)
 					hogFeatures = hogFeatures.t(); // Necessary because the Matlab reshape() takes column-wise from the matrix while the OpenCV reshape() takes row-wise.
 					hogFeatures = hogFeatures.reshape(0, hh*ww); // make it to a column-vector
 					Mat currentDimSubMat = hogDescriptor.rowRange(j*ww*hh, j*ww*hh + ww*hh);
 					hogFeatures.copyTo(currentDimSubMat);
 				}
+				//free(hogArray); // not necessary - we use a Mat.
 				//features = [features; double(reshape(tmp, [], 1))];
 				// B = reshape(A,m,n) returns the m-by-n matrix B whose elements are taken column-wise from A
 				// Matlab (& Eigen, OpenGL): Column-major.
@@ -542,54 +564,38 @@ int main(int argc, char *argv[])
 			cv::rectangle(landmarksImage, cv::Point(cvRound(lm->getX() - 2.0f), cvRound(lm->getY() - 2.0f)), cv::Point(cvRound(lm->getX() + 2.0f), cvRound(lm->getY() + 2.0f)), cv::Scalar(255, 0, 0));
 		}*/
 
+		Mat imgGray;
+		cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);
 		vector<cv::Rect> faces;
 		float score, notFace = 0.5;
+		
 		// face detection
 		//faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
 		faces.push_back({ 172, 199, 278, 278 });
-
 		if (faces.empty()) {
 			cv::imshow(windowName, landmarksImage);
 			cv::waitKey(5);
 			continue;
 		}
-
 		for (const auto& f : faces) {
 			cv::rectangle(landmarksImage, f, cv::Scalar(0.0f, 0.0f, 255.0f));
 		}
-		Mat imgGray;
-		cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);
+
+		Mat modelShape = hogModel.getMeanShape();
+		modelShape = modelFitter.alignRigid(modelShape, faces[0]);
 
 	/*	std::vector<cv::Point2f> mlms = m.getLandmarksAsPoints();
 		for (const auto& l : mlms) {
 			cv::circle(landmarksImage, l, 3, Scalar(0.0f, 0.0f, 255.0f));
 		}*/
-
-		Mat modelShape = hogModel.getMeanShape();
-		modelShape = modelFitter.alignRigid(modelShape, faces[0]);
+		
 		// print the mean initialization
 		/*for (int i = 0; i < m.getNumLandmarks(); ++i) {
 			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + m.getNumLandmarks(), 0)), 3, Scalar(255.0f, 0.0f, 255.0f));
 		}*/
 		modelShape = modelFitter.optimize(modelShape, imgGray);
 		for (int i = 0; i < hogModel.getNumLandmarks(); ++i) {
-			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + hogModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 0.0f, 50.0f));
-		}
-		modelShape = modelFitter.optimize(modelShape, imgGray);
-		for (int i = 0; i < hogModel.getNumLandmarks(); ++i) {
-			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + hogModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 0.0f, 100.0f));
-		}
-		modelShape = modelFitter.optimize(modelShape, imgGray);
-		for (int i = 0; i < hogModel.getNumLandmarks(); ++i) {
-			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + hogModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 0.0f, 150.0f));
-		}
-		modelShape = modelFitter.optimize(modelShape, imgGray);
-		for (int i = 0; i < hogModel.getNumLandmarks(); ++i) {
-			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + hogModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 0.0f, 200.0f));
-		}
-		modelShape = modelFitter.optimize(modelShape, imgGray);
-		for (int i = 0; i < hogModel.getNumLandmarks(); ++i) {
-			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + hogModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 0.0f, 255.0f));
+			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + hogModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 255.0f, 0.0f));
 		}
 		
 		end = std::chrono::system_clock::now();
