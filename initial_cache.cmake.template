@@ -18,14 +18,14 @@
 # ==============================
 # OpenCV:
 # -------
-# Windows: Download the package from opencv.org and compile for VS2013. Set this path to the installation directory of OpenCV.
+# Windows: Download the package from opencv.org, use 2.4.7.2 or never. It includes binaries for VS2013. Set this path accordingly.
 #set( OpenCV_DIR   "C:\\opencv\\install"   CACHE STRING "OpenCV config dir, where OpenCVConfig.cmake can be found" )
 # Linux: Usually can be left blank but it can be used if OpenCV is not found.
 #set( OpenCV_DIR   "/home/user/opencv/install/share/OpenCV"   CACHE STRING "OpenCV config dir, where OpenCVConfig.cmake can be found" )
 
 # HDF5:
 # -------
-# Windows: Download the source from hdfgroup.org, build for VS2013 using cmake and install the generated package. Set this path
+# Windows: Use our provided zip-file 'HDF5-1.8.12-win64_vc12_selfbuilt_DebugAndRelease.rar' that contains binaries for VS2013.
 #set( HDF5_DIR "C:\\Users\\Username\\HDF5-1.8.12-win64\\cmake\\hdf5" CACHE STRING "Directory of hdf5-config.cmake or just the root of the hdf5 installation")
 # Linux: Can be usually left uncommented when HDF5 is installed system-wide.
 #set( HDF5_DIR "" CACHE STRING "Directory of hdf5-config.cmake or just the root of the hdf5 installation")
