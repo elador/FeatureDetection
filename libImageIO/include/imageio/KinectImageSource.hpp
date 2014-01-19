@@ -9,7 +9,7 @@
 #define KINECTIMAGESOURCE_HPP_
 
 #include "imageio/ImageSource.hpp"
-#ifdef WIN32
+#ifdef WITH_MSKINECT_SDK
 	#define NOMINMAX	// This specifies that windows.h does not #define it's min/max macros.
 	#include <windows.h>
 	#include <NuiApi.h>
@@ -45,7 +45,7 @@ public:
 private:
 	Mat frame; ///< The current frame.
 
-#ifdef WIN32
+#ifdef WITH_MSKINECT_SDK
 	INuiSensor * m_pNuiSensor;	///< The kinect capture device.
 	NUI_IMAGE_FRAME imageFrame; ///< The current frame.
 	HANDLE m_pColorStreamHandle; ///< The handle to the Kinect color stream we're grabbing from.

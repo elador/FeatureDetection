@@ -12,22 +12,24 @@ if (HAS_CXX11_FLAG)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
-#IF(WIN32)
-#	option (WITH_KINECT_SDK "Use the Microsoft Kinect SDK" OFF)
-#ENDIF()
+# All the options for building the library. Can be changed on the command-line or in initial_cache.cmake.
+message(STATUS "Options:")
+option(WITH_MSKINECT_SDK "Enables the use of a Kinect as a webcam (using the MS Kinect SDK for Windows)" OFF)
+message(STATUS "WITH_MSKINECT_SDK: ${WITH_MSKINECT_SDK}")
+
 
 add_subdirectory(libLogging)			# Text logging
 add_subdirectory(libImageLogging)		# Image logging
 
 add_subdirectory(libImageIO)			# Input-library for cameras, Kinect and hard-drive images.
-add_subdirectory(libImageProcessing)	# Image pyramids, patch extraction, feature transformation
-add_subdirectory(libClassification)		# Classification and regression library
+#add_subdirectory(libImageProcessing)	# Image pyramids, patch extraction, feature transformation
+#add_subdirectory(libClassification)		# Classification and regression library
 
-add_subdirectory(libDetection)			# Sliding-window detection, Skin detection
-add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
+#add_subdirectory(libDetection)			# Sliding-window detection, Skin detection
+#add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 
-add_subdirectory(libRender)				# A software renderer to render vertices and 3D-meshes
-add_subdirectory(libShapeModels)		# Head/face specific things; 2D/3D models; Combining feature points
+#add_subdirectory(libRender)				# A software renderer to render vertices and 3D-meshes
+#add_subdirectory(libShapeModels)		# Head/face specific things; 2D/3D models; Combining feature points
 
 #add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.
 #add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
@@ -37,12 +39,12 @@ add_subdirectory(libShapeModels)		# Head/face specific things; 2D/3D models; Com
 #add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe).
 #add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature point detection app.
 
-add_subdirectory(facemodelTracking)		# Todo
-add_subdirectory(fitter)			# Todo
-add_subdirectory(sdmTracking)			# Todo
+#add_subdirectory(facemodelTracking)		# Todo
+#add_subdirectory(fitter)			# Todo
+#add_subdirectory(sdmTracking)			# Todo
 
-add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
-add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
+#add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
+#add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
 
 #add_subdirectory(frRunCogExp)		# App for doing face recognition tests with a gallery and probe images
 #add_subdirectory(frDbTool)		# App for managing (creating and populating) the sqlite-database used for face-recognition experiments
