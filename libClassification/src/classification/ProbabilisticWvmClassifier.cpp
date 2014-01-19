@@ -62,7 +62,7 @@ pair<bool, double> ProbabilisticWvmClassifier::getProbability(const Mat& feature
 	*/
 }
 
-shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadFromMatlab(const string& classifierFilename, const string& thresholdsFilename)
+pair<double, double> ProbabilisticWvmClassifier::loadSigmoidParamsFromMatlab(const string& thresholdsFilename)
 {
 	// Load sigmoid stuff:
 	double logisticA, logisticB;
@@ -88,18 +88,32 @@ shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadFromMatla
 			logisticB = matdata[0];
 			logisticA = matdata[1];
 		}
+		// Todo: delete *matdata and *dim??
 		mxDestroyArray(pmxarray);
 	}
 	matClose(pmatfile);
 
+	return make_pair(logisticA, logisticB);
+}
+
+shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::loadFromMatlab(const string& classifierFilename, const string& thresholdsFilename)
+{
+	pair<double, double> sigmoidParams = loadSigmoidParamsFromMatlab(thresholdsFilename);
 	// Load the detector and thresholds:
 	shared_ptr<WvmClassifier> wvm = WvmClassifier::loadFromMatlab(classifierFilename, thresholdsFilename);
-	return make_shared<ProbabilisticWvmClassifier>(wvm, logisticA, logisticB);
+	return make_shared<ProbabilisticWvmClassifier>(wvm, sigmoidParams.first, sigmoidParams.second);
 }
 
 shared_ptr<ProbabilisticWvmClassifier> ProbabilisticWvmClassifier::load(const ptree& subtree)
 {
-	return loadFromMatlab(subtree.get<string>("classifierFile"), subtree.get<string>("thresholdsFile"));
+	pair<double, double> sigmoidParams = loadSigmoidParamsFromMatlab(subtree.get<string>("thresholdsFile"));
+	// Load the detector and thresholds:
+	shared_ptr<WvmClassifier> wvm = WvmClassifier::loadFromMatlab(subtree.get<string>("classifierFile"), subtree.get<string>("thresholdsFile"));
+	shared_ptr<ProbabilisticWvmClassifier> pwvm = make_shared<ProbabilisticWvmClassifier>(wvm, sigmoidParams.first, sigmoidParams.second);
+
+	pwvm->getWvm()->setLimitReliabilityFilter(subtree.get("threshold", 0.0f));
+
+	return pwvm;
 }
 
 } /* namespace classification */

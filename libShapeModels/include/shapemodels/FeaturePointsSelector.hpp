@@ -77,6 +77,17 @@ public:
 			// throw or return empty map
 			return map<string, shared_ptr<imageprocessing::Patch>>();
 		}
+		int numberOfDistinctLandmarksAvailable = 0;
+		for (const auto& l : landmarks) {
+			if (!l.second.empty())
+				++numberOfDistinctLandmarksAvailable;
+		}
+		if (numberOfDistinctLandmarksAvailable < numPoints) {
+			// Logger warning
+			// throw or return empty map
+			return map<string, shared_ptr<imageprocessing::Patch>>();
+		}
+
 		
 		// Convert map to vec. Maybe use vec everywhere instead of map!
 		vector<pair<string, vector<shared_ptr<imageprocessing::Patch>>>> landmarksVector;

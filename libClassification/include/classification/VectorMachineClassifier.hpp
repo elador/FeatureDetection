@@ -69,7 +69,7 @@ protected:
 	shared_ptr<Kernel> kernel; ///< The kernel function.
 	float bias;      ///< The bias that is subtracted from the sum over all scaled kernel values.
 	float threshold; ///< The threshold to compare the hyperplane distance against for determining the label.
-					 // Bigger => weniger patches drueber(mehr rejected, langsamer), dh. mehr fn(FRR), weniger fp(FAR)
+					 // Larger => weniger patches drueber(mehr rejected, langsamer), dh. mehr fn(FRR), weniger fp(FAR)
 					 // Smaller => mehr patches drueber(mehr nicht rejected, schneller), dh. weniger fn(FRR), mehr fp(FAR)
 };
 

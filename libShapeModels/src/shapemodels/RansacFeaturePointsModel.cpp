@@ -7,6 +7,7 @@
 #include "shapemodels/RansacFeaturePointsModel.hpp"
 
 #include "logging/LoggerFactory.hpp"
+#include "boost/lexical_cast.hpp"
 
 #include <random>
 #include <set>
@@ -24,7 +25,7 @@ namespace shapemodels {
 
 // Idea: in evaluateNewPoint, we could use the pixel-data in the patch as an additional indicator if it's a good fit
 
-map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Mat img, float thresholdForDatapointFitsModel/*=30.0f*/, int numIter/*=0*/, int numClosePointsRequiredForGoodFit/*=4*/, int minPointsToFitModel/*=3*/)
+map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Mat img, float thresholdForDatapointFitsModel/*=10.0f*/, int numIter/*=5000*/, int numClosePointsRequiredForGoodFit/*=4*/, int minPointsToFitModel/*=3*/)
 {
 	//The whole algorithm here. evaluator only evaluates 1 combo. All logic here. Selector provides functions to get random items (1 or several) etc.
 
@@ -34,23 +35,25 @@ map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Ma
 	//	featureSelection = selector->select();
 	//} while (evaluator->evaluate(featureSelection));
 	
-	numIter = 100;
-	minPointsToFitModel = 3;
-	bool useSVD = false; // => to eval.
-	thresholdForDatapointFitsModel = 30.0f; // same ?
-
 	unsigned int iterations = 0;
 	vector<vector<pair<string, Point2f>>> bestConsensusSets;
 	float best_error = std::numeric_limits<float>::max();
 
 	while (iterations < numIter) {
 		++iterations;
+		Loggers->getLogger("shapemodels").debug("Iteration " + boost::lexical_cast<string>(iterations));
 
 		//set<string> alreadyChosenFfps;
-		map<string, vector<shared_ptr<imageprocessing::Patch>>> landmarks = selector->getAllLandmarks();
+		map<string, vector<shared_ptr<imageprocessing::Patch>>> landmarks = selector.getAllLandmarks();
 
 		// maybe_inliers := #minPointsToFitModel randomly selected values from data
-		map<string, shared_ptr<imageprocessing::Patch>> maybeInliersPatches = selector->getDistinctRandomPoints(minPointsToFitModel);
+		map<string, shared_ptr<imageprocessing::Patch>> maybeInliersPatches = selector.getDistinctRandomPoints(minPointsToFitModel);
+		if (maybeInliersPatches.size() < minPointsToFitModel) {
+			// we can not get as many points as we need to - skip this iteration
+			// actually we can skip the whole ransac
+			break;
+		}
+
 
 		for (const auto& l : maybeInliersPatches) {
 			landmarks.erase(l.first);
@@ -62,7 +65,7 @@ map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Ma
 		// Use the 3DMM and POSIT:
 		//pair<Mat, Mat> transRot = evaluator->doPosit(maybeInliersPatches, img);
 		Mat firstStepImg = img.clone();
-		pair<Mat, Mat> transRot = evaluator->doPnP(maybeInliersPatches, firstStepImg);
+		pair<Mat, Mat> transRot = evaluator.doPnP(maybeInliersPatches, firstStepImg);
 
 		vector<pair<string, Point2f>> maybeInliers;
 
@@ -94,7 +97,7 @@ map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Ma
 				shared_ptr<imageprocessing::Patch> thePointPatch = p;	// The patch (with 2D-coords) we took // // CHANGED TO PATCH
 				
 				Mat newPointImg = img.clone();
-				float error = evaluator->evaluateNewPointPnP(l.first, p, transRot.first, transRot.second, newPointImg);
+				float error = evaluator.evaluateNewPointPnP(l.first, p, transRot.first, transRot.second, newPointImg);
 				currentFfpDistances.push_back(error); // Todo: we don't need to save the point if the error is >t
 			}
 			// Do we accept any of the points or not?
@@ -126,13 +129,13 @@ map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Ma
 
 		// Do POSIT with ALL the points in the consensus set!
 		Mat fullSetImg = img.clone();
-		transRot = evaluator->doPnP(maybeInliersPatches, fullSetImg);
+		transRot = evaluator.doPnP(maybeInliersPatches, fullSetImg);
 
 		// this_error := a measure of how well this_model fits these points
 		// The line above contains the bug. This_error should be replaced by a score that is either the size of the consensus set, or the robust error norm computed on ALL samples (not just the consensus set).
 		float this_error = 0.0f;
 		for (const auto& p : maybeInliersPatches) {
-			this_error += evaluator->evaluateNewPointPnP(p.first, p.second, transRot.first, transRot.second, fullSetImg);
+			this_error += evaluator.evaluateNewPointPnP(p.first, p.second, transRot.first, transRot.second, fullSetImg);
 		}
 
 		// if this_error < best_error // = (we have found a model which is better than any of the previous ones; keep it until a better one is found)
@@ -159,8 +162,6 @@ map<string, shared_ptr<imageprocessing::Patch>> RansacFeaturePointsModel::run(Ma
 				best_error = this_error;
 			}
 		}
-		
-		Loggers->getLogger("shapemodels").debug("Finished one iteration.");
 	}
 
 	// Hmm, the bestConsensusSets is not unique? Doubled sets? (print them?) Write a comparator for two landmarks (make a landmark class?), then for two LM-sets, etc.

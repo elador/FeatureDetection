@@ -36,8 +36,10 @@ namespace shapemodels {
 class FeaturePointsModel {
 
 public:
+	FeaturePointsModel() {};
 
-	FeaturePointsModel(unique_ptr<FeaturePointsSelector> selector, unique_ptr<FeaturePointsEvaluator> evaluator) : selector(std::move(selector)), evaluator(std::move(evaluator)) {
+
+	FeaturePointsModel(FeaturePointsSelector selector, FeaturePointsEvaluator evaluator) : selector(selector), evaluator(evaluator) {
 
 	};
 
@@ -66,12 +68,12 @@ public:
 		//} while (evaluator->evaluate(featureSelection));
 		
 	void setLandmarks(map<string, vector<shared_ptr<imageprocessing::Patch>>> landmarks) { // Note: That's maybe not so nice because this abstract class is now fixed on this type. But then again, what other type than these landmarks would we use. All here is based on that. So maybe typedef that.
-		selector->setLandmarks(landmarks);
+		selector.setLandmarks(landmarks);
 	};
 
 protected: // That's supposedly not good style since we should keep total control over our own class variables
-	unique_ptr<FeaturePointsSelector> selector;
-	unique_ptr<FeaturePointsEvaluator> evaluator;
+	FeaturePointsSelector selector;
+	FeaturePointsEvaluator evaluator;
 
 };
 

@@ -44,7 +44,6 @@
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
 #include "boost/program_options.hpp"
-#include "boost/iterator/indirect_iterator.hpp"
 #include "boost/property_tree/ptree.hpp"
 #include "boost/property_tree/info_parser.hpp"
 #include "boost/algorithm/string.hpp"
@@ -69,6 +68,7 @@
 #include "imageio/DefaultNamedLandmarkSource.hpp"
 #include "imageio/NamedLabeledImageSource.hpp"
 #include "imageio/LandmarkFileGatherer.hpp"
+#include "imageio/FddbLandmarkSink.hpp"
 
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
@@ -110,7 +110,6 @@ using logging::LoggerFactory;
 using logging::loglevel;
 using imagelogging::ImageLogger;
 using imagelogging::ImageLoggerFactory;
-using boost::make_indirect_iterator;
 using boost::property_tree::ptree;
 using boost::property_tree::info_parser::read_info;
 using boost::filesystem::path;
@@ -207,6 +206,8 @@ Mat patchToMask(shared_ptr<const Patch> patch, Mat mask)
 	return mask;
 }
 
+void doNothing() {};
+
 template<class T>
 ostream& operator<<(ostream& os, const vector<T>& v)
 {
@@ -250,7 +251,7 @@ int main(int argc, char *argv[])
 			("config,c", po::value<path>(&configFilename)->required(), 
 				"path to a config (.cfg) file")
 			("input,i", po::value<vector<path>>(&inputPaths)->required(), 
-				"input from one or more files, a directory, or a  .lst-file containing a list of images")
+				"input from one or more files, a directory, or a  .lst/.txt-file containing a list of images")
 			("groundtruth,g", po::value<path>(&groundtruthDir), 
 				"load ground truth landmarks from the given folder along with the images and output statistics of the detection results")
 			("groundtruth-type,t", po::value<string>(&groundtruthType), 
@@ -324,6 +325,7 @@ int main(int argc, char *argv[])
 	}
 
 	ImageLoggers->getLogger("detection").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir));
+	ImageLoggers->getLogger("app").addAppender(make_shared<imagelogging::ImageFileWriter>(imageLogLevel, outputPicsDir / "final"));
 
 	if (inputPaths.size() > 1) {
 		// We assume the user has given several, valid images
@@ -331,7 +333,7 @@ int main(int argc, char *argv[])
 		inputFilenames = inputPaths;
 	} else if (inputPaths.size() == 1) {
 		// We assume the user has given either an image, directory, or a .lst-file
-		if (inputPaths[0].extension().string() == ".lst") { // check for .lst first
+		if (inputPaths[0].extension().string() == ".lst" || inputPaths[0].extension().string() == ".txt") { // check for .lst or .txt first
 			useFileList = true;
 			inputFilelist = inputPaths.front();
 		} else if (boost::filesystem::is_directory(inputPaths[0])) { // check if it's a directory
@@ -350,7 +352,7 @@ int main(int argc, char *argv[])
 		appLogger.info("Using file-list as input: " + inputFilelist.string());
 		shared_ptr<ImageSource> fileListImgSrc; // TODO VS2013 change to unique_ptr, rest below also
 		try {
-			fileListImgSrc = make_shared<FileListImageSource>(inputFilelist.string());
+			fileListImgSrc = make_shared<FileListImageSource>(inputFilelist.string(), "C:\\Users\\Patrik\\Documents\\GitHub\\data\\fddb\\originalPics\\", ".jpg");
 		} catch(const std::runtime_error& e) {
 			appLogger.error(e.what());
 			return EXIT_FAILURE;
@@ -418,16 +420,6 @@ int main(int argc, char *argv[])
 	unordered_map<string, shared_ptr<Detector>> faceDetectors;
 	unordered_map<string, shared_ptr<Detector>> featureDetectors;
 
-	//shapemodels::MorphableModel mm = shapemodels::MorphableModel::loadOldBaselH5Model("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\featurePoints_head_newfmt.txt");
-	//shapemodels::MorphableModel mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
-	shapemodels::MorphableModel mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\SurreyLowResGuosheng\\NON3448\\ShpVtxModelBin_NON3448.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
-
-	shapemodels::FeaturePointsRANSAC rnsc;
-
-	unique_ptr<shapemodels::FeaturePointsSelector> sel(new shapemodels::FeaturePointsSelector());
-	unique_ptr<shapemodels::FeaturePointsEvaluator> eva(new shapemodels::FeaturePointsEvaluator(mm));
-	shapemodels::RansacFeaturePointsModel rnscnew(std::move(sel), std::move(eva));
-
 	try {
 		ptree ptDetectors = pt.get_child("detectors");
 		for (const auto& kv : ptDetectors) { // kv is of type ptree::value_type
@@ -445,19 +437,19 @@ int main(int argc, char *argv[])
 				shared_ptr<ProbabilisticWvmClassifier> firstClassifier = ProbabilisticWvmClassifier::load(firstClassifierNode); // TODO: Lots of todos here with numUsedFilters, bias, ...
 				shared_ptr<ProbabilisticSvmClassifier> secondClassifier = ProbabilisticSvmClassifier::load(secondClassifierNode);
 
-				//pwvm->getWvm()->setLimitReliabilityFilter(-0.5f);
-				//psvm->getSvm()->setThreshold(-1.0f);	// TODO read this from the config
-
 				shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(oeCfg.get<float>("dist", 5.0f), oeCfg.get<float>("ratio", 0.0f));
 
-				// This:
-				shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f), imgpyr.get<float>("incrementalScaleFactor", 0.9f));
-				imgPyr->addImageFilter(make_shared<GrayscaleFilter>());
-				shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(imgPyr, imgpyr.get<int>("patch.width"), imgpyr.get<int>("patch.height"));
-				// Or:
-				//shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"), config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"), config.get<double>("pyramid.scaleFactor"));
-				//featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
-
+				shared_ptr<DirectPyramidFeatureExtractor> featureExtractor;
+				if (imgpyr.get<int>("patch.minWidth", 0) != 0 && imgpyr.get<int>("patch.maxWidth", 0) != 0) {
+					// The user has set values for patch.minWidth and maxWidth - use them:
+					featureExtractor = make_shared<DirectPyramidFeatureExtractor>(imgpyr.get<int>("patch.width"), imgpyr.get<int>("patch.height"), imgpyr.get<int>("patch.minWidth"), imgpyr.get<int>("patch.maxWidth"), imgpyr.get<double>("incrementalScaleFactor"));
+					featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
+				} else {
+					// The user didn't set values for patch.width and height, use the scale factors or default values:
+					shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f), imgpyr.get<float>("incrementalScaleFactor", 0.9f));
+					imgPyr->addImageFilter(make_shared<GrayscaleFilter>());
+					featureExtractor = make_shared<DirectPyramidFeatureExtractor>(imgPyr, imgpyr.get<int>("patch.width"), imgpyr.get<int>("patch.height"));
+				}
 				// TODO: Make this read from the config file, see code below in 'single'
 				featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
 
@@ -534,8 +526,6 @@ int main(int argc, char *argv[])
 					classifier = ProbabilisticSvmClassifier::load(classifierNode);
 				} 
 				
-				//psvm->getSvm()->setThreshold(-1.0f);	// TODO read this from the config
-
 				shared_ptr<SlidingWindowDetector> det = make_shared<SlidingWindowDetector>(classifier, featureExtractor);
 
 				det->landmark = landmarkName;
@@ -560,6 +550,40 @@ int main(int argc, char *argv[])
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
 	}
+
+	bool enableFeaturePointValidation;
+	string morphableModelFile;
+	string morphableModelVertexMappingFile;
+	int numRansacIterations;
+	shapemodels::MorphableModel mm;
+	shapemodels::RansacFeaturePointsModel featurePointsModel;
+	
+	try {
+		try {
+			ptree ptFeaturePointValidation = pt.get_child("featurePointValidation");
+			enableFeaturePointValidation = ptFeaturePointValidation.get<bool>("enabled", false);
+			if (enableFeaturePointValidation) {
+				//string mode = ptFeaturePointValidation.get<string>("mode", "ransac");
+				morphableModelFile = ptFeaturePointValidation.get<string>("morphableModel");
+				morphableModelVertexMappingFile = ptFeaturePointValidation.get<string>("morphableModelVertexMapping");
+				numRansacIterations = ptFeaturePointValidation.get<int>("numIterations", 50);
+				mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\SurreyLowResGuosheng\\NON3448\\ShpVtxModelBin_NON3448.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
+				shapemodels::FeaturePointsSelector sel;
+				shapemodels::FeaturePointsEvaluator eva(mm);
+				featurePointsModel = shapemodels::RansacFeaturePointsModel(sel, eva);
+			}
+		} catch (const boost::property_tree::ptree_bad_path& e) {
+			enableFeaturePointValidation = false;
+		}
+	} catch (const boost::property_tree::ptree_error& error) {
+		appLogger.error(error.what());
+		return EXIT_FAILURE;
+	}
+	
+	FddbLandmarkSink landmarkSink("annotatedList.txt");
+	landmarkSink.open(outputPicsDir.string() + "/final/" + "detectedFaces.txt");
+	
+	
 
 	// lm-loading
 	// output-dir
@@ -593,7 +617,7 @@ int main(int argc, char *argv[])
 	class imageStatistic 
 	{
 		public:
-		static enum class DetectionType {
+		enum class DetectionType {
 			TACC, ///< todo
 			FACC,
 			TREJ,
@@ -656,10 +680,7 @@ int main(int argc, char *argv[])
 		start = std::chrono::system_clock::now();
 		appLogger.info("Starting to process " + labeledImageSource->getName().string());
 		img = labeledImageSource->getImage();
-		
-		
-		//map<string, shared_ptr<imageprocessing::Patch>> resultLms2 = rnscnew.run(img, 30.0f, 1000, 5, 4); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this  with only the STL? (probably)
-		
+	
 		// Do the face-detection:
 		vector<shared_ptr<ClassifiedPatch>> facePatches;
 		for(const auto& detector : faceDetectors) {
@@ -675,7 +696,11 @@ int main(int argc, char *argv[])
 		end = std::chrono::system_clock::now();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
 		appLogger.debug("Finished face-detection. Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
-		
+		shared_ptr<imageio::RectLandmark> detectedFace;
+		if (facePatches.size() > 0) {
+			detectedFace = make_shared<imageio::RectLandmark>("face", facePatches[0]->getPatch()->getBounds());
+		}		
+
 		// Create the binary mask (ROI) for the feature detectors:
 		//Mat mask = Mat::zeros(img.rows, img.cols, CV_8UC1);
 		//mask = patchToMask(facePatches[0]->getPatch(), mask);
@@ -687,43 +712,72 @@ int main(int argc, char *argv[])
 		map<string, shared_ptr<imageprocessing::Patch>> resultLms;
 		if (facePatches.size() > 1 && featureDetectors.size() > 0) {
 		
+			Mat ffdMaxPosImg = img.clone();
 			map<string, vector<shared_ptr<ClassifiedPatch>>> allFeaturePatches;
 			for (const auto& detector : featureDetectors) {
 				ImageLoggers->getLogger("detection").setCurrentImageName(labeledImageSource->getName().stem().string() + "_" + detector.first);
-				vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img, facePatches[0]->getPatch()->getBounds());
+				Rect faceRoi = facePatches[0]->getPatch()->getBounds();
+				faceRoi.height += 20;
+				vector<shared_ptr<ClassifiedPatch>> resultingPatches = detector.second->detect(img, faceRoi);
 
-				//shared_ptr<PyramidFeatureExtractor> pfe = detector.second->getPyramidFeatureExtractor();
-				//drawScales(ffdResultImg, 20, 20, pfe->getMinScaleFactor(), pfe->getMaxScaleFactor());
-				allFeaturePatches.insert(make_pair(detector.second->landmark, resultingPatches)); // be careful if we want to use detector.first (its name) or detector.second->landmark
-			}
-
-			// Tmp: Convert it to current map<string, vector<shared_ptr<imageprocessing::Patch>>> format
-			map<string, vector<shared_ptr<imageprocessing::Patch>>> landmarkData2;
-			for (const auto& feature : allFeaturePatches) {
-				vector<shared_ptr<imageprocessing::Patch>> tmp;
-				for (const auto& patch : feature.second) {
-					tmp.push_back(patch->getPatch());
+				allFeaturePatches.insert(make_pair(detector.second->landmark, resultingPatches)); // be careful whether we want to use detector.first (its name) or detector.second->landmark
+				if (resultingPatches.size() > 0) {
+					shared_ptr<ModelLandmark> maxPos = make_shared<ModelLandmark>(detector.second->landmark, resultingPatches[0]->getPatch()->getX(), resultingPatches[0]->getPatch()->getY());
+					maxPos->draw(ffdMaxPosImg);
 				}
-				landmarkData2.insert(make_pair(feature.first, tmp));
 			}
+			// Log the image with the max positive of every feature
+			ImageLogger appImageLogger = ImageLoggers->getLogger("app");
+			appImageLogger.setCurrentImageName(labeledImageSource->getName().stem().string());
+			appImageLogger.intermediate(ffdMaxPosImg, doNothing, "AllFfpMaxPos");
 
-			rnscnew.setLandmarks(landmarkData2); // Should better use .run(landmarkData2); Clarity etc
-			Mat rnsacImg = img.clone();
-			//map<string, shared_ptr<imageprocessing::Patch>> resultLms = rnscnew.run(rnsacImg, 30.0f, 1000, 4, 3); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this with only the STL? (probably)
+			if (enableFeaturePointValidation) {
+				// Tmp: Convert it to current map<string, vector<shared_ptr<imageprocessing::Patch>>> format
+				map<string, vector<shared_ptr<imageprocessing::Patch>>> landmarkData2;
+				for (const auto& feature : allFeaturePatches) {
+					vector<shared_ptr<imageprocessing::Patch>> tmp;
+					for (const auto& patch : feature.second) {
+						tmp.push_back(patch->getPatch());
+					}
+					landmarkData2.insert(make_pair(feature.first, tmp));
+					appLogger.debug(feature.first + " #cand: " + lexical_cast<string>(feature.second.size()));
+				}
 
+				featurePointsModel.setLandmarks(landmarkData2); // Should better use .run(landmarkData2); Clarity etc
+				Mat rnsacImg = img.clone();
+				resultLms = featurePointsModel.run(rnsacImg, 15.0f, numRansacIterations); // It would somehow be helpful to have a LandmarkSet data-type, consisting of #n strings and each with #m Patches, and having delete, add, ... operations. Can we do this with only the STL? (probably)
+				if (resultLms.empty()) {
+					// a few possibilities:
+					// - If this happens, we just use the box from the FD
+					// - we could count it as a failure of ransac (assuming the face-box was found correctly)
+					// - future work: treat it as a legitimate failure and use another face-box!
+					// * todo: the ransac algorithm should return only sets that are 4 LMs or bigger. Check if it adheres to that.
+				}
+				// set the improved face-box:
+				if (!resultLms.empty()) {
+					Mat ransacImage = img.clone();
+					Rect detectedFaceRansacRect = featurePointsModel.evaluatorGetFaceCenter(resultLms, ransacImage);
+					detectedFace = make_shared<imageio::RectLandmark>("face", detectedFaceRansacRect);
+				}
+
+			} else { // don't use ransac, just use the max-positive landmarks and the face-box from the FD
+				for (const auto& feature : allFeaturePatches) {
+					if (feature.second.size() > 0) {
+						resultLms.insert(make_pair(feature.first, feature.second[0]->getPatch()));
+					}
+					appLogger.debug(feature.first + " #cand: " + lexical_cast<string>(feature.second.size()));
+				}
+			}
 			
-			resultLms.insert(make_pair("left.lips.corner", landmarkData2.at("left.lips.corner")[0]));
-			resultLms.insert(make_pair("right.lips.corner", landmarkData2.at("right.lips.corner")[0]));
-			resultLms.insert(make_pair("left.eye.pupil.center", landmarkData2.at("left.eye.pupil.center")[0]));
-			resultLms.insert(make_pair("right.eye.pupil.center", landmarkData2.at("right.eye.pupil.center")[0]));
-
 			for (const auto& lm : resultLms) {
 				drawFfpsCircle(img, make_pair(lm.first, Point2f(lm.second->getX(), lm.second->getY())));
 				drawFfpsText(img, make_pair(lm.first, Point2f(lm.second->getX(), lm.second->getY())));
-				imwrite("C:/Users/Patrik/Documents/Github/RANSAC.png", img);
+				//imwrite("C:/Users/Patrik/Documents/Github/RANSAC.png", img);
 				imageio::ModelLandmark l(lm.first, lm.second->getX(), lm.second->getY());
 				l.draw(img);
 			}
+			appImageLogger.setCurrentImageName(labeledImageSource->getName().stem().string());
+			appImageLogger.intermediate(img, doNothing, "AllFfpRansacBest");
 
 		}
 
@@ -744,16 +798,15 @@ int main(int argc, char *argv[])
 		
 		imageStatistic stats;
 		stats.numFaceCandidates = facePatches.size();
-		if (facePatches.size() < 1) {
+		if (!detectedFace) { // the facePatches is empty, i.e. this pointer is null
 			stats.faceDetectionResult = imageStatistic::DetectionType::FREJ;
 		} else { // we detected a face
 			// check if it's the right face:
 			try {
 				shared_ptr<imageio::Landmark> face = groundtruth.getLandmark("face");
-				shared_ptr<imageio::RectLandmark> detected = make_shared<imageio::RectLandmark>("face", facePatches[0]->getPatch()->getBounds());
 				face->draw(img, Scalar(0.0, 255.0, 0.0));
-				detected->draw(img, Scalar(0.0, 0.0, 255.0));
-				bool isClose = detected->isClose(*face.get(), 0.3f);
+				detectedFace->draw(img, Scalar(0.0, 0.0, 255.0));
+				bool isClose = detectedFace->isClose(*face.get(), 0.3f);
 				if (isClose) {
 					stats.faceDetectionResult = imageStatistic::DetectionType::TACC;
 				} else {
@@ -777,31 +830,51 @@ int main(int argc, char *argv[])
 			// Loop through our detected landmarks (top candidate), calculate the error w.r.t. the ground truth
 			// What if we detect a LM (false-positive), but it's not in the ground truth?
 			for (const auto& lm : resultLms) {
-				stats.landmarkNames.push_back(lm.first);
 				shared_ptr<imageprocessing::Patch> p = lm.second;
 				shared_ptr<imageio::ModelLandmark> detected = make_shared<imageio::ModelLandmark>(lm.first, p->getX(), p->getY());
-				shared_ptr<imageio::Landmark> gt = groundtruth.getLandmark(lm.first); // throws when LM not found
-				float pixelError = cv::norm(detected->getPosition2D(), gt->getPosition2D(), cv::NORM_L2);
-				stats.landmarkPixelError.emplace_back(pixelError);
-				if (stats.interEyeDistance > 0.0f) { // we could/should use detected->isClose(gt, ied?); ? Or maybe calculate that later?
-					if (pixelError <= stats.interEyeDistance/(10.0f)) { // is the error less than 10% of the ied? (should be <5 or something)
+				try {
+					shared_ptr<imageio::Landmark> gt = groundtruth.getLandmark(lm.first); // throws when LM not found
+					stats.landmarkNames.push_back(lm.first);
+					float pixelError = cv::norm(detected->getPosition2D(), gt->getPosition2D(), cv::NORM_L2);
+					stats.landmarkPixelError.emplace_back(pixelError);
+					if (stats.interEyeDistance > 0.0f) { // we could/should use detected->isClose(gt, ied?); ? Or maybe calculate that later?
+						if (pixelError <= stats.interEyeDistance/(10.0f)) { // is the error less than 10% of the ied? (should be <5 or something)
+							stats.landmarkDetectionResult.push_back(imageStatistic::DetectionType::TACC);
+						} else {
+							stats.landmarkDetectionResult.push_back(imageStatistic::DetectionType::FACC);
+						}
+					} else { // no IED available, just use a static value of 10 (?) pixel
+						// TODO
 						stats.landmarkDetectionResult.push_back(imageStatistic::DetectionType::TACC);
-					} else {
-						stats.landmarkDetectionResult.push_back(imageStatistic::DetectionType::FACC);
 					}
-				} else { // no IED available, just use a static value of 10 (?) pixel
-					// TODO
-					stats.landmarkDetectionResult.push_back(imageStatistic::DetectionType::TACC);
+				} catch(invalid_argument& e) { // a ground truth landmark was not found
+					// just don't record the stats for it
 				}
 			}
 		}
+		vector<RectLandmark> faces;
+		vector<float> scores;	
+		if (facePatches.size() > 0) {
+			// Todo: We should use "detectedFace" instead of facePatches to make use of the ransac output.
+			// However, with the new ransac face-box, we lose the score. (we could either A) juse use the old FD box score B) Run the FD again on the ransac-box C) calculate a new score based on some ransac criterion)
+			// all posPatches (new NMS):
+			for (const auto& p : facePatches) {
+				faces.push_back(imageio::RectLandmark("face", p->getPatch()->getBounds()));
+				scores.push_back(p->getProbability());
+			}
+			// only the maxPos patch: (normal OE)
+			//faces.push_back(imageio::RectLandmark("face", facePatches[0]->getPatch()->getBounds()));
+			//scores.push_back(facePatches[0]->getProbability());
+		}
+		landmarkSink.add(labeledImageSource->getName().string(), faces, scores);
 
 		detectionResults.insert(make_pair(labeledImageSource->getName(), stats));
 		// log stats for this image
 		appLogger.info(stats.getFaceStatisticsString());
 		appLogger.info(stats.getLandmarksStatisticsString());
-	}
 
+	}
+	landmarkSink.close();
 	//Log stats for all images
 	size_t numImages = labeledImageSource->getNames().size();
 	int totalFacc = 0;

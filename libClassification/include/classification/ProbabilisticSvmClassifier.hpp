@@ -60,13 +60,25 @@ public:
 	void setLogisticParameters(double logisticA, double logisticB);
 
 	/**
+	 * Creates a new probabilistic WVM classifier from the parameters given in some Matlab file. Loads the logistic function's
+	 * parameters from the matlab file, then passes the loading to the underlying WVM which loads the vectors and thresholds
+	 * from the matlab file. TODO update doc
+	 *
+	 * @param[in] classifierFilename The name of the file containing the WVM parameters.
+	 * @param[in] thresholdsFilename The name of the file containing the thresholds of the filter levels and the logistic function's parameters.
+	 * @return The newly created probabilistic WVM classifier.
+	 */
+	static std::pair<double, double> loadSigmoidParamsFromMatlab(const string& thresholdsFilename);
+
+	/**
 	 * Creates a new probabilistic SVM classifier from the parameters given in some Matlab file. Loads the logistic function's
 	 * parameters from the matlab file, then passes the loading to the underlying SVM which loads the vectors and thresholds
 	 * from the matlab file.
 	 *
 	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
 	 * @param[in] logisticFilename The name of the file containing the logistic function's parameters.
-	 * @return The newly created probabilistic SVM classifier.
+	 * @return The newly created probabilistic SVM classifier. TODO: This could be renamed just to "load(...)". But NOTE: The classifier will then be loaded with
+	 * default settings, and any deviation from that (e.g. adjusting the thresholds) must be done manually.
 	 */
 	static shared_ptr<ProbabilisticSvmClassifier> loadFromMatlab(const string& classifierFilename, const string& logisticFilename);
 

@@ -35,8 +35,10 @@ public:
 	 * Constructs a new file-list image source.
 	 *
 	 * @param[in] filelist A text-file containing a list of files.
+	 * @param[in] pathPrefix A path that is added in front of the image name found in the list-file.
+	 * @param[in] alternativeExtension This optional extension is added or the current one replaced by this one.
 	 */
-	explicit FileListImageSource(const string& filelist);
+	explicit FileListImageSource(const string& filelist, const string& pathPrefix="", const string& alternativeExtension="");
 
 	~FileListImageSource();
 
@@ -52,7 +54,7 @@ public:
 
 private:
 	vector<path> files; ///< The files of the given directory, ordered by name.
-	unsigned int index; ///< The index of the next file.
+	int index; ///< The index of the next file.
 };
 
 } /* namespace imageio */

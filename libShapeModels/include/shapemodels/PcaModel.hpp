@@ -95,9 +95,9 @@ public:
 	unsigned int getNumberOfPrincipalComponents() const;
 
 	/**
-	 * Returns the number of principal components in the model.
+	 * Returns TODO.
 	 *
-	 * @return The number of principal components in the model.
+	 * @return TODO.
 	 */
 	unsigned int getDataDimension() const;
 
@@ -149,12 +149,15 @@ public:
 	 */
 	cv::Mat drawSample(std::vector<float> coefficients);
 
+	cv::Mat getPcaBasis() const;
+	cv::Mat getPcaBasis(std::string landmarkIdentifier) const;
+
 private:
 	std::mt19937 engine; ///< A Mersenne twister MT19937 engine
 	std::map<std::string, int> landmarkVertexMap; ///< Holds the translation from feature point name (e.g. "center.nose.tip") to the vertex number in the model
 	
 	cv::Mat mean; ///< A 3m x 1 col-vector (xyzxyz...)', where m is the number of model-vertices
-	cv::Mat pcaBasis; ///< m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
+	cv::Mat pcaBasis; ///< m x n (rows x cols) = numShapeDims x numShapePcaCoeffs, (=eigenvector matrix V)
 	cv::Mat eigenvalues; ///< A col-vector of the eigenvalues (variances in the PCA space).
 
 	std::vector<std::array<int, 3>> triangleList; ///< List of triangles that make up the mesh of the model. (Note: Does every PCA model has a triangle-list? Use Mesh here instead?)
