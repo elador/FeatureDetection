@@ -2,10 +2,10 @@ SET( PROJECT_NAME FeatureDetection )
 PROJECT( ${PROJECT_NAME} )
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-# G++ needs a compiler flag to use the (experimental) C++11 support
-# TODO: Should this go into initial_cache.cmake? We require C++11 anyway.
-#       In addition, it doesn't interfere with the compilation on windows, but is not necessary there.
-
+# g++ needs a compiler flag to use the (experimental) C++11 support
+# TODO: * We could test for VS/gcc/unsupported compilers and warn
+#       * This check doesn't interfere with the compilation on windows, but is not necessary there.
+#       * We should stop and throw an error if we're on gcc and no c++11 support is found
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-std=c++11 HAS_CXX11_FLAG)
 if (HAS_CXX11_FLAG)
