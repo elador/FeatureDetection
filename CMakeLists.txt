@@ -23,30 +23,30 @@ add_subdirectory(libImageLogging)		# Image logging
 
 add_subdirectory(libImageIO)			# Input-library for cameras, Kinect and hard-drive images.
 add_subdirectory(libImageProcessing)	# Image pyramids, patch extraction, feature transformation
+add_subdirectory(libClassification)		# Classification and regression library
 add_subdirectory(libSvm)				# libSVM (support vector classification and regression)
 add_subdirectory(libLinear)				# liblinear (linear classification with SVM and regression)
-add_subdirectory(libClassification)		# Classification and regression library
 
 add_subdirectory(libDetection)			# Sliding-window detection, Skin detection
 add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 
-#add_subdirectory(libRender)				# A software renderer to render vertices and 3D-meshes
-#add_subdirectory(libShapeModels)		# Head/face specific things; 2D/3D models; Combining feature points
+add_subdirectory(libRender)				# A software renderer to render vertices and 3D-meshes
+add_subdirectory(libShapeModels)		# Head/face specific things; 2D/3D models; Combining feature points
 
 add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.
 add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
 add_subdirectory(adaptiveTrackingApp)	# Adaptive tracking app.
 #add_subdirectory(partiallyAdaptiveTrackingApp)	# Old adaptive tracking app.
 add_subdirectory(headTrackingApp)		# Adaptive head tracking app.
-add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe).
-add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature point detection app.
+#add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe).
+#add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature point detection app.
 
-#add_subdirectory(facemodelTracking)		# Todo
-#add_subdirectory(fitter)			# Todo
-#add_subdirectory(sdmTracking)			# Todo
+#add_subdirectory(facemodelTracking)		# Todo - doesn't compile atm
+add_subdirectory(fitter)			# Experimental app (compiles)
+add_subdirectory(sdmTracking)			# Experimental app (compiles)
 
-#add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
-#add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
+add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
+add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
 
 #add_subdirectory(frRunCogExp)		# App for doing face recognition tests with a gallery and probe images
 #add_subdirectory(frDbTool)		# App for managing (creating and populating) the sqlite-database used for face-recognition experiments

@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
 			p.at<float>(2, 0) = tmp[2];
 			p.at<float>(3, 0) = 1;
 			Mat p2d = affineCam * p;
-			Point2f pp({ p2d.at<float>(0, 0), p2d.at<float>(1, 0) });
+			Point2f pp(p2d.at<float>(0, 0), p2d.at<float>(1, 0)); // Todo: check
 			cv::circle(affineCamLandmarksProjectionImage, pp, 4.0f, Scalar(0.0f, 255.0f, 0.0f));
 		}
 		// End Affine est.
