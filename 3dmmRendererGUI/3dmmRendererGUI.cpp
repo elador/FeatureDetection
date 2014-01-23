@@ -6,13 +6,13 @@
 	#include <crtdbg.h>
 #endif
 
-#ifdef _DEBUG
+/*#ifdef _DEBUG
    #ifndef DBG_NEW
 	  #define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
 	  #define new DBG_NEW
    #endif
 #endif  // _DEBUG
-
+   */
 #include "render/MeshUtils.hpp"
 #include "render/MatrixUtils.hpp"
 #include "render/SoftwareRenderer.hpp"
@@ -32,6 +32,10 @@
 #endif
 #include "boost/program_options.hpp"
 #include "boost/lexical_cast.hpp"
+#include "boost/property_tree/ptree.hpp"
+#include "boost/property_tree/info_parser.hpp"
+#include "boost/algorithm/string.hpp"
+#include "boost/filesystem/path.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -44,6 +48,8 @@ using namespace std;
 using namespace cv;
 using namespace render;
 using boost::lexical_cast;
+using boost::property_tree::ptree;
+using boost::filesystem::path;
 
 template<class T>
 ostream& operator<<(ostream& os, const vector<T>& v)
@@ -119,13 +125,14 @@ int main(int argc, char *argv[])
 	//_CrtSetBreakAlloc(3759128);
 	#endif
 
-	std::string filename; // Create vector to hold the filenames
+	path configFilename;
 	
 	try {
 		po::options_description desc("Allowed options");
 		desc.add_options()
 			("help,h", "produce help message")
-			("input-file,i", po::value<string>(), "input image")
+			("config,c", po::value<path>(&configFilename)->required(),
+			"path to a config (.cfg) file")
 		;
 
 		po::variables_map vm;
@@ -138,11 +145,7 @@ int main(int argc, char *argv[])
 			cout << desc;
 			return 0;
 		}
-		if (vm.count("input-file"))
-		{
-			cout << "[renderTestApp] Using input images: " << vm["input-file"].as<vector<string>>() << "\n";
-			filename = vm["input-file"].as<string>();
-		}
+
 	}
 	catch (std::exception& e) {
 		cout << e.what() << endl;
@@ -150,6 +153,8 @@ int main(int argc, char *argv[])
 	}
 	
 	Loggers->getLogger("shapemodels").addAppender(std::make_shared<logging::ConsoleAppender>(loglevel::TRACE));
+	Logger appLogger = Loggers->getLogger("shapemodels");
+	appLogger.addAppender(std::make_shared<logging::ConsoleAppender>(loglevel::TRACE));
 
 	//render::MorphableModel mmHeadL4 = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
 	render::Mesh cube = render::utils::MeshUtils::createCube();
@@ -158,10 +163,33 @@ int main(int argc, char *argv[])
 	shared_ptr<render::Mesh> tri = render::utils::MeshUtils::createTriangle();
 	
 	//mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
-	mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\SurreyLowResGuosheng\\NON3448\\ShpVtxModelBin_NON3448.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
+	//mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\SurreyLowResGuosheng\\NON3448\\ShpVtxModelBin_NON3448.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
 	//mm = shapemodels::MorphableModel::loadOldBaselH5Model("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "featurePoints_head_newfmt.txt");
 	//mm = shapemodels::MorphableModel::loadStatismoModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\2012.2\\head\\model2012_l7_head.h5");
-	
+	//mm = shapemodels::MorphableModel::load("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\bfm_statismo\\bfm2009_face05.h5");
+
+	ptree pt;
+	try {
+		boost::property_tree::info_parser::read_info(configFilename.string(), pt);
+	}
+	catch (const boost::property_tree::ptree_error& error) {
+		appLogger.error(error.what());
+		return EXIT_FAILURE;
+	}
+
+	shapemodels::MorphableModel mm;
+	try {
+		mm = shapemodels::MorphableModel::load(pt.get_child("morphableModel"));
+	}
+	catch (const boost::property_tree::ptree_error& error) {
+		appLogger.error(error.what());
+		return EXIT_FAILURE;
+	}
+	catch (const std::runtime_error& error) {
+		appLogger.error(error.what());
+		return EXIT_FAILURE;
+	}
+
 	meshToDraw = std::make_shared<Mesh>(mm.getMean());
 
 	int screenWidth = 640;
@@ -172,6 +200,10 @@ int main(int argc, char *argv[])
 	Camera camera(Vec3f(0.0f, 0.0f, 0.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 
 	SoftwareRenderer r(screenWidth, screenHeight, camera);
+	r.perspectiveDivision = render::SoftwareRenderer::PerspectiveDivision::W;
+	r.doClippingInNDC = true;
+	r.directToScreenTransform = false;
+	r.doWindowTransform = true;
 
 	namedWindow(windowName, WINDOW_AUTOSIZE);
 	setMouseCallback(windowName, winOnMouse);
@@ -246,7 +278,7 @@ int main(int argc, char *argv[])
 		}
 		if (key == 'n') {
 			meshToDraw.reset();
-			meshToDraw = make_shared<Mesh>(mm.drawSample(1.0f));
+			meshToDraw = make_shared<Mesh>(mm.drawSample(0.7f));
 		}
 		
 		r.resetBuffers();
@@ -303,8 +335,9 @@ int main(int argc, char *argv[])
 		// End test
 		
 		//r.renderLine(Vec4f(1.5f, 0.0f, 0.5f, 1.0f), Vec4f(-1.5f, 0.0f, 0.5f, 1.0f), Scalar(0.0f, 0.0f, 255.0f));
-
+		Mat zBuffer = r.getDepthBuffer();
 		Mat screen = r.getImage();
+		render::Mesh::writeObj(*meshToDraw.get(), "C:\\Users\\Patrik\\Documents\\GitHub\\test_mean.obj");
 		putText(screen, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		putText(screen, "horA: " + lexical_cast<string>(horizontalAngle) + ", verA: " + lexical_cast<string>(verticalAngle), Point(10, 38), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		putText(screen, "moving: " + lexical_cast<string>(moving), Point(10, 56), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));

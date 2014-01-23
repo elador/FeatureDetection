@@ -28,7 +28,8 @@ void Mesh::writeObj(Mesh mesh, string filename)
 	std::ofstream objFile(filename);
 
 	for (const auto& v : mesh.vertex) {
-		objFile << "v " << v.position[0] << " " << v.position[1] << " " << v.position[2] << std::endl;
+		//objFile << "v " << v.position[0] << " " << v.position[1] << " " << v.position[2] << std::endl;
+		objFile << "v " << v.position[0] << " " << v.position[1] << " " << v.position[2] << " " << v.color[0] << " " << v.color[1] << " " << v.color[2] << " " << std::endl;
 	}
 
 	for (const auto& v : mesh.tvi) {
