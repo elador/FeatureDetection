@@ -216,9 +216,9 @@ int main(int argc, char *argv[])
 	vertexIds.push_back(8287); // bridge of the nose -
 	vertexIds.push_back(8320); // nose-tip - center.nose.tip
 	vertexIds.push_back(8332); // nasal septum - (center.nose.attachement_to_philtrum (similar but not defined in the BFM-statismo anyway))
-	vertexIds.push_back(6526); // left-alare - right.nose.wing.tip
-	vertexIds.push_back(10138); // right-alare - left.nose.wing.tip
-
+	vertexIds.push_back(6389); // left-alare - (a bit similar to right.nose.wing.tip but don't use it)
+	vertexIds.push_back(10001); // right-alare - (a bit similar to left.nose.wing.tip but don't use it)
+	
 	ofstream outputFile;
 	//outputFile.open("C:/Users/Patrik/Documents/Github/syndata/data_3dmm_landmarks_random_sd0.5_batch4_600000k.txt");
 	outputFile.open("./data_3dmm_landmarks_random_sd0.7_batch5_600000k.txt");
