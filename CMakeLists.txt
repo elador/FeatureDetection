@@ -44,6 +44,8 @@ add_subdirectory(libShapeModels)		# Head/face specific things; 2D/3D models; Com
 #add_subdirectory(facemodelTracking)		# Todo - doesn't compile atm
 add_subdirectory(fitter)			# Experimental app (compiles)
 add_subdirectory(sdmTracking)			# Experimental app (compiles)
+add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
+add_subdirectory(landmarkVisualiser)	# Simple app to read landmarks and images and display them
 
 add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
 add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
