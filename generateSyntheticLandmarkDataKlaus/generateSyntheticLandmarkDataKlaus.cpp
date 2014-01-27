@@ -120,9 +120,8 @@ int main(int argc, char *argv[])
 		po::options_description desc("Allowed options");
 		desc.add_options()
 			("help,h", "produce help message")
-			("input-file,i", po::value<string>(), "input image")
 			("config,c", po::value<path>(&configFilename)->required(),
-			"path to a config (.cfg) file")
+			"Path to a config file that specifies which Morphable Model to load.")
 		;
 
 		po::variables_map vm;
@@ -256,7 +255,7 @@ int main(int argc, char *argv[])
 		std::cout << generatedSamples << std::endl;
 
 		render::Mesh newSampleMesh = morphableModel.drawSample(0.7f); // Note: it would suffice to only draw a shape model, but then we can't render it
-		//render::Mesh::writeObj(newSampleMesh, "C:\\Users\\Patrik\\Documents\\GitHub\\test3.obj");
+		render::Mesh::writeObj(newSampleMesh, "C:\\Users\\Patrik\\Documents\\GitHub\\test3.obj");
 		
 		int randomVertex = randIntVtx();
 		int yaw = randIntYaw();
@@ -264,7 +263,7 @@ int main(int argc, char *argv[])
 		int roll = randIntRoll();
 
 		vector<shared_ptr<Landmark>> pointsToWrite;
-		//Mat testImg = r.getImage().clone();
+		Mat testImg = r.getImage().clone();
 
 		// 1) Render the randomVertex frontal
 		Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
@@ -276,7 +275,7 @@ int main(int argc, char *argv[])
 		Vec2f res = r.projectVertex(newSampleMesh.vertex[randomVertex].position);
 		string name = "randomVertexFrontal";
 		pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
-		//cv::circle(testImg, cv::Point(res[0], res[1]), 3, cv::Scalar(0, 0, 255));
+		cv::circle(testImg, cv::Point(res[0], res[1]), 3, cv::Scalar(0, 0, 255));
 
 		// 2) Render all LMs in frontal pose
 		for (const auto& vid : vertexIds) {
@@ -286,7 +285,7 @@ int main(int argc, char *argv[])
 			//r.renderLM(newSampleMesh.vertex[vid].position, Scalar(255.0f, 0.0f, 0.0f));
 			name = DidLandmarkFormatParser::didToTlmsName(vid);
 			pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
-			//cv::circle(testImg, cv::Point(res[0], res[1]), 3, cv::Scalar(255, 0, 128));
+			cv::circle(testImg, cv::Point(res[0], res[1]), 3, cv::Scalar(255, 0, 128));
 		}
 
 		// 3) Render the randomVertex in pose angle
@@ -296,22 +295,22 @@ int main(int argc, char *argv[])
 		modelMatrix = rotYawY * rotPitchX * rotRollZ * modelScaling;
 		r.setModelTransform(modelMatrix);
 		// tmp:
-		/*shared_ptr<Mesh> mmMesh = std::make_shared<Mesh>(newSampleMesh);
+		shared_ptr<Mesh> mmMesh = std::make_shared<Mesh>(newSampleMesh);
 		r.draw(mmMesh, nullptr);
 		Mat screen = r.getImage();
-		Mat depth = r.getDepthBuffer();*/
+		Mat depth = r.getDepthBuffer();
 
 		pair<Vec2f, bool> vertexVisPair;
 		//res = r.projectVertex(newSampleMesh.vertex[randomVertex].position);
 		vertexVisPair = r.projectVertexVis(newSampleMesh.vertex[randomVertex].position);
-		//cv::circle(screen, cv::Point(vertexVisPair.first[0], vertexVisPair.first[1]), 3, cv::Scalar(255, 0, 128));
+		cv::circle(screen, cv::Point(vertexVisPair.first[0], vertexVisPair.first[1]), 3, cv::Scalar(255, 0, 128));
 		if (vertexVisPair.second != true) {
 			continue;
 		}
 		res = vertexVisPair.first;
 		name = "randomVertexPose";
 		pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
-		//cv::circle(testImg, cv::Point(res[0], res[1]), 3, cv::Scalar(0, 255, 0));
+		cv::circle(testImg, cv::Point(res[0], res[1]), 3, cv::Scalar(0, 255, 0));
 
 		// 4) Render all LMs in pose angle
 		for (const auto& vid : vertexIds) {
@@ -321,7 +320,7 @@ int main(int argc, char *argv[])
 			//r.renderLM(morphableModel.mesh.vertex[vid].position, Scalar(255.0f, 0.0f, 0.0f));
 			name = DidLandmarkFormatParser::didToTlmsName(vid);
 			pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
-			//cv::circle(testImg, cv::Point(res[0], res[1]), 3, cv::Scalar(128, 0, 255));
+			cv::circle(testImg, cv::Point(res[0], res[1]), 3, cv::Scalar(128, 0, 255));
 		}
 					
 		// 4) Write one row to the file
