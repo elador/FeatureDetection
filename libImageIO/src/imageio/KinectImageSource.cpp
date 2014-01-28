@@ -15,7 +15,7 @@ namespace imageio {
 
 KinectImageSource::KinectImageSource(int device) : ImageSource(lexical_cast<string>(device)), frame() {
 
-#ifdef WIN32
+#ifdef WITH_MSKINECT_SDK
 	m_pColorStreamHandle = INVALID_HANDLE_VALUE;
 	/// Create the first connected Kinect found
 	INuiSensor * pNuiSensor;
@@ -85,7 +85,7 @@ KinectImageSource::KinectImageSource(int device) : ImageSource(lexical_cast<stri
 
 
 KinectImageSource::~KinectImageSource() {
-#ifdef WIN32
+#ifdef WITH_MSKINECT_SDK
 	if (m_pNuiSensor)
 	{
 		m_pNuiSensor->NuiShutdown();
@@ -104,7 +104,7 @@ void KinectImageSource::reset() {
 
 bool KinectImageSource::next() {
 
-#ifdef WIN32
+#ifdef WITH_MSKINECT_SDK
 	// Attempt to get the color frame
 	HRESULT hr;
 	hr = m_pNuiSensor->NuiImageStreamGetNextFrame(m_pColorStreamHandle, 0, &imageFrame);
@@ -153,7 +153,7 @@ bool KinectImageSource::next() {
 
 const Mat KinectImageSource::getImage() const
 {
-#ifdef WIN32
+#ifdef WITH_MSKINECT_SDK
 	return frame;
 #else
 	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
@@ -163,7 +163,7 @@ const Mat KinectImageSource::getImage() const
 
 path KinectImageSource::getName() const
 {
-#ifdef WIN32
+#ifdef WITH_MSKINECT_SDK
 	return path();
 #else
 	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;
@@ -173,7 +173,7 @@ path KinectImageSource::getName() const
 
 vector<path> KinectImageSource::getNames() const
 {
-#ifdef WIN32
+#ifdef WITH_MSKINECT_SDK
 	return vector<path>();
 #else
 	std::cerr << "Error! This is the Microsoft Kinect SDK interface and not available under Linux." << std::endl;

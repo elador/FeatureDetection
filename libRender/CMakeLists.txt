@@ -19,21 +19,18 @@ ELSE(Boost_FOUND)
   MESSAGE(FATAL_ERROR "Boost not found")
 ENDIF()
 
-#HDF5: (needed for reading the Model)
-#MESSAGE(STATUS "HDF5_ROOT: ${HDF5_ROOT}")
-#SET( CMAKE_MODULE_PATH ${HDF5_ROOT}/cmake/hdf5 )
-#MESSAGE(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
-#FIND_PACKAGE( HDF5 REQUIRED COMPONENTS C CXX )
-#FIND_PACKAGE( HDF5 NAMES hdf5 )
-#SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-#FIND_PACKAGE( HDF5 NAMES hdf5 )
+#IF(WIN32)
+	#FIND_PACKAGE (HDF5 NAMES hdf5) # puts it in Config-mode
+	#FIND_PACKAGE (HDF5 REQUIRED CONFIG) # same
+	FIND_PACKAGE (HDF5 REQUIRED COMPONENTS C CXX) # works on windows as well
+#ENDIF()
+#message(STATUS "Hdf5 include dir: ${HDF5_INCLUDE_DIR}") # According to hdf5 cmake file, should use *_DIRS, but they don't define it in hdf5-config.cmake. Ok if find_packaged used as above (now), it works.
+message(STATUS "HDF5 includes at: ${HDF5_INCLUDE_DIRS}")
+message(STATUS "HDF5 libraries at: ${HDF5_LIBRARIES}")
 
 #Source and header files:
 SET(SOURCE
-	src/render/Renderer.cpp
-	src/render/RenderDevice.cpp
-	src/render/OpenGlDevice.cpp
-	src/render/SoftwareDevice.cpp
+	src/render/SoftwareRenderer.cpp
 	src/render/Vertex.cpp
 	src/render/Triangle.cpp
 	src/render/Camera.cpp
@@ -45,10 +42,7 @@ SET(SOURCE
 )
 
 SET(HEADERS
-	include/render/Renderer.hpp
-	include/render/RenderDevice.hpp
-	include/render/OpenGlDevice.hpp
-	include/render/SoftwareDevice.hpp
+	include/render/SoftwareRenderer.hpp
 	include/render/Vertex.hpp
 	include/render/Triangle.hpp
 	include/render/Camera.hpp
@@ -57,13 +51,12 @@ SET(HEADERS
 	include/render/MatrixUtils.hpp
 	include/render/MeshUtils.hpp
 	include/render/Hdf5Utils.hpp
-	include/render/OGLDevNew.hpp
 )
 
 include_directories( "include" )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES("C:\\Users\\Patrik\\Cloud\\PhD\\HDF5\\include\\hdf5\\")
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
+include_directories( ${HDF5_INCLUDE_DIRS} )
 
 #Make the library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )

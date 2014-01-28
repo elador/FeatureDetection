@@ -1,11 +1,11 @@
 /*
- * RenderDevice.cpp
+ * SoftwareRenderer.cpp
  *
- *  Created on: 29.07.2013
+ *  Created on: 25.11.2013
  *      Author: Patrik Huber
  */
 
-#include "render/RenderDevice.hpp"
+#include "render/SoftwareRenderer.hpp"
 #include "render/MatrixUtils.hpp"
 
 using cv::Point2f;
@@ -13,7 +13,7 @@ using cv::Scalar;
 
 namespace render {
 
-RenderDevice::RenderDevice(unsigned int screenWidth, unsigned int screenHeight)
+SoftwareRenderer::SoftwareRenderer(unsigned int screenWidth, unsigned int screenHeight)
 {
 	this->screenWidth = screenWidth;
 	this->screenHeight = screenHeight;
@@ -22,13 +22,18 @@ RenderDevice::RenderDevice(unsigned int screenWidth, unsigned int screenHeight)
 	this->colorBuffer = Mat::zeros(screenHeight, screenWidth, CV_8UC4);
 	this->depthBuffer = Mat::ones(screenHeight, screenWidth, CV_64FC1)*1000000;
 
-	setWorldTransform(Mat::eye(4, 4, CV_32FC1));
+	setModelTransform(Mat::eye(4, 4, CV_32FC1));
 	updateViewTransform();
 	updateProjectionTransform(false);
 	setViewport(screenWidth, screenHeight);
+
+	doClippingInNDC = true;
+	directToScreenTransform = false;
+	doWindowTransform = true;
+	perspectiveDivision = PerspectiveDivision::W;
 }
 
-RenderDevice::RenderDevice(unsigned int screenWidth, unsigned int screenHeight, Camera camera)
+SoftwareRenderer::SoftwareRenderer(unsigned int screenWidth, unsigned int screenHeight, Camera camera)
 {
 	this->camera = camera;
 
@@ -40,32 +45,37 @@ RenderDevice::RenderDevice(unsigned int screenWidth, unsigned int screenHeight, 
 	this->colorBuffer = Mat::zeros(screenHeight, screenWidth, CV_8UC4);
 	this->depthBuffer = Mat::ones(screenHeight, screenWidth, CV_64FC1)*1000000;
 
-	setWorldTransform(Mat::eye(4, 4, CV_32FC1));
+	setModelTransform(Mat::eye(4, 4, CV_32FC1));
 	updateViewTransform();
 	updateProjectionTransform(false);
 	setViewport(screenWidth, screenHeight);
+
+	doClippingInNDC = true;
+	directToScreenTransform = false;
+	doWindowTransform = true;
+	perspectiveDivision = PerspectiveDivision::W;
 }
 
-RenderDevice::~RenderDevice()
+SoftwareRenderer::~SoftwareRenderer()
 {
 }
 
-Mat RenderDevice::getImage()
+Mat SoftwareRenderer::getImage()
 {
 	return colorBuffer;
 }
 
-Mat RenderDevice::getDepthBuffer()
+Mat SoftwareRenderer::getDepthBuffer()
 {
 	return depthBuffer;
 }
 
-void RenderDevice::setWorldTransform(Mat worldTransform)
+void SoftwareRenderer::setModelTransform(Mat modelTransform)
 {
-	this->worldTransform = worldTransform;
+	this->worldTransform = modelTransform;
 }
 
-void RenderDevice::updateViewTransform()
+void SoftwareRenderer::updateViewTransform()
 {
 	Mat translate = render::utils::MatrixUtils::createTranslationMatrix(-camera.getEye()[0], -camera.getEye()[1], -camera.getEye()[2]);
 	
@@ -78,7 +88,7 @@ void RenderDevice::updateViewTransform()
 }
 
 
-void RenderDevice::updateProjectionTransform(bool perspective/*=true*/)
+void SoftwareRenderer::updateProjectionTransform(bool perspective/*=true*/)
 {
 	Mat orthogonal = (cv::Mat_<float>(4,4) << 
 		2.0f / (camera.frustum.r - camera.frustum.l),	0.0f,											0.0f,											-(camera.frustum.r + camera.frustum.l) / (camera.frustum.r - camera.frustum.l),
@@ -97,7 +107,7 @@ void RenderDevice::updateProjectionTransform(bool perspective/*=true*/)
 	}
 }
 
-void RenderDevice::setViewport(unsigned int screenWidth, unsigned int screenHeight)
+void SoftwareRenderer::setViewport(unsigned int screenWidth, unsigned int screenHeight)
 {
 	windowTransform = (cv::Mat_<float>(4,4) << 
 		(float)screenWidth/2.0f,		0.0f,						0.0f,	(float)screenWidth/2.0f, // CG book says (screenWidth-1)/2.0f for second value?
@@ -106,7 +116,7 @@ void RenderDevice::setViewport(unsigned int screenWidth, unsigned int screenHeig
 		0.0f,							0.0f,						0.0f,	1.0f);
 }
 
-Vec2f RenderDevice::projectVertex(Vec4f vertex)
+Vec2f SoftwareRenderer::projectVertex(Vec4f vertex)
 {
 	// TODO After renderVertexList is final, remove this wrapper to be more efficient.
 	vector<Vec4f> list;
@@ -115,7 +125,7 @@ Vec2f RenderDevice::projectVertex(Vec4f vertex)
 	return rendered[0];
 }
 
-vector<Vec2f> RenderDevice::projectVertexList(vector<Vec4f> vertexList)
+vector<Vec2f> SoftwareRenderer::projectVertexList(vector<Vec4f> vertexList)
 {
 	vector<Vec2f> pointList;
 
@@ -137,13 +147,36 @@ vector<Vec2f> RenderDevice::projectVertexList(vector<Vec4f> vertexList)
 	return pointList;
 }
 
-void RenderDevice::resetBuffers()
+std::pair<Vec2f, bool> SoftwareRenderer::projectVertexVis(Vec4f vertex)
+{
+	Mat worldSpace = worldTransform * Mat(vertex);
+	Mat camSpace = viewTransform * worldSpace;
+	Mat normalizedViewingVolume = projectionTransform * camSpace;
+
+	// project from 4D to 2D window position with depth value in z coordinate
+	Vec4f normViewVolVec = matToColVec4f(normalizedViewingVolume);
+	normViewVolVec = normViewVolVec / normViewVolVec[3];	// divide by w
+	Mat windowCoords = windowTransform * Mat(normViewVolVec);	// places the vec as a column in the matrix
+	Vec4f windowCoordsVec = matToColVec4f(windowCoords);
+
+	bool visibility = true;
+	double zAtVertexLocation = depthBuffer.at<double>(static_cast<int>(windowCoordsVec[1]), static_cast<int>(windowCoordsVec[0]));
+	if (windowCoordsVec[3] < zAtVertexLocation) {
+		visibility = false;
+	}
+
+	Vec2f p = Vec2f(windowCoordsVec[0], windowCoordsVec[1]);
+
+	return std::make_pair(p, visibility);
+}
+
+void SoftwareRenderer::resetBuffers()
 {
 	colorBuffer = Mat::zeros(screenHeight, screenWidth, CV_8UC4);
 	depthBuffer = Mat::ones(screenHeight, screenWidth, CV_64FC1)*1000000;
 }
 
-void RenderDevice::renderLine(Vec4f p0, Vec4f p1, Scalar color)
+void SoftwareRenderer::renderLine(Vec4f p0, Vec4f p1, Scalar color)
 {
 	Mat worldSpace = worldTransform * Mat(p0);
 	Mat camSpace = viewTransform * worldSpace;
@@ -166,7 +199,7 @@ void RenderDevice::renderLine(Vec4f p0, Vec4f p1, Scalar color)
 	line(colorBuffer, p0Screen, p1Screen, color);
 }
 
-void RenderDevice::renderLM(Vec4f p0, Scalar color)
+void SoftwareRenderer::renderLM(Vec4f p0, Scalar color)
 {
 	Mat worldSpace = worldTransform * Mat(p0);
 	Mat camSpace = viewTransform * worldSpace;
@@ -180,7 +213,7 @@ void RenderDevice::renderLM(Vec4f p0, Scalar color)
 	circle(colorBuffer, p0Screen, 3, color);
 }
 
-void RenderDevice::draw(shared_ptr<Mesh> mesh, shared_ptr<Texture> texture)
+void SoftwareRenderer::draw(shared_ptr<Mesh> mesh, shared_ptr<Texture> texture)
 {
 	DrawCall drawCall;
 
@@ -205,7 +238,7 @@ void RenderDevice::draw(shared_ptr<Mesh> mesh, shared_ptr<Texture> texture)
 
 // below: all "old" rasterizing functions
 
-void RenderDevice::runVertexProcessor()
+void SoftwareRenderer::runVertexProcessor()
 {
 	for (unsigned int i = 0; i < drawCalls.size(); i++)
 	{
@@ -218,6 +251,21 @@ void RenderDevice::runVertexProcessor()
 				// vertex data gets copied here. (created also in the function). Could avoid this by using pointer, ref... whatever...
 				//triangle.vertex[k] = runVertexShader(drawCalls[i].transform, drawCalls[i].trianglesBuffer[j].vertices[k]);
 			}
+
+			if (!doClippingInNDC) {
+				processProspectiveTriangleToRasterize(	// does nothing with the texture, only copy either NULL or the texcoords
+					triangle.vertex[0],
+					triangle.vertex[1],
+					triangle.vertex[2],
+					drawCalls[i].texture);
+
+				continue;
+			}
+			// PnP: Instead of skipping the visibility check, we could scale the LMs so our PnP outputs NDC.
+			// Also, fix the stuff in processProspectiveTriangleToRasterize(...): We devide by w in one case
+			// and by z in the other. Unify this (think how to do it best in PnP case... change the cam-matrices, ...)
+			
+			// Else, do clipping in NDC: (traditional CG rendering pipeline)
 
 			// Hmm I transform many vertices twice or even more, because they are used in more than one triangle.
 			// Maybe make that better, eg a loop over mesh.vertices instead of tvi, or maybe make a new list with all transformed triangles, in same order, then use this plus mesh.tvi
@@ -292,23 +340,23 @@ void RenderDevice::runVertexProcessor()
 						drawCalls[i].texture);
 				}
 			}
+
 		}
 	}
 }
 
-Vertex RenderDevice::runVertexShader(shared_ptr<Mesh> mesh, const cv::Mat& transform, const int vertexNum)
+Vertex SoftwareRenderer::runVertexShader(shared_ptr<Mesh> mesh, const cv::Mat& transform, const int vertexNum)
 {
 	Vertex output;
-	/*
-	cv::Mat tmp =  transform * cv::Mat(mesh->vertex[vertexNum].position);	// places the vec as a row in the matrix. This is viewProjTransform * worldTransform
-	output.position[0] = tmp.at<float>(0, 0);
-	output.position[1] = tmp.at<float>(1, 0);
-	output.position[2] = tmp.at<float>(2, 0);
-	output.position[3] = tmp.at<float>(3, 0);
-	*/
 	
-	Mat worldToViewVol = projectionTransform * viewTransform * worldTransform;
-	output.position = matToColVec4f(worldToViewVol * Mat(mesh->vertex[vertexNum].position));
+	if (!directToScreenTransform) {
+		// MVP rendering pipeline
+		Mat worldToViewVol = projectionTransform * viewTransform * worldTransform;
+		output.position = matToColVec4f(worldToViewVol * Mat(mesh->vertex[vertexNum].position));
+	} else {
+		// direct object to screen matrix (solvePnP or Affine camera est.)
+		output.position = matToColVec4f(objectToScreenTransform * Mat(mesh->vertex[vertexNum].position));
+	}
 	
 	/*
 	Mat worldSpace = worldTransform * Mat(mesh->vertex[vertexNum].position);
@@ -325,7 +373,7 @@ Vertex RenderDevice::runVertexShader(shared_ptr<Mesh> mesh, const cv::Mat& trans
 	return output;
 }
 
-void RenderDevice::processProspectiveTriangleToRasterize(const Vertex& _v0, const Vertex& _v1, const Vertex& _v2, shared_ptr<Texture> _texture)
+void SoftwareRenderer::processProspectiveTriangleToRasterize(const Vertex& _v0, const Vertex& _v1, const Vertex& _v2, shared_ptr<Texture> _texture)
 {
 	TriangleToRasterize t;
 
@@ -338,23 +386,83 @@ void RenderDevice::processProspectiveTriangleToRasterize(const Vertex& _v0, cons
 	t.one_over_z1 = 1.0 / (double)t.v1.position[3];
 	t.one_over_z2 = 1.0 / (double)t.v2.position[3];
 
-	// project from 4D to 2D window position with depth value in z coordinate
-	t.v0.position = t.v0.position / t.v0.position[3];	// divide by w
-	cv::Mat tmp = windowTransform * cv::Mat(t.v0.position);	// places the vec as a column in the matrix
-	t.v0.position[0] = tmp.at<float>(0, 0);
+	switch (perspectiveDivision)
+	{
+	case PerspectiveDivision::None:
+		// No division: Affine cam matrix case
+		break;
+	case PerspectiveDivision::W:
+		// project from 4D to 2D window position with depth value in z coordinate
+		t.v0.position = t.v0.position / t.v0.position[3];	// divide by w: standard CG case
+		break; // 
+	case PerspectiveDivision::Z:
+		t.v0.position = t.v0.position / t.v0.position[2];	// divide by z: extr/intrin solvePnP case
+		break;
+	default:
+		// Error!!! and no default value set.
+		break;
+	}
+
+	cv::Mat tmp;
+	if (doWindowTransform) {
+		tmp = windowTransform * cv::Mat(t.v0.position);	// places the vec as a column in the matrix
+	} else {
+		tmp = cv::Mat(t.v0.position);	// places the vec as a column in the matrix
+	}
+	t.v0.position[0] = tmp.at<float>(0, 0); // not neccesary in NONE case
 	t.v0.position[1] = tmp.at<float>(1, 0);
 	t.v0.position[2] = tmp.at<float>(2, 0);
 	t.v0.position[3] = tmp.at<float>(3, 0);
 
-	t.v1.position = t.v1.position / t.v1.position[3];
-	tmp = windowTransform * cv::Mat(t.v1.position);	// places the vec as a column in the matrix
+	switch (perspectiveDivision)
+	{
+	case PerspectiveDivision::None:
+		// No division: Affine cam matrix case
+		break;
+	case PerspectiveDivision::W:
+		// project from 4D to 2D window position with depth value in z coordinate
+		t.v1.position = t.v1.position / t.v1.position[3];	// divide by w: standard CG case
+		break; // 
+	case PerspectiveDivision::Z:
+		t.v1.position = t.v1.position / t.v1.position[2];	// divide by w (z?): extr/intrin solvePnP case
+		break;
+	default:
+		// Error!!! and no default value set.
+		break;
+	}
+	if (doWindowTransform) {
+		tmp = windowTransform * cv::Mat(t.v1.position);	// places the vec as a column in the matrix
+	}
+	else {
+		tmp = cv::Mat(t.v1.position);	// places the vec as a column in the matrix
+	}
 	t.v1.position[0] = tmp.at<float>(0, 0);
 	t.v1.position[1] = tmp.at<float>(1, 0);
 	t.v1.position[2] = tmp.at<float>(2, 0);
 	t.v1.position[3] = tmp.at<float>(3, 0);
 
-	t.v2.position = t.v2.position / t.v2.position[3];
-	tmp = windowTransform * cv::Mat(t.v2.position);	// places the vec as a column in the matrix
+	switch (perspectiveDivision)
+	{
+	case PerspectiveDivision::None:
+		// No division: Affine cam matrix case
+		break;
+	case PerspectiveDivision::W:
+		// project from 4D to 2D window position with depth value in z coordinate
+		t.v2.position = t.v2.position / t.v2.position[3];	// divide by w: standard CG case
+		break; // 
+	case PerspectiveDivision::Z:
+		t.v2.position = t.v2.position / t.v2.position[2];	// divide by w (z?): extr/intrin solvePnP case
+		break;
+	default:
+		// Error!!! and no default value set.
+		break;
+	}
+	if (doWindowTransform) {
+		tmp = windowTransform * cv::Mat(t.v2.position);	// places the vec as a column in the matrix
+	}
+	else {
+		tmp = cv::Mat(t.v2.position);	// places the vec as a column in the matrix
+	}
 	t.v2.position[0] = tmp.at<float>(0, 0);
 	t.v2.position[1] = tmp.at<float>(1, 0);
 	t.v2.position[2] = tmp.at<float>(2, 0);
@@ -405,7 +513,7 @@ void RenderDevice::processProspectiveTriangleToRasterize(const Vertex& _v0, cons
 	trianglesToRasterize.push_back(t);
 }
 
-std::vector<Vertex> RenderDevice::clipPolygonToPlaneIn4D(const std::vector<Vertex>& vertices, const cv::Vec4f& planeNormal)
+std::vector<Vertex> SoftwareRenderer::clipPolygonToPlaneIn4D(const std::vector<Vertex>& vertices, const cv::Vec4f& planeNormal)
 {
 	std::vector<Vertex> clippedVertices;
 
@@ -449,7 +557,7 @@ std::vector<Vertex> RenderDevice::clipPolygonToPlaneIn4D(const std::vector<Verte
 	return clippedVertices;
 }
 
-bool RenderDevice::areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2)
+bool SoftwareRenderer::areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2)
 {
 	float dx01 = v1.position[0] - v0.position[0];
 	float dy01 = v1.position[1] - v0.position[1];
@@ -459,13 +567,13 @@ bool RenderDevice::areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v
 	return (dx01*dy02 - dy01*dx02 < 0.0f); // Original: (dx01*dy02 - dy01*dx02 > 0.0f). But: OpenCV has origin top-left, y goes down
 }
 
-double RenderDevice::implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2)
+double SoftwareRenderer::implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2)
 {
 	return ((double)v1[1] - (double)v2[1])*(double)x + ((double)v2[0] - (double)v1[0])*(double)y + (double)v1[0]*(double)v2[1] - (double)v2[0]*(double)v1[1];
 }
 
 
-void RenderDevice::runPixelProcessor()
+void SoftwareRenderer::runPixelProcessor()
 {
 	// clear buffers
 	//this->colorBuffer = cv::Mat::zeros(screenHeight, screenWidth, CV_8UC4);
@@ -497,13 +605,27 @@ void RenderDevice::runPixelProcessor()
 					int pixelIndexCol = xi;
 
 					double z_affine = alpha*(double)t.v0.position[2] + beta*(double)t.v1.position[2] + gamma*(double)t.v2.position[2];	// z
-
-					if (z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol) && z_affine <= 1.0)
+					bool isZTestSuccessful = false;
+					switch (perspectiveDivision)
+					{
+					case PerspectiveDivision::None:
+						isZTestSuccessful = z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol);
+						break;
+					case PerspectiveDivision::W:
+						isZTestSuccessful = z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol) && z_affine <= 1.0;
+						break;
+					case PerspectiveDivision::Z:
+						isZTestSuccessful = z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol) && z_affine <= 1.0;
+						break;
+					default:
+						break;
+					}
+					if (isZTestSuccessful)
 					{
 						// perspective-correct barycentric weights
 						double d = alpha*t.one_over_z0 + beta*t.one_over_z1 + gamma*t.one_over_z2;
 						d = 1.0 / d;
-						alpha *= d*t.one_over_z0;
+						alpha *= d*t.one_over_z0; // In case of affine cam matrix, everything is 1 and a/b/g don't get changed.
 						beta *= d*t.one_over_z1;
 						gamma *= d*t.one_over_z2;
 
@@ -558,7 +680,7 @@ void RenderDevice::runPixelProcessor()
 
 }
 
-cv::Vec3f RenderDevice::runPixelShader(shared_ptr<Texture> texture, const cv::Vec3f& color, const cv::Vec2f& texCoord, bool useTexturing)
+cv::Vec3f SoftwareRenderer::runPixelShader(shared_ptr<Texture> texture, const cv::Vec3f& color, const cv::Vec2f& texCoord, bool useTexturing)
 {
 	if(useTexturing) {
 		//return color.mul(tex2D(texture, texCoord));	// element-wise multiplication
@@ -568,12 +690,12 @@ cv::Vec3f RenderDevice::runPixelShader(shared_ptr<Texture> texture, const cv::Ve
 	}
 }
 
-cv::Vec3f RenderDevice::tex2D(shared_ptr<Texture> texture, const cv::Vec2f& texCoord)
+cv::Vec3f SoftwareRenderer::tex2D(shared_ptr<Texture> texture, const cv::Vec2f& texCoord)
 {
 	return (1.0f / 255.0f) * tex2D_linear_mipmap_linear(texture, texCoord);
 }
 
-cv::Vec3f RenderDevice::tex2D_linear_mipmap_linear(shared_ptr<Texture> texture, const cv::Vec2f& texCoord)
+cv::Vec3f SoftwareRenderer::tex2D_linear_mipmap_linear(shared_ptr<Texture> texture, const cv::Vec2f& texCoord)
 {
 	float px = std::sqrt(std::pow(dudx, 2) + std::pow(dvdx, 2));
 	float py = std::sqrt(std::pow(dudy, 2) + std::pow(dvdy, 2));
@@ -599,12 +721,12 @@ cv::Vec3f RenderDevice::tex2D_linear_mipmap_linear(shared_ptr<Texture> texture, 
 	return color;
 }
 
-cv::Vec2f RenderDevice::texCoord_wrap(const cv::Vec2f& texCoord)
+cv::Vec2f SoftwareRenderer::texCoord_wrap(const cv::Vec2f& texCoord)
 {
 	return cv::Vec2f(texCoord[0]-(int)texCoord[0], texCoord[1]-(int)texCoord[1]);
 }
 
-cv::Vec3f RenderDevice::tex2D_linear(shared_ptr<Texture> texture, const cv::Vec2f& imageTexCoord, unsigned char mipmapIndex)
+cv::Vec3f SoftwareRenderer::tex2D_linear(shared_ptr<Texture> texture, const cv::Vec2f& imageTexCoord, unsigned char mipmapIndex)
 {
 	int x = (int)imageTexCoord[0];
 	int y = (int)imageTexCoord[1];
@@ -652,7 +774,7 @@ cv::Vec3f RenderDevice::tex2D_linear(shared_ptr<Texture> texture, const cv::Vec2
 	return color;
 }
 
-float RenderDevice::clamp(float x, float a, float b)
+float SoftwareRenderer::clamp(float x, float a, float b)
 {
 	return std::max(std::min(x, b), a);
 }

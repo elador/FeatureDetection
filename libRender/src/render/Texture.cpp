@@ -78,8 +78,8 @@ void Texture::createFromFile(const std::string& fileName, uchar mipmapsNum)
 			currHeight >>= 1;
 	}
 	this->fileName = fileName;
-	this->widthLog = (uchar)(std::logf(mipmaps[0].cols)/CV_LOG2 + 0.0001f); // std::epsilon or something? or why 0.0001f here?
-	this->heightLog = (uchar)(std::logf(mipmaps[0].rows)/CV_LOG2 + 0.0001f);
+	this->widthLog = (uchar)(std::log(mipmaps[0].cols)/CV_LOG2 + 0.0001f); // std::epsilon or something? or why 0.0001f here?
+	this->heightLog = (uchar)(std::log(mipmaps[0].rows)/CV_LOG2 + 0.0001f); // Changed std::logf to std::log because it doesnt compile in linux (gcc 4.8). CHECK THAT
 }
 
 } /* namespace render */

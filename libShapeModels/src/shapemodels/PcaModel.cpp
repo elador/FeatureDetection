@@ -9,12 +9,8 @@
 
 #include "logging/LoggerFactory.hpp"
 
-#ifdef WIN32	// This is a shitty hack...  find out what the proper way to do this is. Probably include the hdf5.tar.gz in our cmake project. Bzw... without cpp is maybe correct, and my windows-installation is wrong?
-	#include "cpp/H5Cpp.h"
-#else
-	#include "H5Cpp.h"
-#endif
-//#include "hdf5.h"
+#include "H5Cpp.h"
+
 #include "boost/lexical_cast.hpp"
 #include "boost/algorithm/string.hpp"
 
@@ -101,7 +97,8 @@ PcaModel PcaModel::loadStatismoModel(string h5file, PcaModel::ModelType modelTyp
 	dsMean.close(); */
 
 	// Read the triangle-list
-	H5::Group representerGroup = h5Model.openGroup("/" + h5GroupType + "/representer");
+	string representerGroupName = "/" + h5GroupType + "/representer";
+	H5::Group representerGroup = h5Model.openGroup(representerGroupName);
 	dsMean = representerGroup.openDataSet("./reference-mesh/triangle-list");
 	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
 	Loggers->getLogger("shapemodels").debug("Dimensions of the triangle-list: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
@@ -118,7 +115,7 @@ PcaModel PcaModel::loadStatismoModel(string h5file, PcaModel::ModelType modelTyp
 
 	// Load the landmarks mappings:
 	// load the reference-mesh
-	representerGroup = h5Model.openGroup("/" + h5GroupType + "/representer");
+	representerGroup = h5Model.openGroup(representerGroupName);
 	dsMean = representerGroup.openDataSet("./reference-mesh/vertex-coordinates");
 	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
 	Loggers->getLogger("shapemodels").debug("Dimensions of the reference-mesh vertex-coordinates matrix: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
@@ -404,7 +401,7 @@ Vec3f PcaModel::getMeanAtPoint(unsigned int vertexIndex) const
 
 Mat PcaModel::drawSample(float sigma /*= 1.0f*/)
 {
-	std::normal_distribution<float> distribution(0.0f, sigma);
+	std::normal_distribution<float> distribution(0.0f, sigma); // TODO: c'tor takes the stddev. Update all the documentation!!!
 
 	vector<float> alphas(getNumberOfPrincipalComponents());
 
@@ -443,6 +440,18 @@ Mat PcaModel::drawSample(vector<float> coefficients)
 	Mat modelSample = mean + pcaBasis * alphas; // Bsl .h5 old
 
 	return modelSample;
+}
+
+cv::Mat PcaModel::getPcaBasis() const
+{
+	return pcaBasis;
+}
+
+cv::Mat PcaModel::getPcaBasis(std::string landmarkIdentifier) const
+{
+	int vertexId = landmarkVertexMap.at(landmarkIdentifier);
+	vertexId *= 3;
+	return pcaBasis.rowRange(vertexId, vertexId + 3);
 }
 
 }

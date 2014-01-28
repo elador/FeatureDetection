@@ -8,12 +8,7 @@
 
 #include "logging/LoggerFactory.hpp"
 
-#ifdef WIN32	// This is a shitty hack...  find out what the proper way to do this is. Probably include the hdf5.tar.gz in our cmake project. Bzw... without cpp is maybe correct, and my windows-installation is wrong?
-	#include "cpp/H5Cpp.h"
-#else
-	#include "H5Cpp.h"
-#endif
-//#include "hdf5.h"
+#include "H5Cpp.h"
 
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int_distribution.hpp"

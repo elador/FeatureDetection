@@ -1,13 +1,13 @@
 /*
- * RenderDevice.hpp
+ * SoftwareRenderer.hpp
  *
- *  Created on: 23.07.2013
+ *  Created on: 25.11.2013
  *      Author: Patrik Huber
  */
 #pragma once
 
-#ifndef RENDERDEVICE_HPP_
-#define RENDERDEVICE_HPP_
+#ifndef SOFTWARERENDERER_HPP_
+#define SOFTWARERENDERER_HPP_
 
 #include "render/Camera.hpp"
 #include "render/Mesh.hpp"
@@ -29,7 +29,7 @@ namespace render {
 /**
  * Desc
  */
-class RenderDevice
+	class SoftwareRenderer
 {
 public:
 	enum class RenderMode {
@@ -41,9 +41,9 @@ public:
 
 	// Future Todo: Use c++11 delegating c'tors as soon as VS supports it, i.e. create a viewport with 640x480 default
 	
-	RenderDevice(unsigned int screenWidth, unsigned int screenHeight);
-	RenderDevice(unsigned int screenWidth, unsigned int screenHeight, Camera camera);
-	~RenderDevice(); // Why no virtual possible?
+	SoftwareRenderer(unsigned int screenWidth, unsigned int screenHeight);
+	SoftwareRenderer(unsigned int screenWidth, unsigned int screenHeight, Camera camera);
+	~SoftwareRenderer(); // Why no virtual possible?
 
 	Mat getImage(); // make these a '&' ?
 	Mat getDepthBuffer();
@@ -59,11 +59,16 @@ public:
 	// Render... Does not do any clipping.
 	Vec2f projectVertex(Vec4f vertex);
 	vector<Vec2f> projectVertexList(vector<Vec4f> vertexList);
+	std::pair<Vec2f, bool> projectVertexVis(Vec4f vertex);
 	void renderLine(Vec4f p0, Vec4f p1, Scalar color);
 	void renderLM(Vec4f p0, Scalar color);
 	void renderMesh(Mesh mesh);
 
-	void setWorldTransform(Mat worldTransform);
+	void setModelTransform(Mat modelTransform);
+
+	void setObjectToScreenTransform(Mat objectToScreenTransform) {
+		this->objectToScreenTransform = objectToScreenTransform;
+	}
 
 	void resetBuffers();
 
@@ -74,7 +79,9 @@ public:
 
 	void draw(shared_ptr<Mesh> mesh, shared_ptr<Texture> texture);
 
-protected:
+	
+
+private:
 	Mat colorBuffer;
 	Mat depthBuffer;
 	unsigned int screenWidth;
@@ -83,9 +90,26 @@ protected:
 	
 
 	Mat worldTransform;			// Model-matrix. We should have/save one per object if we start rendering more than 1 object.
+								// TODO: Rename to "modelTransform"! (the setter is already named model...)
 	Mat viewTransform;			// Camera-transform
 	Mat projectionTransform;	// Orthogonal or projective transform
 	Mat windowTransform;	// Transform to window coordinates, 4 x 4 float
+
+	Mat objectToScreenTransform;
+
+public:
+	enum class PerspectiveDivision {
+		None, // Affine
+		W,
+		Z
+	};
+
+	PerspectiveDivision perspectiveDivision;
+	bool doClippingInNDC;
+	bool directToScreenTransform; // rename to "do...xyzTransform" ?
+	bool doWindowTransform;
+
+private:
 
 	void setViewport(unsigned int screenWidth, unsigned int screenHeight);
 
@@ -133,4 +157,4 @@ protected:
 
  } /* namespace render */
 
-#endif /* RENDERDEVICE_HPP_ */
+#endif /* SOFTWARERENDERER_HPP_ */

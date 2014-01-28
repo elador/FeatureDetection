@@ -98,7 +98,7 @@ protected:
 	// hierarchicalThresholdsFromFile is only used for reading from the config, then not used anymore.
 
 	float limitReliabilityFilter;	///< This is added to hierarchicalThresholds on startup (read from the config, FD.limitReliabilityFilter), then not used anymore.
-
+	// there is also a VectorMachineClassifier::threshold variable, that is apparently not used by the WVM.
 
 	typedef struct _rec {
 		int x1,x2,y1,y2,uull,uur,dll,dr;

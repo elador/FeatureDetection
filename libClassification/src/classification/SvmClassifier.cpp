@@ -215,7 +215,7 @@ shared_ptr<SvmClassifier> SvmClassifier::loadFromText(const string& classifierFi
 			lineStream >> values[j];
 		svm->supportVectors.push_back(vector);
 	}
-
+	// TODO: Note: We never close the file?
 	logger.info("SVM successfully read.");
 
 	return svm;
