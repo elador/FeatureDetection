@@ -43,20 +43,15 @@
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
 #include "boost/program_options.hpp"
-#include "boost/property_tree/ptree.hpp"
-#include "boost/property_tree/info_parser.hpp"
 #include "boost/algorithm/string.hpp"
 #include "boost/lexical_cast.hpp"
-
-#include "imageio/ImageSource.hpp"
-#include "imageio/FileImageSource.hpp"
-#include "imageio/FileListImageSource.hpp"
-#include "imageio/DirectoryImageSource.hpp"
+#include "boost/filesystem/path.hpp"
 
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
 #include "imageprocessing/ReshapingFilter.hpp"
 #include "imageprocessing/ConversionFilter.hpp"
+#include "imageprocessing/ResizingFilter.hpp"
 #include "imageprocessing/Patch.hpp"
 #include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
 #include "imageprocessing/FilteringPyramidFeatureExtractor.hpp"
@@ -72,12 +67,9 @@
 namespace po = boost::program_options;
 using namespace std;
 using namespace imageprocessing;
-using namespace imageio;
 using logging::Logger;
 using logging::LoggerFactory;
 using logging::loglevel;
-using boost::property_tree::ptree;
-using boost::property_tree::info_parser::read_info;
 using boost::filesystem::path;
 using boost::lexical_cast;
 
@@ -97,24 +89,41 @@ int main(int argc, char *argv[])
 	#endif
 	
 	string verboseLevelConsole;
-	path inputFilenamePos, inputFilenameNeg;
-	path outputFilenamePos, outputFilenameNeg;
+	path inputFilename;
+	path outputFilename;
+	int patchWidth, patchHeight;
+	enum class ConversionMethod {
+		H,
+		WHI
+	};
+	int conversionMethodNum;
+	ConversionMethod conversionMethod;
+	bool doResize;
+	int resizedWidth, resizedHeight;
 
 	try {
 		po::options_description desc("Allowed options");
 		desc.add_options()
-			("help,h",
+			("help",
 				"produce help message")
 			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
 				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
-				  ("input-positives,p", po::value<path>(&inputFilenamePos)->required(),
-				"input file (.txt, containing positive patches)")
-				("input-negatives,n", po::value<path>(&inputFilenameNeg)->required(),
-				"input file (.txt, containing negative patches)")
-				("output-positives,o", po::value<path>(&outputFilenamePos)->required(),
-				"output directory for the positive result patches")
-				("output-negatives,u", po::value<path>(&outputFilenameNeg)->required(),
-				"output directory for the negative result patches")
+			("input,i", po::value<path>(&inputFilename)->required(),
+				"input file (.txt, containing patches)")
+			("output,o", po::value<path>(&outputFilename)->required(),
+				"output file for the result patches")
+			("patch-width,w", po::value<int>(&patchWidth)->required(),
+				"output file for the result patches")
+			("patch-height,h", po::value<int>(&patchHeight)->required(),
+				"output file for the result patches")
+			("method,m", po::value<int>(&conversionMethodNum)->required(),
+				"conversion method: 0 = H, 1 = WHI")
+			("resize,r", po::value<bool>(&doResize)->default_value(false)->implicit_value(true),
+				"todo")
+			("resized-width,s", po::value<int>(&resizedWidth),
+				"todo")
+			("resized-height,t", po::value<int>(&resizedHeight),
+				"todo")
 		;
 
 		po::variables_map vm;
@@ -142,7 +151,7 @@ int main(int argc, char *argv[])
 	else if(boost::iequals(verboseLevelConsole, "DEBUG")) logLevel = loglevel::DEBUG;
 	else if(boost::iequals(verboseLevelConsole, "TRACE")) logLevel = loglevel::TRACE;
 	else {
-		cout << "Error: Invalid loglevel." << endl;
+		cout << "Invalid loglevel." << endl;
 		return EXIT_FAILURE;
 	}
 
@@ -151,11 +160,26 @@ int main(int argc, char *argv[])
 	Logger appLogger = Loggers->getLogger("patchConverter");
 
 	appLogger.debug("Verbose level for console output: " + logging::loglevelToString(logLevel));
+
+	if (conversionMethodNum == 0) {
+		conversionMethod = ConversionMethod::H;
+	}
+	else if (conversionMethodNum == 1) {
+		conversionMethod = ConversionMethod::WHI;
+	} else {
+		appLogger.error("Unknown conversion method.");
+		return EXIT_FAILURE;
+	}
 	
 	// Read a txt patchset from Cog, do WHI, and write a new .txt.
 	// =================================================================
-	vector<cv::Mat> positives;
-	std::ifstream file(inputFilenamePos.string()); // E:/training/ffd_training_regrPaperX200/data/posPatches.txt
+	// -i C:\Users\Patrik\Documents\GitHub\tmp_regre_redMachines\data\posPatches.txt
+	// -i C:\Users\Patrik\Documents\GitHub\tmp_regre_redMachines\data\negPatches.txt
+	// -w 31 -h 31
+	// Example usage:
+	// -i C:\Users\Patrik\Documents\GitHub\tmp_regre_redMachines\data\posPatches.txt -o C:\Users\Patrik\Documents\GitHub\tmp_regre_redMachines\data\posPatches_out.txt -w 31 -h 31 -m 0 -r -s 19 -t 19
+	vector<cv::Mat> patches;
+	std::ifstream file(inputFilename.string());
 	if (!file.is_open()) {
 		appLogger.error("Error opening input file.");
 		return EXIT_FAILURE;
@@ -165,10 +189,8 @@ int main(int argc, char *argv[])
 		if (!std::getline(file, line))
 			break;
 
-		int width = 31;
-		int height = 31;
-		int dimensions = width * height;
-		Mat patch(width, height, CV_8U);
+		int dimensions = patchWidth * patchHeight;
+		Mat patch(patchHeight, patchWidth, CV_8U);
 		std::istringstream lineStream(line);
 		if (!lineStream.good() || lineStream.fail()) {
 			std::cout << "Invalid patches file l2" << std::endl;
@@ -181,91 +203,42 @@ int main(int argc, char *argv[])
 			values[j] = static_cast<uchar>(val*255.0f);
 		}
 
-		positives.push_back(patch);
+		patches.push_back(patch);
 	}
 	file.close();
 
-	vector<cv::Mat> negatives;
-	file.open(inputFilenameNeg.string()); // "E:/training/ffd_training_regrPaperX200/data/negPatches.txt"
-	if (!file.is_open()) {
-		appLogger.error("Error opening input file.");
-		return EXIT_FAILURE;
-	}
-	while (file.good()) {
-		string line;
-		if (!std::getline(file, line))
-			break;
+	vector<shared_ptr<ImageFilter>> filters;
 
-		int width = 31;
-		int height = 31;
-		int dimensions = width * height;
-		Mat patch(width, height, CV_8U);
-		std::istringstream lineStream(line);
-		if (!lineStream.good() || lineStream.fail()) {
-			std::cout << "Invalid patches file l4" << std::endl;
-			return 0;
+	if (doResize) {
+		filters.push_back(make_shared<ResizingFilter>(cv::Size(resizedWidth, resizedHeight)));
+	}
+
+	if (conversionMethod == ConversionMethod::H) {
+		filters.push_back(make_shared<HistogramEqualizationFilter>()); // min/max, stretch to [0, 255] 8U
+		filters.push_back(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0)); // need to go back to [-1, 1] before UnitNormFilter
+		filters.push_back(make_shared<ReshapingFilter>(1));
+	} 
+	else if (conversionMethod == ConversionMethod::WHI) {
+		filters.push_back(make_shared<WhiteningFilter>());
+		filters.push_back(make_shared<HistogramEqualizationFilter>()); // min/max, stretch to [0, 255] 8U
+		filters.push_back(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0)); // need to go back to [-1, 1] before UnitNormFilter
+		filters.push_back(make_shared<UnitNormFilter>(cv::NORM_L2));
+		filters.push_back(make_shared<ReshapingFilter>(1));
+	}
+
+	for (auto& p : patches) {
+		for (const auto& f : filters) {
+			f->applyInPlace(p);
 		}
-		uchar* values = patch.ptr<uchar>(0);
-		float val;
-		for (int j = 0; j < dimensions; ++j) {
-			lineStream >> val;
-			values[j] = static_cast<uchar>(val*255.0f);
-		}
-
-		negatives.push_back(patch);
-	}
-	file.close();
-
-	shared_ptr<WhiteningFilter> fw = make_shared<WhiteningFilter>();
-	shared_ptr<HistogramEqualizationFilter> fh = make_shared<HistogramEqualizationFilter>();
-	shared_ptr<ConversionFilter> fc = make_shared<ConversionFilter>(CV_32F, 1.0/127.5, -1.0);
-	shared_ptr<UnitNormFilter> fi = make_shared<UnitNormFilter>(cv::NORM_L2);
-	shared_ptr<ReshapingFilter> fr = make_shared<ReshapingFilter>(1);
-	for (auto& p : positives) {
-		//p.convertTo(p, CV_32F);
-		fw->applyInPlace(p);
-		// min/max, stretch to [0, 255] 8U
-		fh->applyInPlace(p);
-		// need to go back to [-1, 1] before UnitNormFilter:
-		fc->applyInPlace(p);
-		fi->applyInPlace(p);
-		fr->applyInPlace(p);
-	}
-	for (auto& p : negatives) {
-		fw->applyInPlace(p);
-		fh->applyInPlace(p);
-		fc->applyInPlace(p);
-		fi->applyInPlace(p);
-		fr->applyInPlace(p);
 	}
 	
-	std::ofstream ofile(outputFilenamePos.string()); // "E:/training/ffd_training_regrPaperX200/data/posPatchesWhi.txt"
+	std::ofstream ofile(outputFilename.string());
 	if (!ofile.is_open()) {
 		appLogger.error("Error creating output file.");
 		return EXIT_FAILURE;
 	}
-	for (auto& p : positives) {
-		int width = 31;
-		int height = 31;
-		int dimensions = width * height;
-		float* values = p.ptr<float>(0);
-		float val;
-		for (int j = 0; j < dimensions; ++j) {
-			ofile << values[j] << " ";
-		}
-		ofile << "\n";
-	}
-	ofile.close();
-
-	ofile.open(outputFilenameNeg.string()); // "E:/training/ffd_training_regrPaperX200/data/negPatchesWhi.txt"
-	if (!ofile.is_open()) {
-		appLogger.error("Error creating output file.");
-		return EXIT_FAILURE;
-	}
-	for (auto& p : negatives) {
-		int width = 31;
-		int height = 31;
-		int dimensions = width * height;
+	for (auto& p : patches) {
+		int dimensions = patchWidth * patchHeight;
 		float* values = p.ptr<float>(0);
 		float val;
 		for (int j = 0; j < dimensions; ++j) {
