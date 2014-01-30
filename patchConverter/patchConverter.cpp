@@ -231,6 +231,11 @@ int main(int argc, char *argv[])
 			f->applyInPlace(p);
 		}
 	}
+
+	if (doResize) {
+		patchWidth = resizedWidth;
+		patchHeight = resizedHeight;
+	}
 	
 	std::ofstream ofile(outputFilename.string());
 	if (!ofile.is_open()) {
