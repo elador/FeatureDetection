@@ -31,6 +31,7 @@
 #include <chrono>
 #include <memory>
 #include <iostream>
+#include <random>
 
 extern "C" {
 	//#include "vl/hog.h"
@@ -54,17 +55,10 @@ extern "C" {
 #include "boost/filesystem/path.hpp"
 #include "boost/lexical_cast.hpp"
 
-#include "shapemodels/MorphableModel.hpp"
-#include "shapemodels/OpenCVCameraEstimation.hpp"
-#include "shapemodels/AffineCameraEstimation.hpp"
-#include "render/Camera.hpp"
-#include "render/SoftwareRenderer.hpp"
-
 #include "imageio/ImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
 #include "imageio/FileListImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
-#include "imageio/CameraImageSource.hpp"
 #include "imageio/NamedLabeledImageSource.hpp"
 #include "imageio/DefaultNamedLandmarkSource.hpp"
 #include "imageio/EmptyLandmarkSource.hpp"
@@ -92,8 +86,6 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 	std::copy(v.begin(), v.end(), std::ostream_iterator<T>(cout, " "));
 	return os;
 }
-
-
 
 /*
 #include <fstream>
@@ -336,7 +328,7 @@ private:
 	HogSdmModel model;
 };
 
-enum class MeanTraining {
+enum class MeanTraining { // not needed anymore
 	// on what to train the mean:
 	ON_VJ_DETECTIONS, // orig paper, sect. 3.1. & Fig. 2b)
 	ON_ALL // orig paper?
@@ -353,6 +345,11 @@ enum class MeanNormalization { // what to do with the mean coords after the mean
 };
 // computation...normalization ... alignment ...
 
+enum class FilterByFaceDetection {
+	NONE,
+	VJ
+};
+
 int main(int argc, char *argv[])
 {
 	#ifdef WIN32
@@ -361,16 +358,8 @@ int main(int argc, char *argv[])
 	#endif
 	
 	string verboseLevelConsole;
-	bool useFileList = false;
-	bool useImgs = false;
-	bool useDirectory = false;
-	vector<path> inputPaths;
-	path inputFilelist;
-	path inputDirectory;
-	vector<path> inputFilenames;
-	shared_ptr<ImageSource> imageSource;
-	path landmarksDir; // TODO: Make more dynamic wrt landmark format. a) What about the loading-flags (1_Per_Folder etc) we have? b) Expose those flags to cmdline? c) Make a LmSourceLoader and he knows about a LM_TYPE (each corresponds to a Parser/Loader class?)
-	string landmarkType;
+	path outputFilename;
+	path configFilename;
 
 	try {
 		po::options_description desc("Allowed options");
@@ -379,23 +368,18 @@ int main(int argc, char *argv[])
 				"produce help message")
 			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
 				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
-			("input,i", po::value<vector<path>>(&inputPaths)->required(), 
-				"input from one or more files, a directory, or a  .lst/.txt-file containing a list of images")
-			("landmarks,l", po::value<path>(&landmarksDir)->required(), 
-				"load landmark files from the given folder")
-			("landmark-type,t", po::value<string>(&landmarkType)->required(), 
-				"specify the type of landmarks to load: ibug")
+			("config,c", po::value<path>(&configFilename)->required(),
+				"input config")
+			("output,o", po::value<path>(&outputFilename)->required(),
+				"output")
 		;
 
-		po::positional_options_description p;
-		p.add("input", -1);
-
 		po::variables_map vm;
-		po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
+		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
 		po::notify(vm);
 
 		if (vm.count("help")) {
-			cout << "Usage: fitter [options]\n";
+			cout << "Usage: sdmTraining [options]\n";
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
@@ -423,90 +407,143 @@ int main(int argc, char *argv[])
 
 	appLogger.debug("Verbose level for console output: " + logging::loglevelToString(logLevel));
 
-	if (inputPaths.size() > 1) {
-		// We assume the user has given several, valid images
-		useImgs = true;
-		inputFilenames = inputPaths;
-	} else if (inputPaths.size() == 1) {
-		// We assume the user has given either an image, directory, or a .lst-file
-		if (inputPaths[0].extension().string() == ".lst" || inputPaths[0].extension().string() == ".txt") { // check for .lst or .txt first
-			useFileList = true;
-			inputFilelist = inputPaths.front();
-		} else if (boost::filesystem::is_directory(inputPaths[0])) { // check if it's a directory
-			useDirectory = true;
-			inputDirectory = inputPaths.front();
-		} else { // it must be an image
-			useImgs = true;
-			inputFilenames = inputPaths;
+	struct Dataset {
+		string databaseName;
+		path images;
+		path groundtruth;
+		string landmarkType;
+		map<string, string> landmarkMappings; // from model (lhs) to thisDb (rhs)
+
+		shared_ptr<LabeledImageSource> labeledImageSource;
+	};
+
+	string modelLandmarkType;
+	std::vector<string> modelLandmarks;
+	vector<Dataset> trainingDatasets;
+
+	// Read the stuff from the config:
+	ptree pt;
+	try {
+		read_info(configFilename.string(), pt);
+	}
+	catch (const boost::property_tree::ptree_error& error) {
+		appLogger.error(error.what());
+		return EXIT_FAILURE;
+	}
+	try {
+		// Get stuff from the modelLandmarks subtree:
+		ptree ptModelLandmarks = pt.get_child("modelLandmarks");
+		modelLandmarkType = ptModelLandmarks.get<string>("landmarkType");
+		appLogger.debug("Type of the model landmarks: " + modelLandmarkType);
+		string modelLandmarksUsage = ptModelLandmarks.get<string>("landmarks");
+		if (modelLandmarksUsage.empty()) {
+			// value is empty, meaning it's a node and the user should specify a list of 'landmarks'
+			ptree ptmodelLandmarksList = ptModelLandmarks.get_child("landmarks");
+			for (const auto& kv : ptmodelLandmarksList) {
+				modelLandmarks.push_back(kv.first);
+			}
+			appLogger.debug("Loaded a list of " + lexical_cast<string>(modelLandmarks.size()) + " landmarks to train the model.");
 		}
-	} else {
-		appLogger.error("Please either specify one or several files, a directory, or a .lst-file containing a list of images to run the program!");
+		else if (modelLandmarksUsage == "all") {
+			throw std::logic_error("Using 'all' modelLandmarks is not implemented yet - specify a list for now.");
+		} 
+		else {
+			throw std::logic_error("Error reading the models 'landmarks' key, should either provide a node with a list of landmarks or specify 'all'.");
+		}
+
+		// Get stuff from the trainingData subtree:
+		ptree ptTrainingData = pt.get_child("trainingData");
+		for (const auto& kv : ptTrainingData) { // For each database:
+			appLogger.debug("Using database '" + kv.first + "' for training:");
+			Dataset dataset;
+			dataset.databaseName = kv.first;
+			dataset.images = kv.second.get<path>("images");
+			dataset.groundtruth = kv.second.get<path>("groundtruth");
+			dataset.landmarkType = kv.second.get<string>("landmarkType");
+			string landmarkMappingsUsage = kv.second.get<string>("landmarkMappings");
+			if (landmarkMappingsUsage.empty()) {
+				// value is empty, meaning it's a node and the user should specify a list of landmarkMappings
+				ptree ptLandmarkMappings = kv.second.get_child("landmarkMappings");
+				for (const auto& kv : ptLandmarkMappings) {
+					dataset.landmarkMappings.insert(make_pair(kv.first, kv.second.get_value<string>()));
+				}
+				appLogger.debug("Loaded a list of " + lexical_cast<string>(dataset.landmarkMappings.size()) + " landmark mappings.");
+				if (dataset.landmarkMappings.size() < modelLandmarks.size()) {
+					throw std::logic_error("Error reading the landmark mappings, there are less mappings given than the number of landmarks that should be used to train the model.");
+				}
+			}
+			else if (landmarkMappingsUsage == "none") {
+				// generate identity mappings
+				for (const auto& lm : modelLandmarks) {
+					dataset.landmarkMappings.insert(make_pair(lm, lm));
+				}
+				appLogger.debug("Generated a list of " + lexical_cast<string>(dataset.landmarkMappings.size()) + " identity landmark mappings.");
+			}
+			else {
+				throw std::logic_error("Error reading the landmark mappings, should either provide list of mappings or specify 'none'.");
+			}
+			trainingDatasets.push_back(dataset);
+		}
+	}
+	catch (const boost::property_tree::ptree_error& error) {
+		appLogger.error("Parsing config: " + string(error.what()));
+		return EXIT_FAILURE;
+	}
+	catch (const std::logic_error& e) {
+		appLogger.error("Parsing config: " + string(e.what()));
 		return EXIT_FAILURE;
 	}
 
-	if (useFileList==true) {
-		appLogger.info("Using file-list as input: " + inputFilelist.string());
-		shared_ptr<ImageSource> fileListImgSrc; // TODO VS2013 change to unique_ptr, rest below also
-		try {
-			fileListImgSrc = make_shared<FileListImageSource>(inputFilelist.string(), "C:\\Users\\Patrik\\Documents\\GitHub\\data\\fddb\\originalPics\\", ".jpg");
-		} catch(const std::runtime_error& e) {
-			appLogger.error(e.what());
+	// Read in the image sources:
+	for (auto& d : trainingDatasets) {
+		// Load the images:
+		shared_ptr<ImageSource> imageSource;
+		// We assume the user has given either a directory or a .lst/.txt-file
+		if (d.images.extension().string() == ".lst" || d.images.extension().string() == ".txt") { // check for .lst or .txt first
+			appLogger.info("Using file-list as input: " + d.images.string());
+			shared_ptr<ImageSource> fileListImgSrc; // TODO VS2013 change to unique_ptr, rest below also
+			try {
+				fileListImgSrc = make_shared<FileListImageSource>(d.images.string());
+			}
+			catch (const std::runtime_error& e) {
+				appLogger.error(e.what());
+				return EXIT_FAILURE;
+			}
+			imageSource = fileListImgSrc;
+		}
+		else if (boost::filesystem::is_directory(d.images)) {
+			appLogger.info("Using input images from directory: " + d.images.string());
+			try {
+				imageSource = make_shared<DirectoryImageSource>(d.images.string());
+			}
+			catch (const std::runtime_error& e) {
+				appLogger.error(e.what());
+				return EXIT_FAILURE;
+			}
+		}
+		else {
+			appLogger.error("The path given is neither a directory nor a .lst/.txt-file containing a list of images.");
 			return EXIT_FAILURE;
 		}
-		imageSource = fileListImgSrc;
-	}
-	if (useImgs==true) {
-		//imageSource = make_shared<FileImageSource>(inputFilenames);
-		//imageSource = make_shared<RepeatingFileImageSource>("C:\\Users\\Patrik\\GitHub\\data\\firstrun\\ws_8.png");
-		appLogger.info("Using input images: ");
-		vector<string> inputFilenamesStrings;	// Hack until we use vector<path> (?)
-		for (const auto& fn : inputFilenames) {
-			appLogger.info(fn.string());
-			inputFilenamesStrings.push_back(fn.string());
+		// Load the ground truth
+		shared_ptr<NamedLandmarkSource> landmarkSource;
+		vector<path> groundtruthDirs = { d.groundtruth };
+		shared_ptr<LandmarkFormatParser> landmarkFormatParser;
+		if (boost::iequals(d.landmarkType, "ibug")) {
+			landmarkFormatParser = make_shared<IbugLandmarkFormatParser>();
+			landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".pts", GatherMethod::ONE_FILE_PER_IMAGE_SAME_DIR, groundtruthDirs), landmarkFormatParser);
 		}
-		shared_ptr<ImageSource> fileImgSrc;
-		try {
-			fileImgSrc = make_shared<FileImageSource>(inputFilenamesStrings);
-		} catch(const std::runtime_error& e) {
-			appLogger.error(e.what());
+		else {
+			cout << "Error: Invalid ground truth type." << endl;
 			return EXIT_FAILURE;
 		}
-		imageSource = fileImgSrc;
-	}
-	if (useDirectory==true) {
-		appLogger.info("Using input images from directory: " + inputDirectory.string());
-		try {
-			imageSource = make_shared<DirectoryImageSource>(inputDirectory.string());
-		} catch(const std::runtime_error& e) {
-			appLogger.error(e.what());
-			return EXIT_FAILURE;
-		}
+		d.labeledImageSource = make_shared<NamedLabeledImageSource>(imageSource, landmarkSource);
 	}
 
-	// Load the ground truth
-	// Either a) use if/else for imageSource or labeledImageSource, or b) use an EmptyLandmarkSoure
-	shared_ptr<LabeledImageSource> labeledImageSource;
-	shared_ptr<NamedLandmarkSource> landmarkSource;
-
-	vector<path> groundtruthDirs; groundtruthDirs.push_back(landmarksDir); // Todo: Make cmdline use a vector<path>
-	shared_ptr<LandmarkFormatParser> landmarkFormatParser;
-	if (boost::iequals(landmarkType, "ibug")) {
-		landmarkFormatParser = make_shared<IbugLandmarkFormatParser>();
-		landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".pts", GatherMethod::ONE_FILE_PER_IMAGE_SAME_DIR, groundtruthDirs), landmarkFormatParser);
-	} else {
-		cout << "Error: Invalid ground truth type." << endl;
-		return EXIT_FAILURE;
-	}
-
-	labeledImageSource = make_shared<NamedLabeledImageSource>(imageSource, landmarkSource);
 		
 	std::chrono::time_point<std::chrono::system_clock> start, end;
-	Mat img;
-	const string windowName = "win";
 
-	vector<imageio::ModelLandmark> landmarks;
-
-	cv::namedWindow(windowName);
+	//vector<imageio::ModelLandmark> landmarks;
 
 	//HogSdmModel hogModel = HogSdmModel::load("C:\\Users\\Patrik\\Documents\\GitHub\\SGD_Zhenhua_11012014\\SDM_Model_HOG_Zhenhua_11012014.txt");
 	//HogSdmModelFitting modelFitter(hogModel);
@@ -519,57 +556,66 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	// Settings:
-	MeanTraining meanTraining = MeanTraining::ON_VJ_DETECTIONS;
+	//MeanTraining meanTraining = MeanTraining::ON_VJ_DETECTIONS;
 	MeanPreAlign meanPreAlign = MeanPreAlign::NONE;
 	MeanNormalization meanNormalization = MeanNormalization::UNIT_SUM_SQUARED_NORMS;
+	FilterByFaceDetection filterByFaceDetection = FilterByFaceDetection::VJ;
+	// Add a switch "use_GT_as_detectionResults" ?
+	
 	// Our data:
 	vector<std::tuple<Mat, cv::Rect, vector<shared_ptr<Landmark>>>> trainingData;
-
-	if (meanTraining == MeanTraining::ON_ALL) {
-		// 1. Use all the images for training
-		while (labeledImageSource->next()) {
-			vector<shared_ptr<Landmark>> landmarks = labeledImageSource->getLandmarks().getLandmarks();
-			// check if landmarks.size() == numModelLandmarks ?
-			Mat img = labeledImageSource->getImage();
-			trainingData.push_back(std::make_tuple(img, cv::Rect(), landmarks));
+	for (const auto& d : trainingDatasets) {
+		if (filterByFaceDetection == FilterByFaceDetection::NONE) {
+			// 1. Use all the images for training
+			while (d.labeledImageSource->next()) {
+				vector<shared_ptr<Landmark>> landmarks = d.labeledImageSource->getLandmarks().getLandmarks();
+				// check if landmarks.size() == numModelLandmarks ?
+				// TODO: Filter the landmarks! (and add as Mat)
+				Mat img = d.labeledImageSource->getImage();
+				trainingData.push_back(std::make_tuple(img, cv::Rect(), landmarks));
+			}
 		}
-	}
-	else if (meanTraining == MeanTraining::ON_VJ_DETECTIONS) {
-		// 1. First, check on which faces the face-detection succeeds. Then only use these images for training.
-		//    "succeeds" means all ground-truth landmarks are inside the face-box. This is reasonable for a face-
-		//    detector like OCV V&J which has a big face-box, but for others, another method is necessary.
-		while (labeledImageSource->next()) {
-			vector<shared_ptr<Landmark>> landmarks = labeledImageSource->getLandmarks().getLandmarks();
-			// check if landmarks.size() == numModelLandmarks
-			Mat img = labeledImageSource->getImage();
-			vector<cv::Rect> detectedFaces;
-			faceCascade.detectMultiScale(img, detectedFaces, 1.2, 2, 0, cv::Size(50, 50));
-			if (detectedFaces.empty()) {
-				continue;
-			}
-			Mat output = img.clone();
-			for (const auto& f : detectedFaces) {
-				cv::rectangle(output, f, cv::Scalar(0.0f, 0.0f, 255.0f));
-			}
-			// check if the detected face is a valid one:
-			// i.e. for now, if the ground-truth landmarks 37 (reye_oc), 46 (leye_oc) and 58 (mouth_ll_c) are inside the face-box
-			// (should add: _and_ the face-box is not bigger than IED*2 or something)
-			bool skipImage = false;
-			for (const auto& lm : landmarks) {
-				if (lm->getName() == "37" || lm->getName() == "46" || lm->getName() == "58") {
-					if (!detectedFaces[0].contains(lm->getPoint2D())) {
-						skipImage = true;
-						break; // if any LM is not inside, skip this training image
-						// Note: improvement: if the first face-box doesn't work, try the other ones
+		else if (filterByFaceDetection == FilterByFaceDetection::VJ) {
+			// 1. First, check on which faces the face-detection succeeds. Then only use these images for training.
+			//    "succeeds" means all ground-truth landmarks are inside the face-box. This is reasonable for a face-
+			//    detector like OCV V&J which has a big face-box, but for others, another method is necessary.
+			while (d.labeledImageSource->next()) {
+				vector<shared_ptr<Landmark>> landmarks = d.labeledImageSource->getLandmarks().getLandmarks();
+				// check if landmarks.size() == numModelLandmarks
+				Mat img = d.labeledImageSource->getImage();
+				vector<cv::Rect> detectedFaces;
+				faceCascade.detectMultiScale(img, detectedFaces, 1.2, 2, 0, cv::Size(50, 50));
+				if (detectedFaces.empty()) {
+					continue;
+				}
+				Mat output = img.clone();
+				for (const auto& f : detectedFaces) {
+					cv::rectangle(output, f, cv::Scalar(0.0f, 0.0f, 255.0f));
+				}
+				// check if the detected face is a valid one:
+				// i.e. for now, if the ground-truth landmarks 37 (reye_oc), 46 (leye_oc) and 58 (mouth_ll_c) are inside the face-box
+				// (should add: _and_ the face-box is not bigger than IED*2 or something)
+				bool skipImage = false;
+				for (const auto& lm : landmarks) {
+					if (lm->getName() == "37" || lm->getName() == "46" || lm->getName() == "58") {
+						if (!detectedFaces[0].contains(lm->getPoint2D())) {
+							skipImage = true;
+							break; // if any LM is not inside, skip this training image
+							// Note: improvement: if the first face-box doesn't work, try the other ones
+						}
 					}
 				}
+				if (skipImage) {
+					continue;
+				}
+				trainingData.push_back(std::make_tuple(img, detectedFaces[0], landmarks));
 			}
-			if (skipImage) {
-				continue;
-			}
-			trainingData.push_back(std::make_tuple(img, detectedFaces[0], landmarks));
 		}
+
 	}
+
+
+
 	
 	// 2. Calculate the mean-shape of all training images
 	//    Afterwards: We could do some procrustes and align all shapes to the calculated mean-shape. But actually just the mean calculated above is a good approximation.
@@ -880,54 +926,13 @@ int main(int argc, char *argv[])
 	Mat regulariser = Mat::eye(featureDimension * numModelLandmarks + 1, featureDimension * numModelLandmarks + 1, CV_32FC1) * lambda;
 	regulariser.at<float>(regulariser.rows - 1, regulariser.cols - 1) = 0.0f; // no lambda for the bias
 	//		solve for x!
-	Mat AAtReg = AtA + regulariser;
-	Mat AAtRegInv = AAtReg.inv(/*cv::DECOMP_SVD*/);
-	Mat AAtRegInvA = AAtRegInv * featureMatrix;
-	Mat AAtRegInvAbt = AAtRegInvA * deltaShape.t(); // = x
+	Mat AtAReg = AtA + regulariser;
+	Mat AtARegInv = AtAReg.inv(cv::DECOMP_SVD); // default is LU
+	Mat AtARegInvAt = AtARegInv * featureMatrix.t();
+	Mat AAtRegInvAtb = AtARegInvAt * deltaShape; // = x
 
 	// 6. Do the same again for all cascade steps
 
-	while(labeledImageSource->next()) {
-		start = std::chrono::system_clock::now();
-		appLogger.info("Starting to process " + labeledImageSource->getName().string());
-		img = labeledImageSource->getImage();
-		
-		LandmarkCollection lms = labeledImageSource->getLandmarks();
-		vector<shared_ptr<Landmark>> lmsv = lms.getLandmarks();
-		landmarks.clear();
-		Mat landmarksImage = img.clone(); // blue rect = the used landmarks
-		/*
-		for (const auto& lm : lmsv) {
-			lm->draw(landmarksImage);
-			landmarks.emplace_back(imageio::ModelLandmark(lm->getName(), lm->getPosition2D()));
-			cv::rectangle(landmarksImage, cv::Point(cvRound(lm->getX() - 2.0f), cvRound(lm->getY() - 2.0f)), cv::Point(cvRound(lm->getX() + 2.0f), cvRound(lm->getY() + 2.0f)), cv::Scalar(255, 0, 0));
-		}*/
-
-		Mat imgGray;
-		cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);
-		vector<cv::Rect> faces;
-		float score, notFace = 0.5;
-		
-		// face detection
-		//faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
-		faces.push_back({ 172, 199, 278, 278 });
-		if (faces.empty()) {
-			cv::imshow(windowName, landmarksImage);
-			cv::waitKey(5);
-			continue;
-		}
-		for (const auto& f : faces) {
-			cv::rectangle(landmarksImage, f, cv::Scalar(0.0f, 0.0f, 255.0f));
-		}
-		
-		end = std::chrono::system_clock::now();
-		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-		appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
-		
-		cv::imshow(windowName, landmarksImage);
-		cv::waitKey(5);
-
-	}
 
 	return 0;
 }

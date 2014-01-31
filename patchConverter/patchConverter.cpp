@@ -214,8 +214,9 @@ int main(int argc, char *argv[])
 	}
 
 	if (conversionMethod == ConversionMethod::H) {
+		// input is [0, 1] float, we convert to [0, 255] on loading because HistEq needs U8
 		filters.push_back(make_shared<HistogramEqualizationFilter>()); // min/max, stretch to [0, 255] 8U
-		filters.push_back(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0)); // need to go back to [-1, 1] before UnitNormFilter
+		filters.push_back(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0)); // go back to [-1, 1]
 		filters.push_back(make_shared<ReshapingFilter>(1));
 	} 
 	else if (conversionMethod == ConversionMethod::WHI) {
@@ -245,7 +246,6 @@ int main(int argc, char *argv[])
 	for (auto& p : patches) {
 		int dimensions = patchWidth * patchHeight;
 		float* values = p.ptr<float>(0);
-		float val;
 		for (int j = 0; j < dimensions; ++j) {
 			ofile << values[j] << " ";
 		}
