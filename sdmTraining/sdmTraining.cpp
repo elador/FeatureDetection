@@ -101,6 +101,36 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 using boost::lexical_cast;
 */
 
+class FeatureDescriptorExtractor
+{
+public:
+	// returns a Matrix, as many rows as points, 1 descriptor = 1 row
+	virtual cv::Mat getDescriptors(const cv::Mat image, std::vector<cv::Point2f> locations) = 0;
+};
+
+class SiftFeatureDescriptorExtractor : public FeatureDescriptorExtractor
+{
+public:
+	// c'tor with param diameter & orientation? (0.0f = right?)
+	cv::Mat getDescriptors(const cv::Mat image, std::vector<cv::Point2f> locations) {
+		Mat grayImage;
+		if (image.channels() == 3) {
+			cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
+		} else {
+			grayImage = image;
+		}
+		cv::SIFT sift; // init only once, could reuse
+		vector<cv::KeyPoint> keypoints;
+		for (const auto& loc : locations) {
+			keypoints.emplace_back(cv::KeyPoint(loc, 32.0f, 0.0f)); // Angle is set to 0. If it's -1, SIFT will be calculated for 361degrees. But Paper (email) says upwards.
+		}
+		Mat siftDescriptors;
+		sift(grayImage, Mat(), keypoints, siftDescriptors, true);
+		//cv::drawKeypoints(img, keypoints, img, Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+		return siftDescriptors;
+	};
+};
+
 /*
 Some notes:
  - The current model ('SDM_Model_HOG_Zhenhua_11012014.txt') uses roughly 1/10 of
@@ -347,7 +377,7 @@ enum class MeanNormalization { // what to do with the mean coords after the mean
 
 enum class FilterByFaceDetection {
 	NONE,
-	VJ
+	VIOLAJONES
 };
 
 int main(int argc, char *argv[])
@@ -420,6 +450,7 @@ int main(int argc, char *argv[])
 	string modelLandmarkType;
 	std::vector<string> modelLandmarks;
 	vector<Dataset> trainingDatasets;
+	int numSamplesPerImage; // How many Monte Carlo samples to generate per training image, in addition to the original image. Default: 10
 
 	// Read the stuff from the config:
 	ptree pt;
@@ -431,6 +462,10 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	try {
+		// Get stuff from the parameters subtree
+		ptree ptParameters = pt.get_child("parameters");
+		numSamplesPerImage = ptParameters.get<int>("numSamplesPerImage", 10);
+
 		// Get stuff from the modelLandmarks subtree:
 		ptree ptModelLandmarks = pt.get_child("modelLandmarks");
 		modelLandmarkType = ptModelLandmarks.get<string>("landmarkType");
@@ -464,8 +499,8 @@ int main(int argc, char *argv[])
 			if (landmarkMappingsUsage.empty()) {
 				// value is empty, meaning it's a node and the user should specify a list of landmarkMappings
 				ptree ptLandmarkMappings = kv.second.get_child("landmarkMappings");
-				for (const auto& kv : ptLandmarkMappings) {
-					dataset.landmarkMappings.insert(make_pair(kv.first, kv.second.get_value<string>()));
+				for (const auto& mapping : ptLandmarkMappings) {
+					dataset.landmarkMappings.insert(make_pair(mapping.first, mapping.second.get_value<string>()));
 				}
 				appLogger.debug("Loaded a list of " + lexical_cast<string>(dataset.landmarkMappings.size()) + " landmark mappings.");
 				if (dataset.landmarkMappings.size() < modelLandmarks.size()) {
@@ -559,29 +594,42 @@ int main(int argc, char *argv[])
 	//MeanTraining meanTraining = MeanTraining::ON_VJ_DETECTIONS;
 	MeanPreAlign meanPreAlign = MeanPreAlign::NONE;
 	MeanNormalization meanNormalization = MeanNormalization::UNIT_SUM_SQUARED_NORMS;
-	FilterByFaceDetection filterByFaceDetection = FilterByFaceDetection::VJ;
+	FilterByFaceDetection filterByFaceDetection = FilterByFaceDetection::VIOLAJONES;
 	// Add a switch "use_GT_as_detectionResults" ?
 	
 	// Our data:
-	vector<std::tuple<Mat, cv::Rect, vector<shared_ptr<Landmark>>>> trainingData;
+	vector<std::tuple<Mat, cv::Rect, Mat>> trainingData; // img, fb, groundtruth-lms (model ones)
 	for (const auto& d : trainingDatasets) {
 		if (filterByFaceDetection == FilterByFaceDetection::NONE) {
 			// 1. Use all the images for training
 			while (d.labeledImageSource->next()) {
-				vector<shared_ptr<Landmark>> landmarks = d.labeledImageSource->getLandmarks().getLandmarks();
-				// check if landmarks.size() == numModelLandmarks ?
-				// TODO: Filter the landmarks! (and add as Mat)
+				Mat landmarks(1, 2 * modelLandmarks.size(), CV_32FC1);
+				int currentLandmark = 0;
+				for (const auto ml : modelLandmarks) {
+					try {
+						string lmIdInDb = d.landmarkMappings.at(ml);
+						shared_ptr<Landmark> lm = d.labeledImageSource->getLandmarks().getLandmark(lmIdInDb);
+						landmarks.at<float>(0, currentLandmark) = lm->getX();
+						landmarks.at<float>(0, currentLandmark + modelLandmarks.size()) = lm->getY();
+					} catch (std::out_of_range& e) {
+						appLogger.error(e.what()); // mapping failed
+						return EXIT_FAILURE;
+					}
+					catch (std::invalid_argument& e) {
+						appLogger.error(e.what()); // lm not in db
+						return EXIT_FAILURE;
+					}
+					++currentLandmark;
+				}
 				Mat img = d.labeledImageSource->getImage();
 				trainingData.push_back(std::make_tuple(img, cv::Rect(), landmarks));
 			}
 		}
-		else if (filterByFaceDetection == FilterByFaceDetection::VJ) {
+		else if (filterByFaceDetection == FilterByFaceDetection::VIOLAJONES) {
 			// 1. First, check on which faces the face-detection succeeds. Then only use these images for training.
 			//    "succeeds" means all ground-truth landmarks are inside the face-box. This is reasonable for a face-
 			//    detector like OCV V&J which has a big face-box, but for others, another method is necessary.
 			while (d.labeledImageSource->next()) {
-				vector<shared_ptr<Landmark>> landmarks = d.labeledImageSource->getLandmarks().getLandmarks();
-				// check if landmarks.size() == numModelLandmarks
 				Mat img = d.labeledImageSource->getImage();
 				vector<cv::Rect> detectedFaces;
 				faceCascade.detectMultiScale(img, detectedFaces, 1.2, 2, 0, cv::Size(50, 50));
@@ -595,8 +643,9 @@ int main(int argc, char *argv[])
 				// check if the detected face is a valid one:
 				// i.e. for now, if the ground-truth landmarks 37 (reye_oc), 46 (leye_oc) and 58 (mouth_ll_c) are inside the face-box
 				// (should add: _and_ the face-box is not bigger than IED*2 or something)
+				vector<shared_ptr<Landmark>> allLandmarks = d.labeledImageSource->getLandmarks().getLandmarks();
 				bool skipImage = false;
-				for (const auto& lm : landmarks) {
+				for (const auto& lm : allLandmarks) {
 					if (lm->getName() == "37" || lm->getName() == "46" || lm->getName() == "58") {
 						if (!detectedFaces[0].contains(lm->getPoint2D())) {
 							skipImage = true;
@@ -607,6 +656,26 @@ int main(int argc, char *argv[])
 				}
 				if (skipImage) {
 					continue;
+				}
+				// We're using the image:
+				Mat landmarks(1, 2 * modelLandmarks.size(), CV_32FC1);
+				int currentLandmark = 0;
+				for (const auto ml : modelLandmarks) {
+					try {
+						string lmIdInDb = d.landmarkMappings.at(ml);
+						shared_ptr<Landmark> lm = d.labeledImageSource->getLandmarks().getLandmark(lmIdInDb);
+						landmarks.at<float>(0, currentLandmark) = lm->getX();
+						landmarks.at<float>(0, currentLandmark + modelLandmarks.size()) = lm->getY();
+					}
+					catch (std::out_of_range& e) {
+						appLogger.error(e.what()); // mapping failed
+						return EXIT_FAILURE;
+					}
+					catch (std::invalid_argument& e) {
+						appLogger.error(e.what()); // lm not in db
+						return EXIT_FAILURE;
+					}
+					++currentLandmark;
 				}
 				trainingData.push_back(std::make_tuple(img, detectedFaces[0], landmarks));
 			}
@@ -621,8 +690,7 @@ int main(int argc, char *argv[])
 	//    Afterwards: We could do some procrustes and align all shapes to the calculated mean-shape. But actually just the mean calculated above is a good approximation.
 	//    Q: At least do some centering/scaling?
 	int numImages = trainingData.size();
-	int numModelLandmarks = 68; // Todo: Do dynamically?
-	int numSamplesPerImage = 2; // How many Monte Carlo samples to generate per training image
+	int numModelLandmarks = modelLandmarks.size();
 	Mat groundtruthLandmarks(numImages, 2 * numModelLandmarks, CV_32FC1);
 	Mat groundtruthLandmarksNormalizedByUnitFacebox(2 * numModelLandmarks, numImages, CV_32FC1);
 	int currentImage = 0;
@@ -649,12 +717,9 @@ int main(int argc, char *argv[])
 		// just copy the coords over into groundtruthLandmarks
 		for (const auto& data : trainingData) {
 			Mat img = std::get<0>(data);
-			vector<shared_ptr<Landmark>> lmsv = std::get<2>(data);
-			// check if lmsv.size() == numModelLandmarks?
-			for (int i = 0; i < lmsv.size(); ++i) {
-				groundtruthLandmarks.at<float>(currentImage, i) = lmsv[i]->getX();
-				groundtruthLandmarks.at<float>(currentImage, i + numModelLandmarks) = lmsv[i]->getY();
-			}
+			Mat lms = std::get<2>(data);
+			Mat groundtruthLandmarksRow = groundtruthLandmarks.row(currentImage);
+			lms.copyTo(groundtruthLandmarksRow);
 			currentImage++;
 		}
 	}
@@ -712,7 +777,6 @@ int main(int argc, char *argv[])
 	for (const auto& data : trainingData) {
 		Mat img = std::get<0>(data);
 		cv::Rect detectedFace = std::get<1>(data); // Caution: Depending on flags selected earlier, we might not have detected faces yet!
-		vector<shared_ptr<Landmark>> lmsv = std::get<2>(data);
 		
 		// calculate the centroid and the min-max bounding-box (for the width/height) of the ground-truth:
 		Scalar gtMeanX = cv::mean(groundtruthLandmarks.row(currentImage).colRange(0, numModelLandmarks));
@@ -720,7 +784,7 @@ int main(int argc, char *argv[])
 		double minWidth, maxWidth, minHeight, maxHeight;
 		cv::minMaxIdx(groundtruthLandmarks.row(currentImage).colRange(0, numModelLandmarks), &minWidth, &maxWidth);
 		cv::minMaxIdx(groundtruthLandmarks.row(currentImage).colRange(numModelLandmarks, numModelLandmarks * 2), &minHeight, &maxHeight);
-		cv::rectangle(img, cv::Rect(minWidth, minHeight, maxWidth - minWidth, maxHeight - minHeight), Scalar(255.0f, 0.0f, 0.0f));
+		//cv::rectangle(img, cv::Rect(minWidth, minHeight, maxWidth - minWidth, maxHeight - minHeight), Scalar(255.0f, 0.0f, 0.0f));
 		
 		for (int i = 0; i < numModelLandmarks; ++i) {
 			//cv::circle(img, Point2f(groundtruthLandmarks.at<float>(currentImage, i), groundtruthLandmarks.at<float>(currentImage, i + numModelLandmarks)), 3, Scalar(0.0f, 255.0f, 0.0f));
@@ -739,7 +803,7 @@ int main(int argc, char *argv[])
 		for (int i = 0; i < numModelLandmarks; ++i) {
 			//cv::circle(img, Point2f(initialShapeEstimateX0.at<float>(0, i), initialShapeEstimateX0.at<float>(0, i + numModelLandmarks)), 3, Scalar(255.0f, 0.0f, 0.0f));
 		}
-		cv::rectangle(img, detectedFace, Scalar(0.0f, 0.0f, 255.0f));
+		//cv::rectangle(img, detectedFace, Scalar(0.0f, 0.0f, 255.0f));
 
 		// calculate the centroid and the min-max bounding-box (for the width/height) of the initial estimate x_0:
 		Scalar x0MeanX = cv::mean(initialShapeEstimateX0_x);
@@ -747,10 +811,10 @@ int main(int argc, char *argv[])
 		double minWidthX0, maxWidthX0, minHeightX0, maxHeightX0;
 		cv::minMaxIdx(initialShapeEstimateX0_x, &minWidthX0, &maxWidthX0);
 		cv::minMaxIdx(initialShapeEstimateX0_y, &minHeightX0, &maxHeightX0);
-		cv::rectangle(img, cv::Rect(minWidthX0, minHeightX0, maxWidthX0 - minWidthX0, maxHeightX0 - minHeightX0), Scalar(255.0f, 0.0f, 0.0f));
+		//cv::rectangle(img, cv::Rect(minWidthX0, minHeightX0, maxWidthX0 - minWidthX0, maxHeightX0 - minHeightX0), Scalar(255.0f, 0.0f, 0.0f));
 
-		cv::circle(img, Point2f(gtMeanX[0], gtMeanY[0]), 2, Scalar(0.0f, 0.0f, 255.0f)); // gt
-		cv::circle(img, Point2f(x0MeanX[0], x0MeanY[0]), 2, Scalar(0.0f, 255.0f, 255.0f)); // x0
+		//cv::circle(img, Point2f(gtMeanX[0], gtMeanY[0]), 2, Scalar(0.0f, 0.0f, 255.0f)); // gt
+		//cv::circle(img, Point2f(x0MeanX[0], x0MeanY[0]), 2, Scalar(0.0f, 255.0f, 255.0f)); // x0
 		
 		delta_tx.at<float>(currentImage) = (gtMeanX[0] - x0MeanX[0]) / detectedFace.width; // This is in relation to the V&J face-box
 		delta_ty.at<float>(currentImage) = (gtMeanY[0] - x0MeanY[0]) / detectedFace.height;
@@ -839,7 +903,6 @@ int main(int argc, char *argv[])
 		// a) Run the face-detector (the same that we're going to use in the testing-stage) (already done)
 		Mat img = std::get<0>(data);
 		cv::Rect detectedFace = std::get<1>(data); // TODO: Careful, depending on options, we might not have face-boxes yet
-		vector<shared_ptr<Landmark>> lmsv = std::get<2>(data);
 		// b) Align the model to the current face-box. (rigid, only centering of the mean). x_0
 		// Initial estimate x_0: Center the mean face at the [-0.5, 0.5] x [-0.5, 0.5] square (assuming the face-box is that square)
 		// More precise: Take the mean as it is (assume it is in a space [-0.5, 0.5] x [-0.5, 0.5]), and just place it in the face-box as
@@ -852,16 +915,16 @@ int main(int argc, char *argv[])
 		Mat initialShapeRow = initialShape.row(currentImage * (numSamplesPerImage + 1));
 		initialShapeEstimateX0.copyTo(initialShapeRow);
 		for (int i = 0; i < numModelLandmarks; ++i) {
-			cv::circle(img, Point2f(initialShapeEstimateX0.at<float>(0, i), initialShapeEstimateX0.at<float>(0, i + numModelLandmarks)), 2, Scalar(255.0f, 0.0f, 0.0f));
+			//cv::circle(img, Point2f(initialShapeEstimateX0.at<float>(0, i), initialShapeEstimateX0.at<float>(0, i + numModelLandmarks)), 2, Scalar(255.0f, 0.0f, 0.0f));
 		}
-		cv::rectangle(img, detectedFace, Scalar(0.0f, 0.0f, 255.0f));
+		//cv::rectangle(img, detectedFace, Scalar(0.0f, 0.0f, 255.0f));
 		// c) Generate Monte Carlo samples? With what variance? x_0^i (maybe make this step 3.)
 		// sample around initialShapeThis, store in initialShape
 		//		Save the samples, all in a matrix
 		//		Todo 1) don't use pixel variance, but a scale-independent one (normalize by IED?)
 		//			 2) calculate the variance from data (gt facebox?)
-		for (int i = 0; i < numSamplesPerImage; ++i) {
-			Mat initialShapeEstimateX0 = initialShape.row(currentImage*(numSamplesPerImage + 1) + (i + 1));
+		for (int sample = 0; sample < numSamplesPerImage; ++sample) {
+			Mat initialShapeEstimateX0 = initialShape.row(currentImage*(numSamplesPerImage + 1) + (sample + 1));
 			Mat initialShapeEstimateX0_x = initialShapeEstimateX0.colRange(0, initialShapeEstimateX0.cols / 2);
 			Mat initialShapeEstimateX0_y = initialShapeEstimateX0.colRange(initialShapeEstimateX0.cols / 2, initialShapeEstimateX0.cols);
 			modelMean.copyTo(initialShapeEstimateX0);
@@ -871,7 +934,7 @@ int main(int argc, char *argv[])
 			// TODO: The scaling needs to be done in the normalized facebox region?? Try to write it down?
 			// Better do the translation in the norm-FB as well to be independent of face-size? yes we do that now. Check the Detection-code though!
 			for (int i = 0; i < numModelLandmarks; ++i) {
-				cv::circle(img, Point2f(initialShapeEstimateX0.at<float>(0, i), initialShapeEstimateX0.at<float>(0, i + numModelLandmarks)), 2, Scalar(0.0f, 0.0f, 255.0f));
+				//cv::circle(img, Point2f(initialShapeEstimateX0.at<float>(0, i), initialShapeEstimateX0.at<float>(0, i + numModelLandmarks)), 2, Scalar(0.0f, 0.0f, 255.0f));
 			}
 		}
 		currentImage++;
@@ -879,6 +942,7 @@ int main(int argc, char *argv[])
 	// 4. For every sample plus the original image: (loop through the matrix)
 	//			a) groundtruthShape, initialShape
 	//				deltaShape = ground - initial
+	// Duplicate each row in groundtruthLandmarks for every sample, store in groundtruthShapes
 	Mat groundtruthShapes = Mat::zeros((numSamplesPerImage+1) * trainingData.size(), 2 * numModelLandmarks, CV_32FC1); // 10 samples + the original data = 11
 	for (int currImg = 0; currImg < groundtruthLandmarks.rows; ++currImg) {
 		Mat groundtruthLandmarksRow = groundtruthLandmarks.row(currImg);
@@ -889,49 +953,114 @@ int main(int argc, char *argv[])
 	}
 	Mat deltaShape = groundtruthShapes - initialShape;
 	//			b) Extract the features at all landmark locations initialShape (Paper: SIFT, 32x32 (?))
-	int featureDimension = 128;
-	Mat featureMatrix = Mat::ones(initialShape.rows, (featureDimension * numModelLandmarks) + 1, CV_32FC1); // Our 'A'. The last column stays all 1's; it's for learning the offset/bias
+	SiftFeatureDescriptorExtractor sift;
+	//int featureDimension = 128;
+	Mat featureMatrix;// = Mat::ones(initialShape.rows, (featureDimension * numModelLandmarks) + 1, CV_32FC1); // Our 'A'. The last column stays all 1's; it's for learning the offset/bias
 	currentImage = 0;
 	for (const auto& data : trainingData) {
 		Mat img = std::get<0>(data);
-		//cv::Rect detectedFace = std::get<1>(data);
-		//vector<shared_ptr<Landmark>> lmsv = std::get<2>(data);
-		Mat imgGray; // img delete fb
-		cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);
-		cv::SIFT sift;
 		for (int sample = 0; sample < numSamplesPerImage + 1; ++sample) {
-			vector<cv::KeyPoint> keypoints;
+			vector<cv::Point2f> keypoints;
 			for (int lm = 0; lm < numModelLandmarks; ++lm) {
 				float px = initialShape.at<float>(currentImage*(numSamplesPerImage + 1) + sample, lm);
 				float py = initialShape.at<float>(currentImage*(numSamplesPerImage + 1) + sample, lm + numModelLandmarks);
-				keypoints.push_back(cv::KeyPoint(px, py, 32.0f, 0.0f)); // Angle is set to 0. If it's -1, SIFT will be calculated for 361degrees.
+				keypoints.emplace_back(cv::Point2f(px, py));
 			}
-			Mat siftDescriptors;
-			sift(imgGray, Mat(), keypoints, siftDescriptors, true);
-			cv::drawKeypoints(img, keypoints, img, Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-			// concatenate all the descriptors for this sample vertically (into a column-vector)
-			siftDescriptors = siftDescriptors.reshape(0, featureDimension * numModelLandmarks).t();
-			int currentImageMatrixIndex = currentImage*(numSamplesPerImage + 1) + sample;
+			Mat featureDescriptors = sift.getDescriptors(img, keypoints);
+			// concatenate all the descriptors for this sample horizontally (into a row-vector)
+			featureDescriptors = featureDescriptors.reshape(0, featureDescriptors.cols * numModelLandmarks).t();
+			//int currentImageMatrixIndex = currentImage*(numSamplesPerImage + 1) + sample;
 			//			c) store the features
-			Mat featureMatrixRow = featureMatrix.row(currentImageMatrixIndex).colRange(0, featureDimension * numModelLandmarks); // take everything up to the last column (which is a 1)
-			siftDescriptors.copyTo(featureMatrixRow);
+			//Mat featureMatrixRow = featureMatrix.row(currentImageMatrixIndex).colRange(0, featureDimension * numModelLandmarks); // take everything up to the last column (which is a 1)
+			//featureDescriptors.copyTo(featureMatrixRow);
+			featureMatrix.push_back(featureDescriptors);
 		}
 		++currentImage;
 	}
+	Mat biasColumn = Mat::ones(initialShape.rows, 1, CV_32FC1);
+	cv::hconcat(featureMatrix, biasColumn, featureMatrix); // Other options: 1) Generate one bigger Mat and use copyTo (memory would be continuous then) or 2) implement a FeatureDescriptorExtractor::getDimension()
 	
 	// 5. Add one row to the features (already done), add regLambda
 	Mat AtA = featureMatrix.t() * featureMatrix;
 	float lambda = cv::norm(AtA);
 	lambda = 0.5f * lambda / (numImages*(numSamplesPerImage + 1));
-	Mat regulariser = Mat::eye(featureDimension * numModelLandmarks + 1, featureDimension * numModelLandmarks + 1, CV_32FC1) * lambda;
+	Mat regulariser = Mat::eye(AtA.rows, AtA.rows, CV_32FC1) * lambda;
 	regulariser.at<float>(regulariser.rows - 1, regulariser.cols - 1) = 0.0f; // no lambda for the bias
 	//		solve for x!
 	Mat AtAReg = AtA + regulariser;
 	Mat AtARegInv = AtAReg.inv(cv::DECOMP_SVD); // default is LU
 	Mat AtARegInvAt = AtARegInv * featureMatrix.t();
-	Mat AAtRegInvAtb = AtARegInvAt * deltaShape; // = x
+	Mat AtARegInvAtb = AtARegInvAt * deltaShape; // = x
+
+	Mat R = AtARegInvAtb;
 
 	// 6. Do the same again for all cascade steps
+	int numCascadeMaxSteps = 3;
+	float cascadeErrorThreshold = 2.0f;
+
+	int currentCascadeStep = 1;
+	float currentError = 5.0f;
+	while (currentCascadeStep < numCascadeMaxSteps && currentError > cascadeErrorThreshold) {
+		SiftFeatureDescriptorExtractor sift; // Note: The descriptors could be different for each cascade step!
+		Mat featureMatrixThisStep;
+		for (int currentImage = 0; currentImage < trainingData.size(); ++currentImage) {
+			Mat img = std::get<0>(trainingData[currentImage]);
+			Mat output = img.clone();
+			for (int sample = 0; sample < numSamplesPerImage + 1; ++sample) {
+				int currentRowInAllData = currentImage * (numSamplesPerImage + 1) + sample;
+				// gt:
+				for (int i = 0; i < numModelLandmarks; ++i) {
+					cv::circle(output, Point2f(groundtruthShapes.at<float>(currentRowInAllData, i), groundtruthShapes.at<float>(currentRowInAllData, i + numModelLandmarks)), 2, Scalar(255.0f, 0.0f, 0.0f));
+				}
+				// x0:
+				for (int i = 0; i < numModelLandmarks; ++i) {
+					cv::circle(output, Point2f(initialShape.at<float>(currentRowInAllData, i), initialShape.at<float>(currentRowInAllData, i + numModelLandmarks)), 2, Scalar(210.0f, 255.0f, 0.0f));
+				}
+				Mat shapeStep = featureMatrix.row(currentRowInAllData) * R;
+				Mat x1 = initialShape.row(currentRowInAllData).t() + shapeStep.t(); // add columns
+				x1 = x1.t(); // now a row-vector
+				Mat initialShapeRow = initialShape.row(currentRowInAllData);
+				x1.copyTo(initialShapeRow);
+				// x1:
+				for (int i = 0; i < numModelLandmarks; ++i) {
+					cv::circle(output, Point2f(x1.at<float>(i), x1.at<float>(i + numModelLandmarks)), 2, Scalar(255.0f, 185.0f, 0.0f));
+				}
+
+				// Feature extr.: Very similar code to above step0
+				vector<cv::Point2f> keypoints;
+				for (int lm = 0; lm < numModelLandmarks; ++lm) {
+					float px = initialShape.at<float>(currentImage*(numSamplesPerImage + 1) + sample, lm);
+					float py = initialShape.at<float>(currentImage*(numSamplesPerImage + 1) + sample, lm + numModelLandmarks);
+					keypoints.emplace_back(cv::Point2f(px, py));
+				}
+				Mat featureDescriptors = sift.getDescriptors(img, keypoints);
+				// concatenate all the descriptors for this sample horizontally (into a row-vector)
+				featureDescriptors = featureDescriptors.reshape(0, featureDescriptors.cols * numModelLandmarks).t();
+				//int currentImageMatrixIndex = currentImage*(numSamplesPerImage + 1) + sample;
+				//			c) store the features
+				//Mat featureMatrixRow = featureMatrix.row(currentImageMatrixIndex).colRange(0, featureDimension * numModelLandmarks); // take everything up to the last column (which is a 1)
+				//featureDescriptors.copyTo(featureMatrixRow);
+				featureMatrixThisStep.push_back(featureDescriptors);
+			}
+		}
+		featureMatrix = featureMatrixThisStep;
+		Mat biasColumn = Mat::ones(initialShape.rows, 1, CV_32FC1);
+		cv::hconcat(featureMatrix, biasColumn, featureMatrix); // Other options: 1) Generate one bigger Mat and use copyTo (memory would be continuous then) or 2) implement a FeatureDescriptorExtractor::getDimension()
+
+		Mat deltaShape = groundtruthShapes - initialShape;
+
+		Mat AtA = featureMatrix.t() * featureMatrix;
+		float lambda = 0.5f * cv::norm(AtA) / (numImages*(numSamplesPerImage + 1));;
+		Mat regulariser = Mat::eye(AtA.rows, AtA.rows, CV_32FC1) * lambda;
+		regulariser.at<float>(regulariser.rows - 1, regulariser.cols - 1) = 0.0f; // no lambda for the bias
+		Mat AtAReg = AtA + regulariser;
+		Mat AtARegInvAtb = AtAReg.inv(cv::DECOMP_SVD) * featureMatrix.t() * deltaShape;
+
+		R = AtARegInvAtb;
+
+		cascadeErrorThreshold = 4.0f;
+		++currentCascadeStep;
+	}
 
 
 	return 0;
