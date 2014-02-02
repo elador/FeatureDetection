@@ -36,14 +36,14 @@ int SdmLandmarkModel::getNumLandmarks() const
 	return meanLandmarks.cols / 2;
 }
 
-int SdmLandmarkModel::getNumCascadeLevels() const
+int SdmLandmarkModel::getNumCascadeSteps() const
 {
 	return regressorData.size();
 }
 
 cv::Mat SdmLandmarkModel::getMeanShape() const
 {
-	return meanLandmarks.clone();
+	return meanLandmarks.clone().t();
 }
 
 cv::Mat SdmLandmarkModel::getRegressorData(int cascadeLevel)
@@ -51,7 +51,17 @@ cv::Mat SdmLandmarkModel::getRegressorData(int cascadeLevel)
 	return regressorData[cascadeLevel];
 }
 
-std::vector<cv::Point2f> SdmLandmarkModel::getLandmarksAsPoints() const
+std::shared_ptr<FeatureDescriptorExtractor> SdmLandmarkModel::getDescriptorExtractor(int cascadeLevel)
+{
+	return descriptorExtractors[cascadeLevel];
+}
+
+std::string SdmLandmarkModel::getDescriptorType(int cascadeLevel)
+{
+	return descriptorTypes[cascadeLevel];
+}
+
+std::vector<cv::Point2f> SdmLandmarkModel::getMeanAsPoints() const
 {
 	std::vector<cv::Point2f> landmarks;
 	for (int i = 0; i < getNumLandmarks(); ++i) {
@@ -60,10 +70,10 @@ std::vector<cv::Point2f> SdmLandmarkModel::getLandmarksAsPoints() const
 	return landmarks;
 }
 
-void SdmLandmarkModel::save(boost::filesystem::path filename)
+void SdmLandmarkModel::save(boost::filesystem::path filename, std::string comment)
 {
 	std::ofstream file(filename.string());
-	file << "#Comment. Date?" << std::endl;
+	file << "# " << comment << std::endl;
 	file << "numLandmarks " << getNumLandmarks() << std::endl;
 	for (const auto& id : landmarkIdentifier) {
 		file << id << std::endl;
@@ -72,8 +82,8 @@ void SdmLandmarkModel::save(boost::filesystem::path filename)
 	for (int i = 0; i < 2 * getNumLandmarks(); ++i) {
 		file << getMeanShape().at<float>(i) << std::endl; // not so efficient, clones every time
 	}
-	file << "numCascadeSteps " << getNumCascadeLevels() << std::endl;
-	for (int i = 0; i < getNumCascadeLevels(); ++i) {
+	file << "numCascadeSteps " << getNumCascadeSteps() << std::endl;
+	for (int i = 0; i < getNumCascadeSteps(); ++i) {
 		// write the params for this cascade level
 		file << "scale " << i << " rows " << getRegressorData(i).rows << " cols " << getRegressorData(i).cols << std::endl;
 		file << "descriptorType " << descriptorTypes[i] << std::endl;
@@ -102,28 +112,45 @@ shapemodels::SdmLandmarkModel SdmLandmarkModel::load(boost::filesystem::path fil
 	std::getline(file, line); // numLandmarks 22
 	boost::split(stringContainer, line, boost::is_any_of(" "));
 	int numLandmarks = lexical_cast<int>(stringContainer[1]);
-	// read the mean landmarks
-	model.meanLandmarks = Mat(numLandmarks * 2, 1, CV_32FC1);
+	// read the landmark identifiers:
+	for (int i = 0; i < numLandmarks; ++i) {
+		std::getline(file, line);
+		model.landmarkIdentifier.push_back(line);
+	}
+	// read the mean landmarks:
+	model.meanLandmarks = Mat(1, 2 * numLandmarks, CV_32FC1);
 	// First all the x-coordinates, then all the  y-coordinates.
 	for (int i = 0; i < numLandmarks * 2; ++i) {
 		std::getline(file, line);
-		model.meanLandmarks.at<float>(i, 0) = lexical_cast<float>(line);
+		model.meanLandmarks.at<float>(i) = lexical_cast<float>(line);
 	}
 	// read the numHogScales
-	std::getline(file, line); // numHogScales 5
+	std::getline(file, line); // numCascadeSteps 5
 	boost::split(stringContainer, line, boost::is_any_of(" "));
-	int numHogScales = lexical_cast<int>(stringContainer[1]);
-	// for every HOG scale, read a header line and then the matrix data
-	for (int i = 0; i < numHogScales; ++i) {
-		// read the header line
+	int numCascadeSteps = lexical_cast<int>(stringContainer[1]);
+	// for every cascade step, read 4 header lines and then the matrix data
+	for (int i = 0; i < numCascadeSteps; ++i) {
 		std::getline(file, line); // scale 1 rows 3169 cols 44
 		boost::split(stringContainer, line, boost::is_any_of(" "));
-		int numRows = lexical_cast<int>(stringContainer[3]); // = numHogDimensions
+		int numRows = lexical_cast<int>(stringContainer[3]); // = numFeatureDimensions
 		int numCols = lexical_cast<int>(stringContainer[5]); // = numLandmarks * 2
-		HogParameter params;
-		params.cellSize = lexical_cast<int>(stringContainer[7]); // = cellSize
-		params.numBins = lexical_cast<int>(stringContainer[9]); // = numBins
-		model.hogParameters.push_back(params);
+		
+		std::getline(file, line); // descriptorType (OpenCVSift | vlhog)
+		boost::split(stringContainer, line, boost::is_any_of(" "));
+		string descriptorType = (stringContainer[1]);
+		std::getline(file, line); // descriptorPostprocessing none TODO
+		std::getline(file, line); // descriptorParameters 0 TODO
+		if (descriptorType == "OpenCVSift") {
+			model.descriptorExtractors.emplace_back(std::make_shared<SiftFeatureDescriptorExtractor>());
+		}
+		else if (descriptorType == "vlhog") {
+			// TODO!
+			HogParameter params;
+			params.cellSize = lexical_cast<int>(stringContainer[7]); // = cellSize
+			params.numBins = lexical_cast<int>(stringContainer[9]); // = numBins
+			model.hogParameters.push_back(params);
+		}
+
 		Mat regressorData(numRows, numCols, CV_32FC1);
 		// read numRows lines
 		for (int j = 0; j < numRows; ++j) {

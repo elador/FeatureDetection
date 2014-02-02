@@ -6,7 +6,7 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # find dependencies
 FIND_PACKAGE(Boost 1.48.0 REQUIRED)
-FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core calib3d)
+FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core calib3d features2d nonfree objdetect)
 
 #IF(WIN32)
 	#FIND_PACKAGE (HDF5 NAMES hdf5) # puts it in Config-mode

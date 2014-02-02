@@ -29,6 +29,7 @@
 */
 
 #include <chrono>
+#include <ctime>
 #include <memory>
 #include <iostream>
 #include <random>
@@ -738,6 +739,10 @@ int main(int argc, char *argv[])
 	// - Then loop! (which means the code above starts after the shape-matrix (and everything else) has been prepared
 	// - time measurement
 	// - calculate the error after each regressor is learned.
+	// - update ML script for ZF's model
+	// - more params, mean etc, my mean...
+	// - draw curves
+	// - impl numcascade steps config
 
 	// 6. Do the same again for all cascade steps
 	int numCascadeMaxSteps = 3;
@@ -811,8 +816,11 @@ int main(int argc, char *argv[])
 		++currentCascadeStep;
 	}
 
+	std::time_t currentTime_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	string currentTime = std::ctime(&currentTime_t);
+
 	SdmLandmarkModel model(modelMean, modelLandmarks, regressorData, descriptorExtractors, descriptorTypes);
-	model.save(outputFilename);
+	model.save(outputFilename, "Trained on " + currentTime.substr(0, currentTime.length() - 1));
 	appLogger.info("Finished training. Saved model to " + outputFilename.string() + ".");
 
 	return 0;

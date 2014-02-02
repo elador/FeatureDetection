@@ -291,8 +291,8 @@ int main(int argc, char *argv[])
 
 	cv::namedWindow(windowName);
 
-	SdmLandmarkModel hogModel = SdmLandmarkModel::load("C:\\Users\\Patrik\\Documents\\GitHub\\SGD_Zhenhua_11012014\\SDM_Model_HOG_Zhenhua_11012014.txt");
-	SdmLandmarkModelFitting modelFitter(hogModel);
+	SdmLandmarkModel lmModel = SdmLandmarkModel::load("C:\\Users\\Patrik\\Documents\\GitHub\\sdm_lfpw_tr_10lm_10s_3casc.txt");
+	SdmLandmarkModelFitting modelFitter(lmModel);
 
 	string faceDetectionModel("C:\\opencv\\2.4.7.2_prebuilt\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt2.xml"); // sgd: "../models/haarcascade_frontalface_alt2.xml"
 	cv::CascadeClassifier faceCascade;
@@ -302,6 +302,8 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	
+	bool runRigidAlign = true;
+
 	while(labeledImageSource->next()) {
 		start = std::chrono::system_clock::now();
 		appLogger.info("Starting to process " + labeledImageSource->getName().string());
@@ -324,9 +326,10 @@ int main(int argc, char *argv[])
 		float score, notFace = 0.5;
 		
 		// face detection
-		//faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
-		faces.push_back({ 172, 199, 278, 278 });
+		faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
+		//faces.push_back({ 172, 199, 278, 278 });
 		if (faces.empty()) {
+			runRigidAlign = true;
 			cv::imshow(windowName, landmarksImage);
 			cv::waitKey(5);
 			continue;
@@ -334,9 +337,14 @@ int main(int argc, char *argv[])
 		for (const auto& f : faces) {
 			cv::rectangle(landmarksImage, f, cv::Scalar(0.0f, 0.0f, 255.0f));
 		}
-
-		Mat modelShape = hogModel.getMeanShape();
-		modelShape = modelFitter.alignRigid(modelShape, faces[0]);
+		
+		Mat modelShape = lmModel.getMeanShape();
+		//if (runRigidAlign) {
+			modelShape = modelFitter.alignRigid(modelShape, faces[0]);
+			//runRigidAlign = false;
+		//}
+		
+		
 
 	/*	std::vector<cv::Point2f> mlms = m.getLandmarksAsPoints();
 		for (const auto& l : mlms) {
@@ -344,12 +352,12 @@ int main(int argc, char *argv[])
 		}*/
 		
 		// print the mean initialization
-		/*for (int i = 0; i < m.getNumLandmarks(); ++i) {
-			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + m.getNumLandmarks(), 0)), 3, Scalar(255.0f, 0.0f, 255.0f));
-		}*/
+		for (int i = 0; i < lmModel.getNumLandmarks(); ++i) {
+			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + lmModel.getNumLandmarks(), 0)), 3, Scalar(255.0f, 0.0f, 255.0f));
+		}
 		modelShape = modelFitter.optimize(modelShape, imgGray);
-		for (int i = 0; i < hogModel.getNumLandmarks(); ++i) {
-			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + hogModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 255.0f, 0.0f));
+		for (int i = 0; i < lmModel.getNumLandmarks(); ++i) {
+			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + lmModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 255.0f, 0.0f));
 		}
 		
 		end = std::chrono::system_clock::now();

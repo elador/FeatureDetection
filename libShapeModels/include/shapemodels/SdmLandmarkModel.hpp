@@ -92,7 +92,7 @@ public:
 
 	int getNumLandmarks() const;
 
-	int getNumCascadeLevels() const;
+	int getNumCascadeSteps() const;
 
 	HogParameter getHogParameters(int cascadeLevel) {
 		return hogParameters[cascadeLevel];
@@ -104,16 +104,20 @@ public:
 	*
 	* @return The mean of the model.
 	*/
-	// returns a copy
+	// returns a copy. col-vec. ext always col, internal row
 	cv::Mat getMeanShape() const;
 
 	// returns  a header that points to the original data
 	cv::Mat getRegressorData(int cascadeLevel);
 
-	//std::vector<cv::Point2f> getLandmarksAsPoints(cv::Mat or vector<float> alphas or empty(=mean));
-	std::vector<cv::Point2f> getLandmarksAsPoints() const;
+	std::shared_ptr<FeatureDescriptorExtractor> getDescriptorExtractor(int cascadeLevel);
+	
+	std::string getDescriptorType(int cascadeLevel);
 
-	void save(boost::filesystem::path filename);
+	//std::vector<cv::Point2f> getLandmarksAsPoints(cv::Mat or vector<float> alphas or empty(=mean));
+	std::vector<cv::Point2f> getMeanAsPoints() const;
+
+	void save(boost::filesystem::path filename, std::string comment="");
 
 	/**
 	* Load a SdmLandmarkModel model TODO a property tree node in a config file.
@@ -165,10 +169,23 @@ public:
 	// in: Rect, ocv with tl x, tl y, w, h (?) and calcs center
 	// directly modifies modelShape
 	// could move to parent-class
+	// assumes mean -0.5, 0.5 and just places inside FB
 	cv::Mat alignRigid(cv::Mat modelShape, cv::Rect faceBox) const {
-
+		// we assume we get passed a col-vec. For convenience, we keep it.
+		if (modelShape.cols != 1) {
+			// error bzw convert
+		}
 		Mat xCoords = modelShape.rowRange(0, modelShape.rows / 2);
-		Mat yCoords = modelShape.rowRange(modelShape.rows / 2, modelShape.rows);
+		Mat yCoords = modelShape.rowRange(modelShape.rows / 2, modelShape.rows);		
+		// b) Align the model to the current face-box. (rigid, only centering of the mean). x_0
+		// Initial estimate x_0: Center the mean face at the [-0.5, 0.5] x [-0.5, 0.5] square (assuming the face-box is that square)
+		// More precise: Take the mean as it is (assume it is in a space [-0.5, 0.5] x [-0.5, 0.5]), and just place it in the face-box as
+		// if the box is [-0.5, 0.5] x [-0.5, 0.5]. (i.e. the mean coordinates get upscaled)
+		xCoords = (xCoords + 0.5f) * faceBox.width + faceBox.x;
+		yCoords = (yCoords + 0.5f) * faceBox.height + faceBox.y;
+
+		/*
+		// Old algorithm Zhenhua:
 		// scale the model:
 		double minX, maxX, minY, maxY;
 		cv::minMaxLoc(xCoords, &minX, &maxX);
@@ -186,7 +203,7 @@ public:
 		// move it:
 		xCoords += faceBox.x + faceBox.width / 2.0f - meanXd;
 		yCoords += faceBox.y + faceBox.height / 1.8f - meanYd; // we use another value for y because we don't want to center the model right in the middle of the face-box
-
+		*/
 		return modelShape;
 	};
 
@@ -194,11 +211,22 @@ public:
 	// in: GRAY img
 	// in: evtl zusaetzlicher param um scale-level/iter auszuwaehlen
 	// calculates shape updates (deltaShape) for one or more iter/scales and returns...
+	// assume we get a col-vec.
 	cv::Mat optimize(cv::Mat modelShape, cv::Mat image) {
 
-		for (int hogScale = 0; hogScale < model.getNumCascadeLevels(); ++hogScale) {
+		for (int cascadeStep = 0; cascadeStep < model.getNumCascadeSteps(); ++cascadeStep) {
 			//feature_current = obtain_features(double(TestImg), New_Shape, 'HOG', hogScale);
-			SdmLandmarkModel::HogParameter hogParameter = model.getHogParameters(hogScale);
+			
+			// TODO Actually, here no switch should be necessary. Just call the extractor.
+			// That means: where should the params go? into the model? or pass them somewhere?
+			vector<cv::Point2f> points;
+			for (int i = 0; i < model.getNumLandmarks(); ++i) { // in case of HOG, need integers?
+				points.emplace_back(cv::Point2f(modelShape.at<float>(i), modelShape.at<float>(i + model.getNumLandmarks())));
+			}
+			Mat currentFeatures = model.getDescriptorExtractor(cascadeStep)->getDescriptors(image, points);
+			currentFeatures = currentFeatures.reshape(0, currentFeatures.cols * model.getNumLandmarks()).t();
+			/* // TODO: HOG code not yet updated for the new model, col/rows etc!
+			SdmLandmarkModel::HogParameter hogParameter = model.getHogParameters(cascadeStep);
 			int numNeighbours = hogParameter.cellSize * 6; // this cellSize has nothing to do with HOG. It's the number of "cells", i.e. image-windows/patches.
 			// if cellSize=1, our window is 12x12, and because our HOG-cellsize is 12, it means we will have 1 cell (the minimum).
 			int hogCellSize = 12;
@@ -217,8 +245,9 @@ public:
 				// extract the patch and supply it to vl_hog
 				Mat roiImg = image(roi).clone(); // clone because we need a continuous memory block
 				roiImg.convertTo(roiImg, CV_32FC1); // because vl_hog_put_image expects a float* (values 0.f-255.f)
-				VlHog* hog = vl_hog_new(VlHogVariant::VlHogVariantUoctti, /*numOrientations=*/hogParameter.numBins, /*transposed (=col-major):*/false); // VlHogVariantUoctti seems to be default in Matlab.
-				vl_hog_put_image(hog, (float*)roiImg.data, roiImg.cols, roiImg.rows, /*numChannels=*/1, hogCellSize);
+				// vl_hog_new: numOrientations=hogParameter.numBins, transposed (=col-major):false)
+				VlHog* hog = vl_hog_new(VlHogVariant::VlHogVariantUoctti, hogParameter.numBins, false); // VlHogVariantUoctti seems to be default in Matlab.
+				vl_hog_put_image(hog, (float*)roiImg.data, roiImg.cols, roiImg.rows, 1, hogCellSize); // (the '1' is numChannels)
 				vl_size ww = vl_hog_get_width(hog);
 				vl_size hh = vl_hog_get_height(hog);
 				vl_size dd = vl_hog_get_dimension(hog); // assert ww=hogDim1, hh=hogDim2, dd=hogDim3
@@ -246,12 +275,13 @@ public:
 				hogDescriptor.copyTo(currentFeaturesSubrange);
 				// currentFeatures needs to have dimensions n x 1, where n = numLandmarks * hogFeaturesDimension, e.g. n = 22 * (3*3*16=144) = 3168 (for the first hog Scale)
 			}
+			*/
 
 			//delta_shape = AAM.RF(1).Regressor(hogScale).A(1:end - 1, : )' * feature_current + AAM.RF(1).Regressor(hogScale).A(end,:)';
-			Mat regressorData = model.getRegressorData(hogScale);
-			Mat deltaShape = regressorData.rowRange(0, regressorData.rows - 1).t() * currentFeatures + regressorData.row(regressorData.rows - 1).t();
-
-			modelShape = modelShape + deltaShape;
+			Mat regressorData = model.getRegressorData(cascadeStep);
+			//Mat deltaShape = regressorData.rowRange(0, regressorData.rows - 1).t() * currentFeatures + regressorData.row(regressorData.rows - 1).t();
+			Mat deltaShape = currentFeatures * regressorData.rowRange(0, regressorData.rows - 1) + regressorData.row(regressorData.rows - 1);
+			modelShape = modelShape + deltaShape.t();
 			/*
 			for (int i = 0; i < m.getNumLandmarks(); ++i) {
 			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + m.getNumLandmarks(), 0)), 6 - hogScale, Scalar(51.0f*(float)hogScale, 51.0f*(float)hogScale, 0.0f));
