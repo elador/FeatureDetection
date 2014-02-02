@@ -39,7 +39,7 @@ public:
 	* Load a morphable model from a property tree node in a config file.
 	* The function uses the file extension to determine which load
 	* function to call.
-	* Throws a std::runtime_exception of the extension is unrecognised.
+	* Throws a std::runtime_exception if the extension is unrecognised.
 	*
 	* @param[in] configTree A node of a ptree.
 	* @return A morphable model.
