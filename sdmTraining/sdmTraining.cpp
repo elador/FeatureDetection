@@ -813,6 +813,7 @@ int main(int argc, char *argv[])
 
 	SdmLandmarkModel model(modelMean, modelLandmarks, regressorData, descriptorExtractors, descriptorTypes);
 	model.save(outputFilename);
+	appLogger.info("Finished training. Saved model to " + outputFilename.string() + ".");
 
 	return 0;
 }
