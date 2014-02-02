@@ -680,8 +680,12 @@ int main(int argc, char *argv[])
 	}
 	Mat deltaShape = groundtruthShapes - initialShape;
 	//			b) Extract the features at all landmark locations initialShape (Paper: SIFT, 32x32 (?))
-	std::vector<std::shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors;
-	SiftFeatureDescriptorExtractor sift;
+	vector<string> descriptorTypes;
+	vector<shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors;
+	shared_ptr<FeatureDescriptorExtractor> sift = make_shared<SiftFeatureDescriptorExtractor>();
+	// read params if there are any?
+	descriptorExtractors.push_back(sift);
+	descriptorTypes.push_back("OpenCVSift");
 	//int featureDimension = 128;
 	Mat featureMatrix;// = Mat::ones(initialShape.rows, (featureDimension * numModelLandmarks) + 1, CV_32FC1); // Our 'A'. The last column stays all 1's; it's for learning the offset/bias
 	currentImage = 0;
@@ -694,7 +698,7 @@ int main(int argc, char *argv[])
 				float py = initialShape.at<float>(currentImage*(numSamplesPerImage + 1) + sample, lm + numModelLandmarks);
 				keypoints.emplace_back(cv::Point2f(px, py));
 			}
-			Mat featureDescriptors = sift.getDescriptors(img, keypoints);
+			Mat featureDescriptors = sift->getDescriptors(img, keypoints);
 			// concatenate all the descriptors for this sample horizontally (into a row-vector)
 			featureDescriptors = featureDescriptors.reshape(0, featureDescriptors.cols * numModelLandmarks).t();
 			//int currentImageMatrixIndex = currentImage*(numSamplesPerImage + 1) + sample;
@@ -732,15 +736,20 @@ int main(int argc, char *argv[])
 	// - move below code up, dont duplicate code
 	// - after training R, evaluate, print error, save the new shapeMatrix
 	// - Then loop! (which means the code above starts after the shape-matrix (and everything else) has been prepared
+	// - time measurement
+	// - calculate the error after each regressor is learned.
 
 	// 6. Do the same again for all cascade steps
 	int numCascadeMaxSteps = 3;
-	float cascadeErrorThreshold = 2.0f;
+	//float cascadeErrorThreshold = 2.0f;
 
 	int currentCascadeStep = 1;
-	float currentError = 5.0f;
-	while (currentCascadeStep < numCascadeMaxSteps && currentError > cascadeErrorThreshold) {
-		SiftFeatureDescriptorExtractor sift; // Note: The descriptors could be different for each cascade step!
+	//float currentError = 5.0f;
+	while (currentCascadeStep < numCascadeMaxSteps/* && currentError > cascadeErrorThreshold*/) {
+		shared_ptr<FeatureDescriptorExtractor> sift = make_shared<SiftFeatureDescriptorExtractor>();
+		// read params if there are any? (generate according to config)
+		descriptorExtractors.push_back(sift);
+		descriptorTypes.push_back("OpenCVSift");
 		Mat featureMatrixThisStep;
 		for (int currentImage = 0; currentImage < trainingData.size(); ++currentImage) {
 			Mat img = std::get<0>(trainingData[currentImage]);
@@ -772,7 +781,7 @@ int main(int argc, char *argv[])
 					float py = initialShape.at<float>(currentImage*(numSamplesPerImage + 1) + sample, lm + numModelLandmarks);
 					keypoints.emplace_back(cv::Point2f(px, py));
 				}
-				Mat featureDescriptors = sift.getDescriptors(img, keypoints);
+				Mat featureDescriptors = sift->getDescriptors(img, keypoints);
 				// concatenate all the descriptors for this sample horizontally (into a row-vector)
 				featureDescriptors = featureDescriptors.reshape(0, featureDescriptors.cols * numModelLandmarks).t();
 				//int currentImageMatrixIndex = currentImage*(numSamplesPerImage + 1) + sample;
@@ -798,12 +807,12 @@ int main(int argc, char *argv[])
 		R = AtARegInvAtb;
 		regressorData.push_back(R);
 
-		cascadeErrorThreshold = 4.0f;
+		//cascadeErrorThreshold = 4.0f;
 		++currentCascadeStep;
 	}
 
-	SdmLandmarkModel model(modelMean, modelLandmarks, regressorData, descriptorExtractors);
-	model.save("C:\\Users\\Patrik\\Documents\\GitHub\\FeatureDetection\\sdmTraining\\share\\models\\model.txt");
+	SdmLandmarkModel model(modelMean, modelLandmarks, regressorData, descriptorExtractors, descriptorTypes);
+	model.save(outputFilename);
 
 	return 0;
 }

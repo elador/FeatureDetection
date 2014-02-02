@@ -22,12 +22,13 @@ SdmLandmarkModel::SdmLandmarkModel()
 
 }
 
-SdmLandmarkModel::SdmLandmarkModel(cv::Mat meanLandmarks, std::vector<std::string> landmarkIdentifier, std::vector<cv::Mat> regressorData, std::vector<std::shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors)
+SdmLandmarkModel::SdmLandmarkModel(cv::Mat meanLandmarks, std::vector<std::string> landmarkIdentifier, std::vector<cv::Mat> regressorData, std::vector<std::shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors, std::vector<std::string> descriptorTypes)
 {
 	this->meanLandmarks = meanLandmarks;
 	this->landmarkIdentifier = landmarkIdentifier;
 	this->regressorData = regressorData;
 	this->descriptorExtractors = descriptorExtractors;
+	this->descriptorTypes = descriptorTypes;
 }
 
 int SdmLandmarkModel::getNumLandmarks() const
@@ -75,7 +76,7 @@ void SdmLandmarkModel::save(boost::filesystem::path filename)
 	for (int i = 0; i < getNumCascadeLevels(); ++i) {
 		// write the params for this cascade level
 		file << "scale " << i << " rows " << getRegressorData(i).rows << " cols " << getRegressorData(i).cols << std::endl;
-		file << "descriptorType " << "OpenCVSift" << std::endl;
+		file << "descriptorType " << descriptorTypes[i] << std::endl;
 		file << "descriptorPostprocessing " << "none" << std::endl;
 		file << "descriptorParameters " << 0 << std::endl;
 		// write the regressor data

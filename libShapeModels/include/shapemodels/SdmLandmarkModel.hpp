@@ -82,7 +82,7 @@ public:
 	*
 	* @param[in] a b
 	*/
-	SdmLandmarkModel(cv::Mat meanLandmarks, std::vector<std::string> landmarkIdentifier, std::vector<cv::Mat> regressorData, std::vector<std::shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors);
+	SdmLandmarkModel(cv::Mat meanLandmarks, std::vector<std::string> landmarkIdentifier, std::vector<cv::Mat> regressorData, std::vector<std::shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors, std::vector<std::string> descriptorTypes);
 
 	struct HogParameter
 	{
@@ -132,6 +132,7 @@ private:
 
 	std::vector<HogParameter> hogParameters;
 	std::vector<std::shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors;
+	std::vector<std::string> descriptorTypes; //
 
 };
 
