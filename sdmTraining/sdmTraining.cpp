@@ -727,12 +727,34 @@ int main(int argc, char *argv[])
 
 	Mat R = AtARegInvAtb;
 
+	// output (optional):
+	for (int currentImage = 0; currentImage < trainingData.size(); ++currentImage) {
+		Mat img = std::get<0>(trainingData[currentImage]);
+		Mat output = img.clone();
+		for (int sample = 0; sample < numSamplesPerImage + 1; ++sample) {
+			int currentRowInAllData = currentImage * (numSamplesPerImage + 1) + sample;
+			// gt:
+			for (int i = 0; i < numModelLandmarks; ++i) {
+				cv::circle(output, Point2f(groundtruthShapes.at<float>(currentRowInAllData, i), groundtruthShapes.at<float>(currentRowInAllData, i + numModelLandmarks)), 2, Scalar(255.0f, 0.0f, 0.0f));
+			}
+			// x0:
+			for (int i = 0; i < numModelLandmarks; ++i) {
+				cv::circle(output, Point2f(initialShape.at<float>(currentRowInAllData, i), initialShape.at<float>(currentRowInAllData, i + numModelLandmarks)), 2, Scalar(210.0f, 255.0f, 0.0f));
+			}
+		}
+	}
+	Mat errx0 = groundtruthShapes - initialShape;
+	double avgErrx0 = cv::norm(errx0, cv::NORM_L1) / (errx0.rows * errx0.cols);
+	// the error:
+	Mat shapeStep = featureMatrix * R;
+	Mat x1 = initialShape + shapeStep;
+	Mat err = groundtruthShapes - x1;
+	double avgErr = cv::norm(err, cv::NORM_L1) / (err.rows * err.cols);
+
 	std::vector<cv::Mat> regressorData;
 	regressorData.push_back(R);
 
 	// Do the following:
-	// * Save the model, i.e.: Write everything to a SDM Model, then sdmmodel::Save
-	// * TEST IT! tracker/fitting/txt/ML script etc anpassen, neues row-format, params etc
 	// * move everything to a SupervisedDescentTraining class, i.e. LandmarkBasedSupervisedDescentTraining (later: GenericSupervisedDescentTraining? abstract base-class or not?)
 	// - move below code up, dont duplicate code
 	// - after training R, evaluate, print error, save the new shapeMatrix
@@ -811,6 +833,11 @@ int main(int argc, char *argv[])
 
 		R = AtARegInvAtb;
 		regressorData.push_back(R);
+
+		Mat shapeStep = featureMatrix * R;
+		Mat x2 = initialShape + shapeStep;
+		Mat err = groundtruthShapes - x2;
+		double avgErr = cv::norm(err, cv::NORM_L1) / (err.rows * err.cols);
 
 		//cascadeErrorThreshold = 4.0f;
 		++currentCascadeStep;

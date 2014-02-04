@@ -304,21 +304,20 @@ int main(int argc, char *argv[])
 	
 	bool runRigidAlign = true;
 
+	std::ofstream resultsFile("C:\\Users\\Patrik\\Documents\\GitHub\\sdm_lfpw_tr_10lm_10s_3casc_RESULTS.txt");
+	vector<string> comparisonLandmarks({ "9", "37", "43" });
+
 	while(labeledImageSource->next()) {
 		start = std::chrono::system_clock::now();
 		appLogger.info("Starting to process " + labeledImageSource->getName().string());
 		img = labeledImageSource->getImage();
-		
-		LandmarkCollection lms = labeledImageSource->getLandmarks();
-		vector<shared_ptr<Landmark>> lmsv = lms.getLandmarks();
-		landmarks.clear();
-		Mat landmarksImage = img.clone(); // blue rect = the used landmarks
-		/*
-		for (const auto& lm : lmsv) {
-			lm->draw(landmarksImage);
-			landmarks.emplace_back(imageio::ModelLandmark(lm->getName(), lm->getPosition2D()));
-			cv::rectangle(landmarksImage, cv::Point(cvRound(lm->getX() - 2.0f), cvRound(lm->getY() - 2.0f)), cv::Point(cvRound(lm->getX() + 2.0f), cvRound(lm->getY() + 2.0f)), cv::Scalar(255, 0, 0));
-		}*/
+		Mat landmarksImage = img.clone();
+
+		LandmarkCollection groundtruth = labeledImageSource->getLandmarks();
+		vector<shared_ptr<Landmark>> lmv = groundtruth.getLandmarks();
+		for (const auto& l : lmv) {
+			cv::circle(landmarksImage, l->getPoint2D(), 3, Scalar(255.0f, 0.0f, 0.0f));
+		}
 
 		Mat imgGray;
 		cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);
@@ -337,6 +336,27 @@ int main(int argc, char *argv[])
 		for (const auto& f : faces) {
 			cv::rectangle(landmarksImage, f, cv::Scalar(0.0f, 0.0f, 255.0f));
 		}
+
+		// Check if the face corresponds to the ground-truth:
+		Mat gtLmsRowX(1, lmv.size(), CV_32FC1);
+		Mat gtLmsRowY(1, lmv.size(), CV_32FC1);
+		int idx = 0;
+		for (const auto& l : lmv) {
+			gtLmsRowX.at<float>(idx) = l->getX();
+			gtLmsRowY.at<float>(idx) = l->getY();
+			++idx;
+		}
+		double minWidth, maxWidth, minHeight, maxHeight;
+		cv::minMaxIdx(gtLmsRowX, &minWidth, &maxWidth);
+		cv::minMaxIdx(gtLmsRowY, &minHeight, &maxHeight);
+		float cx = cv::mean(gtLmsRowX)[0];
+		float cy = cv::mean(gtLmsRowY)[0];
+
+		if (std::abs(cx - (faces[0].x+faces[0].width/2.0f)) > 20.0f || std::abs(cy - (faces[0].y+faces[0].height/2.0f)) > 20.0f) {
+			cv::imshow(windowName, landmarksImage);
+			cv::waitKey(5);
+			continue;
+		}
 		
 		Mat modelShape = lmModel.getMeanShape();
 		//if (runRigidAlign) {
@@ -344,13 +364,7 @@ int main(int argc, char *argv[])
 			//runRigidAlign = false;
 		//}
 		
-		
-
-	/*	std::vector<cv::Point2f> mlms = m.getLandmarksAsPoints();
-		for (const auto& l : mlms) {
-			cv::circle(landmarksImage, l, 3, Scalar(0.0f, 0.0f, 255.0f));
-		}*/
-		
+	
 		// print the mean initialization
 		for (int i = 0; i < lmModel.getNumLandmarks(); ++i) {
 			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + lmModel.getNumLandmarks(), 0)), 3, Scalar(255.0f, 0.0f, 255.0f));
@@ -359,6 +373,21 @@ int main(int argc, char *argv[])
 		for (int i = 0; i < lmModel.getNumLandmarks(); ++i) {
 			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + lmModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 255.0f, 0.0f));
 		}
+
+		resultsFile << "# " << labeledImageSource->getName() << std::endl;
+		for (const auto& lmId : comparisonLandmarks) {
+
+			shared_ptr<Landmark> gtlm = groundtruth.getLandmark(lmId); // Todo: Handle case when LM not found
+			cv::Point2f gt = gtlm->getPoint2D();
+			cv::Point2f det = lmModel.getLandmarkAsPoint(lmId, modelShape);
+
+			float dx = (gt.x - det.x);
+			float dy = (gt.y - det.y);
+			float diff = std::sqrt(dx*dx + dy*dy);
+
+			resultsFile << diff << " # " << lmId << std::endl;
+		}
+
 		
 		end = std::chrono::system_clock::now();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
@@ -368,6 +397,8 @@ int main(int argc, char *argv[])
 		cv::waitKey(5);
 
 	}
+
+	resultsFile.close();
 
 	return 0;
 }

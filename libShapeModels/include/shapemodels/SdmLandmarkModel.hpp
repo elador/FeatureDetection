@@ -117,6 +117,8 @@ public:
 	//std::vector<cv::Point2f> getLandmarksAsPoints(cv::Mat or vector<float> alphas or empty(=mean));
 	std::vector<cv::Point2f> getMeanAsPoints() const;
 
+	cv::Point2f getLandmarkAsPoint(std::string landmarkIdentifier, cv::Mat modelInstance=cv::Mat()) const;
+
 	void save(boost::filesystem::path filename, std::string comment="");
 
 	/**

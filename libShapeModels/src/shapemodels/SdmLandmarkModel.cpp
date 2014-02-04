@@ -70,6 +70,22 @@ std::vector<cv::Point2f> SdmLandmarkModel::getMeanAsPoints() const
 	return landmarks;
 }
 
+cv::Point2f SdmLandmarkModel::getLandmarkAsPoint(std::string landmarkIdentifier, cv::Mat modelInstance/*=cv::Mat()*/) const
+{
+	const auto it = std::find(begin(this->landmarkIdentifier), end(this->landmarkIdentifier), landmarkIdentifier);
+	if (it == end(this->landmarkIdentifier)) {
+
+	} else {
+		const auto index = std::distance(begin(this->landmarkIdentifier), it);
+		if (modelInstance.empty()) {
+			return cv::Point2f(meanLandmarks.at<float>(index), meanLandmarks.at<float>(index + getNumLandmarks()));
+		} else {
+			return cv::Point2f(modelInstance.at<float>(index), modelInstance.at<float>(index + getNumLandmarks()));
+		}
+	}
+}
+
+
 void SdmLandmarkModel::save(boost::filesystem::path filename, std::string comment)
 {
 	std::ofstream file(filename.string());
