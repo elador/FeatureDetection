@@ -17,6 +17,12 @@ FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core calib3d features2d nonfree objdetect)
 message(STATUS "HDF5 includes at: ${HDF5_INCLUDE_DIRS}")
 message(STATUS "HDF5 libraries at: ${HDF5_LIBRARIES}")
 
+SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
+FIND_PACKAGE(Eigen3 REQUIRED)
+MESSAGE(STATUS "Eigen3 found: ${EIGEN3_FOUND}")
+MESSAGE(STATUS "Eigen3 include dir found at ${EIGEN3_INCLUDE_DIR}")
+MESSAGE(STATUS "Eigen3 version: ${EIGEN3_VERSION}")
+
 # source and header files
 SET(HEADERS
 	include/shapemodels/PcaModel.hpp
@@ -29,6 +35,7 @@ SET(HEADERS
 	include/shapemodels/FeaturePointsModel.hpp
 	include/shapemodels/FeaturePointsSelector.hpp
 	include/shapemodels/ListFeaturePointsSelector.hpp
+	include/shapemodels/LandmarkBasedSupervisedDescentTraining.hpp
 	include/shapemodels/RandomFeaturePointsSelector.hpp
 	include/shapemodels/FeaturePointsEvaluator.hpp
 	include/shapemodels/TwoStepFeaturePointsEvaluator.hpp
@@ -41,6 +48,7 @@ SET(SOURCE
 	src/shapemodels/PcaModel.cpp
 	src/shapemodels/MorphableModel.cpp
 	src/shapemodels/SdmLandmarkModel.cpp
+	src/shapemodels/LandmarkBasedSupervisedDescentTraining.cpp
 	src/shapemodels/hog.c
 	src/shapemodels/OpenCVCameraEstimation.cpp
 	src/shapemodels/AffineCameraEstimation.cpp
@@ -55,6 +63,7 @@ include_directories( "include" )
 # add dependencies
 include_directories( ${Boost_INCLUDE_DIRS} )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
+include_directories( ${EIGEN3_INCLUDE_DIR} )
 include_directories( ${HDF5_INCLUDE_DIRS} )
 include_directories( ${ImageProcessing_SOURCE_DIR}/include )
 include_directories( ${ImageIO_SOURCE_DIR}/include )

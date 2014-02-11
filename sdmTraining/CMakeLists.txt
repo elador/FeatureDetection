@@ -56,6 +56,7 @@ SET(HEADERS
 
 ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
 
+include_directories( ${EIGEN3_INCLUDE_DIR} ) # remove
 include_directories( ${Boost_INCLUDE_DIRS} )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( ${HDF5_INCLUDE_DIRS} )
