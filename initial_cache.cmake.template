@@ -13,6 +13,12 @@
 #set( MATLAB_ROOT     "C:/Program Files/MATLAB/R2012b/"    CACHE STRING "Matlab search location" FORCE ) # Note: This path should be given without "/extern"
 #set( MATLAB_ROOT     "/home/user/MATLAB_Compiler_Runtime/v82/"    CACHE STRING "Matlab search location" FORCE ) # Linux
 
+# Eigen3:
+# -------
+# Windows: Set to the path of the unzipped Eigen3 file.
+#set( EIGEN3_INCLUDE_DIR "C:\\opencv\\eigen-eigen-ffa86ffb5570\\" CACHE STRING "Directory of the Eigen3 headers" FORCE )
+# Linux: Not tested, can probably be left empty when installed system-wide. Otherwise, set the path manually.
+
 
 # Mechanism via ConfigLIB.cmake in 3rd party library directory
 # ==============================
