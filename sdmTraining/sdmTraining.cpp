@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 			("config,c", po::value<path>(&configFilename)->required(),
 				"input config")
 			("output,o", po::value<path>(&outputFilename)->required(),
-				"output")
+				"output filename")
 		;
 
 		po::variables_map vm;

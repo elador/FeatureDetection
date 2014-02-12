@@ -367,6 +367,7 @@ public:
 		MeanPreAlign meanPreAlign = MeanPreAlign::NONE;
 		MeanNormalization meanNormalization = MeanNormalization::UNIT_SUM_SQUARED_NORMS;
 		int numCascadeSteps = 5;
+		Regularisation regularisation;
 
 		// TODO: Dont initialize with numSamples... Instead, push_back. Because
 		// Sampling params: DiscardX0Sample. 
@@ -497,9 +498,39 @@ public:
 			// 5. Add one row to the features (already done), add regLambda
 			start = std::chrono::system_clock::now();
 			Mat AtA = featureMatrix.t() * featureMatrix;
-			float lambda = 0.5f * cv::norm(AtA) / (numImages*(numSamplesPerImage + 1));
+			float lambda;
+			if (regularisation.regulariseWithSmallestEigenvalue) {
+				Mat eigenvalues;
+				Eigen::Map<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> AtA_Eigen(AtA.ptr<float>(), AtA.rows, AtA.cols);
+				std::chrono::time_point<std::chrono::system_clock> eigenTimeStart = std::chrono::system_clock::now();
+				Eigen::EigenSolver<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> es(AtA_Eigen);
+				cv::eigen(AtA, false, eigenvalues, Mat());
+				std::cout << es.eigenvalues() << std::endl;
+				std::cout << es.eigenvalues()[0] << std::endl;
+				std::cout << es.eigenvalues()[es.eigenvalues().rows() - 1] << std::endl;
+				std::cout << es.eigenvalues()[es.eigenvalues().rows()] << std::endl;
+				
+				std::chrono::time_point<std::chrono::system_clock> eigenTimeEnd = std::chrono::system_clock::now();
+				elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(eigenTimeEnd - eigenTimeStart).count();
+				logger.debug("cv::eigen of AtA took " + lexical_cast<string>(elapsed_mseconds)+"ms.");
+				float smallestEigenvalue = eigenvalues.at<float>(eigenvalues.rows - 1);
+				if (smallestEigenvalue < 0.0f) {
+					lambda = -smallestEigenvalue; // move all eigenvalues to the right so the smallest will be zero afterwards
+					lambda += 0.01f; // add a little bit more so the eigenvalue won't be zero.
+				} else {
+					lambda = 0.0f;
+				}
+			}
+			else
+			{
+				lambda = regularisation.factor * cv::norm(AtA) / (numImages*(numSamplesPerImage + 1)); // We divide by the number of images. However, division by (AtA.rows * AtA.cols) might make more sense?
+			}
+			logger.debug("Lambda set to " + lexical_cast<string>(lambda));
+			
 			Mat regulariser = Mat::eye(AtA.rows, AtA.rows, CV_32FC1) * lambda;
-			regulariser.at<float>(regulariser.rows - 1, regulariser.cols - 1) = 0.0f; // no lambda for the bias
+			if (!regularisation.regulariseAffineComponent) {
+				regulariser.at<float>(regulariser.rows - 1, regulariser.cols - 1) = 0.0f; // no lambda for the bias
+			}
 			//		solve for x!
 			Mat AtAReg = AtA + regulariser;
 			if (!AtAReg.isContinuous()) {
@@ -573,7 +604,11 @@ public:
 		return model;
 	};
 
-
+	struct Regularisation {
+		float factor = 0.5f;
+		bool regulariseAffineComponent = true;
+		bool regulariseWithSmallestEigenvalue = true;
+	};
 
 private:
 
