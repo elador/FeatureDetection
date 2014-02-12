@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
 		read_info(configFilename.string(), pt);
 	}
 	catch (const boost::property_tree::ptree_error& error) {
-		appLogger.error(error.what());
+		appLogger.error(string("Error reading the config file: ") + error.what());
 		return EXIT_FAILURE;
 	}
 	try {

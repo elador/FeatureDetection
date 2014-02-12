@@ -45,6 +45,7 @@ add_subdirectory(libShapeModels)		# Head/face specific things; 2D/3D models; Com
 add_subdirectory(fitter)			# Experimental app (compiles)
 add_subdirectory(sdmTracking)			# Experimental app (compiles)
 add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
+add_subdirectory(sdmEvaluation)			# 
 add_subdirectory(landmarkVisualiser)	# Simple app to read landmarks and images and display them
 add_subdirectory(landmarkEvaluation)	# Simple app to read detected landmarks and groundtruth (and an optional config to specify which landmarks to compare) and writes the differences to a file.
 

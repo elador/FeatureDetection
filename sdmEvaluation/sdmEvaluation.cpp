@@ -97,23 +97,21 @@ int main(int argc, char *argv[])
 	#endif
 	
 	string verboseLevelConsole;
-	int deviceId, kinectId;
-	bool useCamera = false, useKinect = false;
 	bool useFileList = false;
 	bool useImgs = false;
 	bool useDirectory = false;
-	bool useLandmarkFiles = false;
 	vector<path> inputPaths;
 	path inputFilelist;
 	path inputDirectory;
 	vector<path> inputFilenames;
-	path configFilename;
 	shared_ptr<ImageSource> imageSource;
 	path landmarksDir; // TODO: Make more dynamic wrt landmark format. a) What about the loading-flags (1_Per_Folder etc) we have? b) Expose those flags to cmdline? c) Make a LmSourceLoader and he knows about a LM_TYPE (each corresponds to a Parser/Loader class?)
 	string landmarkType;
 	path sdmModelFile;
 	path faceDetectorFilename;
 	bool trackingMode;
+	path outputDirectory;
+	vector<string> landmarksToCompare;
 
 	try {
 		po::options_description desc("Allowed options");
@@ -122,14 +120,8 @@ int main(int argc, char *argv[])
 				"produce help message")
 			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
 				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
-			("config,c", po::value<path>(&configFilename)->required(), 
-				"path to a config (.cfg) file")
 			("input,i", po::value<vector<path>>(&inputPaths)/*->required()*/, 
 				"input from one or more files, a directory, or a  .lst/.txt-file containing a list of images")
-			("device,d", po::value<int>(&deviceId)->implicit_value(0), 
-				"A camera device ID for use with the OpenCV camera driver")
-			("kinect,k", po::value<int>(&kinectId)->implicit_value(0), 
-				"Windows only: Use a Kinect as camera. Optionally specify a device ID.")
 			("model,m", po::value<path>(&sdmModelFile)->required(),
 				"A SDM model file to load.")
 			("face-detector,f", po::value<path>(&faceDetectorFilename)->required(),
@@ -138,8 +130,12 @@ int main(int argc, char *argv[])
 				"load landmark files from the given folder")
 			("landmark-type,t", po::value<string>(&landmarkType), 
 				"specify the type of landmarks to load: ibug")
+			("landmark-to-compare,c", po::value<vector<string>>(&landmarksToCompare)->multitoken(),
+				"todo")
 			("tracking-mode,r", po::value<bool>(&trackingMode)->default_value(false)->implicit_value(true),
 				"If on, V&J will be run to initialize the model only and after the model lost tracking. If off, V&J will be run on every frame/image.")
+			("output,o", po::value<path>(&outputDirectory)->required(),
+				"Output dir for imgs + 1 lm-err norm. by IED file.")
 		;
 
 		po::positional_options_description p;
@@ -150,16 +146,9 @@ int main(int argc, char *argv[])
 		po::notify(vm);
 
 		if (vm.count("help")) {
-			cout << "Usage: fitter [options]\n";
+			cout << "Usage: sdmEvaluation [options]\n";
 			cout << desc;
 			return EXIT_SUCCESS;
-		}
-		if (vm.count("landmarks")) {
-			useLandmarkFiles = true;
-			if (!vm.count("landmark-type")) {
-				cout << "You have specified to use landmark files. Please also specify the type of the landmarks to load via --landmark-type or -t." << endl;
-				return EXIT_SUCCESS;
-			}
 		}
 
 	} catch(std::exception& e) {
@@ -185,7 +174,6 @@ int main(int argc, char *argv[])
 	Logger appLogger = Loggers->getLogger("sdmTracking");
 
 	appLogger.debug("Verbose level for console output: " + logging::loglevelToString(logLevel));
-	appLogger.debug("Using config: " + configFilename.string());
 
 	if (inputPaths.size() > 1) {
 		// We assume the user has given several, valid images
@@ -204,10 +192,8 @@ int main(int argc, char *argv[])
 			inputFilenames = inputPaths;
 		}
 	} else {
-		// todo see HeadTracking.cpp
-		useCamera = true;
-		//appLogger.error("Please either specify one or several files, a directory, or a .lst-file containing a list of images to run the program!");
-		//return EXIT_FAILURE;
+		appLogger.error("Please either specify one or several files, a directory, or a .lst-file containing a list of images to run the program!");
+		return EXIT_FAILURE;
 	}
 
 	if (useFileList==true) {
@@ -248,37 +234,26 @@ int main(int argc, char *argv[])
 			return EXIT_FAILURE;
 		}
 	}
-	if (useCamera) {
-		imageSource = make_shared<CameraImageSource>(deviceId);
-	}
+
 	// Load the ground truth
 	// Either a) use if/else for imageSource or labeledImageSource, or b) use an EmptyLandmarkSoure
 	shared_ptr<LabeledImageSource> labeledImageSource;
 	shared_ptr<NamedLandmarkSource> landmarkSource;
-	if (useLandmarkFiles) {
-		vector<path> groundtruthDirs; groundtruthDirs.push_back(landmarksDir); // Todo: Make cmdline use a vector<path>
-		shared_ptr<LandmarkFormatParser> landmarkFormatParser;
-		if(boost::iequals(landmarkType, "lst")) {
-			//landmarkFormatParser = make_shared<LstLandmarkFormatParser>();
-			//landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, string(), GatherMethod::SEPARATE_FILES, groundtruthDirs), landmarkFormatParser);
-		} else if(boost::iequals(landmarkType, "ibug")) {
-			landmarkFormatParser = make_shared<IbugLandmarkFormatParser>();
-			landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".pts", GatherMethod::ONE_FILE_PER_IMAGE_SAME_DIR, groundtruthDirs), landmarkFormatParser);
-		} else {
-			cout << "Error: Invalid ground truth type." << endl;
-			return EXIT_FAILURE;
-		}
+	
+	vector<path> groundtruthDirs; groundtruthDirs.push_back(landmarksDir); // Todo: Make cmdline use a vector<path>
+	shared_ptr<LandmarkFormatParser> landmarkFormatParser;
+	if(boost::iequals(landmarkType, "lst")) {
+		//landmarkFormatParser = make_shared<LstLandmarkFormatParser>();
+		//landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, string(), GatherMethod::SEPARATE_FILES, groundtruthDirs), landmarkFormatParser);
+	} else if(boost::iequals(landmarkType, "ibug")) {
+		landmarkFormatParser = make_shared<IbugLandmarkFormatParser>();
+		landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".pts", GatherMethod::ONE_FILE_PER_IMAGE_SAME_DIR, groundtruthDirs), landmarkFormatParser);
 	} else {
-		landmarkSource = make_shared<EmptyLandmarkSource>();
-	}
-	labeledImageSource = make_shared<NamedLabeledImageSource>(imageSource, landmarkSource);
-	ptree pt;
-	try {
-		boost::property_tree::info_parser::read_info(configFilename.string(), pt);
-	} catch(const boost::property_tree::ptree_error& error) {
-		appLogger.error(error.what());
+		cout << "Error: Invalid ground truth type." << endl;
 		return EXIT_FAILURE;
 	}
+	
+	labeledImageSource = make_shared<NamedLabeledImageSource>(imageSource, landmarkSource);
 	
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img;
@@ -301,8 +276,9 @@ int main(int argc, char *argv[])
 	
 	bool runRigidAlign = true;
 
-	std::ofstream resultsFile("C:\\Users\\Patrik\\Documents\\GitHub\\sdm_lfpw_tr_68lm_10s_5c_RESULTS.txt");
-	vector<string> comparisonLandmarks({ "9", "31", "37", "40", "43", "46", "49", "55", "63", "67" });
+	// TODO: If landmarksToCompare is empty, fill it to use all
+
+	std::ofstream resultsFile((outputDirectory / "results.txt").string());
 
 	while(labeledImageSource->next()) {
 		start = std::chrono::system_clock::now();
@@ -378,10 +354,10 @@ int main(int argc, char *argv[])
 			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + lmModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 255.0f, 0.0f));
 		}
 
-		imwrite("C:\\Users\\Patrik\\Documents\\GitHub\\out_sdm_lms\\" + labeledImageSource->getName().filename().string(), landmarksImage);
+		imwrite((outputDirectory / labeledImageSource->getName().filename()).string(), landmarksImage);
 
 		resultsFile << "# " << labeledImageSource->getName() << std::endl;
-		for (const auto& lmId : comparisonLandmarks) {
+		for (const auto& lmId : landmarksToCompare) {
 
 			shared_ptr<Landmark> gtlm = groundtruth.getLandmark(lmId); // Todo: Handle case when LM not found
 			cv::Point2f gt = gtlm->getPoint2D();
