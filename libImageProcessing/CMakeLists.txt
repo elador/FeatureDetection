@@ -9,7 +9,7 @@ MESSAGE(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 # find dependencies
 FIND_PACKAGE(Boost 1.48.0 REQUIRED) # We only need the headers
 
-FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core imgproc)
+FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core imgproc)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 

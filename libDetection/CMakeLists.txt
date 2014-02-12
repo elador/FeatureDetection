@@ -13,7 +13,7 @@ ELSE(Boost_FOUND)
   MESSAGE(FATAL_ERROR "Boost not found")
 ENDIF()
 # OpenCV:
-FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core)
+FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 

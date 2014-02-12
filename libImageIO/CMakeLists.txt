@@ -9,7 +9,7 @@ MESSAGE(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 # find dependencies
 #FIND_PACKAGE(Boost 1.48.0 COMPONENTS filesystem REQUIRED)	# Patrik: I think we need 'system' too, if the app doesn't link to it, ImageIO fails to link.
 FIND_PACKAGE(Boost 1.48.0 REQUIRED) # We only want the headers in the lib?
-FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core)
+FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 IF(WITH_MSKINECT_SDK)
