@@ -87,18 +87,11 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 	return os;
 }
 
-enum class MeanTraining { // not needed anymore
-	// on what to train the mean:
-	ON_VJ_DETECTIONS, // orig paper, sect. 3.1. & Fig. 2b)
-	ON_ALL // orig paper?
-};
-
-
 // computation...normalization ... alignment ...
 
-enum class FilterByFaceDetection {
+enum class FilterByFaceDetection { // on what to train the mean?
 	NONE,
-	VIOLAJONES
+	VIOLAJONES // orig paper, sect. 3.1. & Fig. 2b)
 };
 
 int main(int argc, char *argv[])
@@ -172,6 +165,10 @@ int main(int argc, char *argv[])
 	std::vector<string> modelLandmarks;
 	vector<Dataset> trainingDatasets;
 	int numSamplesPerImage; // How many Monte Carlo samples to generate per training image, in addition to the original image. Default: 10
+	int numCascadeSteps; // How many cascade steps to learn? (i.e. how many regressors)
+	vector<string> descriptorTypes;
+	vector<shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors;
+	LandmarkBasedSupervisedDescentTraining::Regularisation regularisation;
 
 	// Read the stuff from the config:
 	ptree pt;
@@ -186,6 +183,24 @@ int main(int argc, char *argv[])
 		// Get stuff from the parameters subtree
 		ptree ptParameters = pt.get_child("parameters");
 		numSamplesPerImage = ptParameters.get<int>("numSamplesPerImage", 10);
+		numCascadeSteps = ptParameters.get<int>("numCascadeSteps", 5);
+		regularisation.factor = ptParameters.get<float>("regularisationFactor", 0.5f);
+		regularisation.regulariseAffineComponent = ptParameters.get<bool>("regulariseAffineComponent", false);
+		regularisation.regulariseWithEigenvalueThreshold = ptParameters.get<bool>("regulariseWithEigenvalueThreshold", false);
+		// Read the 'featureDescriptors' sub-tree:
+		ptree ptFeatureDescriptors = ptParameters.get_child("featureDescriptors");
+		for (const auto& kv : ptFeatureDescriptors) {
+			string descriptorType = kv.second.get<string>("descriptorType");
+			string descriptorPostprocessing = kv.second.get<string>("descriptorPostprocessing", "none");
+			string descriptorParameters = kv.second.get<string>("descriptorParameters", "");
+			if (descriptorType == "OpenCVSift") {
+				shared_ptr<FeatureDescriptorExtractor> sift = std::make_shared<SiftFeatureDescriptorExtractor>();
+				descriptorExtractors.push_back(sift);
+			} else {
+				throw std::logic_error("descriptorType does not match 'OpenCVSift'. No other descriptor types implemented yet.");
+			}
+			descriptorTypes.push_back(descriptorType);
+		}
 
 		// Get stuff from the modelLandmarks subtree:
 		ptree ptModelLandmarks = pt.get_child("modelLandmarks");
@@ -194,8 +209,8 @@ int main(int argc, char *argv[])
 		string modelLandmarksUsage = ptModelLandmarks.get<string>("landmarks");
 		if (modelLandmarksUsage.empty()) {
 			// value is empty, meaning it's a node and the user should specify a list of 'landmarks'
-			ptree ptmodelLandmarksList = ptModelLandmarks.get_child("landmarks");
-			for (const auto& kv : ptmodelLandmarksList) {
+			ptree ptModelLandmarksList = ptModelLandmarks.get_child("landmarks");
+			for (const auto& kv : ptModelLandmarksList) {
 				modelLandmarks.push_back(kv.first);
 			}
 			appLogger.debug("Loaded a list of " + lexical_cast<string>(modelLandmarks.size()) + " landmarks to train the model.");
@@ -306,14 +321,18 @@ int main(int argc, char *argv[])
 		cout << "Error loading face detection model." << endl;
 		return EXIT_FAILURE;
 	}
-	// Settings:
-	//MeanTraining meanTraining = MeanTraining::ON_VJ_DETECTIONS;
 	
+	// App-config:
 	FilterByFaceDetection filterByFaceDetection = FilterByFaceDetection::VIOLAJONES;
 	// Add a switch "use_GT_as_detectionResults" ?
 	
 	// Our data:
+	using cv::Rect;
 	vector<std::tuple<Mat, cv::Rect, Mat>> trainingData; // img, fb, groundtruth-lms (model ones)
+	vector<Mat> trainingImages;
+	vector<Mat> trainingGroundtruthLandmarks;
+	vector<Rect> trainingFaceboxes;
+
 	for (const auto& d : trainingDatasets) {
 		if (filterByFaceDetection == FilterByFaceDetection::NONE) {
 			// 1. Use all the images for training
@@ -398,11 +417,11 @@ int main(int argc, char *argv[])
 
 	}
 
-
-	// TRAIN!!!
-	// change trainingData to separate args
 	LandmarkBasedSupervisedDescentTraining tr;
-	SdmLandmarkModel model = tr.train(trainingData, modelLandmarks, numSamplesPerImage);
+	tr.setNumSamplesPerImage(numSamplesPerImage);
+	tr.setNumCascadeSteps(numCascadeSteps);
+	tr.setRegularisation(regularisation);
+	SdmLandmarkModel model = tr.train(trainingData, modelLandmarks, descriptorTypes, descriptorExtractors);
 	
 	std::time_t currentTime_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	string currentTime = std::ctime(&currentTime_t);

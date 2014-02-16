@@ -65,6 +65,13 @@ public:
 		GaussParameter sy;
 	};
 
+	// Holds the regularisation parameters for the training.
+	struct Regularisation {
+		float factor = 0.5f;
+		bool regulariseAffineComponent = false;
+		bool regulariseWithEigenvalueThreshold = false;
+	};
+
 	enum class MeanPreAlign { // what to do with the GT LMs before mean is taken.
 		NONE // no prealign, stay in img-coords
 		// translate/scale to normalized square (?)
@@ -359,15 +366,27 @@ public:
 		return groundtruthShapes;
 	};
 
-	SdmLandmarkModel train(vector<std::tuple<Mat, cv::Rect, Mat>> trainingData, std::vector<string> modelLandmarks, int numSamplesPerImage) {
+	void setNumSamplesPerImage(int numSamplesPerImage) {
+		this->numSamplesPerImage = numSamplesPerImage;
+	};
+
+	void setNumCascadeSteps(int numCascadeSteps) {
+		this->numCascadeSteps = numCascadeSteps;
+	};
+
+	void setRegularisation(Regularisation regularisation) {
+		this->regularisation = regularisation;
+	};
+
+public:
+
+	SdmLandmarkModel train(vector<std::tuple<Mat, cv::Rect, Mat>> trainingData, std::vector<string> modelLandmarks, vector<string> descriptorTypes, vector<shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors) {
 
 		Logger logger = Loggers->getLogger("shapemodels");
 		std::chrono::time_point<std::chrono::system_clock> start, end;
 		int elapsed_mseconds;
 		MeanPreAlign meanPreAlign = MeanPreAlign::NONE;
 		MeanNormalization meanNormalization = MeanNormalization::UNIT_SUM_SQUARED_NORMS;
-		int numCascadeSteps = 5;
-		Regularisation regularisation;
 
 		// TODO: Dont initialize with numSamples... Instead, push_back. Because
 		// Sampling params: DiscardX0Sample. 
@@ -450,9 +469,7 @@ public:
 		groundtruthShapes = duplicateGroundtruthShapes(groundtruthLandmarks, numSamplesPerImage);
 
 		// We START here with the real algorithm, everything before was data preparation and calculation of the mean
-		vector<string> descriptorTypes;
-		vector<shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors;
-
+		
 		std::vector<cv::Mat> regressorData; // output
 
 		// Prepare the data for the first cascade step learning. Starting from the mean initialization x0, deltaShape = gt - x0
@@ -465,10 +482,10 @@ public:
 		for (int currentCascadeStep = 0; currentCascadeStep < numCascadeSteps; ++currentCascadeStep) {
 			logger.debug("LM-SDM training: Training regressor " + lexical_cast<string>(currentCascadeStep));
 			// b) Extract the features at all landmark locations initialShape (Paper: SIFT, 32x32 (?))
-			shared_ptr<FeatureDescriptorExtractor> sift = std::make_shared<SiftFeatureDescriptorExtractor>();
+			//shared_ptr<FeatureDescriptorExtractor> sift = std::make_shared<SiftFeatureDescriptorExtractor>();
 			// read params if there are any?
-			descriptorExtractors.push_back(sift);
-			descriptorTypes.push_back("OpenCVSift");
+			//descriptorExtractors.push_back(sift);
+			//descriptorTypes.push_back("OpenCVSift");
 			//int featureDimension = 128;
 			Mat featureMatrix;// = Mat::ones(initialShape.rows, (featureDimension * numModelLandmarks) + 1, CV_32FC1); // Our 'A'. The last column stays all 1's; it's for learning the offset/bias
 			start = std::chrono::system_clock::now();
@@ -482,7 +499,7 @@ public:
 						float py = initialShape.at<float>(currentImage*(numSamplesPerImage + 1) + sample, lm + numModelLandmarks);
 						keypoints.emplace_back(cv::Point2f(px, py));
 					}
-					Mat featureDescriptors = sift->getDescriptors(img, keypoints);
+					Mat featureDescriptors = descriptorExtractors[currentCascadeStep]->getDescriptors(img, keypoints);
 					// concatenate all the descriptors for this sample horizontally (into a row-vector)
 					featureDescriptors = featureDescriptors.reshape(0, featureDescriptors.cols * numModelLandmarks).t();
 					featureMatrix.push_back(featureDescriptors);
@@ -562,9 +579,11 @@ public:
 				// Eigen will most likely return garbage here (according to their docu anyway). We have a few options:
 				// - Increase lambda
 				// - Calculate the pseudo-inverse. See: http://eigen.tuxfamily.org/index.php?title=FAQ#Is_there_a_method_to_compute_the_.28Moore-Penrose.29_pseudo_inverse_.3F
-				string msg("The regularized AtA is not invertible (its rank is: " + lexical_cast<string>(rankOfAtAReg) + "). Increase lambda (or use the pseudo-inverse, which is not implemented yet).");
+				string msg("The regularized AtA is not invertible (its rank is " + lexical_cast<string>(rankOfAtAReg) + ", full rank would be " + lexical_cast<string>(AtAReg_Eigen.rows()) + "). Increase lambda (or use the pseudo-inverse, which is not implemented yet).");
 				logger.error(msg);
-				throw std::runtime_error(msg);
+				#ifndef _DEBUG
+					throw std::runtime_error(msg); // Don't throw while debugging. Makes debugging with small amounts of data possible.
+				#endif
 			}
 			Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> AtARegInv_EigenFullLU = luOfAtAReg.inverse();
 			//Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> AtARegInv_Eigen = AtAReg_Eigen.inverse(); // This would be the cheap variant (PartialPivotLU), but we can't check if the matrix is invertible.
@@ -632,15 +651,11 @@ public:
 		SdmLandmarkModel model(modelMean, modelLandmarks, regressorData, descriptorExtractors, descriptorTypes);
 		return model;
 	};
-
-	struct Regularisation {
-		float factor = 0.5f;
-		bool regulariseAffineComponent = true;
-		bool regulariseWithEigenvalueThreshold = true;
-	};
-
+	
 private:
-
+	int numSamplesPerImage = 10; ///< todo
+	int numCascadeSteps = 5; ///< todo
+	Regularisation regularisation; ///< todo
 
 };
 
