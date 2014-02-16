@@ -328,10 +328,12 @@ int main(int argc, char *argv[])
 	
 	// Our data:
 	using cv::Rect;
-	vector<std::tuple<Mat, cv::Rect, Mat>> trainingData; // img, fb, groundtruth-lms (model ones)
 	vector<Mat> trainingImages;
 	vector<Mat> trainingGroundtruthLandmarks;
 	vector<Rect> trainingFaceboxes;
+
+	start = std::chrono::system_clock::now();
+	appLogger.info("Reading data, doing V&J if enabled...");
 
 	for (const auto& d : trainingDatasets) {
 		if (filterByFaceDetection == FilterByFaceDetection::NONE) {
@@ -356,7 +358,8 @@ int main(int argc, char *argv[])
 					++currentLandmark;
 				}
 				Mat img = d.labeledImageSource->getImage();
-				trainingData.push_back(std::make_tuple(img, cv::Rect(), landmarks));
+				trainingImages.push_back(img);
+				trainingGroundtruthLandmarks.push_back(landmarks);
 			}
 		}
 		else if (filterByFaceDetection == FilterByFaceDetection::VIOLAJONES) {
@@ -411,17 +414,22 @@ int main(int argc, char *argv[])
 					}
 					++currentLandmark;
 				}
-				trainingData.push_back(std::make_tuple(img, detectedFaces[0], landmarks));
+				trainingImages.push_back(img);
+				trainingGroundtruthLandmarks.push_back(landmarks);
+				trainingFaceboxes.push_back(detectedFaces[0]);
 			}
 		}
-
 	}
+
+	end = std::chrono::system_clock::now();
+	int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	appLogger.debug("Finished after " + lexical_cast<string>(elapsed_mseconds)+"ms.");
 
 	LandmarkBasedSupervisedDescentTraining tr;
 	tr.setNumSamplesPerImage(numSamplesPerImage);
 	tr.setNumCascadeSteps(numCascadeSteps);
 	tr.setRegularisation(regularisation);
-	SdmLandmarkModel model = tr.train(trainingData, modelLandmarks, descriptorTypes, descriptorExtractors);
+	SdmLandmarkModel model = tr.train(trainingImages, trainingGroundtruthLandmarks, trainingFaceboxes, modelLandmarks, descriptorTypes, descriptorExtractors);
 	
 	std::time_t currentTime_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	string currentTime = std::ctime(&currentTime_t);

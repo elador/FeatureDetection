@@ -125,13 +125,10 @@ public:
 	};
 
 	// just copy the coords over into groundtruthLandmarks
-	cv::Mat meanPreAlignNone(vector<std::tuple<Mat, cv::Rect, Mat>> trainingData, cv::Mat landmarks) {
-		int currentImage = 0;
-		for (const auto& data : trainingData) {
-			Mat img = std::get<0>(data);
-			Mat lms = std::get<2>(data);
-			lms.copyTo(landmarks.row(currentImage));
-			currentImage++;
+	cv::Mat meanPreAlignNone(vector<cv::Mat> groundtruthLandmarks, cv::Mat landmarks) {
+		for (auto currentImage = 0; currentImage < groundtruthLandmarks.size(); ++currentImage) {
+			Mat groundtruthLms = groundtruthLandmarks[currentImage];
+			groundtruthLms.copyTo(landmarks.row(currentImage));
 		}
 		return landmarks;
 	};
@@ -161,11 +158,10 @@ public:
 	};
 
 	// aligns mean + fb to be x0. Note: fills in a matrix that's bigger (i.e. numSamplesPerImage as big)
-	cv::Mat initialAlign(vector<std::tuple<Mat, cv::Rect, Mat>> trainingData, Mat initialShape, Mat modelMean, int numSamplesPerImage) {
-		int currentImage = 0;
-		for (const auto& data : trainingData) {
-			Mat img = std::get<0>(data);
-			cv::Rect detectedFace = std::get<1>(data); // Caution: Depending on flags selected earlier, we might not have detected faces yet!
+	cv::Mat initialAlign(vector<Mat> trainingImages, vector<cv::Rect> trainingFaceboxes, Mat initialShape, Mat modelMean, int numSamplesPerImage) {
+		for (auto currentImage = 0; currentImage < trainingImages.size(); ++currentImage) {
+			Mat img = trainingImages[currentImage];
+			cv::Rect detectedFace = trainingFaceboxes[currentImage]; // Caution: Depending on flags selected earlier, we might not have detected faces yet!
 
 			// Initial estimate x_0: Center the mean face at the [-0.5, 0.5] x [-0.5, 0.5] square (assuming the face-box is that square)
 			// More precise: Take the mean as it is (assume it is in a space [-0.5, 0.5] x [-0.5, 0.5]), and just place it in the face-box as
@@ -205,22 +201,21 @@ public:
 			for (int i = 0; i < numModelLandmarks; ++i) {
 			cv::circle(img, Point2f(initialShapeEstimateX0.at<float>(i, 0), initialShapeEstimateX0.at<float>(i + numModelLandmarks, 0)), 3, Scalar(0.0f, 255.0f, 0.0f));
 			}*/
-			++currentImage;
 		}
 		return initialShape;
 	};
 
-	ModelVariance calcMeanVarTransScaleDiff(vector<std::tuple<Mat, cv::Rect, Mat>> trainingData, Mat groundtruthLandmarks, Mat initialShapeEstimateX0) {
-		Mat delta_tx(trainingData.size(), 1, CV_32FC1);
-		Mat delta_ty(trainingData.size(), 1, CV_32FC1);
-		Mat delta_sx(trainingData.size(), 1, CV_32FC1);
-		Mat delta_sy(trainingData.size(), 1, CV_32FC1);
+	ModelVariance calcMeanVarTransScaleDiff(vector<Mat> trainingImages, vector<cv::Rect> trainingFaceboxes, Mat groundtruthLandmarks, Mat initialShapeEstimateX0) {
+		Mat delta_tx(trainingImages.size(), 1, CV_32FC1);
+		Mat delta_ty(trainingImages.size(), 1, CV_32FC1);
+		Mat delta_sx(trainingImages.size(), 1, CV_32FC1);
+		Mat delta_sy(trainingImages.size(), 1, CV_32FC1);
 		int numModelLandmarks = groundtruthLandmarks.cols / 2;
 		int numDataPerTrainingImage = initialShapeEstimateX0.rows / groundtruthLandmarks.rows;
 		int currentImage = 0;
-		for (const auto& data : trainingData) {
-			Mat img = std::get<0>(data);
-			cv::Rect detectedFace = std::get<1>(data); // Caution: Depending on flags selected earlier, we might not have detected faces yet!
+		for (auto currentImage = 0; currentImage < trainingImages.size(); ++currentImage) {
+			Mat img = trainingImages[currentImage];
+			cv::Rect detectedFace = trainingFaceboxes[currentImage]; // Caution: Depending on flags selected earlier, we might not have detected faces yet!
 
 			// calculate the centroid and the min-max bounding-box (for the width/height) of the ground-truth:
 			Scalar gtMeanX = cv::mean(groundtruthLandmarks.row(currentImage).colRange(0, numModelLandmarks));
@@ -262,7 +257,7 @@ public:
 			delta_sy.at<float>(currentImage) = (maxHeight - minHeight) / (maxHeightX0 - minHeightX0);
 
 			// Calculate the mean and variances of the translational and scaling differences between the initial and true landmark locations:
-			currentImage++;
+			// ???
 		}
 		// Calculate the mean/variances and store them:
 		ModelVariance modelVariance;
@@ -299,18 +294,17 @@ public:
 
 
 
-	Mat putInDataAndGenerateSamples(vector<std::tuple<Mat, cv::Rect, Mat>> trainingData, Mat modelMean, Mat initialShape, ModelVariance modelVariance, int numSamplesPerImage) {
+	Mat putInDataAndGenerateSamples(vector<Mat> trainingImages, vector<cv::Rect> trainingFaceboxes, Mat modelMean, Mat initialShape, ModelVariance modelVariance, int numSamplesPerImage) {
 		std::mt19937 engine; ///< A Mersenne twister MT19937 engine
 		engine.seed();
 		std::normal_distribution<float> rndN_t_x(modelVariance.tx.mu, modelVariance.tx.sigma);
 		std::normal_distribution<float> rndN_t_y(modelVariance.ty.mu, modelVariance.ty.sigma);
 		std::normal_distribution<float> rndN_s_x(modelVariance.sx.mu, modelVariance.sx.sigma);
 		std::normal_distribution<float> rndN_s_y(modelVariance.sy.mu, modelVariance.sy.sigma);
-		int currentImage = 0;
-		for (const auto& data : trainingData) {
+		for (auto currentImage = 0; currentImage < trainingImages.size(); ++currentImage) {
 			// a) Run the face-detector (the same that we're going to use in the testing-stage) (already done)
-			Mat img = std::get<0>(data);
-			cv::Rect detectedFace = std::get<1>(data); // TODO: Careful, depending on options, we might not have face-boxes yet
+			Mat img = trainingImages[currentImage];
+			cv::Rect detectedFace = trainingFaceboxes[currentImage]; // Caution: Depending on flags selected earlier, we might not have detected faces yet!
 			// b) Align the model to the current face-box. (rigid, only centering of the mean). x_0
 			// Initial estimate x_0: Center the mean face at the [-0.5, 0.5] x [-0.5, 0.5] square (assuming the face-box is that square)
 			// More precise: Take the mean as it is (assume it is in a space [-0.5, 0.5] x [-0.5, 0.5]), and just place it in the face-box as
@@ -346,7 +340,6 @@ public:
 					//cv::circle(img, Point2f(initialShapeEstimateX0.at<float>(0, i), initialShapeEstimateX0.at<float>(0, i + numModelLandmarks)), 2, Scalar(0.0f, 0.0f, 255.0f));
 				}
 			}
-			currentImage++;
 		}
 
 		return initialShape;
@@ -380,7 +373,7 @@ public:
 
 public:
 
-	SdmLandmarkModel train(vector<std::tuple<Mat, cv::Rect, Mat>> trainingData, std::vector<string> modelLandmarks, vector<string> descriptorTypes, vector<shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors) {
+	SdmLandmarkModel train(vector<Mat> trainingImages, vector<Mat> trainingGroundtruthLandmarks, vector<cv::Rect> trainingFaceboxes /*maybe optional bzw weglassen hier?*/, std::vector<string> modelLandmarks, vector<string> descriptorTypes, vector<shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors) {
 
 		Logger logger = Loggers->getLogger("shapemodels");
 		std::chrono::time_point<std::chrono::system_clock> start, end;
@@ -400,7 +393,7 @@ public:
 		// 2. Calculate the mean-shape of all training images
 		//    Afterwards: We could do some procrustes and align all shapes to the calculated mean-shape. But actually just the mean calculated above is a good approximation.
 		//    Q: At least do some centering/scaling?
-		int numImages = trainingData.size();
+		int numImages = trainingImages.size();
 		int numModelLandmarks = modelLandmarks.size();
 		Mat groundtruthLandmarks(numImages, 2 * numModelLandmarks, CV_32FC1);
 		//Mat groundtruthLandmarksNormalizedByUnitFacebox(2 * numModelLandmarks, numImages, CV_32FC1);
@@ -408,7 +401,7 @@ public:
 		switch (meanPreAlign)
 		{
 		case MeanPreAlign::NONE:
-			groundtruthLandmarks = meanPreAlignNone(trainingData, groundtruthLandmarks);
+			groundtruthLandmarks = meanPreAlignNone(trainingGroundtruthLandmarks, groundtruthLandmarks); // from vector<Mat> to one Mat. Just copy, no transformation.
 			break;
 		//case something:
 			// meanPreAlignSomething();
@@ -436,8 +429,8 @@ public:
 		saveShapeInstanceToMLtxt(modelMean, "mean.txt");
 
 		// do the initial alignment: (different methods? depending if mean normalized or not?)
-		Mat initialShape = Mat::zeros((numSamplesPerImage + 1) * trainingData.size(), 2 * numModelLandmarks, CV_32FC1); // 10 samples + the original data = 11
-		initialShape = initialAlign(trainingData, initialShape, modelMean, numSamplesPerImage);
+		Mat initialShape = Mat::zeros((numSamplesPerImage + 1) * trainingImages.size(), 2 * numModelLandmarks, CV_32FC1); // 10 samples + the original data = 11
+		initialShape = initialAlign(trainingImages, trainingFaceboxes, initialShape, modelMean, numSamplesPerImage);
 		
 
 		// 2.9 Calculate the mean and variances of the translational and scaling differences between the initial and true landmark locations. (used for generating the samples)
@@ -447,7 +440,7 @@ public:
 	
 		// flag NormalizeMeanAfterDeviationCalculation ?
 
-		modelVariance = calcMeanVarTransScaleDiff(trainingData, groundtruthLandmarks, initialShape);
+		modelVariance = calcMeanVarTransScaleDiff(trainingImages, trainingFaceboxes, groundtruthLandmarks, initialShape);
 	
 		// Rescale the model-mean, and the mean variances as well: (only necessary if our mean is not normalized to V&J face-box directly in first steps)
 		std::pair<Mat, ModelVariance> pp = rescaleModelMeanAndMeanVariances(modelMean, modelVariance);
@@ -459,13 +452,13 @@ public:
 		// 3. For every training image:
 		// Store the initial shape estimate (x_0) of the image (using the rescaled mean), plus generate 10 samples and store them as well
 	
-		initialShape = putInDataAndGenerateSamples(trainingData, modelMean, initialShape, modelVariance, numSamplesPerImage);
+		initialShape = putInDataAndGenerateSamples(trainingImages, trainingFaceboxes, modelMean, initialShape, modelVariance, numSamplesPerImage);
 
 		// 4. For every sample plus the original image: (loop through the matrix)
 		//			a) groundtruthShape, initialShape
 		//				deltaShape = ground - initial
 		// Duplicate each row in groundtruthLandmarks for every sample, store in groundtruthShapes
-		Mat groundtruthShapes = Mat::zeros((numSamplesPerImage + 1) * trainingData.size(), 2 * numModelLandmarks, CV_32FC1); // 10 samples + the original data = 11
+		Mat groundtruthShapes = Mat::zeros((numSamplesPerImage + 1) * trainingImages.size(), 2 * numModelLandmarks, CV_32FC1); // 10 samples + the original data = 11
 		groundtruthShapes = duplicateGroundtruthShapes(groundtruthLandmarks, numSamplesPerImage);
 
 		// We START here with the real algorithm, everything before was data preparation and calculation of the mean
@@ -490,8 +483,8 @@ public:
 			Mat featureMatrix;// = Mat::ones(initialShape.rows, (featureDimension * numModelLandmarks) + 1, CV_32FC1); // Our 'A'. The last column stays all 1's; it's for learning the offset/bias
 			start = std::chrono::system_clock::now();
 			int currentImage = 0;
-			for (const auto& data : trainingData) {
-				Mat img = std::get<0>(data);
+			for (const auto& image : trainingImages) {
+				Mat img = image;
 				for (int sample = 0; sample < numSamplesPerImage + 1; ++sample) {
 					vector<cv::Point2f> keypoints;
 					for (int lm = 0; lm < numModelLandmarks; ++lm) {
@@ -607,8 +600,8 @@ public:
 			regressorData.push_back(R);
 
 			// output (optional):
-			for (int currentImage = 0; currentImage < trainingData.size(); ++currentImage) {
-				Mat img = std::get<0>(trainingData[currentImage]);
+			for (auto currentImage = 0; currentImage < trainingImages.size(); ++currentImage) {
+				Mat img = trainingImages[currentImage];
 				Mat output = img.clone();
 				for (int sample = 0; sample < numSamplesPerImage + 1; ++sample) {
 					int currentRowInAllData = currentImage * (numSamplesPerImage + 1) + sample;
@@ -647,7 +640,11 @@ public:
 		// - draw curves
 		// - impl numcascade steps config
 		// - vector<std::tuple<Mat, cv::Rect, Mat>> trainingData: Change to & or split up... make smarter somehow
-
+		
+		// delete any unneccesary descriptorExtractors, in case the user selected a numCascadeSteps that's smaller than the number of provided descriptorExtractors.
+		descriptorTypes.erase(begin(descriptorTypes) + numCascadeSteps, std::end(descriptorTypes));
+		descriptorExtractors.erase(begin(descriptorExtractors) + numCascadeSteps, std::end(descriptorExtractors));
+		
 		SdmLandmarkModel model(modelMean, modelLandmarks, regressorData, descriptorExtractors, descriptorTypes);
 		return model;
 	};
