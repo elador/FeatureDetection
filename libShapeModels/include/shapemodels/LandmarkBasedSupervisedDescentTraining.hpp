@@ -28,7 +28,7 @@
 #include "boost/filesystem/path.hpp"
 
 #include <random>
-#include <fstream>
+//#include <fstream>
 #include <chrono>
 
 using cv::Mat;
@@ -39,6 +39,9 @@ namespace shapemodels {
 
 /**
  * Desc
+ * The class provides reasonable default arguments, so when calling
+ * train without setting any, it works.
+ * However, more detailed stuff can be set by the setters.
  */
 class LandmarkBasedSupervisedDescentTraining  {
 public:
@@ -48,7 +51,7 @@ public:
 	 *
 	 * @param[in] a b
 	 */
-	LandmarkBasedSupervisedDescentTraining() {};
+	//LandmarkBasedSupervisedDescentTraining() {};
 
 	struct GaussParameter {
 		double mu = 0.0;
@@ -72,90 +75,20 @@ public:
 		bool regulariseWithEigenvalueThreshold = false;
 	};
 
-	enum class MeanPreAlign { // what to do with the GT LMs before mean is taken.
-		NONE // no prealign, stay in img-coords
-		// translate/scale to normalized square (?)
+	enum class AlignGroundtruth { // what to do with the GT LMs before mean is taken.
+		NONE, // no prealign, stay in img-coords
+		NORMALIZED_FACEBOX// translate/scale to facebox, that is a normalized square [-0.5, ...] x ...
 	};
 
 	enum class MeanNormalization { // what to do with the mean coords after the mean has been calculated
-		OLD_METHOD, // NORMALIZE_BY_FACEBOX?
-		UNIT_SUM_SQUARED_NORMS // orig paper?
+		NONE,
+		UNIT_SUM_SQUARED_NORMS // orig paper
 	};
 
 	// deals with both row and col vecs. Assumes first half x, second y.
-	void saveShapeInstanceToMLtxt(cv::Mat shapeInstance, std::string filename) {
-		int numLandmarks;
-		if (shapeInstance.rows > 1) {
-			numLandmarks = shapeInstance.rows / 2;
-		} else {
-			numLandmarks = shapeInstance.cols / 2;
-		}
-		std::ofstream myfile;
-		myfile.open(filename);
-		myfile << "x = [";
-		for (int i = 0; i < numLandmarks; ++i) {
-			myfile << shapeInstance.at<float>(i) << ", ";
-		}
-		myfile << "];" << std::endl << "y = [";
-		for (int i = 0; i < numLandmarks; ++i) {
-			myfile << shapeInstance.at<float>(i + numLandmarks) << ", ";
-		}
-		myfile << "];" << std::endl;
-		myfile.close();
-	};
+	void saveShapeInstanceToMLtxt(cv::Mat shapeInstance, std::string filename);
 
-	cv::Mat meanPreAlignSomething() {
-		/* // careful: old, doesn't use new row-format yet
-		for (const auto& data : trainingData) {
-		Mat img = std::get<0>(data);
-		cv::Rect detectedFace = std::get<1>(data);
-		vector<shared_ptr<Landmark>> lmsv = std::get<2>(data);
-		// check if lmsv.size() == numModelLandmarks
-
-		for (int i = 0; i < lmsv.size(); ++i) {
-		float normalizedX = ((lmsv[i]->getX() - detectedFace.x) / static_cast<float>(detectedFace.width)) - 0.5f;
-		float normalizedY = ((lmsv[i]->getY() - detectedFace.y) / static_cast<float>(detectedFace.height)) - 0.5f;
-		groundtruthLandmarksNormalizedByUnitFacebox.at<float>(i, currentImage) = normalizedX;
-		groundtruthLandmarksNormalizedByUnitFacebox.at<float>(i + numModelLandmarks, currentImage) = normalizedY;
-		groundtruthLandmarks.at<float>(i, currentImage) = lmsv[i]->getX();
-		groundtruthLandmarks.at<float>(i + numModelLandmarks, currentImage) = lmsv[i]->getY();
-		}
-		currentImage++;
-		}*/
-	};
-
-	// just copy the coords over into groundtruthLandmarks
-	cv::Mat meanPreAlignNone(vector<cv::Mat> groundtruthLandmarks, cv::Mat landmarks) {
-		for (auto currentImage = 0; currentImage < groundtruthLandmarks.size(); ++currentImage) {
-			Mat groundtruthLms = groundtruthLandmarks[currentImage];
-			groundtruthLms.copyTo(landmarks.row(currentImage));
-		}
-		return landmarks;
-	};
-
-	// assumes modelMean is row-vec, first half x, second y.
-	cv::Mat meanNormalizationUnitSumSquaredNorms(cv::Mat modelMean) {
-		int numLandmarks = modelMean.cols / 2;
-		Mat modelMeanX = modelMean.colRange(0, numLandmarks);
-		Mat modelMeanY = modelMean.colRange(numLandmarks, 2 * numLandmarks);
-		// calculate the centroid:
-		cv::Scalar cx = cv::mean(modelMeanX);
-		cv::Scalar cy = cv::mean(modelMeanY);
-		// move all points to the centroid
-		modelMeanX = modelMeanX - cx[0];
-		modelMeanY = modelMeanY - cy[0];
-		// scale so that the average norm is 1/numLandmarks (i.e.: the total norm of all vectors added is 1).
-		// note: that doesn't make too much sense, because it follows that the more landmarks we use, the smaller the mean-face will be.
-		float currentTotalSquaredNorm = 0.0f;
-		for (int p = 0; p < numLandmarks; ++p) {
-			float x = modelMeanX.at<float>(p);
-			float y = modelMeanY.at<float>(p);
-			currentTotalSquaredNorm += (x*x + y*y);
-		}
-		// multiply every vectors coordinate by the sqrt of the currentTotalSquaredNorm
-		modelMean /= std::sqrt(currentTotalSquaredNorm);
-		return modelMean;
-	};
+	cv::Mat calculateMean(std::vector<cv::Mat> landmarks, AlignGroundtruth alignGroundtruth, MeanNormalization meanNormalization, std::vector<cv::Rect> faceboxes=std::vector<cv::Rect>());
 
 	// aligns mean + fb to be x0. Note: fills in a matrix that's bigger (i.e. numSamplesPerImage as big)
 	cv::Mat initialAlign(vector<Mat> trainingImages, vector<cv::Rect> trainingFaceboxes, Mat initialShape, Mat modelMean, int numSamplesPerImage) {
@@ -371,6 +304,14 @@ public:
 		this->regularisation = regularisation;
 	};
 
+	void setAlignGroundtruth(AlignGroundtruth alignGroundtruth) {
+		this->alignGroundtruth = alignGroundtruth;
+	};
+
+	void setMeanNormalization(MeanNormalization meanNormalization) {
+		this->meanNormalization = meanNormalization;
+	};
+
 public:
 
 	SdmLandmarkModel train(vector<Mat> trainingImages, vector<Mat> trainingGroundtruthLandmarks, vector<cv::Rect> trainingFaceboxes /*maybe optional bzw weglassen hier?*/, std::vector<string> modelLandmarks, vector<string> descriptorTypes, vector<shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors) {
@@ -378,8 +319,6 @@ public:
 		Logger logger = Loggers->getLogger("shapemodels");
 		std::chrono::time_point<std::chrono::system_clock> start, end;
 		int elapsed_mseconds;
-		MeanPreAlign meanPreAlign = MeanPreAlign::NONE;
-		MeanNormalization meanNormalization = MeanNormalization::UNIT_SUM_SQUARED_NORMS;
 
 		// TODO: Dont initialize with numSamples... Instead, push_back. Because
 		// Sampling params: DiscardX0Sample. 
@@ -390,45 +329,19 @@ public:
 
 		ModelVariance modelVariance;
 
-		// 2. Calculate the mean-shape of all training images
-		//    Afterwards: We could do some procrustes and align all shapes to the calculated mean-shape. But actually just the mean calculated above is a good approximation.
-		//    Q: At least do some centering/scaling?
 		int numImages = trainingImages.size();
 		int numModelLandmarks = modelLandmarks.size();
-		Mat groundtruthLandmarks(numImages, 2 * numModelLandmarks, CV_32FC1);
-		//Mat groundtruthLandmarksNormalizedByUnitFacebox(2 * numModelLandmarks, numImages, CV_32FC1);
 		
-		switch (meanPreAlign)
-		{
-		case MeanPreAlign::NONE:
-			groundtruthLandmarks = meanPreAlignNone(trainingGroundtruthLandmarks, groundtruthLandmarks); // from vector<Mat> to one Mat. Just copy, no transformation.
-			break;
-		//case something:
-			// meanPreAlignSomething();
-			// break;
-		default:
-			break;
+		Mat groundtruthLandmarks(numImages, 2 * numModelLandmarks, CV_32FC1);
+		// Just copy from vector<Mat> to one big Mat:
+		for (auto currentImage = 0; currentImage < trainingGroundtruthLandmarks.size(); ++currentImage) {
+			Mat groundtruthLms = trainingGroundtruthLandmarks[currentImage];
+			groundtruthLms.copyTo(groundtruthLandmarks.row(currentImage));
 		}
 
-		// Take the mean of every row:
-		Mat modelMean;
-		//cv::reduce(groundtruthLandmarksNormalizedByUnitFacebox, modelMean, 1, CV_REDUCE_AVG); // reduce to 1 column
-		cv::reduce(groundtruthLandmarks, modelMean, 0, CV_REDUCE_AVG); // reduce to 1 row
+		Mat modelMean = calculateMean(trainingGroundtruthLandmarks, alignGroundtruth, meanNormalization, trainingFaceboxes);
 
-		switch (meanNormalization)
-		{
-		case MeanNormalization::OLD_METHOD:
-			break;
-		case MeanNormalization::UNIT_SUM_SQUARED_NORMS:
-			modelMean = meanNormalizationUnitSumSquaredNorms(modelMean);
-			break;
-		default:
-			break;
-		}
-
-		saveShapeInstanceToMLtxt(modelMean, "mean.txt");
-
-		// do the initial alignment: (different methods? depending if mean normalized or not?)
+		// Do the initial alignment: (different methods? depending if mean normalized or not?)
 		Mat initialShape = Mat::zeros((numSamplesPerImage + 1) * trainingImages.size(), 2 * numModelLandmarks, CV_32FC1); // 10 samples + the original data = 11
 		initialShape = initialAlign(trainingImages, trainingFaceboxes, initialShape, modelMean, numSamplesPerImage);
 		
@@ -653,6 +566,16 @@ private:
 	int numSamplesPerImage = 10; ///< todo
 	int numCascadeSteps = 5; ///< todo
 	Regularisation regularisation; ///< todo
+	AlignGroundtruth alignGroundtruth = AlignGroundtruth::NONE; ///< For mean calc: todo
+	MeanNormalization meanNormalization = MeanNormalization::UNIT_SUM_SQUARED_NORMS; ///< F...Mean: todo
+
+	// Transforms one row...
+	// Takes the face-box as [-0.5, 0.5] x [-0.5, 0.5] and transforms the landmarks into that rectangle.
+	// lms are x1 x2 .. y1 y2 .. row-vec
+	cv::Mat transformLandmarksNormalized(cv::Mat landmarks, cv::Rect box);
+
+	// assumes modelMean is row-vec, first half x, second y.
+	cv::Mat meanNormalizationUnitSumSquaredNorms(cv::Mat modelMean);
 
 };
 

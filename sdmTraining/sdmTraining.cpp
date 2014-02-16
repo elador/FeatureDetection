@@ -429,6 +429,8 @@ int main(int argc, char *argv[])
 	tr.setNumSamplesPerImage(numSamplesPerImage);
 	tr.setNumCascadeSteps(numCascadeSteps);
 	tr.setRegularisation(regularisation);
+	tr.setAlignGroundtruth(LandmarkBasedSupervisedDescentTraining::AlignGroundtruth::NONE); // TODO Read from config!
+	tr.setMeanNormalization(LandmarkBasedSupervisedDescentTraining::MeanNormalization::UNIT_SUM_SQUARED_NORMS); // TODO Read from config!
 	SdmLandmarkModel model = tr.train(trainingImages, trainingGroundtruthLandmarks, trainingFaceboxes, modelLandmarks, descriptorTypes, descriptorExtractors);
 	
 	std::time_t currentTime_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
