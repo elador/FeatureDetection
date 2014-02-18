@@ -49,16 +49,36 @@ void LandmarkBasedSupervisedDescentTraining::saveShapeInstanceToMLtxt(Mat shapeI
 
 Mat LandmarkBasedSupervisedDescentTraining::transformLandmarksNormalized(Mat landmarks, Rect box)
 {
+	// Todo: Quick doc
 	Mat transformed(landmarks.rows, landmarks.cols, landmarks.type());
 	int numLandmarks = landmarks.cols / 2;
-	for (int i = 0; i < numLandmarks; ++i) {
-		float normalizedX = ((landmarks.at<float>(i)                -box.x) / static_cast<float>(box.width)) - 0.5f;
+	for (int i = 0; i < numLandmarks; ++i) { // Todo: This could be done without a for-loop I think, by splitting landmarks in a x- and y-Mat
+		float normalizedX = ((landmarks.at<float>(i)                - box.x) / static_cast<float>(box.width)) - 0.5f;
 		float normalizedY = ((landmarks.at<float>(i + numLandmarks) - box.y) / static_cast<float>(box.height)) - 0.5f;
 		transformed.at<float>(i) = normalizedX;
 		transformed.at<float>(i + numLandmarks) = normalizedY;
 	}
 	return transformed;
 }
+
+Mat LandmarkBasedSupervisedDescentTraining::alignMean(Mat mean, Rect faceBox)
+{
+	// Initial estimate x_0: Center the mean face at the [-0.5, 0.5] x [-0.5, 0.5] square (assuming the face-box is that square)
+	// More precise: Take the mean as it is (assume it is in a space [-0.5, 0.5] x [-0.5, 0.5]), and just place it in the face-box as
+	// if the box is [-0.5, 0.5] x [-0.5, 0.5]. (i.e. the mean coordinates get upscaled)
+	Mat alignedMean = mean.clone();
+	Mat alignedMeanX = alignedMean.colRange(0, alignedMean.cols / 2);
+	Mat alignedMeanY = alignedMean.colRange(alignedMean.cols / 2, alignedMean.cols);
+	alignedMeanX = (alignedMeanX + 0.5f) * faceBox.width + faceBox.x;
+	alignedMeanY = (alignedMeanY + 0.5f) * faceBox.height + faceBox.y;
+	return alignedMean;
+
+	/* with variances: (old code, untested)
+	initialShapeEstimate2X0_x = (initialShapeEstimate2X0_x * delta_sx + 0.5f) * detectedFace.width + detectedFace.x + delta_tx;
+	initialShapeEstimate2X0_y = (initialShapeEstimate2X0_y * delta_sy + 0.5f) * detectedFace.height + detectedFace.y + delta_ty;
+	*/
+}
+
 
 cv::Mat LandmarkBasedSupervisedDescentTraining::meanNormalizationUnitSumSquaredNorms(cv::Mat modelMean)
 {
@@ -142,6 +162,63 @@ cv::Mat LandmarkBasedSupervisedDescentTraining::calculateMean(std::vector<cv::Ma
 	}
 	saveShapeInstanceToMLtxt(modelMean, "mean.txt");
 	return modelMean;
+}
+
+LandmarkBasedSupervisedDescentTraining::ModelVariance LandmarkBasedSupervisedDescentTraining::calculateModelVariance(vector<Mat> trainingImages, vector<cv::Rect> trainingFaceboxes, Mat groundtruthLandmarks, Mat initialShapeEstimateX0)
+{
+	Mat delta_tx(trainingImages.size(), 1, CV_32FC1);
+	Mat delta_ty(trainingImages.size(), 1, CV_32FC1);
+	Mat delta_sx(trainingImages.size(), 1, CV_32FC1);
+	Mat delta_sy(trainingImages.size(), 1, CV_32FC1);
+	int numModelLandmarks = groundtruthLandmarks.cols / 2;
+	int numDataPerTrainingImage = initialShapeEstimateX0.rows / groundtruthLandmarks.rows;
+	int currentImage = 0;
+	for (auto currentImage = 0; currentImage < trainingImages.size(); ++currentImage) {
+		Mat img = trainingImages[currentImage];
+		cv::Rect detectedFace = trainingFaceboxes[currentImage]; // Caution: Depending on flags selected earlier, we might not have detected faces yet!
+
+		// calculate the centroid and the min-max bounding-box (for the width/height) of the ground-truth and the initial estimate x0:
+		Mat groundtruth_x = groundtruthLandmarks.row(currentImage).colRange(0, numModelLandmarks);
+		Mat groundtruth_y = groundtruthLandmarks.row(currentImage).colRange(numModelLandmarks, numModelLandmarks * 2);
+		
+		Mat initialShapeEstimateX0_x = initialShapeEstimateX0.row(currentImage * numDataPerTrainingImage).colRange(0, initialShapeEstimateX0.cols / 2);
+		Mat initialShapeEstimateX0_y = initialShapeEstimateX0.row(currentImage * numDataPerTrainingImage).colRange(initialShapeEstimateX0.cols / 2, initialShapeEstimateX0.cols);
+
+		delta_tx.at<float>(currentImage) = calculateTranslationVariance(groundtruth_x, initialShapeEstimateX0_x, detectedFace.width); // This is in relation to the V&J face-box
+		delta_ty.at<float>(currentImage) = calculateTranslationVariance(groundtruth_y, initialShapeEstimateX0_y, detectedFace.height);
+		
+		delta_sx.at<float>(currentImage) = calculateScaleVariance(groundtruth_x, initialShapeEstimateX0_x);
+		delta_sy.at<float>(currentImage) = calculateScaleVariance(groundtruth_y, initialShapeEstimateX0_y);
+
+		// Note: The tx we measure is the bias of the face-detector (and should be 0 in an ideal world).
+		// We could also use abs(gt-x0)/fb.w instead, what we would then measure is how far the x0 is away
+		// from the gt.
+		// Actually we should kind of measure both: Correct for the first, and use the latter for the sampling. TODO!!! (MeanNormalization=unitnorm... or FB)
+		// However, in the paper they only give variances (for the tracking case), not mu's, assuming the mean is 0 and 1?
+		// After long deliberation, I think it's a lost cause - what we measure is just not what is described and what 
+		// we can find a reasonable explanation for augmenting training data.
+		// Solution: Just try both: Perturb the GT and perturb the x0 (with mu's zero) with the measured variance.
+		// NO!!! Perturb the GT by +-mu (mu!=0) makes no sense at all in detection! (maybe in tracking?)
+		
+		// Wording in paper (?): Calculate the mean and variances of the translational and scaling differences between the initial and true landmark locations:
+	}
+	// Calculate the mean/variances and store them:
+	ModelVariance modelVariance;
+	Mat mmu_t_x, mmu_t_y, mmu_s_x, mmu_s_y, msigma_t_x, msigma_t_y, msigma_s_x, msigma_s_y;
+	cv::meanStdDev(delta_tx, mmu_t_x, msigma_t_x);
+	cv::meanStdDev(delta_ty, mmu_t_y, msigma_t_y);
+	cv::meanStdDev(delta_sx, mmu_s_x, msigma_s_x);
+	cv::meanStdDev(delta_sy, mmu_s_y, msigma_s_y);
+	modelVariance.tx.mu = mmu_t_x.at<double>(0);
+	modelVariance.ty.mu = mmu_t_y.at<double>(0);
+	modelVariance.sx.mu = mmu_s_x.at<double>(0);
+	modelVariance.sy.mu = mmu_s_y.at<double>(0);
+	modelVariance.tx.sigma = msigma_t_x.at<double>(0);
+	modelVariance.ty.sigma = msigma_t_y.at<double>(0);
+	modelVariance.sx.sigma = msigma_s_x.at<double>(0);
+	modelVariance.sy.sigma = msigma_s_y.at<double>(0);
+
+	return modelVariance;
 }
 
 }

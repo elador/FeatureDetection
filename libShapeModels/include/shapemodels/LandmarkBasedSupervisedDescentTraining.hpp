@@ -90,135 +90,20 @@ public:
 
 	cv::Mat calculateMean(std::vector<cv::Mat> landmarks, AlignGroundtruth alignGroundtruth, MeanNormalization meanNormalization, std::vector<cv::Rect> faceboxes=std::vector<cv::Rect>());
 
-	// aligns mean + fb to be x0. Note: fills in a matrix that's bigger (i.e. numSamplesPerImage as big)
-	cv::Mat initialAlign(vector<Mat> trainingImages, vector<cv::Rect> trainingFaceboxes, Mat initialShape, Mat modelMean, int numSamplesPerImage) {
-		for (auto currentImage = 0; currentImage < trainingImages.size(); ++currentImage) {
-			Mat img = trainingImages[currentImage];
-			cv::Rect detectedFace = trainingFaceboxes[currentImage]; // Caution: Depending on flags selected earlier, we might not have detected faces yet!
+	// trainingImages: debug only
+	// trainingFaceboxes: for normalizing the variances by the face-box
+	// groundtruthLandmarks, initialShapeEstimateX0: calc variances
+	ModelVariance calculateModelVariance(std::vector<cv::Mat> trainingImages, std::vector<cv::Rect> trainingFaceboxes, cv::Mat groundtruthLandmarks, cv::Mat initialShapeEstimateX0);
 
-			// Initial estimate x_0: Center the mean face at the [-0.5, 0.5] x [-0.5, 0.5] square (assuming the face-box is that square)
-			// More precise: Take the mean as it is (assume it is in a space [-0.5, 0.5] x [-0.5, 0.5]), and just place it in the face-box as
-			// if the box is [-0.5, 0.5] x [-0.5, 0.5]. (i.e. the mean coordinates get upscaled)
-			Mat initialShapeEstimateX0 = modelMean.clone();
-			Mat initialShapeEstimateX0_x = initialShapeEstimateX0.colRange(0, initialShapeEstimateX0.cols / 2);
-			Mat initialShapeEstimateX0_y = initialShapeEstimateX0.colRange(initialShapeEstimateX0.cols / 2, initialShapeEstimateX0.cols);
-			initialShapeEstimateX0_x = (initialShapeEstimateX0_x + 0.5f) * detectedFace.width + detectedFace.x;
-			initialShapeEstimateX0_y = (initialShapeEstimateX0_y + 0.5f) * detectedFace.height + detectedFace.y;
-
-			initialShapeEstimateX0.copyTo(initialShape.row(currentImage * (numSamplesPerImage + 1)));
-			//for (int i = 0; i < numModelLandmarks; ++i) {
-				//cv::circle(img, Point2f(initialShapeEstimateX0.at<float>(0, i), initialShapeEstimateX0.at<float>(0, i + numModelLandmarks)), 3, Scalar(255.0f, 0.0f, 0.0f));
-			//}
-			//cv::rectangle(img, detectedFace, Scalar(0.0f, 0.0f, 255.0f));
-
-			/*	Mat initialShapeEstimate2X0 = modelMean.clone();
-			Mat initialShapeEstimate2X0_x = initialShapeEstimate2X0.colRange(0, initialShapeEstimate2X0.cols / 2);
-			Mat initialShapeEstimate2X0_y = initialShapeEstimate2X0.colRange(initialShapeEstimate2X0.cols / 2, initialShapeEstimate2X0.cols);
-			initialShapeEstimate2X0_x = (initialShapeEstimate2X0_x * delta_sx + 0.5f) * detectedFace.width + detectedFace.x + delta_tx;
-			initialShapeEstimate2X0_y = (initialShapeEstimate2X0_y * delta_sy + 0.5f) * detectedFace.height + detectedFace.y + delta_ty;
-			Mat initialShapeRow2 = initialShape.row(currentImage * (numSamplesPerImage + 1));
-			initialShapeEstimate2X0.copyTo(initialShapeRow);
-			for (int i = 0; i < numModelLandmarks; ++i) {
-			cv::circle(img, Point2f(initialShapeEstimate2X0.at<float>(0, i), initialShapeEstimate2X0.at<float>(0, i + numModelLandmarks)), 3, Scalar(255.0f, 0.0f, 0.0f));
-			}*/
-
-
-			// Initial esti: Center the mean face at the [-0.5, 0.5] x [-0.5, 0.5] square (assuming the face-box is that square)
-			/*Mat initialShapeEstimateX0 = modelMean.clone();
-			Mat initialShapeEstimateX0_x = initialShapeEstimateX0.rowRange(0, initialShapeEstimateX0.rows / 2);
-			Mat initialShapeEstimateX0_y = initialShapeEstimateX0.rowRange(initialShapeEstimateX0.rows / 2, initialShapeEstimateX0.rows);
-			initialShapeEstimateX0_x = (initialShapeEstimateX0_x + 0.5f) * detectedFace.width + detectedFace.x;
-			initialShapeEstimateX0_y = (initialShapeEstimateX0_y + 0.5f) * detectedFace.height + detectedFace.y;
-			Mat initialShapeColumn = initialShape.col(currentImage * (numSamplesPerImage+1));
-			initialShapeEstimateX0.copyTo(initialShapeColumn);
-			for (int i = 0; i < numModelLandmarks; ++i) {
-			cv::circle(img, Point2f(initialShapeEstimateX0.at<float>(i, 0), initialShapeEstimateX0.at<float>(i + numModelLandmarks, 0)), 3, Scalar(0.0f, 255.0f, 0.0f));
-			}*/
-		}
-		return initialShape;
-	};
-
-	ModelVariance calcMeanVarTransScaleDiff(vector<Mat> trainingImages, vector<cv::Rect> trainingFaceboxes, Mat groundtruthLandmarks, Mat initialShapeEstimateX0) {
-		Mat delta_tx(trainingImages.size(), 1, CV_32FC1);
-		Mat delta_ty(trainingImages.size(), 1, CV_32FC1);
-		Mat delta_sx(trainingImages.size(), 1, CV_32FC1);
-		Mat delta_sy(trainingImages.size(), 1, CV_32FC1);
-		int numModelLandmarks = groundtruthLandmarks.cols / 2;
-		int numDataPerTrainingImage = initialShapeEstimateX0.rows / groundtruthLandmarks.rows;
-		int currentImage = 0;
-		for (auto currentImage = 0; currentImage < trainingImages.size(); ++currentImage) {
-			Mat img = trainingImages[currentImage];
-			cv::Rect detectedFace = trainingFaceboxes[currentImage]; // Caution: Depending on flags selected earlier, we might not have detected faces yet!
-
-			// calculate the centroid and the min-max bounding-box (for the width/height) of the ground-truth:
-			Scalar gtMeanX = cv::mean(groundtruthLandmarks.row(currentImage).colRange(0, numModelLandmarks));
-			Scalar gtMeanY = cv::mean(groundtruthLandmarks.row(currentImage).colRange(numModelLandmarks, numModelLandmarks * 2));
-			double minWidth, maxWidth, minHeight, maxHeight;
-			cv::minMaxIdx(groundtruthLandmarks.row(currentImage).colRange(0, numModelLandmarks), &minWidth, &maxWidth);
-			cv::minMaxIdx(groundtruthLandmarks.row(currentImage).colRange(numModelLandmarks, numModelLandmarks * 2), &minHeight, &maxHeight);
-			//cv::rectangle(img, cv::Rect(minWidth, minHeight, maxWidth - minWidth, maxHeight - minHeight), Scalar(255.0f, 0.0f, 0.0f));
-
-			for (int i = 0; i < numModelLandmarks; ++i) {
-				//cv::circle(img, Point2f(groundtruthLandmarks.at<float>(currentImage, i), groundtruthLandmarks.at<float>(currentImage, i + numModelLandmarks)), 3, Scalar(0.0f, 255.0f, 0.0f));
-			}
-
-			// calculate the centroid and the min-max bounding-box (for the width/height) of the initial estimate x_0:
-			Mat initialShapeEstimateX0_x = initialShapeEstimateX0.row(currentImage * numDataPerTrainingImage).colRange(0, initialShapeEstimateX0.cols / 2);
-			Mat initialShapeEstimateX0_y = initialShapeEstimateX0.row(currentImage * numDataPerTrainingImage).colRange(initialShapeEstimateX0.cols / 2, initialShapeEstimateX0.cols);
-			Scalar x0MeanX = cv::mean(initialShapeEstimateX0_x);
-			Scalar x0MeanY = cv::mean(initialShapeEstimateX0_y);
-			double minWidthX0, maxWidthX0, minHeightX0, maxHeightX0;
-			cv::minMaxIdx(initialShapeEstimateX0_x, &minWidthX0, &maxWidthX0);
-			cv::minMaxIdx(initialShapeEstimateX0_y, &minHeightX0, &maxHeightX0);
-			//cv::rectangle(img, cv::Rect(minWidthX0, minHeightX0, maxWidthX0 - minWidthX0, maxHeightX0 - minHeightX0), Scalar(255.0f, 0.0f, 0.0f));
-
-			//cv::circle(img, Point2f(gtMeanX[0], gtMeanY[0]), 2, Scalar(0.0f, 0.0f, 255.0f)); // gt
-			//cv::circle(img, Point2f(x0MeanX[0], x0MeanY[0]), 2, Scalar(0.0f, 255.0f, 255.0f)); // x0
-
-			// Note: The tx we measure is the bias of the face-detector (and should be 0 in an ideal world).
-			// We could also use abs(gt-x0)/fb.w instead, what we would then measure is how far the x0 is away
-			// from the gt.
-			// Actually we should kind of measure both: Correct for the first, and use the latter for the sampling. TODO!!! (MeanNormalization=unitnorm... or FB)
-			// However, in the paper they only give variances (for the tracking case), not mu's, assuming the mean is 0 and 1?
-			// After long deliberation, I think it's a lost cause - what we measure is just not what is described and what 
-			// we can find a reasonable explanation for augmenting training data.
-			// Solution: Just try both: Perturb the GT and perturb the x0 (with mu's zero) with the measured variance.
-			// NO!!! Perturb the GT by +-mu (mu!=0) makes no sense at all in detection! (maybe in tracking?)
-			delta_tx.at<float>(currentImage) = (gtMeanX[0] - x0MeanX[0]) / detectedFace.width; // This is in relation to the V&J face-box
-			delta_ty.at<float>(currentImage) = (gtMeanY[0] - x0MeanY[0]) / detectedFace.height;
-			delta_sx.at<float>(currentImage) = (maxWidth - minWidth) / (maxWidthX0 - minWidthX0);
-			delta_sy.at<float>(currentImage) = (maxHeight - minHeight) / (maxHeightX0 - minHeightX0);
-
-			// Calculate the mean and variances of the translational and scaling differences between the initial and true landmark locations:
-			// ???
-		}
-		// Calculate the mean/variances and store them:
-		ModelVariance modelVariance;
-		Mat mmu_t_x, mmu_t_y, mmu_s_x, mmu_s_y, msigma_t_x, msigma_t_y, msigma_s_x, msigma_s_y;
-		cv::meanStdDev(delta_tx, mmu_t_x, msigma_t_x);
-		cv::meanStdDev(delta_ty, mmu_t_y, msigma_t_y);
-		cv::meanStdDev(delta_sx, mmu_s_x, msigma_s_x);
-		cv::meanStdDev(delta_sy, mmu_s_y, msigma_s_y);
-		modelVariance.tx.mu = mmu_t_x.at<double>(0);
-		modelVariance.ty.mu = mmu_t_y.at<double>(0);
-		modelVariance.sx.mu = mmu_s_x.at<double>(0);
-		modelVariance.sy.mu = mmu_s_y.at<double>(0);
-		modelVariance.tx.sigma = msigma_t_x.at<double>(0);
-		modelVariance.ty.sigma = msigma_t_y.at<double>(0);
-		modelVariance.sx.sigma = msigma_s_x.at<double>(0);
-		modelVariance.sy.sigma = msigma_s_y.at<double>(0);
-		
-		return modelVariance;
-	};
-
-	std::pair<Mat, ModelVariance> rescaleModelMeanAndMeanVariances(Mat modelMean, ModelVariance modelVariance) {
+	// Rescale the model-mean, and the mean variances as well: (only necessary if our mean is not normalized to V&J face-box directly in first steps)
+	std::pair<Mat, ModelVariance> rescaleModel(Mat modelMean, ModelVariance modelVariance) {
 		Mat modelMean_x = modelMean.colRange(0, modelMean.cols / 2);
 		Mat modelMean_y = modelMean.colRange(modelMean.cols / 2, modelMean.cols);
 		modelMean_x = (modelMean_x * modelVariance.sx.mu) + modelVariance.tx.mu;
 		modelMean_y = (modelMean_y * modelVariance.sy.mu) + modelVariance.ty.mu;
-		modelVariance.sx.sigma = modelVariance.sx.sigma / modelVariance.sx.mu; // TODO Q: Should be *, not / ?
+		modelVariance.sx.sigma = modelVariance.sx.sigma * modelVariance.sx.mu;
 		modelVariance.sx.mu = 1.0;
-		modelVariance.sy.sigma = modelVariance.sy.sigma / modelVariance.sy.mu;
+		modelVariance.sy.sigma = modelVariance.sy.sigma * modelVariance.sy.mu;
 		modelVariance.sy.mu = 1.0;
 		modelVariance.tx.mu = 0;
 		modelVariance.ty.mu = 0;
@@ -343,20 +228,32 @@ public:
 
 		// Do the initial alignment: (different methods? depending if mean normalized or not?)
 		Mat initialShape = Mat::zeros((numSamplesPerImage + 1) * trainingImages.size(), 2 * numModelLandmarks, CV_32FC1); // 10 samples + the original data = 11
-		initialShape = initialAlign(trainingImages, trainingFaceboxes, initialShape, modelMean, numSamplesPerImage);
-		
+		// aligns mean + fb to be x0. Note: fills in a matrix that's bigger (i.e. numSamplesPerImage as big)
+		for (auto currentImage = 0; currentImage < trainingImages.size(); ++currentImage) {
+			cv::Rect detectedFace = trainingFaceboxes[currentImage]; // Caution: Depending on flags selected earlier, we might not have detected faces yet!
+			Mat initialShapeEstimateX0 = alignMean(modelMean, detectedFace);
+			initialShapeEstimateX0.copyTo(initialShape.row(currentImage * (numSamplesPerImage + 1)));
+			/* output
+			Mat img = trainingImages[currentImage];
+			for (int i = 0; i < numModelLandmarks; ++i) {
+				cv::circle(img, cv::Point2f(initialShapeEstimateX0.at<float>(0, i), initialShapeEstimateX0.at<float>(0, i + numModelLandmarks)), 3, Scalar(255.0f, 0.0f, 0.0f));
+			}
+			cv::rectangle(img, detectedFace, Scalar(0.0f, 0.0f, 255.0f)); */
+		}
 
-		// 2.9 Calculate the mean and variances of the translational and scaling differences between the initial and true landmark locations. (used for generating the samples)
+
+		// Calculate the mean and variances of the translational and scaling differences between the initial and true landmark locations. (used for generating the samples)
 		// This also includes the scaling/translation necessary to go from the unit-sqnorm normalized mean to one in a reasonably sized one w.r.t. the face-box.
 		// This means we have to divide the stddev we draw by 2. The translation is ok though.
 		// Todo: We should directly learn a reasonably normalized mean during the training!
 	
 		// flag NormalizeMeanAfterDeviationCalculation ?
 
-		modelVariance = calcMeanVarTransScaleDiff(trainingImages, trainingFaceboxes, groundtruthLandmarks, initialShape);
+		modelVariance = calculateModelVariance(trainingImages, trainingFaceboxes, groundtruthLandmarks, initialShape);
 	
 		// Rescale the model-mean, and the mean variances as well: (only necessary if our mean is not normalized to V&J face-box directly in first steps)
-		std::pair<Mat, ModelVariance> pp = rescaleModelMeanAndMeanVariances(modelMean, modelVariance);
+		// TODO add a flag?
+		std::pair<Mat, ModelVariance> pp = rescaleModel(modelMean, modelVariance);
 		modelMean = pp.first;
 		modelVariance = pp.second;
 
@@ -576,6 +473,36 @@ private:
 
 	// assumes modelMean is row-vec, first half x, second y.
 	cv::Mat meanNormalizationUnitSumSquaredNorms(cv::Mat modelMean);
+
+	// public?
+	// Initial estimate x_0: Center the mean face at the [-0.5, 0.5] x [-0.5, 0.5] square (assuming the face-box is that square)
+	// More precise: Take the mean as it is (assume it is in a space [-0.5, 0.5] x [-0.5, 0.5]), and just place it in the face-box as
+	// if the box is [-0.5, 0.5] x [-0.5, 0.5]. (i.e. the mean coordinates get upscaled)
+	// makes a copy of mean, not inplace
+	cv::Mat alignMean(cv::Mat mean, cv::Rect faceBox);
+
+	float calculateTranslationVariance(cv::Mat groundtruth, cv::Mat estimate, float normalization) {
+		// calculate the centroid of the ground-truth and the estimate
+		Scalar gtMean = cv::mean(groundtruth);
+		Scalar estMean = cv::mean(estimate);
+
+		//cv::circle(img, Point2f(gtMeanX[0], gtMeanY[0]), 2, Scalar(0.0f, 0.0f, 255.0f)); // gt
+		//cv::circle(img, Point2f(x0MeanX[0], x0MeanY[0]), 2, Scalar(0.0f, 255.0f, 255.0f)); // x0
+
+		return (gtMean[0] - estMean[0]) / normalization;
+	};
+
+	float calculateScaleVariance(cv::Mat groundtruth, cv::Mat estimate) {
+		// calculate the scaling difference between the ground-truth and the estimate
+		double gtMin, gtMax;
+		cv::minMaxIdx(groundtruth, &gtMin, &gtMax);
+		double x0Min, x0Max;
+		cv::minMaxIdx(estimate, &x0Min, &x0Max);
+
+		//cv::rectangle(img, cv::Rect(minWidth, minHeight, maxWidth - minWidth, maxHeight - minHeight), Scalar(255.0f, 0.0f, 0.0f));
+
+		return (gtMax - gtMin) / (x0Max - x0Min);
+	};
 
 };
 
