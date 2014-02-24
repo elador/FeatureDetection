@@ -32,10 +32,13 @@
 #include <memory>
 #include <iostream>
 
+
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/objdetect/objdetect.hpp"
 
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
@@ -66,6 +69,16 @@
 
 #include "logging/LoggerFactory.hpp"
 
+#include "OpenGLWindow.hpp"
+
+#include <QtGui/QGuiApplication>
+#include <QtGui/QMatrix4x4>
+#include <QtGui/QOpenGLShaderProgram>
+#include <QtGui/QScreen>
+
+#include <QtCore/qmath.h>
+#undef ERROR // from Qt/OGL something... better solution: Rename the loglevels
+
 using namespace imageio;
 namespace po = boost::program_options;
 using std::cout;
@@ -79,6 +92,33 @@ using logging::LoggerFactory;
 using logging::loglevel;
 
 
+
+class TriangleWindow : public OpenGLWindow
+{
+public:
+	TriangleWindow();
+
+	void initialize();
+	void render();
+
+private:
+	GLuint loadShader(GLenum type, const char *source);
+
+	GLuint m_posAttr;
+	GLuint m_colAttr;
+	GLuint m_matrixUniform;
+
+	QOpenGLShaderProgram *m_program;
+	int m_frame;
+};
+
+TriangleWindow::TriangleWindow()
+: m_program(0)
+, m_frame(0)
+{
+}
+
+
 template<class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 {
@@ -87,6 +127,9 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 }
 
 int main(int argc, char *argv[])
+//int WinMain(int argc, char *argv[])
+//int _WinMain(int argc, char **argv)
+//int main(int argc, TCHAR *argv[])
 {
 	#ifdef WIN32
 	//_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF ); // dump leaks at return
@@ -106,6 +149,7 @@ int main(int argc, char *argv[])
 	shared_ptr<ImageSource> imageSource;
 	path landmarksDir; // TODO: Make more dynamic wrt landmark format. a) What about the loading-flags (1_Per_Folder etc) we have? b) Expose those flags to cmdline? c) Make a LmSourceLoader and he knows about a LM_TYPE (each corresponds to a Parser/Loader class?)
 	string landmarkType;
+	string test;
 
 	try {
 		po::options_description desc("Allowed options");
@@ -122,13 +166,17 @@ int main(int argc, char *argv[])
 				"load landmark files from the given folder")
 			("landmark-type,t", po::value<string>(&landmarkType), 
 				"specify the type of landmarks to load: ibug")
+			("platformpluginpath", po::value<string>(&test),
+				"specify the type of landmarks to load: ibug")
+
+				
 		;
 
 		po::positional_options_description p;
 		p.add("input", -1);
 
 		po::variables_map vm;
-		po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
+		po::store(po::command_line_parser(argc, argv).options(desc).positional(p).style(po::command_line_style::unix_style | po::command_line_style::allow_long_disguise).run(), vm);
 		po::notify(vm);
 
 		if (vm.count("help")) {
@@ -277,12 +325,50 @@ int main(int argc, char *argv[])
 	shapemodels::AffineCameraEstimation affineCameraEstimation(morphableModel);
 	vector<imageio::ModelLandmark> landmarks;
 
-	cv::namedWindow(windowName);
+	string faceDetectionModel("C:\\opencv\\2.4.7.2_prebuilt\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt2.xml"); // sgd: "../models/haarcascade_frontalface_alt2.xml"
+	cv::CascadeClassifier faceCascade;
+	if (!faceCascade.load(faceDetectionModel))
+	{
+		cout << "Error loading face detection model." << endl;
+		return EXIT_FAILURE;
+	}
+
+	cv::namedWindow(windowName, cv::WINDOW_OPENGL);
 	
+
+	/*
+	QGuiApplication app(argc, argv);
+
+	QSurfaceFormat format;
+	format.setSamples(16);
+
+	TriangleWindow window;
+	window.setFormat(format);
+	window.resize(640, 480);
+	window.show();
+
+	window.setAnimating(true);
+
+	return app.exec();*/
+
+
+
 	while(labeledImageSource->next()) {
 		start = std::chrono::system_clock::now();
 		appLogger.info("Starting to process " + labeledImageSource->getName().string());
 		img = labeledImageSource->getImage();
+
+		vector<cv::Rect> detectedFaces;
+		faceCascade.detectMultiScale(img, detectedFaces, 1.2, 2, 0, cv::Size(50, 50));
+		if (detectedFaces.empty()) {
+			continue;
+		}
+		Mat output = img.clone();
+		for (const auto& f : detectedFaces) {
+			cv::rectangle(output, f, cv::Scalar(0.0f, 0.0f, 255.0f));
+		}
+
+
 		
 		LandmarkCollection lms = labeledImageSource->getLandmarks();
 		vector<shared_ptr<Landmark>> lmsv = lms.getLandmarks();
@@ -402,6 +488,89 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
+static const char *vertexShaderSource =
+"attribute highp vec4 posAttr;\n"
+"attribute lowp vec4 colAttr;\n"
+"varying lowp vec4 col;\n"
+"uniform highp mat4 matrix;\n"
+"void main() {\n"
+"   col = colAttr;\n"
+"   gl_Position = matrix * posAttr;\n"
+"}\n";
+
+static const char *fragmentShaderSource =
+"varying lowp vec4 col;\n"
+"void main() {\n"
+"   gl_FragColor = col;\n"
+"}\n";
+
+GLuint TriangleWindow::loadShader(GLenum type, const char *source)
+{
+	GLuint shader = glCreateShader(type);
+	glShaderSource(shader, 1, &source, 0);
+	glCompileShader(shader);
+	return shader;
+}
+
+void TriangleWindow::initialize()
+{
+	m_program = new QOpenGLShaderProgram(this);
+	m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
+	m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
+	m_program->link();
+	m_posAttr = m_program->attributeLocation("posAttr");
+	m_colAttr = m_program->attributeLocation("colAttr");
+	m_matrixUniform = m_program->uniformLocation("matrix");
+}
+
+void TriangleWindow::render()
+{
+	const qreal retinaScale = devicePixelRatio();
+	glViewport(0, 0, width() * retinaScale, height() * retinaScale);
+
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	m_program->bind();
+
+	QMatrix4x4 matrix;
+	matrix.perspective(60, 4.0 / 3.0, 0.1, 100.0);
+	matrix.translate(0, 0, -2);
+	matrix.rotate(100.0f * m_frame / screen()->refreshRate(), 0, 1, 0);
+
+	m_program->setUniformValue(m_matrixUniform, matrix);
+
+	GLfloat vertices[] = {
+		0.0f, 0.707f,
+		-0.5f, -0.5f,
+		0.5f, -0.5f
+	};
+
+	GLfloat colors[] = {
+		1.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 1.0f
+	};
+
+	glVertexAttribPointer(m_posAttr, 2, GL_FLOAT, GL_FALSE, 0, vertices);
+	glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, colors);
+
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(0);
+
+	m_program->release();
+
+	++m_frame;
+}
+
+
+
+
 /*
 // Start solvePnP & display (e.g. instead of the affine estimation)
 int max_d = std::max(img.rows, img.cols); // should be the focal length? (don't forget the aspect ratio!). TODO Read in Hartley-Zisserman what this is

@@ -28,8 +28,7 @@ using cv::Rect;
 using cv::Scalar;
 using std::string;
 
-namespace shapemodels {
-
+namespace shapemodels { 
 
 void LandmarkBasedSupervisedDescentTraining::saveShapeInstanceToMLtxt(Mat shapeInstance, string filename)
 {
@@ -469,7 +468,7 @@ shapemodels::SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vect
 			string msg("The regularized AtA is not invertible (its rank is " + lexical_cast<string>(rankOfAtAReg)+", full rank would be " + lexical_cast<string>(AtAReg_Eigen.rows()) + "). Increase lambda (or use the pseudo-inverse, which is not implemented yet).");
 			logger.error(msg);
 			#ifndef _DEBUG
-				throw std::runtime_error(msg); // Don't throw while debugging. Makes debugging with small amounts of data possible.
+				//throw std::runtime_error(msg); // Don't throw while debugging. Makes debugging with small amounts of data possible.
 			#endif
 		}
 		Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> AtARegInv_EigenFullLU = luOfAtAReg.inverse();

@@ -5,7 +5,7 @@ SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 #OpenCV:
-FIND_PACKAGE( OpenCV 2.4.3 REQUIRED core imgproc highgui calib3d )
+FIND_PACKAGE( OpenCV 2.4.3 REQUIRED core imgproc highgui calib3d objdetect )
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
@@ -38,20 +38,31 @@ ELSE(Boost_FOUND)
   MESSAGE(FATAL_ERROR "Boost not found")
 ENDIF()
 
+find_package(OpenGL REQUIRED)
+
+set(CMAKE_AUTOMOC ON)
+find_package(Qt5Core REQUIRED)
+find_package(Qt5Gui REQUIRED)
+#find_package(Qt5OpenGL REQUIRED)
+find_package(Qt5Widgets REQUIRED)
+
 #Source and header files:
 SET(SOURCE
 	fitter.cpp
+	OpenGLWindow.cpp
 )
 
 SET(HEADERS
+	OpenGLWindow.hpp
 )
 
-ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
+ADD_EXECUTABLE( ${SUBPROJECT_NAME} WIN32 ${SOURCE} ${HEADERS} )
 
 INCLUDE_DIRECTORIES( ${MATLAB_INCLUDE_DIR} )
 include_directories( ${Boost_INCLUDE_DIRS} )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( ${HDF5_INCLUDE_DIRS} )
+include_directories(${OPENGL_INCLUDE_DIR})
 include_directories( ${Logging_SOURCE_DIR}/include )
 include_directories( ${ImageLogging_SOURCE_DIR}/include )
 include_directories( ${ImageIO_SOURCE_DIR}/include )
@@ -62,4 +73,4 @@ include_directories( ${ShapeModels_SOURCE_DIR}/include )
 include_directories( ${Detection_SOURCE_DIR}/include )
 
 #Make the app depend on the libraries
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection ImageIO ${KINECT_LIBNAME} ImageProcessing Classification ShapeModels Render ImageLogging Logging ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} ${HDF5_LIBRARIES} )
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection ImageIO ${KINECT_LIBNAME} ImageProcessing Classification ShapeModels Render ImageLogging Logging ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} ${HDF5_LIBRARIES} Qt5::Core Qt5::Gui Qt5::Widgets ${OPENGL_LIBRARIES}) # Qt5::OpenGL Qt5::Widgets

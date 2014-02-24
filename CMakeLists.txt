@@ -17,6 +17,7 @@ message(STATUS "Options:")
 option(WITH_MSKINECT_SDK "Enables the use of a Kinect as a webcam (using the MS Kinect SDK for Windows)" OFF)
 message(STATUS "WITH_MSKINECT_SDK: ${WITH_MSKINECT_SDK}")
 
+cmake_policy(SET CMP0020 NEW) # all Qt projects. auto-link to winmain... etc. Better: cmake_policy(VERSION 2.8.11) (first version to support auto-linking (and the new Qt imports anyway).
 
 add_subdirectory(libLogging)			# Text logging
 add_subdirectory(libImageLogging)		# Image logging
