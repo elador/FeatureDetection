@@ -1,8 +1,12 @@
 SET( SUBPROJECT_NAME fitter )	# my own variable, not cmake's
 PROJECT( ${SUBPROJECT_NAME} )
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
+
+#cmake_policy(SET CMP0020 NEW) # all Qt projects. auto-link to winmain... etc. Better: cmake_policy(VERSION 2.8.11) (first version to support auto-linking (and the new Qt imports anyway).
+# Todo: move the policy to the sub-project. Because: it gives an error on a cmake version that doesnt support this policy!
+# Note: with CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11), the policy is already set to default for 2.8.11 which is ON.
 
 #OpenCV:
 FIND_PACKAGE( OpenCV 2.4.3 REQUIRED core imgproc highgui calib3d objdetect )
@@ -38,13 +42,18 @@ ELSE(Boost_FOUND)
   MESSAGE(FATAL_ERROR "Boost not found")
 ENDIF()
 
-find_package(OpenGL REQUIRED)
+#find_package(OpenGL REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 #find_package(Qt5OpenGL REQUIRED)
-find_package(Qt5Widgets REQUIRED)
+#find_package(Qt5Widgets REQUIRED)
+
+link_directories( "C:\\Qt\\instl_src_build\\lib\\" )
+set(GLES_LIBRARIES debug libGLESv2d debug libEGLd optimized libGLESv2; optimized libEGL)
+#libGLESv2d.lib
+#libEGLd.lib
 
 #Source and header files:
 SET(SOURCE
@@ -56,13 +65,13 @@ SET(HEADERS
 	OpenGLWindow.hpp
 )
 
-ADD_EXECUTABLE( ${SUBPROJECT_NAME} WIN32 ${SOURCE} ${HEADERS} )
+ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
 
 INCLUDE_DIRECTORIES( ${MATLAB_INCLUDE_DIR} )
 include_directories( ${Boost_INCLUDE_DIRS} )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( ${HDF5_INCLUDE_DIRS} )
-include_directories(${OPENGL_INCLUDE_DIR})
+#include_directories(${OPENGL_INCLUDE_DIR})
 include_directories( ${Logging_SOURCE_DIR}/include )
 include_directories( ${ImageLogging_SOURCE_DIR}/include )
 include_directories( ${ImageIO_SOURCE_DIR}/include )
@@ -73,4 +82,4 @@ include_directories( ${ShapeModels_SOURCE_DIR}/include )
 include_directories( ${Detection_SOURCE_DIR}/include )
 
 #Make the app depend on the libraries
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection ImageIO ${KINECT_LIBNAME} ImageProcessing Classification ShapeModels Render ImageLogging Logging ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} ${HDF5_LIBRARIES} Qt5::Core Qt5::Gui Qt5::Widgets ${OPENGL_LIBRARIES}) # Qt5::OpenGL Qt5::Widgets
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection ImageIO ${KINECT_LIBNAME} ImageProcessing Classification ShapeModels Render ImageLogging Logging ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} ${HDF5_LIBRARIES} Qt5::Core Qt5::Gui ${GLES_LIBRARIES} ) # Qt5::OpenGL Qt5::Widgets ${OPENGL_LIBRARIES}

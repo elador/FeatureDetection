@@ -176,6 +176,7 @@ PcaModel PcaModel::loadScmModel(string modelFilename, string landmarkVertexMappi
 	PcaModel model;
 
 	// Load the landmarks mappings
+	/*
 	std::ifstream ffpList;
 	ffpList.open(landmarkVertexMappingFile.c_str(), std::ios::in);
 	if (!ffpList.is_open()) {
@@ -198,6 +199,11 @@ PcaModel PcaModel::loadScmModel(string modelFilename, string landmarkVertexMappi
 		currFfp.clear();
 	}
 	ffpList.close();
+	*/
+	// Identity mapping: // TODO DO PROPER SOLUTION
+	/*for (int i = 0; i < 28635; ++i)	{
+		model.landmarkVertexMap.insert(make_pair(boost::lexical_cast<string>(i), i)); // maybe from 1 to ...
+	}*/
 
 	// Load the model
 	if (sizeof(unsigned int) != 4) {
@@ -388,7 +394,8 @@ Mat PcaModel::getMean() const
 
 Vec3f PcaModel::getMeanAtPoint(string landmarkIdentifier) const
 {
-	int vertexId = landmarkVertexMap.at(landmarkIdentifier);
+	//int vertexId = landmarkVertexMap.at(landmarkIdentifier); // TODO hack. Do proper.
+	int vertexId = boost::lexical_cast<int>(landmarkIdentifier);
 	vertexId *= 3;
 	return Vec3f(mean.at<float>(vertexId), mean.at<float>(vertexId+1), mean.at<float>(vertexId+2)); // we could use Vec3f(mean(Range(), Range())), maybe then we don't copy the data?
 }
@@ -436,8 +443,8 @@ Mat PcaModel::drawSample(vector<float> coefficients)
 	//Mat smallBasis = pcaBasis(cv::Rect(0, 0, 55, 100));
 	//Mat smallMean = mean(cv::Rect(0, 0, 1, 100));
 
-	//Mat modelSample = mean + pcaBasis * alphas.mul(sqrtOfEigenvalues); // Surr
-	Mat modelSample = mean + pcaBasis * alphas; // Bsl .h5 old
+	Mat modelSample = mean + pcaBasis * alphas.mul(sqrtOfEigenvalues); // Surr
+	//Mat modelSample = mean + pcaBasis * alphas; // Bsl .h5 old
 
 	return modelSample;
 }
@@ -449,9 +456,28 @@ cv::Mat PcaModel::getPcaBasis() const
 
 cv::Mat PcaModel::getPcaBasis(std::string landmarkIdentifier) const
 {
-	int vertexId = landmarkVertexMap.at(landmarkIdentifier);
+	//int vertexId = landmarkVertexMap.at(landmarkIdentifier); // Todo: Hacky
+	int vertexId = boost::lexical_cast<int>(landmarkIdentifier);
 	vertexId *= 3;
-	return pcaBasis.rowRange(vertexId, vertexId + 3);
+
+	Mat sqrtOfEigenvalues = eigenvalues.clone();
+	for (unsigned int i = 0; i < eigenvalues.rows; ++i)	{ // only do in case of Surrey model...
+		sqrtOfEigenvalues.at<float>(i) = std::sqrt(eigenvalues.at<float>(i));
+	}
+	Mat unnormalizedBasis = pcaBasis.rowRange(vertexId, vertexId + 3).clone(); // we dont want to modify the original basis...
+	for (int basis = 0; basis < unnormalizedBasis.cols; ++basis) {
+		Mat normalizedBasis = unnormalizedBasis.col(basis).mul(sqrtOfEigenvalues.at<float>(basis));
+		normalizedBasis.copyTo(unnormalizedBasis.col(basis));
+	}
+	//Mat normalizedBasis = unnormalizedBasis * sqrtOfEigenvalues;
+	return unnormalizedBasis;
+	
+	//return pcaBasis.rowRange(vertexId, vertexId + 3);
+}
+
+float PcaModel::getEigenvalue(unsigned int index) const
+{
+	return eigenvalues.at<float>(index);
 }
 
 }

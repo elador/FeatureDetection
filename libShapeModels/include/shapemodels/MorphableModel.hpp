@@ -99,6 +99,7 @@ public:
 	 * Returns a sample from the model with the given shape- and
 	 * color PCA coefficients. 
 	 * If a vector is empty, the mean is used.
+	 * TODO: Provide normalized, i.e. standardnormal ditributed coeffs, we'll take care of the rest
 	 *
 	 * @param[in] shapeCoefficients The PCA coefficients used to generate the shape sample.
 	 * @param[in] colorCoefficients The PCA coefficients used to generate the shape sample.

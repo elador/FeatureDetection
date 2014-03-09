@@ -86,7 +86,8 @@ render::Mesh MorphableModel::getMean() const
 	unsigned int numVertices = shapeModel.getDataDimension() / 3;
 	unsigned int numVerticesColor = colorModel.getDataDimension() / 3;
 	if (numVertices != numVerticesColor) {
-		// TODO throw ERROR!
+		// TODO throw more meaningful error, maybe log
+		throw std::runtime_error("numVertices should be equal to numVerticesColor.");
 	}
 
 	mean.vertex.resize(numVertices);

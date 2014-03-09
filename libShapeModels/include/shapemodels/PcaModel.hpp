@@ -152,6 +152,8 @@ public:
 	cv::Mat getPcaBasis() const;
 	cv::Mat getPcaBasis(std::string landmarkIdentifier) const;
 
+	float getEigenvalue(unsigned int index) const;
+
 private:
 	std::mt19937 engine; ///< A Mersenne twister MT19937 engine
 	std::map<std::string, int> landmarkVertexMap; ///< Holds the translation from feature point name (e.g. "center.nose.tip") to the vertex number in the model

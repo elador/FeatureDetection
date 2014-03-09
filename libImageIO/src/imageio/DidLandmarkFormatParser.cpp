@@ -66,7 +66,8 @@ shared_ptr<ModelLandmark> DidLandmarkFormatParser::readFromDidLine(const string&
 	}
 	fPos[2] = 0;
 	int vertexNumber = boost::lexical_cast<int>(fVertexNumber);
-	name = didToTlmsName(vertexNumber);
+	//name = didToTlmsName(vertexNumber); // TODO: More generic solution
+	name = boost::lexical_cast<string>(vertexNumber);
 	if (!name.empty()) {
 		return make_shared<ModelLandmark>(name, fPos, true);
 	} else {
