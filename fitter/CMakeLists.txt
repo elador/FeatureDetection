@@ -47,8 +47,8 @@ ENDIF()
 set(CMAKE_AUTOMOC ON)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
-#find_package(Qt5OpenGL REQUIRED)
-#find_package(Qt5Widgets REQUIRED)
+find_package(Qt5OpenGL REQUIRED)
+find_package(Qt5Widgets REQUIRED)
 
 link_directories( "C:\\Qt\\instl_src_build\\lib\\" )
 set(GLES_LIBRARIES debug libGLESv2d debug libEGLd optimized libGLESv2; optimized libEGL)
@@ -82,4 +82,4 @@ include_directories( ${ShapeModels_SOURCE_DIR}/include )
 include_directories( ${Detection_SOURCE_DIR}/include )
 
 #Make the app depend on the libraries
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection ImageIO ${KINECT_LIBNAME} ImageProcessing Classification ShapeModels Render ImageLogging Logging ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} ${HDF5_LIBRARIES} Qt5::Core Qt5::Gui ${GLES_LIBRARIES} ) # Qt5::OpenGL Qt5::Widgets ${OPENGL_LIBRARIES}
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection ImageIO ${KINECT_LIBNAME} ImageProcessing Classification ShapeModels Render ImageLogging Logging ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} ${HDF5_LIBRARIES} Qt5::Core Qt5::Gui Qt5::OpenGL Qt5::Widgets ${GLES_LIBRARIES} ) # Qt5::OpenGL Qt5::Widgets ${OPENGL_LIBRARIES}

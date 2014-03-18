@@ -80,6 +80,10 @@
 #include <QtCore/qmath.h>
 #undef ERROR // from Qt/OGL something... better solution: Rename the loglevels
 
+#include <QPainter>
+#include <QImage>
+#include <QGLWidget>
+
 using namespace imageio;
 namespace po = boost::program_options;
 using std::cout;
@@ -108,7 +112,11 @@ private:
 
 	GLuint m_posAttr;
 	GLuint m_colAttr;
+	GLuint m_texAttr;
+	GLuint m_texWeightAttr;
 	GLuint m_matrixUniform;
+
+	GLuint texture;
 
 	QOpenGLShaderProgram *m_program;
 	int m_frame;
@@ -367,17 +375,30 @@ int main(int argc, char *argv[])
 static const char *vertexShaderSource =
 "attribute highp vec4 posAttr;\n"
 "attribute lowp vec4 colAttr;\n"
+"attribute mediump vec2 texAttr;\n" // new tex
+"attribute mediump float texWeightAttr;\n" // new tex
 "varying lowp vec4 col;\n"
+"varying mediump vec2 tex;\n" // new tex
 "uniform highp mat4 matrix;\n"
+"varying lowp float texWeight;\n" // new tex
 "void main() {\n"
 "   col = colAttr;\n"
+"   tex = texAttr;\n" // new tex
+"   texWeight = texWeightAttr;\n" // new tex
 "   gl_Position = matrix * posAttr;\n"
 "}\n";
 
 static const char *fragmentShaderSource =
 "varying lowp vec4 col;\n"
+"varying mediump vec2 tex;\n" // new tex
+"varying lowp float texWeight;\n" // new tex
+"uniform sampler2D texture;\n" // new tex
 "void main() {\n"
-"   gl_FragColor = col;\n"
+//    "   gl_FragColor = col;\n"
+//	"   gl_FragColor = texture2D(texture, tex);\n" // new tex
+"   gl_FragColor = mix(col, texture2D(texture, tex), texWeight);\n" // new tex
+//"   gl_FragColor = vec4(0.0, texWeight, 0.0, 0.0);\n"
+//"   gl_FragColor = vec4(tex.x, tex.y, 0.0, 0.0);\n"
 "}\n";
 
 GLuint FittingWindow::loadShader(GLenum type, const char *source)
@@ -394,9 +415,36 @@ void FittingWindow::initialize()
 	m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
 	m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
 	m_program->link();
-	m_posAttr = m_program->attributeLocation("posAttr");
-	m_colAttr = m_program->attributeLocation("colAttr");
-	m_matrixUniform = m_program->uniformLocation("matrix");
+    m_posAttr = m_program->attributeLocation("posAttr");
+    m_colAttr = m_program->attributeLocation("colAttr");
+	m_texAttr = m_program->attributeLocation("texAttr");
+	m_texWeightAttr = m_program->attributeLocation("texWeightAttr");
+    m_matrixUniform = m_program->uniformLocation("matrix");
+
+	glEnable(GL_TEXTURE_2D);
+	cv::Mat ocvimg = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\img.png");
+
+	glGenTextures(1, &texture);
+	glActiveTexture(GL_TEXTURE0 + 1);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	cv::cvtColor(ocvimg, ocvimg, CV_BGR2RGB);
+	cv::flip(ocvimg, ocvimg, 0); // Flip around the x-axis
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ocvimg.cols, ocvimg.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, ocvimg.ptr(0));
+	
+	std::cout << "GL_SHADING_LANGUAGE_VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION);
+
+	// Set nearest filtering mode for texture minification
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	// Set bilinear filtering mode for texture magnification
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// Wrap texture coordinates by repeating
+	// f.ex. texture coordinate (1.1, 1.2) is same as (0.1, 0.2)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // GL_REPEAT
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	// TODO: Put in d'tor:
+	// glDeleteTextures(1, &texture);
 }
 
 void FittingWindow::render()
@@ -411,16 +459,24 @@ void FittingWindow::render()
 	// Enable back face culling
 	glEnable(GL_CULL_FACE); // could go to init? Don't know
 
+	glEnable(GL_TEXTURE_2D);
+
+	// Note: OpenGL: CCW triangles = front-facing.
+	// Coord-axis: right = +x, up = +y, to back = -z, to front = +z
+
 	m_program->bind();
 
 	QMatrix4x4 matrix;
-	//matrix.perspective(60, 4.0 / 3.0, 0.1, 100.0);
-	matrix.flipCoordinates();
-	matrix.ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 100.0f);
+	//matrix.perspective(60, 4.0 / 3.0, 0.1, 1000.0);
+	//matrix.flipCoordinates();
+	matrix.ortho(-70.0f, 70.0f, -70.0f, 70.0f, 0.1f, 1000.0f);
+	//matrix.ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 1000.0f);
 	
-	matrix.translate(0, 0, -2);
-	matrix.rotate(100.0f * m_frame / screen()->refreshRate(), 0, 1, 0);
-	matrix.scale(1.0f / 70.0f, 1.0f / 70.0f, 1.0f / 70.0f);
+	//matrix.translate(0, 0, -2);
+	matrix.translate(0, 0, -50);
+	//matrix.rotate(100.0f * m_frame / screen()->refreshRate(), 0, 1, 0);
+	//matrix.rotate(180, 0, 1, 0);
+	//matrix.scale(1.0f / 70.0f, 1.0f / 70.0f, 1.0f / 70.0f);
 
 	m_program->setUniformValue(m_matrixUniform, matrix);
 
@@ -439,10 +495,11 @@ void FittingWindow::render()
 	vertices.push_back(0.5f);
 	vertices.push_back(-0.5f);
 	vertices.push_back(0.0f);*/
-	//int nt = 6736;
-	int nt = 6736;
+
 	render::Mesh mesh = morphableModel.getMean();
 	vertices.clear();
+	//int nt = 6736;
+	int nt = mesh.tvi.size();
 	//for (const auto& triangle : mesh.tvi)
 	for (int i = 0; i < nt; ++i)
 	{
@@ -484,8 +541,7 @@ void FittingWindow::render()
 		colors.push_back(mesh.vertex[triangle[2]].color[1]);
 		colors.push_back(mesh.vertex[triangle[2]].color[2]);
 	}
-
-
+	/*
 	//glVertexAttribPointer(m_posAttr, 2, GL_FLOAT, GL_FALSE, 0, vertices);
 	glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &vertices[0]);
 	glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &colors[0]);
@@ -497,13 +553,71 @@ void FittingWindow::render()
 
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(0);
+	*/
+
+	GLfloat cube[] = {
+	-0.5f, -0.5f, 0.0f,
+	0.5f, -0.5f, 0.0f,
+	-0.5f, 0.5f, 0.0f,
+
+	-0.5f, 0.5f, 0.0f,
+	0.5f, -0.5f, 0.0f,
+	0.5f, 0.5f, 0.0f
+	};
+	GLfloat cubeTex[] = {
+		0.0f, 0.0f,
+		1.0f, 0.0f,
+		0.0f, 1.0f,
+
+		0.0f, 1.0f,
+		1.0f, 0.0f,
+		1.0f, 1.0f
+	};
+	GLfloat cubeCols[] = {
+	1.0f, 0.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 0.0f, 1.0f,
+
+	1.0f, 0.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 0.0f, 1.0f
+	};
+	matrix.setToIdentity();
+	matrix.ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 1000.0f);
+	matrix.translate(0, 0, -2);
+	m_program->setUniformValue(m_matrixUniform, matrix);
+
+	glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, cube);
+	glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, cubeCols);
+	glVertexAttribPointer(m_texAttr, 2, GL_FLOAT, GL_FALSE, 0, cubeTex);
+
+	m_program->setAttributeValue(m_texWeightAttr, 0.7f);
+	m_program->setUniformValue("texture", texture);
+	glActiveTexture(GL_TEXTURE0 + 1);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glEnableVertexAttribArray(m_posAttr);
+	glEnableVertexAttribArray(m_colAttr);
+	glEnableVertexAttribArray(m_texAttr);
+
+	glDrawArrays(GL_TRIANGLES, 0, 6); // how many vertices to render
+
+	glDisableVertexAttribArray(m_texAttr);
+	glDisableVertexAttribArray(m_colAttr);
+	glDisableVertexAttribArray(m_posAttr);
 
 	if (renderModel == false) {
 		//fit();
 		renderModel = true;
 	}
 
+	
+
 	m_program->release();
+
+	//QPainter painter;
+	//QPixmap bg("img.png");
+	//painter.drawPixmap(0, 0, bg.scaled(size()));
 
 	++m_frame;
 }
