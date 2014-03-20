@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	
-	Loggers->getLogger("shapemodels").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("superviseddescentmodel").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("sdmTraining").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("sdmTraining");
 
@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
 		
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 
-	string faceDetectionModel("C:\\opencv\\2.4.7.2_prebuilt\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt2.xml"); // sgd: "../models/haarcascade_frontalface_alt2.xml"
+	string faceDetectionModel("C:\\opencv\\opencv_2.4.8\\sources\\data\\haarcascades\\haarcascade_frontalface_alt2.xml"); // sgd: "../models/haarcascade_frontalface_alt2.xml"
 	cv::CascadeClassifier faceCascade;
 	if (!faceCascade.load(faceDetectionModel))
 	{

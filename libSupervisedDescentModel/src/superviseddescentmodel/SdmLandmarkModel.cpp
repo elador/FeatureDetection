@@ -120,6 +120,7 @@ void SdmLandmarkModel::save(boost::filesystem::path filename, std::string commen
 
 SdmLandmarkModel SdmLandmarkModel::load(boost::filesystem::path filename)
 {
+	// TODO: Logging, make more verbose what we load!
 	SdmLandmarkModel model;
 	std::ifstream file(filename.string());
 	std::string line;
