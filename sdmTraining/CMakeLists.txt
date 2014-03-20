@@ -63,10 +63,11 @@ include_directories( ${HDF5_INCLUDE_DIRS} )
 include_directories( ${Logging_SOURCE_DIR}/include )
 include_directories( ${ImageLogging_SOURCE_DIR}/include )
 include_directories( ${ImageIO_SOURCE_DIR}/include )
-include_directories( ${ImageProcessing_SOURCE_DIR}/include )
+include_directories( ${SupervisedDescentModel_SOURCE_DIR}/include )
+#include_directories( ${ImageProcessing_SOURCE_DIR}/include )
 include_directories( ${ShapeModels_SOURCE_DIR}/include )
 
 #include_directories( ${VLFEAT_INCLUDE_DIR} )
 
 #Make the app depend on the libraries
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} ImageIO ${KINECT_LIBNAME} ImageProcessing ShapeModels ImageLogging Logging ${Boost_LIBRARIES} ${OpenCV_LIBS} ${HDF5_LIBRARIES} ) #${VLFEAT_LIBRARY}
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} ImageIO SupervisedDescentModel ${KINECT_LIBNAME} Logging ${Boost_LIBRARIES} ${OpenCV_LIBS} ${HDF5_LIBRARIES} ) #${VLFEAT_LIBRARY}

@@ -48,12 +48,7 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/lexical_cast.hpp"
 
-#include "shapemodels/MorphableModel.hpp"
-#include "shapemodels/OpenCVCameraEstimation.hpp"
-#include "shapemodels/AffineCameraEstimation.hpp"
-#include "shapemodels/SdmLandmarkModel.hpp"
-#include "render/Camera.hpp"
-#include "render/SoftwareRenderer.hpp"
+#include "superviseddescentmodel/SdmLandmarkModel.hpp"
 
 #include "imageio/ImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
@@ -69,7 +64,7 @@
 #include "logging/LoggerFactory.hpp"
 
 using namespace imageio;
-using namespace shapemodels;
+using namespace superviseddescentmodel;
 namespace po = boost::program_options;
 using std::cout;
 using std::endl;

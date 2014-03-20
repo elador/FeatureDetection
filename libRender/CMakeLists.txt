@@ -19,12 +19,15 @@ ELSE(Boost_FOUND)
   MESSAGE(FATAL_ERROR "Boost not found")
 ENDIF()
 
-#IF(WIN32)
+#Hdf5:
+IF(WIN32)
 	#FIND_PACKAGE (HDF5 NAMES hdf5) # puts it in Config-mode
+	FIND_PACKAGE (HDF5 REQUIRED COMPONENTS C CXX NAMES hdf5) # COMPONENTS doesn't seem to work
+	set (HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIR}) # According to hdf5 cmake file, should use *_DIRS, but they don't define it in hdf5-config.cmake. So if we use the Config-mode with NAMES, it isn't set, but it is, when used as in linux.
+ELSE()
 	#FIND_PACKAGE (HDF5 REQUIRED CONFIG) # same
-	FIND_PACKAGE (HDF5 REQUIRED COMPONENTS C CXX) # works on windows as well
-#ENDIF()
-#message(STATUS "Hdf5 include dir: ${HDF5_INCLUDE_DIR}") # According to hdf5 cmake file, should use *_DIRS, but they don't define it in hdf5-config.cmake. Ok if find_packaged used as above (now), it works.
+	FIND_PACKAGE (HDF5 REQUIRED COMPONENTS C CXX) # works on windows as well but links to dll's instead of lib's...
+ENDIF()
 message(STATUS "HDF5 includes at: ${HDF5_INCLUDE_DIRS}")
 message(STATUS "HDF5 libraries at: ${HDF5_LIBRARIES}")
 

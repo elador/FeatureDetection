@@ -5,7 +5,7 @@
  *      Author: Patrik Huber
  */
 
-#include "shapemodels/SdmLandmarkModel.hpp"
+#include "superviseddescentmodel/SdmLandmarkModel.hpp"
 
 #include <fstream>
 #include "opencv2/core/core.hpp"
@@ -15,7 +15,7 @@
 
 using boost::lexical_cast;
 
-namespace shapemodels {
+namespace superviseddescentmodel {
 
 SdmLandmarkModel::SdmLandmarkModel()
 {
@@ -118,7 +118,7 @@ void SdmLandmarkModel::save(boost::filesystem::path filename, std::string commen
 	return;
 }
 
-shapemodels::SdmLandmarkModel SdmLandmarkModel::load(boost::filesystem::path filename)
+SdmLandmarkModel SdmLandmarkModel::load(boost::filesystem::path filename)
 {
 	SdmLandmarkModel model;
 	std::ifstream file(filename.string());

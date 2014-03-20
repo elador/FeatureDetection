@@ -27,15 +27,12 @@ MESSAGE(STATUS "Eigen3 version: ${EIGEN3_VERSION}")
 SET(HEADERS
 	include/shapemodels/PcaModel.hpp
 	include/shapemodels/MorphableModel.hpp
-	include/shapemodels/SdmLandmarkModel.hpp
-	include/shapemodels/hog.h
 	include/shapemodels/OpenCVCameraEstimation.hpp
 	include/shapemodels/AffineCameraEstimation.hpp
 	include/shapemodels/FeaturePointsModelRANSACtmp.hpp
 	include/shapemodels/FeaturePointsModel.hpp
 	include/shapemodels/FeaturePointsSelector.hpp
 	include/shapemodels/ListFeaturePointsSelector.hpp
-	include/shapemodels/LandmarkBasedSupervisedDescentTraining.hpp
 	include/shapemodels/RandomFeaturePointsSelector.hpp
 	include/shapemodels/FeaturePointsEvaluator.hpp
 	include/shapemodels/TwoStepFeaturePointsEvaluator.hpp
@@ -47,9 +44,6 @@ SET(HEADERS
 SET(SOURCE
 	src/shapemodels/PcaModel.cpp
 	src/shapemodels/MorphableModel.cpp
-	src/shapemodels/SdmLandmarkModel.cpp
-	src/shapemodels/LandmarkBasedSupervisedDescentTraining.cpp
-	src/shapemodels/hog.c
 	src/shapemodels/OpenCVCameraEstimation.cpp
 	src/shapemodels/AffineCameraEstimation.cpp
 	src/shapemodels/RandomFeaturePointsSelector.cpp

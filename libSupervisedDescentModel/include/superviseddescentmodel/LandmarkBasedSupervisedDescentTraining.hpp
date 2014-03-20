@@ -10,11 +10,11 @@
 #ifndef LANDMARKBASEDSUPERVISEDDESCENTTRAINING_HPP_
 #define LANDMARKBASEDSUPERVISEDDESCENTTRAINING_HPP_
 
-#include "shapemodels/SdmLandmarkModel.hpp"
+#include "superviseddescentmodel/SdmLandmarkModel.hpp"
 
 #include "opencv2/core/core.hpp"
 
-namespace shapemodels {
+namespace superviseddescentmodel {
 
 /**
  * Desc

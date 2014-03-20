@@ -61,13 +61,13 @@
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/IbugLandmarkFormatParser.hpp"
 
-#include "shapemodels/LandmarkBasedSupervisedDescentTraining.hpp"
-#include "shapemodels/SdmLandmarkModel.hpp"
+#include "superviseddescentmodel/LandmarkBasedSupervisedDescentTraining.hpp"
+#include "superviseddescentmodel/SdmLandmarkModel.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
 using namespace imageio;
-using namespace shapemodels;
+using namespace superviseddescentmodel;
 namespace po = boost::program_options;
 using std::cout;
 using std::endl;

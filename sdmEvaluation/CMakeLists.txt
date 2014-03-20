@@ -61,15 +61,11 @@ include_directories( ${Boost_INCLUDE_DIRS} )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( ${HDF5_INCLUDE_DIRS} )
 include_directories( ${Logging_SOURCE_DIR}/include )
-include_directories( ${ImageLogging_SOURCE_DIR}/include )
 include_directories( ${ImageIO_SOURCE_DIR}/include )
-include_directories( ${ImageProcessing_SOURCE_DIR}/include )
-include_directories( ${Render_SOURCE_DIR}/include )
-include_directories( ${Classification_SOURCE_DIR}/include )
-include_directories( ${ShapeModels_SOURCE_DIR}/include )
-include_directories( ${Detection_SOURCE_DIR}/include )
+#include_directories( ${ImageProcessing_SOURCE_DIR}/include )
+include_directories( ${SupervisedDescentModel_SOURCE_DIR}/include )
 
 #include_directories( ${VLFEAT_INCLUDE_DIR} )
 
 #Make the app depend on the libraries
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection Render ImageIO ${KINECT_LIBNAME} ImageProcessing Classification ShapeModels ImageLogging Logging ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} ${HDF5_LIBRARIES} ) #${VLFEAT_LIBRARY}
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} SupervisedDescentModel ImageIO ${KINECT_LIBNAME} Logging ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} ${HDF5_LIBRARIES} ) #${VLFEAT_LIBRARY}

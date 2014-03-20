@@ -23,7 +23,7 @@
 #include "boost/lexical_cast.hpp"
 extern "C" {
 	//#include "vl/hog.h"
-	#include "shapemodels/hog.h"
+	#include "superviseddescentmodel/hog.h"
 }
 
 using cv::Mat;
@@ -32,7 +32,7 @@ using std::vector;
 using std::string;
 using boost::lexical_cast;
 
-namespace shapemodels {
+namespace superviseddescentmodel {
 
 class FeatureDescriptorExtractor
 {

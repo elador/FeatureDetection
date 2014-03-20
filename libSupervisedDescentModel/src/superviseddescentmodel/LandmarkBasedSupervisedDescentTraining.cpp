@@ -5,7 +5,7 @@
  *      Author: Patrik Huber
  */
 
-#include "shapemodels/LandmarkBasedSupervisedDescentTraining.hpp"
+#include "superviseddescentmodel/LandmarkBasedSupervisedDescentTraining.hpp"
 #include "logging/LoggerFactory.hpp"
 
 #include <fstream>
@@ -28,7 +28,7 @@ using cv::Rect;
 using cv::Scalar;
 using std::string;
 
-namespace shapemodels { 
+namespace superviseddescentmodel {
 
 void LandmarkBasedSupervisedDescentTraining::saveShapeInstanceToMLtxt(Mat shapeInstance, string filename)
 {
@@ -112,7 +112,7 @@ cv::Mat LandmarkBasedSupervisedDescentTraining::meanNormalizationUnitSumSquaredN
 
 cv::Mat LandmarkBasedSupervisedDescentTraining::calculateMean(std::vector<cv::Mat> landmarks, AlignGroundtruth alignGroundtruth, MeanNormalization meanNormalization, std::vector<cv::Rect> faceboxes/*=std::vector<cv::Rect>()*/)
 {
-	Logger logger = Loggers->getLogger("shapemodels");
+	Logger logger = Loggers->getLogger("superviseddescentmodel");
 	if (landmarks.size() < 1) {
 		string msg("No landmarks provided to calculate the mean.");
 		logger.error(msg);
@@ -286,9 +286,9 @@ Mat LandmarkBasedSupervisedDescentTraining::putInDataAndGenerateSamples(vector<M
 	return initialShape;
 }
 
-shapemodels::SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> trainingImages, vector<Mat> trainingGroundtruthLandmarks, vector<cv::Rect> trainingFaceboxes /*maybe optional bzw weglassen hier?*/, std::vector<string> modelLandmarks, vector<string> descriptorTypes, vector<shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors)
+SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> trainingImages, vector<Mat> trainingGroundtruthLandmarks, vector<cv::Rect> trainingFaceboxes /*maybe optional bzw weglassen hier?*/, std::vector<string> modelLandmarks, vector<string> descriptorTypes, vector<shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors)
 {
-	Logger logger = Loggers->getLogger("shapemodels");
+	Logger logger = Loggers->getLogger("superviseddescentmodel");
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	int elapsed_mseconds;
 
