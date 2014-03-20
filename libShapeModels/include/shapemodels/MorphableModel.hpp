@@ -19,6 +19,7 @@
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
 #include "boost/property_tree/ptree.hpp"
+#include "boost/filesystem/path.hpp"
 
 namespace shapemodels {
 
@@ -53,9 +54,11 @@ public:
 	 * @param[in] landmarkVertexMappingFile Todo.
 	 * @return TODO.
 	 */
-	static MorphableModel loadScmModel(std::string h5file, std::string landmarkVertexMappingFile);
+	static MorphableModel loadScmModel(boost::filesystem::path h5file, boost::filesystem::path landmarkVertexMappingFile, boost::filesystem::path isomapFile);
 
-	static MorphableModel loadStatismoModel(std::string h5file);
+	static MorphableModel loadStatismoModel(boost::filesystem::path h5file);
+
+	static std::vector<cv::Vec2f> loadIsomap(boost::filesystem::path isomapFile);
 	
 	PcaModel getShapeModel() const;
 	PcaModel getColorModel() const;
@@ -99,17 +102,23 @@ public:
 	 * Returns a sample from the model with the given shape- and
 	 * color PCA coefficients. 
 	 * If a vector is empty, the mean is used.
-	 * TODO: Provide normalized, i.e. standardnormal ditributed coeffs, we'll take care of the rest
+	 * TODO: Provide normalized, i.e. standardnormal distributed coeffs, we'll take care of the rest
 	 *
 	 * @param[in] shapeCoefficients The PCA coefficients used to generate the shape sample.
 	 * @param[in] colorCoefficients The PCA coefficients used to generate the shape sample.
 	 * @return A model instance with given coefficients.
 	 */
 	render::Mesh drawSample(std::vector<float> shapeCoefficients, std::vector<float> colorCoefficients);
+
+	//void setHasTextureCoordinates(bool hasTextureCoordinates);
 	
 private:
 	PcaModel shapeModel; ///< A PCA model over the shape
 	PcaModel colorModel; ///< A PCA model over vertex color information
+
+	bool hasTextureCoordinates = false; ///< 
+
+	std::vector<cv::Vec2f> textureCoordinates; ///< 
 
 };
 

@@ -11,13 +11,16 @@
 #include "boost/lexical_cast.hpp"
 #include "boost/filesystem/path.hpp"
 #include <exception>
+#include <sstream>
 #include <fstream>
 
 using logging::LoggerFactory;
 using cv::Mat;
+using cv::Vec2f;
 using cv::Vec3f;
 using cv::Vec4f;
 using boost::lexical_cast;
+using boost::filesystem::path;
 using std::vector;
 using std::string;
 
@@ -31,10 +34,11 @@ MorphableModel::MorphableModel()
 shapemodels::MorphableModel MorphableModel::load(boost::property_tree::ptree configTree)
 {
 	MorphableModel morphableModel;
-	boost::filesystem::path filename = configTree.get<string>("filename");
+	path filename = configTree.get<path>("filename");
 	if (filename.extension().string() == ".scm") {
-		string vertexMappingFile = configTree.get<string>("vertexMapping");
-		morphableModel = shapemodels::MorphableModel::loadScmModel(filename.string(), vertexMappingFile);
+		path vertexMappingFile = configTree.get<path>("vertexMapping");
+		path isomapFile = configTree.get<path>("isomap", "");
+		morphableModel = shapemodels::MorphableModel::loadScmModel(filename.string(), vertexMappingFile, isomapFile);
 	}
 	else if (filename.extension().string() == ".h5") {
 		morphableModel = shapemodels::MorphableModel::loadStatismoModel(filename.string());
@@ -46,15 +50,27 @@ shapemodels::MorphableModel MorphableModel::load(boost::property_tree::ptree con
 	return morphableModel;
 }
 
-shapemodels::MorphableModel MorphableModel::loadScmModel(std::string h5file, std::string landmarkVertexMappingFile)
+shapemodels::MorphableModel MorphableModel::loadScmModel(path h5file, path landmarkVertexMappingFile, path isomapFile)
 {
 	MorphableModel model;
 	model.shapeModel = PcaModel::loadScmModel(h5file, landmarkVertexMappingFile, PcaModel::ModelType::SHAPE);
 	model.colorModel = PcaModel::loadScmModel(h5file, landmarkVertexMappingFile, PcaModel::ModelType::COLOR);
+
+	if (!isomapFile.empty()) {
+		vector<Vec2f> texCoords = MorphableModel::loadIsomap(isomapFile);
+		if (model.shapeModel.getDataDimension() / 3.0f != model.textureCoordinates.size()) {
+			// TODO Warn/Error, texCoords will not be used
+		}
+		else
+		{
+			model.textureCoordinates = texCoords;
+			model.hasTextureCoordinates = true;
+		}	
+	}
 	return model;
 }
 
-shapemodels::MorphableModel MorphableModel::loadStatismoModel(std::string h5file)
+shapemodels::MorphableModel MorphableModel::loadStatismoModel(path h5file)
 {
 	MorphableModel model;
 	model.shapeModel = PcaModel::loadStatismoModel(h5file, PcaModel::ModelType::SHAPE);
@@ -172,6 +188,31 @@ render::Mesh MorphableModel::drawSample(vector<float> shapeCoefficients, vector<
 
 	return mean;
 }
+
+vector<Vec2f> MorphableModel::loadIsomap(path isomapFile)
+{
+	vector<Vec2f> texCoords;
+	string line;
+	std::ifstream myfile(isomapFile.string());
+	if (!myfile.is_open()) {
+		//TODO log "Isomap file could not be opened. Did you specify a correct filename?" isomapFile
+	} else {
+		while (getline(myfile, line))
+		{
+			std::istringstream iss(line);
+			string u, v;
+			iss >> u >> v;
+			texCoords.push_back(Vec2f(lexical_cast<float>(u), lexical_cast<float>(v)));
+		}
+		myfile.close();
+	}
+	return texCoords;
+}
+
+/*void MorphableModel::setHasTextureCoordinates(bool hasTextureCoordinates)
+{
+	this->hasTextureCoordinates = hasTextureCoordinates;
+}*/
 
 /*
 unsigned int matIdx = 0;

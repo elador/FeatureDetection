@@ -20,6 +20,7 @@ using logging::LoggerFactory;
 using cv::Mat;
 using cv::Vec3f;
 using boost::lexical_cast;
+using boost::filesystem::path;
 using std::string;
 using std::vector;
 using std::array;
@@ -31,7 +32,7 @@ PcaModel::PcaModel()
 	engine.seed();
 }
 
-PcaModel PcaModel::loadStatismoModel(string h5file, PcaModel::ModelType modelType)
+PcaModel PcaModel::loadStatismoModel(path h5file, PcaModel::ModelType modelType)
 {
 	logging::Logger logger = Loggers->getLogger("shapemodels");
 	PcaModel model;
@@ -47,7 +48,7 @@ PcaModel PcaModel::loadStatismoModel(string h5file, PcaModel::ModelType modelTyp
 	H5::H5File h5Model;
 
 	try {
-		h5Model = H5::H5File(h5file, H5F_ACC_RDONLY);
+		h5Model = H5::H5File(h5file.string(), H5F_ACC_RDONLY);
 	}
 	catch (H5::Exception& e) {
 		string errorMessage = "Could not open HDF5 file: " + string(e.getCDetailMsg());
@@ -170,7 +171,7 @@ PcaModel PcaModel::loadStatismoModel(string h5file, PcaModel::ModelType modelTyp
 	return model;
 }
 
-PcaModel PcaModel::loadScmModel(string modelFilename, string landmarkVertexMappingFile, PcaModel::ModelType modelType)
+PcaModel PcaModel::loadScmModel(path modelFilename, path landmarkVertexMappingFile, PcaModel::ModelType modelType)
 {
 	logging::Logger logger = Loggers->getLogger("shapemodels");
 	PcaModel model;
@@ -214,9 +215,9 @@ PcaModel PcaModel::loadScmModel(string modelFilename, string landmarkVertexMappi
 	}
 
 	std::ifstream modelFile;
-	modelFile.open(modelFilename, std::ios::binary);
+	modelFile.open(modelFilename.string(), std::ios::binary);
 	if (!modelFile.is_open()) {
-		logger.warn("Could not open model file: " + modelFilename);
+		logger.warn("Could not open model file: " + modelFilename.string());
 		exit(EXIT_FAILURE);
 	}
 

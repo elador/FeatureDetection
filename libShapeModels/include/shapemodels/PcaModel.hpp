@@ -12,6 +12,12 @@
 
 #include "opencv2/core/core.hpp"
 
+#ifdef WIN32
+	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
+	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
+#endif
+#include "boost/filesystem/path.hpp"
+
 #include <string>
 #include <vector>
 #include <array>
@@ -66,7 +72,7 @@ public:
 	 * @param[in] modelType The type of PCA model to load (SHAPE or COLOR).
 	 * @return A shape- or color model from the given file.
 	 */
-	static PcaModel loadScmModel(std::string modelFilename, std::string landmarkVertexMappingFile, ModelType modelType);
+	static PcaModel loadScmModel(boost::filesystem::path modelFilename, boost::filesystem::path landmarkVertexMappingFile, ModelType modelType);
 
 	/**
 	 * Load a shape or color model from a .h5 file containing a
@@ -85,7 +91,7 @@ public:
 	 * @param[in] modelType The type of PCA model to load (SHAPE or COLOR).
 	 * @return A shape- or color model from the given file.
 	 */
-	static PcaModel loadStatismoModel(std::string h5file, ModelType modelType);
+	static PcaModel loadStatismoModel(boost::filesystem::path h5file, ModelType modelType);
 
 	/**
 	 * Returns the number of principal components in the model.
@@ -102,7 +108,7 @@ public:
 	unsigned int getDataDimension() const;
 
 	/**
-	 * Returns a list of triangles  on how to assemble the vertices into a mesh.
+	 * Returns a list of triangles on how to assemble the vertices into a mesh.
 	 *
 	 * @return The list of triangles to build a mesh.
 	 */

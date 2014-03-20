@@ -32,8 +32,6 @@
 #include <memory>
 #include <iostream>
 
-
-
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -352,8 +350,6 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}*/
 
-	//cv::namedWindow(windowName, cv::WINDOW_OPENGL);
-	
 	QGuiApplication app(argc, argv);
 
 	QSurfaceFormat format;
