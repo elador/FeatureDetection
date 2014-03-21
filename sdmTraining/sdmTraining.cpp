@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 	int numSamplesPerImage; // How many Monte Carlo samples to generate per training image, in addition to the original image. Default: 10
 	int numCascadeSteps; // How many cascade steps to learn? (i.e. how many regressors)
 	vector<string> descriptorTypes;
-	vector<shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors;
+	vector<shared_ptr<DescriptorExtractor>> descriptorExtractors;
 	LandmarkBasedSupervisedDescentTraining::Regularisation regularisation;
 
 	// Read the stuff from the config:
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
 			string descriptorPostprocessing = kv.second.get<string>("descriptorPostprocessing", "none");
 			string descriptorParameters = kv.second.get<string>("descriptorParameters", "");
 			if (descriptorType == "OpenCVSift") {
-				shared_ptr<FeatureDescriptorExtractor> sift = std::make_shared<SiftFeatureDescriptorExtractor>();
+				shared_ptr<DescriptorExtractor> sift = std::make_shared<SiftDescriptorExtractor>();
 				descriptorExtractors.push_back(sift);
 			} else {
 				throw std::logic_error("descriptorType does not match 'OpenCVSift'. No other descriptor types implemented yet.");
