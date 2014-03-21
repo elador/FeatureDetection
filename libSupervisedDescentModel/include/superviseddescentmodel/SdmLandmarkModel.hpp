@@ -37,7 +37,10 @@ using boost::lexical_cast;
 namespace superviseddescentmodel {
 
 /**
- * Desc
+ * A class representing a landmark model trained
+ * with the supervised descent method.
+ *
+ * Todo: Write something about how the landmarks are represented?
  */
 class SdmLandmarkModel  {
 

@@ -29,6 +29,12 @@ using std::vector;
 
 namespace superviseddescentmodel {
 
+/**
+ * Base-class for extracting descriptors at given points
+ * in an image.
+ * Todo: Check how this integrates with our FeatureExtractors
+ * in libImageProcessing.
+ */
 class DescriptorExtractor
 {
 public:

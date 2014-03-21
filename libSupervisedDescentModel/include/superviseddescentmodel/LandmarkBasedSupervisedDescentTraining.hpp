@@ -18,10 +18,14 @@
 namespace superviseddescentmodel {
 
 /**
- * Desc
+ * A class to train a landmark model based on the supervised descent 
+ * method of Xiong and De la Torre, "Supervised Descent Method and its
+ * Applications to Face Alignment", CVPR 2013.
  * The class provides reasonable default arguments, so when calling
- * train without setting any, it works.
+ * the train function without setting any arguments, it works.
  * However, more detailed stuff can be set by the setters.
+ *
+ * Todo: Write something about how the landmarks are represented?
  */
 class LandmarkBasedSupervisedDescentTraining  {
 public:
@@ -118,9 +122,9 @@ public:
 	SdmLandmarkModel train(std::vector<cv::Mat> trainingImages, std::vector<cv::Mat> trainingGroundtruthLandmarks, std::vector<cv::Rect> trainingFaceboxes /*maybe optional bzw weglassen hier?*/, std::vector<std::string> modelLandmarks, std::vector<std::string> descriptorTypes, std::vector<std::shared_ptr<DescriptorExtractor>> descriptorExtractors);
 	
 private:
-	int numSamplesPerImage = 10; ///< todo
-	int numCascadeSteps = 5; ///< todo
-	Regularisation regularisation; ///< todo
+	int numSamplesPerImage = 10; ///< How many random perturbations to generate per training image
+	int numCascadeSteps = 5; ///< How many regressors to train
+	Regularisation regularisation; ///< Controls the regularisation of the regressor learning
 	AlignGroundtruth alignGroundtruth = AlignGroundtruth::NONE; ///< For mean calc: todo
 	MeanNormalization meanNormalization = MeanNormalization::UNIT_SUM_SQUARED_NORMS; ///< F...Mean: todo
 
