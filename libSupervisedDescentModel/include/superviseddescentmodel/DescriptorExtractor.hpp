@@ -15,8 +15,8 @@
 #include "opencv2/nonfree/nonfree.hpp"
 
 #ifdef WIN32
-#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
-#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
+	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
+	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
 
 extern "C" {
@@ -65,6 +65,27 @@ public:
 		sift(grayImage, Mat(), keypoints, siftDescriptors, true);
 		//cv::drawKeypoints(img, keypoints, img, Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 		return siftDescriptors;
+	};
+};
+
+class HogDescriptorExtractor : public DescriptorExtractor
+{
+public:
+	// Store the params as private vars? However, it might be better to store the parameters separately, to be able to share a FeatureDescriptorExtractor over multiple Sdm cascade levels
+
+	cv::Mat getDescriptors(const cv::Mat image, std::vector<cv::Point2f> locations) {
+		Mat grayImage;
+		if (image.channels() == 3) {
+			cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
+		}
+		else {
+			grayImage = image;
+		}
+		
+		// do it
+
+		Mat hogDescriptors;
+		return hogDescriptors;
 	};
 };
 

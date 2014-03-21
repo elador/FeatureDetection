@@ -196,8 +196,16 @@ int main(int argc, char *argv[])
 			if (descriptorType == "OpenCVSift") {
 				shared_ptr<DescriptorExtractor> sift = std::make_shared<SiftDescriptorExtractor>();
 				descriptorExtractors.push_back(sift);
+			}
+			else if (descriptorType == "vlhog-dt") {
+				shared_ptr<DescriptorExtractor> vlhogDt = std::make_shared<HogDescriptorExtractor>();
+				descriptorExtractors.push_back(vlhogDt);
+			}
+			else if (descriptorType == "vlhog-uoctti") {
+				shared_ptr<DescriptorExtractor> vlhogUoctti = std::make_shared<HogDescriptorExtractor>();
+				descriptorExtractors.push_back(vlhogUoctti);
 			} else {
-				throw std::logic_error("descriptorType does not match 'OpenCVSift'. No other descriptor types implemented yet.");
+				throw std::logic_error("descriptorType does not match 'OpenCVSift', 'vlhog-dt' or 'vlhog-uoctti'.");
 			}
 			descriptorTypes.push_back(descriptorType);
 		}
