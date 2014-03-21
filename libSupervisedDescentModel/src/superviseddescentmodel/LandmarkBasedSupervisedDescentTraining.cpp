@@ -286,7 +286,7 @@ Mat LandmarkBasedSupervisedDescentTraining::putInDataAndGenerateSamples(vector<M
 	return initialShape;
 }
 
-SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> trainingImages, vector<Mat> trainingGroundtruthLandmarks, vector<cv::Rect> trainingFaceboxes /*maybe optional bzw weglassen hier?*/, std::vector<string> modelLandmarks, vector<string> descriptorTypes, vector<shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors)
+SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> trainingImages, vector<Mat> trainingGroundtruthLandmarks, vector<cv::Rect> trainingFaceboxes /*maybe optional bzw weglassen hier?*/, std::vector<string> modelLandmarks, vector<string> descriptorTypes, vector<shared_ptr<DescriptorExtractor>> descriptorExtractors)
 {
 	Logger logger = Loggers->getLogger("superviseddescentmodel");
 	std::chrono::time_point<std::chrono::system_clock> start, end;

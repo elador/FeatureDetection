@@ -20,16 +20,13 @@ ENDIF()
 #Source and header files:
 SET(SOURCE
 	sdmLandmarkDetection.cpp
-	hog.c
 )
 
 SET(HEADERS
-	hog.h
 )
 
 ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
 
-INCLUDE_DIRECTORIES( ${MATLAB_INCLUDE_DIR} )
 include_directories( ${Boost_INCLUDE_DIRS} )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( ${Logging_SOURCE_DIR}/include )

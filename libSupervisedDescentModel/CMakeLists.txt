@@ -17,12 +17,14 @@ MESSAGE(STATUS "Eigen3 version: ${EIGEN3_VERSION}")
 # source and header files
 SET(HEADERS
 	include/superviseddescentmodel/SdmLandmarkModel.hpp
-	include/superviseddescentmodel/hog.h
 	include/superviseddescentmodel/LandmarkBasedSupervisedDescentTraining.hpp
+	include/superviseddescentmodel/DescriptorExtractor.hpp
+	include/superviseddescentmodel/hog.h
 )
 SET(SOURCE
 	src/superviseddescentmodel/SdmLandmarkModel.cpp
 	src/superviseddescentmodel/LandmarkBasedSupervisedDescentTraining.cpp
+	src/superviseddescentmodel/DescriptorExtractor.cpp
 	src/superviseddescentmodel/hog.c
 )
 

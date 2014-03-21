@@ -22,7 +22,7 @@ SdmLandmarkModel::SdmLandmarkModel()
 
 }
 
-SdmLandmarkModel::SdmLandmarkModel(cv::Mat meanLandmarks, std::vector<std::string> landmarkIdentifier, std::vector<cv::Mat> regressorData, std::vector<std::shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors, std::vector<std::string> descriptorTypes)
+SdmLandmarkModel::SdmLandmarkModel(cv::Mat meanLandmarks, std::vector<std::string> landmarkIdentifier, std::vector<cv::Mat> regressorData, std::vector<std::shared_ptr<DescriptorExtractor>> descriptorExtractors, std::vector<std::string> descriptorTypes)
 {
 	this->meanLandmarks = meanLandmarks;
 	this->landmarkIdentifier = landmarkIdentifier;
@@ -51,7 +51,7 @@ cv::Mat SdmLandmarkModel::getRegressorData(int cascadeLevel)
 	return regressorData[cascadeLevel];
 }
 
-std::shared_ptr<FeatureDescriptorExtractor> SdmLandmarkModel::getDescriptorExtractor(int cascadeLevel)
+std::shared_ptr<DescriptorExtractor> SdmLandmarkModel::getDescriptorExtractor(int cascadeLevel)
 {
 	return descriptorExtractors[cascadeLevel];
 }
@@ -158,7 +158,7 @@ SdmLandmarkModel SdmLandmarkModel::load(boost::filesystem::path filename)
 		std::getline(file, line); // descriptorPostprocessing none TODO
 		std::getline(file, line); // descriptorParameters 0 TODO
 		if (descriptorType == "OpenCVSift") {
-			model.descriptorExtractors.emplace_back(std::make_shared<SiftFeatureDescriptorExtractor>());
+			model.descriptorExtractors.emplace_back(std::make_shared<SiftDescriptorExtractor>());
 		}
 		else if (descriptorType == "vlhog") {
 			// TODO!

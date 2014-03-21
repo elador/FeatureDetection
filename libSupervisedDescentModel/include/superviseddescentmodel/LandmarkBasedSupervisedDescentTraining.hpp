@@ -11,6 +11,7 @@
 #define LANDMARKBASEDSUPERVISEDDESCENTTRAINING_HPP_
 
 #include "superviseddescentmodel/SdmLandmarkModel.hpp"
+#include "superviseddescentmodel/DescriptorExtractor.hpp"
 
 #include "opencv2/core/core.hpp"
 
@@ -114,7 +115,7 @@ public:
 
 public:
 
-	SdmLandmarkModel train(std::vector<cv::Mat> trainingImages, std::vector<cv::Mat> trainingGroundtruthLandmarks, std::vector<cv::Rect> trainingFaceboxes /*maybe optional bzw weglassen hier?*/, std::vector<std::string> modelLandmarks, std::vector<std::string> descriptorTypes, std::vector<std::shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors);
+	SdmLandmarkModel train(std::vector<cv::Mat> trainingImages, std::vector<cv::Mat> trainingGroundtruthLandmarks, std::vector<cv::Rect> trainingFaceboxes /*maybe optional bzw weglassen hier?*/, std::vector<std::string> modelLandmarks, std::vector<std::string> descriptorTypes, std::vector<std::shared_ptr<DescriptorExtractor>> descriptorExtractors);
 	
 private:
 	int numSamplesPerImage = 10; ///< todo

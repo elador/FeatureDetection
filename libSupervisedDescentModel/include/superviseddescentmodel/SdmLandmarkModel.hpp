@@ -10,6 +10,8 @@
 #ifndef SDMLANDMARKMODEL_HPP_
 #define SDMLANDMARKMODEL_HPP_
 
+#include "superviseddescentmodel/DescriptorExtractor.hpp"
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/nonfree/nonfree.hpp"
@@ -21,8 +23,8 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/algorithm/string.hpp"
 #include "boost/lexical_cast.hpp"
+
 extern "C" {
-	//#include "vl/hog.h"
 	#include "superviseddescentmodel/hog.h"
 }
 
@@ -33,40 +35,6 @@ using std::string;
 using boost::lexical_cast;
 
 namespace superviseddescentmodel {
-
-class FeatureDescriptorExtractor
-{
-public:
-	// returns a Matrix, as many rows as points, 1 descriptor = 1 row
-	virtual cv::Mat getDescriptors(const cv::Mat image, std::vector<cv::Point2f> locations) = 0;
-};
-
-class SiftFeatureDescriptorExtractor : public FeatureDescriptorExtractor
-{
-public:
-	// c'tor with param diameter & orientation? (0.0f = right?)
-	// and store them as private vars.
-	// However, it might be better to store the parameters separately, to be able to share a FeatureDescriptorExtractor over multiple Sdm cascade levels
-
-	cv::Mat getDescriptors(const cv::Mat image, std::vector<cv::Point2f> locations) {
-		Mat grayImage;
-		if (image.channels() == 3) {
-			cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
-		} else {
-			grayImage = image;
-		}
-		cv::SIFT sift; // init only once, could reuse
-		vector<cv::KeyPoint> keypoints;
-		for (const auto& loc : locations) {
-			keypoints.emplace_back(cv::KeyPoint(loc, 32.0f, 0.0f)); // Angle is set to 0. If it's -1, SIFT will be calculated for 361degrees. But Paper (email) says upwards.
-		}
-		Mat siftDescriptors;
-		sift(grayImage, Mat(), keypoints, siftDescriptors, true);
-		//cv::drawKeypoints(img, keypoints, img, Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-		return siftDescriptors;
-	};
-};
-
 
 /**
  * Desc
@@ -82,7 +50,7 @@ public:
 	*
 	* @param[in] a b
 	*/
-	SdmLandmarkModel(cv::Mat meanLandmarks, std::vector<std::string> landmarkIdentifier, std::vector<cv::Mat> regressorData, std::vector<std::shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors, std::vector<std::string> descriptorTypes);
+	SdmLandmarkModel(cv::Mat meanLandmarks, std::vector<std::string> landmarkIdentifier, std::vector<cv::Mat> regressorData, std::vector<std::shared_ptr<DescriptorExtractor>> descriptorExtractors, std::vector<std::string> descriptorTypes);
 
 	struct HogParameter
 	{
@@ -110,7 +78,7 @@ public:
 	// returns  a header that points to the original data
 	cv::Mat getRegressorData(int cascadeLevel);
 
-	std::shared_ptr<FeatureDescriptorExtractor> getDescriptorExtractor(int cascadeLevel);
+	std::shared_ptr<DescriptorExtractor> getDescriptorExtractor(int cascadeLevel);
 	
 	std::string getDescriptorType(int cascadeLevel);
 
@@ -137,7 +105,7 @@ private:
 	std::vector<cv::Mat> regressorData; // Holds the training data, one cv::Mat for each cascade level. Every Mat is (numFeatureDim+1) x numLandmarks*2 (for x & y)
 
 	std::vector<HogParameter> hogParameters;
-	std::vector<std::shared_ptr<FeatureDescriptorExtractor>> descriptorExtractors;
+	std::vector<std::shared_ptr<DescriptorExtractor>> descriptorExtractors;
 	std::vector<std::string> descriptorTypes; //
 
 };
