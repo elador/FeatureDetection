@@ -64,7 +64,7 @@ dimension ::vl_hog_get_dimension. The array is stored in row major order,
 with the slowest varying dimension beying the dimension indexing the histogram
 elements.
 
-The number of entreis in the histogram as well as their meaning depends
+The number of entries in the histogram as well as their meaning depends
 on the HOG variant and is detailed later. However, it is usually
 unnecessary to know such details. @ref hog.h provides support for
 creating an inconic representation of a HOG feature array:
@@ -174,7 +174,10 @@ VlHog *
 vl_hog_new (VlHogVariant variant, vl_size numOrientations, vl_bool transposed)
 {
   vl_index o, k ;
+  size_t a = sizeof(VlHog);
   VlHog * self = calloc(1, sizeof(VlHog)) ;
+  VlHog * self2 = malloc(1, sizeof(VlHog));
+  //VlHog * self3 = new VlHog();
 
   assert(numOrientations >= 1) ;
 

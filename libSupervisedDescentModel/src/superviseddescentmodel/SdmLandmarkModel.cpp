@@ -101,7 +101,7 @@ void SdmLandmarkModel::save(boost::filesystem::path filename, std::string commen
 	file << "numCascadeSteps " << getNumCascadeSteps() << std::endl;
 	for (int i = 0; i < getNumCascadeSteps(); ++i) {
 		// write the params for this cascade level
-		file << "scale " << i << " rows " << getRegressorData(i).rows << " cols " << getRegressorData(i).cols << std::endl;
+		file << "cascadeStep " << i << " rows " << getRegressorData(i).rows << " cols " << getRegressorData(i).cols << std::endl;
 		file << "descriptorType " << descriptorTypes[i] << std::endl;
 		file << "descriptorPostprocessing " << "none" << std::endl;
 		file << "descriptorParameters " << 0 << std::endl;
@@ -147,7 +147,7 @@ SdmLandmarkModel SdmLandmarkModel::load(boost::filesystem::path filename)
 	int numCascadeSteps = lexical_cast<int>(stringContainer[1]);
 	// for every cascade step, read 4 header lines and then the matrix data
 	for (int i = 0; i < numCascadeSteps; ++i) {
-		std::getline(file, line); // scale 1 rows 3169 cols 44
+		std::getline(file, line); // cascadeStep 1 rows 3169 cols 44
 		boost::split(stringContainer, line, boost::is_any_of(" "));
 		int numRows = lexical_cast<int>(stringContainer[3]); // = numFeatureDimensions
 		int numCols = lexical_cast<int>(stringContainer[5]); // = numLandmarks * 2

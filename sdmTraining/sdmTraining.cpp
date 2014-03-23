@@ -198,11 +198,25 @@ int main(int argc, char *argv[])
 				descriptorExtractors.push_back(sift);
 			}
 			else if (descriptorType == "vlhog-dt") {
-				shared_ptr<DescriptorExtractor> vlhogDt = std::make_shared<HogDescriptorExtractor>();
+				vector<string> params;
+				boost::split(params, descriptorParameters, boost::is_any_of(" "));
+				if (params.size() != 4) {
+					throw std::logic_error("descriptorParameters must contain cellSize and numBins.");
+				}
+				int cellSize = boost::lexical_cast<int>(params[1]);
+				int numBins = boost::lexical_cast<int>(params[3]);
+				shared_ptr<DescriptorExtractor> vlhogDt = std::make_shared<VlHogDescriptorExtractor>(VlHogDescriptorExtractor::VlHogType::DalalTriggs, cellSize, numBins);
 				descriptorExtractors.push_back(vlhogDt);
 			}
 			else if (descriptorType == "vlhog-uoctti") {
-				shared_ptr<DescriptorExtractor> vlhogUoctti = std::make_shared<HogDescriptorExtractor>();
+				vector<string> params;
+				boost::split(params, descriptorParameters, boost::is_any_of(" "));
+				if (params.size() != 4) {
+					throw std::logic_error("descriptorParameters must contain cellSize and numBins.");
+				}
+				int cellSize = boost::lexical_cast<int>(params[1]);
+				int numBins = boost::lexical_cast<int>(params[3]);
+				shared_ptr<DescriptorExtractor> vlhogUoctti = std::make_shared<VlHogDescriptorExtractor>(VlHogDescriptorExtractor::VlHogType::Uoctti, cellSize, numBins);
 				descriptorExtractors.push_back(vlhogUoctti);
 			} else {
 				throw std::logic_error("descriptorType does not match 'OpenCVSift', 'vlhog-dt' or 'vlhog-uoctti'.");
@@ -301,7 +315,7 @@ int main(int argc, char *argv[])
 			}
 		}
 		else {
-			appLogger.error("The path given is neither a directory nor a .lst/.txt-file containing a list of images.");
+			appLogger.error("The path given is neither a directory nor a .lst/.txt-file containing a list of images: " + d.images.string());
 			return EXIT_FAILURE;
 		}
 		// Load the ground truth
@@ -322,7 +336,7 @@ int main(int argc, char *argv[])
 		
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 
-	string faceDetectionModel("C:\\opencv\\opencv_2.4.8\\sources\\data\\haarcascades\\haarcascade_frontalface_alt2.xml"); // sgd: "../models/haarcascade_frontalface_alt2.xml"
+	string faceDetectionModel("C:\\opencv\\opencv_2.4.8_prebuilt\\sources\\data\\haarcascades\\haarcascade_frontalface_alt2.xml"); // sgd: "../models/haarcascade_frontalface_alt2.xml"
 	cv::CascadeClassifier faceCascade;
 	if (!faceCascade.load(faceDetectionModel))
 	{
