@@ -200,23 +200,25 @@ int main(int argc, char *argv[])
 			else if (descriptorType == "vlhog-dt") {
 				vector<string> params;
 				boost::split(params, descriptorParameters, boost::is_any_of(" "));
-				if (params.size() != 4) {
-					throw std::logic_error("descriptorParameters must contain cellSize and numBins.");
+				if (params.size() != 6) {
+					throw std::logic_error("descriptorParameters must contain numCells, cellSize and numBins.");
 				}
-				int cellSize = boost::lexical_cast<int>(params[1]);
-				int numBins = boost::lexical_cast<int>(params[3]);
-				shared_ptr<DescriptorExtractor> vlhogDt = std::make_shared<VlHogDescriptorExtractor>(VlHogDescriptorExtractor::VlHogType::DalalTriggs, cellSize, numBins);
+				int numCells = boost::lexical_cast<int>(params[1]);
+				int cellSize = boost::lexical_cast<int>(params[3]);
+				int numBins = boost::lexical_cast<int>(params[5]);
+				shared_ptr<DescriptorExtractor> vlhogDt = std::make_shared<VlHogDescriptorExtractor>(VlHogDescriptorExtractor::VlHogType::DalalTriggs, numCells, cellSize, numBins);
 				descriptorExtractors.push_back(vlhogDt);
 			}
 			else if (descriptorType == "vlhog-uoctti") {
 				vector<string> params;
 				boost::split(params, descriptorParameters, boost::is_any_of(" "));
-				if (params.size() != 4) {
-					throw std::logic_error("descriptorParameters must contain cellSize and numBins.");
+				if (params.size() != 6) {
+					throw std::logic_error("descriptorParameters must contain numCells, cellSize and numBins.");
 				}
-				int cellSize = boost::lexical_cast<int>(params[1]);
-				int numBins = boost::lexical_cast<int>(params[3]);
-				shared_ptr<DescriptorExtractor> vlhogUoctti = std::make_shared<VlHogDescriptorExtractor>(VlHogDescriptorExtractor::VlHogType::Uoctti, cellSize, numBins);
+				int numCells = boost::lexical_cast<int>(params[1]);
+				int cellSize = boost::lexical_cast<int>(params[3]);
+				int numBins = boost::lexical_cast<int>(params[5]);
+				shared_ptr<DescriptorExtractor> vlhogUoctti = std::make_shared<VlHogDescriptorExtractor>(VlHogDescriptorExtractor::VlHogType::Uoctti, numCells, cellSize, numBins);
 				descriptorExtractors.push_back(vlhogUoctti);
 			} else {
 				throw std::logic_error("descriptorType does not match 'OpenCVSift', 'vlhog-dt' or 'vlhog-uoctti'.");

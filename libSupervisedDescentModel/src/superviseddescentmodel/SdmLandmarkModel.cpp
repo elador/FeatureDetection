@@ -104,7 +104,7 @@ void SdmLandmarkModel::save(boost::filesystem::path filename, std::string commen
 		file << "cascadeStep " << i << " rows " << getRegressorData(i).rows << " cols " << getRegressorData(i).cols << std::endl;
 		file << "descriptorType " << descriptorTypes[i] << std::endl;
 		file << "descriptorPostprocessing " << "none" << std::endl;
-		file << "descriptorParameters " << 0 << std::endl;
+		file << "descriptorParameters " << descriptorExtractors[i]->getParameterString() << std::endl;
 		// write the regressor data
 		Mat regressor = getRegressorData(i);
 		for (int row = 0; row < regressor.rows; ++row) {

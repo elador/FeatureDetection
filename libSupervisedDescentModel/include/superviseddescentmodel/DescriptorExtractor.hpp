@@ -18,6 +18,9 @@
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
+#include "boost/lexical_cast.hpp"
+
+#include <string>
 
 extern "C" {
 	#include "superviseddescentmodel/hog.h"
@@ -40,6 +43,9 @@ class DescriptorExtractor
 public:
 	// returns a Matrix, as many rows as points, 1 descriptor = 1 row
 	virtual cv::Mat getDescriptors(const cv::Mat image, std::vector<cv::Point2f> locations) = 0;
+
+	// returns a string with its parameters (to be written to a model-file)
+	virtual std::string getParameterString() const = 0;
 };
 
 class SiftDescriptorExtractor : public DescriptorExtractor
@@ -66,6 +72,10 @@ public:
 		//cv::drawKeypoints(img, keypoints, img, Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 		return siftDescriptors;
 	};
+
+	std::string getParameterString() const {
+		return "";
+	};
 };
 
 class VlHogDescriptorExtractor : public DescriptorExtractor
@@ -78,7 +88,7 @@ public:
 		Uoctti
 	};
 
-	VlHogDescriptorExtractor(VlHogType vlhogType, int cellSize, int numBins) : hogType(vlhogType), cellSize(cellSize), numBins(numBins) {
+	VlHogDescriptorExtractor(VlHogType vlhogType, int numCells, int cellSize, int numBins) : hogType(vlhogType), numCells(numCells), cellSize(cellSize), numBins(numBins) {
 
 	};
 
@@ -103,30 +113,28 @@ public:
 			break;
 		}
 		
-		// TODO: HOG code not yet updated for the new model, col/rows etc!
+		int patchWidthHalf = numCells * (cellSize/2); // patchWidthHalf: Zhenhua's 'numNeighbours'. cellSize: has nothing to do with HOG. It's rather the number of HOG cells we want.
 		
-		int numNeighbours = cellSize * 6; // this cellSize has nothing to do with HOG. It's the number of "cells", i.e. image-windows/patches.
-		// if cellSize=1, our window is 12x12, and because our HOG-cellsize is 12, it means we will have 1 cell (the minimum).
-		int hogCellSize = 12;
-		int hogDim1 = (numNeighbours * 2) / hogCellSize; // i.e. how many times does the hogCellSize fit into our patch
-		int hogDim2 = hogDim1; // as our patch is quadratic, those two are the same
-		int hogDim3 = 16; // VlHogVariantUoctti: Creates 4+3*numOrientations dimensions
-		int hogDims = hogDim1 * hogDim2 * hogDim3;
-		Mat currentFeatures(locations.size() * hogDims, 1, CV_32FC1);
+		//int hogDim1 = (numNeighbours * 2) / hogCellSize; // i.e. how many times does the hogCellSize fit into our patch
+		//int hogDim2 = hogDim1; // as our patch is quadratic, those two are the same
+		//int hogDim3 = 16; // VlHogVariantUoctti: Creates 4+3*numOrientations dimensions. DT: 4*numOri dimensions.
+		//int hogDims = hogDim1 * hogDim2 * hogDim3;
+		//Mat hogDescriptors(locations.size(), hogDims, CV_32FC1); // better allocate later, when we know ww/hh/dd?
+		Mat hogDescriptors; // We'll get the dimensions later from vl_hog_get_*
 
 		for (int i = 0; i < locations.size(); ++i) {
 			// get the (x, y) location and w/h of the current patch
 			int x = cvRound(locations[i].x);
 			int y = cvRound(locations[i].y);
-			cv::Rect roi(x - numNeighbours, y - numNeighbours, numNeighbours * 2, numNeighbours * 2); // x y w h. Rect: x and y are top-left corner. Our x and y are center. Convert.
+			cv::Rect roi(x - patchWidthHalf, y - patchWidthHalf, patchWidthHalf * 2, patchWidthHalf * 2); // x y w h. Rect: x and y are top-left corner. Our x and y are center. Convert.
 			// we have exactly the same window as the matlab code.
 			// extract the patch and supply it to vl_hog
 			Mat roiImg = image(roi).clone(); // clone because we need a continuous memory block
 			roiImg.convertTo(roiImg, CV_32FC1); // because vl_hog_put_image expects a float* (values 0.f-255.f)
 			// vl_hog_new: numOrientations=hogParameter.numBins, transposed (=col-major):false)
-			VlHog* hog = vl_hog_new(VlHogVariant::VlHogVariantUoctti, numBins, false); // VlHogVariantUoctti seems to be default in Matlab.
-			vl_hog_put_image(hog, (float*)roiImg.data, roiImg.cols, roiImg.rows, 1, hogCellSize); // (the '1' is numChannels)
-			vl_size ww = vl_hog_get_width(hog);
+			VlHog* hog = vl_hog_new(vlHogVariant, numBins, false); // VlHogVariantUoctti seems to be default in Matlab.
+			vl_hog_put_image(hog, (float*)roiImg.data, roiImg.cols, roiImg.rows, 1, cellSize); // (the '1' is numChannels)
+			vl_size ww = vl_hog_get_width(hog); // we could assert that ww == hh == numCells
 			vl_size hh = vl_hog_get_height(hog);
 			vl_size dd = vl_hog_get_dimension(hog); // assert ww=hogDim1, hh=hogDim2, dd=hogDim3
 			//float* hogArray = (float*)malloc(ww*hh*dd*sizeof(float));
@@ -135,6 +143,7 @@ public:
 			vl_hog_extract(hog, hogArray.ptr<float>(0));
 			vl_hog_delete(hog);
 			Mat hogDescriptor(hh*ww*dd, 1, CV_32FC1);
+			// Stack the third dimensions of the HOG descriptor of this patch one after each other in a column-vector
 			for (int j = 0; j < dd; ++j) {
 				//Mat hogFeatures(hh, ww, CV_32FC1, hogArray + j*ww*hh);
 				Mat hogFeatures(hh, ww, CV_32FC1, hogArray.ptr<float>(0) + j*ww*hh); // Creates the same array as in Matlab. I might have to check this again if hh!=ww (non-square)
@@ -149,19 +158,22 @@ public:
 			// Matlab (& Eigen, OpenGL): Column-major.
 			// OpenCV: Row-major.
 			// (access is always (r, c).)
-			Mat currentFeaturesSubrange = currentFeatures.rowRange(i*hogDims, i*hogDims + hogDims);
-			hogDescriptor.copyTo(currentFeaturesSubrange);
-			// currentFeatures needs to have dimensions n x 1, where n = numLandmarks * hogFeaturesDimension, e.g. n = 22 * (3*3*16=144) = 3168 (for the first hog Scale)
+			//Mat currentFeaturesSubrange = hogDescriptors.rowRange(i*hogDims, i*hogDims + hogDims);
+			//hogDescriptor.copyTo(currentFeaturesSubrange);
+			hogDescriptor = hogDescriptor.t(); // now a row-vector
+			hogDescriptors.push_back(hogDescriptor);
 		}
-
-
-
-		Mat hogDescriptors;
+		// hogDescriptors needs to have dimensions numLandmarks x hogFeaturesDimension, where hogFeaturesDimension is e.g. 3*3*16=144
 		return hogDescriptors;
+	};
+
+	std::string getParameterString() const {
+		return std::string("numCells " + boost::lexical_cast<std::string>(numCells)+" cellSize " + boost::lexical_cast<std::string>(cellSize)+" numBins " + boost::lexical_cast<std::string>(numBins));
 	};
 
 private:
 	VlHogType hogType;
+	int numCells;
 	int cellSize;
 	int numBins;
 };

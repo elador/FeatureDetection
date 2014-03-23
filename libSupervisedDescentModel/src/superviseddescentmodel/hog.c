@@ -15,6 +15,7 @@
 //#include "mathop.h"
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 /**
 
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  -->
@@ -170,14 +171,10 @@ image edges would be oriented at 90 degrees from these.
  ** by setting @a transposed to true.
  **/
 
-VlHog *
-vl_hog_new (VlHogVariant variant, vl_size numOrientations, vl_bool transposed)
+VlHog * vl_hog_new (VlHogVariant variant, vl_size numOrientations, vl_bool transposed)
 {
   vl_index o, k ;
-  size_t a = sizeof(VlHog);
   VlHog * self = calloc(1, sizeof(VlHog)) ;
-  VlHog * self2 = malloc(1, sizeof(VlHog));
-  //VlHog * self3 = new VlHog();
 
   assert(numOrientations >= 1) ;
 
