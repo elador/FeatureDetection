@@ -292,7 +292,7 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	int elapsed_mseconds;
 
-	// TODO: Dont initialize with numSamples... Instead, push_back. Because
+	// TODO: Don't initialize with numSamples... Instead, push_back. Because
 	// Sampling params: DiscardX0Sample. 
 	// 1) PERTURB_GT, 2) PERTURB_(X0|DETECTOR_ESTIMATE)
 	// NO!!! Perturb the GT by +-mu (mu!=0) makes no sense at all in detection! (maybe in tracking?)

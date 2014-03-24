@@ -21,6 +21,7 @@
 #include "boost/lexical_cast.hpp"
 
 #include <string>
+#include <iostream>
 
 extern "C" {
 	#include "superviseddescentmodel/hog.h"
@@ -68,7 +69,7 @@ public:
 			keypoints.emplace_back(cv::KeyPoint(loc, 32.0f, 0.0f)); // Angle is set to 0. If it's -1, SIFT will be calculated for 361degrees. But Paper (email) says upwards.
 		}
 		Mat siftDescriptors;
-		sift(grayImage, Mat(), keypoints, siftDescriptors, true);
+		sift(grayImage, Mat(), keypoints, siftDescriptors, true); // TODO: What happens if the keypoint (or part of its patch) is outside the image?
 		//cv::drawKeypoints(img, keypoints, img, Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 		return siftDescriptors;
 	};
@@ -126,10 +127,26 @@ public:
 			// get the (x, y) location and w/h of the current patch
 			int x = cvRound(locations[i].x);
 			int y = cvRound(locations[i].y);
-			cv::Rect roi(x - patchWidthHalf, y - patchWidthHalf, patchWidthHalf * 2, patchWidthHalf * 2); // x y w h. Rect: x and y are top-left corner. Our x and y are center. Convert.
-			// we have exactly the same window as the matlab code.
-			// extract the patch and supply it to vl_hog
-			Mat roiImg = image(roi).clone(); // clone because we need a continuous memory block
+			
+			Mat roiImg;
+			if (x - patchWidthHalf < 0 || y - patchWidthHalf < 0 || x + patchWidthHalf >= image.cols || y + patchWidthHalf >= image.rows) {	
+				// The feature extraction location is too far near a border. We extend the image (add a black canvas)
+				// and then extract from this larger image.
+				int borderLeft = (x - patchWidthHalf) < 0 ? std::abs(x - patchWidthHalf) : 0; // Our x and y are center.
+				int borderTop = (y - patchWidthHalf) < 0 ? std::abs(y - patchWidthHalf) : 0;
+				int borderRight = (x + patchWidthHalf) >= image.cols ? std::abs(image.cols - (x + patchWidthHalf)) : 0;
+				int borderBottom = (y + patchWidthHalf) >= image.rows ? std::abs(image.rows - (y + patchWidthHalf)) : 0;
+				Mat extendedImage = image.clone();
+				cv::copyMakeBorder(extendedImage, extendedImage, borderTop, borderBottom, borderLeft, borderRight, cv::BORDER_CONSTANT, cv::Scalar(0));
+				cv::Rect roi((x - patchWidthHalf) + borderLeft, (y - patchWidthHalf) + borderRight, patchWidthHalf * 2, patchWidthHalf * 2); // Rect: x y w h. x and y are top-left corner.
+				roiImg = extendedImage(roi).clone(); // clone because we need a continuous memory block
+			}
+			else {
+				cv::Rect roi(x - patchWidthHalf, y - patchWidthHalf, patchWidthHalf * 2, patchWidthHalf * 2); // x y w h. Rect: x and y are top-left corner. Our x and y are center. Convert.
+				// we have exactly the same window as the matlab code.
+				// extract the patch and supply it to vl_hog
+				roiImg = image(roi).clone(); // clone because we need a continuous memory block
+			}
 			roiImg.convertTo(roiImg, CV_32FC1); // because vl_hog_put_image expects a float* (values 0.f-255.f)
 			// vl_hog_new: numOrientations=hogParameter.numBins, transposed (=col-major):false)
 			VlHog* hog = vl_hog_new(vlHogVariant, numBins, false); // VlHogVariantUoctti seems to be default in Matlab.
