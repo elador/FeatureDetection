@@ -7,12 +7,17 @@
 
 #include "superviseddescentmodel/SdmLandmarkModel.hpp"
 
-#include <fstream>
+#include "logging/LoggerFactory.hpp"
+
 #include "opencv2/core/core.hpp"
 #include "boost/algorithm/string.hpp"
 #include "boost/filesystem/path.hpp"
 #include "boost/lexical_cast.hpp"
 
+#include <fstream>
+
+using logging::Logger;
+using logging::LoggerFactory;
 using boost::lexical_cast;
 
 namespace superviseddescentmodel {
@@ -120,7 +125,7 @@ void SdmLandmarkModel::save(boost::filesystem::path filename, std::string commen
 
 SdmLandmarkModel SdmLandmarkModel::load(boost::filesystem::path filename)
 {
-	// TODO: Logging, make more verbose what we load!
+	Logger logger = Loggers->getLogger("superviseddescentmodel");
 	SdmLandmarkModel model;
 	std::ifstream file(filename.string());
 	std::string line;
@@ -152,20 +157,41 @@ SdmLandmarkModel SdmLandmarkModel::load(boost::filesystem::path filename)
 		int numRows = lexical_cast<int>(stringContainer[3]); // = numFeatureDimensions
 		int numCols = lexical_cast<int>(stringContainer[5]); // = numLandmarks * 2
 		
-		std::getline(file, line); // descriptorType (OpenCVSift | vlhog)
+		std::getline(file, line); // descriptorType
 		boost::split(stringContainer, line, boost::is_any_of(" "));
 		string descriptorType = (stringContainer[1]);
-		std::getline(file, line); // descriptorPostprocessing none TODO
-		std::getline(file, line); // descriptorParameters 0 TODO
-		if (descriptorType == "OpenCVSift") {
-			model.descriptorExtractors.emplace_back(std::make_shared<SiftDescriptorExtractor>());
+		std::getline(file, line); // descriptorPostprocessing none. Not in use yet.
+		std::getline(file, line); // descriptorParameters
+		if (descriptorType == "OpenCVSift") { // Todo: make a load method in each descriptor
+			shared_ptr<DescriptorExtractor> sift = std::make_shared<SiftDescriptorExtractor>();
+			model.descriptorExtractors.push_back(sift);
 		}
-		else if (descriptorType == "vlhog") {
-			// TODO!
-			HogParameter params;
-			params.cellSize = lexical_cast<int>(stringContainer[7]); // = cellSize
-			params.numBins = lexical_cast<int>(stringContainer[9]); // = numBins
-			model.hogParameters.push_back(params);
+		else if (descriptorType == "vlhog-dt") {
+			boost::split(stringContainer, line, boost::is_any_of(" "));
+			stringContainer.erase(stringContainer.begin()); // TODO: CHECK THAT!
+			if (stringContainer.size() != 6) {
+				throw std::logic_error("descriptorParameters must contain numCells, cellSize and numBins.");
+			}
+			int numCells = boost::lexical_cast<int>(stringContainer[1]);
+			int cellSize = boost::lexical_cast<int>(stringContainer[3]);
+			int numBins = boost::lexical_cast<int>(stringContainer[5]);
+			shared_ptr<DescriptorExtractor> vlhogDt = std::make_shared<VlHogDescriptorExtractor>(VlHogDescriptorExtractor::VlHogType::DalalTriggs, numCells, cellSize, numBins);
+			model.descriptorExtractors.push_back(vlhogDt);
+		}
+		else if (descriptorType == "vlhog-uoctti") {
+			boost::split(stringContainer, line, boost::is_any_of(" "));
+			stringContainer.erase(stringContainer.begin()); // TODO: CHECK THAT!
+			if (stringContainer.size() != 6) {
+				throw std::logic_error("descriptorParameters must contain numCells, cellSize and numBins.");
+			}
+			int numCells = boost::lexical_cast<int>(stringContainer[1]);
+			int cellSize = boost::lexical_cast<int>(stringContainer[3]);
+			int numBins = boost::lexical_cast<int>(stringContainer[5]);
+			shared_ptr<DescriptorExtractor> vlhogUoctti = std::make_shared<VlHogDescriptorExtractor>(VlHogDescriptorExtractor::VlHogType::Uoctti, numCells, cellSize, numBins);
+			model.descriptorExtractors.push_back(vlhogUoctti);
+		}
+		else {
+			throw std::logic_error("descriptorType does not match 'OpenCVSift', 'vlhog-dt' or 'vlhog-uoctti'.");
 		}
 
 		Mat regressorData(numRows, numCols, CV_32FC1);

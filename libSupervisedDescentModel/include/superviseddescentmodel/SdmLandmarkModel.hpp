@@ -189,66 +189,13 @@ public:
 
 		for (int cascadeStep = 0; cascadeStep < model.getNumCascadeSteps(); ++cascadeStep) {
 			//feature_current = obtain_features(double(TestImg), New_Shape, 'HOG', hogScale);
-			
-			// TODO Actually, here no switch should be necessary. Just call the extractor.
-			// That means: where should the params go? into the model? or pass them somewhere?
+
 			vector<cv::Point2f> points;
 			for (int i = 0; i < model.getNumLandmarks(); ++i) { // in case of HOG, need integers?
 				points.emplace_back(cv::Point2f(modelShape.at<float>(i), modelShape.at<float>(i + model.getNumLandmarks())));
 			}
 			Mat currentFeatures = model.getDescriptorExtractor(cascadeStep)->getDescriptors(image, points);
 			currentFeatures = currentFeatures.reshape(0, currentFeatures.cols * model.getNumLandmarks()).t();
-			/* // TODO: HOG code not yet updated for the new model, col/rows etc!
-			SdmLandmarkModel::HogParameter hogParameter = model.getHogParameters(cascadeStep);
-			int numNeighbours = hogParameter.cellSize * 6; // this cellSize has nothing to do with HOG. It's the number of "cells", i.e. image-windows/patches.
-			// if cellSize=1, our window is 12x12, and because our HOG-cellsize is 12, it means we will have 1 cell (the minimum).
-			int hogCellSize = 12;
-			int hogDim1 = (numNeighbours * 2) / hogCellSize; // i.e. how many times does the hogCellSize fit into our patch
-			int hogDim2 = hogDim1; // as our patch is quadratic, those two are the same
-			int hogDim3 = 16; // VlHogVariantUoctti: Creates 4+3*numOrientations dimensions
-			int hogDims = hogDim1 * hogDim2 * hogDim3;
-			Mat currentFeatures(model.getNumLandmarks() * hogDims, 1, CV_32FC1);
-
-			for (int i = 0; i < model.getNumLandmarks(); ++i) {
-				// get the (x, y) location and w/h of the current patch
-				int x = cvRound(modelShape.at<float>(i, 0));
-				int y = cvRound(modelShape.at<float>(i + model.getNumLandmarks(), 0));
-				cv::Rect roi(x - numNeighbours, y - numNeighbours, numNeighbours * 2, numNeighbours * 2); // x y w h. Rect: x and y are top-left corner. Our x and y are center. Convert.
-				// we have exactly the same window as the matlab code.
-				// extract the patch and supply it to vl_hog
-				Mat roiImg = image(roi).clone(); // clone because we need a continuous memory block
-				roiImg.convertTo(roiImg, CV_32FC1); // because vl_hog_put_image expects a float* (values 0.f-255.f)
-				// vl_hog_new: numOrientations=hogParameter.numBins, transposed (=col-major):false)
-				VlHog* hog = vl_hog_new(VlHogVariant::VlHogVariantUoctti, hogParameter.numBins, false); // VlHogVariantUoctti seems to be default in Matlab.
-				vl_hog_put_image(hog, (float*)roiImg.data, roiImg.cols, roiImg.rows, 1, hogCellSize); // (the '1' is numChannels)
-				vl_size ww = vl_hog_get_width(hog);
-				vl_size hh = vl_hog_get_height(hog);
-				vl_size dd = vl_hog_get_dimension(hog); // assert ww=hogDim1, hh=hogDim2, dd=hogDim3
-				//float* hogArray = (float*)malloc(ww*hh*dd*sizeof(float));
-				Mat hogArray(1, ww*hh*dd, CV_32FC1); // safer & same result. Don't use C-style memory management.
-				//vl_hog_extract(hog, hogArray); // just interpret hogArray in col-major order to get the same n x 1 vector as in matlab. (w * h * d)
-				vl_hog_extract(hog, hogArray.ptr<float>(0));
-				vl_hog_delete(hog);
-				Mat hogDescriptor(hh*ww*dd, 1, CV_32FC1);
-				for (int j = 0; j < dd; ++j) {
-					//Mat hogFeatures(hh, ww, CV_32FC1, hogArray + j*ww*hh);
-					Mat hogFeatures(hh, ww, CV_32FC1, hogArray.ptr<float>(0) + j*ww*hh); // Creates the same array as in Matlab. I might have to check this again if hh!=ww (non-square)
-					hogFeatures = hogFeatures.t(); // Necessary because the Matlab reshape() takes column-wise from the matrix while the OpenCV reshape() takes row-wise.
-					hogFeatures = hogFeatures.reshape(0, hh*ww); // make it to a column-vector
-					Mat currentDimSubMat = hogDescriptor.rowRange(j*ww*hh, j*ww*hh + ww*hh);
-					hogFeatures.copyTo(currentDimSubMat);
-				}
-				//free(hogArray); // not necessary - we use a Mat.
-				//features = [features; double(reshape(tmp, [], 1))];
-				// B = reshape(A,m,n) returns the m-by-n matrix B whose elements are taken column-wise from A
-				// Matlab (& Eigen, OpenGL): Column-major.
-				// OpenCV: Row-major.
-				// (access is always (r, c).)
-				Mat currentFeaturesSubrange = currentFeatures.rowRange(i*hogDims, i*hogDims + hogDims);
-				hogDescriptor.copyTo(currentFeaturesSubrange);
-				// currentFeatures needs to have dimensions n x 1, where n = numLandmarks * hogFeaturesDimension, e.g. n = 22 * (3*3*16=144) = 3168 (for the first hog Scale)
-			}
-			*/
 
 			//delta_shape = AAM.RF(1).Regressor(hogScale).A(1:end - 1, : )' * feature_current + AAM.RF(1).Regressor(hogScale).A(end,:)';
 			Mat regressorData = model.getRegressorData(cascadeStep);

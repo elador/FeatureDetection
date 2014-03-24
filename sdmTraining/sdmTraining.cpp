@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 			string descriptorType = kv.second.get<string>("descriptorType");
 			string descriptorPostprocessing = kv.second.get<string>("descriptorPostprocessing", "none");
 			string descriptorParameters = kv.second.get<string>("descriptorParameters", "");
-			if (descriptorType == "OpenCVSift") {
+			if (descriptorType == "OpenCVSift") { // Todo: make a load method in each descriptor
 				shared_ptr<DescriptorExtractor> sift = std::make_shared<SiftDescriptorExtractor>();
 				descriptorExtractors.push_back(sift);
 			}
