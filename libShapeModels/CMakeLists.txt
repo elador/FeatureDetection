@@ -25,10 +25,6 @@ MESSAGE(STATUS "Eigen3 version: ${EIGEN3_VERSION}")
 
 # source and header files
 SET(HEADERS
-	include/shapemodels/PcaModel.hpp
-	include/shapemodels/MorphableModel.hpp
-	include/shapemodels/OpenCVCameraEstimation.hpp
-	include/shapemodels/AffineCameraEstimation.hpp
 	include/shapemodels/FeaturePointsModelRANSACtmp.hpp
 	include/shapemodels/FeaturePointsModel.hpp
 	include/shapemodels/FeaturePointsSelector.hpp
@@ -42,10 +38,6 @@ SET(HEADERS
 	include/shapemodels/RansacFeaturePointsModel.hpp
 )
 SET(SOURCE
-	src/shapemodels/PcaModel.cpp
-	src/shapemodels/MorphableModel.cpp
-	src/shapemodels/OpenCVCameraEstimation.cpp
-	src/shapemodels/AffineCameraEstimation.cpp
 	src/shapemodels/RandomFeaturePointsSelector.cpp
 	src/shapemodels/FeaturePointsModelRANSACtmp.cpp
 	src/shapemodels/PositFeaturePointsEvaluator.cpp

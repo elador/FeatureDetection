@@ -30,8 +30,8 @@ add_subdirectory(libImageIO)			# Input-library for cameras, Kinect and hard-driv
 #add_subdirectory(libDetection)			# Sliding-window detection, Skin detection
 #add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 
-#add_subdirectory(libRender)				# A software renderer to render vertices and 3D-meshes
-#add_subdirectory(libShapeModels)		# Head/face specific things; 2D/3D models; Combining feature points
+add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
+add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes; Camera (Pose) estimation
 add_subdirectory(libSupervisedDescentModel) # A non-parametric model for landmark detection. Uses the supervised descent method.
 
 #add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.
@@ -45,7 +45,8 @@ add_subdirectory(libSupervisedDescentModel) # A non-parametric model for landmar
 #add_subdirectory(facemodelTracking)		# Todo - doesn't compile atm
 #add_subdirectory(fitter)			# Experimental app (compiles)
 add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
-add_subdirectory(sdmLandmarkDetection)	# Run the SDM landmark detection on one or several images
+add_subdirectory(sdmLandmarkDetection)	# Run the SDM landmark detection on one or several images.
+add_subdirectory(sdmLandmarkDetectionPlain)	# Run the SDM landmark detection on one or several images. Version without libImageIO.
 #add_subdirectory(sdmTracking)			# Experimental app (compiles) TODO
 #add_subdirectory(sdmEvaluation)			# Experimental app (compiles) TODO
 #add_subdirectory(landmarkVisualiser)	# Simple app to read landmarks and images and display them
@@ -61,3 +62,4 @@ add_subdirectory(sdmLandmarkDetection)	# Run the SDM landmark detection on one o
 #add_subdirectory(ffpDetectAppExp)		# Experimental playground for FFD with the 3DMM/POSIT
 #add_subdirectory(trackerAppERT)		# kind of deprecated, was only a test. But can use this to see how to make a real-time tracker.
 #add_subdirectory(patchConverter)	# Converts patches (in .txt format) to other feature spaces (e.g. gray to WHI)
+#add_subdirectory(libShapeModels)		# Kind of deprecated. Head/face specific things; 2D/3D models; Combining feature points

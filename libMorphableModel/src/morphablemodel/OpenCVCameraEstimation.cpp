@@ -5,7 +5,7 @@
  *      Author: Patrik Huber
  */
 
-#include "shapemodels/OpenCVCameraEstimation.hpp"
+#include "morphablemodel/OpenCVCameraEstimation.hpp"
 
 #include "logging/LoggerFactory.hpp"
 

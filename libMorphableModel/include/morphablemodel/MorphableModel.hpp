@@ -10,7 +10,7 @@
 #ifndef MORPHABLEMODEL_HPP_
 #define MORPHABLEMODEL_HPP_
 
-#include "shapemodels/PcaModel.hpp"
+#include "morphablemodel/PcaModel.hpp"
 
 #include "render/Mesh.hpp"
 

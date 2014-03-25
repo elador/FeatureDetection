@@ -12,7 +12,7 @@
 
 #include "imageio/ModelLandmark.hpp"
 
-#include "shapemodels/MorphableModel.hpp"
+#include "morphablemodel/MorphableModel.hpp"
 
 #include "opencv2/core/core.hpp"
 

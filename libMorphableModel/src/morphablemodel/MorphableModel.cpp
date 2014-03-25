@@ -5,7 +5,7 @@
  *      Author: Patrik Huber
  */
 
-#include "shapemodels/MorphableModel.hpp"
+#include "morphablemodel/MorphableModel.hpp"
 #include "logging/LoggerFactory.hpp"
 #include "opencv2/core/core.hpp"
 #include "boost/lexical_cast.hpp"

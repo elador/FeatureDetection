@@ -5,7 +5,7 @@
  *      Author: Patrik Huber
  */
 
-#include "shapemodels/AffineCameraEstimation.hpp"
+#include "morphablemodel/AffineCameraEstimation.hpp"
 
 #include "logging/LoggerFactory.hpp"
 

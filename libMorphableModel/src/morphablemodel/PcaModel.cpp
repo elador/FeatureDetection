@@ -5,7 +5,7 @@
  *      Author: Patrik Huber
  */
 
-#include "shapemodels/PcaModel.hpp"
+#include "morphablemodel/PcaModel.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
