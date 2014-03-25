@@ -19,7 +19,7 @@
 #include <utility>
 #include <vector>
 
-namespace shapemodels {
+namespace morphablemodel {
 
 /**
  * A wrapper for the OpenCV solvePnP algorithm, that uses given
@@ -59,5 +59,5 @@ private:
 	MorphableModel morphableModel;
 };
 
-} /* namespace shapemodels */
+} /* namespace morphablemodel */
 #endif /* OPENCVCAMERAESTIMATION_HPP_ */

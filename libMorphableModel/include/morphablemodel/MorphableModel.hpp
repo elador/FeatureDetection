@@ -21,7 +21,7 @@
 #include "boost/property_tree/ptree.hpp"
 #include "boost/filesystem/path.hpp"
 
-namespace shapemodels {
+namespace morphablemodel {
 
 /**
  * Desc
@@ -122,5 +122,5 @@ private:
 
 };
 
-} /* namespace shapemodels */
+} /* namespace morphablemodel */
 #endif /* MORPHABLEMODEL_HPP_ */

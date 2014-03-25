@@ -16,7 +16,7 @@ using cv::Mat;
 using std::vector;
 using std::pair;
 
-namespace shapemodels {
+namespace morphablemodel {
 
 OpenCVCameraEstimation::OpenCVCameraEstimation(/* const? shared_ptr? */MorphableModel morphableModel) : morphableModel(morphableModel)
 {
@@ -75,4 +75,4 @@ cv::Mat OpenCVCameraEstimation::createIntrinsicCameraMatrix(float f, int w, int 
 	return camMatrix;
 }
 
-}
+} /* namespace morphablemodel */

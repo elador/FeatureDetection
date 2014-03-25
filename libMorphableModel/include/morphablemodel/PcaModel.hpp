@@ -24,7 +24,7 @@
 #include <map>
 #include <random>
 
-namespace shapemodels {
+namespace morphablemodel {
 
 /**
  * A PCA-model that consists of:
@@ -172,5 +172,5 @@ private:
 
 };
 
-} /* namespace shapemodels */
+} /* namespace morphablemodel */
 #endif /* PCAMODEL_HPP_ */

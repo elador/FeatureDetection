@@ -19,7 +19,7 @@
 
 // Todo: Class with static methods? Or just functions? I don't know which method is better.
 
-namespace render {
+namespace morphablemodel {
 	namespace utils {
 
 		class Hdf5Utils
@@ -35,9 +35,10 @@ namespace render {
 
 			static bool existsObjectWithName(const H5::CommonFG& fg, const std::string& name);
 
+			static render::Mesh readFromHdf5(std::string filename);
 		};
 
 	} /* namespace utils */
-} /* namespace render */
+} /* namespace morphablemodel */
 
 #endif /* HDF5UTILS_HPP_ */

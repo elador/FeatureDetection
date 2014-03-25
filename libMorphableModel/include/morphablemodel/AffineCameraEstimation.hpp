@@ -19,7 +19,7 @@
 #include <utility>
 #include <vector>
 
-namespace shapemodels {
+namespace morphablemodel {
 
 /**
  * The Gold Standard Algorithm for estimating an affine
@@ -59,5 +59,5 @@ private:
 	MorphableModel morphableModel;
 };
 
-} /* namespace shapemodels */
+} /* namespace morphablemodel */
 #endif /* AFFINECAMERAESTIMATION_HPP_ */

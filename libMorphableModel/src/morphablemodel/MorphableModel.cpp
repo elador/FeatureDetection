@@ -24,24 +24,24 @@ using boost::filesystem::path;
 using std::vector;
 using std::string;
 
-namespace shapemodels {
+namespace morphablemodel {
 
 MorphableModel::MorphableModel()
 {
 	
 }
 
-shapemodels::MorphableModel MorphableModel::load(boost::property_tree::ptree configTree)
+MorphableModel MorphableModel::load(boost::property_tree::ptree configTree)
 {
 	MorphableModel morphableModel;
 	path filename = configTree.get<path>("filename");
 	if (filename.extension().string() == ".scm") {
 		path vertexMappingFile = configTree.get<path>("vertexMapping");
 		path isomapFile = configTree.get<path>("isomap", "");
-		morphableModel = shapemodels::MorphableModel::loadScmModel(filename.string(), vertexMappingFile, isomapFile);
+		morphableModel = MorphableModel::loadScmModel(filename.string(), vertexMappingFile, isomapFile);
 	}
 	else if (filename.extension().string() == ".h5") {
-		morphableModel = shapemodels::MorphableModel::loadStatismoModel(filename.string());
+		morphableModel = MorphableModel::loadStatismoModel(filename.string());
 	}
 	else
 	{
@@ -50,7 +50,7 @@ shapemodels::MorphableModel MorphableModel::load(boost::property_tree::ptree con
 	return morphableModel;
 }
 
-shapemodels::MorphableModel MorphableModel::loadScmModel(path h5file, path landmarkVertexMappingFile, path isomapFile)
+MorphableModel MorphableModel::loadScmModel(path h5file, path landmarkVertexMappingFile, path isomapFile)
 {
 	MorphableModel model;
 	model.shapeModel = PcaModel::loadScmModel(h5file, landmarkVertexMappingFile, PcaModel::ModelType::SHAPE);
@@ -70,7 +70,7 @@ shapemodels::MorphableModel MorphableModel::loadScmModel(path h5file, path landm
 	return model;
 }
 
-shapemodels::MorphableModel MorphableModel::loadStatismoModel(path h5file)
+MorphableModel MorphableModel::loadStatismoModel(path h5file)
 {
 	MorphableModel model;
 	model.shapeModel = PcaModel::loadStatismoModel(h5file, PcaModel::ModelType::SHAPE);
@@ -79,12 +79,12 @@ shapemodels::MorphableModel MorphableModel::loadStatismoModel(path h5file)
 }
 
 
-shapemodels::PcaModel MorphableModel::getShapeModel() const
+PcaModel MorphableModel::getShapeModel() const
 {
 	return shapeModel;
 }
 
-shapemodels::PcaModel MorphableModel::getColorModel() const
+PcaModel MorphableModel::getColorModel() const
 {
 	return colorModel;
 }
@@ -222,4 +222,4 @@ matIdx += 3;
 }
 */
 
-}
+} /* namespace morphablemodel */

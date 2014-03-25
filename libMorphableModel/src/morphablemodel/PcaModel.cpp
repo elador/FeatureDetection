@@ -25,7 +25,7 @@ using std::string;
 using std::vector;
 using std::array;
 
-namespace shapemodels {
+namespace morphablemodel {
 
 PcaModel::PcaModel()
 {
@@ -481,4 +481,4 @@ float PcaModel::getEigenvalue(unsigned int index) const
 	return eigenvalues.at<float>(index);
 }
 
-}
+} /* namespace morphablemodel */

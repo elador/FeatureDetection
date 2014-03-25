@@ -24,7 +24,7 @@ using cv::Vec3f;
 using cv::Vec4f;
 using std::vector;
 
-namespace shapemodels {
+namespace morphablemodel {
 
 AffineCameraEstimation::AffineCameraEstimation(/* const? shared_ptr? */MorphableModel morphableModel) : morphableModel(morphableModel)
 {
@@ -181,4 +181,4 @@ cv::Mat AffineCameraEstimation::calculateFullMatrix(cv::Mat affineCameraMatrix)
 	return affineCamFull;
 }
 
-}
+} /* namespace morphablemodel */

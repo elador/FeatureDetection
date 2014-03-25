@@ -30,8 +30,6 @@ namespace render {
 			static Mesh createPlane();
 			static Mesh createPyramid();
 			static shared_ptr<Mesh> createTriangle();
-
-			static Mesh readFromHdf5(std::string filename);
 		};
 
 	} /* namespace utils */
