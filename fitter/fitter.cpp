@@ -564,6 +564,8 @@ void FittingWindow::render()
 	m_program->bind();
 
 	// Store the 3DMM vertices in GLfloat's
+	// Todo: Measure time. Possible improvements: 1) See if Vec3f is in contiguous storage, if yes, maybe change my Vertex/Mesh structure.
+	// 2) Maybe change the datatypes (see http://www.opengl.org/wiki/Vertex_Specification_Best_Practices 'Attribute sizes')
 	vector<GLfloat> mmVertices;
 	render::Mesh mesh = morphableModel.getMean();
 	mmVertices.clear();
