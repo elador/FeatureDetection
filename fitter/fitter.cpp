@@ -563,32 +563,12 @@ void FittingWindow::render()
 
 	m_program->bind();
 
-	float aspect = static_cast<float>(width()) / static_cast<float>(height());
-	QMatrix4x4 matrix;
-	// qDebug() << matrix;
-	//matrix.flipCoordinates();
-	matrix.ortho(-70.0f, 70.0f, -70.0f, 70.0f, 0.1f, 1000.0f);
-	//matrix.ortho(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
-	//matrix.ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 1000.0f);
-	//matrix.perspective(60, aspect, 0.1, 100.0);
-	
-	//matrix.translate(0, 0, -2);
-	matrix.translate(0, 0, -50);
-	//matrix.rotate(100.0f * m_frame / screen()->refreshRate(), 0, 1, 0);
-	//matrix.rotate(180, 0, 1, 0);
-	//matrix.rotate(30.0f, 1.0f, 0.0f, 0.0f);
-	//matrix.rotate(50.0f, 0.0f, 1.0f, 0.0f);
-	//matrix.scale(1.0f / 70.0f, 1.0f / 70.0f, 1.0f / 70.0f);
-
-	m_program->setUniformValue(m_matrixUniform, matrix);
-
 	// Store the 3DMM vertices in GLfloat's
 	vector<GLfloat> mmVertices;
 	render::Mesh mesh = morphableModel.getMean();
 	mmVertices.clear();
-	//int nt = 6736; //glDrawArrays(GL_TRIANGLES, 0, nt*3); // how many vertices to render
-	int nt = mesh.tvi.size();
-	for (int i = 0; i < nt; ++i)
+	int numTriangles = mesh.tvi.size();
+	for (int i = 0; i < numTriangles; ++i)
 	{
 		// First vertex x, y, z of the triangle
 		const auto& triangle = mesh.tvi[i];
@@ -605,7 +585,7 @@ void FittingWindow::render()
 		mmVertices.push_back(mesh.vertex[triangle[2]].position[2]);
 	}
 	vector<GLfloat> mmColors;
-	for (int i = 0; i < nt; ++i)
+	for (int i = 0; i < numTriangles; ++i)
 	{
 		// First vertex x, y, z of the triangle
 		const auto& triangle = mesh.tci[i];
@@ -622,7 +602,7 @@ void FittingWindow::render()
 		mmColors.push_back(mesh.vertex[triangle[2]].color[2]);
 	}
 	vector<GLfloat> mmTex;
-	for (int i = 0; i < nt; ++i)
+	for (int i = 0; i < numTriangles; ++i)
 	{
 		// First vertex u, v of the triangle
 		const auto& triangle = mesh.tci[i]; // use tti?
@@ -636,47 +616,8 @@ void FittingWindow::render()
 		mmTex.push_back(mesh.vertex[triangle[2]].texcrd[1]);
 	}
 	
-	struct Triangle {
-		Triangle(cv::Point3f v0, cv::Point3f v1, cv::Point3f v2) : v0(v0), v1(v1), v2(v2) {};
-		cv::Point3f v0;
-		cv::Point3f v1;
-		cv::Point3f v2;
-	};
-	std::vector<Triangle> tris;
-	tris.emplace_back(Triangle({ 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }));
-	tris.emplace_back(Triangle({ 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 0.0f }));
-
-   GLfloat vertices[] = {
-        0.0f, 1.0f, 0.0f, 
-        0.0f, 0.0f, 0.0f, 
-        1.0f, 0.0f, 0.0f,
-
-		0.0f, 1.0f, 0.0f,
-		1.0f, 0.0f, 0.0f,
-		1.0f, 1.0f, 0.0f
-    };
-
-	GLfloat texCoords[] = {
-		0.0f, 1.0f,
-		0.0f, 0.0f,
-		1.0f, 0.0f,
-
-		0.0f, 1.0f,
-		1.0f, 0.0f,
-		1.0f, 1.0f
-	};
-
-    GLfloat colors[] = {
-        1.0f, 0.0f, 0.0f,
-        1.0f, 0.0f, 0.0f,
-        1.0f, 0.0f, 0.0f,
-		
-		1.0f, 0.0f, 0.0f,
-		1.0f, 0.0f, 0.0f,
-		1.0f, 0.0f, 0.0f
-    };
-	glEnable(GL_TEXTURE_2D);
-	matrix.setToIdentity();
+	float aspect = static_cast<float>(width()) / static_cast<float>(height());
+	QMatrix4x4 matrix;
 	matrix.ortho(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
 	//matrix.ortho(-70.0f, 70.0f, -70.0f, 70.0f, 0.1f, 1000.0f);
 	//matrix.perspective(60, aspect, 0.1, 100.0);
@@ -699,7 +640,7 @@ void FittingWindow::render()
 	glEnableVertexAttribArray(m_colAttr);
 	glEnableVertexAttribArray(m_texAttr);
 
-	glDrawArrays(GL_TRIANGLES, 0, nt*3); // 6; (2 triangles) how many vertices to render
+	glDrawArrays(GL_TRIANGLES, 0, numTriangles*3); // 6; (2 triangles) how many vertices to render
 
 	glDisableVertexAttribArray(m_texAttr);
 	glDisableVertexAttribArray(m_colAttr);
@@ -711,29 +652,10 @@ void FittingWindow::render()
 	}
 
 	m_program->release();
-	/*
-	if (!m_device)
-		m_device = new QOpenGLPaintDevice;
-	m_device->setSize(size());
-	
-	QPainter painter(m_device);
-	QPen pen(Qt::green, 2);
-	painter.setPen(pen);
-	//painter.setPen(Qt::blue);
-	//painter.setFont(QFont("Arial", 30));
-	//painter.drawText(10, 10, 50, 50, Qt::AlignCenter, "Qt");
-	painter.drawLine(QLine(20, 20, 50, 100));
-	painter.drawLine(10, 10, 50, 50);
-	painter.drawRect(10, 10, 50, 50);
-	painter.drawText(30, 30, 50, 50, Qt::AlignLeft, "asdf");
-	//QPixmap bg("C:\\Users\\Patrik\\Documents\\GitHub\\img.png");
-	//painter.drawPixmap(0, 0, bg.scaled(size()));
-	int viewport[4];
-	glGetIntegerv(GL_VIEWPORT, viewport); // (X, Y, Width, Height)
-	*/
+
 	cv::Mat framebuffer = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\box_screenbuffer10.png");
-	Mat textureMap = extractTexture(mesh, matrix, width(), height(), framebuffer);
-	cv::imwrite("C:\\Users\\Patrik\\Documents\\GitHub\\img_extracted10.png", textureMap);
+	//Mat textureMap = extractTexture(mesh, matrix, width(), height(), framebuffer);
+	//cv::imwrite("C:\\Users\\Patrik\\Documents\\GitHub\\img_extracted10.png", textureMap);
 	++m_frame;
 }
 
