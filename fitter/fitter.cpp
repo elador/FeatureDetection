@@ -49,9 +49,9 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/lexical_cast.hpp"
 
-#include "shapemodels/MorphableModel.hpp"
-#include "shapemodels/OpenCVCameraEstimation.hpp"
-#include "shapemodels/AffineCameraEstimation.hpp"
+#include "morphablemodel/MorphableModel.hpp"
+#include "morphablemodel/OpenCVCameraEstimation.hpp"
+#include "morphablemodel/AffineCameraEstimation.hpp"
 #include "render/Camera.hpp"
 #include "render/SoftwareRenderer.hpp"
 
@@ -99,7 +99,7 @@ using logging::loglevel;
 class FittingWindow : public OpenGLWindow
 {
 public:
-	FittingWindow(shared_ptr<LabeledImageSource> labeledImageSource, shapemodels::MorphableModel morphableModel);
+	FittingWindow(shared_ptr<LabeledImageSource> labeledImageSource, morphablemodel::MorphableModel morphableModel);
 
 	void initialize();
 	void render();
@@ -120,11 +120,11 @@ private:
 	int m_frame;
 
 	shared_ptr<LabeledImageSource> labeledImageSource; // todo unique_ptr
-	shapemodels::MorphableModel morphableModel;
+	morphablemodel::MorphableModel morphableModel;
 	bool renderModel = false;
 };
 
-FittingWindow::FittingWindow(shared_ptr<LabeledImageSource> labeledImageSource, shapemodels::MorphableModel morphableModel) : m_program(0)
+FittingWindow::FittingWindow(shared_ptr<LabeledImageSource> labeledImageSource, morphablemodel::MorphableModel morphableModel) : m_program(0)
 , m_frame(0)
 {
 	this->labeledImageSource = labeledImageSource;
@@ -323,9 +323,9 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	shapemodels::MorphableModel morphableModel;
+	morphablemodel::MorphableModel morphableModel;
 	try {
-		morphableModel = shapemodels::MorphableModel::load(pt.get_child("morphableModel"));
+		morphableModel = morphablemodel::MorphableModel::load(pt.get_child("morphableModel"));
 	} catch (const boost::property_tree::ptree_error& error) {
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
@@ -493,6 +493,7 @@ void FittingWindow::render()
 	vertices.push_back(0.0f);*/
 
 	render::Mesh mesh = morphableModel.getMean();
+	
 	vertices.clear();
 	//int nt = 6736;
 	int nt = mesh.tvi.size();
@@ -622,8 +623,8 @@ void FittingWindow::fit()
 {
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img;
-	shapemodels::OpenCVCameraEstimation epnpCameraEstimation(morphableModel); // todo: this can all go to only init once
-	shapemodels::AffineCameraEstimation affineCameraEstimation(morphableModel);
+	morphablemodel::OpenCVCameraEstimation epnpCameraEstimation(morphableModel); // todo: this can all go to only init once
+	morphablemodel::AffineCameraEstimation affineCameraEstimation(morphableModel);
 	vector<imageio::ModelLandmark> landmarks;
 	Logger appLogger = Loggers->getLogger("fitter");
 

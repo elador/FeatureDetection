@@ -58,7 +58,7 @@ MorphableModel MorphableModel::loadScmModel(path h5file, path landmarkVertexMapp
 
 	if (!isomapFile.empty()) {
 		vector<Vec2f> texCoords = MorphableModel::loadIsomap(isomapFile);
-		if (model.shapeModel.getDataDimension() / 3.0f != model.textureCoordinates.size()) {
+		if (model.shapeModel.getDataDimension() / 3.0f != texCoords.size()) {
 			// TODO Warn/Error, texCoords will not be used
 		}
 		else
@@ -106,14 +106,21 @@ render::Mesh MorphableModel::getMean() const
 		throw std::runtime_error("numVertices should be equal to numVerticesColor.");
 	}
 
+	// Construct the mesh vertices
 	mean.vertex.resize(numVertices);
-
 	for (unsigned int i = 0; i < numVertices; ++i) {
 		mean.vertex[i].position = Vec4f(shapeMean.at<float>(i*3 + 0), shapeMean.at<float>(i*3 + 1), shapeMean.at<float>(i*3 + 2), 1.0f);
 		mean.vertex[i].color = Vec3f(colorMean.at<float>(i*3 + 0), colorMean.at<float>(i*3 + 1), colorMean.at<float>(i*3 + 2));        // order in hdf5: RGB. Order in OCV: BGR. But order in vertex.color: RGB
 	}
 
-	mean.hasTexture = false;
+	if (hasTextureCoordinates) {
+		for (unsigned int i = 0; i < numVertices; ++i) {
+			mean.vertex[i].texcrd = textureCoordinates[i];
+		}
+		
+	}
+	
+	mean.hasTexture = false; // hasTexture is not the same as hasTextureCoordinates...
 
 	return mean;
 }
@@ -191,7 +198,7 @@ render::Mesh MorphableModel::drawSample(vector<float> shapeCoefficients, vector<
 
 vector<Vec2f> MorphableModel::loadIsomap(path isomapFile)
 {
-	vector<Vec2f> texCoords;
+	vector<float> xCoords, yCoords;
 	string line;
 	std::ifstream myfile(isomapFile.string());
 	if (!myfile.is_open()) {
@@ -200,12 +207,24 @@ vector<Vec2f> MorphableModel::loadIsomap(path isomapFile)
 		while (getline(myfile, line))
 		{
 			std::istringstream iss(line);
-			string u, v;
-			iss >> u >> v;
-			texCoords.push_back(Vec2f(lexical_cast<float>(u), lexical_cast<float>(v)));
+			string x, y;
+			iss >> x >> y;
+			xCoords.push_back(lexical_cast<float>(x));
+			yCoords.push_back(lexical_cast<float>(y));
 		}
 		myfile.close();
 	}
+	// Process the coordinates: Find the min/max and rescale to [0, 1] x [0, 1]
+	auto minMaxX = std::minmax_element(begin(xCoords), end(xCoords)); // minMaxX is a pair, first=min, second=max
+	auto minMaxY = std::minmax_element(begin(yCoords), end(yCoords));
+
+	vector<Vec2f> texCoords;
+	float divisorX = *minMaxX.second - *minMaxX.first;
+	float divisorY = *minMaxY.second - *minMaxY.first;
+	for (int i = 0; i < xCoords.size(); ++i) {
+		texCoords.push_back(Vec2f((xCoords[i]-*minMaxX.first)/divisorX, (yCoords[i]-*minMaxY.first)/divisorY)); // rescale
+	}
+
 	return texCoords;
 }
 

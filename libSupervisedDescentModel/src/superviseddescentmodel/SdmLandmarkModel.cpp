@@ -128,15 +128,20 @@ SdmLandmarkModel SdmLandmarkModel::load(boost::filesystem::path filename)
 	Logger logger = Loggers->getLogger("superviseddescentmodel");
 	SdmLandmarkModel model;
 	std::ifstream file(filename.string());
+	if (!file.is_open()) {
+		throw std::runtime_error("Given SDM model file could not be opened.");
+	}
 	std::string line;
 	vector<string> stringContainer;
 	std::getline(file, line); // skip the first line, it's the description
 	std::getline(file, line); // numLandmarks 22
+	boost::trim_right_if(line, boost::is_any_of("\r")); // Windows line-endings are \r\n, Linux only \n. Thus, when a file has been created on windows and is read on linux, we need to remove the trailing \r.
 	boost::split(stringContainer, line, boost::is_any_of(" "));
 	int numLandmarks = lexical_cast<int>(stringContainer[1]);
 	// read the landmark identifiers:
 	for (int i = 0; i < numLandmarks; ++i) {
 		std::getline(file, line);
+		boost::trim_right_if(line, boost::is_any_of("\r"));
 		model.landmarkIdentifier.push_back(line);
 	}
 	// read the mean landmarks:
@@ -144,24 +149,29 @@ SdmLandmarkModel SdmLandmarkModel::load(boost::filesystem::path filename)
 	// First all the x-coordinates, then all the  y-coordinates.
 	for (int i = 0; i < numLandmarks * 2; ++i) {
 		std::getline(file, line);
+		boost::trim_right_if(line, boost::is_any_of("\r"));
 		model.meanLandmarks.at<float>(i) = lexical_cast<float>(line);
 	}
 	// read the numHogScales
 	std::getline(file, line); // numCascadeSteps 5
+	boost::trim_right_if(line, boost::is_any_of("\r"));
 	boost::split(stringContainer, line, boost::is_any_of(" "));
 	int numCascadeSteps = lexical_cast<int>(stringContainer[1]);
 	// for every cascade step, read 4 header lines and then the matrix data
 	for (int i = 0; i < numCascadeSteps; ++i) {
 		std::getline(file, line); // cascadeStep 1 rows 3169 cols 44
+		boost::trim_right_if(line, boost::is_any_of("\r"));
 		boost::split(stringContainer, line, boost::is_any_of(" "));
 		int numRows = lexical_cast<int>(stringContainer[3]); // = numFeatureDimensions
 		int numCols = lexical_cast<int>(stringContainer[5]); // = numLandmarks * 2
-		
+
 		std::getline(file, line); // descriptorType
+		boost::trim_right_if(line, boost::is_any_of("\r"));
 		boost::split(stringContainer, line, boost::is_any_of(" "));
 		string descriptorType = (stringContainer[1]);
 		std::getline(file, line); // descriptorPostprocessing none. Not in use yet.
 		std::getline(file, line); // descriptorParameters
+		boost::trim_right_if(line, boost::is_any_of("\r"));
 		if (descriptorType == "OpenCVSift") { // Todo: make a load method in each descriptor
 			shared_ptr<DescriptorExtractor> sift = std::make_shared<SiftDescriptorExtractor>();
 			model.descriptorExtractors.push_back(sift);
@@ -198,6 +208,7 @@ SdmLandmarkModel SdmLandmarkModel::load(boost::filesystem::path filename)
 		// read numRows lines
 		for (int j = 0; j < numRows; ++j) {
 			std::getline(file, line); // float1 float2 float3 ... float44
+			boost::trim_right_if(line, boost::is_any_of("\r"));
 			boost::split(stringContainer, line, boost::is_any_of(" "));
 			for (int col = 0; col < numCols; ++col) { // stringContainer contains one more entry than numCols, but we just skip it, it's a whitespace
 				regressorData.at<float>(j, col) = lexical_cast<float>(stringContainer[col]);

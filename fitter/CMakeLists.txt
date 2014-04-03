@@ -42,23 +42,16 @@ ELSE(Boost_FOUND)
   MESSAGE(FATAL_ERROR "Boost not found")
 ENDIF()
 
-#find_package(OpenGL REQUIRED)
-
 set(CMAKE_AUTOMOC ON)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 find_package(Qt5OpenGL REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 
-#link_directories( "C:\\Qt\\instl_src_build\\lib\\" )
-#set(GLES_LIBRARIES debug libGLESv2d debug libEGLd optimized libGLESv2; optimized libEGL)
-#libGLESv2d.lib
-#libEGLd.lib
-
-message(status "1 ${Qt5Gui_EGL_INCLUDE_DIRS}")
-message(status "2 ${Qt5Gui_OPENGL_INCLUDE_DIRS}")
-message(status "3 ${Qt5Gui_EGL_LIBRARIES}")
-message(status "4 ${Qt5Gui_OPENGL_LIBRARIES}")
+message(status "EGL inc: ${Qt5Gui_EGL_INCLUDE_DIRS}")
+message(status "OpenGL inc: ${Qt5Gui_OPENGL_INCLUDE_DIRS}")
+message(status "EGL libs: ${Qt5Gui_EGL_LIBRARIES}")
+message(status "OpenGL libs: ${Qt5Gui_OPENGL_LIBRARIES}")
 
 #Source and header files:
 SET(SOURCE
@@ -72,18 +65,13 @@ SET(HEADERS
 
 ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
 
-INCLUDE_DIRECTORIES( ${MATLAB_INCLUDE_DIR} )
 include_directories( ${Boost_INCLUDE_DIRS} )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( ${HDF5_INCLUDE_DIRS} )
 include_directories( ${Logging_SOURCE_DIR}/include )
-include_directories( ${ImageLogging_SOURCE_DIR}/include )
 include_directories( ${ImageIO_SOURCE_DIR}/include )
-include_directories( ${ImageProcessing_SOURCE_DIR}/include )
-include_directories( ${Classification_SOURCE_DIR}/include )
 include_directories( ${Render_SOURCE_DIR}/include )
-include_directories( ${ShapeModels_SOURCE_DIR}/include )
-include_directories( ${Detection_SOURCE_DIR}/include )
+include_directories( ${MorphableModel_SOURCE_DIR}/include )
 
 #Make the app depend on the libraries
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Detection ImageIO ${KINECT_LIBNAME} ImageProcessing Classification ShapeModels Render ImageLogging Logging ${Boost_LIBRARIES} ${MATLAB_MX_LIBRARY} ${MATLAB_MAT_LIBRARY} ${OpenCV_LIBS} ${HDF5_LIBRARIES} Qt5::Core Qt5::Gui Qt5::OpenGL Qt5::Widgets ${Qt5Gui_EGL_LIBRARIES} ${Qt5Gui_OPENGL_LIBRARIES} ) # Qt5::OpenGL Qt5::Widgets ${OPENGL_LIBRARIES} ${GLES_LIBRARIES}
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} ImageIO ${KINECT_LIBNAME} MorphableModel Render Logging ${Boost_LIBRARIES} ${OpenCV_LIBS} ${HDF5_LIBRARIES} Qt5::Core Qt5::Gui Qt5::OpenGL Qt5::Widgets ${Qt5Gui_EGL_LIBRARIES} ${Qt5Gui_OPENGL_LIBRARIES} ) # Qt5::OpenGL Qt5::Widgets ${OPENGL_LIBRARIES} ${GLES_LIBRARIES}

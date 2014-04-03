@@ -1,13 +1,13 @@
 /*
- * sdmTracking.cpp
+ * sdmEvaluation.cpp
  *
- *  Created on: 11.01.2014
+ *  Created on: 25.03.2014
  *      Author: Patrik Huber
  */
 
 // For memory leak debugging: http://msdn.microsoft.com/en-us/library/x98tx3cf(v=VS.100).aspx
 //#define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
+#include <cstdlib>
 
 #ifdef WIN32
 	#include <SDKDDKVer.h>
@@ -125,10 +125,8 @@ int main(int argc, char *argv[])
 				"load landmark files from the given folder")
 			("landmark-type,t", po::value<string>(&landmarkType), 
 				"specify the type of landmarks to load: ibug")
-			("landmark-to-compare,c", po::value<vector<string>>(&landmarksToCompare)->multitoken(),
+			("landmarks-to-compare,c", po::value<vector<string>>(&landmarksToCompare)->multitoken()->required(),
 				"todo")
-			("tracking-mode,r", po::value<bool>(&trackingMode)->default_value(false)->implicit_value(true),
-				"If on, V&J will be run to initialize the model only and after the model lost tracking. If off, V&J will be run on every frame/image.")
 			("output,o", po::value<path>(&outputDirectory)->required(),
 				"Output dir for imgs + 1 lm-err norm. by IED file.")
 		;
@@ -163,10 +161,9 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	
-	Loggers->getLogger("shapemodels").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Loggers->getLogger("render").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Loggers->getLogger("sdmTracking").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Logger appLogger = Loggers->getLogger("sdmTracking");
+	Loggers->getLogger("superviseddescentmodel").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("sdmEvaluation").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Logger appLogger = Loggers->getLogger("sdmEvaluation");
 
 	appLogger.debug("Verbose level for console output: " + logging::loglevelToString(logLevel));
 
@@ -252,11 +249,8 @@ int main(int argc, char *argv[])
 	
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img;
-	const string windowName = "win";
 
 	vector<imageio::ModelLandmark> landmarks;
-
-	cv::namedWindow(windowName);
 
 	SdmLandmarkModel lmModel = SdmLandmarkModel::load(sdmModelFile);
 	SdmLandmarkModelFitting modelFitter(lmModel);
@@ -269,8 +263,6 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	
-	bool runRigidAlign = true;
-
 	// TODO: If landmarksToCompare is empty, fill it to use all
 
 	std::ofstream resultsFile((outputDirectory / "results.txt").string());
@@ -301,18 +293,30 @@ int main(int argc, char *argv[])
 		
 		// face detection
 		faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
-		//faces.push_back({ 172, 199, 278, 278 });
 		if (faces.empty()) {
-			runRigidAlign = true;
-			cv::imshow(windowName, landmarksImage);
-			cv::waitKey(5);
+			// no face found. Skip this image.
 			continue;
 		}
 		for (const auto& f : faces) {
 			cv::rectangle(landmarksImage, f, cv::Scalar(0.0f, 0.0f, 255.0f));
 		}
 
-		// Check if the face corresponds to the ground-truth:
+		// Skip any face with w or h < 20
+		vector<cv::Rect> definiteFaces;
+		for (const auto& f : faces) {
+			if (f.width >= 20 && f.height >= 20) {
+				definiteFaces.push_back(f);
+			}
+		}
+		faces = definiteFaces;
+
+		// calculate the center of the bounding boxes
+		vector<Point2f> faceboxCenters;
+		for (const auto& f : faces) {
+			faceboxCenters.push_back(Point2f(f.x + f.width/2.0f, f.y + f.height/2.0f));
+		}
+
+		// calculate the center of the ground-truth landmarks
 		Mat gtLmsRowX(1, lmv.size(), CV_32FC1);
 		Mat gtLmsRowY(1, lmv.size(), CV_32FC1);
 		int idx = 0;
@@ -324,21 +328,27 @@ int main(int argc, char *argv[])
 		double minWidth, maxWidth, minHeight, maxHeight;
 		cv::minMaxIdx(gtLmsRowX, &minWidth, &maxWidth);
 		cv::minMaxIdx(gtLmsRowY, &minHeight, &maxHeight);
-		float cx = cv::mean(gtLmsRowX)[0];
-		float cy = cv::mean(gtLmsRowY)[0] - 30.0f;
-		// do this in relation to the IED, not absolute pixel values
-		if (std::abs(cx - (faces[0].x+faces[0].width/2.0f)) > 30.0f || std::abs(cy - (faces[0].y+faces[0].height/2.0f)) > 30.0f) {
-			//cv::imshow(windowName, landmarksImage);
-			//cv::waitKey();
+		cv::Point2f groundtruthCenter(cv::mean(gtLmsRowX)[0], cv::mean(gtLmsRowY)[0]); // we could subtract some offset here from 'y' (w.r.t. the IED) because the center of mass of the landmarks is below the face-box center of V&J.
+		
+		vector<float> gtToFbDistances;
+		for (const auto& f : faceboxCenters) {
+			cv::Scalar distance = cv::norm(Vec2f(f), Vec2f(groundtruthCenter), cv::NORM_L2);
+			gtToFbDistances.push_back(distance[0]);
+		}
+
+		const auto minDistIt = std::min_element(std::begin(gtToFbDistances), std::end(gtToFbDistances));
+		const auto minDistIdx = std::distance(std::begin(gtToFbDistances), minDistIt);
+		
+		if (gtToFbDistances[minDistIdx] > ((maxWidth-minWidth) + (maxHeight-minHeight)) / 2.0f || faces[minDistIdx].width*1.2f < (maxWidth-minWidth)) {
+			// the chosen facebox is smaller than the max-width of the ground-truth landmarks (slightly adjusted because the V&J fb seems rather small)
+			// or
+			// the center of the chosen facebox is further away than the avg(width+height) of the gt (i.e. the point is outside the bbox enclosing the gt-lms)
+			// ==> skip the image
 			continue;
 		}
 		
 		Mat modelShape = lmModel.getMeanShape();
-		//if (runRigidAlign) {
-			modelShape = modelFitter.alignRigid(modelShape, faces[0]);
-			//runRigidAlign = false;
-		//}
-		
+		modelShape = modelFitter.alignRigid(modelShape, faces[minDistIdx]);
 	
 		// print the mean initialization
 		for (int i = 0; i < lmModel.getNumLandmarks(); ++i) {
@@ -371,9 +381,6 @@ int main(int argc, char *argv[])
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
 		appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
 		
-		//cv::imshow(windowName, landmarksImage);
-		//cv::waitKey(5);
-
 	}
 
 	resultsFile.close();
