@@ -81,6 +81,7 @@
 #include <QPainter>
 #include <QImage>
 #include <QGLWidget>
+#include <QtGui/QOpenGLPaintDevice>
 
 using namespace imageio;
 namespace po = boost::program_options;
@@ -90,6 +91,7 @@ using boost::property_tree::ptree;
 using boost::filesystem::path;
 using boost::lexical_cast;
 using cv::Mat;
+using cv::Point2f;
 using logging::Logger;
 using logging::LoggerFactory;
 using logging::loglevel;
@@ -100,6 +102,9 @@ class FittingWindow : public OpenGLWindow
 {
 public:
 	FittingWindow(shared_ptr<LabeledImageSource> labeledImageSource, morphablemodel::MorphableModel morphableModel);
+	~FittingWindow() {
+		delete m_device;
+	}
 
 	void initialize();
 	void render();
@@ -118,6 +123,8 @@ private:
 
 	QOpenGLShaderProgram *m_program;
 	int m_frame;
+	
+	QOpenGLPaintDevice *m_device;
 
 	shared_ptr<LabeledImageSource> labeledImageSource; // todo unique_ptr
 	morphablemodel::MorphableModel morphableModel;
@@ -126,11 +133,35 @@ private:
 
 FittingWindow::FittingWindow(shared_ptr<LabeledImageSource> labeledImageSource, morphablemodel::MorphableModel morphableModel) : m_program(0)
 , m_frame(0)
+, m_device(0)
 {
 	this->labeledImageSource = labeledImageSource;
 	this->morphableModel = morphableModel;
 }
 
+// Returns true if inside the tri or on the border
+bool isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Point2f triV1, cv::Point2f triV2) {
+	/* See http://www.blackpawn.com/texts/pointinpoly/ */
+	// Compute vectors        
+	cv::Point2f v0 = triV2 - triV0;
+	cv::Point2f v1 = triV1 - triV0;
+	cv::Point2f v2 = point - triV0;
+
+	// Compute dot products
+	float dot00 = v0.dot(v0);
+	float dot01 = v0.dot(v1);
+	float dot02 = v0.dot(v2);
+	float dot11 = v1.dot(v1);
+	float dot12 = v1.dot(v2);
+
+	// Compute barycentric coordinates
+	float invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+	float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+	float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+	// Check if point is in triangle
+	return (u >= 0) && (v >= 0) && (u + v < 1);
+}
 
 template<class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
@@ -418,8 +449,8 @@ void FittingWindow::initialize()
     m_matrixUniform = m_program->uniformLocation("matrix");
 
 	glEnable(GL_TEXTURE_2D);
-	cv::Mat ocvimg = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\img.png");
-
+	//cv::Mat ocvimg = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\img.png");
+	cv::Mat ocvimg = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\isoRegistered3D_square.png");
 	glGenTextures(1, &texture);
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -427,7 +458,7 @@ void FittingWindow::initialize()
 	cv::flip(ocvimg, ocvimg, 0); // Flip around the x-axis
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ocvimg.cols, ocvimg.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, ocvimg.ptr(0));
 	
-	std::cout << "GL_SHADING_LANGUAGE_VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION);
+	std::cout << "GL_SHADING_LANGUAGE_VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
 	// Set nearest filtering mode for texture minification
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -448,12 +479,13 @@ void FittingWindow::render()
 	const qreal retinaScale = devicePixelRatio();
 	glViewport(0, 0, width() * retinaScale, height() * retinaScale);
 
-	glClear(GL_COLOR_BUFFER_BIT);
+	//glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	// Enable depth buffer
-	glEnable(GL_DEPTH_TEST); // could go to init? Don't know
+	glEnable(GL_DEPTH_TEST); // to init
 	// Enable back face culling
-	glEnable(GL_CULL_FACE); // could go to init? Don't know
+	glEnable(GL_CULL_FACE); // to init
 
 	glEnable(GL_TEXTURE_2D);
 
@@ -462,133 +494,134 @@ void FittingWindow::render()
 
 	m_program->bind();
 
+	float aspect = static_cast<float>(width()) / static_cast<float>(height());
 	QMatrix4x4 matrix;
-	//matrix.perspective(60, 4.0 / 3.0, 0.1, 1000.0);
+	// qDebug() << matrix;
 	//matrix.flipCoordinates();
 	matrix.ortho(-70.0f, 70.0f, -70.0f, 70.0f, 0.1f, 1000.0f);
+	//matrix.ortho(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
 	//matrix.ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 1000.0f);
+	//matrix.perspective(60, aspect, 0.1, 100.0);
 	
 	//matrix.translate(0, 0, -2);
 	matrix.translate(0, 0, -50);
 	//matrix.rotate(100.0f * m_frame / screen()->refreshRate(), 0, 1, 0);
 	//matrix.rotate(180, 0, 1, 0);
+	//matrix.rotate(30.0f, 1.0f, 0.0f, 0.0f);
+	//matrix.rotate(50.0f, 0.0f, 1.0f, 0.0f);
 	//matrix.scale(1.0f / 70.0f, 1.0f / 70.0f, 1.0f / 70.0f);
 
 	m_program->setUniformValue(m_matrixUniform, matrix);
 
-/*	GLfloat vertices[] = {
-		0.0f, 0.707f, 0.0f,
-		-0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f
-	};*/
-	vector<GLfloat> vertices;
-/*	vertices.push_back(0.0f);
-	vertices.push_back(0.707f);
-	vertices.push_back(0.0f);
-	vertices.push_back(-0.5f);
-	vertices.push_back(-0.5f);
-	vertices.push_back(0.0f);
-	vertices.push_back(0.5f);
-	vertices.push_back(-0.5f);
-	vertices.push_back(0.0f);*/
-
+	// Store the 3DMM vertices in GLfloat's
+	vector<GLfloat> mmVertices;
 	render::Mesh mesh = morphableModel.getMean();
-	
-	vertices.clear();
-	//int nt = 6736;
+	mmVertices.clear();
+	//int nt = 6736; //glDrawArrays(GL_TRIANGLES, 0, nt*3); // how many vertices to render
 	int nt = mesh.tvi.size();
-	//for (const auto& triangle : mesh.tvi)
 	for (int i = 0; i < nt; ++i)
 	{
 		// First vertex x, y, z of the triangle
 		const auto& triangle = mesh.tvi[i];
-		vertices.push_back(mesh.vertex[triangle[0]].position[0]);
-		vertices.push_back(mesh.vertex[triangle[0]].position[1]);
-		vertices.push_back(mesh.vertex[triangle[0]].position[2]);
+		mmVertices.push_back(mesh.vertex[triangle[0]].position[0]);
+		mmVertices.push_back(mesh.vertex[triangle[0]].position[1]);
+		mmVertices.push_back(mesh.vertex[triangle[0]].position[2]);
 		// Second vertex x, y, z
-		vertices.push_back(mesh.vertex[triangle[1]].position[0]);
-		vertices.push_back(mesh.vertex[triangle[1]].position[1]);
-		vertices.push_back(mesh.vertex[triangle[1]].position[2]);
+		mmVertices.push_back(mesh.vertex[triangle[1]].position[0]);
+		mmVertices.push_back(mesh.vertex[triangle[1]].position[1]);
+		mmVertices.push_back(mesh.vertex[triangle[1]].position[2]);
 		// Third vertex x, y, z
-		vertices.push_back(mesh.vertex[triangle[2]].position[0]);
-		vertices.push_back(mesh.vertex[triangle[2]].position[1]);
-		vertices.push_back(mesh.vertex[triangle[2]].position[2]);
+		mmVertices.push_back(mesh.vertex[triangle[2]].position[0]);
+		mmVertices.push_back(mesh.vertex[triangle[2]].position[1]);
+		mmVertices.push_back(mesh.vertex[triangle[2]].position[2]);
 	}
-
-
-/*	GLfloat colors[] = {
-		1.0f, 0.0f, 0.0f,
-		0.0f, 1.0f, 0.0f,
-		0.0f, 0.0f, 1.0f
-	};*/
-	vector<GLfloat> colors;
+	vector<GLfloat> mmColors;
 	for (int i = 0; i < nt; ++i)
 	{
 		// First vertex x, y, z of the triangle
 		const auto& triangle = mesh.tci[i];
-		colors.push_back(mesh.vertex[triangle[0]].color[0]);
-		colors.push_back(mesh.vertex[triangle[0]].color[1]);
-		colors.push_back(mesh.vertex[triangle[0]].color[2]);
+		mmColors.push_back(mesh.vertex[triangle[0]].color[0]);
+		mmColors.push_back(mesh.vertex[triangle[0]].color[1]);
+		mmColors.push_back(mesh.vertex[triangle[0]].color[2]);
 		// Second vertex x, y, z
-		colors.push_back(mesh.vertex[triangle[1]].color[0]);
-		colors.push_back(mesh.vertex[triangle[1]].color[1]);
-		colors.push_back(mesh.vertex[triangle[1]].color[2]);
+		mmColors.push_back(mesh.vertex[triangle[1]].color[0]);
+		mmColors.push_back(mesh.vertex[triangle[1]].color[1]);
+		mmColors.push_back(mesh.vertex[triangle[1]].color[2]);
 		// Third vertex x, y, z
-		colors.push_back(mesh.vertex[triangle[2]].color[0]);
-		colors.push_back(mesh.vertex[triangle[2]].color[1]);
-		colors.push_back(mesh.vertex[triangle[2]].color[2]);
+		mmColors.push_back(mesh.vertex[triangle[2]].color[0]);
+		mmColors.push_back(mesh.vertex[triangle[2]].color[1]);
+		mmColors.push_back(mesh.vertex[triangle[2]].color[2]);
 	}
-	/*
-	//glVertexAttribPointer(m_posAttr, 2, GL_FLOAT, GL_FALSE, 0, vertices);
-	glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &vertices[0]);
-	glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &colors[0]);
-
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-
-	glDrawArrays(GL_TRIANGLES, 0, nt*3); // how many vertices to render
-
-	glDisableVertexAttribArray(1);
-	glDisableVertexAttribArray(0);
-	*/
-
-	GLfloat cube[] = {
-	-0.5f, -0.5f, 0.0f,
-	0.5f, -0.5f, 0.0f,
-	-0.5f, 0.5f, 0.0f,
-
-	-0.5f, 0.5f, 0.0f,
-	0.5f, -0.5f, 0.0f,
-	0.5f, 0.5f, 0.0f
+	vector<GLfloat> mmTex;
+	for (int i = 0; i < nt; ++i)
+	{
+		// First vertex u, v of the triangle
+		const auto& triangle = mesh.tci[i]; // use tti?
+		mmTex.push_back(mesh.vertex[triangle[0]].texcrd[0]);
+		mmTex.push_back(mesh.vertex[triangle[0]].texcrd[1]);
+		// Second vertex u, v
+		mmTex.push_back(mesh.vertex[triangle[1]].texcrd[0]);
+		mmTex.push_back(mesh.vertex[triangle[1]].texcrd[1]);
+		// Third vertex u, v
+		mmTex.push_back(mesh.vertex[triangle[2]].texcrd[0]);
+		mmTex.push_back(mesh.vertex[triangle[2]].texcrd[1]);
+	}
+	
+	struct Triangle {
+		Triangle(cv::Point3f v0, cv::Point3f v1, cv::Point3f v2) : v0(v0), v1(v1), v2(v2) {};
+		cv::Point3f v0;
+		cv::Point3f v1;
+		cv::Point3f v2;
 	};
-	GLfloat cubeTex[] = {
+	std::vector<Triangle> tris;
+	tris.emplace_back(Triangle({ 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }));
+	tris.emplace_back(Triangle({ 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 0.0f }));
+
+   GLfloat vertices[] = {
+        0.0f, 1.0f, 0.0f, 
+        0.0f, 0.0f, 0.0f, 
+        1.0f, 0.0f, 0.0f,
+
+		0.0f, 1.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 1.0f, 0.0f
+    };
+
+	GLfloat texCoords[] = {
+		0.0f, 1.0f,
 		0.0f, 0.0f,
 		1.0f, 0.0f,
-		0.0f, 1.0f,
 
 		0.0f, 1.0f,
 		1.0f, 0.0f,
 		1.0f, 1.0f
 	};
-	GLfloat cubeCols[] = {
-	1.0f, 0.0f, 0.0f,
-	0.0f, 1.0f, 0.0f,
-	0.0f, 0.0f, 1.0f,
 
-	1.0f, 0.0f, 0.0f,
-	0.0f, 1.0f, 0.0f,
-	0.0f, 0.0f, 1.0f
-	};
+    GLfloat colors[] = {
+        1.0f, 0.0f, 0.0f,
+        1.0f, 0.0f, 0.0f,
+        1.0f, 0.0f, 0.0f,
+		
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f
+    };
+	glEnable(GL_TEXTURE_2D);
 	matrix.setToIdentity();
-	matrix.ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 1000.0f);
+	matrix.ortho(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
+	//matrix.ortho(-70.0f, 70.0f, -70.0f, 70.0f, 0.1f, 1000.0f);
+	//matrix.perspective(60, aspect, 0.1, 100.0);
 	matrix.translate(0, 0, -2);
+	//matrix.rotate(30.0f, 1.0f, 0.0f, 0.0f);
+	//matrix.rotate(50.0f, 0.0f, 1.0f, 0.0f);
+	matrix.scale(0.010f);
+
 	m_program->setUniformValue(m_matrixUniform, matrix);
 
-	glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, cube);
-	glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, cubeCols);
-	glVertexAttribPointer(m_texAttr, 2, GL_FLOAT, GL_FALSE, 0, cubeTex);
-
-	m_program->setAttributeValue(m_texWeightAttr, 0.7f);
+	glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &mmVertices[0]); // vertices
+    glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &mmColors[0]); // colors
+	glVertexAttribPointer(m_texAttr, 2, GL_FLOAT, GL_FALSE, 0, &mmTex[0]); // texCoords
+	m_program->setAttributeValue(m_texWeightAttr, 1.0f);
 	m_program->setUniformValue("texture", texture);
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -597,7 +630,7 @@ void FittingWindow::render()
 	glEnableVertexAttribArray(m_colAttr);
 	glEnableVertexAttribArray(m_texAttr);
 
-	glDrawArrays(GL_TRIANGLES, 0, 6); // how many vertices to render
+	glDrawArrays(GL_TRIANGLES, 0, nt*3); // 6; (2 triangles) how many vertices to render
 
 	glDisableVertexAttribArray(m_texAttr);
 	glDisableVertexAttribArray(m_colAttr);
@@ -608,14 +641,113 @@ void FittingWindow::render()
 		renderModel = true;
 	}
 
-	
-
 	m_program->release();
-
-	//QPainter painter;
-	//QPixmap bg("img.png");
+	/*
+	if (!m_device)
+		m_device = new QOpenGLPaintDevice;
+	m_device->setSize(size());
+	
+	QPainter painter(m_device);
+	QPen pen(Qt::green, 2);
+	painter.setPen(pen);
+	//painter.setPen(Qt::blue);
+	//painter.setFont(QFont("Arial", 30));
+	//painter.drawText(10, 10, 50, 50, Qt::AlignCenter, "Qt");
+	painter.drawLine(QLine(20, 20, 50, 100));
+	painter.drawLine(10, 10, 50, 50);
+	painter.drawRect(10, 10, 50, 50);
+	painter.drawText(30, 30, 50, 50, Qt::AlignLeft, "asdf");
+	//QPixmap bg("C:\\Users\\Patrik\\Documents\\GitHub\\img.png");
 	//painter.drawPixmap(0, 0, bg.scaled(size()));
+	int viewport[4];
+	glGetIntegerv(GL_VIEWPORT, viewport); // (X, Y, Width, Height)
+	*/
+	// the destination (atm empty) texture map. Coords come from texCoord.
+	//cv::Mat textureMap(512, 512, inputImage.type());
+	cv::Mat textureMap(512, 512, CV_8UC3);
+	bool first = true;
+	for (const auto& tri : tris) {
+		cv::Point2f srcTri[3];
+		cv::Point2f dstTri[3];
+		QVector4D vec(tri.v0.x, tri.v0.y, tri.v0.z, 1.0f);
+		QVector4D res = matrix * vec;
+		res /= res.w();
+		float x_w = (res.x() + 1)*(width() / 2.0f) + 0.0f;
+		float y_w = (res.y() + 1)*(height() / 2.0f) + 0.0f;
+		y_w = height() - y_w; // Qt: Origin top-left. OpenGL: bottom-left.
+		//QPen myPen(Qt::green);
+		//painter.setPen(myPen);
+		//painter.setBrush(Qt::NoBrush); // should not be necessary, but doesn't hurt
+		//painter.drawText(x_w, y_w, 20, 20, Qt::AlignLeft, "S0");
+		srcTri[0] = cv::Point2f(x_w, y_w);
 
+		vec = QVector4D(tri.v1.x, tri.v1.y, tri.v1.z, 1.0f);
+		res = matrix * vec;
+		res /= res.w();
+		x_w = (res.x() + 1)*(width() / 2.0f) + 0.0f;
+		y_w = (res.y() + 1)*(height() / 2.0f) + 0.0f;
+		y_w = height() - y_w; // Qt: Origin top-left. OpenGL: bottom-left.
+		//painter.drawText(x_w, y_w, 20, 20, Qt::AlignLeft, "S1");
+		srcTri[1] = cv::Point2f(x_w, y_w);
+
+		vec = QVector4D(tri.v2.x, tri.v2.y, tri.v2.z, 1.0f);
+		res = matrix * vec;
+		res /= res.w();
+		x_w = (res.x() + 1)*(width() / 2.0f) + 0.0f;
+		y_w = (res.y() + 1)*(height() / 2.0f) + 0.0f;
+		y_w = height() - y_w; // Qt: Origin top-left. OpenGL: bottom-left.
+		//painter.drawText(x_w, y_w, 20, 20, Qt::AlignLeft, "S2");
+		srcTri[2] = cv::Point2f(x_w, y_w);
+
+		//cv::Mat tmpComparisonGt = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\img.png");
+		cv::Mat tmpComparisonGt = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\isoRegistered3D_square.png");
+		
+		// ROI in the source image:
+		// Todo: Check if the triangle is on screen. If it's outside, we crash here.
+		float src_tri_min_x = std::min(srcTri[0].x, std::min(srcTri[1].x, srcTri[2].x)); // note: might be better to round later (i.e. use the float points for getAffineTransform for a more accurate warping)
+		float src_tri_max_x = std::max(srcTri[0].x, std::max(srcTri[1].x, srcTri[2].x));
+		float src_tri_min_y = std::min(srcTri[0].y, std::min(srcTri[1].y, srcTri[2].y));
+		float src_tri_max_y = std::max(srcTri[0].y, std::max(srcTri[1].y, srcTri[2].y));
+		cv::Mat inputImage = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\box_screenbuffer10.png");
+		//cv::resize(inputImage, inputImage, cv::Size(width(), height())); // framebuffer should have size of the image (ok not necessarily. What about mobile?) (well it should, to get optimal quality (and everywhere the same quality)?)
+		Mat inputImageRoi = inputImage.rowRange(src_tri_min_y, src_tri_max_y).colRange(src_tri_min_x, src_tri_max_x); // cvRound here?
+		srcTri[0] -= Point2f(src_tri_min_x, src_tri_min_y);
+		srcTri[1] -= Point2f(src_tri_min_x, src_tri_min_y);
+		srcTri[2] -= Point2f(src_tri_min_x, src_tri_min_y); // shift all the points to correspond to the roi
+
+		if (first) {
+			dstTri[0] = cv::Point2f(textureMap.cols*0.0f, textureMap.rows*0.0f);
+			dstTri[1] = cv::Point2f(textureMap.cols*0.0f, textureMap.rows*1.0f - 1);
+			dstTri[2] = cv::Point2f(textureMap.cols*1.0f - 1, textureMap.rows*1.0f - 1);
+			first = false;
+		}
+		else
+		{
+			dstTri[0] = cv::Point2f(textureMap.cols*0.0f, textureMap.rows*0.0f);
+			dstTri[1] = cv::Point2f(textureMap.cols*1.0f - 1, textureMap.rows*1.0f - 1);
+			dstTri[2] = cv::Point2f(textureMap.cols*1.0f - 1, textureMap.rows*0.0f);
+		}
+
+		/// Get the Affine Transform
+		cv::Mat warp_mat = getAffineTransform(srcTri, dstTri);
+
+		/// Apply the Affine Transform just found to the src image
+		//cv::Mat warp_dst = cv::Mat::zeros(src.rows, src.cols, src.type());
+		//warpAffine(src, warp_dst, warp_mat, warp_dst.size());
+		cv::Mat tmpDstBuffer = Mat::zeros(textureMap.rows, textureMap.cols, inputImage.type()); // I think using the source-size here is not correct. The dst might be larger. We should warp the endpoints and set to max-w/h. No, I think it would be even better to directly warp to the final textureMap size. (so that the last step is only a 1:1 copy)
+		warpAffine(inputImageRoi, tmpDstBuffer, warp_mat, tmpDstBuffer.size(), cv::INTER_CUBIC, cv::BORDER_TRANSPARENT); // last row/col is zeros, depends on interpolation method. Maybe because of rounding or interpolation? So it cuts a little. Maybe try to implement by myself?
+
+		// only copy to final img if point is inside the triangle (or on the border)
+		for (int x = std::min(dstTri[0].x, std::min(dstTri[1].x, dstTri[2].x)); x < std::max(dstTri[0].x, std::max(dstTri[1].x, dstTri[2].x)); ++x) {
+			for (int y = std::min(dstTri[0].y, std::min(dstTri[1].y, dstTri[2].y)); y < std::max(dstTri[0].y, std::max(dstTri[1].y, dstTri[2].y)); ++y) {
+				if (isPointInTriangle(cv::Point2f(x, y), dstTri[0], dstTri[1], dstTri[2])) {
+					textureMap.at<cv::Vec3b>(y, x) = tmpDstBuffer.at<cv::Vec3b>(y, x);
+				}
+			}
+		}
+	}
+	//cv::imwrite("C:\\Users\\Patrik\\Documents\\GitHub\\img_extracted2.png", textureMap);
+	
 	++m_frame;
 }
 
