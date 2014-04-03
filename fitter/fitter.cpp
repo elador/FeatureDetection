@@ -614,7 +614,7 @@ void FittingWindow::render()
 	matrix.translate(0, 0, -2);
 	//matrix.rotate(30.0f, 1.0f, 0.0f, 0.0f);
 	//matrix.rotate(50.0f, 0.0f, 1.0f, 0.0f);
-	matrix.scale(0.010f);
+	matrix.scale(0.009f);
 
 	m_program->setUniformValue(m_matrixUniform, matrix);
 
@@ -662,14 +662,17 @@ void FittingWindow::render()
 	int viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport); // (X, Y, Width, Height)
 	*/
+	
 	// the destination (atm empty) texture map. Coords come from texCoord.
 	//cv::Mat textureMap(512, 512, inputImage.type());
 	cv::Mat textureMap(512, 512, CV_8UC3);
-	bool first = true;
-	for (const auto& tri : tris) {
+
+	for (const auto& triangleIndices : mesh.tvi) {
+
 		cv::Point2f srcTri[3];
 		cv::Point2f dstTri[3];
-		QVector4D vec(tri.v0.x, tri.v0.y, tri.v0.z, 1.0f);
+		//QVector4D vec(tri.v0.x, tri.v0.y, tri.v0.z, 1.0f);
+		QVector4D vec(mesh.vertex[triangleIndices[0]].position[0], mesh.vertex[triangleIndices[0]].position[1], mesh.vertex[triangleIndices[0]].position[2], 1.0f);
 		QVector4D res = matrix * vec;
 		res /= res.w();
 		float x_w = (res.x() + 1)*(width() / 2.0f) + 0.0f;
@@ -681,7 +684,8 @@ void FittingWindow::render()
 		//painter.drawText(x_w, y_w, 20, 20, Qt::AlignLeft, "S0");
 		srcTri[0] = cv::Point2f(x_w, y_w);
 
-		vec = QVector4D(tri.v1.x, tri.v1.y, tri.v1.z, 1.0f);
+		//vec = QVector4D(tri.v1.x, tri.v1.y, tri.v1.z, 1.0f);
+		vec = QVector4D(mesh.vertex[triangleIndices[1]].position[0], mesh.vertex[triangleIndices[1]].position[1], mesh.vertex[triangleIndices[1]].position[2], 1.0f);
 		res = matrix * vec;
 		res /= res.w();
 		x_w = (res.x() + 1)*(width() / 2.0f) + 0.0f;
@@ -690,7 +694,8 @@ void FittingWindow::render()
 		//painter.drawText(x_w, y_w, 20, 20, Qt::AlignLeft, "S1");
 		srcTri[1] = cv::Point2f(x_w, y_w);
 
-		vec = QVector4D(tri.v2.x, tri.v2.y, tri.v2.z, 1.0f);
+		//vec = QVector4D(tri.v2.x, tri.v2.y, tri.v2.z, 1.0f);
+		vec = QVector4D(mesh.vertex[triangleIndices[2]].position[0], mesh.vertex[triangleIndices[2]].position[1], mesh.vertex[triangleIndices[2]].position[2], 1.0f);
 		res = matrix * vec;
 		res /= res.w();
 		x_w = (res.x() + 1)*(width() / 2.0f) + 0.0f;
@@ -710,23 +715,14 @@ void FittingWindow::render()
 		float src_tri_max_y = std::max(srcTri[0].y, std::max(srcTri[1].y, srcTri[2].y));
 		cv::Mat inputImage = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\box_screenbuffer10.png");
 		//cv::resize(inputImage, inputImage, cv::Size(width(), height())); // framebuffer should have size of the image (ok not necessarily. What about mobile?) (well it should, to get optimal quality (and everywhere the same quality)?)
-		Mat inputImageRoi = inputImage.rowRange(src_tri_min_y, src_tri_max_y).colRange(src_tri_min_x, src_tri_max_x); // cvRound here?
+		Mat inputImageRoi = inputImage.rowRange(cvFloor(src_tri_min_y), cvCeil(src_tri_max_y)).colRange(cvFloor(src_tri_min_x), cvCeil(src_tri_max_x)); // We round down and up. ROI is possibly larger. But wrong pixels get thrown away later when we check if the point is inside the triangle? Correct?
 		srcTri[0] -= Point2f(src_tri_min_x, src_tri_min_y);
 		srcTri[1] -= Point2f(src_tri_min_x, src_tri_min_y);
 		srcTri[2] -= Point2f(src_tri_min_x, src_tri_min_y); // shift all the points to correspond to the roi
 
-		if (first) {
-			dstTri[0] = cv::Point2f(textureMap.cols*0.0f, textureMap.rows*0.0f);
-			dstTri[1] = cv::Point2f(textureMap.cols*0.0f, textureMap.rows*1.0f - 1);
-			dstTri[2] = cv::Point2f(textureMap.cols*1.0f - 1, textureMap.rows*1.0f - 1);
-			first = false;
-		}
-		else
-		{
-			dstTri[0] = cv::Point2f(textureMap.cols*0.0f, textureMap.rows*0.0f);
-			dstTri[1] = cv::Point2f(textureMap.cols*1.0f - 1, textureMap.rows*1.0f - 1);
-			dstTri[2] = cv::Point2f(textureMap.cols*1.0f - 1, textureMap.rows*0.0f);
-		}
+		dstTri[0] = cv::Point2f(textureMap.cols*mesh.vertex[triangleIndices[0]].texcrd[0], textureMap.rows*mesh.vertex[triangleIndices[0]].texcrd[1] - 1.0f);
+		dstTri[1] = cv::Point2f(textureMap.cols*mesh.vertex[triangleIndices[1]].texcrd[0], textureMap.rows*mesh.vertex[triangleIndices[1]].texcrd[1] - 1.0f);
+		dstTri[2] = cv::Point2f(textureMap.cols*mesh.vertex[triangleIndices[2]].texcrd[0], textureMap.rows*mesh.vertex[triangleIndices[2]].texcrd[1] - 1.0f);
 
 		/// Get the Affine Transform
 		cv::Mat warp_mat = getAffineTransform(srcTri, dstTri);
@@ -746,7 +742,7 @@ void FittingWindow::render()
 			}
 		}
 	}
-	//cv::imwrite("C:\\Users\\Patrik\\Documents\\GitHub\\img_extracted2.png", textureMap);
+	cv::imwrite("C:\\Users\\Patrik\\Documents\\GitHub\\img_extracted10.png", textureMap);
 	
 	++m_frame;
 }
