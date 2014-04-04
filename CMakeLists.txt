@@ -17,18 +17,17 @@ message(STATUS "Options:")
 option(WITH_MSKINECT_SDK "Enables the use of a Kinect as a webcam (using the MS Kinect SDK for Windows)" OFF)
 message(STATUS "WITH_MSKINECT_SDK: ${WITH_MSKINECT_SDK}")
 
-
 add_subdirectory(libLogging)			# Text logging
-#add_subdirectory(libImageLogging)		# Image logging
+add_subdirectory(libImageLogging)		# Image logging
 
 add_subdirectory(libImageIO)			# Input-library for cameras, Kinect and hard-drive images.
-#add_subdirectory(libImageProcessing)	# Image pyramids, patch extraction, feature transformation
-#add_subdirectory(libClassification)		# Classification and regression library
+add_subdirectory(libImageProcessing)	# Image pyramids, patch extraction, feature transformation
+add_subdirectory(libClassification)		# Classification and regression library
 #add_subdirectory(libSvm)				# libSVM (support vector classification and regression)
 #add_subdirectory(libLinear)				# liblinear (linear classification with SVM and regression)
 
-#add_subdirectory(libDetection)			# Sliding-window detection, Skin detection
-#add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
+add_subdirectory(libDetection)			# Sliding-window detection, Skin detection
+add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 
 add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
 add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes; Camera (Pose) estimation
