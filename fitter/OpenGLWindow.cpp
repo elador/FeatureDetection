@@ -1,7 +1,5 @@
 #include "OpenGLWindow.hpp"
 
-#include "render/MeshUtils.hpp"
-
 #include <QtCore/QCoreApplication>
 
 #include <QtGui/QOpenGLContext>
@@ -27,7 +25,7 @@ void OpenGLWindow::render(QPainter *painter)
 	Q_UNUSED(painter);
 }
 
-void OpenGLWindow::initialize()
+void OpenGLWindow::initialize(QOpenGLContext* context)
 {
 }
 
@@ -91,13 +89,10 @@ void OpenGLWindow::renderNow()
 
 	if (needsInitialize) {
 		initializeOpenGLFunctions();
-		r = new render::QOpenGLRenderer(m_context);
-		r->setViewport(width(), height(), devicePixelRatio());
-		//initialize();
+		initialize(m_context);
 	}
 
-	//render(); // call r->setViewport before every render?
-	r->render(render::utils::MeshUtils::createCube());
+	render();
 
 	m_context->swapBuffers(this);
 

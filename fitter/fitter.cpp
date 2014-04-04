@@ -201,34 +201,22 @@ public:
 		delete m_device;
 	}
 
-	void initialize();
+	void initialize(QOpenGLContext* context);
 	void render();
 	void fit();
 
 private:
-	GLuint loadShader(GLenum type, const char *source);
-
-	GLuint m_posAttr;
-	GLuint m_colAttr;
-	GLuint m_texAttr;
-	GLuint m_texWeightAttr;
-	GLuint m_matrixUniform;
-
-	GLuint texture;
-
-	QOpenGLShaderProgram *m_program;
 	int m_frame;
+
+	render::QOpenGLRenderer* r;
 	
 	QOpenGLPaintDevice *m_device;
 
 	shared_ptr<LabeledImageSource> labeledImageSource; // todo unique_ptr
 	morphablemodel::MorphableModel morphableModel;
-	bool renderModel = false;
 };
 
-FittingWindow::FittingWindow(shared_ptr<LabeledImageSource> labeledImageSource, morphablemodel::MorphableModel morphableModel) : m_program(0)
-, m_frame(0)
-, m_device(0)
+FittingWindow::FittingWindow(shared_ptr<LabeledImageSource> labeledImageSource, morphablemodel::MorphableModel morphableModel) : m_frame(0), m_device(0)
 {
 	this->labeledImageSource = labeledImageSource;
 	this->morphableModel = morphableModel;
@@ -473,22 +461,16 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-GLuint FittingWindow::loadShader(GLenum type, const char *source)
+void FittingWindow::initialize(QOpenGLContext* context)
 {
-	GLuint shader = glCreateShader(type);
-	glShaderSource(shader, 1, &source, 0);
-	glCompileShader(shader);
-	return shader;
-}
-
-void FittingWindow::initialize()
-{
-
+	r = new render::QOpenGLRenderer(context);
+	r->setViewport(width(), height(), devicePixelRatio());
 }
 
 void FittingWindow::render()
 {
-	
+	// call r->setViewport before every render?
+	r->render(render::utils::MeshUtils::createCube());
 	++m_frame;
 }
 

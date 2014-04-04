@@ -1,5 +1,3 @@
-#include "render/QOpenGLRenderer.hpp"
-
 #include <QtGui/QWindow>
 #include <QtGui/QOpenGLFunctions>
 
@@ -17,7 +15,7 @@ public:
 	virtual void render(QPainter *painter);
 	virtual void render();
 
-	virtual void initialize();
+	virtual void initialize(QOpenGLContext* context);
 
 	void setAnimating(bool animating);
 
@@ -29,8 +27,6 @@ protected:
 	bool event(QEvent *event);
 
 	void exposeEvent(QExposeEvent *event);
-
-	render::QOpenGLRenderer* r;
 
 private:
 	bool m_update_pending;
