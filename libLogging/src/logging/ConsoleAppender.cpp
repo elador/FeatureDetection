@@ -6,7 +6,7 @@
  */
 
 #include "logging/ConsoleAppender.hpp"
-#include "logging/loglevels.hpp"
+#include "logging/LogLevels.hpp"
 #include <iostream>
 #include <sstream>
 #include <iomanip>

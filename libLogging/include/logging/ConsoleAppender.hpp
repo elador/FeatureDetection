@@ -10,7 +10,7 @@
 #define CONSOLEAPPENDER_HPP_
 
 #include "logging/Appender.hpp"
-#include "logging/loglevels.hpp"
+#include "logging/LogLevels.hpp"
 
 namespace logging {
 

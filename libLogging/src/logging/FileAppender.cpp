@@ -6,7 +6,7 @@
  */
 
 #include "logging/FileAppender.hpp"
-#include "logging/loglevels.hpp"
+#include "logging/LogLevels.hpp"
 #include <ios>
 #include <iostream>
 #include <sstream>

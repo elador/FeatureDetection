@@ -9,7 +9,7 @@
 #ifndef LOGGER_HPP_
 #define LOGGER_HPP_
 
-#include "logging/loglevels.hpp"
+#include "logging/LogLevels.hpp"
 #include <string>
 #include <vector>
 #include <memory>

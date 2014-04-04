@@ -16,9 +16,9 @@
 # Eigen3:
 # -------
 # Windows: Set to the path of the unzipped Eigen3 file.
-#set( EIGEN3_INCLUDE_DIR "C:\\opencv\\eigen-eigen-ffa86ffb5570\\" CACHE STRING "Directory of the Eigen3 headers" FORCE )
+#set( EIGEN3_INCLUDE_DIR "C:\\eigen\\eigen-ffa86ffb5570\\" CACHE STRING "Directory of the Eigen3 headers" FORCE )
 # Linux: Can be left empty when installed system-wide. (Note/Todo: Doesnt work with Eigen 3.0.5 from Ubuntu 12.04). Otherwise, set the path manually.
-set( EIGEN3_INCLUDE_DIR "/user/cvssppgr/ph00111/eigen-ffa86ffb5570/" CACHE STRING "Directory of the Eigen3 headers" FORCE )
+#set( EIGEN3_INCLUDE_DIR "/home/user/eigen-ffa86ffb5570/" CACHE STRING "Directory of the Eigen3 headers" FORCE )
 
 
 # Mechanism via ConfigLIB.cmake in 3rd party library directory
@@ -39,13 +39,12 @@ set( EIGEN3_INCLUDE_DIR "/user/cvssppgr/ph00111/eigen-ffa86ffb5570/" CACHE STRIN
 
 # QT:
 # -------
-# Windows: Compile Qt for VS2013. Set these variables to the directories where the CMake config files can be found.
-#set( Qt5Core_DIR "C:\\Qt\\Qt5git\\qt5\\qtbase\\lib\\cmake\\Qt5Core" CACHE STRING "Path to Qt5CoreConfig.cmake" FORCE )
-#set( Qt5Gui_DIR "C:\\Qt\\Qt5git\\qt5\\qtbase\\lib\\cmake\\Qt5Gui" CACHE STRING "Path to Qt5GuiConfig.cmake" FORCE )
+# Windows: Use Qt 5.3 beta which includes binaries for VS2013. Set these variables to the directories where the CMake config files can be found.
+#set( Qt5Core_DIR "C:\\Qt\\5.3\\msvc2013_64\\lib\\cmake\\Qt5Core" CACHE STRING "Path to Qt5CoreConfig.cmake" FORCE )
+#set( Qt5Gui_DIR "C:\\Qt\\5.3\\msvc2013_64\\lib\\cmake\\Qt5Gui" CACHE STRING "Path to Qt5GuiConfig.cmake" FORCE )
 # Linux: It is recommended to use the "Qt Online Installer" (64-bit) from http://qt-project.org/downloads. Set below-mentioned paths accordingly.
 #set( Qt5Core_DIR "/home/user/Qt/5.2.1/gcc_64/lib/cmake/Qt5Core" CACHE STRING "Path to Qt5CoreConfig.cmake" FORCE )
-#set( Qt5Gui_DIR "/home/user/Qt/5.2.1/gcc_64/lib/cmake/Qt5Gui" CACHE STRING "Path to Qt5CoreConfig.cmake" FORCE )
-#set( Qt5Widgets_DIR "/home/cvssp2/pgr/ph00111/Qt/5.2.1/gcc_64/lib/cmake/Qt5Widgets" CACHE STRING "Path to Qt5CoreConfig.cmake" FORCE )
+#set( Qt5Gui_DIR "/home/user/Qt/5.2.1/gcc_64/lib/cmake/Qt5Gui" CACHE STRING "Path to Qt5GuiConfig.cmake" FORCE )
 
 # Configuration options
 # ==============================

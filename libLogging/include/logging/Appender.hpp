@@ -9,7 +9,7 @@
 #ifndef APPENDER_HPP_
 #define APPENDER_HPP_
 
-#include "logging/loglevels.hpp"
+#include "logging/LogLevels.hpp"
 #include <string>
 
 using std::string;

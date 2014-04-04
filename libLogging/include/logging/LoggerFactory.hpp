@@ -10,7 +10,7 @@
 #define LOGGERFACTORY_HPP_
 
 #include "logging/Logger.hpp" // We wouldn't need this include, we could use a forward declaration. But this way, our libs/apps only have to include one file to use the logger.
-#include "logging/loglevels.hpp" // Same as for Logger.hpp.
+#include "logging/LogLevels.hpp" // Same as for Logger.hpp.
 #include "logging/ConsoleAppender.hpp"
 
 #include <map>

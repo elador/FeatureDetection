@@ -15,7 +15,7 @@ SET(HEADERS
 	include/logging/Appender.hpp
 	include/logging/ConsoleAppender.hpp
 	include/logging/FileAppender.hpp
-	include/logging/loglevels.hpp
+	include/logging/LogLevels.hpp
 )
 SET(SOURCE
 	src/logging/Logger.cpp

@@ -28,7 +28,7 @@ namespace imageio {
 /**
  * Represents the different possible methods for gathering landmark files.
  */
-enum class GatherMethod { // Case inconsistent with "loglevels"
+enum class GatherMethod { // Change all enum classes to camelCase?
 	SEPARATE_FILES,		// Use one or more separate, user-specified files.
 	ONE_FILE_PER_IMAGE_SAME_DIR,	// Look for the landmark file in the same directory as the image resides.
 	ONE_FILE_PER_IMAGE_DIFFERENT_DIRS // Look for the landmark file in the directory of the image as well as
