@@ -1,3 +1,5 @@
+#include "render/QOpenGLRenderer.hpp"
+
 #include <QtGui/QWindow>
 #include <QtGui/QOpenGLFunctions>
 
@@ -27,6 +29,8 @@ protected:
 	bool event(QEvent *event);
 
 	void exposeEvent(QExposeEvent *event);
+
+	render::QOpenGLRenderer* r;
 
 private:
 	bool m_update_pending;

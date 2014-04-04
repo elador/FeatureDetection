@@ -22,7 +22,7 @@ Mesh MeshUtils::createCube()
 	cube.vertex.resize(24);
 
 	for (int i = 0; i < 24; i++)
-		cube.vertex[i].color = cv::Vec3f(1.0f, 1.0f, 1.0f);
+		cube.vertex[i].color = cv::Vec3f(1.0f, 1.0f, 0.0f);
 
 	cube.vertex[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
 	cube.vertex[0].texcrd = cv::Vec2f(0.0f, 0.0f);
@@ -117,8 +117,10 @@ Mesh MeshUtils::createCube()
 	cube.triangleList.push_back(render::Triangle(cube.vertex[20], cube.vertex[21], cube.vertex[22]));
 	cube.triangleList.push_back(render::Triangle(cube.vertex[20], cube.vertex[22], cube.vertex[23]));*/
 
+	cube.tci = cube.tvi;
+
 	cube.texture = std::make_shared<Texture>();
-	cube.texture->createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\up.png");
+	cube.texture->createFromFile("C:\\Users\\Patrik\\Documents\\Github\\img.png");
 	cube.hasTexture = true;
 
 	return cube;
