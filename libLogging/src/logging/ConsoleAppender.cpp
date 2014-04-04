@@ -21,11 +21,11 @@ using std::chrono::duration_cast;
 
 namespace logging {
 
-ConsoleAppender::ConsoleAppender(loglevel logLevel) : Appender(logLevel) {}
+ConsoleAppender::ConsoleAppender(Loglevel logLevel) : Appender(logLevel) {}
 
 ConsoleAppender::~ConsoleAppender() {}
 
-void ConsoleAppender::log(const loglevel logLevel, const string loggerName, const string logMessage)
+void ConsoleAppender::log(const Loglevel logLevel, const string loggerName, const string logMessage)
 {
 	if(logLevel <= this->logLevel)
 		cout << getCurrentTime() << ' ' << loglevelToString(logLevel) << ' ' << "[" << loggerName << "] " << logMessage << std::endl;

@@ -57,10 +57,12 @@ message(status "OpenGL libs: ${Qt5Gui_OPENGL_LIBRARIES}")
 SET(SOURCE
 	fitter.cpp
 	OpenGLWindow.cpp
+	FittingWindow.cpp
 )
 
 SET(HEADERS
 	OpenGLWindow.hpp
+	FittingWindow.hpp
 )
 
 ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )

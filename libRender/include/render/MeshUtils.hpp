@@ -13,6 +13,8 @@
 
 #include "opencv2/core/core.hpp"
 
+#include <QtGui/QMatrix4x4>
+
 #include <memory>
 
 using std::shared_ptr;
@@ -30,6 +32,9 @@ namespace render {
 			static Mesh createPlane();
 			static Mesh createPyramid();
 			static shared_ptr<Mesh> createTriangle();
+
+			static bool isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Point2f triV1, cv::Point2f triV2);
+			static cv::Mat extractTexture(render::Mesh mesh, QMatrix4x4 mvpMatrix, int viewportWidth, int viewportHeight, cv::Mat framebuffer); // Change QMatrix4x4 to cv::Mat so that software-renderer is not dependent on Qt?
 		};
 
 	} /* namespace utils */

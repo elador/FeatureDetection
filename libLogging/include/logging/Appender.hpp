@@ -26,13 +26,13 @@ class Appender {
 public:
 
 	/**
-	 * Construct a new appender that logs at a certain loglevel.
+	 * Construct a new appender that logs at a certain Loglevel.
 	 * TODO: 1) Should this really go into the interface?
 	 *       2) What about the default constructor, is one created? Should we disable it?
 	 *
 	 * @param[in] logLevel The log-level at which the appender should log. Required for all appenders.
 	 */
-	explicit Appender(loglevel logLevel) : logLevel(logLevel) {};
+	explicit Appender(Loglevel logLevel) : logLevel(logLevel) {};
 
 	virtual ~Appender() {};
 
@@ -43,7 +43,7 @@ public:
 	 * @param[in] loggerName The name of the logger that is logging the message.
 	 * @param[in] logMessage The message to be logged.
 	 */
-	virtual void log(const loglevel logLevel, const string loggerName, const string logMessage) = 0;	// const?
+	virtual void log(const Loglevel logLevel, const string loggerName, const string logMessage) = 0;	// const?
 
 	/**
 	 * Tests if this appender is actually doing logging at the given log-level.
@@ -55,7 +55,7 @@ public:
 	 * @param[in] logLevel The log-level to be tested for.
 	 * @return True if the appender is logging at this level, false otherwise.
 	 */
-	bool isLogLevelEnabled(const loglevel logLevel) const {
+	bool isLogLevelEnabled(const Loglevel logLevel) const {
 		return (this->logLevel >= logLevel);
 	};
 
@@ -64,7 +64,7 @@ public:
 	 *
 	 * @return The log-level at which this appender is logging the messages.
 	 */
-	loglevel getLogLevel() const {
+	Loglevel getLogLevel() const {
 		return logLevel;
 	};
 
@@ -73,12 +73,12 @@ public:
 	 *
 	 * @param[in] logLevel The log-level.
 	 */
-	void setLogLevel(const loglevel logLevel) {
+	void setLogLevel(const Loglevel logLevel) {
 		this->logLevel = logLevel;
 	};
 
 protected:
-	loglevel logLevel;
+	Loglevel logLevel;
 
 };
 

@@ -74,7 +74,7 @@ using boost::lexical_cast;
 using cv::Mat;
 using logging::Logger;
 using logging::LoggerFactory;
-using logging::loglevel;
+using logging::Loglevel;
 
 
 template<class T>
@@ -149,15 +149,15 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	loglevel logLevel;
-	if(boost::iequals(verboseLevelConsole, "PANIC")) logLevel = loglevel::PANIC;
-	else if(boost::iequals(verboseLevelConsole, "ERROR")) logLevel = loglevel::ERROR;
-	else if(boost::iequals(verboseLevelConsole, "WARN")) logLevel = loglevel::WARN;
-	else if(boost::iequals(verboseLevelConsole, "INFO")) logLevel = loglevel::INFO;
-	else if(boost::iequals(verboseLevelConsole, "DEBUG")) logLevel = loglevel::DEBUG;
-	else if(boost::iequals(verboseLevelConsole, "TRACE")) logLevel = loglevel::TRACE;
+	Loglevel logLevel;
+	if(boost::iequals(verboseLevelConsole, "PANIC")) logLevel = Loglevel::Panic;
+	else if(boost::iequals(verboseLevelConsole, "ERROR")) logLevel = Loglevel::Error;
+	else if(boost::iequals(verboseLevelConsole, "WARN")) logLevel = Loglevel::Warn;
+	else if(boost::iequals(verboseLevelConsole, "INFO")) logLevel = Loglevel::Info;
+	else if(boost::iequals(verboseLevelConsole, "DEBUG")) logLevel = Loglevel::Debug;
+	else if(boost::iequals(verboseLevelConsole, "TRACE")) logLevel = Loglevel::Trace;
 	else {
-		cout << "Error: Invalid loglevel." << endl;
+		cout << "Error: Invalid Loglevel." << endl;
 		return EXIT_FAILURE;
 	}
 	

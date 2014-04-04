@@ -22,7 +22,7 @@ using std::chrono::duration_cast;
 
 namespace logging {
 
-FileAppender::FileAppender(loglevel logLevel, string filename) : Appender(logLevel)
+FileAppender::FileAppender(Loglevel logLevel, string filename) : Appender(logLevel)
 {
 	file.open(filename, std::ios::out | std::ios::app);
 	if (!file.is_open())
@@ -36,7 +36,7 @@ FileAppender::~FileAppender()
 	file.close();
 }
 
-void FileAppender::log(const loglevel logLevel, const string loggerName, const string logMessage)
+void FileAppender::log(const Loglevel logLevel, const string loggerName, const string logMessage)
 {
 	if(logLevel <= this->logLevel)
 		file << getCurrentTime() << ' ' << loglevelToString(logLevel) << ' ' << "[" << loggerName << "] " << logMessage << std::endl;
