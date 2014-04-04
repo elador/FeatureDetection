@@ -20,7 +20,7 @@ namespace logging {
  *
  * TODO is this ok here? Is there a better place? If we place it in the LoggerFactory or Logger, we have circular dependencies?
  */
-enum class Loglevel {
+enum class LogLevel {
 	Panic,	// Use to log extreme situations where the entire application execution could be affected due to some cause.
 	Error,	// Use to log all errors and exceptions that affect the functionality of the application.
 	Warn,	// Use to log warnings, i.e. situations that are usually unexpected but do not significantly affect the functionality.
@@ -31,31 +31,31 @@ enum class Loglevel {
 
 
 /**
- * Converts a Loglevel to a string.
+ * Converts a LogLevel to a string.
  *
- * @param[in] logLevel The Loglevel that will be converted to a string.
- * @return The Loglevel as a string.
+ * @param[in] logLevel The LogLevel that will be converted to a string.
+ * @return The LogLevel as a string.
  */
-static string loglevelToString(Loglevel logLevel)
+static string loglevelToString(LogLevel logLevel)
 {
 	switch (logLevel)
 	{
-	case Loglevel::Panic:
+	case LogLevel::Panic:
 		return string("PANIC");
 		break;
-	case Loglevel::Error:
+	case LogLevel::Error:
 		return string("ERROR");
 		break;
-	case Loglevel::Warn:
+	case LogLevel::Warn:
 		return string("WARN");
 		break;
-	case Loglevel::Info:
+	case LogLevel::Info:
 		return string("INFO");
 		break;
-	case Loglevel::Debug:
+	case LogLevel::Debug:
 		return string("DEBUG");
 		break;
-	case Loglevel::Trace:
+	case LogLevel::Trace:
 		return string("TRACE");
 		break;
 	default:

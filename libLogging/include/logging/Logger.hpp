@@ -98,7 +98,7 @@ private:
 	 * @param[in] logLevel The log-level of the message.
 	 * @param[in] logMessage The message to be logged.
 	 */
-	void log(const Loglevel logLevel, const string logMessage);
+	void log(const LogLevel logLevel, const string logMessage);
 
 };
 

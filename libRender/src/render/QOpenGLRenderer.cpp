@@ -8,6 +8,7 @@
 #include "render/QOpenGLRenderer.hpp"
 
 #include "render/Mesh.hpp"
+#include "render/MeshUtils.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -140,17 +141,17 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	//matrix.ortho(-70.0f, 70.0f, -70.0f, 70.0f, 0.1f, 1000.0f);
 	//matrix.perspective(60, aspect, 0.1, 100.0);
 	matrix.translate(0, 0, -2);
-	//matrix.rotate(30.0f, 1.0f, 0.0f, 0.0f);
-	//matrix.rotate(50.0f, 0.0f, 1.0f, 0.0f);
+	matrix.rotate(15.0f, 1.0f, 0.0f, 0.0f);
+	matrix.rotate(30.0f, 0.0f, 1.0f, 0.0f);
 	//matrix.scale(0.009f);
-	matrix.scale(0.3f);
+	matrix.scale(0.008f);
 
 	m_program->setUniformValue(m_matrixUniform, matrix);
 
 	glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &mmVertices[0]); // vertices
 	glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &mmColors[0]); // colors
 	glVertexAttribPointer(m_texAttr, 2, GL_FLOAT, GL_FALSE, 0, &mmTex[0]); // texCoords
-	m_program->setAttributeValue(m_texWeightAttr, 0.4f);
+	m_program->setAttributeValue(m_texWeightAttr, 1.0f);
 	m_program->setUniformValue("texture", texture);
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -167,9 +168,9 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 
 	m_program->release();
 
-	cv::Mat framebuffer = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\box_screenbuffer10.png");
-	//Mat textureMap = extractTexture(mesh, matrix, width(), height(), framebuffer);
-	//cv::imwrite("C:\\Users\\Patrik\\Documents\\GitHub\\img_extracted10.png", textureMap);
+	cv::Mat framebuffer = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\box_screenbuffer11.png");
+	cv::Mat textureMap = render::utils::MeshUtils::extractTexture(mesh, matrix, viewportWidth, viewportHeight, framebuffer);
+	cv::imwrite("C:\\Users\\Patrik\\Documents\\GitHub\\img_extracted11.png", textureMap);
 	++m_frame;
 }
 

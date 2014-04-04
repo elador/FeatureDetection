@@ -11,7 +11,6 @@
 #include "imageio/Landmark.hpp"
 #include "imageio/LandmarkCollection.hpp"
 
-
 #include "morphablemodel/OpenCVCameraEstimation.hpp"
 #include "morphablemodel/AffineCameraEstimation.hpp"
 #include "render/QOpenGLRenderer.hpp"
@@ -44,8 +43,10 @@ void FittingWindow::initialize(QOpenGLContext* context)
 
 void FittingWindow::render()
 {
+	// This function gets called by our subclass every time Qt is ready to render a frame
 	// call r->setViewport before every render?
-	r->render(render::utils::MeshUtils::createCube());
+	//r->render(render::utils::MeshUtils::createCube());
+	r->render(morphableModel.getMean());
 	++m_frame;
 }
 
