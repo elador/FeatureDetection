@@ -29,7 +29,7 @@ using logging::LoggerFactory;
 using boost::lexical_cast;
 
 
-FittingWindow::FittingWindow(shared_ptr<imageio::LabeledImageSource> labeledImageSource, morphablemodel::MorphableModel morphableModel) : m_frame(0), m_device(0)
+FittingWindow::FittingWindow(shared_ptr<imageio::LabeledImageSource> labeledImageSource, morphablemodel::MorphableModel morphableModel) : m_frame(0)/*, m_device(0)*/
 {
 	this->labeledImageSource = labeledImageSource;
 	this->morphableModel = morphableModel;

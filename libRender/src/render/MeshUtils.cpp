@@ -234,7 +234,7 @@ shared_ptr<Mesh> MeshUtils::createTriangle()
 }
 
 // Returns true if inside the tri or on the border
-bool isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Point2f triV1, cv::Point2f triV2) {
+bool MeshUtils::isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Point2f triV1, cv::Point2f triV2) {
 	/* See http://www.blackpawn.com/texts/pointinpoly/ */
 	// Compute vectors        
 	cv::Point2f v0 = triV2 - triV0;
@@ -259,7 +259,7 @@ bool isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Point2f triV1, 
 
 // framebuffer where to extract the texture from
 // note: framebuffer should have size of the image (ok not necessarily. What about mobile?) (well it should, to get optimal quality (and everywhere the same quality)?)
-cv::Mat extractTexture(render::Mesh mesh, QMatrix4x4 mvpMatrix, int viewportWidth, int viewportHeight, cv::Mat framebuffer) { // Change QMatrix4x4 to cv::Mat so that software-renderer is not dependent on Qt?
+cv::Mat MeshUtils::extractTexture(render::Mesh mesh, QMatrix4x4 mvpMatrix, int viewportWidth, int viewportHeight, cv::Mat framebuffer) { // Change QMatrix4x4 to cv::Mat so that software-renderer is not dependent on Qt?
 	// optional param cv::Mat textureMap = cv::Mat(512, 512, CV_8UC3) ?
 	//cv::Mat textureMap(512, 512, inputImage.type());
 	cv::Mat textureMap(512, 512, CV_8UC3);

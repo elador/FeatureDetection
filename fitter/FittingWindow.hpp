@@ -32,7 +32,7 @@ class FittingWindow : public OpenGLWindow
 public:
 	FittingWindow(std::shared_ptr<imageio::LabeledImageSource> labeledImageSource, morphablemodel::MorphableModel morphableModel);
 	~FittingWindow() {
-		delete m_device;
+		//delete m_device;
 	}
 
 	void initialize(QOpenGLContext* context);
@@ -44,7 +44,7 @@ private:
 
 	render::QOpenGLRenderer* r;
 
-	QOpenGLPaintDevice *m_device;
+	//QOpenGLPaintDevice *m_device; // for QPainter
 
 	std::shared_ptr<imageio::LabeledImageSource> labeledImageSource; // todo unique_ptr
 	morphablemodel::MorphableModel morphableModel;
