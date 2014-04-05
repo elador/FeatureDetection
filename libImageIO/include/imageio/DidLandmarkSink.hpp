@@ -1,13 +1,15 @@
 /*
- * NamedLandmarkSink.hpp
+ * DidLandmarkSink.hpp
  *
  *  Created on: 05.04.2014
  *      Author: Patrik Huber
  */
 #pragma once
 
-#ifndef NAMEDLANDMARKSINK_HPP_
-#define NAMEDLANDMARKSINK_HPP_
+#ifndef DIDLANDMARKSINK_HPP_
+#define DIDLANDMARKSINK_HPP_
+
+#include "imageio/NamedLandmarkSink.hpp"
 
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
@@ -21,12 +23,11 @@ class LandmarkCollection;
 
 /**
  * Sink for landmark collections where each landmark
- * is saved to a separate file with a filename.
+ * is saved to a separate file in the Surrey DID
+ * format. Each line is 'x y vertexId', x and y are int's? What about float? TODO CHECK
  */
-class NamedLandmarkSink {
+class DidLandmarkSink : public NamedLandmarkSink {
 public:
-
-	virtual ~NamedLandmarkSink() {}
 
 	/**
 	 * Adds a landmark collection and saves it to the given file.
@@ -34,8 +35,8 @@ public:
 	 * @param[in] collection The landmark collection.
 	 * @param[in] filename The file to which to save the landmarks, without file extension.
 	 */
-	virtual void add(const LandmarkCollection& collection, boost::filesystem::path filename) = 0;
+	void add(const LandmarkCollection& collection, boost::filesystem::path filename);
 };
 
 } /* namespace imageio */
-#endif /* NAMEDLANDMARKSINK_HPP_ */
+#endif /* DIDLANDMARKSINK_HPP_ */

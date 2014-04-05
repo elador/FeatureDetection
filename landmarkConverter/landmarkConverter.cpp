@@ -46,8 +46,10 @@
 
 #include "imageio/DefaultNamedLandmarkSource.hpp"
 #include "imageio/LandmarkFileGatherer.hpp"
+#include "imageio/RectLandmark.hpp"
 #include "imageio/IbugLandmarkFormatParser.hpp"
 #include "imageio/MuctLandmarkFormatParser.hpp"
+#include "imageio/DidLandmarkSink.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -97,7 +99,7 @@ int main(int argc, char *argv[])
 			("input-type,s", po::value<string>(&inputLandmarkType)->required(), 
 				"type of input landmarks")
 			("output,o", po::value<path>(&outputLandmarks)->required(), 
-				"output file or folder")
+				"output folder")
 			("output-type,t", po::value<string>(&outputLandmarkType)->required(),
 				"type of output landmarks")
 			("mapping,m", po::value<path>(&landmarkMappingsFile)->required(),
@@ -181,9 +183,19 @@ int main(int argc, char *argv[])
 	}
 
 	// Create the landmark-sink for the output landmarks
+	shared_ptr<NamedLandmarkSink> landmarkSink;
+	if (boost::iequals(outputLandmarkType, "did")) {
+		landmarkSink = make_shared<DidLandmarkSink>();
+	}
+	//else if (boost::iequals(outputLandmarkType, "ibug")) {
+	//	landmarkSink = make_shared<DidLandmarkSink>();
+	//}
+	else {
+		appLogger.error("The output landmark type is not supported.");
+		return EXIT_SUCCESS;
+	}
 
-
-	// Create the output directory if it is a directory and not a file
+	// Create the output directory
 	if (!boost::filesystem::exists(outputLandmarks)) {
 		boost::filesystem::create_directory(outputLandmarks);
 	}
@@ -191,7 +203,33 @@ int main(int argc, char *argv[])
 	while(landmarkSource->next()) {
 		appLogger.info("Converting " + landmarkSource->getName().string());
 		LandmarkCollection lms = landmarkSource->getLandmarks();
-		// if LM not in mapping, warn + skip
+		const auto& oldLandmarks = lms.getLandmarks();
+		LandmarkCollection convertedLandmarks;
+		for (const auto& old : oldLandmarks) {
+			if (landmarkMappings.find(old->getName()) != end(landmarkMappings))	{
+				std::string mappedId = landmarkMappings.at(old->getName());
+				shared_ptr<Landmark> convertedLandmark;
+				switch (old->getType())
+				{
+				case Landmark::LandmarkType::MODEL:
+					convertedLandmark = make_shared<ModelLandmark>(mappedId, old->getPosition3D(), old->isVisible());
+					break;
+				case Landmark::LandmarkType::RECT:
+					convertedLandmark = make_shared<RectLandmark>(mappedId, old->getPosition2D(), old->getSize(), old->isVisible());
+					break;
+				default:
+					appLogger.error("Encountered an unknown LandmarkType. Please update this switch-statement.");
+					break;
+				}
+				convertedLandmarks.insert(convertedLandmark);
+			}
+			else {
+				appLogger.info("Could not find the current landmark \"" + old->getName() + "\" in the landmarks-mapping, not writing this landmark into the output file.");
+			}
+		}
+		
+		path outputFilename = outputLandmarks / landmarkSource->getName().stem();
+		landmarkSink->add(convertedLandmarks, outputFilename);
 	}
 	appLogger.info("Finished converting all landmarks.");
 

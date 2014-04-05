@@ -27,6 +27,7 @@ SET(HEADERS
 	include/imageio/CameraImageSource.hpp
 	include/imageio/DefaultNamedLandmarkSource.hpp
 	include/imageio/DidLandmarkFormatParser.hpp
+	include/imageio/DidLandmarkSink.hpp
 	include/imageio/DirectoryImageSink.hpp
 	include/imageio/DirectoryImageSource.hpp
 	include/imageio/EmptyLandmarkSource.hpp
@@ -66,6 +67,7 @@ SET(SOURCE
 	src/imageio/CameraImageSource.cpp
 	src/imageio/DefaultNamedLandmarkSource.cpp
 	src/imageio/DidLandmarkFormatParser.cpp
+	src/imageio/DidLandmarkSink.cpp
 	src/imageio/DirectoryImageSink.cpp
 	src/imageio/DirectoryImageSource.cpp
 	src/imageio/FddbLandmarkSink.cpp
