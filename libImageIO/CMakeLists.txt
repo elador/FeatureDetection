@@ -48,6 +48,7 @@ SET(HEADERS
 	include/imageio/ModelLandmark.hpp
 	include/imageio/MuctLandmarkFormatParser.hpp
 	include/imageio/NamedLabeledImageSource.hpp
+	include/imageio/NamedLandmarkSink.hpp
 	include/imageio/NamedLandmarkSource.hpp
 	include/imageio/OrderedLabeledImageSource.hpp
 	include/imageio/OrderedLandmarkSink.hpp

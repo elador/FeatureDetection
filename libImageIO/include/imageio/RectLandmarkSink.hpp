@@ -6,8 +6,8 @@
  */
 #pragma once
 
-#ifndef DEFAULTLANDMARKSINK_HPP_
-#define DEFAULTLANDMARKSINK_HPP_
+#ifndef RECTLANDMARKSINK_HPP_
+#define RECTLANDMARKSINK_HPP_
 
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
@@ -55,4 +55,4 @@ private:
 };
 
 } /* namespace imageio */
-#endif /* DEFAULTLANDMARKSINK_HPP_ */
+#endif /* RECTLANDMARKSINK_HPP_ */
