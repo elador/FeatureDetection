@@ -35,12 +35,16 @@ public:
 		return empty;
 	}
 
-	LandmarkCollection get(const path& imagePath) {
+	LandmarkCollection get(const boost::filesystem::path& imagePath) {
 		return empty;
 	}
 
 	LandmarkCollection getLandmarks() const {
 		return empty;
+	}
+
+	boost::filesystem::path getName() const {
+		return boost::filesystem::path();
 	}
 
 private:
