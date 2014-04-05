@@ -9,7 +9,11 @@
 #include "boost/lexical_cast.hpp"
 #include <iostream>
 
+using cv::Mat;
 using boost::lexical_cast;
+using boost::filesystem::path;
+using std::string;
+using std::vector;
 
 namespace imageio {
 

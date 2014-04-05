@@ -10,8 +10,6 @@
 
 #include "opencv2/core/core.hpp"
 
-using cv::Mat;
-
 namespace imageio {
 
 /**
@@ -27,7 +25,7 @@ public:
 	 *
 	 * @param[in] image The image.
 	 */
-	virtual void add(const Mat& image) = 0;
+	virtual void add(const cv::Mat& image) = 0;
 };
 
 } /* namespace imageio */

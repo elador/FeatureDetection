@@ -10,8 +10,6 @@
 
 #include "imageio/ImageSink.hpp"
 
-using std::string;
-
 namespace imageio {
 
 /**
@@ -26,16 +24,16 @@ public:
 	 * @param[in] directory The name of the directory.
 	 * @param[in] ending The file ending of the image files.
 	 */
-	explicit DirectoryImageSink(string directory, string ending = "png");
+	explicit DirectoryImageSink(std::string directory, std::string ending = "png");
 
 	~DirectoryImageSink();
 
-	void add(const Mat& image);
+	void add(const cv::Mat& image);
 
 private:
 
-	string directory;   ///< The name of the directory.
-	string ending;      ///< The file ending of the image files.
+	std::string directory;   ///< The name of the directory.
+	std::string ending;      ///< The file ending of the image files.
 	unsigned int index; ///< The index of the next file.
 };
 

@@ -8,16 +8,8 @@
 #include "imageio/NamedLabeledImageSource.hpp"
 #include "imageio/NamedLandmarkSource.hpp"
 #include "imageio/LandmarkCollection.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include <stdexcept>
 
-using cv::imread;
-using boost::filesystem::exists;
-using boost::filesystem::is_directory;
-using boost::filesystem::directory_iterator;
-using std::copy;
-using std::sort;
-using std::runtime_error;
+using boost::filesystem::path;
 
 namespace imageio {
 

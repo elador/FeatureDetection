@@ -9,6 +9,8 @@
 #include <iostream>
 
 using cv::Size;
+using cv::Mat;
+using std::string;
 
 namespace imageio {
 

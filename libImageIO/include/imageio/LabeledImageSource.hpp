@@ -29,7 +29,7 @@ public:
 	 *
 	 * @param[in] name The name of this image source.
 	 */
-	LabeledImageSource(const string& name) : ImageSource(name) {}
+	LabeledImageSource(const std::string& name) : ImageSource(name) {}
 
 	virtual ~LabeledImageSource() {}
 
@@ -37,11 +37,11 @@ public:
 
 	virtual bool next() = 0;
 
-	virtual const Mat getImage() const = 0;
+	virtual const cv::Mat getImage() const = 0;
 
-	virtual path getName() const = 0;
+	virtual boost::filesystem::path getName() const = 0;
 
-	virtual vector<path> getNames() const = 0;
+	virtual std::vector<boost::filesystem::path> getNames() const = 0;
 
 	/**
 	 * Retrieves the landmarks of the current image.

@@ -11,9 +11,6 @@
 #include "imageio/ImageSink.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
-using cv::VideoWriter;
-using std::string;
-
 namespace imageio {
 
 /**
@@ -29,17 +26,17 @@ public:
 	 * @param[in] fps Framerate of the video stream.
 	 * @param[in] fourcc 4-character code of video codec.
 	 */
-	explicit VideoImageSink(const string filename, double fps, int fourcc = CV_FOURCC('M','J','P','G'));
+	explicit VideoImageSink(const std::string filename, double fps, int fourcc = CV_FOURCC('M', 'J', 'P', 'G'));
 
 	~VideoImageSink();
 
-	void add(const Mat& image);
+	void add(const cv::Mat& image);
 
 private:
-	const string filename; ///< The name of the video file.
+	const std::string filename; ///< The name of the video file.
 	double fps;            ///< Framerate of the video stream.
 	int fourcc;            ///< 4-character code of video codec.
-	VideoWriter writer;    ///< The video writer.
+	cv::VideoWriter writer;    ///< The video writer.
 };
 
 } /* namespace imageio */

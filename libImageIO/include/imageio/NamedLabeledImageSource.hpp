@@ -4,6 +4,7 @@
  *  Created on: 27.04.2013
  *      Author: Patrik Huber
  */
+#pragma once
 
 #ifndef NAMEDLABELEDIMAGESOURCE_HPP_
 #define NAMEDLABELEDIMAGESOURCE_HPP_
@@ -13,11 +14,8 @@
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
-#include "boost/filesystem.hpp"
+#include "boost/filesystem/path.hpp"
 #include <memory>
-
-using boost::filesystem::path;
-using std::shared_ptr;
 
 namespace imageio {
 
@@ -38,7 +36,7 @@ public:
 	 * @param[in] imageSource The image source to use.
 	 * @param[in] landmarkSource The landmark source to use.
 	 */
-	NamedLabeledImageSource(shared_ptr<ImageSource> imageSource, shared_ptr<NamedLandmarkSource> landmarkSource);
+	NamedLabeledImageSource(std::shared_ptr<ImageSource> imageSource, std::shared_ptr<NamedLandmarkSource> landmarkSource);
 
 	virtual ~NamedLabeledImageSource();
 
@@ -46,18 +44,18 @@ public:
 
 	bool next();
 
-	const Mat getImage() const;
+	const cv::Mat getImage() const;
 
-	path getName() const;
+	boost::filesystem::path getName() const;
 
-	vector<path> getNames() const;
+	std::vector<boost::filesystem::path> getNames() const;
 
 	const LandmarkCollection getLandmarks() const;
 
 private:
 
-	shared_ptr<ImageSource> imageSource; ///< The underlying image source.
-	shared_ptr<NamedLandmarkSource> landmarkSource; ///< The underlying landmark source.
+	std::shared_ptr<ImageSource> imageSource; ///< The underlying image source.
+	std::shared_ptr<NamedLandmarkSource> landmarkSource; ///< The underlying landmark source.
 
 };
 

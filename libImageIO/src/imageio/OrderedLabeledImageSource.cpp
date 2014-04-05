@@ -9,6 +9,8 @@
 #include "imageio/OrderedLandmarkSource.hpp"
 #include "imageio/LandmarkCollection.hpp"
 
+using boost::filesystem::path;
+
 namespace imageio {
 
 OrderedLabeledImageSource::OrderedLabeledImageSource(

@@ -16,11 +16,12 @@
 #include <iostream>
 #include <iomanip>
 
-using cv::imwrite;
+using cv::Mat;
 using boost::filesystem::path;
 using boost::filesystem::exists;
 using boost::filesystem::is_directory;
 using boost::filesystem::create_directory;
+using std::string;
 using std::ostringstream;
 using std::setfill;
 using std::setw;

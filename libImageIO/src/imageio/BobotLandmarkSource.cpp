@@ -13,6 +13,7 @@
 #include <utility>
 #include <memory>
 
+using boost::filesystem::path;
 using std::make_shared;
 
 namespace imageio {
