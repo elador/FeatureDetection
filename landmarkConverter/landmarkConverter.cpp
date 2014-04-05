@@ -219,6 +219,7 @@ int main(int argc, char *argv[])
 					break;
 				default:
 					appLogger.error("Encountered an unknown LandmarkType. Please update this switch-statement.");
+					throw std::runtime_error("Encountered an unknown LandmarkType. Please update this switch-statement.");
 					break;
 				}
 				convertedLandmarks.insert(convertedLandmark);
