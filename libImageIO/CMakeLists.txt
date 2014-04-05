@@ -26,7 +26,6 @@ SET(HEADERS
 	include/imageio/BobotLandmarkSource.hpp
 	include/imageio/CameraImageSource.hpp
 	include/imageio/DefaultNamedLandmarkSource.hpp
-	include/imageio/DefaultLandmarkSink.hpp
 	include/imageio/DidLandmarkFormatParser.hpp
 	include/imageio/DirectoryImageSink.hpp
 	include/imageio/DirectoryImageSource.hpp
@@ -54,6 +53,7 @@ SET(HEADERS
 	include/imageio/OrderedLandmarkSink.hpp
 	include/imageio/OrderedLandmarkSource.hpp
 	include/imageio/RectLandmark.hpp
+	include/imageio/RectLandmarkSink.hpp
 	include/imageio/RepeatingFileImageSource.hpp
 	include/imageio/TlmsLandmarkFormatParser.hpp
 	include/imageio/VideoImageSink.hpp
@@ -64,7 +64,6 @@ SET(SOURCE
 	src/imageio/BobotLandmarkSource.cpp
 	src/imageio/CameraImageSource.cpp
 	src/imageio/DefaultNamedLandmarkSource.cpp
-	src/imageio/DefaultLandmarkSink.cpp
 	src/imageio/DidLandmarkFormatParser.cpp
 	src/imageio/DirectoryImageSink.cpp
 	src/imageio/DirectoryImageSource.cpp
@@ -82,6 +81,7 @@ SET(SOURCE
 	src/imageio/NamedLabeledImageSource.cpp
 	src/imageio/OrderedLabeledImageSource.cpp
 	src/imageio/RectLandmark.cpp
+	src/imageio/RectLandmarkSink.cpp
 	src/imageio/RepeatingFileImageSource.cpp
 	src/imageio/TlmsLandmarkFormatParser.cpp
 	src/imageio/VideoImageSink.cpp

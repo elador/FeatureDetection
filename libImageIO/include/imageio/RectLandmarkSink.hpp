@@ -1,5 +1,5 @@
 /*
- * DefaultLandmarkSink.hpp
+ * RectLandmarkSink.hpp
  *
  *  Created on: 08.10.2013
  *      Author: Patrik Huber
@@ -28,7 +28,7 @@ class LandmarkCollection;
  * each call of the 'write' method).
  *
  */
-class DefaultLandmarkSink {
+class RectLandmarkSink {
 public:
 
 	/**
@@ -36,9 +36,9 @@ public:
 	 *
 	 * @param[in] outputPath A path to the folder to which the landmark files should be written.
 	 */
-	explicit DefaultLandmarkSink(const boost::filesystem::path& outputPath);
+	explicit RectLandmarkSink(const boost::filesystem::path& outputPath);
 
-	~DefaultLandmarkSink();
+	~RectLandmarkSink();
 
 	/**
 	 * Creates a file and writes the landmarks to it.
