@@ -28,7 +28,6 @@
 #endif  // _DEBUG
 */
 
-#include <chrono>
 #include <memory>
 #include <iostream>
 
@@ -46,7 +45,6 @@
 #include "boost/lexical_cast.hpp"
 
 #include "imageio/DefaultNamedLandmarkSource.hpp"
-#include "imageio/EmptyLandmarkSource.hpp"
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/IbugLandmarkFormatParser.hpp"
 #include "imageio/MuctLandmarkFormatParser.hpp"
@@ -85,7 +83,7 @@ int main(int argc, char *argv[])
 	path outputLandmarks;
 	string inputLandmarkType;
 	string outputLandmarkType;
-	path landmarkMappings;
+	path landmarkMappingsFile;
 	
 	try {
 		po::options_description desc("Allowed options");
@@ -102,7 +100,7 @@ int main(int argc, char *argv[])
 				"output file or folder")
 			("output-type,t", po::value<string>(&outputLandmarkType)->required(),
 				"type of output landmarks")
-			("mapping,m", po::value<path>(&landmarkMappings)->required(),
+			("mapping,m", po::value<path>(&landmarkMappingsFile)->required(),
 				"a file with mappings from the input- to the output-format")
 		;
 
@@ -140,8 +138,8 @@ int main(int argc, char *argv[])
 
 	appLogger.debug("Verbose level for console output: " + logging::loglevelToString(logLevel));
 
+	// Load the input landmarks
 	shared_ptr<NamedLandmarkSource> landmarkSource;
-
 	vector<path> groundtruthDirs; groundtruthDirs.push_back(inputLandmarks); // Todo: Make cmdline use a vector<path>
 	shared_ptr<LandmarkFormatParser> landmarkFormatParser;
 	if (boost::iequals(inputLandmarkType, "muct76-opencv")) {
@@ -154,6 +152,40 @@ int main(int argc, char *argv[])
 	else {
 		appLogger.error("The input landmark type is not supported.");
 		return EXIT_SUCCESS;
+	}
+
+	// Load the mapping file
+	map<string, string> landmarkMappings;
+	ptree pt;
+	try {
+		boost::property_tree::info_parser::read_info(landmarkMappingsFile.string(), pt);
+	}
+	catch (const boost::property_tree::ptree_error& error) {
+		appLogger.error(error.what());
+		return EXIT_FAILURE;
+	}
+	try { // TODO: Make a LandmarkMapping class and put this into (c'tor ptree, return map) or load()
+		ptree ptLandmarkMappings = pt.get_child("landmarkMappings");
+		for (const auto& mapping : ptLandmarkMappings) {
+			landmarkMappings.insert(make_pair(mapping.first, mapping.second.get_value<string>()));
+		}
+		appLogger.info("Loaded a list of " + lexical_cast<string>(landmarkMappings.size()) + " landmark mappings.");
+	}
+	catch (const boost::property_tree::ptree_error& error) {
+		appLogger.error(string("Error while parsing the mappings file: ") + error.what());
+		return EXIT_FAILURE;
+	}
+	catch (const std::runtime_error& error) {
+		appLogger.error(string("Error while parsing the mappings file: ") + error.what());
+		return EXIT_FAILURE;
+	}
+
+	// Create the landmark-sink for the output landmarks
+
+
+	// Create the output directory if it is a directory and not a file
+	if (!boost::filesystem::exists(outputLandmarks)) {
+		boost::filesystem::create_directory(outputLandmarks);
 	}
 
 	while(landmarkSource->next()) {
