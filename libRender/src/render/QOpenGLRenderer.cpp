@@ -66,12 +66,16 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	glViewport(0, 0, viewportWidth * retinaScale, viewportHeight * retinaScale);
 
 	//glClear(GL_COLOR_BUFFER_BIT);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT/* | GL_STENCIL_BUFFER_BIT*/);
 
 	// Enable depth buffer
-	glEnable(GL_DEPTH_TEST); // to init
+	glEnable(GL_DEPTH_TEST); // not to init
+	//glDepthFunc(GL_LEQUAL);                               // The Type Of Depth Test To Do
+	//glClearDepthf(1.0f);
+	//glDepthMask(GL_TRUE);
+	//glDepthRange(0.0, 1.0);
 	// Enable back face culling
-	glEnable(GL_CULL_FACE); // to init
+	//glEnable(GL_CULL_FACE); // not to init
 
 	glEnable(GL_TEXTURE_2D);
 
@@ -141,17 +145,17 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	//matrix.ortho(-70.0f, 70.0f, -70.0f, 70.0f, 0.1f, 1000.0f);
 	//matrix.perspective(60, aspect, 0.1, 100.0);
 	matrix.translate(0, 0, -2);
-	matrix.rotate(15.0f, 1.0f, 0.0f, 0.0f);
-	matrix.rotate(30.0f, 0.0f, 1.0f, 0.0f);
+	//matrix.rotate(15.0f, 1.0f, 0.0f, 0.0f);
+	//matrix.rotate(30.0f, 0.0f, 1.0f, 0.0f);
 	//matrix.scale(0.009f);
-	matrix.scale(0.008f);
+	//matrix.scale(0.008f);
 
 	m_program->setUniformValue(m_matrixUniform, matrix);
 
 	glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &mmVertices[0]); // vertices
 	glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &mmColors[0]); // colors
 	glVertexAttribPointer(m_texAttr, 2, GL_FLOAT, GL_FALSE, 0, &mmTex[0]); // texCoords
-	m_program->setAttributeValue(m_texWeightAttr, 1.0f);
+	m_program->setAttributeValue(m_texWeightAttr, 0.0f);
 	m_program->setUniformValue("texture", texture);
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -168,9 +172,31 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 
 	m_program->release();
 
-	cv::Mat framebuffer = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\box_screenbuffer11.png");
-	cv::Mat textureMap = render::utils::MeshUtils::extractTexture(mesh, matrix, viewportWidth, viewportHeight, framebuffer);
-	cv::imwrite("C:\\Users\\Patrik\\Documents\\GitHub\\img_extracted11.png", textureMap);
+	// Test: Get the depth buffer (probably slow)
+	glDisable(GL_TEXTURE_2D);
+	uchar col;
+	cv::Mat colb = cv::Mat::zeros(viewportHeight, viewportWidth, CV_8UC4);
+	glGetError();
+	glReadPixels(0, 0, viewportWidth, viewportHeight, GL_RGBA, GL_UNSIGNED_BYTE, colb.ptr(0)); // Caution: For QtQuick I guess we might into trouble as other stuff is in the buffer as well. Also, it doesn't seem to work if the window is occluded by another window.
+	cv::flip(colb, colb, 0); // 0 = flip around x-axis. OpenGL and glReadPixels have (0, 0) at the bottom-left, while OpenCV has it on the top-left.
+	cvtColor(colb, colb, cv::COLOR_RGBA2BGRA); // The OpenGL framebuffer is RGBA, OpenCV assumes BGRA, so we need to flip it to make it right for OpenCV.
+	GLenum err0 = glGetError();
+	glGetError();
+
+	float depth;
+	cv::Mat depthBuffer = cv::Mat::zeros(viewportHeight, viewportWidth, CV_32FC1);
+	glReadPixels(320, 240, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+	//glReadPixels(0, 0, viewportWidth, viewportHeight, GL_DEPTH_COMPONENT, GL_FLOAT, depthBuffer.ptr(0));
+	GLenum err = glGetError();
+	std::cout << err << std::endl;
+	std::cout << depth << std::endl;
+	int dbits;
+	glGetIntegerv(GL_DEPTH_BITS, &dbits);
+	std::cout << "dbits: " << dbits << std::endl;
+
+	//cv::Mat framebuffer = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\box_screenbuffer11.png");
+	//cv::Mat textureMap = render::utils::MeshUtils::extractTexture(mesh, matrix, viewportWidth, viewportHeight, framebuffer);
+	//cv::imwrite("C:\\Users\\Patrik\\Documents\\GitHub\\img_extracted11.png", textureMap);
 	++m_frame;
 }
 

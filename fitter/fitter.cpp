@@ -302,6 +302,7 @@ int main(int argc, char *argv[])
 
 	QSurfaceFormat format;
 	format.setSamples(16);
+	format.setDepthBufferSize(24);
 
 	FittingWindow window(labeledImageSource, morphableModel);
 	window.setFormat(format);

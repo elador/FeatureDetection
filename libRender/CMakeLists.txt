@@ -20,6 +20,15 @@ ELSE(Boost_FOUND)
   MESSAGE(FATAL_ERROR "Boost not found")
 ENDIF()
 
+#set (CMAKE_LIBRARY_PATH "C:\\Program Files (x86)\\Windows Kits\\8.0\\Lib\\win8\\um\\x64")
+#set (CMAKE_PREFIX_PATH "C:\\Program Files (x86)\\Windows Kits\\8.0\\Lib\\win8\\um\\x64")
+#set (CMAKE_MODULE_PATH "C:\\Program Files (x86)\\Windows Kits\\8.0\\Lib\\win8\\um\\x64")
+
+#find_package(glu32)
+#find_package(opengl)
+#message("TEST_Qt5Gui_GL_LIBRARY : ${TEST_Qt5Gui_GL_LIBRARY}")
+message("CMAKE_CXX_LIBRARY_ARCHITECTURE ${CMAKE_CXX_LIBRARY_ARCHITECTURE}")
+
 set(CMAKE_AUTOMOC ON) # Todo: Probably make dependent on WITH_RENDER_OPENGL
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)

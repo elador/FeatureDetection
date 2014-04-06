@@ -46,7 +46,47 @@ void FittingWindow::render()
 	// This function gets called by our subclass every time Qt is ready to render a frame
 	// call r->setViewport before every render?
 	//r->render(render::utils::MeshUtils::createCube());
-	r->render(morphableModel.getMean());
+	
+	//r->render(morphableModel.getMean());
+
+	render::Mesh triangle;
+	triangle.vertex.resize(6);
+
+	triangle.vertex[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 0.0f);
+	triangle.vertex[0].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
+	triangle.vertex[0].texcrd = cv::Vec2f(0.0f, 0.0f);
+
+	triangle.vertex[1].position = cv::Vec4f(-0.5f, -0.5f, 0.5f, 0.0f);
+	triangle.vertex[1].color = cv::Vec3f(0.0f, 1.0f, 0.0f);
+	triangle.vertex[1].texcrd = cv::Vec2f(0.0f, 1.0f);
+
+	triangle.vertex[2].position = cv::Vec4f(0.5f, -0.5f, 0.5f, 0.0f);
+	triangle.vertex[2].color = cv::Vec3f(0.0f, 0.0f, 1.0f);
+	triangle.vertex[2].texcrd = cv::Vec2f(1.0f, 1.0f);
+
+	triangle.vertex[3].position = cv::Vec4f(-0.8f, 0.8f, 0.0f, 0.0f);
+	triangle.vertex[3].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
+	triangle.vertex[3].texcrd = cv::Vec2f(0.0f, 0.0f);
+
+	triangle.vertex[4].position = cv::Vec4f(-0.8f, -0.8f, 0.0f, 0.0f);
+	triangle.vertex[4].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
+	triangle.vertex[4].texcrd = cv::Vec2f(0.0f, 1.0f);
+
+	triangle.vertex[5].position = cv::Vec4f(0.8f, -0.8f, 0.0f, 0.0f);
+	triangle.vertex[5].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
+	triangle.vertex[5].texcrd = cv::Vec2f(1.0f, 1.0f);
+
+
+	// the efficiency of this might be improvable...
+	std::array<int, 3> vi;
+	vi[0] = 0; vi[1] = 1; vi[2] = 2;
+	triangle.tvi.push_back(vi);
+	triangle.tci.push_back(vi);
+	vi[0] = 3; vi[1] = 4; vi[2] = 5;
+	triangle.tvi.push_back(vi);
+	triangle.tci.push_back(vi);
+	r->render(triangle);
+
 	++m_frame;
 }
 

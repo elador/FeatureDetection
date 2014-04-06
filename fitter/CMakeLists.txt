@@ -42,11 +42,15 @@ ELSE(Boost_FOUND)
   MESSAGE(FATAL_ERROR "Boost not found")
 ENDIF()
 
+#set (CMAKE_LIBRARY_PATH "C:\\Program Files (x86)\\Windows Kits\\8.0\\Lib\\win8\\um\\x64")
+#set (CMAKE_PREFIX_PATH "C:\\Program Files (x86)\\Windows Kits\\8.0\\Lib\\win8\\um\\x64")
+#set (CMAKE_MODULE_PATH "C:\\Program Files (x86)\\Windows Kits\\8.0\\Lib\\win8\\um\\x64")
+
 set(CMAKE_AUTOMOC ON)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
-find_package(Qt5OpenGL REQUIRED)
-find_package(Qt5Widgets REQUIRED)
+#find_package(Qt5OpenGL REQUIRED)
+#find_package(Qt5Widgets REQUIRED)
 
 message(status "EGL inc: ${Qt5Gui_EGL_INCLUDE_DIRS}")
 message(status "OpenGL inc: ${Qt5Gui_OPENGL_INCLUDE_DIRS}")
@@ -76,4 +80,4 @@ include_directories( ${Render_SOURCE_DIR}/include )
 include_directories( ${MorphableModel_SOURCE_DIR}/include )
 
 #Make the app depend on the libraries
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} ImageIO ${KINECT_LIBNAME} MorphableModel Render Logging ${Boost_LIBRARIES} ${OpenCV_LIBS} ${HDF5_LIBRARIES} Qt5::Core Qt5::Gui Qt5::OpenGL Qt5::Widgets ${Qt5Gui_EGL_LIBRARIES} ${Qt5Gui_OPENGL_LIBRARIES} ) # Qt5::OpenGL Qt5::Widgets ${OPENGL_LIBRARIES} ${GLES_LIBRARIES}
+TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} ImageIO ${KINECT_LIBNAME} MorphableModel Render Logging ${Boost_LIBRARIES} ${OpenCV_LIBS} ${HDF5_LIBRARIES} Qt5::Core Qt5::Gui ${Qt5Gui_EGL_LIBRARIES} ${Qt5Gui_OPENGL_LIBRARIES} ) # Qt5::OpenGL Qt5::Widgets ${OPENGL_LIBRARIES} ${GLES_LIBRARIES}

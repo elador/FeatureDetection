@@ -226,8 +226,8 @@ shared_ptr<Mesh> MeshUtils::createTriangle()
 	vi[0] = 0; vi[1] = 1; vi[2] = 2;
 	triangle->tvi.push_back(vi);
 	
-	triangle->texture = std::make_shared<Texture>();
-	triangle->texture->createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\up.png");
+	//triangle->texture = std::make_shared<Texture>();
+	//triangle->texture->createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\up.png");
 	triangle->hasTexture = false;
 
 	return triangle;
