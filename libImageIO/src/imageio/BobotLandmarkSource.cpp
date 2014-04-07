@@ -13,8 +13,11 @@
 #include <utility>
 #include <memory>
 
+using cv::Rect_;
 using boost::filesystem::path;
+using std::shared_ptr;
 using std::make_shared;
+using std::string;
 
 namespace imageio {
 
@@ -54,11 +57,6 @@ bool BobotLandmarkSource::next() {
 	return index < static_cast<int>(positions.size());
 }
 
-LandmarkCollection BobotLandmarkSource::get() {
-	next();
-	return getLandmarks();
-}
-
 LandmarkCollection BobotLandmarkSource::get(const path& imagePath) {
 	const auto iterator = name2index.find(imagePath.string());
 	if (iterator == name2index.end())
@@ -80,7 +78,7 @@ LandmarkCollection BobotLandmarkSource::getLandmarks() const {
 					relativePosition.width * image.cols, relativePosition.height * image.rows);
 			collection.insert(make_shared<RectLandmark>(landmarkName, rect));
 		}
-	}
+	} // Note: else { throw... } ? This should never happen in regular operation, now that we removed get() ?
 	return collection;
 }
 

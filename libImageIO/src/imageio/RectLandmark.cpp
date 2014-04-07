@@ -7,9 +7,14 @@
 
 #include "imageio/RectLandmark.hpp"
 
-using cv::Point_;
-using std::max;
-using std::min;
+using cv::Rect_;
+using cv::Rect;
+using cv::Point2f;
+using cv::Size2f;
+using cv::Vec2f;
+using cv::Mat;
+using cv::Scalar;
+using std::string;
 
 namespace imageio {
 

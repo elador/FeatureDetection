@@ -42,8 +42,6 @@ public:
 
 	bool next();
 
-	LandmarkCollection get(); // Careful, this will not work (yet), it will probably throw after the last element. See method body for description.
-
 	LandmarkCollection get(const boost::filesystem::path& imagePath); // This doesn't change the iterator at the moment, it's completely independent of it.
 
 	LandmarkCollection getLandmarks() const;

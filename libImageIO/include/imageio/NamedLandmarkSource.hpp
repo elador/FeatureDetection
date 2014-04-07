@@ -2,11 +2,13 @@
  * NamedLandmarkSource.hpp
  *
  *  Created on: 22.05.2013
- *      Author: poschmann
+ *      Author: poschmann & Patrik Huber
  */
 
 #ifndef NAMEDLANDMARKSOURCE_HPP_
 #define NAMEDLANDMARKSOURCE_HPP_
+
+#include "imageio/LandmarkSource.hpp"
 
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
@@ -19,33 +21,14 @@ namespace imageio {
 class LandmarkCollection;
 
 /**
- * Source of named landmark collections. Each landmark collection is named after the image
- * it belongs to.
+ * Source of named landmark collections. Each landmark collection is
+ * named after the image it belongs to or after the filename (or the
+ * full path) of the landmark file if read independently.
  */
-class NamedLandmarkSource {
+class NamedLandmarkSource : public LandmarkSource {
 public:
 
-	virtual ~NamedLandmarkSource() {}
-
-	/**
-	* Resets the landmark source to its initial state.
-	*/
-	virtual void reset() = 0;
-
-	/**
-	* Moves the landmark source forward to the next collection of landmarks.
-	*
-	* @return True if the landmark source contains a next collection of landmarks, false otherwise.
-	*/
-	virtual bool next() = 0;
-
-	/**
-	* Retrieves the current collection of landmarks and moves the landmark source forward to
-	* the next collection.
-	*
-	* @return The collection of landmarks (that may be empty if no data could be retrieved).
-	*/
-	virtual LandmarkCollection get() = 0;
+	virtual ~NamedLandmarkSource() {} // Note: If we derive from an abstract class, do we need a virtual d'tor again?
 
 	/**
 	 * Retrieves the labels for a given image name.
@@ -57,14 +40,6 @@ public:
 	 * @return The landmarks (that may be empty if no data could be retrieved).
 	 */
 	virtual LandmarkCollection get(const boost::filesystem::path& imagePath) = 0; // Note: This could be either implemented as modifying the state of the instance (iterator) or not. Decide and document! (see also DefaultNamedLandmarkSource - atm it doesn't change the iterator, so the function could in theory be const)
-
-	/**
-	* Retrieves the current collection of landmarks.
-	* (Throws if iterator invalid. Maybe change, behaviour of other *Sources seems to be that it returns empty stuff if no data could be retrieved.)
-	*
-	* @return The collection of landmarks.
-	*/
-	virtual LandmarkCollection getLandmarks() const = 0;
 
 	/**
 	* Retrieves the name of the current collection of landmarks.

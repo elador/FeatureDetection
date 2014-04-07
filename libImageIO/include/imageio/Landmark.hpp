@@ -12,16 +12,6 @@
 #include "opencv2/core/core.hpp"
 #include <string>
 
-using cv::Vec2f;
-using cv::Vec3f;
-using cv::Size2f;
-using cv::Mat;
-using cv::Scalar;
-using cv::Point2f;
-using cv::Point3f;
-using cv::Rect_;
-using std::string;
-
 namespace imageio {
 
 /**
@@ -41,7 +31,7 @@ public:
 	 * @param[in] name The name of the landmark.
 	 * @param[in] visible A flag that indicates whether the landmark is visible.
 	 */
-	Landmark(LandmarkType type, const string& name, bool visible) : type(type), name(name), visible(visible) {}
+	Landmark(LandmarkType type, const std::string& name, bool visible) : type(type), name(name), visible(visible) {}
 
 	/**
 	 * @return The type of the landmark.
@@ -53,7 +43,7 @@ public:
 	/**
 	 * @return The name of the landmark.
 	 */
-	const string& getName() const {
+	const std::string& getName() const {
 		return name;
 	}
 
@@ -67,40 +57,40 @@ public:
 	/**
 	 * @return The 2D coordinates of the landmark's center.
 	 */
-	Point2f getPoint2D() const {
-		return Point2f(getX(), getY());
+	cv::Point2f getPoint2D() const {
+		return cv::Point2f(getX(), getY());
 	}
 
 	/**
 	 * @return The 3D coordinates of the landmark's center.
 	 */
-	Point3f getPoint3D() const {
-		return Point3f(getX(), getY(), getZ());
+	cv::Point3f getPoint3D() const {
+		return cv::Point3f(getX(), getY(), getZ());
 	}
 
 	/**
 	 * @return The rectangular area of this landmark. In case of a landmark with no size, the size of the rect will be zero.
 	 */
-	Rect_<float> getRect() const {
-		return Rect_<float>(getX() - 0.5f * getWidth(), getY() - 0.5f * getHeight(), getWidth(), getHeight());
+	cv::Rect_<float> getRect() const {
+		return cv::Rect_<float>(getX() - 0.5f * getWidth(), getY() - 0.5f * getHeight(), getWidth(), getHeight());
 	}
 
 	/**
 	 * @return The 2D coordinates of the landmark's center.
 	 */
-	virtual Vec2f getPosition2D() const = 0;
+	virtual cv::Vec2f getPosition2D() const = 0;
 
 	/**
 	 * @return The 3D coordinates of the landmark's center.
 	 */
-	virtual Vec3f getPosition3D() const = 0;
+	virtual cv::Vec3f getPosition3D() const = 0;
 	
 	/**
 	 * The width and height of the landmark, if it comes from an annotation or detector. Might be undefined (=0).
 	 *
 	 * @return The width and height of the landmark. Might be undefined (=0).
 	 */
-	virtual Size2f getSize() const = 0;
+	virtual cv::Size2f getSize() const = 0;
 
 	/**
 	 * @return The x coordinate of the center.
@@ -163,12 +153,12 @@ public:
 	 *
 	 * @param[in] image The image into which this landmark is drawn.
 	 */
-	virtual void draw(Mat& image, const Scalar& color = Scalar(0, 0, 0), float width = 1) const = 0;
+	virtual void draw(cv::Mat& image, const cv::Scalar& color = cv::Scalar(0, 0, 0), float width = 1) const = 0;
 
 private:
 
 	LandmarkType type; ///< The type of the landmark.
-	string name;       ///< The name and identifier of the landmark.
+	std::string name;       ///< The name and identifier of the landmark.
 	bool visible;      ///< Flag that indicates whether the landmark is visible.
 };
 

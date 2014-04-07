@@ -13,6 +13,8 @@
 
 using logging::LoggerFactory;
 using cv::Mat;
+using cv::Point2f;
+using cv::Point3f;
 using std::vector;
 using std::pair;
 
@@ -26,7 +28,7 @@ OpenCVCameraEstimation::OpenCVCameraEstimation(/* const? shared_ptr? */Morphable
 cv::Mat OpenCVCameraEstimation::estimate(std::vector<imageio::ModelLandmark> imagePoints, cv::Mat intrinsicCameraMatrix, std::vector<int> vertexIds /*= std::vector<int>()*/)
 {
 	if (imagePoints.size() < 3) {
-		Loggers->getLogger("shapemodels").error("CameraEstimation: Number of points given is smaller than 3.");
+		Loggers->getLogger("morphablemodel").error("CameraEstimation: Number of points given is smaller than 3.");
 		throw std::runtime_error("CameraEstimation: Number of points given is smaller than 3.");
 	}
 

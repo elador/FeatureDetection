@@ -13,9 +13,11 @@
 
 #include <fstream>
 
-using std::ofstream;
-
 using cv::Rect_;
+using boost::filesystem::path;
+using std::ofstream;
+using std::vector;
+using std::shared_ptr;
 
 namespace imageio {
 
@@ -27,7 +29,7 @@ RectLandmarkSink::RectLandmarkSink(const boost::filesystem::path& outputPath) :
 RectLandmarkSink::~RectLandmarkSink() {}
 
 
-void RectLandmarkSink::write(const LandmarkCollection& collection, const boost::filesystem::path imageFilename) {
+void RectLandmarkSink::write(const LandmarkCollection& collection, const path imageFilename) {
 	ofstream output(outputPath.string() + imageFilename.stem().string() + ".txt", std::ios_base::out);
 	if (!output.is_open()) {
 		throw std::runtime_error("DefaultOrderedLandmarkSink TODO: Couldn't open the landmark-file for writing: " + outputPath.string() + imageFilename.stem().string() + ".txt");

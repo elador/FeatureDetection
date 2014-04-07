@@ -16,12 +16,8 @@
 
 using logging::Logger;
 using logging::LoggerFactory;
-using boost::filesystem::exists;
-using boost::filesystem::is_directory;
-using boost::filesystem::directory_iterator;
-using std::copy;
-using std::sort;
-using std::runtime_error;
+using boost::filesystem::path;
+// Todo: vector shouldn't be in namespace. Maybe from logger? Clean-up.
 
 namespace imageio {
 

@@ -9,6 +9,7 @@
 #define ORDEREDLABELEDIMAGESOURCE_HPP_
 
 #include "imageio/LabeledImageSource.hpp"
+#include "imageio/LandmarkSource.hpp"
 #include <memory>
 
 namespace imageio {
@@ -27,7 +28,7 @@ public:
 	 * @param[in] imageSource The source of the images.
 	 * @param[in] landmarkSource The source of the landmarks.
 	 */
-	OrderedLabeledImageSource(std::shared_ptr<ImageSource> imageSource, std::shared_ptr<OrderedLandmarkSource> landmarkSource);
+	OrderedLabeledImageSource(std::shared_ptr<ImageSource> imageSource, std::shared_ptr<LandmarkSource> landmarkSource);
 
 	~OrderedLabeledImageSource();
 
@@ -46,7 +47,7 @@ public:
 private:
 
 	std::shared_ptr<ImageSource> imageSource;              ///< The source of the images.
-	std::shared_ptr<OrderedLandmarkSource> landmarkSource; ///< The source of the landmarks.
+	std::shared_ptr<LandmarkSource> landmarkSource; ///< The source of the landmarks.
 };
 
 } /* namespace imageio */

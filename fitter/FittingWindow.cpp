@@ -26,6 +26,10 @@ using imageio::Landmark;
 using imageio::LandmarkCollection;
 using logging::Logger;
 using logging::LoggerFactory;
+using cv::Mat;
+using cv::Vec3f;
+using cv::Point2f;
+using cv::Scalar;
 using boost::lexical_cast;
 
 

@@ -13,11 +13,17 @@
 #include <utility>
 #include <fstream>
 
-using std::make_pair;
+using cv::Vec3f;
 using boost::filesystem::path;
 using boost::lexical_cast;
+using std::make_pair;
 using std::ifstream;
 using std::make_shared;
+using std::map;
+using std::getline;
+using std::vector;
+using std::string;
+using std::shared_ptr;
 
 namespace imageio {
 

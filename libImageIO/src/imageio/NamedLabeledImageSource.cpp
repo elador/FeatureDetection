@@ -10,6 +10,9 @@
 #include "imageio/LandmarkCollection.hpp"
 
 using boost::filesystem::path;
+using cv::Mat;
+using std::shared_ptr;
+using std::vector;
 
 namespace imageio {
 

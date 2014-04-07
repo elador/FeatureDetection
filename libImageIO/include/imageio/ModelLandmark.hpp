@@ -12,9 +12,6 @@
 #include <array>
 #include <map>
 
-using std::array;
-using std::map;
-
 namespace imageio {
 
 /**
@@ -26,55 +23,55 @@ public:
 	/**
 	 * Constructs a new invisible model landmark.
 	 *
-	 * @param[in] name The name of the landmark (TODO in tlms format).
+	 * @param[in] name The name of the landmark.
 	 */
-	explicit ModelLandmark(const string& name);
+	explicit ModelLandmark(const std::string& name);
 
 	/**
 	 * Constructs a new visible model landmark.
 	 *
-	 * @param[in] name The name of the landmark (TODO in tlms format).
+	 * @param[in] name The name of the landmark.
 	 * @param[in] x The x coordinate of the position.
 	 * @param[in] y The y coordinate of the position.
 	 * @param[in] z The z coordinate of the position.
 	 */
-	ModelLandmark(const string& name, float x, float y, float z = 0);
+	ModelLandmark(const std::string& name, float x, float y, float z = 0);
 
 	/**
 	 * Constructs a new visible model landmark.
 	 *
-	 * @param[in] name The name of the landmark (TODO in tlms format).
+	 * @param[in] name The name of the landmark.
 	 * @param[in] position The 2D coordinates of the landmark.
 	 */
-	ModelLandmark(const string& name, const Vec2f& position);
+	ModelLandmark(const std::string& name, const cv::Vec2f& position);
 
 	/**
 	 * Constructs a new visible model landmark.
 	 *
-	 * @param[in] name The name of the landmark (TODO in tlms format).
+	 * @param[in] name The name of the landmark.
 	 * @param[in] position The 3D coordinates of the landmark.
 	 */
-	ModelLandmark(const string& name, const Vec3f& position);
+	ModelLandmark(const std::string& name, const cv::Vec3f& position);
 
 	/**
 	 * Constructs a new model landmark.
 	 *
-	 * @param[in] name The name of the landmark (TODO in tlms format).
+	 * @param[in] name The name of the landmark.
 	 * @param[in] position The 2D or 3D coordinates of the landmark.
 	 * @param[in] visible A flag that indicates whether the landmark is visible.
 	 */
-	ModelLandmark(const string& name, const Vec3f& position, bool visible);
+	ModelLandmark(const std::string& name, const cv::Vec3f& position, bool visible);
 
-	Vec2f getPosition2D() const {
-		return Vec2f(getX(), getY());
+	cv::Vec2f getPosition2D() const {
+		return cv::Vec2f(getX(), getY());
 	}
 
-	Vec3f getPosition3D() const {
+	cv::Vec3f getPosition3D() const {
 		return position;
 	}
 
-	Size2f getSize() const {
-		return Size2f(0, 0);
+	cv::Size2f getSize() const {
+		return cv::Size2f(0, 0);
 	}
 
 	float getX() const {
@@ -104,11 +101,11 @@ public:
 	bool isClose(const Landmark& landmark, const float similarity) const;
 
 	// Note: Expects a 3-channel image.
-	void draw(Mat& image, const Scalar& color = Scalar(0, 0, 0), float width = 1) const;
+	void draw(cv::Mat& image, const cv::Scalar& color = cv::Scalar(0, 0, 0), float width = 1) const;
 
 private:
 
-	Vec3f position; ///< The 2D or 3D position of the landmark.
+	cv::Vec3f position; ///< The 2D or 3D position of the landmark.
 };
 
 
@@ -119,12 +116,12 @@ private:
 class LandmarkSymbols {
 
 public:
-	static array<bool, 9> get(string landmarkName);
-	static cv::Scalar getColor(string landmarkName);
+	static std::array<bool, 9> get(std::string landmarkName);
+	static cv::Scalar getColor(std::string landmarkName);
 
 private:
-	static map<string, array<bool, 9>> symbolMap;
-	static map<string, cv::Scalar> colorMap;
+	static std::map<std::string, std::array<bool, 9>> symbolMap;
+	static std::map<std::string, cv::Scalar> colorMap;
 };
 
 } /* namespace imageio */

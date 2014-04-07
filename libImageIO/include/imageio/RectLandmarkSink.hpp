@@ -15,7 +15,6 @@
 #endif
 #include "boost/filesystem/path.hpp"
 
-
 namespace imageio {
 
 class LandmarkCollection;

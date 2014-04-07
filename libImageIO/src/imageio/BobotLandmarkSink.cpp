@@ -11,6 +11,8 @@
 #include "opencv2/core/core.hpp"
 
 using cv::Rect_;
+using std::string;
+using std::shared_ptr;
 
 namespace imageio {
 

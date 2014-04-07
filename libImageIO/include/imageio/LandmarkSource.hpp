@@ -1,12 +1,12 @@
 /*
- * OrderedLandmarkSource.hpp
+ * LandmarkSource.hpp
  *
  *  Created on: 22.05.2013
  *      Author: poschmann
  */
 
-#ifndef ORDEREDLANDMARKSOURCE_HPP_
-#define ORDEREDLANDMARKSOURCE_HPP_
+#ifndef LANDMARKSOURCE_HPP_
+#define LANDMARKSOURCE_HPP_
 
 namespace imageio {
 
@@ -16,10 +16,10 @@ class LandmarkCollection;
  * Source of subsequent landmark collections. The landmark collections have the same order as the images
  * they belong to.
  */
-class OrderedLandmarkSource {
+class LandmarkSource {
 public:
 
-	virtual ~OrderedLandmarkSource() {}
+	virtual ~LandmarkSource() {}
 
 	/**
 	 * Resets the landmark source to its initial state.
@@ -34,14 +34,6 @@ public:
 	virtual bool next() = 0;
 
 	/**
-	 * Retrieves the current collection of landmarks and moves the landmark source forward to
-	 * the next collection.
-	 *
-	 * @return The collection of landmarks (that may be empty if no data could be retrieved).
-	 */
-	virtual LandmarkCollection get() = 0;
-
-	/**
 	 * Retrieves the current collection of landmarks.
 	 *
 	 * @return The collection of landmarks (that may be empty if no data could be retrieved).
@@ -50,4 +42,4 @@ public:
 };
 
 } /* namespace imageio */
-#endif /* ORDEREDLANDMARKSOURCE_HPP_ */
+#endif /* LANDMARKSOURCE_HPP_ */

@@ -4,14 +4,12 @@
  *  Created on: 24.05.2013
  *      Author: poschmann
  */
+#pragma once
 
 #ifndef RECTLANDMARK_HPP_
 #define RECTLANDMARK_HPP_
 
 #include "imageio/Landmark.hpp"
-
-using cv::Rect;
-using cv::Point2f;
 
 namespace imageio {
 
@@ -33,7 +31,7 @@ public:
 	 *
 	 * @param[in] name The name of the landmark.
 	 */
-	explicit RectLandmark(const string& name);
+	explicit RectLandmark(const std::string& name);
 
 	/**
 	 * Constructs a new visible rectangular landmark.
@@ -44,7 +42,7 @@ public:
 	 * @param[in] width The width.
 	 * @param[in] height The height.
 	 */
-	RectLandmark(const string& name, float x, float y, float width, float height);
+	RectLandmark(const std::string& name, float x, float y, float width, float height);
 
 	/**
 	 * Constructs a new visible rectangular landmark.
@@ -52,7 +50,7 @@ public:
 	 * @param[in] name The name of the landmark.
 	 * @param[in] rect The rectangular area.
 	 */
-	RectLandmark(const string& name, const Rect& rect);
+	RectLandmark(const std::string& name, const cv::Rect& rect);
 
 	/**
 	 * Constructs a new visible rectangular landmark.
@@ -60,7 +58,7 @@ public:
 	 * @param[in] name The name of the landmark.
 	 * @param[in] rect The rectangular area.
 	 */
-	RectLandmark(const string& name, const Rect_<float>& rect);
+	RectLandmark(const std::string& name, const cv::Rect_<float>& rect);
 
 	/**
 	 * Constructs a new visible rectangular landmark.
@@ -69,7 +67,7 @@ public:
 	 * @param[in] position The position of the center.
 	 * @param[in] size  The size.
 	 */
-	RectLandmark(const string& name, const Point2f& position, const Size2f& size);
+	RectLandmark(const std::string& name, const cv::Point2f& position, const cv::Size2f& size);
 
 	/**
 	 * Constructs a new visible rectangular landmark.
@@ -78,7 +76,7 @@ public:
 	 * @param[in] position The position of the center.
 	 * @param[in] size The size.
 	 */
-	RectLandmark(const string& name, const Vec2f& position, const Size2f& size);
+	RectLandmark(const std::string& name, const cv::Vec2f& position, const cv::Size2f& size);
 
 	/**
 	 * Constructs a new rectangular landmark.
@@ -88,17 +86,17 @@ public:
 	 * @param[in] size The size.
 	 * @param[in] visible A flag that indicates whether the landmark is visible.
 	 */
-	RectLandmark(const string& name, const Vec2f& position, const Size2f& size, bool visible);
+	RectLandmark(const std::string& name, const cv::Vec2f& position, const cv::Size2f& size, bool visible);
 
-	Vec2f getPosition2D() const {
+	cv::Vec2f getPosition2D() const {
 		return position;
 	}
 
-	Vec3f getPosition3D() const {
-		return Vec3f(getX(), getY(), 0);
+	cv::Vec3f getPosition3D() const {
+		return cv::Vec3f(getX(), getY(), 0);
 	}
 
-	Size2f getSize() const {
+	cv::Size2f getSize() const {
 		return size;
 	}
 
@@ -126,12 +124,12 @@ public:
 
 	bool isClose(const Landmark& landmark, const float similarity) const;
 
-	void draw(Mat& image, const Scalar& color = Scalar(0, 0, 0), float width = 1) const;
+	void draw(cv::Mat& image, const cv::Scalar& color = cv::Scalar(0, 0, 0), float width = 1) const;
 
 private:
 
-	Vec2f position; ///< The position of the landmark.
-	Size2f size;    ///< The size of the landmark.
+	cv::Vec2f position; ///< The position of the landmark.
+	cv::Size2f size;    ///< The size of the landmark.
 };
 
 } /* namespace imageio */
