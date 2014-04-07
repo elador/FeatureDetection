@@ -25,6 +25,7 @@ namespace render {
 			static cv::Mat createRotationMatrixZ(float angle);
 			static cv::Mat createScalingMatrix(float sx, float sy, float sz);
 			static cv::Mat createTranslationMatrix(float tx, float ty, float tz);
+			static cv::Mat createOrthogonalProjectionMatrix(float l, float r, float b, float t, float n, float f);
 
 			static unsigned char getMaxPossibleMipmapsNum(ushort width, ushort height)	// TODO: This belongs more in a ImageUtils, TextureUtils, or whatever...
 			{

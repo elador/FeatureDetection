@@ -9,6 +9,7 @@
 
 #include "render/Mesh.hpp"
 #include "render/MeshUtils.hpp"
+#include "render/MatrixUtils.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -207,22 +208,89 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	// SOFTWARE RENDERER START
 	Mat framebuffer = Mat::zeros(viewportHeight, viewportWidth, CV_8UC3);
 	// Vertex shader: Take all tris, transform to NDC (?) (MVP)
+	// Prepare:
+	// this is only the method how to draw (e.g. make tris and draw them (i.e. duplicate vertices), but in the end we have a VertexShader that operates per vertex
+	for (const auto& triIndices : mesh.tvi) {
+		//For every triangle: Like OpenGL does it! (So actually, OpenGL duplicates the vertices as well, it's not using triangle indices, at least not the way how I draw)
+		Triangle tri;
+		tri.vertex[0] = mesh.vertex[triIndices[0]];
+		tri.vertex[1] = mesh.vertex[triIndices[1]];
+		tri.vertex[2] = mesh.vertex[triIndices[2]];
+		// 
+	}
 
+	//aspect = 1.0f;
+	QMatrix4x4 p1;
+	p1.perspective(60, aspect, 1.0f, 100.0f);
+	qDebug() << p1;
+	QMatrix4x4 o1;
+	o1.ortho(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
+	o1.scale(0.1f, 0.3f, 1.6f);
+	o1.rotate(389.9f, 0.0f, 0.0f, 1.0f);
+	o1.rotate(197.2f, 0.0f, 1.0f, 0.0f);
+	o1.rotate(45.0f, 1.0f, 0.0f, 0.0f);
+	o1.translate(1.2f, 2.1f, 5.4f);
+	
+	Mat mt1 = utils::MatrixUtils::createTranslationMatrix(1.2f, 2.1f, 5.4f);
+	Mat mrx = utils::MatrixUtils::createRotationMatrixX(45.0f * (3.141592f/180.0f));
+	Mat mry = utils::MatrixUtils::createRotationMatrixY(197.2f * (3.141592f / 180.0f));
+	Mat mrz = utils::MatrixUtils::createRotationMatrixZ(389.9f * (3.141592f / 180.0f));
+	Mat ms1 = utils::MatrixUtils::createScalingMatrix(0.1f, 0.3f, 1.6f);
+	Mat mp1 = utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
 
-	// Fragment shader: Color the pixel values
+	qDebug() << "=====================";
+	// Actual Vertex shader:
+	//processedVertex = shade(Vertex); // processedVertex : pos, col, tex, texweight
+	std::vector<Vertex> processedVertices;
+	for (const auto& v : mesh.vertex) {
+		// pos_new = matrix * oldPosVec4
+		Mat mpnew = mp1*ms1*mrz*mry*mrx*mt1 * Mat(v.position);
+		//QVector4D pnew = o1 * QVector4D(v.position[0], v.position[1], v.position[2], v.position[3]);
+		//qDebug() << pnew;
+		processedVertices.push_back(Vertex(mpnew, v.color, v.texcrd));
+		// if ortho, we can do the divide as well, it will just be a / 1.0f.
+		//cv::Vec4f mpnewv(mpnew);
+		//mpnewv /= mpnewv[3]; // div by w
+	}
+	// We're in NDC now (= clip space, clipping volume)
+	// for every vertex/tri:
+		// classify vertices visibility with respect to the planes of the view frustum
+		// all vertices are not visible - reject the triangle.
+		// all vertices are visible - pass the whole triangle to the rasterizer.
+		// at this moment the triangle is known to be intersecting one of the view frustum's planes
+		// split the tri etc... then rasterize!
+
+	// PREPARE rasterizer:
+	// processProspectiveTriangleToRasterize:
+	// for every tri:
+		// calc 1/v0.w, 1/v1.w, 1/v2.w
+		// divide by w
+		// Viewport Transform
+		// if (!areVerticesCCWInScreenSpace(t.v0, t.v1, t.v2)), return;
+		// find bounding box for the triangle
+		// barycentric blabla, partial derivatives??? ... (what is for texturing, what for persp., what for rest?)
 
 	// Viewport transform:
+	//float x_w = (res.x() + 1)*(viewportWidth / 2.0f) + 0.0f; // OpenGL viewport transform (from NDC to viewport) (NDC=clipspace?)
+	//float y_w = (res.y() + 1)*(viewportHeight / 2.0f) + 0.0f;
+	//y_w = viewportHeight - y_w; // Qt: Origin top-left. OpenGL: bottom-left. OCV: top-left.
+	// My last SW-renderer was:
+	// x_w = (x *  vW/2) + vW/2; // equivalent to above
+	// y_w = (y * -vH/2) + vH/2; // equiv? Todo!
+	// CG book says: (check!)
+	// x_w = (x *  vW/2) + (vW-1)/2;
+	// y_w = (y * -vH/2) + (vH-1)/2;
 
-
-
-
-
-
-
-
-
-
-
+	// runPixelProcessor:
+	// Fragment shader: Color the pixel values
+	// for every tri:
+		// loop over min/max
+			// calc bary
+			// if visible according to z-buffer:
+			// interpolate tex, color
+			// color the pixel: runPixelShader: just returns color or return tex2D(texture, texCoords)
+			// clamp
+			// set pixel value in framebuffer, set depth-buffer
 }
 
 } /* namespace render */
