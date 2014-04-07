@@ -18,6 +18,7 @@
 #include <vector>
 
 using std::vector;
+using cv::Mat;
 
 namespace render {
 
@@ -172,7 +173,7 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 
 	m_program->release();
 
-	// Test: Get the depth buffer (probably slow)
+	// Get the framebuffer
 	glDisable(GL_TEXTURE_2D);
 	uchar col;
 	cv::Mat colb = cv::Mat::zeros(viewportHeight, viewportWidth, CV_8UC4);
@@ -183,21 +184,45 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	GLenum err0 = glGetError();
 	glGetError();
 
+	// Test: Get the depth buffer (probably slow)
 	float depth;
-	cv::Mat depthBuffer = cv::Mat::zeros(viewportHeight, viewportWidth, CV_32FC1);
+	cv::Mat qdepthBuffer = cv::Mat::zeros(viewportHeight, viewportWidth, CV_32FC1);
 	glReadPixels(320, 240, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-	//glReadPixels(0, 0, viewportWidth, viewportHeight, GL_DEPTH_COMPONENT, GL_FLOAT, depthBuffer.ptr(0));
+	//glReadPixels(0, 0, viewportWidth, viewportHeight, GL_DEPTH_COMPONENT, GL_FLOAT, qdepthBuffer.ptr(0));
 	GLenum err = glGetError();
 	std::cout << err << std::endl;
 	std::cout << depth << std::endl;
 	int dbits;
 	glGetIntegerv(GL_DEPTH_BITS, &dbits);
 	std::cout << "dbits: " << dbits << std::endl;
+	//glBindFramebuffer(GL_READ_FRAMEBUFFER, 0); ?
+	//glPixelStorei(GL_PACK_ALIGNMENT, 1);?
 
 	//cv::Mat framebuffer = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\box_screenbuffer11.png");
 	//cv::Mat textureMap = render::utils::MeshUtils::extractTexture(mesh, matrix, viewportWidth, viewportHeight, framebuffer);
 	//cv::imwrite("C:\\Users\\Patrik\\Documents\\GitHub\\img_extracted11.png", textureMap);
 	++m_frame;
+
+
+	// SOFTWARE RENDERER START
+	Mat framebuffer = Mat::zeros(viewportHeight, viewportWidth, CV_8UC3);
+	// Vertex shader: Take all tris, transform to NDC (?) (MVP)
+
+
+	// Fragment shader: Color the pixel values
+
+	// Viewport transform:
+
+
+
+
+
+
+
+
+
+
+
 }
 
 } /* namespace render */

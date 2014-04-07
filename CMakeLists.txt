@@ -23,16 +23,16 @@ add_subdirectory(libImageLogging)		# Image logging
 
 add_subdirectory(libImageIO)			# Input-library for cameras, Kinect and hard-drive images.
 add_subdirectory(libImageProcessing)	# Image pyramids, patch extraction, feature transformation
-add_subdirectory(libClassification)		# Classification and regression library
+#add_subdirectory(libClassification)		# Classification and regression library
 #add_subdirectory(libSvm)				# libSVM (support vector classification and regression)
 #add_subdirectory(libLinear)				# liblinear (linear classification with SVM and regression)
 
-add_subdirectory(libDetection)			# Sliding-window detection, Skin detection (Note: Do we use it anymore?)
-add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
+#add_subdirectory(libDetection)			# Sliding-window detection, Skin detection (Note: Do we use it anymore?)
+#add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 
 add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
 add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes; Camera (Pose) estimation
-add_subdirectory(libSupervisedDescentModel) # A non-parametric model for landmark detection. Uses the supervised descent method.
+#add_subdirectory(libSupervisedDescentModel) # A non-parametric model for landmark detection. Uses the supervised descent method.
 
 # Tracking apps
 #add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.
@@ -45,17 +45,18 @@ add_subdirectory(libSupervisedDescentModel) # A non-parametric model for landmar
 #add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe). (Note: Check if it still works)
 
 # SDM landmark detection apps
-add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
-add_subdirectory(sdmLandmarkDetection)	# Run the SDM landmark detection on one or several images.
-add_subdirectory(sdmLandmarkDetectionPlain)	# Run the SDM landmark detection on one or several images. Version without libImageIO.
-add_subdirectory(sdmEvaluation)			# App to evaluate an SDM landmark model on images, given ground-truth landmarks
+#add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
+#add_subdirectory(sdmLandmarkDetection)	# Run the SDM landmark detection on one or several images.
+#add_subdirectory(sdmLandmarkDetectionPlain)	# Run the SDM landmark detection on one or several images. Version without libImageIO.
+#add_subdirectory(sdmEvaluation)			# App to evaluate an SDM landmark model on images, given ground-truth landmarks
 
 # 3DMM fitting
 add_subdirectory(fitter)			# Experimental app (compiles)
+add_subdirectory(softwareRendererTestApp)
 
 # Tools
-add_subdirectory(landmarkVisualiser)	# Simple app to read landmarks and images and display them
-add_subdirectory(landmarkConverter)		# Simple app to convert landmarks from one format into another
+#add_subdirectory(landmarkVisualiser)	# Simple app to read landmarks and images and display them
+#add_subdirectory(landmarkConverter)		# Simple app to convert landmarks from one format into another
 
 # Face-recognition
 #add_subdirectory(frRunCogExp)		# App for doing face recognition tests with a gallery and probe images
