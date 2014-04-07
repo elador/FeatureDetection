@@ -13,17 +13,19 @@
 #include <utility>
 #include <fstream>
 
-using std::copy;
-using std::sort;
-using std::runtime_error;
-using std::make_pair;
-using boost::algorithm::trim;
-using boost::algorithm::starts_with;
+using std::map;
+using std::string;
+using std::getline;
+using std::vector;
+//using boost::algorithm::trim;
+//using boost::algorithm::starts_with;
 using boost::filesystem::path;
 using std::ifstream;
-using std::stringstream;
+using std::shared_ptr;
 using std::make_shared;
 using std::pair;
+using std::make_pair;
+
 
 namespace imageio {
 

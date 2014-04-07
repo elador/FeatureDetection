@@ -6,15 +6,18 @@
  */
 
 #include "imageio/OrderedLabeledImageSource.hpp"
-#include "imageio/OrderedLandmarkSource.hpp"
+#include "imageio/LandmarkSource.hpp"
 #include "imageio/LandmarkCollection.hpp"
 
 using boost::filesystem::path;
+using cv::Mat;
+using std::vector;
+using std::shared_ptr;
 
 namespace imageio {
 
 OrderedLabeledImageSource::OrderedLabeledImageSource(
-		shared_ptr<ImageSource> imageSource, shared_ptr<OrderedLandmarkSource> landmarkSource) :
+		shared_ptr<ImageSource> imageSource, shared_ptr<LandmarkSource> landmarkSource) :
 				LabeledImageSource(imageSource->getSourceName()), imageSource(imageSource), landmarkSource(landmarkSource) {}
 
 OrderedLabeledImageSource::~OrderedLabeledImageSource() {}

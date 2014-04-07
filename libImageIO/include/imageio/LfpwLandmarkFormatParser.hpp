@@ -53,7 +53,7 @@ private:
 	 * @param[in] header TODO.
 	 * @return TODO.
 	 */
-	std::pair<boost::filesystem::path, LandmarkCollection> readLine(const std::vector<std::string>& line, const string header);
+	std::pair<boost::filesystem::path, LandmarkCollection> readLine(const std::vector<std::string>& line, const std::string header);
 	
 public:
 	static std::string lfpwToTlmsName(std::string lfpwName);

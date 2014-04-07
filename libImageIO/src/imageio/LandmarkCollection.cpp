@@ -8,7 +8,10 @@
 #include "imageio/LandmarkCollection.hpp"
 #include <stdexcept>
 
-using std::move;
+using std::string;
+using std::vector;
+using std::make_pair;
+using std::shared_ptr;
 
 namespace imageio {
 

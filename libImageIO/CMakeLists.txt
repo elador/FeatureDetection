@@ -43,6 +43,7 @@ SET(HEADERS
 	include/imageio/LandmarkCollection.hpp
 	include/imageio/LandmarkFileGatherer.hpp
 	include/imageio/LandmarkFormatParser.hpp
+	include/imageio/LandmarkSource.hpp
 	include/imageio/LandmarksHelper.hpp
 	include/imageio/LfpwLandmarkFormatParser.hpp
 	include/imageio/LstLandmarkFormatParser.hpp
@@ -53,7 +54,6 @@ SET(HEADERS
 	include/imageio/NamedLandmarkSource.hpp
 	include/imageio/OrderedLabeledImageSource.hpp
 	include/imageio/OrderedLandmarkSink.hpp
-	include/imageio/OrderedLandmarkSource.hpp
 	include/imageio/RectLandmark.hpp
 	include/imageio/RectLandmarkSink.hpp
 	include/imageio/RepeatingFileImageSource.hpp

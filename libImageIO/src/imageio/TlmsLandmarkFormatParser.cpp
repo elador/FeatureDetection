@@ -13,16 +13,19 @@
 #include <utility>
 #include <fstream>
 
-using std::copy;
-using std::sort;
-using std::runtime_error;
-using std::make_pair;
-using boost::algorithm::trim;
-using boost::algorithm::starts_with;
+using cv::Vec3f;
 using boost::filesystem::path;
+using boost::algorithm::starts_with;
+using boost::algorithm::trim;
+using std::map;
+using std::string;
+using std::getline;
+using std::shared_ptr;
 using std::ifstream;
 using std::stringstream;
+using std::make_pair;
 using std::make_shared;
+
 
 namespace imageio {
 
@@ -42,9 +45,9 @@ LandmarkCollection TlmsLandmarkFormatParser::readFromTlmsFile(const string& file
 
 	while(getline(ifLM, strLine))
 	{
-		boost::algorithm::trim(strLine);
+		trim(strLine);
 		// allow comments
-		if ( !strLine.empty() && !starts_with(strLine, "#") && !starts_with(strLine, "//") )
+		if (!strLine.empty() && !starts_with(strLine, "#") && !starts_with(strLine, "//"))
 		{
 			shared_ptr<ModelLandmark> lm = readFromTlmsLine(strLine);
 			listLM.insert(lm);

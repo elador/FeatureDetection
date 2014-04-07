@@ -72,6 +72,8 @@ using boost::property_tree::ptree;
 using boost::filesystem::path;
 using boost::lexical_cast;
 using cv::Mat;
+using cv::Vec2f;
+using cv::Point2f;
 using logging::Logger;
 using logging::LoggerFactory;
 using logging::LogLevel;

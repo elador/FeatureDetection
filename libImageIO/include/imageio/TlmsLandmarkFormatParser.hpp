@@ -16,11 +16,6 @@
 #include <map>
 #include <memory>
 
-using std::vector;
-using std::string;
-using std::map;
-using std::shared_ptr;
-
 namespace imageio {
 
 /**
@@ -39,7 +34,7 @@ public:
 	 * @return A map with one entry containing the basename of the
 	 *         file and all the landmarks that are present.
 	 */
-	const map<path, LandmarkCollection> read(path landmarkFilePath);
+	const std::map<boost::filesystem::path, LandmarkCollection> read(boost::filesystem::path landmarkFilePath);
 
 private:
 	/**
@@ -48,7 +43,7 @@ private:
 	 * @param[in] filename The file name of the .tlms file to parse.
 	 * @return A collection of all the landmarks.
 	 */
-	LandmarkCollection readFromTlmsFile(const string& filename);
+	LandmarkCollection readFromTlmsFile(const std::string& filename);
 
 	/**
 	 * Parse a line of a .tlms file and return a Landmark.
@@ -56,7 +51,7 @@ private:
 	 * @param[in] line The line with the landmark information to parse.
 	 * @return A Landmark object.
 	 */
-	shared_ptr<ModelLandmark> readFromTlmsLine(const string& line);
+	std::shared_ptr<ModelLandmark> readFromTlmsLine(const std::string& line);
 	
 };
 

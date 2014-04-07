@@ -13,13 +13,7 @@
 
 using logging::Logger;
 using logging::LoggerFactory;
-using boost::filesystem::exists;
-using boost::filesystem::is_directory;
-using boost::filesystem::directory_iterator;
-using std::copy;
-using std::sort;
-using std::runtime_error;
-using std::make_pair;
+using boost::filesystem::path;
 
 namespace imageio {
 
@@ -50,17 +44,6 @@ bool DefaultNamedLandmarkSource::next()
 		return false;
 	}
 	return true;
-}
-
-imageio::LandmarkCollection DefaultNamedLandmarkSource::get()
-{
-	next();
-	// TODO: Careful, this can return an invalid element (will probably throw). Is that intentional? How to solve?
-	// We could do 'if return of next() == false, return LandmarkCollection() (empty)'
-	// But then we kind of never know when we're finished, because it's also possible that there are no
-	// landmarks for one image, but the next one is fine again.
-	// BobotLandmarkSource just seems to return an empty LandmarkCollection.
-	return index->second;
 }
 
 LandmarkCollection DefaultNamedLandmarkSource::get(const path& imagePath) {

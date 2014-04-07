@@ -7,7 +7,14 @@
 
 #include "imageio/ModelLandmark.hpp"
 
+using cv::Mat;
+using cv::Vec2f;
+using cv::Vec3f;
+using cv::Scalar;
 using std::make_pair;
+using std::string;
+using std::array;
+using std::map;
 
 namespace imageio {
 
@@ -145,49 +152,49 @@ array<bool, 9> LandmarkSymbols::get(string landmarkName)
 	return symbol->second;
 }
 
-cv::Scalar LandmarkSymbols::getColor(string landmarkName)
+Scalar LandmarkSymbols::getColor(string landmarkName)
 {
 	if (colorMap.empty()) {
-		cv::Scalar reye_c(0.0f, 0.0f, 1.0f);
+		Scalar reye_c(0.0f, 0.0f, 1.0f);
 		colorMap.insert(make_pair("right.eye.pupil.center", reye_c));	// Use an initializer list as soon as msvc supports it...
 
-		cv::Scalar leye_c(1.0f, 0.0f, 0.0f);
+		Scalar leye_c(1.0f, 0.0f, 0.0f);
 		colorMap.insert(make_pair("left.eye.pupil.center", leye_c));
 
-		cv::Scalar nose_tip(0.0f, 1.0f, 0.0f);
+		Scalar nose_tip(0.0f, 1.0f, 0.0f);
 		colorMap.insert(make_pair("center.nose.tip", nose_tip));
 
-		cv::Scalar mouth_rc(0.0f, 1.0f, 1.0f);
+		Scalar mouth_rc(0.0f, 1.0f, 1.0f);
 		colorMap.insert(make_pair("right.lips.corner", mouth_rc));
 
-		cv::Scalar mouth_lc(1.0f, 0.0f, 1.0f);
+		Scalar mouth_lc(1.0f, 0.0f, 1.0f);
 		colorMap.insert(make_pair("left.lips.corner", mouth_lc));
 
-		cv::Scalar reye_oc(0.0f, 0.0f, 0.48f);
+		Scalar reye_oc(0.0f, 0.0f, 0.48f);
 		colorMap.insert(make_pair("right.eye.corner_outer", reye_oc));
 
-		cv::Scalar leye_oc(1.0f, 1.0f, 0.0f);
+		Scalar leye_oc(1.0f, 1.0f, 0.0f);
 		colorMap.insert(make_pair("left.eye.corner_outer", leye_oc));
 
-		cv::Scalar mouth_ulb(0.63f, 0.75f, 0.9f);
+		Scalar mouth_ulb(0.63f, 0.75f, 0.9f);
 		colorMap.insert(make_pair("center.lips.upper.outer", mouth_ulb));
 
-		cv::Scalar nosetrill_r(0.27f, 0.27f, 0.67f);
+		Scalar nosetrill_r(0.27f, 0.27f, 0.67f);
 		colorMap.insert(make_pair("right.nose.wing.tip", nosetrill_r));
 
-		cv::Scalar nosetrill_l(0.04f, 0.78f, 0.69f);
+		Scalar nosetrill_l(0.04f, 0.78f, 0.69f);
 		colorMap.insert(make_pair("left.nose.wing.tip", nosetrill_l));
 
-		cv::Scalar rear_DONTKNOW(1.0f, 0.0f, 0.52f);
+		Scalar rear_DONTKNOW(1.0f, 0.0f, 0.52f);
 		colorMap.insert(make_pair("right.ear.DONTKNOW", rear_DONTKNOW)); // right.ear.(antihelix.tip | lobule.center | lobule.attachement)
 
-		cv::Scalar lear_DONTKNOW(0.0f, 0.6f, 0.0f);
+		Scalar lear_DONTKNOW(0.0f, 0.6f, 0.0f);
 		colorMap.insert(make_pair("left.ear.DONTKNOW", lear_DONTKNOW));
 
 	}
 	const auto symbol = colorMap.find(landmarkName);
 	if (symbol == colorMap.end()) {
-		cv::Scalar unknownLmColor(0.35f, 0.35f, 0.35f);
+		Scalar unknownLmColor(0.35f, 0.35f, 0.35f);
 		return unknownLmColor;
 	}
 	return symbol->second;
