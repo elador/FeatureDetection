@@ -11,6 +11,8 @@
 #include "render/MeshUtils.hpp"
 #include "render/MatrixUtils.hpp"
 
+#include "render/SoftwareRenderer2.hpp"
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -239,58 +241,10 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	Mat mp1 = utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
 
 	qDebug() << "=====================";
-	// Actual Vertex shader:
-	//processedVertex = shade(Vertex); // processedVertex : pos, col, tex, texweight
-	std::vector<Vertex> processedVertices;
-	for (const auto& v : mesh.vertex) {
-		// pos_new = matrix * oldPosVec4
-		Mat mpnew = mp1*ms1*mrz*mry*mrx*mt1 * Mat(v.position);
-		//QVector4D pnew = o1 * QVector4D(v.position[0], v.position[1], v.position[2], v.position[3]);
-		//qDebug() << pnew;
-		processedVertices.push_back(Vertex(mpnew, v.color, v.texcrd));
-		// if ortho, we can do the divide as well, it will just be a / 1.0f.
-		//cv::Vec4f mpnewv(mpnew);
-		//mpnewv /= mpnewv[3]; // div by w
-	}
-	// We're in NDC now (= clip space, clipping volume)
-	// for every vertex/tri:
-		// classify vertices visibility with respect to the planes of the view frustum
-		// all vertices are not visible - reject the triangle.
-		// all vertices are visible - pass the whole triangle to the rasterizer.
-		// at this moment the triangle is known to be intersecting one of the view frustum's planes
-		// split the tri etc... then rasterize!
+	qDebug() << o1;
+	SoftwareRenderer2 swr;
+	swr.render(mesh, o1);
 
-	// PREPARE rasterizer:
-	// processProspectiveTriangleToRasterize:
-	// for every tri:
-		// calc 1/v0.w, 1/v1.w, 1/v2.w
-		// divide by w
-		// Viewport Transform
-		// if (!areVerticesCCWInScreenSpace(t.v0, t.v1, t.v2)), return;
-		// find bounding box for the triangle
-		// barycentric blabla, partial derivatives??? ... (what is for texturing, what for persp., what for rest?)
-
-	// Viewport transform:
-	//float x_w = (res.x() + 1)*(viewportWidth / 2.0f) + 0.0f; // OpenGL viewport transform (from NDC to viewport) (NDC=clipspace?)
-	//float y_w = (res.y() + 1)*(viewportHeight / 2.0f) + 0.0f;
-	//y_w = viewportHeight - y_w; // Qt: Origin top-left. OpenGL: bottom-left. OCV: top-left.
-	// My last SW-renderer was:
-	// x_w = (x *  vW/2) + vW/2; // equivalent to above
-	// y_w = (y * -vH/2) + vH/2; // equiv? Todo!
-	// CG book says: (check!)
-	// x_w = (x *  vW/2) + (vW-1)/2;
-	// y_w = (y * -vH/2) + (vH-1)/2;
-
-	// runPixelProcessor:
-	// Fragment shader: Color the pixel values
-	// for every tri:
-		// loop over min/max
-			// calc bary
-			// if visible according to z-buffer:
-			// interpolate tex, color
-			// color the pixel: runPixelShader: just returns color or return tex2D(texture, texCoords)
-			// clamp
-			// set pixel value in framebuffer, set depth-buffer
 }
 
 } /* namespace render */

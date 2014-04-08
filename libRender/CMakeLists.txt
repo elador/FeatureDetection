@@ -56,6 +56,7 @@ SET(SOURCE
 SET(HEADERS
 	include/render/QOpenGLRenderer.hpp
 	include/render/SoftwareRenderer.hpp
+	include/render/SoftwareRenderer2.hpp
 	include/render/Vertex.hpp
 	include/render/Triangle.hpp
 	include/render/Camera.hpp
