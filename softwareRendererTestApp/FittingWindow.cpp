@@ -51,32 +51,32 @@ void FittingWindow::render()
 	// call r->setViewport before every render?
 	//r->render(render::utils::MeshUtils::createCube());
 	
-	//r->render(morphableModel.getMean());
+	r->render(morphableModel.getMean());
 
-	render::Mesh triangle;
+	/*render::Mesh triangle;
 	triangle.vertex.resize(6);
 
-	triangle.vertex[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 0.0f);
+	triangle.vertex[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
 	triangle.vertex[0].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
 	triangle.vertex[0].texcrd = cv::Vec2f(0.0f, 0.0f);
 
-	triangle.vertex[1].position = cv::Vec4f(-0.5f, -0.5f, 0.5f, 0.0f);
+	triangle.vertex[1].position = cv::Vec4f(-0.5f, -0.5f, 0.5f, 1.0f);
 	triangle.vertex[1].color = cv::Vec3f(0.0f, 1.0f, 0.0f);
 	triangle.vertex[1].texcrd = cv::Vec2f(0.0f, 1.0f);
 
-	triangle.vertex[2].position = cv::Vec4f(0.5f, -0.5f, 0.5f, 0.0f);
+	triangle.vertex[2].position = cv::Vec4f(0.5f, -0.5f, 0.5f, 1.0f);
 	triangle.vertex[2].color = cv::Vec3f(0.0f, 0.0f, 1.0f);
 	triangle.vertex[2].texcrd = cv::Vec2f(1.0f, 1.0f);
 
-	triangle.vertex[3].position = cv::Vec4f(-0.8f, 0.8f, 0.0f, 0.0f);
+	triangle.vertex[3].position = cv::Vec4f(-0.8f, 0.8f, 0.0f, 1.0f);
 	triangle.vertex[3].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
 	triangle.vertex[3].texcrd = cv::Vec2f(0.0f, 0.0f);
 
-	triangle.vertex[4].position = cv::Vec4f(-0.8f, -0.8f, 0.0f, 0.0f);
+	triangle.vertex[4].position = cv::Vec4f(-0.8f, -0.8f, 0.0f, 1.0f);
 	triangle.vertex[4].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
 	triangle.vertex[4].texcrd = cv::Vec2f(0.0f, 1.0f);
 
-	triangle.vertex[5].position = cv::Vec4f(0.8f, -0.8f, 0.0f, 0.0f);
+	triangle.vertex[5].position = cv::Vec4f(0.8f, -0.8f, 0.0f, 1.0f);
 	triangle.vertex[5].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
 	triangle.vertex[5].texcrd = cv::Vec2f(1.0f, 1.0f);
 
@@ -90,7 +90,7 @@ void FittingWindow::render()
 	triangle.tvi.push_back(vi);
 	triangle.tci.push_back(vi);
 	r->render(triangle);
-
+	*/
 	++m_frame;
 }
 
