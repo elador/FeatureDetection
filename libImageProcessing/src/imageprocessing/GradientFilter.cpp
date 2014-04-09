@@ -8,7 +8,6 @@
 #include "imageprocessing/GradientFilter.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <stdexcept>
-#include <vector>
 
 using std::invalid_argument;
 
@@ -56,10 +55,7 @@ Mat GradientFilter::applyTo(const Mat& image, Mat& filtered) const {
 	cv::Sobel(blurred, gradientX, imageType, 1, 0, kernelSize, scale, delta);
 	cv::Sobel(blurred, gradientY, imageType, 0, 1, kernelSize, scale, delta);
 
-	std::vector<Mat> gradients;
-	gradients.push_back(gradientX);	// Note: Revert back to initializer lists as soon as vs2012 supports it.
-	gradients.push_back(gradientY);
-	cv::merge(gradients, filtered);
+	cv::merge({ gradientX, gradientY }, filtered);
 	return filtered;
 }
 

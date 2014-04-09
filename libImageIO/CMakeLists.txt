@@ -12,6 +12,7 @@ FIND_PACKAGE(Boost 1.48.0 REQUIRED) # We only want the headers in the lib?
 FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
+
 IF(WITH_MSKINECT_SDK)
 	# Include Microsoft Kinect SDK (Windows)
 	SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )

@@ -13,18 +13,21 @@ MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 FIND_PACKAGE(MATLAB REQUIRED)
 
-IF(WIN32)
-	# In Windows only: Include Microsoft Kinect SDK
+IF(WITH_MSKINECT_SDK)
+	# Include Microsoft Kinect SDK (Windows)
 	SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
 	FIND_PACKAGE(KinectSDK REQUIRED)
 	INCLUDE_DIRECTORIES(${KinectSDK_INCLUDE_DIR})
 	SET(KINECT_LIBNAME ${KinectSDK_LIBRARIES})
-	
-	# Fix for VS2012 that has _VARIADIC_MAX set to 5 (the C++11 standard requires a value
-	# of 10). Don't set too high because it increases compiler memory usage / compile-time.
-	add_definitions( -D_VARIADIC_MAX=6 )
+	add_definitions(-DWITH_MSKINECT_SDK)
 ELSE()
 	SET(KINECT_LIBNAME "")
+ENDIF()
+
+IF(WIN32)
+	# Fix for VS2012 that has _VARIADIC_MAX set to 5 (the C++11 standard requires a value
+	# of 10). Don't set too high because it increases compiler memory usage / compile-time.
+	#add_definitions( -D_VARIADIC_MAX=6 )
 ENDIF()
 
 # source and header files
