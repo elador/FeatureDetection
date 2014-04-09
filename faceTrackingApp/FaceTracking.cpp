@@ -266,7 +266,6 @@ void FaceTracking::stop() {
 
 int main(int argc, char *argv[]) {
 	int verboseLevelText;
-	int verboseLevelImages;
 	int deviceId, kinectId;
 	string filename, directory;
 	bool useCamera = false, useKinect = false, useFile = false, useDirectory = false;
@@ -277,8 +276,7 @@ int main(int argc, char *argv[]) {
 		po::options_description desc("Allowed options");
 		desc.add_options()
 			("help,h", "Produce help message")
-			("verbose-text,v", po::value<int>(&verboseLevelText)->implicit_value(2)->default_value(0,"minimal text output"), "Enable text-verbosity (optionally specify level)")
-			("verbose-images,w", po::value<int>(&verboseLevelImages)->implicit_value(2)->default_value(0,"minimal image output"), "Enable image-verbosity (optionally specify level)")
+			("verbose-text,v", po::value<int>(&verboseLevelText)->implicit_value(2)->default_value(0,"minimal text output"), "Enable text-verbosity (optionally specify level). TODO: Not implemented yet.")
 			("filename,f", po::value< string >(&filename), "A filename of a video to run the tracking")
 			("directory,i", po::value< string >(&directory), "Use a directory as input")
 			("device,d", po::value<int>(&deviceId)->implicit_value(0), "A camera device ID for use with the OpenCV camera driver")
@@ -324,7 +322,7 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	Loggers->getLogger("app").addAppender(make_shared<ConsoleAppender>(loglevel::INFO));
+	Loggers->getLogger("app").addAppender(make_shared<ConsoleAppender>(LogLevel::Info));
 
 	unique_ptr<ImageSource> imageSource;
 	if (useCamera)

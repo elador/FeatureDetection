@@ -7,7 +7,10 @@
 
 #include "classification/ProbabilisticRvmClassifier.hpp"
 #include "classification/RvmClassifier.hpp"
-#include "mat.h"
+#include "logging/LoggerFactory.hpp"
+#ifdef WITH_MATLAB_CLASSIFIER
+	#include "mat.h"
+#endif
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
@@ -16,6 +19,8 @@
 #include <iostream>
 #include <stdexcept>
 
+using logging::Logger;
+using logging::LoggerFactory;
 using boost::filesystem::path;
 using std::make_pair;
 using std::make_shared;
@@ -57,41 +62,6 @@ void ProbabilisticRvmClassifier::setLogisticParameters(double logisticA, double 
 	this->logisticB = logisticB;
 }
 
-
-pair<double, double> ProbabilisticRvmClassifier::loadSigmoidParamsFromMatlab(const string& logisticFilename)
-{
-	// Load sigmoid stuff:
-	double logisticA, logisticB;
-	MATFile *pmatfile;
-	mxArray *pmxarray; // =mat
-	pmatfile = matOpen(logisticFilename.c_str(), "r");
-	if (pmatfile == 0) {
-		throw invalid_argument("ProbabilisticRvmClassifier: Unable to open the thresholds-file: " + logisticFilename);
-	} 
-
-	//TODO is there a case (when svm+wvm from same training-data) when there exists only a posterior_svm, and I should use this here?
-	pmxarray = matGetVariable(pmatfile, "posterior_wrvm");
-	if (pmxarray == 0) {
-		throw runtime_error("ProbabilisticRvmClassifier: Unable to find the vector posterior_wrvm. If you don't want probabilistic output, don't use a probabilistic classifier.");
-		//logisticA = logisticB = 0; // TODO: Does it make sense to continue?
-	} else {
-		double* matdata = mxGetPr(pmxarray);
-		const mwSize *dim = mxGetDimensions(pmxarray);
-		if (dim[1] != 2) {
-			throw runtime_error("ProbabilisticRvmClassifier: Size of vector posterior_wrvm !=2. If you don't want probabilistic output, don't use a probabilistic classifier.");
-			//logisticA = logisticB = 0; // TODO: Does it make sense to continue?
-		} else {
-			logisticB = matdata[0];
-			logisticA = matdata[1];
-		}
-		mxDestroyArray(pmxarray);
-	}
-	matClose(pmatfile);
-
-	return make_pair(logisticA, logisticB);
-}
-
-
 shared_ptr<ProbabilisticRvmClassifier> ProbabilisticRvmClassifier::load(const ptree& subtree)
 {
 	path classifierFile = subtree.get<path>("classifierFile");
@@ -107,6 +77,49 @@ shared_ptr<ProbabilisticRvmClassifier> ProbabilisticRvmClassifier::load(const pt
 	} else {
 		throw logic_error("ProbabilisticRvmClassifier: Only loading of .mat RVMs is supported. If you want to load a non-cascaded RVM, use an SvmClassifier.");
 	}
+}
+
+pair<double, double> ProbabilisticRvmClassifier::loadSigmoidParamsFromMatlab(const string& logisticFilename)
+{
+	Logger logger = Loggers->getLogger("classification");
+
+#ifdef WITH_MATLAB_CLASSIFIER
+	// Load sigmoid stuff:
+	double logisticA, logisticB;
+	MATFile *pmatfile;
+	mxArray *pmxarray; // =mat
+	pmatfile = matOpen(logisticFilename.c_str(), "r");
+	if (pmatfile == 0) {
+		throw invalid_argument("ProbabilisticRvmClassifier: Unable to open the thresholds-file: " + logisticFilename);
+	}
+
+	//TODO is there a case (when svm+wvm from same training-data) when there exists only a posterior_svm, and I should use this here?
+	pmxarray = matGetVariable(pmatfile, "posterior_wrvm");
+	if (pmxarray == 0) {
+		throw runtime_error("ProbabilisticRvmClassifier: Unable to find the vector posterior_wrvm. If you don't want probabilistic output, don't use a probabilistic classifier.");
+		//logisticA = logisticB = 0; // TODO: Does it make sense to continue?
+	}
+	else {
+		double* matdata = mxGetPr(pmxarray);
+		const mwSize *dim = mxGetDimensions(pmxarray);
+		if (dim[1] != 2) {
+			throw runtime_error("ProbabilisticRvmClassifier: Size of vector posterior_wrvm !=2. If you don't want probabilistic output, don't use a probabilistic classifier.");
+			//logisticA = logisticB = 0; // TODO: Does it make sense to continue?
+		}
+		else {
+			logisticB = matdata[0];
+			logisticA = matdata[1];
+		}
+		mxDestroyArray(pmxarray);
+	}
+	matClose(pmatfile);
+
+	return make_pair(logisticA, logisticB);
+#else
+	string errorMessage("ProbabilisticRvmClassifier: Cannot load a Matlab classifier, library compiled without support for Matlab. Please re-run CMake with WITH_MATLAB_CLASSIFIER enabled.");
+	logger.error(errorMessage);
+	throw std::runtime_error(errorMessage);
+#endif
 }
 
 } /* namespace classification */

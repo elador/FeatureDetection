@@ -50,3 +50,4 @@
 # ==============================
 
 set( WITH_MSKINECT_SDK OFF CACHE BOOL "Enables the use of a Kinect as a webcam (using the MS Kinect SDK for Windows)" FORCE )
+set( WITH_MATLAB_CLASSIFIER OFF CACHE BOOL "Enables support for loading Matlab classifiers (e.g. WVMs) in libClassification and certain apps" FORCE )
