@@ -79,7 +79,7 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	//glDepthMask(GL_TRUE);
 	//glDepthRange(0.0, 1.0);
 	// Enable back face culling
-	//glEnable(GL_CULL_FACE); // not to init
+	glEnable(GL_CULL_FACE); // not to init
 
 	glEnable(GL_TEXTURE_2D);
 
@@ -150,9 +150,9 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	//matrix.perspective(60, aspect, 0.1, 100.0);
 	matrix.translate(0, 0, -2);
 	//matrix.rotate(15.0f, 1.0f, 0.0f, 0.0f);
-	matrix.rotate(30.0f, 0.0f, 1.0f, 0.0f);
+	//matrix.rotate(30.0f, 0.0f, 1.0f, 0.0f);
 	//matrix.scale(0.009f);
-	matrix.scale(0.003f);
+	//matrix.scale(0.003f);
 
 	m_program->setUniformValue(m_matrixUniform, matrix);
 

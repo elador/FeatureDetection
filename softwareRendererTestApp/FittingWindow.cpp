@@ -51,9 +51,9 @@ void FittingWindow::render()
 	// call r->setViewport before every render?
 	//r->render(render::utils::MeshUtils::createCube());
 	
-	r->render(morphableModel.getMean());
+	//r->render(morphableModel.getMean());
 
-	/*render::Mesh triangle;
+	render::Mesh triangle;
 	triangle.vertex.resize(6);
 
 	triangle.vertex[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
@@ -90,7 +90,7 @@ void FittingWindow::render()
 	triangle.tvi.push_back(vi);
 	triangle.tci.push_back(vi);
 	r->render(triangle);
-	*/
+	
 	++m_frame;
 }
 

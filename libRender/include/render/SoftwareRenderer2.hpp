@@ -24,6 +24,11 @@ namespace render {
 
 /**
  * Desc
+ * Coordinate systems:
+ * When specifying the vertices: +x = right, +y = up, we look into -z.
+ * So z = 0.5 is in front of 0.0.
+ * Z-Buffer: 
+ * 
  */
 class SoftwareRenderer2
 {
@@ -31,6 +36,8 @@ public:
 	//SoftwareRenderer2();
 	//SoftwareRenderer2(unsigned int screenWidth, unsigned int screenHeight);
 	//~SoftwareRenderer2();
+
+	bool doBackfaceCulling = false; ///< If true, only draw triangles with vertices ordered CCW in screen-space
 
 	//ifdef WITH_RENDER_QT? WITH_RENDER_QOPENGL?
 	std::pair<cv::Mat, cv::Mat> render(Mesh mesh, QMatrix4x4 mvp) {
@@ -59,15 +66,74 @@ public:
 		// processProspectiveTriangleToRasterize:
 		// for every vertex/tri:
 		for (const auto& triIndices : mesh.tvi) {
+			// Todo: Split this whole stuff up. Make a "clip" function, ... rename "processProspective..".. what is "process"... get rid of "continue;"-stuff by moving stuff inside process...
 			// classify vertices visibility with respect to the planes of the view frustum
+			// we're in clip-coords (NDC), so just check if outside [-1, 1] x ...
+			unsigned char visibilityBits[3];
+			for (unsigned char k = 0; k < 3; k++)
+			{
+				visibilityBits[k] = 0;
+				float xOverW = clipSpaceVertices[triIndices[k]].position[0] / clipSpaceVertices[triIndices[k]].position[3];
+				float yOverW = clipSpaceVertices[triIndices[k]].position[1] / clipSpaceVertices[triIndices[k]].position[3];
+				float zOverW = clipSpaceVertices[triIndices[k]].position[2] / clipSpaceVertices[triIndices[k]].position[3];
+				if (xOverW < -1)			// true if outside of view frustum
+					visibilityBits[k] |= 1;	// set bit if outside of frustum
+				if (xOverW > 1)
+					visibilityBits[k] |= 2;
+				if (yOverW < -1)
+					visibilityBits[k] |= 4;
+				if (yOverW > 1)
+					visibilityBits[k] |= 8;
+				if (zOverW < -1)
+					visibilityBits[k] |= 16;
+				if (zOverW > 1)
+					visibilityBits[k] |= 32;
+			} // if all bits are 0, then it's inside the frustum
 			// all vertices are not visible - reject the triangle.
-			// all vertices are visible - pass the whole triangle to the rasterizer.
-			boost::optional<TriangleToRasterize> t = processProspectiveTri(clipSpaceVertices[triIndices[0]], clipSpaceVertices[triIndices[1]], clipSpaceVertices[triIndices[2]]); // true/false?
-			if (t) {
-				trisToRaster.push_back(*t);
+			if ((visibilityBits[0] & visibilityBits[1] & visibilityBits[2]) > 0)
+			{
+				continue;
+			}
+			// all vertices are visible - pass the whole triangle to the rasterizer. = All bits of all 3 triangles are 0.
+			if ((visibilityBits[0] | visibilityBits[1] | visibilityBits[2]) == 0)
+			{
+				boost::optional<TriangleToRasterize> t = processProspectiveTri(clipSpaceVertices[triIndices[0]], clipSpaceVertices[triIndices[1]], clipSpaceVertices[triIndices[2]]);
+				if (t) {
+					trisToRaster.push_back(*t);
+				}
+				continue;
 			}
 			// at this moment the triangle is known to be intersecting one of the view frustum's planes
+			std::vector<Vertex> vertices;
+			vertices.push_back(clipSpaceVertices[triIndices[0]]);
+			vertices.push_back(clipSpaceVertices[triIndices[1]]);
+			vertices.push_back(clipSpaceVertices[triIndices[2]]);
 			// split the tri etc... then pass to to the rasterizer.
+			//vertices = clipPolygonToPlaneIn4D(vertices, cv::Vec4f(0.0f, 0.0f, -1.0f, -1.0f));	// This is the near-plane, right? Because we only have to check against that. For tlbr planes of the frustum, we can just draw, and then clamp it because it's outside the screen
+			vertices = clipPolygonToPlaneIn4D(vertices, cv::Vec4f(0.0f, 0.0f, 1.0f, -1.0f));	// This is the near-plane, right? Because we only have to check against that. For tlbr planes of the frustum, we can just draw, and then clamp it because it's outside the screen
+			//	vertices = clipPolygonToPlaneIn4D(vertices, vec4(0.0f, 0.0f, 1.0f, -1.0f));
+			//	vertices = clipPolygonToPlaneIn4D(vertices, vec4(-1.0f, 0.0f, 0.0f, -1.0f));
+			//	vertices = clipPolygonToPlaneIn4D(vertices, vec4(1.0f, 0.0f, 0.0f, -1.0f));
+			//	vertices = clipPolygonToPlaneIn4D(vertices, vec4(0.0f, -1.0f, 0.0f, -1.0f));
+			//	vertices = clipPolygonToPlaneIn4D(vertices, vec4(0.0f, 1.0f, 0.0f, -1.0f));
+			/* Note from mail: (note: stuff might flip because we change z/P-matrix?)
+			vertices = clipPolygonToPlaneIn4D(vertices, cv::Vec4f(0.0f, 0.0f, -1.0f, -1.0f));
+			PH: That vector should be the normal of the NEAR-plane of the frustum, right? Because we only have to check if the triangle intersects the near plane. (?) and the rest we should be able to just clamp.
+			=> That's right. It's funny here it's actually a 4D hyperplane and it works! Math is beautiful :).
+			=> Clipping to the near plane must be done because after w-division tris crossing it would get distorted. Clipping against other planes can be done but I think it's faster to simply check pixel's boundaries during rasterization stage.
+			*/
+
+			// triangulation of the polygon formed of vertices array
+			if (vertices.size() >= 3)
+			{
+				for (unsigned char k = 0; k < vertices.size() - 2; k++)
+				{
+					boost::optional<TriangleToRasterize> t = processProspectiveTri(vertices[0], vertices[1 + k], vertices[2 + k]);
+					if (t) {
+						trisToRaster.push_back(*t);
+					}
+				}
+			}
 		}
 
 		// runPixelProcessor:
@@ -125,7 +191,10 @@ private:
 		// x_w = (x *  vW/2) + (vW-1)/2;
 		// y_w = (y * -vH/2) + (vH-1)/2;
 
-		//if (!areVerticesCCWInScreenSpace(t.v0, t.v1, t.v2)) return;
+		if (doBackfaceCulling) {
+			if (!areVerticesCCWInScreenSpace(t.v0, t.v1, t.v2))
+				return boost::none;
+		}
 
 		// find bounding box for the triangle
 		/*t.minX = std::max(std::min(t.v0.position[0], std::min(t.v1.position[0], t.v2.position[0])), 0.0f);
@@ -201,6 +270,60 @@ private:
 
 	double implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2) {
 		return ((double)v1[1] - (double)v2[1])*(double)x + ((double)v2[0] - (double)v1[0])*(double)y + (double)v1[0] * (double)v2[1] - (double)v2[0] * (double)v1[1];
+	};
+
+	std::vector<Vertex> clipPolygonToPlaneIn4D(const std::vector<Vertex>& vertices, const cv::Vec4f& planeNormal)
+	{
+		std::vector<Vertex> clippedVertices;
+
+		// We can have 2 cases:
+		//	* 1 vertex visible: we make 1 new triangle out of the visible vertex plus the 2 intersection points with the near-plane
+		//  * 2 vertices visible: we have a quad, so we have to make 2 new triangles out of it.
+
+		for (unsigned int i = 0; i < vertices.size(); i++)
+		{
+			int a = i;
+			int b = (i + 1) % vertices.size();
+
+			float fa = vertices[a].position.dot(planeNormal);
+			float fb = vertices[b].position.dot(planeNormal);
+
+			if ((fa < 0 && fb > 0) || (fa > 0 && fb < 0))
+			{
+				cv::Vec4f direction = vertices[b].position - vertices[a].position;
+				float t = -(planeNormal.dot(vertices[a].position)) / (planeNormal.dot(direction));
+
+				cv::Vec4f position = vertices[a].position + t*direction;
+				cv::Vec3f color = vertices[a].color + t*(vertices[b].color - vertices[a].color);
+				cv::Vec2f texCoord = vertices[a].texcrd + t*(vertices[b].texcrd - vertices[a].texcrd);	// We could omit that if we don't render with texture.
+
+				if (fa < 0)
+				{
+					clippedVertices.push_back(vertices[a]);
+					clippedVertices.push_back(Vertex(position, color, texCoord));
+				}
+				else if (fb < 0)
+				{
+					clippedVertices.push_back(Vertex(position, color, texCoord));
+				}
+			}
+			else if (fa < 0 && fb < 0)
+			{
+				clippedVertices.push_back(vertices[a]);
+			}
+		}
+
+		return clippedVertices;
+	};
+
+	bool areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2)
+	{
+		float dx01 = v1.position[0] - v0.position[0];
+		float dy01 = v1.position[1] - v0.position[1];
+		float dx02 = v2.position[0] - v0.position[0];
+		float dy02 = v2.position[1] - v0.position[1];
+
+		return (dx01*dy02 - dy01*dx02 < 0.0f); // Original: (dx01*dy02 - dy01*dx02 > 0.0f). But: OpenCV has origin top-left, y goes down
 	};
 	
 };
