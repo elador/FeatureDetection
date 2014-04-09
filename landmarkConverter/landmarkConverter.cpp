@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 	Loggers->getLogger("landmarkConverter").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("landmarkConverter");
 
-	appLogger.debug("Verbose level for console output: " + logging::loglevelToString(logLevel));
+	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
 	// Load the input landmarks
 	shared_ptr<NamedLandmarkSource> landmarkSource;

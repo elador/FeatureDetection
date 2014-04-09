@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 	Loggers->getLogger("fitter").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("fitter");
 
-	appLogger.debug("Verbose level for console output: " + logging::loglevelToString(logLevel));
+	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 	appLogger.debug("Using config: " + configFilename.string());
 
 	if (inputPaths.size() > 1) {

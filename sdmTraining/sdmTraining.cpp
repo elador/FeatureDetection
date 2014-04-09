@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 	Loggers->getLogger("sdmTraining").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("sdmTraining");
 
-	appLogger.debug("Verbose level for console output: " + logging::loglevelToString(logLevel));
+	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
 	struct Dataset {
 		string databaseName;
