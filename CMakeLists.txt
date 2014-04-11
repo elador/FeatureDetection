@@ -1,6 +1,6 @@
-SET( PROJECT_NAME FeatureDetection )
-PROJECT( ${PROJECT_NAME} )
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+set(PROJECT_NAME FeatureDetection)
+project(${PROJECT_NAME})
+cmake_minimum_required(VERSION 2.8)
 
 # g++ needs a compiler flag to use the (experimental) C++11 support
 # TODO: * We could test for VS/gcc/unsupported compilers and warn
