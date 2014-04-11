@@ -27,7 +27,7 @@ public:
 
 	~LowVarianceSampling();
 
-	void resample(const vector<Sample>& samples, unsigned int count, vector<Sample>& newSamples);
+	void resample(const vector<shared_ptr<Sample>>& samples, unsigned int count, vector<shared_ptr<Sample>>& newSamples);
 
 private:
 
@@ -37,7 +37,7 @@ private:
 	 * @param[in] samples The samples.
 	 * @return The sum of the sample weights.
 	 */
-	double computeWeightSum(const vector<Sample>& samples);
+	double computeWeightSum(const vector<shared_ptr<Sample>>& samples);
 
 	boost::mt19937 generator;         ///< Random number generator.
 	boost::uniform_01<> distribution; ///< Uniform real distribution.

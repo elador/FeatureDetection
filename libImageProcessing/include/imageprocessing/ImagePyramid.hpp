@@ -15,12 +15,6 @@
 #include <memory>
 #include <utility>
 
-using cv::Mat;
-using cv::Size;
-using std::vector;
-using std::shared_ptr;
-using std::pair;
-
 namespace imageprocessing {
 
 class VersionedImage;
@@ -37,11 +31,25 @@ public:
 	/**
 	 * Constructs a new empty image pyramid.
 	 *
+	 * @param[in] octaveLayerCount The number of layers per octave.
 	 * @param[in] minScaleFactor The minimum scale factor (the scale factor of the smallest scaled (last) image is bigger or equal).
 	 * @param[in] maxScaleFactor The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
-	 * @param[in] incrementalScaleFactor The incremental scale factor between two layers of the pyramid.
 	 */
-	explicit ImagePyramid(double minScaleFactor = 0, double maxScaleFactor = 1, double incrementalScaleFactor = 0.9);
+	ImagePyramid(size_t octaveLayerCount, double minScaleFactor, double maxScaleFactor = 1);
+
+	/**
+	 * Constructs a new empty image pyramid using the incremental scale factor for determining the number of layers per octave.
+	 *
+	 * @param[in] incrementalScaleFactor The incremental scale factor between two layers of the pyramid.
+	 * @param[in] minScaleFactor The minimum scale factor (the scale factor of the smallest scaled (last) image is bigger or equal).
+	 * @param[in] maxScaleFactor The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
+	 */
+	ImagePyramid(double incrementalScaleFactor, double minScaleFactor, double maxScaleFactor = 1);
+
+	/**
+	 * Constructs a new empty image pyramid that will use another pyramid as its source.
+	 */
+	explicit ImagePyramid(double minScaleFactor = 0, double maxScaleFactor = 1);
 
 	/**
 	 * Constructs a new empty image pyramid with another pyramid as its source.
@@ -50,9 +58,7 @@ public:
 	 * @param[in] minScaleFactor The minimum scale factor (the scale factor of the smallest scaled (last) image is bigger or equal).
 	 * @param[in] maxScaleFactor The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
 	 */
-	explicit ImagePyramid(shared_ptr<ImagePyramid> pyramid, double minScaleFactor = 0, double maxScaleFactor = 1);
-
-	~ImagePyramid();
+	explicit ImagePyramid(std::shared_ptr<ImagePyramid> pyramid, double minScaleFactor = 0, double maxScaleFactor = 1);
 
 	/**
 	 * @return The version number.
@@ -67,7 +73,7 @@ public:
 	 *
 	 * @param[in] image The new source image.
 	 */
-	void setSource(const Mat& image);
+	void setSource(const cv::Mat& image);
 
 	/**
 	 * Changes the source to the given versioned image. The pyramid will not get updated, therefore for the source change
@@ -76,7 +82,7 @@ public:
 	 *
 	 * @param[in] image The new source image.
 	 */
-	void setSource(shared_ptr<VersionedImage> image);
+	void setSource(const std::shared_ptr<VersionedImage>& image);
 
 	/**
 	 * Changes the source to the given pyramid. This pyramid will not get updated, therefore for the source change to take
@@ -85,7 +91,7 @@ public:
 	 *
 	 * @param[in] pyramid The new source pyramid.
 	 */
-	void setSource(shared_ptr<ImagePyramid> pyramid);
+	void setSource(const std::shared_ptr<ImagePyramid>& pyramid);
 
 	/**
 	 * Updates this pyramid using its source (either an image or another pyramid). If the source has not changed since the
@@ -100,7 +106,7 @@ public:
 	 *
 	 * @param[in] image The new image.
 	 */
-	void update(const Mat& image);
+	void update(const cv::Mat& image);
 
 	/**
 	 * Updates this pyramid using the saved parameters. If this pyramid's source is another pyramid, then that pyramid
@@ -109,21 +115,21 @@ public:
 	 *
 	 * @param[in] image The new image.
 	 */
-	void update(shared_ptr<VersionedImage> image);
+	void update(const std::shared_ptr<VersionedImage>& image);
 
 	/**
 	 * Adds a new filter that is applied to the original image after the currently existing image filters.
 	 *
 	 * @param[in] filter The new image filter.
 	 */
-	void addImageFilter(shared_ptr<ImageFilter> filter);
+	void addImageFilter(const std::shared_ptr<ImageFilter>& filter);
 
 	/**
 	 * Adds a new filter that is applied to the down-scaled images after the currently existing layer filters.
 	 *
 	 * @param[in] filter The new layer filter.
 	 */
-	void addLayerFilter(shared_ptr<ImageFilter> filter);
+	void addLayerFilter(const std::shared_ptr<ImageFilter>& filter);
 
 	/**
 	 * Determines the pyramid layer with the given index.
@@ -131,7 +137,7 @@ public:
 	 * @param[in] index The index of the pyramid layer.
 	 * @return The pointer to a pyramid layer that may be empty if there is no layer with the given index.
 	 */
-	const shared_ptr<ImagePyramidLayer> getLayer(int index) const;
+	const std::shared_ptr<ImagePyramidLayer> getLayer(int index) const;
 
 	/**
 	 * Determines the pyramid layer that is closest to the given scale factor.
@@ -139,27 +145,41 @@ public:
 	 * @param[in] scaleFactor The approximate scale factor of the layer.
 	 * @return The pointer to a pyramid layer that may be empty if no layer has an appropriate scale factor.
 	 */
-	const shared_ptr<ImagePyramidLayer> getLayer(double scaleFactor) const;
+	const std::shared_ptr<ImagePyramidLayer> getLayer(double scaleFactor) const;
 
 	/**
 	 * Determines the scale factors of each pyramid layer.
 	 *
 	 * @return Pairs containing the index and scale factor of each pyramid layer, beginning from the largest layer.
 	 */
-	vector<pair<int, double>> getLayerScales() const;
+	std::vector<std::pair<int, double>> getLayerScales() const;
 
 	/**
 	 * Determines the size of the scaled image of each pyramid layer.
 	 *
 	 * @return The sizes of the pyramid layer's scaled images, beginning from the largest layer.
 	 */
-	vector<Size> getLayerSizes() const;
+	std::vector<cv::Size> getLayerSizes() const;
 
 	/**
 	 * @return A reference to the pyramid layers.
 	 */
-	const vector<shared_ptr<ImagePyramidLayer>>& getLayers() const {
+	const std::vector<std::shared_ptr<ImagePyramidLayer>>& getLayers() const {
 		return layers;
+	}
+
+	/**
+	 * @return The number of layers per octave.
+	 */
+	size_t getOctaveLayerCount() const {
+		return octaveLayerCount;
+	}
+
+	/**
+	 * @return The incremental scale factor between two layers of the pyramid.
+	 */
+	double getIncrementalScaleFactor() const {
+		return incrementalScaleFactor;
 	}
 
 	/**
@@ -177,31 +197,25 @@ public:
 	}
 
 	/**
-	 * @return The incremental scale factor between two layers of the pyramid.
-	 */
-	double getIncrementalScaleFactor() const {
-		return incrementalScaleFactor;
-	}
-
-	/**
 	 * @return The size of the original image.
 	 */
-	Size getImageSize() const;
+	cv::Size getImageSize() const;
 
 private:
 
+	size_t octaveLayerCount; ///< The number of layers per octave.
+	double incrementalScaleFactor; ///< The incremental scale factor between two layers of the pyramid.
 	double minScaleFactor; ///< The minimum scale factor (the scale factor of the smallest scaled (last) image is bigger or equal).
 	double maxScaleFactor; ///< The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
-	double incrementalScaleFactor; ///< The incremental scale factor between two layers of the pyramid.
-	int firstLayer;                               ///< The index of the first stored pyramid layer.
-	vector<shared_ptr<ImagePyramidLayer>> layers; ///< The pyramid layers.
+	int firstLayer; ///< The index of the first stored pyramid layer.
+	std::vector<std::shared_ptr<ImagePyramidLayer>> layers; ///< The pyramid layers.
 
-	shared_ptr<VersionedImage> sourceImage; ///< The source image.
-	shared_ptr<ImagePyramid> sourcePyramid; ///< The source pyramid.
-	int version;                            ///< The version number.
+	std::shared_ptr<VersionedImage> sourceImage; ///< The source image.
+	std::shared_ptr<ImagePyramid> sourcePyramid; ///< The source pyramid.
+	int version; ///< The version number.
 
-	shared_ptr<ChainedFilter> imageFilter; ///< Filter that is applied to the image before down-scaling.
-	shared_ptr<ChainedFilter> layerFilter; ///< Filter that is applied to the down-scaled images of the layers.
+	std::shared_ptr<ChainedFilter> imageFilter; ///< Filter that is applied to the image before down-scaling.
+	std::shared_ptr<ChainedFilter> layerFilter; ///< Filter that is applied to the down-scaled images of the layers.
 };
 
 } /* namespace imageprocessing */

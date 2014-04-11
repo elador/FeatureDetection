@@ -25,7 +25,7 @@ public:
 
 	~MaxWeightPositionExtractor();
 
-	optional<Sample> extract(const vector<Sample>& samples);
+	shared_ptr<Sample> extract(const vector<shared_ptr<Sample>>& samples);
 };
 
 } /* namespace condensation */

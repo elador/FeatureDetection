@@ -13,6 +13,7 @@
 using std::min;
 using std::max;
 using std::invalid_argument;
+using std::make_shared;
 
 namespace condensation {
 
@@ -32,11 +33,10 @@ GridSampler::~GridSampler() {}
 
 void GridSampler::init(const Mat& image) {}
 
-void GridSampler::sample(const vector<Sample>& samples, vector<Sample>& newSamples, const Mat& image, const optional<Sample>& target) {
+void GridSampler::sample(const vector<shared_ptr<Sample>>& samples, vector<shared_ptr<Sample>>& newSamples,
+		const Mat& image, const shared_ptr<Sample> target) {
 	newSamples.clear();
-	Sample newSample;
 	for (int size = minSize; size <= maxSize; size *= sizeScale) {
-		newSample.setSize(size);
 		int halfSize = size / 2;
 		int minX = halfSize;
 		int minY = halfSize;
@@ -44,10 +44,8 @@ void GridSampler::sample(const vector<Sample>& samples, vector<Sample>& newSampl
 		int maxY = image.rows - size + halfSize;
 		int step = (int)(stepSize * size + 0.5f);
 		for (int x = minX; x < maxX; x += step) {
-			newSample.setX(x);
 			for (int y = minY; y < maxY; y += step) {
-				newSample.setY(y);
-				newSamples.push_back(newSample);
+				newSamples.push_back(make_shared<Sample>(x, y, size));
 			}
 		}
 	}

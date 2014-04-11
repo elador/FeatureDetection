@@ -131,10 +131,6 @@ public:
 
 	shared_ptr<Patch> extract(int layer, int x, int y) const;
 
-	Rect getCenterRoi(const Rect& roi) const {
-		return extractor->getCenterRoi(roi);
-	}
-
 	int getLayerIndex(int width, int height) const {
 		return extractor->getLayerIndex(width, height);
 	}

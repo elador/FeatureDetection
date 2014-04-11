@@ -61,15 +61,17 @@ public:
 
 	void update(shared_ptr<VersionedImage> image);
 
-	void evaluate(Sample& sample);
+	void evaluate(Sample& sample) const;
 
-	void evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples);
+	void evaluate(shared_ptr<VersionedImage> image, vector<shared_ptr<Sample>>& samples);
 
-	bool isUsable();
+	bool isUsable() const;
 
-	bool adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples, const Sample& target);
+	bool initialize(shared_ptr<VersionedImage> image, Sample& target);
 
-	bool adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples);
+	bool adapt(shared_ptr<VersionedImage> image, const vector<shared_ptr<Sample>>& samples, const Sample& target);
+
+	bool adapt(shared_ptr<VersionedImage> image, const vector<shared_ptr<Sample>>& samples);
 
 	void reset();
 

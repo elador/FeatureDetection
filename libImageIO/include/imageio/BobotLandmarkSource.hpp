@@ -17,12 +17,6 @@
 #include <unordered_map>
 #include <memory>
 
-using cv::Rect_;
-using std::string;
-using std::vector;
-using std::unordered_map;
-using std::shared_ptr;
-
 namespace imageio {
 
 class ImageSource;
@@ -36,12 +30,21 @@ class BobotLandmarkSource : public NamedLandmarkSource, public OrderedLandmarkSo
 public:
 
 	/**
-	 * Constructs a new BoBoT landmark source.
+	 * Constructs a new BoBoT landmark source with explicit image dimensions.
 	 *
-	 * @param(in] imageSource The source of the images. Is assumed to be at the same position as this landmark source.
 	 * @param[in] filename The name of the file containing the landmark data in BoBoT format.
+	 * @param[in] imageWidth The width of the images.
+	 * @param[in] imageHeight The height of the images.
 	 */
-	BobotLandmarkSource(shared_ptr<ImageSource> imageSource, const string& filename);
+	BobotLandmarkSource(const std::string& filename, int imageWidth, int imageHeight);
+
+	/**
+	 * Constructs a new BoBoT landmark source that takes the image dimensions from an image source.
+	 *
+	 * @param[in] filename The name of the file containing the landmark data in BoBoT format.
+	 * @param(in] imageSource The source of the images. Is assumed to be at the same position as this landmark source.
+	 */
+	BobotLandmarkSource(const std::string& filename, std::shared_ptr<ImageSource> imageSource);
 
 	void reset();
 
@@ -55,12 +58,20 @@ public:
 
 private:
 
-	static const string landmarkName;         ///< The name of the landmarks.
-	shared_ptr<ImageSource> imageSource;      ///< The source of the images. Is assumed to be at the same position as this landmark source.
-	vector<Rect_<float>> positions;           ///< The target positions inside each image.
-	unordered_map<string, size_t> name2index; ///< Mapping between image name and position index.
-	int index;                                ///< The index of the current target position.
-	mutable LandmarkCollection collection;    ///< The current landmark collection.
+	/**
+	 * Reads the target positions for each frame from the given file.
+	 *
+	 * @param[in] filename The name of the file containing the landmark data in BoBoT format.
+	 */
+	void readPositions(const std::string& filename);
+
+	static const std::string landmarkName; ///< The name of the landmarks.
+	mutable int imageWidth;  ///< The width of the images.
+	mutable int imageHeight; ///< The height of the images.
+	std::shared_ptr<ImageSource> imageSource; ///< The source of the images. Is assumed to be at the same position as this landmark source.
+	std::vector<cv::Rect_<float>> positions; ///< The target positions inside each image.
+	std::unordered_map<std::string, size_t> name2index; ///< Mapping between image name and position index.
+	int index; ///< The index of the current target position.
 };
 
 } /* namespace imageio */

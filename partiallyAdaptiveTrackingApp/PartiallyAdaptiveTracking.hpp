@@ -51,8 +51,8 @@ private:
 	static void samplerChanged(int state, void* userdata);
 	static void sampleCountChanged(int state, void* userdata);
 	static void randomRateChanged(int state, void* userdata);
-	static void positionScatterChanged(int state, void* userdata);
-	static void velocityScatterChanged(int state, void* userdata);
+	static void positionDeviationChanged(int state, void* userdata);
+	static void sizeDeviationChanged(int state, void* userdata);
 	static void drawSamplesChanged(int state, void* userdata);
 
 	shared_ptr<Kernel> createKernel(ptree config);

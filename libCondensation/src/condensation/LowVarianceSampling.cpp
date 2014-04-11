@@ -16,29 +16,30 @@ LowVarianceSampling::LowVarianceSampling() : generator(boost::mt19937(time(0))),
 
 LowVarianceSampling::~LowVarianceSampling() {}
 
-void LowVarianceSampling::resample(const vector<Sample>& samples, unsigned int count, vector<Sample>& newSamples) {
-	newSamples.clear();
+void LowVarianceSampling::resample(const vector<shared_ptr<Sample>>& samples, unsigned int count, vector<shared_ptr<Sample>>& newSamples) {
+	newSamples.reserve(count);
 	if (samples.size() > 0) {
-		double step = computeWeightSum(samples) / count;
+		double weightSum = computeWeightSum(samples);
+		double step = weightSum / count;
 		if (step > 0) {
 			double start = step * distribution(generator);
-			vector<Sample>::const_iterator sample = samples.cbegin();
-			double weightSum = sample->getWeight();
+			vector<shared_ptr<Sample>>::const_iterator sample = samples.cbegin();
+			double weightSum = (*sample)->getWeight();
 			for (unsigned int i = 0; i < count; ++i) {
 				double weightPointer = start + i * step;
 				while (weightPointer > weightSum) {
 					++sample;
-					weightSum += sample->getWeight();
+					weightSum += (*sample)->getWeight();
 				}
-				newSamples.push_back(*sample);
+				newSamples.emplace_back(new Sample(*sample));
 			}
 		}
 	}
 }
 
-double LowVarianceSampling::computeWeightSum(const vector<Sample>& samples) {
+double LowVarianceSampling::computeWeightSum(const vector<shared_ptr<Sample>>& samples) {
 	double weightSum = 0;
-	for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample)
+	for (const shared_ptr<Sample> sample : samples)
 		weightSum += sample->getWeight();
 	return weightSum;
 }

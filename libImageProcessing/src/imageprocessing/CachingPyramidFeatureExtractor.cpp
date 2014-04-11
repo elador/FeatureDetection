@@ -50,17 +50,20 @@ shared_ptr<Patch> CachingPyramidFeatureExtractor::extract(int x, int y, int widt
 	if (index < 0 || static_cast<unsigned int>(index) >= cache.size())
 		return shared_ptr<Patch>();
 	CacheLayer& layer = cache[index];
+	Size patchSize = getPatchSize();
+	int layerX = layer.getScaled(x - width / 2) + patchSize.width / 2;
+	int layerY = layer.getScaled(y - height / 2) + patchSize.height / 2;
 	switch (strategy) {
 	case Strategy::SHARING:
-		return extractSharing(layer, layer.getScaled(x), layer.getScaled(y));
+		return extractSharing(layer, layerX, layerY);
 	case Strategy::COPYING:
-		return extractCopying(layer, layer.getScaled(x), layer.getScaled(y));
+		return extractCopying(layer, layerX, layerY);
 	case Strategy::INPUT_COPYING:
-		return extractInputCopying(layer, layer.getScaled(x), layer.getScaled(y));
+		return extractInputCopying(layer, layerX, layerY);
 	case Strategy::OUTPUT_COPYING:
-		return extractOutputCopying(layer, layer.getScaled(x), layer.getScaled(y));
+		return extractOutputCopying(layer, layerX, layerY);
 	default: // should never be reached
-		return extractor->extract(layerIndex, x, y);
+		return extractor->extract(layerIndex, layerX, layerY);
 	}
 }
 
@@ -93,14 +96,14 @@ vector<shared_ptr<Patch>> CachingPyramidFeatureExtractor::extract(int stepX, int
 		if (layer->getIndex() > lastLayer)
 			break;
 
-		Rect centerRoi = getCenterRoi(
-				Rect(layer->getScaled(roi.x), layer->getScaled(roi.y), layer->getScaled(roi.x + roi.width), layer->getScaled(roi.y + roi.height)));
-		Point centerRoiBegin = centerRoi.tl();
-		Point centerRoiEnd = centerRoi.br();
+		Size patchSize = getPatchSize();
+		Point roiBegin(layer->getScaled(roi.x), layer->getScaled(roi.y));
+		Point roiEnd(layer->getScaled(roi.x + roi.width), layer->getScaled(roi.y + roi.height));
+		Point centerRoiBegin = Point(roiBegin.x + patchSize.width / 2, roiBegin.y + patchSize.height / 2);
+		Point centerRoiEnd = Point(roiEnd.x - patchSize.width, roiEnd.y - patchSize.height);
 		Point center(centerRoiBegin.x, centerRoiBegin.y);
-		while (center.y <= centerRoiEnd.y) {
-			center.x = centerRoiBegin.x;
-			while (center.x <= centerRoiEnd.x) {
+		for (center.y = centerRoiBegin.y; center.y < centerRoiEnd.y; center.y += stepY) {
+			for (center.x = centerRoiBegin.x; center.x < centerRoiEnd.x; center.x += stepX) {
 				switch (strategy) {
 				case Strategy::SHARING:
 					patches.push_back(extractSharing(*layer, center.x, center.y));
@@ -115,9 +118,7 @@ vector<shared_ptr<Patch>> CachingPyramidFeatureExtractor::extract(int stepX, int
 					patches.push_back(extractOutputCopying(*layer, center.x, center.y));
 					break;
 				}
-				center.x += stepX;
 			}
-			center.y += stepY;
 		}
 	}
 	return patches;

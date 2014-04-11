@@ -18,19 +18,29 @@ using std::shared_ptr;
 namespace classification {
 
 ConfidenceBasedExampleManagement::ConfidenceBasedExampleManagement(
-		const shared_ptr<BinaryClassifier>& classifier, size_t capacity, size_t requiredSize) :
-				VectorBasedExampleManagement(capacity, requiredSize), classifier(classifier) {}
+		const shared_ptr<BinaryClassifier>& classifier, bool positive, size_t capacity, size_t requiredSize) :
+				VectorBasedExampleManagement(capacity, requiredSize), classifier(classifier), positive(positive) {}
 
 void ConfidenceBasedExampleManagement::add(const vector<Mat>& newExamples) {
 	// compute confidences of existing and new training examples and sort
 	vector<pair<size_t, double>> existingConfidences;
 	existingConfidences.reserve(examples.size());
-	for (size_t i = 1; i < examples.size(); ++i)
-		existingConfidences.push_back(make_pair(i, classifier->getConfidence(examples[i]).second));
+	for (size_t i = 1; i < examples.size(); ++i) {
+		pair<bool, double> result = classifier->getConfidence(examples[i]);
+		double score = result.second;
+		if (positive ^ result.first)
+			score = -score;
+		existingConfidences.push_back(make_pair(i, score));
+	}
 	vector<pair<size_t, double>> newConfidences;
 	newConfidences.reserve(newExamples.size());
-	for (size_t i = 0; i < newExamples.size(); ++i)
-		newConfidences.push_back(make_pair(i, classifier->getConfidence(newExamples[i]).second));
+	for (size_t i = 0; i < newExamples.size(); ++i) {
+		pair<bool, double> result = classifier->getConfidence(newExamples[i]);
+		double score = result.second;
+		if (positive ^ result.first)
+			score = -score;
+		newConfidences.push_back(make_pair(i, score));
+	}
 	sort(existingConfidences.begin(), existingConfidences.end(), [](pair<size_t, double> a, pair<size_t, double> b) {
 		return a.second > b.second; // descending order (high confidence first)
 	});

@@ -42,7 +42,7 @@ void FilteringClassifierModel::update(shared_ptr<VersionedImage> image) {
 	measurementModel->update(image);
 }
 
-void FilteringClassifierModel::evaluate(Sample& sample) {
+void FilteringClassifierModel::evaluate(Sample& sample) const {
 	if (behavior == Behavior::RESET_WEIGHT) {
 		if (passesFilter(sample)) {
 			measurementModel->evaluate(sample);
@@ -57,24 +57,24 @@ void FilteringClassifierModel::evaluate(Sample& sample) {
 	}
 }
 
-void FilteringClassifierModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples) {
+void FilteringClassifierModel::evaluate(shared_ptr<VersionedImage> image, vector<shared_ptr<Sample>>& samples) {
 	if (behavior == Behavior::RESET_WEIGHT) {
 		update(image);
-		for (Sample& sample : samples) {
-			if (passesFilter(sample)) {
-				measurementModel->evaluate(sample);
+		for (shared_ptr<Sample> sample : samples) {
+			if (passesFilter(*sample)) {
+				measurementModel->evaluate(*sample);
 			} else {
-				sample.setObject(false);
-				sample.setWeight(0);
+				sample->setObject(false);
+				sample->setWeight(0);
 			}
 		}
 	} else { // behavior == Behavior::KEEP_WEIGHT
 		cache.clear();
 		featureExtractor->update(image);
 		measurementModel->evaluate(image, samples);
-		for (Sample& sample : samples) {
-			if (sample.isObject() && !passesFilter(sample))
-				sample.setObject(false);
+		for (shared_ptr<Sample> sample : samples) {
+			if (sample->isObject() && !passesFilter(*sample))
+				sample->setObject(false);
 		}
 	}
 }

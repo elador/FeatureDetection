@@ -404,7 +404,7 @@ int main(int argc, char *argv[])
 				shared_ptr<OverlapElimination> oe = make_shared<OverlapElimination>(oeCfg.get<float>("dist", 5.0f), oeCfg.get<float>("ratio", 0.0f));
 
 				// This:
-				shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f), imgpyr.get<float>("incrementalScaleFactor", 0.9f));
+				shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("incrementalScaleFactor", 0.9f), imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f));
 				imgPyr->addImageFilter(make_shared<GrayscaleFilter>());
 				shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(imgPyr, imgpyr.get<int>("patch.width"), imgpyr.get<int>("patch.height"));
 				// Or:
@@ -432,7 +432,7 @@ int main(int argc, char *argv[])
 
 				// One for all classifiers (with same pyramids):
 				// This:
-				shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f), imgpyr.get<float>("incrementalScaleFactor", 0.9f));
+				shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("incrementalScaleFactor", 0.9f), imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f));
 				imgPyr->addImageFilter(make_shared<GrayscaleFilter>());
 				shared_ptr<DirectPyramidFeatureExtractor> patchExtractor = make_shared<DirectPyramidFeatureExtractor>(imgPyr, imgpyr.get<int>("patch.width"), imgpyr.get<int>("patch.height"));
 				// Or:
@@ -602,8 +602,8 @@ int main(int argc, char *argv[])
 			for (const auto& patch : features.second) {
 				// patch to landmark
 				// add a function in libDetection, either Patch.getLandmark or Helper...::PatchToLandmark(...) (not ClassifiedPatch!)
-				// Anmerkung von peter: libDetection/libImageProcessing hat bisher keine Abhängigkeit von libImageIO, aber Patch.getLandmark/ClassifiedPatch.getLandmark würde dazu führen
-				// Anmerkung von peter: (ebenso umgekehrt, wenn der Helper in libImageIO läge - die Abhängigkeit (von libImageProcessing) wäre dann sogar sehr unschön)
+				// Anmerkung von peter: libDetection/libImageProcessing hat bisher keine Abhaengigkeit von libImageIO, aber Patch.getLandmark/ClassifiedPatch.getLandmark wuerde dazu fuehren
+				// Anmerkung von peter: (ebenso umgekehrt, wenn der Helper in libImageIO laege - die Abhaengigkeit (von libImageProcessing) waere dann sogar sehr unschoen)
 				RectLandmark lm(features.first, patch->getPatch()->getX(), patch->getPatch()->getY(), patch->getPatch()->getWidth(), patch->getPatch()->getHeight());
 				lm.draw(ffdResultImg);
 			}

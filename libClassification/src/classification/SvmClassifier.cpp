@@ -30,15 +30,18 @@ bool SvmClassifier::classify(const Mat& featureVector) const {
 }
 
 pair<bool, double> SvmClassifier::getConfidence(const Mat& featureVector) const {
-	double hyperplaneDistance = computeHyperplaneDistance(featureVector);
-	if (classify(hyperplaneDistance))
-		return make_pair(true, hyperplaneDistance);
-	else
-		return make_pair(false, -hyperplaneDistance);
+	return getConfidence(computeHyperplaneDistance(featureVector));
 }
 
 bool SvmClassifier::classify(double hyperplaneDistance) const {
 	return hyperplaneDistance >= threshold;
+}
+
+pair<bool, double> SvmClassifier::getConfidence(double hyperplaneDistance) const {
+	if (classify(hyperplaneDistance))
+		return make_pair(true, hyperplaneDistance);
+	else
+		return make_pair(false, -hyperplaneDistance);
 }
 
 double SvmClassifier::computeHyperplaneDistance(const Mat& featureVector) const {

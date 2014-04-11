@@ -9,12 +9,12 @@
 #define SAMPLER_HPP_
 
 #include "opencv2/core/core.hpp"
-#include "boost/optional.hpp"
 #include <vector>
+#include <memory>
 
 using cv::Mat;
-using boost::optional;
 using std::vector;
+using std::shared_ptr;
 
 namespace condensation {
 
@@ -43,7 +43,8 @@ public:
 	 * @param[in] image The new image.
 	 * @param[in] target The previous target state.
 	 */
-	virtual void sample(const vector<Sample>& samples, vector<Sample>& newSamples, const Mat& image, const optional<Sample>& target) = 0;
+	virtual void sample(const vector<shared_ptr<Sample>>& samples, vector<shared_ptr<Sample>>& newSamples,
+			const Mat& image, const shared_ptr<Sample> target) = 0;
 };
 
 } /* namespace condensation */

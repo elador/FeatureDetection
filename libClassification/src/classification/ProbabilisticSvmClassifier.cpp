@@ -23,8 +23,8 @@ using std::runtime_error;
 
 namespace classification {
 
-ProbabilisticSvmClassifier::ProbabilisticSvmClassifier() :
-		svm(), logisticA(0), logisticB(0) {}
+ProbabilisticSvmClassifier::ProbabilisticSvmClassifier(shared_ptr<Kernel> kernel, double logisticA, double logisticB) :
+		svm(make_shared<SvmClassifier>(kernel)), logisticA(logisticA), logisticB(logisticB) {}
 
 ProbabilisticSvmClassifier::ProbabilisticSvmClassifier(shared_ptr<SvmClassifier> svm, double logisticA, double logisticB) :
 		svm(svm), logisticA(logisticA), logisticB(logisticB) {}
@@ -40,8 +40,12 @@ pair<bool, double> ProbabilisticSvmClassifier::getConfidence(const Mat& featureV
 }
 
 pair<bool, double> ProbabilisticSvmClassifier::getProbability(const Mat& featureVector) const {
-	double hyperplaneDistance = svm->computeHyperplaneDistance(featureVector);
-	double probability = 1.0f / (1.0f + exp(logisticA + logisticB * hyperplaneDistance));
+	return getProbability(svm->computeHyperplaneDistance(featureVector));
+}
+
+pair<bool, double> ProbabilisticSvmClassifier::getProbability(double hyperplaneDistance) const {
+	double fABp = logisticA + logisticB * hyperplaneDistance;
+	double probability = fABp >= 0 ? exp(-fABp) / (1.0 + exp(-fABp)) : 1.0 / (1.0 + exp(fABp));
 	return make_pair(svm->classify(hyperplaneDistance), probability);
 }
 

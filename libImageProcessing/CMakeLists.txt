@@ -25,8 +25,10 @@ SET(HEADERS
 	include/imageprocessing/ColorSpaceConversionFilter.hpp
 	include/imageprocessing/CompleteExtendedHogFilter.hpp
 	include/imageprocessing/ConversionFilter.hpp
+	include/imageprocessing/ConvolutionFilter.hpp
 	include/imageprocessing/DirectImageFeatureExtractor.hpp
 	include/imageprocessing/DirectPyramidFeatureExtractor.hpp
+	include/imageprocessing/ExtendedHogFeatureExtractor.hpp
 	include/imageprocessing/ExtendedHogFilter.hpp
 	include/imageprocessing/FeatureExtractor.hpp
 	include/imageprocessing/FilteringFeatureExtractor.hpp
@@ -77,8 +79,10 @@ SET(SOURCE
 	src/imageprocessing/ColorSpaceConversionFilter.cpp
 	src/imageprocessing/CompleteExtendedHogFilter.cpp
 	src/imageprocessing/ConversionFilter.cpp
+	src/imageprocessing/ConvolutionFilter.cpp
 	src/imageprocessing/DirectImageFeatureExtractor.cpp
 	src/imageprocessing/DirectPyramidFeatureExtractor.cpp
+	src/imageprocessing/ExtendedHogFeatureExtractor.cpp
 	src/imageprocessing/ExtendedHogFilter.cpp
 	src/imageprocessing/GammaCorrectionFilter.cpp
 	src/imageprocessing/GradientBinningFilter.cpp

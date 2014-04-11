@@ -71,7 +71,7 @@ FaceTracking::~FaceTracking() {}
 
 void FaceTracking::initTracking() {
 	// create measurement model
-	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(20, 20, 80, 480, 0.85);
+	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(20, 20, 80, 480, 5);
 	featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 	featureExtractor->addPatchFilter(make_shared<HistEq64Filter>());
 	string svmConfigFile1 = "/home/poschmann/projects/ffd/config/fdetection/WRVM/fd_web/fnf-hq64-wvm_big-outnew02-hq64SVM/fd_hq64-fnf_wvm_r0.04_c1_o8x8_n14l20t10_hcthr0.72-0.27,0.36-0.14--With-outnew02-HQ64SVM.mat";
@@ -82,7 +82,7 @@ void FaceTracking::initTracking() {
 	shared_ptr<ProbabilisticSvmClassifier> svm = ProbabilisticSvmClassifier::loadFromMatlab(svmConfigFile1, svmConfigFile2);
 	measurementModel = make_shared<WvmSvmModel>(featureExtractor, wvm, svm);
 
-//	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(19, 19, 40, 480, 0.9);
+//	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(19, 19, 40, 480, 5);
 //	featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 //	featureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
 //	featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
@@ -95,7 +95,7 @@ void FaceTracking::initTracking() {
 //	shared_ptr<ProbabilisticClassifier> probRvm = make_shared<ProbabilisticRvmClassifier>(rvm, logisticParams.first, logisticParams.second);
 //	measurementModel = make_shared<SingleClassifierModel>(featureExtractor, probRvm);
 
-//	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(31, 31, 80, 480, 0.85);
+//	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(31, 31, 80, 480, 5);
 //	featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 //	featureExtractor->addPatchFilter(make_shared<WhiteningFilter>());
 //	featureExtractor->addPatchFilter(make_shared<HistogramEqualizationFilter>());
@@ -107,7 +107,7 @@ void FaceTracking::initTracking() {
 //	svm->getSvm()->setThreshold(600);
 //	measurementModel = make_shared<SingleClassifierModel>(featureExtractor, svm);
 
-//	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(31, 31, 80, 480, 0.85);
+//	shared_ptr<DirectPyramidFeatureExtractor> featureExtractor = make_shared<DirectPyramidFeatureExtractor>(31, 31, 80, 480, 5);
 //	featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 //	featureExtractor->addPatchFilter(make_shared<ConversionFilter>(CV_32F, 1.0/255.0));
 //	featureExtractor->addPatchFilter(make_shared<ReshapingFilter>(1));
@@ -119,10 +119,10 @@ void FaceTracking::initTracking() {
 	// create tracker
 	unsigned int count = 800;
 	double randomRate = 0.35;
-	transitionModel = make_shared<SimpleTransitionModel>(0.07, 0.1);
+	transitionModel = make_shared<SimpleTransitionModel>(10.0, 0.1);
 	resamplingSampler = make_shared<ResamplingSampler>(count, randomRate, make_shared<LowVarianceSampling>(),
 			transitionModel, 80, 480);
-	gridSampler = make_shared<GridSampler>(80, 480, 1 / 0.85, 0.1);
+	gridSampler = make_shared<GridSampler>(80, 480, 1 / featureExtractor->getPyramid()->getIncrementalScaleFactor(), 0.1);
 	tracker = unique_ptr<CondensationTracker>(new CondensationTracker(
 			resamplingSampler, measurementModel, make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>())));
 }
@@ -145,11 +145,11 @@ void FaceTracking::initGui() {
 	cv::createTrackbar("Random Rate", controlWindowName, NULL, 100, randomRateChanged, this);
 	cv::setTrackbarPos("Random Rate", controlWindowName, 100 * resamplingSampler->getRandomRate());
 
-	cv::createTrackbar("Position Scatter * 100", controlWindowName, NULL, 100, positionScatterChanged, this);
-	cv::setTrackbarPos("Position Scatter * 100", controlWindowName, 100 * transitionModel->getPositionScatter());
+	cv::createTrackbar("Position Deviation * 10", controlWindowName, NULL, 100, positionDeviationChanged, this);
+	cv::setTrackbarPos("Position Deviation * 10", controlWindowName, 100 * transitionModel->getPositionDeviation());
 
-	cv::createTrackbar("Velocity Scatter * 100", controlWindowName, NULL, 100, velocityScatterChanged, this);
-	cv::setTrackbarPos("Velocity Scatter * 100", controlWindowName, 100 * transitionModel->getVelocityScatter());
+	cv::createTrackbar("Size Deviation * 100", controlWindowName, NULL, 100, sizeDeviationChanged, this);
+	cv::setTrackbarPos("Size Deviation * 100", controlWindowName, 100 * transitionModel->getSizeDeviation());
 
 	cv::createTrackbar("Draw samples", controlWindowName, NULL, 1, drawSamplesChanged, this);
 	cv::setTrackbarPos("Draw samples", controlWindowName, drawSamples ? 1 : 0);
@@ -173,14 +173,14 @@ void FaceTracking::randomRateChanged(int state, void* userdata) {
 	tracking->resamplingSampler->setRandomRate(0.01 * state);
 }
 
-void FaceTracking::positionScatterChanged(int state, void* userdata) {
+void FaceTracking::positionDeviationChanged(int state, void* userdata) {
 	FaceTracking *tracking = (FaceTracking*)userdata;
-	tracking->transitionModel->setPositionScatter(0.01 * state);
+	tracking->transitionModel->setPositionDeviation(0.1 * state);
 }
 
-void FaceTracking::velocityScatterChanged(int state, void* userdata) {
+void FaceTracking::sizeDeviationChanged(int state, void* userdata) {
 	FaceTracking *tracking = (FaceTracking*)userdata;
-	tracking->transitionModel->setVelocityScatter(0.01 * state);
+	tracking->transitionModel->setSizeDeviation(0.01 * state);
 }
 
 void FaceTracking::drawSamplesChanged(int state, void* userdata) {
@@ -192,8 +192,8 @@ void FaceTracking::drawDebug(cv::Mat& image) {
 	cv::Scalar black(0, 0, 0); // blue, green, red
 	cv::Scalar red(0, 0, 255); // blue, green, red
 	if (drawSamples) {
-		const std::vector<Sample> samples = tracker->getSamples();
-		for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample) {
+		const std::vector<shared_ptr<Sample>> samples = tracker->getSamples();
+		for (const shared_ptr<Sample>& sample : samples) {
 			const cv::Scalar& color = sample->isObject() ? cv::Scalar(0, 0, sample->getWeight() * 255) : black;
 			cv::circle(image, cv::Point(sample->getX(), sample->getY()), 3, color);
 		}

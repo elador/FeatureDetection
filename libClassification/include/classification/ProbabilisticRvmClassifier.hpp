@@ -53,6 +53,14 @@ public:
 
 	pair<bool, double> getProbability(const Mat& featureVector) const;
 
+	/**
+	 * Computes the probability for being positive given the distance of a feature vector to the decision hyperplane.
+	 *
+	 * @param[in] levelAndDistance The index of the last used filter and distance of that filter level.
+	 * @return A pair containing the binary classification result and a probability between zero and one for being positive.
+	 */
+	pair<bool, double> getProbability(pair<int, double> levelAndDistance) const;
+
 	pair<bool, double> classifyCached(const Mat& featureVector);
 
 	/**

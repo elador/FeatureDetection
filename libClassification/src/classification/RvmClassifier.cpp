@@ -44,7 +44,11 @@ bool RvmClassifier::classify(const Mat& featureVector) const {
 }
 
 pair<bool, double> RvmClassifier::getConfidence(const Mat& featureVector) const {
-	pair<int, double> levelAndDistance = computeHyperplaneDistance(featureVector);
+	return getConfidence(computeHyperplaneDistance(featureVector));
+
+}
+
+pair<bool, double> RvmClassifier::getConfidence(pair<int, double> levelAndDistance) const {
 	if (classify(levelAndDistance))
 		return make_pair(true, levelAndDistance.second);
 	else
@@ -272,7 +276,7 @@ shared_ptr<RvmClassifier> RvmClassifier::load(const ptree& subtree)
 		//wvm->numUsedFilters=280;	// Todo make dynamic (from script)
 		return rvm;
 	} else {
-		throw logic_error("ProbabilisticRvmClassifier: Only loading of .mat RVMs is supported. If you want to load a non-cascaded RVM, use an SvmClassifier.");
+		throw logic_error("RvmClassifier: Only loading of .mat RVMs is supported. If you want to load a non-cascaded RVM, use an SvmClassifier.");
 	}
 }
 
