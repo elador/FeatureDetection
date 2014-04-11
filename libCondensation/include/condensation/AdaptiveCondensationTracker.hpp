@@ -22,8 +22,13 @@ using std::shared_ptr;
 
 namespace imageprocessing {
 class VersionedImage;
+class DirectPyramidFeatureExtractor;
 }
 using imageprocessing::VersionedImage;
+
+namespace classification {
+class ProbabilisticClassifier;
+}
 
 namespace condensation {
 
@@ -31,6 +36,7 @@ class Sampler;
 class MeasurementModel;
 class AdaptiveMeasurementModel;
 class PositionExtractor;
+class StateValidator;
 
 /**
  * Condensation tracker that adapts to the appearance of the tracked object over time.
@@ -81,50 +87,48 @@ public:
 	/**
 	 * @return True if the tracker has adapted to the current appearance, false otherwise.
 	 */
-	bool hasAdapted() {
-		return adapted;
-	}
+	bool hasAdapted();
 
 	/**
 	 * @return The estimated state.
 	 */
-	optional<Sample> getState() {
-		return state;
-	}
+	shared_ptr<Sample> getState();
 
 	/**
 	 * @return The current samples.
 	 */
-	inline const vector<Sample>& getSamples() const {
-		return samples;
-	}
+	const vector<shared_ptr<Sample>>& getSamples() const;
 
 	/**
 	 * @return The sampler.
 	 */
-	inline shared_ptr<Sampler> getSampler() {
-		return sampler;
-	}
+	shared_ptr<Sampler> getSampler();
 
 	/**
 	 * @param[in] sampler The new sampler.
 	 */
-	inline void setSampler(shared_ptr<Sampler> sampler) {
-		this->sampler = sampler;
-	}
+	void setSampler(shared_ptr<Sampler> sampler);
+
+	/**
+	 * Adds a validator.
+	 *
+	 * @param[in] validator The new target state validator.
+	 */
+	void addValidator(shared_ptr<StateValidator> validator);
 
 private:
 
 	int initialCount;          ///< The initial amount of particles.
-	vector<Sample> samples;    ///< The current samples.
-	vector<Sample> oldSamples; ///< The previous samples.
-	optional<Sample> state;    ///< The estimated state.
+	vector<shared_ptr<Sample>> samples;    ///< The current samples.
+	vector<shared_ptr<Sample>> oldSamples; ///< The previous samples.
+	shared_ptr<Sample> state;    ///< The estimated state.
 	bool adapted;              ///< Flag that indicates whether the tracker has adapted to the current appearance.
 
 	shared_ptr<VersionedImage> image;                      ///< The image used for evaluation.
 	shared_ptr<Sampler> sampler;                           ///< The sampler.
 	shared_ptr<AdaptiveMeasurementModel> measurementModel; ///< The adaptive measurement model.
 	shared_ptr<PositionExtractor> extractor;               ///< The position extractor.
+	vector<shared_ptr<StateValidator>> validators;         ///< The validators of the target position.
 };
 
 } /* namespace condensation */

@@ -17,8 +17,8 @@ using std::sort;
 
 namespace condensation {
 
-OpticalFlowTransitionModel::OpticalFlowTransitionModel(
-		shared_ptr<TransitionModel> fallback, double scatter, Size gridSize, bool circle, Size windowSize, int maxLevel) :
+OpticalFlowTransitionModel::OpticalFlowTransitionModel(shared_ptr<TransitionModel> fallback,
+		double positionDeviation, double sizeDeviation, Size gridSize, bool circle, Size windowSize, int maxLevel) :
 				fallback(fallback),
 				templatePoints(),
 				gridSize(gridSize),
@@ -34,19 +34,36 @@ OpticalFlowTransitionModel::OpticalFlowTransitionModel(
 				error(),
 				squaredDistances(),
 				correctFlowCount(0),
-				scatter(scatter),
+				positionDeviation(positionDeviation),
+				sizeDeviation(sizeDeviation),
 				generator(boost::mt19937(time(0)), boost::normal_distribution<>()) {
-	float gridY = 1 / static_cast<float>(gridSize.height);
-	float gridX = 1 / static_cast<float>(gridSize.width);
-	Point2f gridPoint(-0.5f + 0.5 * gridX, -0.5f + 0.5 * gridY);
+//	float gridY = 1 / static_cast<float>(gridSize.height);
+//	float gridX = 1 / static_cast<float>(gridSize.width);
+//	Point2f gridPoint(-0.5f + 0.5 * gridX, -0.5f + 0.5 * gridY);
+//	for (int y = 0; y < gridSize.height; ++y) {
+//		for (int x = 0; x < gridSize.width; ++x) {
+//			float r = 1.f / 2.f;
+//			if (!circle || gridPoint.x * gridPoint.x + gridPoint.y * gridPoint.y < r * r)
+//				templatePoints.push_back(gridPoint);
+//			gridPoint.x += gridX;
+//		}
+//		gridPoint.x = -0.5f + gridX / 2;
+//		gridPoint.y += gridY;
+//	}
+
+	// TODO die variante erscheint bissl besser (größerer abstand der punkte zum rand)
+	// braucht aber evtl. bissl mehr scatter nötig
+	float gridY = 1.f / static_cast<float>(gridSize.height + 2);
+	float gridX = 1.f / static_cast<float>(gridSize.width + 2);
+	float r = 0.5f - 0.5f * (gridX + gridY);
+	Point2f gridPoint(-0.5f + 0.5 * gridX + gridX, -0.5f + 0.5 * gridY + gridY);
 	for (int y = 0; y < gridSize.height; ++y) {
 		for (int x = 0; x < gridSize.width; ++x) {
-			float r = 1.f / 2.f;
 			if (!circle || gridPoint.x * gridPoint.x + gridPoint.y * gridPoint.y < r * r)
 				templatePoints.push_back(gridPoint);
 			gridPoint.x += gridX;
 		}
-		gridPoint.x = -0.5f + gridX / 2;
+		gridPoint.x = -0.5f + gridX / 2 + gridX;
 		gridPoint.y += gridY;
 	}
 }
@@ -65,7 +82,7 @@ void OpticalFlowTransitionModel::init(const Mat& image) {
 	cv::buildOpticalFlowPyramid(makeGrayscale(image), previousPyramid, windowSize, maxLevel, true, BORDER_REPLICATE, BORDER_REPLICATE);
 }
 
-void OpticalFlowTransitionModel::predict(vector<Sample>& samples, const Mat& image, const optional<Sample>& target) {
+void OpticalFlowTransitionModel::predict(vector<shared_ptr<Sample>>& samples, const Mat& image, const shared_ptr<Sample> target) {
 	points.clear();
 	forwardPoints.clear();
 	backwardPoints.clear();
@@ -116,7 +133,7 @@ void OpticalFlowTransitionModel::predict(vector<Sample>& samples, const Mat& ima
 		xs.push_back(flows[index].x);
 		ys.push_back(flows[index].y);
 	}
-	if (correctFlowCount < points.size() / 2) // to little correct correspondences
+	if (correctFlowCount < points.size() / 2) // too few correct correspondences
 		return fallback->predict(samples, image, target);
 
 	// compute median flow (only change in position for now)
@@ -148,27 +165,23 @@ void OpticalFlowTransitionModel::predict(vector<Sample>& samples, const Mat& ima
 	float medianRatio = sqrt(squaredRatios[squaredRatios.size() / 2]);
 
 	// predict samples according to median flow and random noise
-	for (auto sample = samples.begin(); sample != samples.end(); ++sample) {
-		int oldX = sample->getX();
-		int oldY = sample->getY();
-		float oldSize = sample->getSize();
-		// change position according to median flow
-		double newX = oldX + medianX;
-		double newY = oldY + medianY;
-		double newSize = oldSize * medianRatio;
-		// add noise to position
-		double positionDeviation = scatter * sample->getSize();
-		newX += positionDeviation * generator();
-		newY += positionDeviation * generator();
-		newSize *= pow(2, scatter * generator());
+	for (shared_ptr<Sample> sample : samples) {
+		// add noise to velocity
+		double vx = medianX;
+		double vy = medianY;
+		double vs = medianRatio;
+		// diffuse
+		vx += positionDeviation * generator();
+		vy += positionDeviation * generator();
+		vs *= pow(2, sizeDeviation * generator());
 		// round to integer
-		sample->setX((int)(newX + 0.5));
-		sample->setY((int)(newY + 0.5));
-		sample->setSize((int)(newSize + 0.5));
-		// compute change
-		sample->setVx(sample->getX() - oldX);
-		sample->setVy(sample->getY() - oldY);
-		sample->setVSize(sample->getSize() / oldSize);
+		sample->setVx(static_cast<int>(std::round(vx)));
+		sample->setVy(static_cast<int>(std::round(vy)));
+		sample->setVSize(vs);
+		// change position according to velocity
+		sample->setX(sample->getX() + sample->getVx());
+		sample->setY(sample->getY() + sample->getVy());
+		sample->setSize(static_cast<int>(std::round(sample->getSize() * sample->getVSize())));
 	}
 }
 

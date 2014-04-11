@@ -446,7 +446,7 @@ int main(int argc, char *argv[])
 					featureExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 				} else {
 					// The user didn't set values for patch.width and height, use the scale factors or default values:
-					shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f), imgpyr.get<float>("incrementalScaleFactor", 0.9f));
+					shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("incrementalScaleFactor", 0.9f), imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f));
 					imgPyr->addImageFilter(make_shared<GrayscaleFilter>());
 					featureExtractor = make_shared<DirectPyramidFeatureExtractor>(imgPyr, imgpyr.get<int>("patch.width"), imgpyr.get<int>("patch.height"));
 				}
@@ -471,7 +471,7 @@ int main(int argc, char *argv[])
 
 				// One for all classifiers (with same pyramids):
 				// This:
-				shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f), imgpyr.get<float>("incrementalScaleFactor", 0.9f));
+				shared_ptr<ImagePyramid> imgPyr = make_shared<ImagePyramid>(imgpyr.get<float>("incrementalScaleFactor", 0.9f), imgpyr.get<float>("minScaleFactor", 0.09f), imgpyr.get<float>("maxScaleFactor", 0.25f));
 				imgPyr->addImageFilter(make_shared<GrayscaleFilter>());
 				shared_ptr<DirectPyramidFeatureExtractor> patchExtractor = make_shared<DirectPyramidFeatureExtractor>(imgPyr, imgpyr.get<int>("patch.width"), imgpyr.get<int>("patch.height"));
 				// Or:

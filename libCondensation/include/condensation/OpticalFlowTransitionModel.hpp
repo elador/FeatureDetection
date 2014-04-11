@@ -31,20 +31,21 @@ public:
 	 * Constructs a new optical flow transition model.
 	 *
 	 * @param[in] fallback Fallback model in case the optical flow cannot be used.
-	 * @param[in] scatter The scatter that controls the diffusion of the position.
+	 * @param[in] positionDeviation Standard deviation of the translation noise.
+	 * @param[in] sizeDeviation Standard deviation of the scale change noise.
 	 * @param[in] gridSize The size of the point grid (amount of points).
 	 * @param[in] circle Flag that indicates whether the point grid should be a circle (points in the corners are discarded).
 	 * @param[in] windowSize Size of the search window for the optical flow calculation.
 	 * @param[in] maxLevel 0-based maximal pyramid level number of the optical flow calculation.
 	 */
-	explicit OpticalFlowTransitionModel(shared_ptr<TransitionModel> fallback, double scatter = 0.02,
+	explicit OpticalFlowTransitionModel(shared_ptr<TransitionModel> fallback, double positionDeviation, double sizeDeviation,
 			Size gridSize = Size(10, 10), bool circle = true, Size windowSize = Size(15, 15), int maxLevel = 2);
 
 	~OpticalFlowTransitionModel();
 
 	void init(const Mat& image);
 
-	void predict(vector<Sample>& samples, const Mat& image, const optional<Sample>& target);
+	void predict(vector<shared_ptr<Sample>>& samples, const Mat& image, const shared_ptr<Sample> target);
 
 	/**
 	 * Draws the flow of the chosen points into an image.
@@ -57,17 +58,31 @@ public:
 	void drawFlow(Mat& image, int thickness, Scalar color, Scalar badColor = Scalar(-1, -1, -1)) const;
 
 	/**
-	 * @return The scatter that controls the diffusion of the position.
+	 * @return The standard deviation of the translation noise.
 	 */
-	double getScatter() {
-		return scatter;
+	double getPositionDeviation() const {
+		return positionDeviation;
 	}
 
 	/**
-	 * @param[in] scatter The new scatter that controls the diffusion of the position.
+	 * @param[in] deviation The new standard deviation of the translation noise.
 	 */
-	void setScatter(double scatter) {
-		this->scatter = scatter;
+	void setPositionDeviation(double deviation) {
+		this->positionDeviation = deviation;
+	}
+
+	/**
+	 * @return The standard deviation of the scale change noise.
+	 */
+	double getSizeDeviation() const {
+		return sizeDeviation;
+	}
+
+	/**
+	 * @param[in] deviation The new standard deviation of the scale change noise.
+	 */
+	void setSizeDeviation(double deviation) {
+		this->sizeDeviation = deviation;
 	}
 
 private:
@@ -95,7 +110,8 @@ private:
 	vector<float> error;            ///< Error values of the points.
 	vector<pair<float, int>> squaredDistances; ///< Forward-backward-error paired with the point index, ordered by the error.
 	unsigned int correctFlowCount;             ///< The amount of flows that are considered correct and are used for median flow.
-	double scatter; ///< The scatter that controls the diffusion of the position.
+	double positionDeviation; ///< Standard deviation of the translation noise.
+	double sizeDeviation;     ///< Standard deviation of the scale change noise.
 	boost::variate_generator<boost::mt19937, boost::normal_distribution<>> generator; ///< Random number generator.
 };
 

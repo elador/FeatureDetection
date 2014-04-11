@@ -74,11 +74,14 @@ bool WvmClassifier::classify(const Mat& featureVector) const {
 }
 
 pair<bool, double> WvmClassifier::getConfidence(const Mat& featureVector) const {
-	pair<int, double> hyperplaneDistance = computeHyperplaneDistance(featureVector);
-	if (classify(hyperplaneDistance))
-		return make_pair(true, hyperplaneDistance.second);
+	return getConfidence(computeHyperplaneDistance(featureVector));
+}
+
+pair<bool, double> WvmClassifier::getConfidence(pair<int, double> levelAndDistance) const {
+	if (classify(levelAndDistance))
+		return make_pair(true, levelAndDistance.second);
 	else
-		return make_pair(false, -hyperplaneDistance.second);
+		return make_pair(false, -levelAndDistance.second);
 }
 
 bool WvmClassifier::classify(pair<int, double> levelAndDistance) const {

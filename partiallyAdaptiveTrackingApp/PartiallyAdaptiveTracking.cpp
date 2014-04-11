@@ -118,7 +118,7 @@ shared_ptr<TrainableProbabilisticClassifier> PartiallyAdaptiveTracking::createCl
 	if (config.get_value<string>() == "default")
 		return make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm, 20, 50);
 	else if (config.get_value<string>() == "fixed")
-		return make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm);
+		return make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm, 0.95, 0.05, 1.01, -1.01);
 	else
 		throw invalid_argument("PartiallyAdaptiveTracking: invalid classifier type: " + config.get_value<string>());
 }
@@ -128,7 +128,7 @@ void PartiallyAdaptiveTracking::initTracking(ptree config) {
 	shared_ptr<DirectPyramidFeatureExtractor> patchExtractor = make_shared<DirectPyramidFeatureExtractor>(
 			config.get<int>("pyramid.patch.width"), config.get<int>("pyramid.patch.height"),
 			config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"),
-			config.get<double>("pyramid.scaleFactor"));
+			config.get<int>("pyramid.interval"));
 	patchExtractor->addImageFilter(make_shared<GrayscaleFilter>());
 
 	shared_ptr<FilteringFeatureExtractor> staticFeatureExtractor = make_shared<FilteringFeatureExtractor>(patchExtractor);
@@ -185,12 +185,12 @@ void PartiallyAdaptiveTracking::initTracking(ptree config) {
 
 	// create tracker
 	transitionModel = make_shared<SimpleTransitionModel>(
-			config.get<double>("transition.positionScatter"), config.get<double>("transition.velocityScatter"));
+			config.get<double>("transition.positionDeviation"), config.get<double>("transition.sizeDeviation"));
 	resamplingSampler = make_shared<ResamplingSampler>(
 			config.get<unsigned int>("resampling.particleCount"), config.get<double>("resampling.randomRate"), make_shared<LowVarianceSampling>(),
 			transitionModel, config.get<double>("resampling.minSize"), config.get<double>("resampling.maxSize"));
 	gridSampler = make_shared<GridSampler>(config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"),
-			1 / config.get<double>("pyramid.scaleFactor"), 0.1);
+			1 / patchExtractor->getPyramid()->getIncrementalScaleFactor(), 0.1);
 	tracker = unique_ptr<PartiallyAdaptiveCondensationTracker>(new PartiallyAdaptiveCondensationTracker(
 			resamplingSampler, staticMeasurementModel, adaptiveMeasurementModel,
 			make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>())));
@@ -218,11 +218,11 @@ void PartiallyAdaptiveTracking::initGui() {
 	cv::createTrackbar("Random Rate", controlWindowName, NULL, 100, randomRateChanged, this);
 	cv::setTrackbarPos("Random Rate", controlWindowName, 100 * resamplingSampler->getRandomRate());
 
-	cv::createTrackbar("Position Scatter * 100", controlWindowName, NULL, 100, positionScatterChanged, this);
-	cv::setTrackbarPos("Position Scatter * 100", controlWindowName, 100 * transitionModel->getPositionScatter());
+	cv::createTrackbar("Position Deviation * 10", controlWindowName, NULL, 100, positionDeviationChanged, this);
+	cv::setTrackbarPos("Position Deviation * 10", controlWindowName, 100 * transitionModel->getPositionDeviation());
 
-	cv::createTrackbar("Velocity Scatter * 100", controlWindowName, NULL, 100, velocityScatterChanged, this);
-	cv::setTrackbarPos("Velocity Scatter * 100", controlWindowName, 100 * transitionModel->getVelocityScatter());
+	cv::createTrackbar("Size Deviation * 100", controlWindowName, NULL, 100, sizeDeviationChanged, this);
+	cv::setTrackbarPos("Size Deviation * 100", controlWindowName, 100 * transitionModel->getSizeDeviation());
 
 	cv::createTrackbar("Draw samples", controlWindowName, NULL, 1, drawSamplesChanged, this);
 	cv::setTrackbarPos("Draw samples", controlWindowName, drawSamples ? 1 : 0);
@@ -251,14 +251,14 @@ void PartiallyAdaptiveTracking::randomRateChanged(int state, void* userdata) {
 	tracking->resamplingSampler->setRandomRate(0.01 * state);
 }
 
-void PartiallyAdaptiveTracking::positionScatterChanged(int state, void* userdata) {
+void PartiallyAdaptiveTracking::positionDeviationChanged(int state, void* userdata) {
 	PartiallyAdaptiveTracking *tracking = (PartiallyAdaptiveTracking*)userdata;
-	tracking->transitionModel->setPositionScatter(0.01 * state);
+	tracking->transitionModel->setPositionDeviation(0.1 * state);
 }
 
-void PartiallyAdaptiveTracking::velocityScatterChanged(int state, void* userdata) {
+void PartiallyAdaptiveTracking::sizeDeviationChanged(int state, void* userdata) {
 	PartiallyAdaptiveTracking *tracking = (PartiallyAdaptiveTracking*)userdata;
-	tracking->transitionModel->setVelocityScatter(0.01 * state);
+	tracking->transitionModel->setSizeDeviation(0.01 * state);
 }
 
 void PartiallyAdaptiveTracking::drawSamplesChanged(int state, void* userdata) {
@@ -271,10 +271,10 @@ void PartiallyAdaptiveTracking::drawDebug(cv::Mat& image) {
 	cv::Scalar red(0, 0, 255); // blue, green, red
 	cv::Scalar green(0, 255, 0); // blue, green, red
 	if (drawSamples) {
-		const std::vector<Sample> samples = tracker->getSamples();
-		for (std::vector<Sample>::const_iterator sit = samples.begin(); sit < samples.end(); ++sit) {
-			const cv::Scalar& color = sit->isObject() ? cv::Scalar(0, 0, sit->getWeight() * 255) : black;
-			cv::circle(image, cv::Point(sit->getX(), sit->getY()), 3, color);
+		const std::vector<shared_ptr<Sample>> samples = tracker->getSamples();
+		for (const shared_ptr<Sample>& sample : samples) {
+			const cv::Scalar& color = sample->isObject() ? cv::Scalar(0, 0, sample->getWeight() * 255) : black;
+			cv::circle(image, cv::Point(sample->getX(), sample->getY()), 3, color);
 		}
 	}
 	cv::Scalar& svmIndicatorColor = tracker->wasUsingAdaptiveModel() ? green : red;
@@ -411,7 +411,7 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	Loggers->getLogger("app").addAppender(make_shared<ConsoleAppender>(loglevel::INFO));
+	Loggers->getLogger("app").addAppender(make_shared<ConsoleAppender>(LogLevel::Info));
 
 	unique_ptr<ImageSource> imageSource;
 	if (useCamera)

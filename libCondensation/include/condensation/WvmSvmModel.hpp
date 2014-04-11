@@ -58,9 +58,9 @@ public:
 
 	void update(shared_ptr<VersionedImage> image);
 
-	void evaluate(Sample& sample);
+	void evaluate(Sample& sample) const;
 
-	void evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples);
+	void evaluate(shared_ptr<VersionedImage> image, vector<shared_ptr<Sample>>& samples);
 
 private:
 
@@ -68,7 +68,7 @@ private:
 	shared_ptr<ProbabilisticWvmClassifier> wvm;    ///< The fast WVM.
 	shared_ptr<ProbabilisticSvmClassifier> svm;    ///< The slower SVM.
 	//shared_ptr<OverlapElimination> oe;      ///< The overlap elimination algorithm. TODO
-	unordered_map<shared_ptr<Patch>, pair<bool, double>> cache; ///< The cache of the WVM classification results.
+	mutable unordered_map<shared_ptr<Patch>, pair<bool, double>> cache; ///< The cache of the WVM classification results.
 };
 
 } /* namespace condensation */

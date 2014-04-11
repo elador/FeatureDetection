@@ -169,8 +169,8 @@ void drawWindow(Mat image, string windowName, int windowX, int windowY)
 
 static shared_ptr<ImagePyramid> loadImgPyrFromConfigSubtree(const ptree& subtree)
 {
-	return make_shared<ImagePyramid>(subtree.get<float>("minScaleFactor", 0.09f), subtree.get<float>("maxScaleFactor", 0.25f), subtree.get<float>("incrementalScaleFactor", 0.9f));
-	// (0.09, 0.25, 0.9) is nearly the same as old 90, 9, 0.9
+	return make_shared<ImagePyramid>(subtree.get<float>("incrementalScaleFactor", 0.9f), subtree.get<float>("minScaleFactor", 0.09f), subtree.get<float>("maxScaleFactor", 0.25f));
+	// (0.9, 0.25, 0.09) is nearly the same as old 90, 9, 0.9
 }
 
 

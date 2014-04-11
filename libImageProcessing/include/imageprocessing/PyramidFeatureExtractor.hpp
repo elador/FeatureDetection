@@ -71,16 +71,6 @@ public:
 	virtual shared_ptr<Patch> extract(int layer, int x, int y) const = 0;
 
 	/**
-	 * Given a region of interest around patches (patches are completely within the region), compute a region of
-	 * interest of the center points of the patches. The given region will be shrunk by half of the patch width
-	 * or height on all four sides.
-	 *
-	 * @param[in] The region of interest of patches that are completely within that region.
-	 * @return The region of interest of the same patches, so (at least) their center points are within that region.
-	 */
-	virtual Rect getCenterRoi(const Rect& roi) const = 0;
-
-	/**
 	 * Determines the index of the pyramid layer that approximately contains patches of the given size.
 	 *
 	 * @param[in] width The width of the patches.

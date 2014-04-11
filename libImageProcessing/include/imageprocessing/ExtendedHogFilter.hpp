@@ -64,6 +64,20 @@ public:
 
 	Mat applyTo(const Mat& image, Mat& filtered) const;
 
+	/**
+	 * @return The width of the cells.
+	 */
+	int getCellWidth() {
+		return cellWidth;
+	}
+
+	/**
+	 * @return The height of the cells.
+	 */
+	int getCellHeight() {
+		return cellHeight;
+	}
+
 private:
 
 	/**

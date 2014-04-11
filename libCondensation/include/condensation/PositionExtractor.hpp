@@ -9,11 +9,10 @@
 #define POSITIONEXTRACTOR_HPP_
 
 #include "condensation/Sample.hpp"
-#include "boost/optional.hpp"
 #include <vector>
 
-using boost::optional;
 using std::vector;
+using std::shared_ptr;
 
 namespace condensation {
 
@@ -31,7 +30,7 @@ public:
 	 * @param[in] samples The samples.
 	 * @return The the most probable object position if there is one.
 	 */
-	virtual optional<Sample> extract(const vector<Sample>& samples) = 0;
+	virtual shared_ptr<Sample> extract(const vector<shared_ptr<Sample>>& samples) = 0;
 };
 
 } /* namespace condensation */

@@ -8,6 +8,8 @@
 #ifndef ORDEREDLANDMARKSINK_HPP_
 #define ORDEREDLANDMARKSINK_HPP_
 
+#include <string>
+
 namespace imageio {
 
 class LandmarkCollection;
@@ -19,6 +21,25 @@ class OrderedLandmarkSink {
 public:
 
 	virtual ~OrderedLandmarkSink() {}
+
+	/**
+	 * Determines whether this landmark sink is open.
+	 *
+	 * @return True if this landmark sink was opened (and not closed since), false otherwise.
+	 */
+	virtual bool isOpen() = 0;
+
+	/**
+	 * Opens the file writer. Needs to be called before adding the first landmark collection.
+	 *
+	 * @param[in] filename The name of the file to write the landmark data into.
+	 */
+	virtual void open(const std::string& filename) = 0;
+
+	/**
+	 * Closes the file writer.
+	 */
+	virtual void close() = 0;
 
 	/**
 	 * Adds a landmark collection.

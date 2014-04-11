@@ -67,19 +67,19 @@ void DirectoryImageSource::reset()
 bool DirectoryImageSource::next()
 {
 	index++;
-	return index < files.size();
+	return index < static_cast<int>(files.size());
 }
 
 const Mat DirectoryImageSource::getImage() const
 {
-	if (index < 0 || index >= files.size())
+	if (index < 0 || index >= static_cast<int>(files.size()))
 		return Mat();
 	return imread(files[index].string(), CV_LOAD_IMAGE_COLOR);
 }
 
 path DirectoryImageSource::getName() const
 {
-	if (index < 0 || index >= files.size())
+	if (index < 0 || index >= static_cast<int>(files.size()))
 		return path();
 	return files[index];
 }

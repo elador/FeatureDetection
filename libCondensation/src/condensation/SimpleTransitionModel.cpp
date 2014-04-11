@@ -12,44 +12,32 @@
 
 namespace condensation {
 
-SimpleTransitionModel::SimpleTransitionModel(double positionScatter, double velocityScatter) :
-		positionScatter(positionScatter),
-		velocityScatter(velocityScatter),
+SimpleTransitionModel::SimpleTransitionModel(double positionDeviation, double sizeDeviation) :
+		positionDeviation(positionDeviation), sizeDeviation(sizeDeviation),
 		generator(boost::mt19937(time(0)), boost::normal_distribution<>()) {}
 
 SimpleTransitionModel::~SimpleTransitionModel() {}
 
 void SimpleTransitionModel::init(const Mat& image) {}
 
-void SimpleTransitionModel::predict(vector<Sample>& samples, const Mat& image, const optional<Sample>& target) {
-	for (auto sample = samples.begin(); sample != samples.end(); ++sample) {
-		// change position according to velocity plus noise
-		double x = sample->getX() + sample->getVx();
-		double y = sample->getY() + sample->getVy();
-		double s = sample->getSize() * sample->getVSize();
-		// diffuse
-		double positionDeviation = positionScatter * sample->getSize();
-		x += positionDeviation * generator();
-		y += positionDeviation * generator();
-		s *= pow(2, positionScatter * generator());
-		// round to integer
-		sample->setX((int)(x + 0.5));
-		sample->setY((int)(y + 0.5));
-		sample->setSize((int)(s + 0.5));
-
-		// change velocity according to noise (assumed to be constant)
+void SimpleTransitionModel::predict(vector<shared_ptr<Sample>>& samples, const Mat& image, const shared_ptr<Sample> target) {
+	for (shared_ptr<Sample> sample : samples) {
+		// add noise to velocity
 		double vx = sample->getVx();
 		double vy = sample->getVy();
 		double vs = sample->getVSize();
 		// diffuse
-		double velocityDeviation = velocityScatter * sample->getSize();
-		vx += velocityDeviation * generator();
-		vy += velocityDeviation * generator();
-		vs *= pow(2, velocityScatter * generator());
+		vx += positionDeviation * generator();
+		vy += positionDeviation * generator();
+		vs *= pow(2, sizeDeviation * generator());
 		// round to integer
-		sample->setVx((int)(vx + 0.5));
-		sample->setVy((int)(vy + 0.5));
+		sample->setVx(static_cast<int>(std::round(vx)));
+		sample->setVy(static_cast<int>(std::round(vy)));
 		sample->setVSize(vs);
+		// change position according to velocity
+		sample->setX(sample->getX() + sample->getVx());
+		sample->setY(sample->getY() + sample->getVy());
+		sample->setSize(static_cast<int>(std::round(sample->getSize() * sample->getVSize())));
 	}
 }
 

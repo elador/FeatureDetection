@@ -45,7 +45,8 @@ public:
 
 	void init(const Mat& image);
 
-	void sample(const vector<Sample>& samples, vector<Sample>& newSamples, const Mat& image, const optional<Sample>& target);
+	void sample(const vector<shared_ptr<Sample>>& samples, vector<shared_ptr<Sample>>& newSamples,
+			const Mat& image, const shared_ptr<Sample> target);
 
 	/**
 	 * @return The number of samples.
@@ -78,26 +79,19 @@ public:
 private:
 
 	/**
-	 * Determines whether a sample is valid for a certain image.
-	 *
-	 * @param[in] sample The sample.
-	 * @param[in] image The image.
-	 * @return True if the sample is valid, false otherwise.
-	 */
-	bool isValid(const Sample& sample, const Mat& image);
-
-	/**
-	 * Randomly samples new valid values for a sample.
+	 * Randomly samples new values for a sample.
 	 *
 	 * @param[in,out] sample The sample.
 	 * @param[in] image The image.
 	 */
-	void sampleValid(Sample& sample, const Mat& image);
+	void sampleValues(Sample& sample, const Mat& image);
 
 	unsigned int count; ///< The number of samples.
 	double randomRate;  ///< The percentage of samples that should be equally distributed.
 	shared_ptr<ResamplingAlgorithm> resamplingAlgorithm; ///< The resampling algorithm.
+public: // TODO
 	shared_ptr<TransitionModel> transitionModel;         ///< The transition model.
+private: // TODO
 
 	int minSize; ///< The minimum size of a sample.
 	int maxSize; ///< The maximum size of a sample.

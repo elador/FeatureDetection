@@ -31,6 +31,8 @@ namespace imageprocessing {
  * binCount + 4.
  *
  * [1] Felzenszwalb et al., Object Detection with Discriminatively Trained Part-Based Models, PAMI, 2010.
+ *
+ * TODO fuer veroeffentlichung das Complete rausschmeissen, dafuer den alten filter raus
  */
 class CompleteExtendedHogFilter : public ImageFilter {
 public:
@@ -52,6 +54,13 @@ public:
 	using ImageFilter::applyTo;
 
 	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
+
+	/**
+	 * @return The width and height of the cells.
+	 */
+	size_t getCellSize() {
+		return cellSize;
+	}
 
 private:
 

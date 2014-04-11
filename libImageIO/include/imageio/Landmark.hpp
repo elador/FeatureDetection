@@ -33,6 +33,8 @@ public:
 	 */
 	Landmark(LandmarkType type, const std::string& name, bool visible) : type(type), name(name), visible(visible) {}
 
+	virtual ~Landmark() {}
+
 	/**
 	 * @return The type of the landmark.
 	 */

@@ -73,10 +73,6 @@ public:
 		return patch;
 	}
 
-	Rect getCenterRoi(const Rect& roi) const {
-		return extractor->getCenterRoi(roi);
-	}
-
 	int getLayerIndex(int width, int height) const {
 		return extractor->getLayerIndex(width, height);
 	}

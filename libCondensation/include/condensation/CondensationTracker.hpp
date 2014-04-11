@@ -60,14 +60,14 @@ public:
 	/**
 	 * @return The estimated state.
 	 */
-	optional<Sample> getState() {
+	shared_ptr<Sample> getState() {
 		return state;
 	}
 
 	/**
 	 * @return The current samples.
 	 */
-	inline const vector<Sample>& getSamples() const {
+	inline const vector<shared_ptr<Sample>>& getSamples() const {
 		return samples;
 	}
 
@@ -87,9 +87,9 @@ public:
 
 private:
 
-	vector<Sample> samples;    ///< The current samples.
-	vector<Sample> oldSamples; ///< The previous samples.
-	optional<Sample> state;    ///< The estimated state.
+	vector<shared_ptr<Sample>> samples;    ///< The current samples.
+	vector<shared_ptr<Sample>> oldSamples; ///< The previous samples.
+	shared_ptr<Sample> state;    ///< The estimated state.
 
 	shared_ptr<VersionedImage> image;              ///< The image used for evaluation.
 	shared_ptr<Sampler> sampler;                   ///< The sampler.

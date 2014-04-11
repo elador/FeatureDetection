@@ -64,6 +64,13 @@ public:
 		return kernel;
 	}
 
+	/**
+	 * @return The bias that is subtracted from the sum over all scaled kernel values.
+	 */
+	float getBias() const {
+		return bias;
+	}
+
 protected:
 
 	shared_ptr<Kernel> kernel; ///< The kernel function.

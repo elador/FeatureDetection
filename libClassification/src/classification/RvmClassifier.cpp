@@ -46,7 +46,11 @@ bool RvmClassifier::classify(const Mat& featureVector) const {
 }
 
 pair<bool, double> RvmClassifier::getConfidence(const Mat& featureVector) const {
-	pair<int, double> levelAndDistance = computeHyperplaneDistance(featureVector);
+	return getConfidence(computeHyperplaneDistance(featureVector));
+
+}
+
+pair<bool, double> RvmClassifier::getConfidence(pair<int, double> levelAndDistance) const {
 	if (classify(levelAndDistance))
 		return make_pair(true, levelAndDistance.second);
 	else

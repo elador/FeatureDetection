@@ -73,9 +73,9 @@ public:
 
 	void update(shared_ptr<VersionedImage> image);
 
-	void evaluate(Sample& sample);
+	void evaluate(Sample& sample) const;
 
-	void evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples);
+	void evaluate(shared_ptr<VersionedImage> image, vector<shared_ptr<Sample>>& samples);
 
 private:
 

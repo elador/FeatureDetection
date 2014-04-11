@@ -47,7 +47,7 @@ public:
 
 	void update(shared_ptr<VersionedImage> image);
 
-	void evaluate(Sample& sample);
+	void evaluate(Sample& sample) const;
 
 	using MeasurementModel::evaluate;
 
@@ -59,11 +59,11 @@ private:
 	 * @param[in] patch The patch.
 	 * @return The classification result.
 	 */
-	pair<bool, double> classify(shared_ptr<Patch> patch);
+	pair<bool, double> classify(shared_ptr<Patch> patch) const;
 
 	shared_ptr<FeatureExtractor> featureExtractor;  ///< The feature extractor.
 	shared_ptr<ProbabilisticClassifier> classifier; ///< The classifier.
-	unordered_map<shared_ptr<Patch>, pair<bool, double>> cache; ///< The classification result cache.
+	mutable unordered_map<shared_ptr<Patch>, pair<bool, double>> cache; ///< The classification result cache.
 };
 
 } /* namespace condensation */

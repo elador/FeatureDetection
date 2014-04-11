@@ -30,7 +30,8 @@ CondensationTracker::~CondensationTracker() {}
 
 optional<Rect> CondensationTracker::process(const Mat& imageData) {
 	image->setData(imageData);
-	oldSamples = samples;
+	samples.swap(oldSamples);
+	samples.clear();
 	sampler->sample(oldSamples, samples, image->getData(), state);
 	// evaluate samples and extract position
 	measurementModel->evaluate(image, samples);
