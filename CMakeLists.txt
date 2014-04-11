@@ -16,6 +16,10 @@ endif()
 message(STATUS "Options:")
 option(WITH_MSKINECT_SDK "Enables the use of a Kinect as a webcam (using the MS Kinect SDK for Windows)" OFF)
 message(STATUS "WITH_MSKINECT_SDK: ${WITH_MSKINECT_SDK}")
+option(WITH_MATLAB_CLASSIFIER "Enables support for loading Matlab classifiers (e.g. WVMs) in libClassification and certain apps" OFF)
+message(STATUS "WITH_MATLAB_CLASSIFIER: ${WITH_MATLAB_CLASSIFIER}")
+option(WITH_LIBLINEAR_CLASSIFIER "Enables support for loading libLinear classifiers in certain apps (needs BLAS)" OFF)
+message(STATUS "WITH_LIBLINEAR_CLASSIFIER: ${WITH_LIBLINEAR_CLASSIFIER}")
 
 # Core libraries
 add_subdirectory(libLogging)			# Text logging
@@ -24,7 +28,7 @@ add_subdirectory(libImageLogging)		# Image logging
 add_subdirectory(libImageIO)			# Input-library for cameras, Kinect and hard-drive images.
 add_subdirectory(libImageProcessing)	# Image pyramids, patch extraction, feature transformation
 add_subdirectory(libClassification)		# Classification and regression library
-#add_subdirectory(libSvm)				# libSVM (support vector classification and regression)
+add_subdirectory(libSvm)				# libSVM (support vector classification and regression)
 #add_subdirectory(libLinear)				# liblinear (linear classification with SVM and regression)
 
 add_subdirectory(libDetection)			# Sliding-window detection, Skin detection (Note: Do we use it anymore?)
