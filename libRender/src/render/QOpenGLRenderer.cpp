@@ -145,9 +145,9 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 
 	float aspect = static_cast<float>(viewportWidth) / static_cast<float>(viewportHeight);
 	QMatrix4x4 matrix;
-	matrix.ortho(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
+	//matrix.ortho(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
 	//matrix.ortho(-70.0f, 70.0f, -70.0f, 70.0f, 0.1f, 1000.0f);
-	//matrix.perspective(60, aspect, 0.1, 100.0);
+	matrix.perspective(60, aspect, 0.1, 100.0);
 	matrix.translate(0, 0, -2);
 	//matrix.rotate(15.0f, 1.0f, 0.0f, 0.0f);
 	//matrix.rotate(30.0f, 0.0f, 1.0f, 0.0f);
@@ -221,11 +221,12 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 		// 
 	}
 
-	//aspect = 1.0f;
-	/*QMatrix4x4 p1;
-	p1.perspective(60, aspect, 1.0f, 100.0f);
-	qDebug() << p1;
-	QMatrix4x4 o1;
+	//QMatrix4x4 p1;
+	//p1.perspective(60, aspect, 1.0f, 100.0f);
+	//p1.frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f);
+	//qDebug() << p1;
+	
+	/*QMatrix4x4 o1;
 	o1.ortho(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
 	o1.scale(0.008f);*/
 	//o1.scale(0.1f, 0.3f, 1.6f);
@@ -234,15 +235,15 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	//o1.rotate(45.0f, 1.0f, 0.0f, 0.0f);
 	//o1.translate(1.2f, 2.1f, 5.4f);
 	
-	Mat mt1 = utils::MatrixUtils::createTranslationMatrix(1.2f, 2.1f, 5.4f);
+	/*Mat mt1 = utils::MatrixUtils::createTranslationMatrix(1.2f, 2.1f, 5.4f);
 	Mat mrx = utils::MatrixUtils::createRotationMatrixX(45.0f * (3.141592f/180.0f));
 	Mat mry = utils::MatrixUtils::createRotationMatrixY(197.2f * (3.141592f / 180.0f));
 	Mat mrz = utils::MatrixUtils::createRotationMatrixZ(389.9f * (3.141592f / 180.0f));
 	Mat ms1 = utils::MatrixUtils::createScalingMatrix(0.1f, 0.3f, 1.6f);
 	Mat mp1 = utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
+	Mat mpp1 = utils::MatrixUtils::createPerspectiveProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
+	Mat mpp2 = utils::MatrixUtils::createPerspectiveProjectionMatrix(60, aspect, 1.0f, 100.0f);*/
 
-	//qDebug() << "=====================";
-	//qDebug() << o1;
 	SoftwareRenderer2 swr;
 	auto swbuffs = swr.render(mesh, matrix);
 	Mat swbuffc = swbuffs.first;
