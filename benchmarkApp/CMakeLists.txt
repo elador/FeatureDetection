@@ -8,7 +8,9 @@ message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies
 FIND_PACKAGE(BLAS REQUIRED)
+
 FIND_PACKAGE(Boost 1.48.0 COMPONENTS random system filesystem program_options REQUIRED)
+
 FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core imgproc highgui video)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
@@ -16,19 +18,16 @@ MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 FIND_PACKAGE(MATLAB REQUIRED)
 
-IF(WIN32)
-	# In Windows only: Include Microsoft Kinect SDK
-	SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
-	FIND_PACKAGE(KinectSDK REQUIRED)
-	INCLUDE_DIRECTORIES(${KinectSDK_INCLUDE_DIR})
-	SET(KINECT_LIBNAME ${KinectSDK_LIBRARIES})
-	
-	# Fix for VS2012 that has _VARIADIC_MAX set to 5 (the C++11 standard requires a value
-	# of 10). Don't set too high because it increases compiler memory usage / compile-time.
-	add_definitions( -D_VARIADIC_MAX=9 )
-ELSE()
-	SET(KINECT_LIBNAME "")
-ENDIF()
+if(WITH_MSKINECT_SDK)
+	# Include Microsoft Kinect SDK (Windows)
+	set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+	find_package(KinectSDK REQUIRED)
+	include_directories(${KinectSDK_INCLUDE_DIR})
+	set(KINECT_LIBNAME ${KinectSDK_LIBRARIES})
+	add_definitions(-DWITH_MSKINECT_SDK)
+else()
+	set(KINECT_LIBNAME "")
+endif()
 
 # source and header files
 SET(HEADERS

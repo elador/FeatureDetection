@@ -39,11 +39,11 @@ add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes;
 add_subdirectory(libSupervisedDescentModel) # A non-parametric model for landmark detection. Uses the supervised descent method.
 
 # Tracking apps
-#add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.
-#add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
-#add_subdirectory(adaptiveTrackingApp)	# Adaptive tracking app.
-#add_subdirectory(partiallyAdaptiveTrackingApp)	# Old adaptive tracking app.
-#add_subdirectory(headTrackingApp)		# Adaptive head tracking app.
+add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.
+add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
+add_subdirectory(adaptiveTrackingApp)	# Adaptive tracking app.
+add_subdirectory(partiallyAdaptiveTrackingApp)	# Old adaptive tracking app.
+add_subdirectory(headTrackingApp)		# Adaptive head tracking app.
 add_subdirectory(VideoPlayerApp)		# App for playing videos, showing landmarks and storing videos.
 
 # Face-detection apps:
