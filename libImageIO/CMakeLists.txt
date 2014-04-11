@@ -9,9 +9,10 @@ MESSAGE(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 # find dependencies
 #FIND_PACKAGE(Boost 1.48.0 COMPONENTS filesystem REQUIRED)	# Patrik: I think we need 'system' too, if the app doesn't link to it, ImageIO fails to link.
 FIND_PACKAGE(Boost 1.48.0 REQUIRED) # We only want the headers in the lib?
-FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core)
+FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
+
 IF(WITH_MSKINECT_SDK)
 	# Include Microsoft Kinect SDK (Windows)
 	SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
@@ -26,8 +27,8 @@ SET(HEADERS
 	include/imageio/BobotLandmarkSource.hpp
 	include/imageio/CameraImageSource.hpp
 	include/imageio/DefaultNamedLandmarkSource.hpp
-	include/imageio/DefaultLandmarkSink.hpp
 	include/imageio/DidLandmarkFormatParser.hpp
+	include/imageio/DidLandmarkSink.hpp
 	include/imageio/DirectoryImageSink.hpp
 	include/imageio/DirectoryImageSource.hpp
 	include/imageio/EmptyLandmarkSource.hpp
@@ -43,16 +44,19 @@ SET(HEADERS
 	include/imageio/LandmarkCollection.hpp
 	include/imageio/LandmarkFileGatherer.hpp
 	include/imageio/LandmarkFormatParser.hpp
+	include/imageio/LandmarkSource.hpp
 	include/imageio/LandmarksHelper.hpp
 	include/imageio/LfpwLandmarkFormatParser.hpp
 	include/imageio/LstLandmarkFormatParser.hpp
 	include/imageio/ModelLandmark.hpp
+	include/imageio/MuctLandmarkFormatParser.hpp
 	include/imageio/NamedLabeledImageSource.hpp
+	include/imageio/NamedLandmarkSink.hpp
 	include/imageio/NamedLandmarkSource.hpp
 	include/imageio/OrderedLabeledImageSource.hpp
 	include/imageio/OrderedLandmarkSink.hpp
-	include/imageio/OrderedLandmarkSource.hpp
 	include/imageio/RectLandmark.hpp
+	include/imageio/RectLandmarkSink.hpp
 	include/imageio/RepeatingFileImageSource.hpp
 	include/imageio/TlmsLandmarkFormatParser.hpp
 	include/imageio/VideoImageSink.hpp
@@ -63,8 +67,8 @@ SET(SOURCE
 	src/imageio/BobotLandmarkSource.cpp
 	src/imageio/CameraImageSource.cpp
 	src/imageio/DefaultNamedLandmarkSource.cpp
-	src/imageio/DefaultLandmarkSink.cpp
 	src/imageio/DidLandmarkFormatParser.cpp
+	src/imageio/DidLandmarkSink.cpp
 	src/imageio/DirectoryImageSink.cpp
 	src/imageio/DirectoryImageSource.cpp
 	src/imageio/FddbLandmarkSink.cpp
@@ -77,9 +81,11 @@ SET(SOURCE
 	src/imageio/LfpwLandmarkFormatParser.cpp
 	src/imageio/LstLandmarkFormatParser.cpp
 	src/imageio/ModelLandmark.cpp
+	src/imageio/MuctLandmarkFormatParser.cpp
 	src/imageio/NamedLabeledImageSource.cpp
 	src/imageio/OrderedLabeledImageSource.cpp
 	src/imageio/RectLandmark.cpp
+	src/imageio/RectLandmarkSink.cpp
 	src/imageio/RepeatingFileImageSource.cpp
 	src/imageio/TlmsLandmarkFormatParser.cpp
 	src/imageio/VideoImageSink.cpp

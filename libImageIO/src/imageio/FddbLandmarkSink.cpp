@@ -16,6 +16,7 @@
 #include "opencv2/core/core.hpp"
 
 using cv::Rect_;
+using std::string;
 
 namespace imageio {
 
@@ -41,7 +42,7 @@ void FddbLandmarkSink::close() {
 	output.close();
 }
 
-void FddbLandmarkSink::add(const std::string imageFilename, const std::vector<RectLandmark> faceLandmarks, const std::vector<float> detectionScores) {
+void FddbLandmarkSink::add(const string imageFilename, const std::vector<RectLandmark> faceLandmarks, const std::vector<float> detectionScores) {
 	// TODO: Write only to a vector/map/tuple <fn, vec<lms>, vec<scores>>, then sort by fn according to the .txt, then write at close()/d'tor
 	
 	size_t posOf2002 = imageFilename.find("2002/"); // NOTE: If this sequence occurs in the path somewhere else (e.g. twice), we have a problem. Same below.

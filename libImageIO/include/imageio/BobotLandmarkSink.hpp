@@ -13,15 +13,12 @@
 #include <fstream>
 #include <memory>
 
-using std::string;
-using std::ofstream;
-
 namespace imageio {
 
 class Landmark;
 
 /**
- * Landmark source that writes rectangular landmarks to a file using the Bonn Benchmark on Tracking (BoBoT) format.
+ * Landmark sink that writes rectangular landmarks to a file using the Bonn Benchmark on Tracking (BoBoT) format.
  */
 class BobotLandmarkSink : public OrderedLandmarkSink {
 public:
@@ -29,9 +26,9 @@ public:
 	/**
 	 * Constructs a new BoBoT landmark sink.
 	 *
-	 * @param[in] landmarkName The name of the landmark. Can be ommitted if there is only one landmark per image.
+	 * @param[in] landmarkName The name of the landmark. Can be omitted if there is only one landmark per image.
 	 */
-	explicit BobotLandmarkSink(const string& landmarkName = "");
+	explicit BobotLandmarkSink(const std::string& landmarkName = "");
 
 	~BobotLandmarkSink();
 
@@ -50,7 +47,7 @@ public:
 	 * @param[in] imageWidth The width of the images.
 	 * @param[in] imageHeight The height of the images.
 	 */
-	void open(const string& filename, const string& videoFilename, float imageWidth, float imageHeight);
+	void open(const std::string& filename, const std::string& videoFilename, float imageWidth, float imageHeight);
 
 	/**
 	 * Closes the file writer.
@@ -73,8 +70,8 @@ private:
 	 */
 	const std::shared_ptr<Landmark> getLandmark(const LandmarkCollection& collection);
 
-	const string landmarkName; ///< The name of the landmark.
-	ofstream output; ///< The file output stream.
+	const std::string landmarkName; ///< The name of the landmark.
+	std::ofstream output; ///< The file output stream.
 	unsigned int index; ///< The index of the next landmark that is written to the file.
 	float imageWidth; ///< The width of the images.
 	float imageHeight; ///< The height of the images.

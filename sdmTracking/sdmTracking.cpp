@@ -32,11 +32,6 @@
 #include <memory>
 #include <iostream>
 
-extern "C" {
-	//#include "vl/hog.h"
-	#include "hog.h"
-}
-
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -53,11 +48,7 @@ extern "C" {
 #include "boost/filesystem/path.hpp"
 #include "boost/lexical_cast.hpp"
 
-#include "shapemodels/MorphableModel.hpp"
-#include "shapemodels/OpenCVCameraEstimation.hpp"
-#include "shapemodels/AffineCameraEstimation.hpp"
-#include "render/Camera.hpp"
-#include "render/SoftwareRenderer.hpp"
+#include "superviseddescentmodel/SdmLandmarkModel.hpp"
 
 #include "imageio/ImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
@@ -73,6 +64,7 @@ extern "C" {
 #include "logging/LoggerFactory.hpp"
 
 using namespace imageio;
+using namespace superviseddescentmodel;
 namespace po = boost::program_options;
 using std::cout;
 using std::endl;
@@ -91,249 +83,6 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 	std::copy(v.begin(), v.end(), std::ostream_iterator<T>(cout, " "));
 	return os;
 }
-
-
-
-/*
-#include <fstream>
-#include "opencv2/core/core.hpp"
-#ifdef WIN32
-#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
-#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
-#endif
-#include "boost/algorithm/string.hpp"
-#include "boost/filesystem/path.hpp"
-#include "boost/lexical_cast.hpp"
-
-using boost::lexical_cast;
-*/
-
-/*
-Some notes:
- - The current model ('SDM_Model_HOG_Zhenhua_11012014.txt') uses roughly 1/10 of
-   the training data of the original model from the paper, and has no expressions
-
- - One problem: Running the optimization several times doesn't result in better
-   performance. Two possible reasons:
-     * In the training, what we train is the step from the mean to the groundtruth.
-	   So we only train a big step.
-	     - Actually, that means that it's very important to get the rigid alignment
-		   right to get the first update-step right?
-	 * The update-step for one landmark is dependent on the other landmarks
-
- Test: To calculate the face-box (Zhenhua): Take all 68 LMs; Take the min/max x and y
- for the face-box. (so the face-box is quite small)
-*/
-class HogSdmModel
-{
-public:
-	HogSdmModel() {
-	};
-
-	struct HogParameter
-	{
-		int cellSize;
-		int numBins;
-	};
-
-	// interface
-	int getNumLandmarks() const {
-		return meanLandmarks.rows/2;
-	};
-
-	// only HOG models
-	int getNumHogScales() const {
-		return regressorData.size();
-	};
-
-	HogParameter getHogParameters(int hogScaleLevel) {
-		return hogParameters[hogScaleLevel];
-	}
-
-	// returns a copy
-	cv::Mat getMeanShape() const {
-		return meanLandmarks.clone();
-	};
-	// returns  a header that points to the original data
-	cv::Mat getRegressorData(int hogScaleLevel) {
-		return regressorData[hogScaleLevel];
-	}
-
-	//std::vector<cv::Point2f> getLandmarksAsPoints(cv::Mat or vector<float> alphas or empty(=mean));
-	std::vector<cv::Point2f> getLandmarksAsPoints() const {
-		std::vector<cv::Point2f> landmarks;
-		for (int i = 0; i < getNumLandmarks(); ++i) {
-			landmarks.push_back({ meanLandmarks.at<float>(i, 0), meanLandmarks.at<float>(i+getNumLandmarks(), 0) });
-		}
-		return landmarks;
-	};
-
-	static HogSdmModel load(boost::filesystem::path filename) {
-		HogSdmModel model;
-		std::ifstream file(filename.string());
-		std::string line;
-		vector<string> stringContainer;
-		std::getline(file, line); // skip the first line, it's the description
-		std::getline(file, line); // numLandmarks 22
-		boost::split(stringContainer, line, boost::is_any_of(" "));
-		int numLandmarks = lexical_cast<int>(stringContainer[1]);
-		// read the mean landmarks
-		model.meanLandmarks = Mat(numLandmarks*2, 1, CV_32FC1);
-		// First all the x-coordinates, then all the  y-coordinates.
-		for (int i = 0; i < numLandmarks*2; ++i) {
-			std::getline(file, line);
-			model.meanLandmarks.at<float>(i, 0) = lexical_cast<float>(line);
-		}
-		// read the numHogScales
-		std::getline(file, line); // numHogScales 5
-		boost::split(stringContainer, line, boost::is_any_of(" "));
-		int numHogScales = lexical_cast<int>(stringContainer[1]);
-		// for every HOG scale, read a header line and then the matrix data
-		for (int i = 0; i < numHogScales; ++i) {
-			// read the header line
-			std::getline(file, line); // scale 1 rows 3169 cols 44
-			boost::split(stringContainer, line, boost::is_any_of(" "));
-			int numRows = lexical_cast<int>(stringContainer[3]); // = numHogDimensions
-			int numCols = lexical_cast<int>(stringContainer[5]); // = numLandmarks * 2
-			HogParameter params;
-			params.cellSize = lexical_cast<int>(stringContainer[7]); // = cellSize
-			params.numBins = lexical_cast<int>(stringContainer[9]); // = numBins
-			model.hogParameters.push_back(params);
-			Mat regressorData(numRows, numCols, CV_32FC1);
-			// read numRows lines
-			for (int j = 0; j < numRows; ++j) {
-				std::getline(file, line); // float1 float2 float3 ... float44
-				boost::split(stringContainer, line, boost::is_any_of(" "));
-				for (int col = 0; col < numCols; ++col) { // stringContainer contains one more entry than numCols, but we just skip it, it's a whitespace
-					regressorData.at<float>(j, col) = lexical_cast<float>(stringContainer[col]);
-				}
-				
-			}
-
-			model.regressorData.push_back(regressorData);
-		}
-
-		return model;
-	};
-
-private:
-	cv::Mat meanLandmarks; // numLandmarks*2 x 1. First all the x-coordinates, then all the y-coordinates.
-	std::vector<cv::Mat> regressorData; // Holds the training data, one cv::Mat for each Hog scale level. Every Mat is numFeatureDim x numLandmarks*2 (for x & y)
-
-	std::vector<HogParameter> hogParameters;
-
-};
-
-class HogSdmModelFitting
-{
-public:
-	HogSdmModelFitting(HogSdmModel model)/* : model(model)*/ {
-		this->model = model;
-	};
-	
-	// out: aligned modelShape
-	// in: Rect, ocv with tl x, tl y, w, h (?) and calcs center
-	// directly modifies modelShape
-	// could move to parent-class
-	cv::Mat alignRigid(cv::Mat modelShape, cv::Rect faceBox) const {
-		
-		Mat xCoords = modelShape.rowRange(0, modelShape.rows / 2);
-		Mat yCoords = modelShape.rowRange(modelShape.rows / 2, modelShape.rows);
-		// scale the model:
-		double minX, maxX, minY, maxY;
-		cv::minMaxLoc(xCoords, &minX, &maxX);
-		cv::minMaxLoc(yCoords, &minY, &maxY);
-		float faceboxScaleFactor = 1.25f; // 1.25f: value of Zhenhua Matlab FD. Mine: 1.35f
-		float modelWidth = maxX - minX;
-		float modelHeight = maxY - minY;
-		// scale it:
-		modelShape = modelShape * (faceBox.width / modelWidth + faceBox.height / modelHeight) / (2.0f * faceboxScaleFactor);
-		// translate the model:
-		Scalar meanX = cv::mean(xCoords);
-		double meanXd = meanX[0];
-		Scalar meanY = cv::mean(yCoords);
-		double meanYd = meanY[0];
-		// move it:
-		xCoords += faceBox.x + faceBox.width / 2.0f - meanXd;
-		yCoords += faceBox.y + faceBox.height / 1.8f - meanYd; // we use another value for y because we don't want to center the model right in the middle of the face-box
-
-		return modelShape;
-	};
-
-	// out: optimized model-shape
-	// in: GRAY img
-	// in: evtl zusaetzlicher param um scale-level/iter auszuwaehlen
-	// calculates shape updates (deltaShape) for one or more iter/scales and returns...
-	cv::Mat optimize(cv::Mat modelShape, cv::Mat image) {
-		
-		for (int hogScale = 0; hogScale < model.getNumHogScales(); ++hogScale) {
-			//feature_current = obtain_features(double(TestImg), New_Shape, 'HOG', hogScale);
-			HogSdmModel::HogParameter hogParameter = model.getHogParameters(hogScale);
-			int numNeighbours = hogParameter.cellSize * 6; // this cellSize has nothing to do with HOG. It's the number of "cells", i.e. image-windows/patches.
-			// if cellSize=1, our window is 12x12, and because our HOG-cellsize is 12, it means we will have 1 cell (the minimum).
-			int hogCellSize = 12;
-			int hogDim1 = (numNeighbours * 2) / hogCellSize; // i.e. how many times does the hogCellSize fit into our patch
-			int hogDim2 = hogDim1; // as our patch is quadratic, those two are the same
-			int hogDim3 = 16; // VlHogVariantUoctti: Creates 4+3*numOrientations dimensions
-			int hogDims = hogDim1 * hogDim2 * hogDim3;
-			Mat currentFeatures(model.getNumLandmarks() * hogDims, 1, CV_32FC1);
-
-			for (int i = 0; i < model.getNumLandmarks(); ++i) {
-				// get the (x, y) location and w/h of the current patch
-				int x = cvRound(modelShape.at<float>(i, 0));
-				int y = cvRound(modelShape.at<float>(i + model.getNumLandmarks(), 0));
-				cv::Rect roi(x - numNeighbours, y - numNeighbours, numNeighbours * 2, numNeighbours * 2); // x y w h. Rect: x and y are top-left corner. Our x and y are center. Convert.
-				// we have exactly the same window as the matlab code.
-				// extract the patch and supply it to vl_hog
-				Mat roiImg = image(roi).clone(); // clone because we need a continuous memory block
-				roiImg.convertTo(roiImg, CV_32FC1); // because vl_hog_put_image expects a float* (values 0.f-255.f)
-				VlHog* hog = vl_hog_new(VlHogVariant::VlHogVariantUoctti, /*numOrientations=*/hogParameter.numBins, /*transposed (=col-major):*/false); // VlHogVariantUoctti seems to be default in Matlab.
-				vl_hog_put_image(hog, (float*)roiImg.data, roiImg.cols, roiImg.rows, /*numChannels=*/1, hogCellSize);
-				vl_size ww = vl_hog_get_width(hog);
-				vl_size hh = vl_hog_get_height(hog);
-				vl_size dd = vl_hog_get_dimension(hog); // assert ww=hogDim1, hh=hogDim2, dd=hogDim3
-				//float* hogArray = (float*)malloc(ww*hh*dd*sizeof(float));
-				Mat hogArray(1, ww*hh*dd, CV_32FC1); // safer & same result. Don't use C-style memory management.
-				//vl_hog_extract(hog, hogArray); // just interpret hogArray in col-major order to get the same n x 1 vector as in matlab. (w * h * d)
-				vl_hog_extract(hog, hogArray.ptr<float>(0));
-				vl_hog_delete(hog);
-				Mat hogDescriptor(hh*ww*dd, 1, CV_32FC1);
-				for (int j = 0; j < dd; ++j) {
-					//Mat hogFeatures(hh, ww, CV_32FC1, hogArray + j*ww*hh);
-					Mat hogFeatures(hh, ww, CV_32FC1, hogArray.ptr<float>(0) + j*ww*hh); // Creates the same array as in Matlab. I might have to check this again if hh!=ww (non-square)
-					hogFeatures = hogFeatures.t(); // Necessary because the Matlab reshape() takes column-wise from the matrix while the OpenCV reshape() takes row-wise.
-					hogFeatures = hogFeatures.reshape(0, hh*ww); // make it to a column-vector
-					Mat currentDimSubMat = hogDescriptor.rowRange(j*ww*hh, j*ww*hh + ww*hh);
-					hogFeatures.copyTo(currentDimSubMat);
-				}
-				//free(hogArray); // not necessary - we use a Mat.
-				//features = [features; double(reshape(tmp, [], 1))];
-				// B = reshape(A,m,n) returns the m-by-n matrix B whose elements are taken column-wise from A
-				// Matlab (& Eigen, OpenGL): Column-major.
-				// OpenCV: Row-major.
-				// (access is always (r, c).)
-				Mat currentFeaturesSubrange = currentFeatures.rowRange(i*hogDims, i*hogDims + hogDims);
-				hogDescriptor.copyTo(currentFeaturesSubrange);
-				// currentFeatures needs to have dimensions n x 1, where n = numLandmarks * hogFeaturesDimension, e.g. n = 22 * (3*3*16=144) = 3168 (for the first hog Scale)
-			}
-
-			//delta_shape = AAM.RF(1).Regressor(hogScale).A(1:end - 1, : )' * feature_current + AAM.RF(1).Regressor(hogScale).A(end,:)';
-			Mat regressorData = model.getRegressorData(hogScale);
-			Mat deltaShape = regressorData.rowRange(0, regressorData.rows - 1).t() * currentFeatures + regressorData.row(regressorData.rows - 1).t();
-
-			modelShape = modelShape + deltaShape;
-			/*
-			for (int i = 0; i < m.getNumLandmarks(); ++i) {
-			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + m.getNumLandmarks(), 0)), 6 - hogScale, Scalar(51.0f*(float)hogScale, 51.0f*(float)hogScale, 0.0f));
-			}*/
-		}
-
-		return modelShape;
-	};
-
-private:
-	HogSdmModel model;
-};
 
 int main(int argc, char *argv[])
 {
@@ -357,6 +106,9 @@ int main(int argc, char *argv[])
 	shared_ptr<ImageSource> imageSource;
 	path landmarksDir; // TODO: Make more dynamic wrt landmark format. a) What about the loading-flags (1_Per_Folder etc) we have? b) Expose those flags to cmdline? c) Make a LmSourceLoader and he knows about a LM_TYPE (each corresponds to a Parser/Loader class?)
 	string landmarkType;
+	path sdmModelFile;
+	path faceDetectorFilename;
+	bool trackingMode;
 
 	try {
 		po::options_description desc("Allowed options");
@@ -373,10 +125,16 @@ int main(int argc, char *argv[])
 				"A camera device ID for use with the OpenCV camera driver")
 			("kinect,k", po::value<int>(&kinectId)->implicit_value(0), 
 				"Windows only: Use a Kinect as camera. Optionally specify a device ID.")
+			("model,m", po::value<path>(&sdmModelFile)->required(),
+				"A SDM model file to load.")
+			("face-detector,f", po::value<path>(&faceDetectorFilename)->required(),
+				"Path to an XML CascadeClassifier from OpenCV.")
 			("landmarks,l", po::value<path>(&landmarksDir), 
 				"load landmark files from the given folder")
 			("landmark-type,t", po::value<string>(&landmarkType), 
 				"specify the type of landmarks to load: ibug")
+			("tracking-mode,r", po::value<bool>(&trackingMode)->default_value(false)->implicit_value(true),
+				"If on, V&J will be run to initialize the model only and after the model lost tracking. If off, V&J will be run on every frame/image.")
 		;
 
 		po::positional_options_description p;
@@ -418,8 +176,8 @@ int main(int argc, char *argv[])
 	
 	Loggers->getLogger("shapemodels").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("render").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Loggers->getLogger("fitter").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Logger appLogger = Loggers->getLogger("fitter");
+	Loggers->getLogger("sdmTracking").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Logger appLogger = Loggers->getLogger("sdmTracking");
 
 	appLogger.debug("Verbose level for console output: " + logging::loglevelToString(logLevel));
 	appLogger.debug("Using config: " + configFilename.string());
@@ -451,7 +209,7 @@ int main(int argc, char *argv[])
 		appLogger.info("Using file-list as input: " + inputFilelist.string());
 		shared_ptr<ImageSource> fileListImgSrc; // TODO VS2013 change to unique_ptr, rest below also
 		try {
-			fileListImgSrc = make_shared<FileListImageSource>(inputFilelist.string(), "C:\\Users\\Patrik\\Documents\\GitHub\\data\\fddb\\originalPics\\", ".jpg");
+			fileListImgSrc = make_shared<FileListImageSource>(inputFilelist.string());
 		} catch(const std::runtime_error& e) {
 			appLogger.error(e.what());
 			return EXIT_FAILURE;
@@ -516,18 +274,6 @@ int main(int argc, char *argv[])
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
 	}
-	/*
-	shapemodels::MorphableModel morphableModel;
-	try {
-		morphableModel = shapemodels::MorphableModel::load(pt.get_child("morphableModel"));
-	} catch (const boost::property_tree::ptree_error& error) {
-		appLogger.error(error.what());
-		return EXIT_FAILURE;
-	}
-	catch (const std::runtime_error& error) {
-		appLogger.error(error.what());
-		return EXIT_FAILURE;
-	}*/
 	
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img;
@@ -537,32 +283,40 @@ int main(int argc, char *argv[])
 
 	cv::namedWindow(windowName);
 
-	HogSdmModel hogModel = HogSdmModel::load("C:\\Users\\Patrik\\Documents\\GitHub\\SGD_Zhenhua_11012014\\SDM_Model_HOG_Zhenhua_11012014.txt");
-	HogSdmModelFitting modelFitter(hogModel);
+	SdmLandmarkModel lmModel = SdmLandmarkModel::load(sdmModelFile);
+	SdmLandmarkModelFitting modelFitter(lmModel);
 
-	string faceDetectionModel("C:\\opencv\\2.4.7.2_prebuilt\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt2.xml"); // sgd: "../models/haarcascade_frontalface_alt2.xml"
+	// faceDetectorFilename: e.g. opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt2.xml
 	cv::CascadeClassifier faceCascade;
-	if (!faceCascade.load(faceDetectionModel))
+	if (!faceCascade.load(faceDetectorFilename.string()))
 	{
 		cout << "Error loading face detection model." << endl;
 		return EXIT_FAILURE;
 	}
 	
+	bool runRigidAlign = true;
+
+	std::ofstream resultsFile("C:\\Users\\Patrik\\Documents\\GitHub\\sdm_lfpw_tr_68lm_10s_5c_RESULTS.txt");
+	vector<string> comparisonLandmarks({ "9", "31", "37", "40", "43", "46", "49", "55", "63", "67" });
+
 	while(labeledImageSource->next()) {
 		start = std::chrono::system_clock::now();
 		appLogger.info("Starting to process " + labeledImageSource->getName().string());
 		img = labeledImageSource->getImage();
-		
-		LandmarkCollection lms = labeledImageSource->getLandmarks();
-		vector<shared_ptr<Landmark>> lmsv = lms.getLandmarks();
-		landmarks.clear();
-		Mat landmarksImage = img.clone(); // blue rect = the used landmarks
-		/*
-		for (const auto& lm : lmsv) {
-			lm->draw(landmarksImage);
-			landmarks.emplace_back(imageio::ModelLandmark(lm->getName(), lm->getPosition2D()));
-			cv::rectangle(landmarksImage, cv::Point(cvRound(lm->getX() - 2.0f), cvRound(lm->getY() - 2.0f)), cv::Point(cvRound(lm->getX() + 2.0f), cvRound(lm->getY() + 2.0f)), cv::Scalar(255, 0, 0));
-		}*/
+		Mat landmarksImage = img.clone();
+
+		LandmarkCollection groundtruth = labeledImageSource->getLandmarks();
+		vector<shared_ptr<Landmark>> lmv = groundtruth.getLandmarks();
+		for (const auto& l : lmv) {
+			cv::circle(landmarksImage, l->getPoint2D(), 3, Scalar(255.0f, 0.0f, 0.0f));
+		}
+
+		// iBug 68 points. No eye-centers. Calculate them:
+		cv::Point2f reye_c = (groundtruth.getLandmark("37")->getPosition2D() + groundtruth.getLandmark("40")->getPosition2D()) / 2.0f;
+		cv::Point2f leye_c = (groundtruth.getLandmark("43")->getPosition2D() + groundtruth.getLandmark("46")->getPosition2D()) / 2.0f;
+		cv::circle(landmarksImage, reye_c, 3, Scalar(255.0f, 0.0f, 127.0f));
+		cv::circle(landmarksImage, leye_c, 3, Scalar(255.0f, 0.0f, 127.0f));
+		cv::Scalar interEyeDistance = cv::norm(Vec2f(reye_c), Vec2f(leye_c), cv::NORM_L2);
 
 		Mat imgGray;
 		cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);
@@ -570,9 +324,10 @@ int main(int argc, char *argv[])
 		float score, notFace = 0.5;
 		
 		// face detection
-		//faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
-		faces.push_back({ 172, 199, 278, 278 });
+		faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
+		//faces.push_back({ 172, 199, 278, 278 });
 		if (faces.empty()) {
+			runRigidAlign = true;
 			cv::imshow(windowName, landmarksImage);
 			cv::waitKey(5);
 			continue;
@@ -581,31 +336,71 @@ int main(int argc, char *argv[])
 			cv::rectangle(landmarksImage, f, cv::Scalar(0.0f, 0.0f, 255.0f));
 		}
 
-		Mat modelShape = hogModel.getMeanShape();
-		modelShape = modelFitter.alignRigid(modelShape, faces[0]);
-
-	/*	std::vector<cv::Point2f> mlms = m.getLandmarksAsPoints();
-		for (const auto& l : mlms) {
-			cv::circle(landmarksImage, l, 3, Scalar(0.0f, 0.0f, 255.0f));
-		}*/
-		
-		// print the mean initialization
-		/*for (int i = 0; i < m.getNumLandmarks(); ++i) {
-			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + m.getNumLandmarks(), 0)), 3, Scalar(255.0f, 0.0f, 255.0f));
-		}*/
-		modelShape = modelFitter.optimize(modelShape, imgGray);
-		for (int i = 0; i < hogModel.getNumLandmarks(); ++i) {
-			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + hogModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 255.0f, 0.0f));
+		// Check if the face corresponds to the ground-truth:
+		Mat gtLmsRowX(1, lmv.size(), CV_32FC1);
+		Mat gtLmsRowY(1, lmv.size(), CV_32FC1);
+		int idx = 0;
+		for (const auto& l : lmv) {
+			gtLmsRowX.at<float>(idx) = l->getX();
+			gtLmsRowY.at<float>(idx) = l->getY();
+			++idx;
 		}
+		double minWidth, maxWidth, minHeight, maxHeight;
+		cv::minMaxIdx(gtLmsRowX, &minWidth, &maxWidth);
+		cv::minMaxIdx(gtLmsRowY, &minHeight, &maxHeight);
+		float cx = cv::mean(gtLmsRowX)[0];
+		float cy = cv::mean(gtLmsRowY)[0] - 30.0f;
+		// do this in relation to the IED, not absolute pixel values
+		if (std::abs(cx - (faces[0].x+faces[0].width/2.0f)) > 30.0f || std::abs(cy - (faces[0].y+faces[0].height/2.0f)) > 30.0f) {
+			//cv::imshow(windowName, landmarksImage);
+			//cv::waitKey();
+			continue;
+		}
+		
+		Mat modelShape = lmModel.getMeanShape();
+		//if (runRigidAlign) {
+			modelShape = modelFitter.alignRigid(modelShape, faces[0]);
+			//runRigidAlign = false;
+		//}
+		
+	
+		// print the mean initialization
+		for (int i = 0; i < lmModel.getNumLandmarks(); ++i) {
+			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + lmModel.getNumLandmarks(), 0)), 3, Scalar(255.0f, 0.0f, 255.0f));
+		}
+		modelShape = modelFitter.optimize(modelShape, imgGray);
+		for (int i = 0; i < lmModel.getNumLandmarks(); ++i) {
+			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + lmModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 255.0f, 0.0f));
+		}
+
+		imwrite("C:\\Users\\Patrik\\Documents\\GitHub\\out_sdm_lms\\" + labeledImageSource->getName().filename().string(), landmarksImage);
+
+		resultsFile << "# " << labeledImageSource->getName() << std::endl;
+		for (const auto& lmId : comparisonLandmarks) {
+
+			shared_ptr<Landmark> gtlm = groundtruth.getLandmark(lmId); // Todo: Handle case when LM not found
+			cv::Point2f gt = gtlm->getPoint2D();
+			cv::Point2f det = lmModel.getLandmarkAsPoint(lmId, modelShape);
+
+			float dx = (gt.x - det.x);
+			float dy = (gt.y - det.y);
+			float diff = std::sqrt(dx*dx + dy*dy);
+			diff = diff / interEyeDistance[0]; // normalize by the IED
+
+			resultsFile << diff << " # " << lmId << std::endl;
+		}
+
 		
 		end = std::chrono::system_clock::now();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
 		appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
 		
-		cv::imshow(windowName, landmarksImage);
-		cv::waitKey(5);
+		//cv::imshow(windowName, landmarksImage);
+		//cv::waitKey(5);
 
 	}
+
+	resultsFile.close();
 
 	return 0;
 }

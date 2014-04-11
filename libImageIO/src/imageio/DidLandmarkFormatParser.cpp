@@ -13,15 +13,17 @@
 #include <utility>
 #include <fstream>
 
-using std::copy;
-using std::sort;
-using std::runtime_error;
-using std::make_pair;
-using boost::algorithm::trim;
+using cv::Vec3f;
 using boost::algorithm::starts_with;
+using boost::lexical_cast;
 using boost::filesystem::path;
+using std::string;
+using std::map;
+using std::make_pair;
 using std::ifstream;
+using std::getline;
 using std::stringstream;
+using std::shared_ptr;
 using std::make_shared;
 
 namespace imageio {
@@ -65,8 +67,9 @@ shared_ptr<ModelLandmark> DidLandmarkFormatParser::readFromDidLine(const string&
 		throw std::runtime_error("Landmark parsing format error, use .did");
 	}
 	fPos[2] = 0;
-	int vertexNumber = boost::lexical_cast<int>(fVertexNumber);
-	name = didToTlmsName(vertexNumber);
+	int vertexNumber = lexical_cast<int>(fVertexNumber);
+	//name = didToTlmsName(vertexNumber); // TODO: More generic solution
+	name = lexical_cast<string>(vertexNumber);
 	if (!name.empty()) {
 		return make_shared<ModelLandmark>(name, fPos, true);
 	} else {

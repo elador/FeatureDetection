@@ -5,7 +5,7 @@ SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 #OpenCV:
-FIND_PACKAGE( OpenCV 2.3.1 REQUIRED core imgproc highgui calib3d)
+FIND_PACKAGE( OpenCV 2.4.3 REQUIRED core imgproc highgui calib3d)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 

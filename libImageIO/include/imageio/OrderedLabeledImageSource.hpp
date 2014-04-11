@@ -9,9 +9,8 @@
 #define ORDEREDLABELEDIMAGESOURCE_HPP_
 
 #include "imageio/LabeledImageSource.hpp"
+#include "imageio/LandmarkSource.hpp"
 #include <memory>
-
-using std::shared_ptr;
 
 namespace imageio {
 
@@ -29,7 +28,7 @@ public:
 	 * @param[in] imageSource The source of the images.
 	 * @param[in] landmarkSource The source of the landmarks.
 	 */
-	OrderedLabeledImageSource(shared_ptr<ImageSource> imageSource, shared_ptr<OrderedLandmarkSource> landmarkSource);
+	OrderedLabeledImageSource(std::shared_ptr<ImageSource> imageSource, std::shared_ptr<LandmarkSource> landmarkSource);
 
 	~OrderedLabeledImageSource();
 
@@ -37,18 +36,18 @@ public:
 
 	bool next();
 
-	const Mat getImage() const;
+	const cv::Mat getImage() const;
 
-	path getName() const;
+	boost::filesystem::path getName() const;
 
-	vector<path> getNames() const;
+	std::vector<boost::filesystem::path> getNames() const;
 
 	const LandmarkCollection getLandmarks() const;
 
 private:
 
-	shared_ptr<ImageSource> imageSource;              ///< The source of the images.
-	shared_ptr<OrderedLandmarkSource> landmarkSource; ///< The source of the landmarks.
+	std::shared_ptr<ImageSource> imageSource;              ///< The source of the images.
+	std::shared_ptr<LandmarkSource> landmarkSource; ///< The source of the landmarks.
 };
 
 } /* namespace imageio */

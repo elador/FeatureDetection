@@ -6,19 +6,14 @@
  */
 #pragma once
 
-#ifndef LANDMARKSCOLLECTION_HPP_
-#define LANDMARKSCOLLECTION_HPP_
+#ifndef LANDMARKCOLLECTION_HPP_
+#define LANDMARKCOLLECTION_HPP_
 
 #include "imageio/Landmark.hpp"
 #include <string>
 #include <vector>
 #include <map>
 #include <memory>
-
-using std::string;
-using std::vector;
-using std::map;
-using std::shared_ptr;
 
 namespace imageio {
 
@@ -46,7 +41,7 @@ public:
 	 *
 	 * @param[in] landmark The landmark.
 	 */
-	void insert(shared_ptr<Landmark> landmark);
+	void insert(std::shared_ptr<Landmark> landmark);
 
 	/**
 	 * Determines whether this collection is empty.
@@ -61,7 +56,7 @@ public:
 	 * @param[in] name The name of the landmark.
 	 * @return True if there exists a landmark with the given name, false otherwise.
 	 */
-	bool hasLandmark(const string& name) const;
+	bool hasLandmark(const std::string& name) const;
 
 	/**
 	 * Retrieves a landmark from this collection. Throws an exception if there is no landmark with
@@ -70,7 +65,7 @@ public:
 	 * @param[in] name The name of the landmark.
 	 * @return The landmark with the given name.
 	 */
-	const shared_ptr<Landmark> getLandmark(const string& name) const;
+	const std::shared_ptr<Landmark> getLandmark(const std::string& name) const;
 
 	/**
 	 * Retrieves the first landmark of this collection. Throws an exception if there is not landmark.
@@ -78,22 +73,22 @@ public:
 	 *
 	 * @return The first landmark of this collection.
 	 */
-	const shared_ptr<Landmark> getLandmark() const;
+	const std::shared_ptr<Landmark> getLandmark() const;
 
 	/**
 	 * @return The landmarks.
 	 */
-	const vector<shared_ptr<Landmark>>& getLandmarks() const;
+	const std::vector<std::shared_ptr<Landmark>>& getLandmarks() const;
 
-	operator vector<shared_ptr<Landmark>> const& () const {
+	operator std::vector<std::shared_ptr<Landmark>> const& () const {
 		return landmarks;
 	}
 	
 private:
 
-	vector<shared_ptr<Landmark>> landmarks; ///< A vector of all the landmarks.
-	map<string, size_t> landmarksMap;	      ///< A map from the landmarks names to the indices in the vector.
+	std::vector<std::shared_ptr<Landmark>> landmarks; ///< A vector of all the landmarks.
+	std::map<std::string, size_t> landmarksMap;	      ///< A map from the landmarks names to the indices in the vector.
 };
 
 } /* namespace imageio */
-#endif /* LANDMARKSCOLLECTION_HPP_ */
+#endif /* LANDMARKCOLLECTION_HPP_ */

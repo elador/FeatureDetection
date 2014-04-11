@@ -6,7 +6,7 @@
  */
 
 #include "logging/ConsoleAppender.hpp"
-#include "logging/loglevels.hpp"
+#include "logging/LogLevels.hpp"
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -21,14 +21,14 @@ using std::chrono::duration_cast;
 
 namespace logging {
 
-ConsoleAppender::ConsoleAppender(loglevel logLevel) : Appender(logLevel) {}
+ConsoleAppender::ConsoleAppender(LogLevel logLevel) : Appender(logLevel) {}
 
 ConsoleAppender::~ConsoleAppender() {}
 
-void ConsoleAppender::log(const loglevel logLevel, const string loggerName, const string logMessage)
+void ConsoleAppender::log(const LogLevel logLevel, const string loggerName, const string logMessage)
 {
 	if(logLevel <= this->logLevel)
-		cout << getCurrentTime() << ' ' << loglevelToString(logLevel) << ' ' << "[" << loggerName << "] " << logMessage << std::endl;
+		cout << getCurrentTime() << ' ' << logLevelToString(logLevel) << ' ' << "[" << loggerName << "] " << logMessage << std::endl;
 }
 
 string ConsoleAppender::getCurrentTime()

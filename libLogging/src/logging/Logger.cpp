@@ -14,7 +14,7 @@ Logger::Logger(string name) : name(name), appenders() {}
 
 Logger::~Logger() {}
 
-void Logger::log(const loglevel logLevel, string logMessage)
+void Logger::log(const LogLevel logLevel, string logMessage)
 {
 	for (shared_ptr<Appender> appender : appenders) {
 		appender->log(logLevel, name, logMessage);
@@ -28,32 +28,32 @@ void Logger::addAppender(shared_ptr<Appender> appender)
 
 void Logger::trace(const string logMessage)
 {
-	log(loglevel::TRACE, logMessage);
+	log(LogLevel::Trace, logMessage);
 }
 
 void Logger::debug(const string logMessage)
 {
-	log(loglevel::DEBUG, logMessage);
+	log(LogLevel::Debug, logMessage);
 }
 
 void Logger::info(const string logMessage)
 {
-	log(loglevel::INFO, logMessage);
+	log(LogLevel::Info, logMessage);
 }
 
 void Logger::warn(const string logMessage)
 {
-	log(loglevel::WARN, logMessage);
+	log(LogLevel::Warn, logMessage);
 }
 
 void Logger::error(const string logMessage)
 {
-	log(loglevel::ERROR, logMessage);
+	log(LogLevel::Error, logMessage);
 }
 
 void Logger::panic(const string logMessage)
 {
-	log(loglevel::PANIC, logMessage);
+	log(LogLevel::Panic, logMessage);
 }
 
 } /* namespace logging */

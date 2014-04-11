@@ -38,15 +38,10 @@ public:
 	 *
 	 * @param[in] landmarkFilePath A path to a .pts file.
 	 * @return A map with one entry containing the basename of the file and
-	 *         all the landmarks that are present (TODO in tlms format).
+	 *         all 68 iBug landmarks.
 	 */
 	const std::map<boost::filesystem::path, LandmarkCollection> read(boost::filesystem::path landmarkFilePath);
 
-private:
-	static std::map<int, std::string> iBugLmMapping;	///< Contains a mapping from the iBug landmark ID to tlms landmark names.
-	
-public:
-	static std::string iBugToTlmsName(int iBugId);
 };
 
 } /* namespace imageio */

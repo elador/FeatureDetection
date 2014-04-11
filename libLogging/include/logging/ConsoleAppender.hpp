@@ -10,7 +10,7 @@
 #define CONSOLEAPPENDER_HPP_
 
 #include "logging/Appender.hpp"
-#include "logging/loglevels.hpp"
+#include "logging/LogLevels.hpp"
 
 namespace logging {
 
@@ -26,9 +26,9 @@ public:
 	 *			need to define this "again" here? Probably because if not,
 	 *			the compiler generates a ConsoleAppender() default constructor?
 	 *
-	 * param[in] loglevel The loglevel at which to log.
+	 * param[in] loglevel The LogLevel at which to log.
 	 */
-	ConsoleAppender(loglevel logLevel);
+	ConsoleAppender(LogLevel logLevel);
 
 	~ConsoleAppender();
 
@@ -39,7 +39,7 @@ public:
 	 * @param[in] loggerName The name of the logger that is logging the message.
 	 * @param[in] logMessage The log-message itself.
 	 */
-	void log(const loglevel logLevel, const string loggerName, const string logMessage);
+	void log(const LogLevel logLevel, const string loggerName, const string logMessage);
 
 private:
 

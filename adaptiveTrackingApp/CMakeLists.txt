@@ -7,14 +7,14 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 # find dependencies
 FIND_PACKAGE(BLAS REQUIRED)
 FIND_PACKAGE(Boost 1.48.0 COMPONENTS random system filesystem program_options REQUIRED)
-FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core imgproc highgui video)
+FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core imgproc highgui video)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 # Matlab
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 FIND_PACKAGE(MATLAB REQUIRED)
 
-IF(WIN32)
+IF(WIN32) # TODO Make use of new WITH_KINECT flag!
 	# In Windows only: Include Microsoft Kinect SDK
 	SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
 	FIND_PACKAGE(KinectSDK REQUIRED)
@@ -23,7 +23,7 @@ IF(WIN32)
 	
 	# Fix for VS2012 that has _VARIADIC_MAX set to 5 (the C++11 standard requires a value
 	# of 10). Don't set too high because it increases compiler memory usage / compile-time.
-	add_definitions( -D_VARIADIC_MAX=9 )
+	add_definitions( -D_VARIADIC_MAX=9 ) # TODO I think we don't need that anymore with VS2013?
 ELSE()
 	SET(KINECT_LIBNAME "")
 ENDIF()

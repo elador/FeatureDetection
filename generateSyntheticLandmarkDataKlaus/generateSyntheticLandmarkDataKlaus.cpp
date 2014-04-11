@@ -120,9 +120,8 @@ int main(int argc, char *argv[])
 		po::options_description desc("Allowed options");
 		desc.add_options()
 			("help,h", "produce help message")
-			("input-file,i", po::value<string>(), "input image")
 			("config,c", po::value<path>(&configFilename)->required(),
-			"path to a config (.cfg) file")
+			"Path to a config file that specifies which Morphable Model to load.")
 		;
 
 		po::variables_map vm;

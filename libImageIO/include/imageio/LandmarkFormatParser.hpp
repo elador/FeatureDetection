@@ -17,10 +17,6 @@
 #include <map>
 #include <string>
 
-using boost::filesystem::path;
-using std::map;
-using std::string;
-
 namespace imageio {
 
 /**
@@ -42,7 +38,7 @@ public:
 	 * @return All the landmarks that are present in the input. The path is
 	 *         stripped to only contain the basename.
 	 */
-	virtual const map<path, LandmarkCollection> read(path landmarkFilePath) = 0;
+	virtual const std::map<boost::filesystem::path, LandmarkCollection> read(boost::filesystem::path landmarkFilePath) = 0;
 };
 
 } /* namespace imageio */

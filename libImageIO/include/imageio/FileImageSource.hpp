@@ -58,7 +58,7 @@ public:
 
 private:
 	vector<path> files; ///< The files of the given directory, ordered by name.
-	unsigned int index; ///< The index of the next file.
+	int index;			///< The index of the next file.
 
 };
 

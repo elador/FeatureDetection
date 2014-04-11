@@ -27,9 +27,9 @@ class FddbLandmarkSink  {
 public:
 
 	/**
-	 * Constructs a new BoBoT landmark sink.
+	 * Constructs a new FDDB landmark sink.
 	 *
-	 * @param[in] landmarkName The name of the landmark. Can be ommitted if there is only one landmark per image.
+	 * @param[in] annotatedList TODO.
 	 */
 	explicit FddbLandmarkSink(const std::string& annotatedList);
 
@@ -45,7 +45,7 @@ public:
 	/**
 	 * Opens the file writer. Needs to be called before adding the first landmark collection.
 	 *
-	 * @param[in] filename The name of the file containing the landmark data in BoBoT format.
+	 * @param[in] filename TODO.
 	 */
 	void open(const std::string& filename);
 

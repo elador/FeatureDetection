@@ -9,7 +9,7 @@
 #ifndef LOGGER_HPP_
 #define LOGGER_HPP_
 
-#include "logging/loglevels.hpp"
+#include "logging/LogLevels.hpp"
 #include <string>
 #include <vector>
 #include <memory>
@@ -98,7 +98,7 @@ private:
 	 * @param[in] logLevel The log-level of the message.
 	 * @param[in] logMessage The message to be logged.
 	 */
-	void log(const loglevel logLevel, const string logMessage);
+	void log(const LogLevel logLevel, const string logMessage);
 
 };
 

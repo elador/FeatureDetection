@@ -26,10 +26,10 @@ public:
 	/**
 	 * Constructs a new appender that logs to a file. Appends to the file if it already exists.
 	 *
-	 * param[in] loglevel The loglevel at which to log.
+	 * param[in] loglevel The LogLevel at which to log.
 	 * param[in] filename The full path to the file to log to.
 	 */
-	FileAppender(loglevel logLevel, string filename);
+	FileAppender(LogLevel logLevel, string filename);
 
 	~FileAppender();
 
@@ -40,7 +40,7 @@ public:
 	 * @param[in] loggerName The name of the logger that is logging the message.
 	 * @param[in] logMessage The log-message itself.
 	 */
-	void log(const loglevel logLevel, const string loggerName, const string logMessage);
+	void log(const LogLevel logLevel, const string loggerName, const string logMessage);
 
 private:
 

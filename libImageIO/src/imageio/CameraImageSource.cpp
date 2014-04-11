@@ -11,7 +11,10 @@
 #include <string>
 
 using boost::lexical_cast;
+using boost::filesystem::path;
+using cv::Mat;
 using std::string;
+using std::vector;
 using std::invalid_argument;
 using std::runtime_error;
 

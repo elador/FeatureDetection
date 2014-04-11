@@ -18,17 +18,12 @@
 #include <memory>
 #include <string>
 
-using boost::filesystem::path;
-using std::map;
-using std::shared_ptr;
-using std::string;
-
 namespace imageio {
 
 /**
  * Represents the different possible methods for gathering landmark files.
  */
-enum class GatherMethod { // Case inconsistent with "loglevels"
+enum class GatherMethod { // Change all enum classes to camelCase?
 	SEPARATE_FILES,		// Use one or more separate, user-specified files.
 	ONE_FILE_PER_IMAGE_SAME_DIR,	// Look for the landmark file in the same directory as the image resides.
 	ONE_FILE_PER_IMAGE_DIFFERENT_DIRS // Look for the landmark file in the directory of the image as well as
@@ -69,7 +64,7 @@ public:
 	 * @param[in] additionalPaths One or more additional paths to files or directories, depending on the type of GatherMethod. Default: empty vector.
 	 * @return A vector containing the full paths to all the landmark files gathered.
 	 */
-	static vector<path> gather(const shared_ptr<const ImageSource> imageSource, const string fileExtension, const GatherMethod gatherMethod, const vector<path> additionalPaths=vector<path>());
+	static std::vector<boost::filesystem::path> gather(const std::shared_ptr<const ImageSource> imageSource, const std::string fileExtension, const GatherMethod gatherMethod, const std::vector<boost::filesystem::path> additionalPaths = std::vector<boost::filesystem::path>());
 
 };
 

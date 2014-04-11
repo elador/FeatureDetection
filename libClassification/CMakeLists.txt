@@ -8,18 +8,22 @@ MESSAGE(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies
 FIND_PACKAGE(Boost 1.48.0 REQUIRED)
-FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core)
+
+FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
-#Matlab:
-SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
-FIND_PACKAGE( MATLAB REQUIRED )
-IF(MATLAB_FOUND)
-  MESSAGE(STATUS "Matlab found at ${MATLAB_INCLUDE_DIR}")
-ELSE(MATLAB_FOUND)
-  MESSAGE(FATAL_ERROR "Matlab not found")
-ENDIF(MATLAB_FOUND)
 
+if(WITH_MATLAB_CLASSIFIER)
+	set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
+	find_package( MATLAB REQUIRED )
+	if(MATLAB_FOUND)
+		message(STATUS "Matlab found at ${MATLAB_INCLUDE_DIR}")
+	else(MATLAB_FOUND)
+		message(FATAL_ERROR "Matlab not found")
+	endif(MATLAB_FOUND)
+	include_directories( ${MATLAB_INCLUDE_DIR} )
+	add_definitions(-DWITH_MATLAB_CLASSIFIER)
+endif()
 
 # source and header files
 SET(HEADERS
@@ -80,7 +84,6 @@ include_directories( "include" )
 include_directories( ${Logging_SOURCE_DIR}/include )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( ${Boost_INCLUDE_DIRS} )
-INCLUDE_DIRECTORIES( ${MATLAB_INCLUDE_DIR} )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )

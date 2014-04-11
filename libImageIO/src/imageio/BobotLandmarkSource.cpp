@@ -13,15 +13,18 @@
 #include <utility>
 #include <memory>
 
-using std::make_pair;
+using cv::Rect_;
+using boost::filesystem::path;
+using std::shared_ptr;
 using std::make_shared;
+using std::string;
 
 namespace imageio {
 
 const string BobotLandmarkSource::landmarkName = "target";
 
 BobotLandmarkSource::BobotLandmarkSource(shared_ptr<ImageSource> imageSource, const string& filename) :
-		imageSource(imageSource), positions(), name2index(), index(-1), collection() {
+		imageSource(imageSource), positions(), name2index(), index(-1) {
 	string name;
 	string line;
 	std::ifstream file(filename.c_str());
@@ -54,13 +57,8 @@ bool BobotLandmarkSource::next() {
 	return index < static_cast<int>(positions.size());
 }
 
-LandmarkCollection BobotLandmarkSource::get() {
-	next();
-	return getLandmarks();
-}
-
 LandmarkCollection BobotLandmarkSource::get(const path& imagePath) {
-	auto iterator = name2index.find(imagePath.string());
+	const auto iterator = name2index.find(imagePath.string());
 	if (iterator == name2index.end())
 		index = -1;
 	else
@@ -69,7 +67,7 @@ LandmarkCollection BobotLandmarkSource::get(const path& imagePath) {
 }
 
 LandmarkCollection BobotLandmarkSource::getLandmarks() const {
-	collection.clear(); // Todo: As we don't return a reference anymore, I think this could now be a local variable.
+	LandmarkCollection collection;
 	if (index >= 0 && index < static_cast<int>(positions.size())) {
 		const cv::Mat& image = imageSource->getImage();
 		const Rect_<float>& relativePosition = positions[index];
@@ -80,7 +78,7 @@ LandmarkCollection BobotLandmarkSource::getLandmarks() const {
 					relativePosition.width * image.cols, relativePosition.height * image.rows);
 			collection.insert(make_shared<RectLandmark>(landmarkName, rect));
 		}
-	}
+	} // Note: else { throw... } ? This should never happen in regular operation, now that we removed get() ?
 	return collection;
 }
 

@@ -13,21 +13,37 @@
 
 using logging::Logger;
 using logging::LoggerFactory;
-using boost::filesystem::exists;
-using boost::filesystem::is_directory;
-using boost::filesystem::directory_iterator;
-using std::copy;
-using std::sort;
-using std::runtime_error;
-using std::make_pair;
+using boost::filesystem::path;
 
 namespace imageio {
 
 DefaultNamedLandmarkSource::DefaultNamedLandmarkSource(vector<path> landmarkFiles, shared_ptr<LandmarkFormatParser> fileParser) {
-	 for (const auto& file : landmarkFiles) {
-		 map<path, LandmarkCollection> lms = fileParser->read(file);
-		 landmarkCollections.insert(begin(lms), end(lms));
-	 }
+	for (const auto& file : landmarkFiles) {
+		map<path, LandmarkCollection> lms = fileParser->read(file);
+		landmarkCollections.insert(begin(lms), end(lms));
+	}
+	index = end(landmarkCollections); // We initialize to end() to be able to allow getName() and getLandmarks() to check if the iterator has been initialized. (If it isn't, there's no way to check it!)
+	iteratorIsBeforeBegin = true;
+}
+
+void DefaultNamedLandmarkSource::reset()
+{
+	index = end(landmarkCollections); // Same reason as given in constructor
+	iteratorIsBeforeBegin = true;
+}
+
+bool DefaultNamedLandmarkSource::next()
+{
+	if (iteratorIsBeforeBegin) {
+		index = begin(landmarkCollections);
+		iteratorIsBeforeBegin = false;
+	} else {
+		++index;
+	}
+	if (index == end(landmarkCollections)) {
+		return false;
+	}
+	return true;
 }
 
 LandmarkCollection DefaultNamedLandmarkSource::get(const path& imagePath) {
@@ -48,7 +64,27 @@ LandmarkCollection DefaultNamedLandmarkSource::get(const path& imagePath) {
 		}
 		// we succeeded using the basename
 	}
-	return landmarks;
+	return landmarks; // empty if element not found
+}
+
+imageio::LandmarkCollection DefaultNamedLandmarkSource::getLandmarks() const
+{
+	if (index != end(landmarkCollections)) {
+		return index->second;
+	}
+	else {
+		throw std::logic_error("Cannot return the current landmarks, iterator not initialized. Either call get(const path& imagePath) or use next().");
+	}
+}
+
+boost::filesystem::path DefaultNamedLandmarkSource::getName() const
+{
+	if (index != end(landmarkCollections)) {
+		return index->first;
+	}
+	else {
+		throw std::logic_error("Cannot return the current landmarks, iterator not initialized. Either call get(const path& imagePath) or use next().");
+	}
 }
 
 } /* namespace imageio */

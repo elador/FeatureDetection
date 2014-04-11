@@ -36,6 +36,7 @@ FileImageSource::FileImageSource(vector<string> filePaths) : ImageSource(filePat
 		With plugins, present by default: JPEG (jpeg, jpg, jpe), JPEG 2000 (jp2 (=Jasper)), 
 										  TIFF files (tiff, tif), png.
 		If specified: OpenEXR.
+		Note: No, maybe don't filter here. See emails (search for "FileListImageSource")
 	*/
 	for (auto file : filePaths) {
 		path path(file);

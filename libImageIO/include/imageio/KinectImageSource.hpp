@@ -36,14 +36,14 @@ public:
 
 	bool next();
 
-	const Mat getImage() const;
+	const cv::Mat getImage() const;
 
-	path getName() const;
+	boost::filesystem::path getName() const;
 
-	vector<path> getNames() const;
+	std::vector<boost::filesystem::path> getNames() const;
 
 private:
-	Mat frame; ///< The current frame.
+	cv::Mat frame; ///< The current frame.
 
 #ifdef WITH_MSKINECT_SDK
 	INuiSensor * m_pNuiSensor;	///< The kinect capture device.

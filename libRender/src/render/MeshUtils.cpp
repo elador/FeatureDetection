@@ -6,13 +6,16 @@
  */
 
 #include "render/MeshUtils.hpp"
-#include "render/Hdf5Utils.hpp"
 
 #include "opencv2/core/core.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
 
 #include <array>
 #include <iostream>
 #include <fstream>
+
+using cv::Mat;
+using cv::Point2f;
 
 namespace render {
 	namespace utils {
@@ -23,7 +26,7 @@ Mesh MeshUtils::createCube()
 	cube.vertex.resize(24);
 
 	for (int i = 0; i < 24; i++)
-		cube.vertex[i].color = cv::Vec3f(1.0f, 1.0f, 1.0f);
+		cube.vertex[i].color = cv::Vec3f(1.0f, 1.0f, 0.0f);
 
 	cube.vertex[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
 	cube.vertex[0].texcrd = cv::Vec2f(0.0f, 0.0f);
@@ -118,8 +121,10 @@ Mesh MeshUtils::createCube()
 	cube.triangleList.push_back(render::Triangle(cube.vertex[20], cube.vertex[21], cube.vertex[22]));
 	cube.triangleList.push_back(render::Triangle(cube.vertex[20], cube.vertex[22], cube.vertex[23]));*/
 
+	cube.tci = cube.tvi;
+
 	cube.texture = std::make_shared<Texture>();
-	cube.texture->createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\up.png");
+	cube.texture->createFromFile("C:\\Users\\Patrik\\Documents\\Github\\img.png");
 	cube.hasTexture = true;
 
 	return cube;
@@ -228,104 +233,98 @@ shared_ptr<Mesh> MeshUtils::createTriangle()
 	return triangle;
 }
 
-Mesh MeshUtils::readFromHdf5(std::string filename)
-{
-	Mesh mesh;
+// Returns true if inside the tri or on the border
+bool MeshUtils::isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Point2f triV1, cv::Point2f triV2) {
+	/* See http://www.blackpawn.com/texts/pointinpoly/ */
+	// Compute vectors        
+	cv::Point2f v0 = triV2 - triV0;
+	cv::Point2f v1 = triV1 - triV0;
+	cv::Point2f v2 = point - triV0;
 
-	// Open the HDF5 file
-	H5::H5File h5Model;
-	try
-	{
-		h5Model = H5::H5File( filename, H5F_ACC_RDONLY );
+	// Compute dot products
+	float dot00 = v0.dot(v0);
+	float dot01 = v0.dot(v1);
+	float dot02 = v0.dot(v2);
+	float dot11 = v1.dot(v1);
+	float dot12 = v1.dot(v2);
+
+	// Compute barycentric coordinates
+	float invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+	float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+	float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+	// Check if point is in triangle
+	return (u >= 0) && (v >= 0) && (u + v < 1);
+}
+
+// framebuffer where to extract the texture from
+// note: framebuffer should have size of the image (ok not necessarily. What about mobile?) (well it should, to get optimal quality (and everywhere the same quality)?)
+cv::Mat MeshUtils::extractTexture(render::Mesh mesh, QMatrix4x4 mvpMatrix, int viewportWidth, int viewportHeight, cv::Mat framebuffer) { // Change QMatrix4x4 to cv::Mat so that software-renderer is not dependent on Qt?
+	// optional param cv::Mat textureMap = cv::Mat(512, 512, CV_8UC3) ?
+	//cv::Mat textureMap(512, 512, inputImage.type());
+	cv::Mat textureMap(512, 512, CV_8UC3);
+
+	for (const auto& triangleIndices : mesh.tvi) {
+
+		cv::Point2f srcTri[3];
+		cv::Point2f dstTri[3];
+		QVector4D vec(mesh.vertex[triangleIndices[0]].position[0], mesh.vertex[triangleIndices[0]].position[1], mesh.vertex[triangleIndices[0]].position[2], 1.0f);
+		QVector4D res = mvpMatrix * vec;
+		res /= res.w();
+		float x_w = (res.x() + 1)*(viewportWidth / 2.0f) + 0.0f; // OpenGL viewport transform (from NDC to viewport) (NDC=clipspace?)
+		float y_w = (res.y() + 1)*(viewportHeight / 2.0f) + 0.0f;
+		y_w = viewportHeight - y_w; // Qt: Origin top-left. OpenGL: bottom-left.
+		srcTri[0] = cv::Point2f(x_w, y_w);
+
+		vec = QVector4D(mesh.vertex[triangleIndices[1]].position[0], mesh.vertex[triangleIndices[1]].position[1], mesh.vertex[triangleIndices[1]].position[2], 1.0f);
+		res = mvpMatrix * vec;
+		res /= res.w();
+		x_w = (res.x() + 1)*(viewportWidth / 2.0f) + 0.0f;
+		y_w = (res.y() + 1)*(viewportHeight / 2.0f) + 0.0f;
+		y_w = viewportHeight - y_w; // Qt: Origin top-left. OpenGL: bottom-left.
+		srcTri[1] = cv::Point2f(x_w, y_w);
+
+		vec = QVector4D(mesh.vertex[triangleIndices[2]].position[0], mesh.vertex[triangleIndices[2]].position[1], mesh.vertex[triangleIndices[2]].position[2], 1.0f);
+		res = mvpMatrix * vec;
+		res /= res.w();
+		x_w = (res.x() + 1)*(viewportWidth / 2.0f) + 0.0f;
+		y_w = (res.y() + 1)*(viewportHeight / 2.0f) + 0.0f;
+		y_w = viewportHeight - y_w; // Qt: Origin top-left. OpenGL: bottom-left.
+		srcTri[2] = cv::Point2f(x_w, y_w);
+
+		// ROI in the source image:
+		// Todo: Check if the triangle is on screen. If it's outside, we crash here.
+		float src_tri_min_x = std::min(srcTri[0].x, std::min(srcTri[1].x, srcTri[2].x)); // note: might be better to round later (i.e. use the float points for getAffineTransform for a more accurate warping)
+		float src_tri_max_x = std::max(srcTri[0].x, std::max(srcTri[1].x, srcTri[2].x));
+		float src_tri_min_y = std::min(srcTri[0].y, std::min(srcTri[1].y, srcTri[2].y));
+		float src_tri_max_y = std::max(srcTri[0].y, std::max(srcTri[1].y, srcTri[2].y));
+
+		Mat inputImageRoi = framebuffer.rowRange(cvFloor(src_tri_min_y), cvCeil(src_tri_max_y)).colRange(cvFloor(src_tri_min_x), cvCeil(src_tri_max_x)); // We round down and up. ROI is possibly larger. But wrong pixels get thrown away later when we check if the point is inside the triangle? Correct?
+		srcTri[0] -= Point2f(src_tri_min_x, src_tri_min_y);
+		srcTri[1] -= Point2f(src_tri_min_x, src_tri_min_y);
+		srcTri[2] -= Point2f(src_tri_min_x, src_tri_min_y); // shift all the points to correspond to the roi
+
+		dstTri[0] = cv::Point2f(textureMap.cols*mesh.vertex[triangleIndices[0]].texcrd[0], textureMap.rows*mesh.vertex[triangleIndices[0]].texcrd[1] - 1.0f);
+		dstTri[1] = cv::Point2f(textureMap.cols*mesh.vertex[triangleIndices[1]].texcrd[0], textureMap.rows*mesh.vertex[triangleIndices[1]].texcrd[1] - 1.0f);
+		dstTri[2] = cv::Point2f(textureMap.cols*mesh.vertex[triangleIndices[2]].texcrd[0], textureMap.rows*mesh.vertex[triangleIndices[2]].texcrd[1] - 1.0f);
+
+		/// Get the Affine Transform
+		cv::Mat warp_mat = getAffineTransform(srcTri, dstTri);
+
+		/// Apply the Affine Transform just found to the src image
+		cv::Mat tmpDstBuffer = Mat::zeros(textureMap.rows, textureMap.cols, framebuffer.type()); // I think using the source-size here is not correct. The dst might be larger. We should warp the endpoints and set to max-w/h. No, I think it would be even better to directly warp to the final textureMap size. (so that the last step is only a 1:1 copy)
+		warpAffine(inputImageRoi, tmpDstBuffer, warp_mat, tmpDstBuffer.size(), cv::INTER_CUBIC, cv::BORDER_TRANSPARENT); // last row/col is zeros, depends on interpolation method. Maybe because of rounding or interpolation? So it cuts a little. Maybe try to implement by myself?
+
+		// only copy to final img if point is inside the triangle (or on the border)
+		for (int x = std::min(dstTri[0].x, std::min(dstTri[1].x, dstTri[2].x)); x < std::max(dstTri[0].x, std::max(dstTri[1].x, dstTri[2].x)); ++x) {
+			for (int y = std::min(dstTri[0].y, std::min(dstTri[1].y, dstTri[2].y)); y < std::max(dstTri[0].y, std::max(dstTri[1].y, dstTri[2].y)); ++y) {
+				if (isPointInTriangle(cv::Point2f(x, y), dstTri[0], dstTri[1], dstTri[2])) {
+					textureMap.at<cv::Vec3b>(y, x) = tmpDstBuffer.at<cv::Vec3b>(y, x);
+				}
+			}
+		}
 	}
-	catch ( H5::Exception& e )
-	{
-		std::string msg( std::string( "could not open HDF5 file \n" ) + e.getCDetailMsg() );
-		throw msg.c_str();
-	}
-
-	// make a MM and load both the shape and color models (maybe in another function). For now, we only load the mesh & color info.
-	 
-	H5::Group fg = h5Model.openGroup( "/color" );
-
-	//if ( Hdf5Utils::existsObjectWithName( fg, "reference-mesh" ) )
-	//{
-		//H5::Group fgRef = fg.openGroup( "representer/reference-mesh" );
-		fg = fg.openGroup( "representer/reference-mesh" );
-
-		// Vertex coordinates
-		cv::Mat matVertex = Hdf5Utils::readMatrixFloat( fg, "./vertex-coordinates" );
-		if ( matVertex.cols != 3 )
-			throw std::runtime_error("Reference reading failed, vertex-coordinates have too many dimensions");
-		mesh.vertex.resize(matVertex.rows);
-		for ( unsigned int i = 0; i < matVertex.rows; ++i )
-		{
-			mesh.vertex[i].position = cv::Vec4f(matVertex.at<float>(i, 0), matVertex.at<float>(i, 1), matVertex.at<float>(i, 2), 1.0f);
-		}
-
-		// triangle list
-		// get the integer matrix
-		H5::DataSet ds = fg.openDataSet( "./triangle-list" );
-		hsize_t dims[2];
-		ds.getSpace().getSimpleExtentDims(dims, NULL);
-		cv::Mat matTL((int)dims[0], (int)dims[1], CV_32SC1);	// int
-		//matTL.resize(dims[0], dims[1]);
-		ds.read( matTL.data, H5::PredType::NATIVE_INT32);
-		ds.close();
-		if ( matTL.cols != 3 )
-			throw std::runtime_error("Reference reading failed, triangle-list has not 3 indices per entry");
-
-		mesh.tvi.resize( matTL.rows );
-		for ( size_t i = 0; i < matTL.rows; ++i ) {
-			mesh.tvi[i][0] = matTL.at<int>(i, 0);
-			mesh.tvi[i][1] = matTL.at<int>(i, 1);
-			mesh.tvi[i][2] = matTL.at<int>(i, 2);
-		}
-		
-		// color coordinates
-		cv::Mat matColor = Hdf5Utils::readMatrixFloat( fg, "./vertex-colors" );
-		if ( matColor.cols != 3 )
-			throw std::runtime_error("Reference reading failed, vertex-colors have too many dimensions");
-		//pReference->color.resize( matColor.rows );
-		for ( size_t i = 0; i < matColor.rows; ++i )
-		{
-			mesh.vertex[i].color = cv::Vec3f(matColor.at<float>(i, 2), matColor.at<float>(i, 1), matColor.at<float>(i, 0));	// order in hdf5: RGB. Order in OCV/vertex.color: BGR
-		}
-
-// 		// triangle list
-// 		// get the integer matrix
-// 		ds = fg.openDataSet( "./triangle-color-indices" );
-// 		//hsize_t dims[2];
-// 		ds.getSpace().getSimpleExtentDims(dims, NULL);
-// 		cv::Mat matTLC((int)dims[0], (int)dims[1], CV_32SC1);	// int
-// 		//matTLC.resize(dims[0], dims[1]);
-// 		ds.read( matTLC.data, H5::PredType::NATIVE_INT32);
-// 		ds.close();
-// 		
-// 		if ( matTLC.cols != 3 )
-// 			throw std::runtime_error("Reference reading failed, triangle-color-indices has not 3 indices per entry");
-// 
-// 		mesh.tci.resize( matTLC.rows );
-// 		for ( size_t i = 0; i < matTLC.rows; ++i ) {
-// 			mesh.tci[i][0] = matTLC.at<int>(i, 0);
-// 			mesh.tci[i][1] = matTLC.at<int>(i, 1);
-// 			mesh.tci[i][2] = matTLC.at<int>(i, 2);
-// 		}
-		mesh.tci.resize( matTL.rows );
-		for ( size_t i = 0; i < matTL.rows; ++i ) {
-			mesh.tci[i][0] = matTL.at<int>(i, 0);
-			mesh.tci[i][1] = matTL.at<int>(i, 1);
-			mesh.tci[i][2] = matTL.at<int>(i, 2);
-		}
-
-		fg.close();
-	//}
-
-	h5Model.close();
-
-	mesh.hasTexture = false;
-
-	return mesh; // pReference
+	return textureMap;
 }
 
 

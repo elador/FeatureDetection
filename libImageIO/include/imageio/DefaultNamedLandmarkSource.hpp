@@ -13,15 +13,10 @@
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
-#include "boost/filesystem.hpp"
+#include "boost/filesystem/path.hpp"
 #include <map>
 #include <vector>
 #include <memory>
-
-using boost::filesystem::path;
-using std::map;
-using std::vector;
-using std::shared_ptr;
 
 namespace imageio {
 
@@ -41,12 +36,22 @@ public:
 	 * @param[in] landmarkFiles A list of paths to landmark files.
 	 * @param[in] fileParser A parser to read the file format.
 	 */
-	DefaultNamedLandmarkSource(vector<path> landmarkFiles, shared_ptr<LandmarkFormatParser> fileParser);
+	DefaultNamedLandmarkSource(std::vector<boost::filesystem::path> landmarkFiles, std::shared_ptr<LandmarkFormatParser> fileParser);
 	
-	LandmarkCollection get(const path& imagePath);
+	void reset();
+
+	bool next();
+
+	LandmarkCollection get(const boost::filesystem::path& imagePath); // This doesn't change the iterator at the moment, it's completely independent of it.
+
+	LandmarkCollection getLandmarks() const;
+
+	boost::filesystem::path getName() const;
 
 private:
-	map<path, LandmarkCollection> landmarkCollections; ///< Holds all the landmarks for all images.
+	std::map<boost::filesystem::path, LandmarkCollection> landmarkCollections;		///< Holds all the landmarks for all images.
+	std::map<boost::filesystem::path, LandmarkCollection>::const_iterator index;	///< The current landmark position in the landmarkCollections map.
+	bool iteratorIsBeforeBegin;	///< This is a little hacky because we can't set index to -1 so that it points to the first valid element after one call to next().
 };
 
 } /* namespace imageio */

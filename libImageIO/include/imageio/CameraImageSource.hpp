@@ -11,8 +11,6 @@
 #include "imageio/ImageSource.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
-using cv::VideoCapture;
-
 namespace imageio {
 
 /**
@@ -34,17 +32,17 @@ public:
 
 	bool next();
 
-	const Mat getImage() const;
+	const cv::Mat getImage() const;
 
-	path getName() const;
+	boost::filesystem::path getName() const;
 
-	vector<path> getNames() const;
+	std::vector<boost::filesystem::path> getNames() const;
 
 private:
 
 	int device;           ///< ID of the video capturing device.
-	VideoCapture capture; ///< The video capture.
-	Mat frame;            ///< The current frame.
+	cv::VideoCapture capture; ///< The video capture.
+	cv::Mat frame;            ///< The current frame.
 	unsigned long frameCounter; ///< The current frame number since the capture was started.
 };
 

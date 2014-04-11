@@ -13,17 +13,17 @@
 #include <utility>
 #include <fstream>
 
-using std::copy;
-using std::sort;
-using std::runtime_error;
-using std::make_pair;
-using boost::algorithm::trim;
-using boost::algorithm::starts_with;
+using cv::Vec3f;
+using boost::lexical_cast;
 using boost::filesystem::path;
 using std::ifstream;
 using std::stringstream;
+using std::getline;
 using std::make_shared;
-using std::pair;
+using std::shared_ptr;
+using std::map;
+using std::string;
+using std::make_pair;
 
 namespace imageio {
 
@@ -51,65 +51,25 @@ const map<path, LandmarkCollection> IbugLandmarkFormatParser::read(path landmark
 		if (!(ssLine >> position[0] >> position[1])) {
 			throw std::runtime_error("Landmark format error while parsing a line.");
 		}
-		// Todo: Incorporate this:
+		// From the iBug website:
 		// "Please note that the re-annotated data for this challenge are saved in the matlab convention of 1 being 
 		// the first index, i.e. the coordinates of the top left pixel in an image are x=1, y=1."
+		// ==> So we shift every point by 1:
+		position[0] -= 1.0f;
+		position[1] -= 1.0f;
 		
-		string tlmsName = iBugToTlmsName(landmarkId);
+		string landmarkIdentifier = lexical_cast<string>(landmarkId);
 		bool visible = true; // In comparison to the original LFPW, this information is not available anymore.
-		shared_ptr<Landmark> lm = make_shared<ModelLandmark>(tlmsName, position, visible);
-		if (lm->getName().length() != 0) { // Todo: Find better solution
-			landmarks.insert(lm);
-		}
+		shared_ptr<Landmark> lm = make_shared<ModelLandmark>(landmarkIdentifier, position, visible);
+
+		landmarks.insert(lm);
 		
 		++landmarkId;
 	}
-	// Slightly hacky: Create landmarks for the right and left pupil center by taking the middle between the corners:
-	Point2f rEyeCo = landmarks.getLandmark("right.eye.corner_outer")->getPoint2D();
-	Point2f rEyeCi = landmarks.getLandmark("right.eye.corner_inner")->getPoint2D();
-	shared_ptr<Landmark> rEyeCenter = make_shared<ModelLandmark>("right.eye.pupil.center", Vec2f((rEyeCo.x+rEyeCi.x)/2.0f, (rEyeCo.y+rEyeCi.y)/2.0f));
-	landmarks.insert(rEyeCenter);
-	Point2f lEyeCo = landmarks.getLandmark("left.eye.corner_outer")->getPoint2D();
-	Point2f lEyeCi = landmarks.getLandmark("left.eye.corner_inner")->getPoint2D();
-	shared_ptr<Landmark> lEyeCenter = make_shared<ModelLandmark>("left.eye.pupil.center", Vec2f((lEyeCo.x+lEyeCi.x)/2.0f, (lEyeCo.y+lEyeCi.y)/2.0f));
-	landmarks.insert(lEyeCenter);
 
 	path imageName = landmarkFilePath.stem();
 	allLandmarks.insert(make_pair(imageName, landmarks));
 	return allLandmarks;
 }
-
-map<int, string> IbugLandmarkFormatParser::iBugLmMapping;
-
-std::string IbugLandmarkFormatParser::iBugToTlmsName(int iBugId)
-{ // Todo: Remove that, use the file
-	if (iBugLmMapping.empty()) {
-		// TODO: Check all the landmarks with the .tlms file open in notepad++
-		iBugLmMapping.insert(make_pair(18, "right.eyebrow.bend.lower"));
-		iBugLmMapping.insert(make_pair(22, "right.eyebrow.inner_lower"));
-		iBugLmMapping.insert(make_pair(27, "left.eyebrow.bend.lower"));
-		iBugLmMapping.insert(make_pair(23, "left.eyebrow.inner_lower"));
-		// eyebrow centers
-		iBugLmMapping.insert(make_pair(37, "right.eye.corner_outer"));
-		iBugLmMapping.insert(make_pair(46, "left.eye.corner_outer"));
-		iBugLmMapping.insert(make_pair(40, "right.eye.corner_inner"));
-		iBugLmMapping.insert(make_pair(43, "left.eye.corner_inner"));
-		// left/right nose
-		iBugLmMapping.insert(make_pair(31, "center.nose.tip"));
-		iBugLmMapping.insert(make_pair(49, "right.lips.corner"));
-		iBugLmMapping.insert(make_pair(55, "left.lips.corner"));
-		iBugLmMapping.insert(make_pair(52, "center.lips.upper.outer"));
-		iBugLmMapping.insert(make_pair(63, "center.lips.upper.inner"));
-		iBugLmMapping.insert(make_pair(67, "center.lips.lower.inner"));
-		iBugLmMapping.insert(make_pair(58, "center.lips.lower.outer"));
-		iBugLmMapping.insert(make_pair( 9, "center.chin.tip"));
-	}
-	const auto tlmsName = iBugLmMapping.find(iBugId); // maybe use .at() and let it throw, or just throw/log by ourselves
-	if(tlmsName != iBugLmMapping.end())
-		return tlmsName->second;
-	else
-		return string("");	// Todo: That's not so nice, do this differently.
-}
-
 
 } /* namespace imageio */

@@ -7,7 +7,7 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 MESSAGE(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies
-FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core)
+FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 

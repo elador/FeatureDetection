@@ -21,11 +21,6 @@
 #include <map>
 #include <memory>
 
-using std::vector;
-using std::string;
-using std::map;
-using std::shared_ptr;
-
 namespace imageio {
 
 /**
@@ -44,10 +39,10 @@ public:
 	 * @return A map with one entry containing the basename of the file and
 	 *         all the landmarks that are present (TODO in tlms format).
 	 */
-	const map<path, LandmarkCollection> read(path landmarkFilePath);
+	const std::map<boost::filesystem::path, LandmarkCollection> read(boost::filesystem::path landmarkFilePath);
 
 private:
-	static map<int, string> didLmMapping;	///< Contains a mapping from the .did Surrey 3DMM to tlms landmark names
+	static std::map<int, std::string> didLmMapping;	///< Contains a mapping from the .did Surrey 3DMM to tlms landmark names
 	
 	/**
 	 * Opens and parses a .did file and returns a collection of all the landmarks it contains.
@@ -55,7 +50,7 @@ private:
 	 * @param[in] filename The file name of the .did file to parse.
 	 * @return A collection of all the landmarks.
 	 */
-	LandmarkCollection readFromDidFile(const string& filename);
+	LandmarkCollection readFromDidFile(const std::string& filename);
 
 	/**
 	 * Parse a line of a .did file and return a Landmark.
@@ -63,10 +58,10 @@ private:
 	 * @param[in] line The line with the landmark information to parse.
 	 * @return A Landmark object.
 	 */
-	shared_ptr<ModelLandmark> readFromDidLine(const string& line);
+	std::shared_ptr<ModelLandmark> readFromDidLine(const std::string& line);
 	
 public:
-	static string didToTlmsName(int didVertexId);
+	static std::string didToTlmsName(int didVertexId);
 };
 
 } /* namespace imageio */

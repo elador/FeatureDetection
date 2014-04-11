@@ -53,8 +53,8 @@ public:
 	vector<path> getNames() const;
 
 private:
-	vector<path> files; ///< The files of the given directory, ordered by name.
-	int index; ///< The index of the next file.
+	vector<path> files;	///< The files of the given directory, ordered by name. TODO: No, I think they're not ordered. Check the code! Anyway I think expected behaviour is that they should be in the same order as in the list-file.
+	int index;			///< The index of the next file.
 };
 
 } /* namespace imageio */
