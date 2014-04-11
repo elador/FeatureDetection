@@ -6,22 +6,25 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
 # find dependencies
 FIND_PACKAGE(Boost 1.48.0 COMPONENTS system filesystem REQUIRED)
-FIND_PACKAGE(OpenCV 2.3.1 REQUIRED core highgui)
+FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core highgui)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
-IF(WIN32)
-	# In Windows only: Include Microsoft Kinect SDK
+IF(WITH_MSKINECT_SDK)
+	# Include Microsoft Kinect SDK (Windows)
 	SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
 	FIND_PACKAGE(KinectSDK REQUIRED)
 	INCLUDE_DIRECTORIES(${KinectSDK_INCLUDE_DIR})
 	SET(KINECT_LIBNAME ${KinectSDK_LIBRARIES})
-
-	# Fix for VS2012 that has _VARIADIC_MAX set to 5 (the C++11 standard requires a value
-	# of 10). Don't set too high because it increases compiler memory usage / compile-time.
-	add_definitions( -D_VARIADIC_MAX=9 )
+	add_definitions(-DWITH_MSKINECT_SDK)
 ELSE()
 	SET(KINECT_LIBNAME "")
+ENDIF()
+
+IF(WIN32)
+	# Fix for VS2012 that has _VARIADIC_MAX set to 5 (the C++11 standard requires a value
+	# of 10). Don't set too high because it increases compiler memory usage / compile-time.
+	add_definitions( -D_VARIADIC_MAX=9 ) # Todo Might not be needed anymore in VS2013
 ENDIF()
 
 # source and header files
