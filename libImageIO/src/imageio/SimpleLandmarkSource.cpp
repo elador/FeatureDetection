@@ -12,6 +12,7 @@
 #include <sstream>
 #include <utility>
 #include <memory>
+#include <locale>
 #include <stdexcept>
 
 using cv::Rect_;
@@ -41,7 +42,8 @@ SimpleLandmarkSource::SimpleLandmarkSource(const string& filename) : positions()
 		// read values from line
 		std::istringstream lineStream(line);
 		bool nonSpaceSeparator = !std::all_of(line.begin(), line.end(), [](char ch) {
-			return std::isdigit(ch) || std::isspace(ch) || '-' == ch || '.' == ch;
+			std::locale loc;
+			return std::isdigit(ch, loc) || std::isspace(ch, loc) || '-' == ch || '.' == ch;
 		});
 		lineStream >> position.x;
 		if (nonSpaceSeparator)
