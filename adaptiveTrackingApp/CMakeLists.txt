@@ -7,9 +7,9 @@ set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies
-find_package(Boost 1.48.0 COMPONENTS random system filesystem program_options REQUIRED)
+find_package(Boost 1.48.0 COMPONENTS system filesystem program_options REQUIRED)
 
-find_package(OpenCV 2.4.3 REQUIRED core imgproc highgui video)
+find_package(OpenCV 2.4.3 REQUIRED core highgui video)
 
 if(WITH_MSKINECT_SDK)
 	# Include Microsoft Kinect SDK (Windows)
