@@ -7,14 +7,13 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies
-# Boost:
-FIND_PACKAGE(Boost 1.48.0 COMPONENTS program_options REQUIRED) # others (e.g.): system filesystem
+FIND_PACKAGE(Boost 1.48.0 COMPONENTS program_options REQUIRED)
 if(Boost_FOUND)
   MESSAGE(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
 ELSE(Boost_FOUND)
   MESSAGE(FATAL_ERROR "Boost not found")
 ENDIF()
-# OpenCV:
+
 FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
@@ -33,15 +32,16 @@ SET(SOURCE
 	src/detection/FiveStageSlidingWindowDetector.cpp
 )
 
-include_directories( "include" )
+include_directories("include")
 
 # add dependencies
-include_directories( ${Classification_SOURCE_DIR}/include )
-include_directories( ${ImageProcessing_SOURCE_DIR}/include )
-include_directories( ${Logging_SOURCE_DIR}/include )
-include_directories( ${ImageLogging_SOURCE_DIR}/include )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
-include_directories( ${Boost_INCLUDE_DIRS} )
+include_directories(${Classification_SOURCE_DIR}/include)
+include_directories(${ImageProcessing_SOURCE_DIR}/include)
+include_directories(${Logging_SOURCE_DIR}/include)
+include_directories(${ImageLogging_SOURCE_DIR}/include)
+include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS})
 
 # make library
-add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
+add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
+target_link_libraries(${SUBPROJECT_NAME} Logging ImageLogging ${Boost_LIBRARIES} ${OpenCV_LIBS})

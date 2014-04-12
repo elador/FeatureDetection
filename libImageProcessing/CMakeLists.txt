@@ -124,3 +124,4 @@ include_directories( ${Logging_SOURCE_DIR}/include )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
+target_link_libraries(${SUBPROJECT_NAME} Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})

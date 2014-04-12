@@ -7,12 +7,10 @@ SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies
-# OpenCV:
-FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core)
+FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core highgui)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
-#Boost:
 FIND_PACKAGE(Boost 1.48.0 COMPONENTS system filesystem REQUIRED)
 if(Boost_FOUND)
   MESSAGE(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
@@ -41,9 +39,9 @@ SET(SOURCE
 include_directories( "include" )
 
 # add dependencies
-#include_directories( ${Detection_SOURCE_DIR}/include )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( ${Boost_INCLUDE_DIRS} )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
+target_link_libraries(${SUBPROJECT_NAME} ${Boost_LIBRARIES} ${OpenCV_LIBS})

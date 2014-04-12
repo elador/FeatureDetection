@@ -1,4 +1,4 @@
-SET( SUBPROJECT_NAME Linear ) # my own variable, not cmake's
+SET( SUBPROJECT_NAME Linear )
 PROJECT( ${SUBPROJECT_NAME} )
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
@@ -8,9 +8,8 @@ message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies
 FIND_PACKAGE(BLAS REQUIRED)
+
 FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core)
-MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
-MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
 # source and header files
 SET(HEADERS
@@ -29,9 +28,10 @@ SET(SOURCE
 include_directories( "include" )
 
 # add dependencies
-include_directories( ${Classification_SOURCE_DIR}/include )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
-include_directories( ${BLAS_INCLUDE_DIRS} )
+include_directories(${Classification_SOURCE_DIR}/include)
+include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(${BLAS_INCLUDE_DIRS})
 
 # make library
-add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
+add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
+target_link_libraries(${SUBPROJECT_NAME} ${BLAS_LIBRARIES} ${OpenCV_LIBS})
