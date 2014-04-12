@@ -59,7 +59,9 @@
 #include "classification/UnlimitedExampleManagement.hpp"
 #include "classification/FixedTrainableProbabilisticSvmClassifier.hpp"
 #include "libsvm/LibSvmClassifier.hpp"
-#include "liblinear/LibLinearClassifier.hpp"
+#ifdef WITH_LIBLINEAR_CLASSIFIER
+	#include "liblinear/LibLinearClassifier.hpp"
+#endif
 #include "condensation/ResamplingSampler.hpp"
 #include "condensation/GridSampler.hpp"
 #include "condensation/LowVarianceSampling.hpp"
@@ -89,7 +91,6 @@ using namespace logging;
 using namespace classification;
 using namespace std::chrono;
 using libsvm::LibSvmClassifier;
-using liblinear::LibLinearClassifier;
 using cv::Point;
 using cv::Rect;
 using boost::property_tree::info_parser::read_info;
@@ -347,7 +348,8 @@ shared_ptr<TrainableSvmClassifier> AdaptiveTracking::createLibSvmClassifier(ptre
 }
 
 shared_ptr<TrainableSvmClassifier> AdaptiveTracking::createLibLinearClassifier(ptree& config) {
-	shared_ptr<LibLinearClassifier> trainableSvm = make_shared<LibLinearClassifier>(config.get<double>("C"), config.get<bool>("bias"));
+#ifdef WITH_LIBLINEAR_CLASSIFIER
+	shared_ptr<liblinear::LibLinearClassifier> trainableSvm = make_shared<liblinear::LibLinearClassifier>(config.get<double>("C"), config.get<bool>("bias"));
 	trainableSvm->setPositiveExampleManagement(
 			unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm, true)));
 	trainableSvm->setNegativeExampleManagement(
@@ -358,6 +360,9 @@ shared_ptr<TrainableSvmClassifier> AdaptiveTracking::createLibLinearClassifier(p
 				negativesConfig->get<int>("amount"), negativesConfig->get<double>("scale"));
 	}
 	return trainableSvm;
+#else
+	throw std::runtime_error("Cannot load a LibLinear classifier. Run CMake with WITH_LIBLINEAR_CLASSIFIER set to ON to enable.");
+#endif // WITH_LIBLINEAR_CLASSIFIER
 }
 
 shared_ptr<TrainableProbabilisticClassifier> AdaptiveTracking::createTrainableProbabilisticClassifier(ptree& config) {
