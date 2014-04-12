@@ -10,8 +10,6 @@ message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 FIND_PACKAGE(Boost 1.48.0 COMPONENTS random system filesystem program_options REQUIRED)
 
 FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core imgproc highgui video)
-MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
-MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
 if(WITH_MSKINECT_SDK)
 	# Include Microsoft Kinect SDK (Windows)

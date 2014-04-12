@@ -22,23 +22,23 @@ option(WITH_LIBLINEAR_CLASSIFIER "Enables support for loading libLinear classifi
 message(STATUS "WITH_LIBLINEAR_CLASSIFIER: ${WITH_LIBLINEAR_CLASSIFIER}")
 
 # Core libraries
-add_subdirectory(libLogging)			# Text logging F
-add_subdirectory(libImageLogging)		# Image logging F
+add_subdirectory(libLogging)			# Text logging
+add_subdirectory(libImageLogging)		# Image logging
 
-add_subdirectory(libImageIO)			# Input-library for cameras, Kinect and hard-drive images. F
-add_subdirectory(libImageProcessing)	# Image pyramids, patch extraction, feature transformation F
-add_subdirectory(libClassification)		# Classification and regression library F
-add_subdirectory(libSvm)				# libSVM (support vector classification and regression) F
+add_subdirectory(libImageIO)			# Input-library for cameras, Kinect and hard-drive images.
+add_subdirectory(libImageProcessing)	# Image pyramids, patch extraction, feature transformation
+add_subdirectory(libClassification)		# Classification and regression library
+add_subdirectory(libSvm)				# libSVM (support vector classification and regression)
 if(WITH_LIBLINEAR_CLASSIFIER)
 	add_subdirectory(libLinear)				# liblinear (linear classification with SVM and regression)
 endif()
 
-add_subdirectory(libDetection)			# Sliding-window detection, Skin detection (Note: Do we use it anymore? Yes, Condensation depends on it) F
-add_subdirectory(libCondensation)		# Condensation tracking (particle filter) F
+add_subdirectory(libDetection)			# Sliding-window detection, Skin detection (Note: Do we use it anymore? Yes, Condensation depends on it)
+add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 
-#add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
-#add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes; Camera (Pose) estimation
-#add_subdirectory(libSupervisedDescentModel) # A non-parametric model for landmark detection. Uses the supervised descent method.
+add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
+add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes; Camera (Pose) estimation
+add_subdirectory(libSupervisedDescentModel) # A non-parametric model for landmark detection. Uses the supervised descent method.
 
 # Tracking apps
 #add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.
