@@ -69,7 +69,6 @@ void QOpenGLRenderer::render(render::Mesh mesh, QMatrix4x4 mvp)
 	//const qreal retinaScale = devicePixelRatio();
 	glViewport(0, 0, viewportWidth * retinaScale, viewportHeight * retinaScale);
 
-	//glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT/* | GL_STENCIL_BUFFER_BIT*/);
 
 	// Enable depth buffer
