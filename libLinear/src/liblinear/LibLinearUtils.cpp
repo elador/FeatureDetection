@@ -80,8 +80,13 @@ vector<Mat> LibLinearUtils::extractSupportVectors(struct model *model) const {
 template<class T>
 void LibLinearUtils::extractWeightVector(Mat& vector, const struct model *model) const {
 	T* values = vector.ptr<T>();
-	for (int i = 0; i < model->nr_feature; ++i)
-		values[i] = static_cast<T>(model->w[model->nr_class * i]);
+	if (model->nr_class == 2 && model->param.solver_type != MCSVM_CS) {
+		for (int i = 0; i < model->nr_feature; ++i)
+			values[i] = static_cast<T>(model->w[i]);
+	} else {
+		for (int i = 0; i < model->nr_feature; ++i)
+			values[i] = static_cast<T>(model->w[model->nr_class * i]);
+	}
 }
 
 vector<float> LibLinearUtils::extractCoefficients(struct model *model) const {
@@ -91,7 +96,12 @@ vector<float> LibLinearUtils::extractCoefficients(struct model *model) const {
 }
 
 double LibLinearUtils::extractBias(struct model *model) const {
-	return model->bias >= 0 ? model->w[model->nr_class * model->nr_feature] : 0;
+	if (model->bias < 0)
+		return 0;
+	if(model->nr_class == 2 && model->param.solver_type != MCSVM_CS)
+		return -model->w[model->nr_feature];
+	else
+		return -model->w[model->nr_class * model->nr_feature];
 }
 
 void ParameterDeleter::operator()(struct parameter *param) const {

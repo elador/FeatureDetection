@@ -32,17 +32,16 @@ LibLinearClassifier::LibLinearClassifier(double c, bool bias) :
 		TrainableSvmClassifier(make_shared<LinearKernel>()), utils(), bias(bias), param(), staticNegativeExamples(),
 		positiveExamples(new UnlimitedExampleManagement()), negativeExamples(new UnlimitedExampleManagement()) {
 	param.reset(new struct parameter);
-	param->solver_type = MCSVM_CS; // possible values: L2R_L2LOSS_SVC   L2R_L2LOSS_SVC_DUAL   L2R_L1LOSS_SVC_DUAL   MCSVM_CS   L1R_L2LOSS_SVC
-	param->eps = 1e-4;
+	param->solver_type = L2R_L2LOSS_SVC; // possible values: L2R_L2LOSS_SVC   L2R_L2LOSS_SVC_DUAL   L2R_L1LOSS_SVC_DUAL   MCSVM_CS   L1R_L2LOSS_SVC
+	if (param->solver_type == L2R_L2LOSS_SVC)
+		param->eps = 0.01;
+	else
+		param->eps = 0.1;
 	param->C = c;
 	param->p = 0;
-	param->nr_weight = 2;
-	param->weight_label = (int*)malloc(param->nr_weight * sizeof(int));
-	param->weight_label[0] = +1;
-	param->weight_label[1] = -1;
-	param->weight = (double*)malloc(param->nr_weight * sizeof(double));
-	param->weight[0] = 1;
-	param->weight[1] = 1;
+	param->nr_weight = 0;
+	param->weight_label = nullptr;
+	param->weight = nullptr;
 }
 
 void LibLinearClassifier::loadStaticNegatives(const string& negativesFilename, int maxNegatives, double scale) {
@@ -96,8 +95,6 @@ bool LibLinearClassifier::retrain(const vector<Mat>& newPositiveExamples, const 
 bool LibLinearClassifier::train() {
 	vector<unique_ptr<struct feature_node[]>> positiveExamples = move(createNodes(this->positiveExamples.get()));
 	vector<unique_ptr<struct feature_node[]>> negativeExamples = move(createNodes(this->negativeExamples.get()));
-	param->weight[0] = positiveExamples.size();
-	param->weight[1] = negativeExamples.size() + staticNegativeExamples.size();
 	unique_ptr<struct problem, ProblemDeleter> problem = move(createProblem(
 			positiveExamples, negativeExamples, staticNegativeExamples, utils.getDimensions()));
 	const char* message = check_parameter(problem.get(), param.get());
