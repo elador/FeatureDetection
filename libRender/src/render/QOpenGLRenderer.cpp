@@ -11,7 +11,7 @@
 #include "render/MeshUtils.hpp"
 #include "render/MatrixUtils.hpp"
 
-#include "render/SoftwareRenderer2.hpp"
+#include "render/SoftwareRenderer.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -244,9 +244,11 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	Mat mpp1 = utils::MatrixUtils::createPerspectiveProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
 	Mat mpp2 = utils::MatrixUtils::createPerspectiveProjectionMatrix(60, aspect, 1.0f, 100.0f);*/
 
-	SoftwareRenderer2 swr;
-	swr.enableTexturing(false);
-	swr.setCurrentTexture(mesh.texture);
+	SoftwareRenderer swr;
+	swr.enableTexturing(true);
+	auto tex = std::make_shared<Texture>();
+	tex->createFromFile("C:\\Users\\Patrik\\Documents\\GitHub\\isoRegistered3D_square.png");
+	swr.setCurrentTexture(tex);
 	auto swbuffs = swr.render(mesh, matrix);
 	Mat swbuffc = swbuffs.first;
 	Mat swbuffd = swbuffs.second;
