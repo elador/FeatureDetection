@@ -145,13 +145,13 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 
 	float aspect = static_cast<float>(viewportWidth) / static_cast<float>(viewportHeight);
 	QMatrix4x4 matrix;
-	//matrix.ortho(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
+	matrix.ortho(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
 	//matrix.ortho(-70.0f, 70.0f, -70.0f, 70.0f, 0.1f, 1000.0f);
-	matrix.perspective(60, aspect, 0.1, 100.0);
+	//matrix.perspective(30, aspect, 0.1, 100.0);
 	matrix.translate(0, 0, -2);
-	//matrix.rotate(45.0f, 1.0f, 0.0f, 0.0f);
-	//matrix.rotate(0.0f, 0.0f, 1.0f, 0.0f);
-	matrix.scale(1.0f/75.0f);
+	matrix.rotate(45.0f, 1.0f, 0.0f, 0.0f);
+	//matrix.rotate(45.0f, 0.0f, 1.0f, 0.0f);
+	//matrix.scale(1.0f/75.0f);
 	//matrix.scale(0.003f);
 
 	m_program->setUniformValue(m_matrixUniform, matrix);
@@ -187,7 +187,8 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	GLenum err0 = glGetError();
 	glGetError();
 
-	// Test: Get the depth buffer (probably slow)
+	// Test: Get the depth buffer. Doesn't work on GLES
+	/*
 	float depth;
 	cv::Mat qdepthBuffer = cv::Mat::zeros(viewportHeight, viewportWidth, CV_32FC1);
 	glReadPixels(320, 240, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
@@ -198,12 +199,8 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	int dbits;
 	glGetIntegerv(GL_DEPTH_BITS, &dbits);
 	std::cout << "dbits: " << dbits << std::endl;
-	//glBindFramebuffer(GL_READ_FRAMEBUFFER, 0); ?
-	//glPixelStorei(GL_PACK_ALIGNMENT, 1);?
+	*/
 
-	//cv::Mat framebuffer = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\box_screenbuffer11.png");
-	//cv::Mat textureMap = render::utils::MeshUtils::extractTexture(mesh, matrix, viewportWidth, viewportHeight, framebuffer);
-	//cv::imwrite("C:\\Users\\Patrik\\Documents\\GitHub\\img_extracted11.png", textureMap);
 	++m_frame;
 
 
@@ -221,29 +218,6 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 		// 
 	}
 
-	//QMatrix4x4 p1;
-	//p1.perspective(60, aspect, 1.0f, 100.0f);
-	//p1.frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f);
-	//qDebug() << p1;
-	
-	/*QMatrix4x4 o1;
-	o1.ortho(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
-	o1.scale(0.008f);*/
-	//o1.scale(0.1f, 0.3f, 1.6f);
-	//o1.rotate(389.9f, 0.0f, 0.0f, 1.0f);
-	//o1.rotate(197.2f, 0.0f, 1.0f, 0.0f);
-	//o1.rotate(45.0f, 1.0f, 0.0f, 0.0f);
-	//o1.translate(1.2f, 2.1f, 5.4f);
-	
-	/*Mat mt1 = utils::MatrixUtils::createTranslationMatrix(1.2f, 2.1f, 5.4f);
-	Mat mrx = utils::MatrixUtils::createRotationMatrixX(45.0f * (3.141592f/180.0f));
-	Mat mry = utils::MatrixUtils::createRotationMatrixY(197.2f * (3.141592f / 180.0f));
-	Mat mrz = utils::MatrixUtils::createRotationMatrixZ(389.9f * (3.141592f / 180.0f));
-	Mat ms1 = utils::MatrixUtils::createScalingMatrix(0.1f, 0.3f, 1.6f);
-	Mat mp1 = utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
-	Mat mpp1 = utils::MatrixUtils::createPerspectiveProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
-	Mat mpp2 = utils::MatrixUtils::createPerspectiveProjectionMatrix(60, aspect, 1.0f, 100.0f);*/
-
 	SoftwareRenderer swr;
 	swr.enableTexturing(true);
 	auto tex = std::make_shared<Texture>();
@@ -252,6 +226,10 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	auto swbuffs = swr.render(mesh, matrix);
 	Mat swbuffc = swbuffs.first;
 	Mat swbuffd = swbuffs.second;
+
+	//cv::Mat framebuffer = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\box_screenbuffer11.png");
+	//cv::Mat textureMap = render::utils::MeshUtils::extractTexture(mesh, matrix, viewportWidth, viewportHeight, framebuffer);
+	//cv::imwrite("C:\\Users\\Patrik\\Documents\\GitHub\\img_extracted11.png", textureMap);
 }
 
 } /* namespace render */

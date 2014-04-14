@@ -24,6 +24,9 @@ namespace render {
 
 pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, QMatrix4x4 mvp)
 {
+	// We assign the values one-by-one since if we used
+	// mvp.data() or something, we'd have to transpose
+	// because Qt stores the matrix col-major in memory.
 	Mat ocv_mvp = (cv::Mat_<float>(4, 4) <<
 		mvp(0, 0), mvp(0, 1), mvp(0, 2), mvp(0, 3),
 		mvp(1, 0), mvp(1, 1), mvp(1, 2), mvp(1, 3),
@@ -47,7 +50,7 @@ pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, Mat mvp)
 		clipSpaceVertices.push_back(Vertex(mpnew, v.color, v.texcrd));
 	}
 
-	// We're in NDC now (= clip space, clipping volume)
+	// We're in clip-space now
 	// PREPARE rasterizer:
 	// processProspectiveTriangleToRasterize:
 	// for every vertex/tri:
@@ -55,6 +58,9 @@ pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, Mat mvp)
 		// Todo: Split this whole stuff up. Make a "clip" function, ... rename "processProspective..".. what is "process"... get rid of "continue;"-stuff by moving stuff inside process...
 		// classify vertices visibility with respect to the planes of the view frustum
 		// we're in clip-coords (NDC), so just check if outside [-1, 1] x ...
+		// Actually we're in clip-coords and it's not the same as NDC. We're only in NDC after the division by w.
+		// We should do the clipping in clip-coords though. See http://www.songho.ca/opengl/gl_projectionmatrix.html for more details.
+		// However, when comparing against w_c below, we might run into the trouble of the sign again in the affine case.
 		unsigned char visibilityBits[3];
 		for (unsigned char k = 0; k < 3; k++)
 		{
@@ -144,7 +150,6 @@ boost::optional<TriangleToRasterize> SoftwareRenderer::processProspectiveTri(Ver
 	t.one_over_z1 = 1.0 / (double)t.v1.position[3];
 	t.one_over_z2 = 1.0 / (double)t.v2.position[3];
 
-
 	// divide by w
 	// if ortho, we can do the divide as well, it will just be a / 1.0f.
 	t.v0.position = t.v0.position / t.v0.position[3];
@@ -211,12 +216,6 @@ boost::optional<TriangleToRasterize> SoftwareRenderer::processProspectiveTri(Ver
 	t.beta_ffy = -t.betaPlane.b * t.one_over_beta_c;
 	t.gamma_ffy = -t.gammaPlane.b * t.one_over_gamma_c;
 
-	t.tileMinX = t.minX / 16; // Todo: Necessary?
-	t.tileMinY = t.minY / 16;
-	t.tileMaxX = t.maxX / 16;
-	t.tileMaxY = t.maxY / 16;
-
-
 	// Use t
 	return boost::optional<TriangleToRasterize>(t);
 }
@@ -247,8 +246,8 @@ void SoftwareRenderer::rasterTriangle(TriangleToRasterize triangle)
 				int pixelIndexRow = yi;
 				int pixelIndexCol = xi;
 
-				double z_affine = alpha*(double)t.v0.position[2] + beta*(double)t.v1.position[2] + gamma*(double)t.v2.position[2];	// z
-
+				double z_affine = alpha*(double)t.v0.position[2] + beta*(double)t.v1.position[2] + gamma*(double)t.v2.position[2];
+				// The '<= 1.0' clips against the far-plane in NDC. We clip against the near-plane earlier.
 				if (z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol) && z_affine <= 1.0)
 				{
 					// perspective-correct barycentric weights

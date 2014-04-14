@@ -16,6 +16,7 @@
 
 using cv::Mat;
 using cv::Point2f;
+using cv::Scalar;
 
 namespace render {
 	namespace utils {
@@ -233,6 +234,18 @@ shared_ptr<Mesh> MeshUtils::createTriangle()
 	return triangle;
 }
 
+cv::Mat MeshUtils::drawTexCoords(Mesh mesh)
+{
+	Mat texImg(512, 512, CV_8UC4, cv::Scalar(0.0f, 0.0f, 0.0f, 255.0f));
+	//texImg.s
+	for (const auto& triIdx : mesh.tvi) {
+		cv::line(texImg, Point2f(mesh.vertex[triIdx[0]].texcrd[0] * texImg.cols, mesh.vertex[triIdx[0]].texcrd[1] * texImg.rows), Point2f(mesh.vertex[triIdx[1]].texcrd[0] * texImg.cols, mesh.vertex[triIdx[1]].texcrd[1] * texImg.rows), Scalar(255.0f, 0.0f, 0.0f));
+		cv::line(texImg, Point2f(mesh.vertex[triIdx[1]].texcrd[0] * texImg.cols, mesh.vertex[triIdx[1]].texcrd[1] * texImg.rows), Point2f(mesh.vertex[triIdx[2]].texcrd[0] * texImg.cols, mesh.vertex[triIdx[2]].texcrd[1] * texImg.rows), Scalar(255.0f, 0.0f, 0.0f));
+		cv::line(texImg, Point2f(mesh.vertex[triIdx[2]].texcrd[0] * texImg.cols, mesh.vertex[triIdx[2]].texcrd[1] * texImg.rows), Point2f(mesh.vertex[triIdx[0]].texcrd[0] * texImg.cols, mesh.vertex[triIdx[0]].texcrd[1] * texImg.rows), Scalar(255.0f, 0.0f, 0.0f));
+	}
+	return texImg;
+}
+
 // Returns true if inside the tri or on the border
 bool MeshUtils::isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Point2f triV1, cv::Point2f triV2) {
 	/* See http://www.blackpawn.com/texts/pointinpoly/ */
@@ -326,7 +339,6 @@ cv::Mat MeshUtils::extractTexture(render::Mesh mesh, QMatrix4x4 mvpMatrix, int v
 	}
 	return textureMap;
 }
-
 
 	} /* namespace utils */
 } /* namespace render */
