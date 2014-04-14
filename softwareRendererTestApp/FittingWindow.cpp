@@ -14,6 +14,7 @@
 #include "morphablemodel/OpenCVCameraEstimation.hpp"
 #include "morphablemodel/AffineCameraEstimation.hpp"
 #include "render/QOpenGLRenderer.hpp"
+#include "render/SoftwareRenderer.hpp"
 #include "render/MeshUtils.hpp"
 
 #include "logging/LoggerFactory.hpp"
@@ -49,8 +50,47 @@ void FittingWindow::render()
 {
 	// This function gets called by our subclass every time Qt is ready to render a frame
 	// call r->setViewport before every render?
-	r->render(render::utils::MeshUtils::createCube());
+	float aspect = static_cast<float>(width()) / static_cast<float>(height());
+	QMatrix4x4 matrix;
+	matrix.ortho(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
+	//matrix.ortho(-70.0f, 70.0f, -70.0f, 70.0f, 0.1f, 1000.0f);
+	//matrix.perspective(30, aspect, 0.1, 100.0);
+	matrix.translate(0, 0, -2);
+	matrix.rotate(45.0f, 1.0f, 0.0f, 0.0f);
+	//matrix.rotate(45.0f, 0.0f, 1.0f, 0.0f);
+	//matrix.scale(1.0f/75.0f);
+	//matrix.scale(0.003f);
+	render::Mesh mesh = render::utils::MeshUtils::createCube();
+	r->render(mesh, matrix);
 	//r->render(morphableModel.getMean());
+
+
+	// SOFTWARE RENDERER START
+	Mat framebuffer = Mat::zeros(height(), width(), CV_8UC3);
+	// Prepare:
+	// this is only the method how to draw (e.g. make tris and draw them (i.e. duplicate vertices), but in the end we have a VertexShader that operates per vertex
+	for (const auto& triIndices : mesh.tvi) {
+		//For every triangle: Like OpenGL does it! (So actually, OpenGL duplicates the vertices as well, it's not using triangle indices, at least not the way how I draw)
+		render::Triangle tri;
+		tri.vertex[0] = mesh.vertex[triIndices[0]];
+		tri.vertex[1] = mesh.vertex[triIndices[1]];
+		tri.vertex[2] = mesh.vertex[triIndices[2]];
+		// 
+	}
+
+	render::SoftwareRenderer swr;
+	swr.enableTexturing(true);
+	auto tex = std::make_shared<render::Texture>();
+	tex->createFromFile("C:\\Users\\Patrik\\Documents\\GitHub\\isoRegistered3D_square.png");
+	swr.setCurrentTexture(tex);
+	auto swbuffs = swr.render(mesh, matrix);
+	Mat swbuffc = swbuffs.first;
+	Mat swbuffd = swbuffs.second;
+
+	//cv::Mat framebuffer = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\box_screenbuffer11.png");
+	//cv::Mat textureMap = render::utils::MeshUtils::extractTexture(mesh, matrix, viewportWidth, viewportHeight, framebuffer);
+	//cv::imwrite("C:\\Users\\Patrik\\Documents\\GitHub\\img_extracted11.png", textureMap);
+
 	++m_frame;
 }
 

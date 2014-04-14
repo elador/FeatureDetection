@@ -30,7 +30,10 @@ public:
 		this->retinaScale = retinaScale;
 	};
 	// maybe make a setMesh(), to avoid copying the mesh in every frame
-	void render(Mesh mesh);
+	void render(Mesh mesh, QMatrix4x4 mvp);
+
+	// Warning: Performs full rendering of the frame in the current OpenGL context.
+	// getFramebuffer(Mesh, QMatrix4x4);
 private:
 	QOpenGLShaderProgram *m_program;
 	QOpenGLContext* qOpenGlContext;

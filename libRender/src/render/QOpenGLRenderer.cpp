@@ -64,7 +64,7 @@ QOpenGLRenderer::QOpenGLRenderer(QOpenGLContext* qOpenGlContext) : qOpenGlContex
 	// glDeleteTextures(1, &texture);
 }
 
-void QOpenGLRenderer::render(render::Mesh mesh)
+void QOpenGLRenderer::render(render::Mesh mesh, QMatrix4x4 mvp)
 {
 	//const qreal retinaScale = devicePixelRatio();
 	glViewport(0, 0, viewportWidth * retinaScale, viewportHeight * retinaScale);
@@ -143,18 +143,7 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 		mmTex.push_back(mesh.vertex[triangle[2]].texcrd[1]);
 	}
 
-	float aspect = static_cast<float>(viewportWidth) / static_cast<float>(viewportHeight);
-	QMatrix4x4 matrix;
-	matrix.ortho(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f); // l r b t n f
-	//matrix.ortho(-70.0f, 70.0f, -70.0f, 70.0f, 0.1f, 1000.0f);
-	//matrix.perspective(30, aspect, 0.1, 100.0);
-	matrix.translate(0, 0, -2);
-	matrix.rotate(45.0f, 1.0f, 0.0f, 0.0f);
-	//matrix.rotate(45.0f, 0.0f, 1.0f, 0.0f);
-	//matrix.scale(1.0f/75.0f);
-	//matrix.scale(0.003f);
-
-	m_program->setUniformValue(m_matrixUniform, matrix);
+	m_program->setUniformValue(m_matrixUniform, mvp);
 
 	glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &mmVertices[0]); // vertices
 	glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &mmColors[0]); // colors
@@ -177,6 +166,7 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	m_program->release();
 
 	// Get the framebuffer
+	// Todo: Move this stuff to getFramebuffer
 	glDisable(GL_TEXTURE_2D);
 	uchar col;
 	cv::Mat colb = cv::Mat::zeros(viewportHeight, viewportWidth, CV_8UC4);
@@ -200,36 +190,7 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	glGetIntegerv(GL_DEPTH_BITS, &dbits);
 	std::cout << "dbits: " << dbits << std::endl;
 	*/
-
 	++m_frame;
-
-
-	// SOFTWARE RENDERER START
-	Mat framebuffer = Mat::zeros(viewportHeight, viewportWidth, CV_8UC3);
-
-	// Prepare:
-	// this is only the method how to draw (e.g. make tris and draw them (i.e. duplicate vertices), but in the end we have a VertexShader that operates per vertex
-	for (const auto& triIndices : mesh.tvi) {
-		//For every triangle: Like OpenGL does it! (So actually, OpenGL duplicates the vertices as well, it's not using triangle indices, at least not the way how I draw)
-		Triangle tri;
-		tri.vertex[0] = mesh.vertex[triIndices[0]];
-		tri.vertex[1] = mesh.vertex[triIndices[1]];
-		tri.vertex[2] = mesh.vertex[triIndices[2]];
-		// 
-	}
-
-	SoftwareRenderer swr;
-	swr.enableTexturing(true);
-	auto tex = std::make_shared<Texture>();
-	tex->createFromFile("C:\\Users\\Patrik\\Documents\\GitHub\\isoRegistered3D_square.png");
-	swr.setCurrentTexture(tex);
-	auto swbuffs = swr.render(mesh, matrix);
-	Mat swbuffc = swbuffs.first;
-	Mat swbuffd = swbuffs.second;
-
-	//cv::Mat framebuffer = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\box_screenbuffer11.png");
-	//cv::Mat textureMap = render::utils::MeshUtils::extractTexture(mesh, matrix, viewportWidth, viewportHeight, framebuffer);
-	//cv::imwrite("C:\\Users\\Patrik\\Documents\\GitHub\\img_extracted11.png", textureMap);
 }
 
 } /* namespace render */
