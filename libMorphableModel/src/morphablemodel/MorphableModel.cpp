@@ -222,7 +222,7 @@ vector<Vec2f> MorphableModel::loadIsomap(path isomapFile)
 	float divisorX = *minMaxX.second - *minMaxX.first;
 	float divisorY = *minMaxY.second - *minMaxY.first;
 	for (int i = 0; i < xCoords.size(); ++i) {
-		texCoords.push_back(Vec2f((xCoords[i]-*minMaxX.first)/divisorX, (yCoords[i]-*minMaxY.first)/divisorY)); // rescale
+		texCoords.push_back(Vec2f((xCoords[i]-*minMaxX.first)/divisorX, 1.0f - (yCoords[i]-*minMaxY.first)/divisorY)); // We rescale to [0, 1] and at the same time flip the y-coords (because in the isomap, the coordinates are stored upside-down).
 	}
 
 	return texCoords;

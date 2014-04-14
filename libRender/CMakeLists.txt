@@ -1,19 +1,18 @@
-SET( SUBPROJECT_NAME Render )
-PROJECT( ${SUBPROJECT_NAME} )
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11)
-SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
-SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
+set(SUBPROJECT_NAME Render)
+project(${SUBPROJECT_NAME})
+cmake_minimum_required(VERSION 2.8.11)
+set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
+set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
-FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core imgproc highgui)
+find_package(OpenCV 2.4.3 REQUIRED core imgproc highgui)
 
-#FIND_PACKAGE(Boost 1.48.0 COMPONENTS random REQUIRED)
-FIND_PACKAGE(Boost 1.48.0 REQUIRED)
+find_package(Boost 1.48.0 REQUIRED)
 if(Boost_FOUND)
-  MESSAGE(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
+  message(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
 ELSE(Boost_FOUND)
-  MESSAGE(FATAL_ERROR "Boost not found")
+  message(FATAL_ERROR "Boost not found")
 ENDIF()
 
 set(CMAKE_AUTOMOC ON) # Todo: Probably make dependent on WITH_RENDER_OPENGL
@@ -25,7 +24,7 @@ message(STATUS "Qt5 EGL library: ${Qt5Gui_EGL_LIBRARIES}")
 message(STATUS "Qt5 OpenGL library: ${Qt5Gui_OPENGL_LIBRARIES}")
 
 #Source and header files:
-SET(SOURCE
+set(SOURCE
 	src/render/QOpenGLRenderer.cpp
 	src/render/SoftwareRenderer.cpp
 	src/render/Vertex.cpp
@@ -37,9 +36,10 @@ SET(SOURCE
 	src/render/MeshUtils.cpp
 )
 
-SET(HEADERS
+set(HEADERS
 	include/render/QOpenGLRenderer.hpp
 	include/render/SoftwareRenderer.hpp
+	include/render/SoftwareRenderer2.hpp
 	include/render/Vertex.hpp
 	include/render/Triangle.hpp
 	include/render/Camera.hpp
@@ -54,5 +54,5 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 
 #Make the library
-add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
-target_link_libraries(${SUBPROJECT_NAME} Qt5::Core Qt5::Gui ${Qt5Gui_EGL_LIBRARIES} ${Qt5Gui_OPENGL_LIBRARIES} ${OpenCV_LIBS}) # ${Boost_LIBRARIES}
+add_library(${SUBPROJECT_NAME} SHARED ${SOURCE} ${HEADERS})
+target_link_libraries(${SUBPROJECT_NAME} Qt5::Core Qt5::Gui ${Qt5Gui_EGL_LIBRARIES} ${Qt5Gui_OPENGL_LIBRARIES} ${OpenCV_LIBS})

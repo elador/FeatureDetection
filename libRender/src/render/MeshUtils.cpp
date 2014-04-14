@@ -26,7 +26,7 @@ Mesh MeshUtils::createCube()
 	cube.vertex.resize(24);
 
 	for (int i = 0; i < 24; i++)
-		cube.vertex[i].color = cv::Vec3f(1.0f, 1.0f, 0.0f);
+		cube.vertex[i].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
 
 	cube.vertex[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
 	cube.vertex[0].texcrd = cv::Vec2f(0.0f, 0.0f);
@@ -226,8 +226,8 @@ shared_ptr<Mesh> MeshUtils::createTriangle()
 	vi[0] = 0; vi[1] = 1; vi[2] = 2;
 	triangle->tvi.push_back(vi);
 	
-	triangle->texture = std::make_shared<Texture>();
-	triangle->texture->createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\up.png");
+	//triangle->texture = std::make_shared<Texture>();
+	//triangle->texture->createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\up.png");
 	triangle->hasTexture = false;
 
 	return triangle;

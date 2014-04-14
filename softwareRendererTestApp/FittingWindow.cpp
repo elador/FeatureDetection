@@ -51,32 +51,43 @@ void FittingWindow::render()
 	// call r->setViewport before every render?
 	//r->render(render::utils::MeshUtils::createCube());
 	
-	//r->render(morphableModel.getMean());
+	r->render(morphableModel.getMean());
 
+	render::Mesh m = morphableModel.getMean();
+	//Mat texImg = Mat::zeros(512, 512, CV_8UC4);
+	Mat texImg(512, 512, CV_8UC4, cv::Scalar(0.0f, 0.0f, 0.0f, 255.0f));
+	//texImg.s
+	for (const auto& triIdx : m.tvi) {
+		cv::line(texImg, Point2f(m.vertex[triIdx[0]].texcrd[0] * texImg.cols, m.vertex[triIdx[0]].texcrd[1] * texImg.rows), Point2f(m.vertex[triIdx[1]].texcrd[0] * texImg.cols, m.vertex[triIdx[1]].texcrd[1] * texImg.rows), Scalar(255.0f, 0.0f, 0.0f));
+		cv::line(texImg, Point2f(m.vertex[triIdx[1]].texcrd[0] * texImg.cols, m.vertex[triIdx[1]].texcrd[1] * texImg.rows), Point2f(m.vertex[triIdx[2]].texcrd[0] * texImg.cols, m.vertex[triIdx[2]].texcrd[1] * texImg.rows), Scalar(255.0f, 0.0f, 0.0f));
+		cv::line(texImg, Point2f(m.vertex[triIdx[2]].texcrd[0] * texImg.cols, m.vertex[triIdx[2]].texcrd[1] * texImg.rows), Point2f(m.vertex[triIdx[0]].texcrd[0] * texImg.cols, m.vertex[triIdx[0]].texcrd[1] * texImg.rows), Scalar(255.0f, 0.0f, 0.0f));
+	}
+
+	/*
 	render::Mesh triangle;
 	triangle.vertex.resize(6);
 
-	triangle.vertex[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 0.0f);
+	triangle.vertex[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
 	triangle.vertex[0].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
 	triangle.vertex[0].texcrd = cv::Vec2f(0.0f, 0.0f);
 
-	triangle.vertex[1].position = cv::Vec4f(-0.5f, -0.5f, 0.5f, 0.0f);
+	triangle.vertex[1].position = cv::Vec4f(-0.5f, -0.5f, 0.5f, 1.0f);
 	triangle.vertex[1].color = cv::Vec3f(0.0f, 1.0f, 0.0f);
 	triangle.vertex[1].texcrd = cv::Vec2f(0.0f, 1.0f);
 
-	triangle.vertex[2].position = cv::Vec4f(0.5f, -0.5f, 0.5f, 0.0f);
+	triangle.vertex[2].position = cv::Vec4f(0.5f, -0.5f, 0.5f, 1.0f);
 	triangle.vertex[2].color = cv::Vec3f(0.0f, 0.0f, 1.0f);
 	triangle.vertex[2].texcrd = cv::Vec2f(1.0f, 1.0f);
 
-	triangle.vertex[3].position = cv::Vec4f(-0.8f, 0.8f, 0.0f, 0.0f);
+	triangle.vertex[3].position = cv::Vec4f(-0.8f, 0.8f, 0.0f, 1.0f);
 	triangle.vertex[3].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
 	triangle.vertex[3].texcrd = cv::Vec2f(0.0f, 0.0f);
 
-	triangle.vertex[4].position = cv::Vec4f(-0.8f, -0.8f, 0.0f, 0.0f);
+	triangle.vertex[4].position = cv::Vec4f(-0.8f, -0.8f, 0.0f, 1.0f);
 	triangle.vertex[4].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
 	triangle.vertex[4].texcrd = cv::Vec2f(0.0f, 1.0f);
 
-	triangle.vertex[5].position = cv::Vec4f(0.8f, -0.8f, 0.0f, 0.0f);
+	triangle.vertex[5].position = cv::Vec4f(0.8f, -0.8f, 0.0f, 1.0f);
 	triangle.vertex[5].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
 	triangle.vertex[5].texcrd = cv::Vec2f(1.0f, 1.0f);
 
@@ -90,7 +101,7 @@ void FittingWindow::render()
 	triangle.tvi.push_back(vi);
 	triangle.tci.push_back(vi);
 	r->render(triangle);
-
+	*/
 	++m_frame;
 }
 

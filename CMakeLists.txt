@@ -38,7 +38,7 @@ add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 
 add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
 add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes; Camera (Pose) estimation
-add_subdirectory(libSupervisedDescentModel) # A non-parametric model for landmark detection. Uses the supervised descent method.
+#add_subdirectory(libSupervisedDescentModel) # A non-parametric model for landmark detection. Uses the supervised descent method.
 
 # Tracking apps
 add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.
@@ -59,6 +59,7 @@ add_subdirectory(VideoPlayerApp)		# App for playing videos, showing landmarks an
 
 # 3DMM fitting
 #add_subdirectory(fitter)			# Experimental app (compiles)
+add_subdirectory(softwareRendererTestApp)
 
 # Tools
 #add_subdirectory(landmarkVisualiser)	# Simple app to read landmarks and images and display them
