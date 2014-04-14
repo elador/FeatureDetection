@@ -40,13 +40,12 @@ QOpenGLRenderer::QOpenGLRenderer(QOpenGLContext* qOpenGlContext) : qOpenGlContex
 
 	glEnable(GL_TEXTURE_2D);
 	//cv::Mat ocvimg = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\img.png");
-	//cv::Mat ocvimg = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\isoRegistered3D_square.png");
-	cv::Mat ocvimg = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\img.png");
+	cv::Mat ocvimg = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\isoRegistered3D_square.png");
 	glGenTextures(1, &texture);
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	cv::cvtColor(ocvimg, ocvimg, CV_BGR2RGB);
-	//cv::flip(ocvimg, ocvimg, 0); // Flip around the x-axis
+	//cv::flip(ocvimg, ocvimg, 0); // Flip around the x-axis. TODO: Not neccesary for cube, but for the 3DMM. Why?
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ocvimg.cols, ocvimg.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, ocvimg.ptr(0));
 
 	std::cout << "GL_SHADING_LANGUAGE_VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
@@ -150,9 +149,9 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	//matrix.ortho(-70.0f, 70.0f, -70.0f, 70.0f, 0.1f, 1000.0f);
 	matrix.perspective(60, aspect, 0.1, 100.0);
 	matrix.translate(0, 0, -2);
-	matrix.rotate(45.0f, 1.0f, 0.0f, 0.0f);
-	matrix.rotate(0.0f, 0.0f, 1.0f, 0.0f);
-	//matrix.scale(0.009f);
+	//matrix.rotate(45.0f, 1.0f, 0.0f, 0.0f);
+	//matrix.rotate(0.0f, 0.0f, 1.0f, 0.0f);
+	matrix.scale(1.0f/75.0f);
 	//matrix.scale(0.003f);
 
 	m_program->setUniformValue(m_matrixUniform, matrix);
@@ -246,7 +245,7 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	Mat mpp2 = utils::MatrixUtils::createPerspectiveProjectionMatrix(60, aspect, 1.0f, 100.0f);*/
 
 	SoftwareRenderer2 swr;
-	swr.enableTexturing(true);
+	swr.enableTexturing(false);
 	swr.setCurrentTexture(mesh.texture);
 	auto swbuffs = swr.render(mesh, matrix);
 	Mat swbuffc = swbuffs.first;

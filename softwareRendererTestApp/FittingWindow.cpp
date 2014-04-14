@@ -49,9 +49,20 @@ void FittingWindow::render()
 {
 	// This function gets called by our subclass every time Qt is ready to render a frame
 	// call r->setViewport before every render?
-	r->render(render::utils::MeshUtils::createCube());
+	//r->render(render::utils::MeshUtils::createCube());
 	
-	//r->render(morphableModel.getMean());
+	r->render(morphableModel.getMean());
+
+	render::Mesh m = morphableModel.getMean();
+	//Mat texImg = Mat::zeros(512, 512, CV_8UC4);
+	Mat texImg(512, 512, CV_8UC4, cv::Scalar(0.0f, 0.0f, 0.0f, 255.0f));
+	//texImg.s
+	for (const auto& triIdx : m.tvi) {
+		cv::line(texImg, Point2f(m.vertex[triIdx[0]].texcrd[0] * texImg.cols, m.vertex[triIdx[0]].texcrd[1] * texImg.rows), Point2f(m.vertex[triIdx[1]].texcrd[0] * texImg.cols, m.vertex[triIdx[1]].texcrd[1] * texImg.rows), Scalar(255.0f, 0.0f, 0.0f));
+		cv::line(texImg, Point2f(m.vertex[triIdx[1]].texcrd[0] * texImg.cols, m.vertex[triIdx[1]].texcrd[1] * texImg.rows), Point2f(m.vertex[triIdx[2]].texcrd[0] * texImg.cols, m.vertex[triIdx[2]].texcrd[1] * texImg.rows), Scalar(255.0f, 0.0f, 0.0f));
+		cv::line(texImg, Point2f(m.vertex[triIdx[2]].texcrd[0] * texImg.cols, m.vertex[triIdx[2]].texcrd[1] * texImg.rows), Point2f(m.vertex[triIdx[0]].texcrd[0] * texImg.cols, m.vertex[triIdx[0]].texcrd[1] * texImg.rows), Scalar(255.0f, 0.0f, 0.0f));
+	}
+
 	/*
 	render::Mesh triangle;
 	triangle.vertex.resize(6);
