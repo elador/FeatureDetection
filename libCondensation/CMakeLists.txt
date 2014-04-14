@@ -4,11 +4,12 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
+message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
+
 # find dependencies
 FIND_PACKAGE(Boost 1.48.0 REQUIRED)
-FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core)
-MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
-MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
+
+FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core imgproc video)
 
 # source and header files
 SET(HEADERS
@@ -72,3 +73,4 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
+target_link_libraries(${SUBPROJECT_NAME} Classification ImageProcessing ${Boost_LIBRARIES} ${OpenCV_LIBS})

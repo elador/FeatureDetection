@@ -1,25 +1,28 @@
-SET( SUBPROJECT_NAME ImageIO ) # my own variable, not cmake's
+SET( SUBPROJECT_NAME ImageIO )
 PROJECT( ${SUBPROJECT_NAME} )
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
-MESSAGE(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
+message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies
-#FIND_PACKAGE(Boost 1.48.0 COMPONENTS filesystem REQUIRED)	# Patrik: I think we need 'system' too, if the app doesn't link to it, ImageIO fails to link.
-FIND_PACKAGE(Boost 1.48.0 REQUIRED) # We only want the headers in the lib?
-FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core)
+FIND_PACKAGE(Boost 1.48.0 COMPONENTS system filesystem REQUIRED)
+
+FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core highgui)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
-IF(WITH_MSKINECT_SDK)
+if(WITH_MSKINECT_SDK)
 	# Include Microsoft Kinect SDK (Windows)
-	SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
-	FIND_PACKAGE(KinectSDK REQUIRED)
-	INCLUDE_DIRECTORIES(${KinectSDK_INCLUDE_DIR})
+	set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+	find_package(KinectSDK REQUIRED)
+	include_directories(${KinectSDK_INCLUDE_DIR})
+	set(KINECT_LIBNAME ${KinectSDK_LIBRARIES})
 	add_definitions(-DWITH_MSKINECT_SDK)
-ENDIF()
+else()
+	set(KINECT_LIBNAME "")
+endif()
 
 # source and header files
 SET(HEADERS
@@ -102,4 +105,5 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( ${Boost_INCLUDE_DIRS} )
 
 # make library
-add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
+add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
+target_link_libraries(${SUBPROJECT_NAME} Logging ${KINECT_LIBNAME} ${Boost_LIBRARIES} ${OpenCV_LIBS})

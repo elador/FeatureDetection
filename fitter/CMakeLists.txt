@@ -4,6 +4,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
+message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
+
 #cmake_policy(SET CMP0020 NEW) # all Qt projects. auto-link to winmain... etc. Better: cmake_policy(VERSION 2.8.11) (first version to support auto-linking (and the new Qt imports anyway).
 # Todo: move the policy to the sub-project. Because: it gives an error on a cmake version that doesnt support this policy!
 # Note: with CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11), the policy is already set to default for 2.8.11 which is ON.

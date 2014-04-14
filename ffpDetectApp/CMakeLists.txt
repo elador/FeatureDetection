@@ -4,6 +4,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
+message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
+
 #OpenCV:
 FIND_PACKAGE( OpenCV 2.4.3 REQUIRED core imgproc highgui calib3d)
 MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")

@@ -47,7 +47,9 @@
 #include "classification/TrainableProbabilisticSvmClassifier.hpp"
 #include "classification/FixedTrainableProbabilisticSvmClassifier.hpp"
 #include "libsvm/LibSvmClassifier.hpp"
-#include "liblinear/LibLinearClassifier.hpp"
+#ifdef WITH_LIBLINEAR_CLASSIFIER
+	#include "liblinear/LibLinearClassifier.hpp"
+#endif
 #include "boost/property_tree/ptree.hpp"
 #include "boost/property_tree/info_parser.hpp"
 #include "boost/optional/optional.hpp"
@@ -60,7 +62,6 @@ using namespace imageio;
 using namespace imageprocessing;
 using namespace classification;
 using libsvm::LibSvmClassifier;
-using liblinear::LibLinearClassifier;
 using boost::property_tree::ptree;
 using boost::property_tree::info_parser::read_info;
 using boost::optional;
@@ -371,7 +372,8 @@ shared_ptr<TrainableSvmClassifier> createLibSvmClassifier(ptree& config, shared_
 }
 
 shared_ptr<TrainableSvmClassifier> createLibLinearClassifier(ptree& config) {
-	shared_ptr<LibLinearClassifier> trainableSvm = make_shared<LibLinearClassifier>(config.get<double>("C"), config.get<bool>("bias"));
+#ifdef WITH_LIBLINEAR_CLASSIFIER
+	shared_ptr<liblinear::LibLinearClassifier> trainableSvm = make_shared<liblinear::LibLinearClassifier>(config.get<double>("C"), config.get<bool>("bias"));
 	trainableSvm->setPositiveExampleManagement(
 			unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm, true)));
 	trainableSvm->setNegativeExampleManagement(
@@ -382,6 +384,9 @@ shared_ptr<TrainableSvmClassifier> createLibLinearClassifier(ptree& config) {
 				negativesConfig->get<int>("amount"), negativesConfig->get<double>("scale"));
 	}
 	return trainableSvm;
+#else
+	throw std::runtime_error("Cannot load a LibLinear classifier. Run CMake with WITH_LIBLINEAR_CLASSIFIER set to ON to enable.");
+#endif // WITH_LIBLINEAR_CLASSIFIER
 }
 
 shared_ptr<TrainableProbabilisticClassifier> createTrainableProbabilisticSvm(
