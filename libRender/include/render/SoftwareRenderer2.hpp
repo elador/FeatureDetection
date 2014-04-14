@@ -38,6 +38,11 @@ public:
 	//~SoftwareRenderer2();
 
 	bool doBackfaceCulling = false; ///< If true, only draw triangles with vertices ordered CCW in screen-space
+	bool doTexturing = false; ///< Desc.
+
+	void enableTexturing(bool doTexturing) {
+		this->doTexturing = doTexturing;
+	};
 
 	//ifdef WITH_RENDER_QT? WITH_RENDER_QOPENGL?
 	std::pair<cv::Mat, cv::Mat> render(Mesh mesh, QMatrix4x4 mvp) {
@@ -51,9 +56,10 @@ public:
 	std::pair<cv::Mat, cv::Mat> render(Mesh mesh, Mat mvp) {
 		this->colorBuffer = Mat::zeros(viewportHeight, viewportWidth, CV_8UC4);
 		depthBuffer = Mat::ones(viewportHeight, viewportWidth, CV_64FC1) * 1000000;
+
 		std::vector<TriangleToRasterize> trisToRaster;
 
-		// Actual Vertex shader:
+		// Vertex shader:
 		//processedVertex = shade(Vertex); // processedVertex : pos, col, tex, texweight
 		std::vector<Vertex> clipSpaceVertices;
 		for (const auto& v : mesh.vertex) {
@@ -158,7 +164,12 @@ private:
 		t.v1 = v1;
 		t.v2 = v2;
 
-		// calc 1/v0.w, 1/v1.w, 1/v2.w. No, only for perspective projection
+		// Only for texturing or perspective texturing:
+		//t.texture = _texture;
+		t.one_over_z0 = 1.0 / (double)t.v0.position[3];
+		t.one_over_z1 = 1.0 / (double)t.v1.position[3];
+		t.one_over_z2 = 1.0 / (double)t.v2.position[3];
+
 
 		// divide by w
 		// if ortho, we can do the divide as well, it will just be a / 1.0f.
@@ -209,16 +220,39 @@ private:
 		if (t.maxX <= t.minX || t.maxY <= t.minY)
 			return boost::none;
 
-		// Use the triangle:
-		
-		// barycentric blabla, partial derivatives??? ... (what is for texturing, what for persp., what for rest?)
-		
+		// Which of these is for texturing, what for perspective?
+		// for partial derivatives computation
+		t.alphaPlane = plane(cv::Vec3f(t.v0.position[0], t.v0.position[1], t.v0.texcrd[0] * t.one_over_z0),
+			cv::Vec3f(t.v1.position[0], t.v1.position[1], t.v1.texcrd[0] * t.one_over_z1),
+			cv::Vec3f(t.v2.position[0], t.v2.position[1], t.v2.texcrd[0] * t.one_over_z2));
+		t.betaPlane = plane(cv::Vec3f(t.v0.position[0], t.v0.position[1], t.v0.texcrd[1] * t.one_over_z0),
+			cv::Vec3f(t.v1.position[0], t.v1.position[1], t.v1.texcrd[1] * t.one_over_z1),
+			cv::Vec3f(t.v2.position[0], t.v2.position[1], t.v2.texcrd[1] * t.one_over_z2));
+		t.gammaPlane = plane(cv::Vec3f(t.v0.position[0], t.v0.position[1], t.one_over_z0),
+			cv::Vec3f(t.v1.position[0], t.v1.position[1], t.one_over_z1),
+			cv::Vec3f(t.v2.position[0], t.v2.position[1], t.one_over_z2));
+		t.one_over_alpha_c = 1.0f / t.alphaPlane.c;
+		t.one_over_beta_c = 1.0f / t.betaPlane.c;
+		t.one_over_gamma_c = 1.0f / t.gammaPlane.c;
+		t.alpha_ffx = -t.alphaPlane.a * t.one_over_alpha_c;
+		t.beta_ffx = -t.betaPlane.a * t.one_over_beta_c;
+		t.gamma_ffx = -t.gammaPlane.a * t.one_over_gamma_c;
+		t.alpha_ffy = -t.alphaPlane.b * t.one_over_alpha_c;
+		t.beta_ffy = -t.betaPlane.b * t.one_over_beta_c;
+		t.gamma_ffy = -t.gammaPlane.b * t.one_over_gamma_c;
+
+		t.tileMinX = t.minX / 16; // Todo: Necessary?
+		t.tileMinY = t.minY / 16;
+		t.tileMaxX = t.maxX / 16;
+		t.tileMaxY = t.maxY / 16;
+
+
 		// Use t
 		return boost::optional<TriangleToRasterize>(t);
 	};
 
 	void rasterTriangle(TriangleToRasterize triangle) {
-		TriangleToRasterize t = triangle; // delete
+		TriangleToRasterize t = triangle; // remove this, use 'triangle'
 		for (int yi = t.minY; yi <= t.maxY; yi++)
 		{
 			for (int xi = t.minX; xi <= t.maxX; xi++)
@@ -239,8 +273,6 @@ private:
 				// if pixel (x, y) is inside the triangle or on one of its edges
 				if (alpha >= 0 && beta >= 0 && gamma >= 0)
 				{
-					//int pixelIndex = (screenHeight - 1 - yi)*screenWidth + xi;
-					//int pixelIndexRow = (screenHeight - 1 - yi);
 					int pixelIndexRow = yi;
 					int pixelIndexCol = xi;
 
@@ -248,9 +280,48 @@ private:
 
 					if (z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol) && z_affine <= 1.0)
 					{
+						// perspective-correct barycentric weights
+						double d = alpha*t.one_over_z0 + beta*t.one_over_z1 + gamma*t.one_over_z2;
+						d = 1.0 / d;
+						alpha *= d*t.one_over_z0; // In case of affine cam matrix, everything is 1 and a/b/g don't get changed.
+						beta *= d*t.one_over_z1;
+						gamma *= d*t.one_over_z2;
+
 						// attributes interpolation
 						cv::Vec3f color_persp = alpha*t.v0.color + beta*t.v1.color + gamma*t.v2.color;
-						cv::Vec3f pixelColor = color_persp;
+						cv::Vec2f texCoord_persp = alpha*t.v0.texcrd + beta*t.v1.texcrd + gamma*t.v2.texcrd;
+						
+						cv::Vec3f pixelColor;
+						// Pixel Shader:
+						if (doTexturing) {	// We use texturing
+							// check if texture != NULL?
+							// partial derivatives (for mip-mapping)
+							float u_over_z = -(t.alphaPlane.a*x + t.alphaPlane.b*y + t.alphaPlane.d) * t.one_over_alpha_c;
+							float v_over_z = -(t.betaPlane.a*x + t.betaPlane.b*y + t.betaPlane.d) * t.one_over_beta_c;
+							float one_over_z = -(t.gammaPlane.a*x + t.gammaPlane.b*y + t.gammaPlane.d) * t.one_over_gamma_c;
+							float one_over_squared_one_over_z = 1.0f / pow(one_over_z, 2);
+
+							dudx = one_over_squared_one_over_z * (t.alpha_ffx * one_over_z - u_over_z * t.gamma_ffx);
+							dudy = one_over_squared_one_over_z * (t.beta_ffx * one_over_z - v_over_z * t.gamma_ffx);
+							dvdx = one_over_squared_one_over_z * (t.alpha_ffy * one_over_z - u_over_z * t.gamma_ffy);
+							dvdy = one_over_squared_one_over_z * (t.beta_ffy * one_over_z - v_over_z * t.gamma_ffy);
+
+							dudx *= currentTexture->mipmaps[0].cols;
+							dudy *= currentTexture->mipmaps[0].cols;
+							dvdx *= currentTexture->mipmaps[0].rows;
+							dvdy *= currentTexture->mipmaps[0].rows;
+
+							// The Texture is in BGR, thus tex2D returns BGR
+							cv::Vec3f textureColor = tex2D(texCoord_persp); // uses the current texture
+							pixelColor = cv::Vec3f(textureColor[2], textureColor[1], textureColor[0]);
+							// other: color.mul(tex2D(texture, texCoord));
+							// Old note: for texturing, we load the texture as BGRA, so the colors get the wrong way in the next few lines...
+						}
+						else {	// We use vertex-coloring
+							// color_persp is in RGB
+							pixelColor = color_persp;
+						}
+
 						// clamp bytes to 255
 						unsigned char red = (unsigned char)(255.0f * std::min(pixelColor[0], 1.0f));
 						unsigned char green = (unsigned char)(255.0f * std::min(pixelColor[1], 1.0f));
@@ -324,6 +395,107 @@ private:
 		float dy02 = v2.position[1] - v0.position[1];
 
 		return (dx01*dy02 - dy01*dx02 < 0.0f); // Original: (dx01*dy02 - dy01*dx02 > 0.0f). But: OpenCV has origin top-left, y goes down
+	};
+
+
+	/* Texturing functions: */
+private:
+	std::shared_ptr<render::Texture> currentTexture;
+	float dudx, dudy, dvdx, dvdy; // partial derivatives of U/V coordinates with respect to X/Y pixel's screen coordinates
+public:
+	void setCurrentTexture(std::shared_ptr<render::Texture> texture) {
+		currentTexture = texture;
+	};
+
+private:
+
+	cv::Vec3f tex2D(const cv::Vec2f& texCoord)
+	{
+		return (1.0f / 255.0f) * tex2D_linear_mipmap_linear(texCoord);
+	};
+
+	cv::Vec3f tex2D_linear_mipmap_linear(const cv::Vec2f& texCoord)
+	{
+		float px = std::sqrt(std::pow(dudx, 2) + std::pow(dvdx, 2));
+		float py = std::sqrt(std::pow(dudy, 2) + std::pow(dvdy, 2));
+		float lambda = std::log(std::max(px, py)) / CV_LOG2;
+		unsigned char mipmapIndex1 = clamp((int)lambda, 0.0f, std::max(currentTexture->widthLog, currentTexture->heightLog) - 1);
+		unsigned char mipmapIndex2 = mipmapIndex1 + 1;
+
+		cv::Vec2f imageTexCoord = texCoord_wrap(texCoord);
+		cv::Vec2f imageTexCoord1 = imageTexCoord;
+		imageTexCoord1[0] *= currentTexture->mipmaps[mipmapIndex1].cols;
+		imageTexCoord1[1] *= currentTexture->mipmaps[mipmapIndex1].rows;
+		cv::Vec2f imageTexCoord2 = imageTexCoord;
+		imageTexCoord2[0] *= currentTexture->mipmaps[mipmapIndex2].cols;
+		imageTexCoord2[1] *= currentTexture->mipmaps[mipmapIndex2].rows;
+
+		cv::Vec3f color, color1, color2;
+		color1 = tex2D_linear(imageTexCoord1, mipmapIndex1);
+		color2 = tex2D_linear(imageTexCoord2, mipmapIndex2);
+		float lambdaFrac = std::max(lambda, 0.0f);
+		lambdaFrac = lambdaFrac - (int)lambdaFrac;
+		color = (1.0f - lambdaFrac)*color1 + lambdaFrac*color2;
+
+		return color;
+	};
+
+	cv::Vec2f texCoord_wrap(const cv::Vec2f& texCoord)
+	{
+		return cv::Vec2f(texCoord[0] - (int)texCoord[0], texCoord[1] - (int)texCoord[1]);
+	};
+
+	cv::Vec3f tex2D_linear(const cv::Vec2f& imageTexCoord, unsigned char mipmapIndex)
+	{
+		int x = (int)imageTexCoord[0];
+		int y = (int)imageTexCoord[1];
+		float alpha = imageTexCoord[0] - x;
+		float beta = imageTexCoord[1] - y;
+		float oneMinusAlpha = 1.0f - alpha;
+		float oneMinusBeta = 1.0f - beta;
+		float a = oneMinusAlpha * oneMinusBeta;
+		float b = alpha * oneMinusBeta;
+		float c = oneMinusAlpha * beta;
+		float d = alpha * beta;
+		cv::Vec3f color;
+
+		//int pixelIndex;
+		//pixelIndex = getPixelIndex_wrap(x, y, texture->mipmaps[mipmapIndex].cols, texture->mipmaps[mipmapIndex].rows);
+		int pixelIndexCol = x; if (pixelIndexCol == currentTexture->mipmaps[mipmapIndex].cols) { pixelIndexCol = 0; }
+		int pixelIndexRow = y; if (pixelIndexRow == currentTexture->mipmaps[mipmapIndex].rows) { pixelIndexRow = 0; }
+		//std::cout << texture->mipmaps[mipmapIndex].cols << " " << texture->mipmaps[mipmapIndex].rows << " " << texture->mipmaps[mipmapIndex].channels() << std::endl;
+		//cv::imwrite("mm.png", texture->mipmaps[mipmapIndex]);
+		color[0] = a * currentTexture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[0];
+		color[1] = a * currentTexture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[1];
+		color[2] = a * currentTexture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[2];
+
+		//pixelIndex = getPixelIndex_wrap(x + 1, y, texture->mipmaps[mipmapIndex].cols, texture->mipmaps[mipmapIndex].rows);
+		pixelIndexCol = x + 1; if (pixelIndexCol == currentTexture->mipmaps[mipmapIndex].cols) { pixelIndexCol = 0; }
+		pixelIndexRow = y; if (pixelIndexRow == currentTexture->mipmaps[mipmapIndex].rows) { pixelIndexRow = 0; }
+		color[0] += b * currentTexture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[0];
+		color[1] += b * currentTexture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[1];
+		color[2] += b * currentTexture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[2];
+
+		//pixelIndex = getPixelIndex_wrap(x, y + 1, texture->mipmaps[mipmapIndex].cols, texture->mipmaps[mipmapIndex].rows);
+		pixelIndexCol = x; if (pixelIndexCol == currentTexture->mipmaps[mipmapIndex].cols) { pixelIndexCol = 0; }
+		pixelIndexRow = y + 1; if (pixelIndexRow == currentTexture->mipmaps[mipmapIndex].rows) { pixelIndexRow = 0; }
+		color[0] += c * currentTexture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[0];
+		color[1] += c * currentTexture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[1];
+		color[2] += c * currentTexture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[2];
+
+		//pixelIndex = getPixelIndex_wrap(x + 1, y + 1, texture->mipmaps[mipmapIndex].cols, texture->mipmaps[mipmapIndex].rows);
+		pixelIndexCol = x + 1; if (pixelIndexCol == currentTexture->mipmaps[mipmapIndex].cols) { pixelIndexCol = 0; }
+		pixelIndexRow = y + 1; if (pixelIndexRow == currentTexture->mipmaps[mipmapIndex].rows) { pixelIndexRow = 0; }
+		color[0] += d * currentTexture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[0];
+		color[1] += d * currentTexture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[1];
+		color[2] += d * currentTexture->mipmaps[mipmapIndex].at<cv::Vec4b>(pixelIndexRow, pixelIndexCol)[2];
+
+		return color;
+	};
+
+	float clamp(float x, float a, float b)
+	{
+		return std::max(std::min(x, b), a);
 	};
 	
 };

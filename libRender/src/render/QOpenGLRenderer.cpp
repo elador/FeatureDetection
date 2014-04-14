@@ -40,12 +40,13 @@ QOpenGLRenderer::QOpenGLRenderer(QOpenGLContext* qOpenGlContext) : qOpenGlContex
 
 	glEnable(GL_TEXTURE_2D);
 	//cv::Mat ocvimg = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\img.png");
-	cv::Mat ocvimg = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\isoRegistered3D_square.png");
+	//cv::Mat ocvimg = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\isoRegistered3D_square.png");
+	cv::Mat ocvimg = cv::imread("C:\\Users\\Patrik\\Documents\\GitHub\\img.png");
 	glGenTextures(1, &texture);
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	cv::cvtColor(ocvimg, ocvimg, CV_BGR2RGB);
-	cv::flip(ocvimg, ocvimg, 0); // Flip around the x-axis
+	//cv::flip(ocvimg, ocvimg, 0); // Flip around the x-axis
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ocvimg.cols, ocvimg.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, ocvimg.ptr(0));
 
 	std::cout << "GL_SHADING_LANGUAGE_VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
@@ -149,8 +150,8 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	//matrix.ortho(-70.0f, 70.0f, -70.0f, 70.0f, 0.1f, 1000.0f);
 	matrix.perspective(60, aspect, 0.1, 100.0);
 	matrix.translate(0, 0, -2);
-	//matrix.rotate(15.0f, 1.0f, 0.0f, 0.0f);
-	//matrix.rotate(30.0f, 0.0f, 1.0f, 0.0f);
+	matrix.rotate(45.0f, 1.0f, 0.0f, 0.0f);
+	matrix.rotate(0.0f, 0.0f, 1.0f, 0.0f);
 	//matrix.scale(0.009f);
 	//matrix.scale(0.003f);
 
@@ -159,7 +160,7 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &mmVertices[0]); // vertices
 	glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &mmColors[0]); // colors
 	glVertexAttribPointer(m_texAttr, 2, GL_FLOAT, GL_FALSE, 0, &mmTex[0]); // texCoords
-	m_program->setAttributeValue(m_texWeightAttr, 0.0f);
+	m_program->setAttributeValue(m_texWeightAttr, 1.0f);
 	m_program->setUniformValue("texture", texture);
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -245,6 +246,8 @@ void QOpenGLRenderer::render(render::Mesh mesh)
 	Mat mpp2 = utils::MatrixUtils::createPerspectiveProjectionMatrix(60, aspect, 1.0f, 100.0f);*/
 
 	SoftwareRenderer2 swr;
+	swr.enableTexturing(true);
+	swr.setCurrentTexture(mesh.texture);
 	auto swbuffs = swr.render(mesh, matrix);
 	Mat swbuffc = swbuffs.first;
 	Mat swbuffd = swbuffs.second;

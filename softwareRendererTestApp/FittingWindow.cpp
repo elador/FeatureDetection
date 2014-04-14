@@ -49,10 +49,10 @@ void FittingWindow::render()
 {
 	// This function gets called by our subclass every time Qt is ready to render a frame
 	// call r->setViewport before every render?
-	//r->render(render::utils::MeshUtils::createCube());
+	r->render(render::utils::MeshUtils::createCube());
 	
 	//r->render(morphableModel.getMean());
-
+	/*
 	render::Mesh triangle;
 	triangle.vertex.resize(6);
 
@@ -90,7 +90,7 @@ void FittingWindow::render()
 	triangle.tvi.push_back(vi);
 	triangle.tci.push_back(vi);
 	r->render(triangle);
-	
+	*/
 	++m_frame;
 }
 
