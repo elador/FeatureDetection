@@ -479,7 +479,8 @@ Vec3f SoftwareRenderer::projectVertex(Vec4f vertex, Mat mvp)
 
 	// Find the correct z-value for the exact pixel the vertex is landing in.
 	// We need this to get the same depth value for the vertex than the one in the z-buffer.
-	int xi = cvRound(clipSpaceV[0]);
+	// No, this doesn't work, we're only projecting a vertex, not a triangle => no barycentric coords
+/*	int xi = cvRound(clipSpaceV[0]);
 	int yi = cvRound(clipSpaceV[1]);
 	float x = (float)xi + 0.5f;
 	float y = (float)yi + 0.5f;
