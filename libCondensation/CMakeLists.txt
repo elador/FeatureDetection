@@ -1,18 +1,18 @@
-SET( SUBPROJECT_NAME Condensation ) # my own variable, not cmake's
-PROJECT( ${SUBPROJECT_NAME} )
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
-SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
-SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
+set(SUBPROJECT_NAME Condensation)
+project(${SUBPROJECT_NAME})
+cmake_minimum_required(VERSION 2.8)
+set( ${SUBPROJECT_NAME}_VERSION_MAJOR 0)
+set( ${SUBPROJECT_NAME}_VERSION_MINOR 1)
 
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies
-FIND_PACKAGE(Boost 1.48.0 REQUIRED)
+find_package(Boost 1.48.0 REQUIRED)
 
-FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core imgproc video)
+find_package(OpenCV 2.4.3 REQUIRED core imgproc video)
 
 # source and header files
-SET(HEADERS
+set(HEADERS
 	include/condensation/AdaptiveCondensationTracker.hpp
 	include/condensation/AdaptiveMeasurementModel.hpp
 	include/condensation/ClassificationBasedStateValidator.hpp
@@ -40,7 +40,7 @@ SET(HEADERS
 	include/condensation/WeightedMeanPositionExtractor.hpp
 	include/condensation/WvmSvmModel.hpp
 )
-SET(SOURCE
+set(SOURCE
 	src/condensation/AdaptiveCondensationTracker.cpp
 	src/condensation/ClassificationBasedStateValidator.cpp
 	src/condensation/CondensationTracker.cpp
@@ -62,15 +62,15 @@ SET(SOURCE
 	src/condensation/WvmSvmModel.cpp
 )
 
-include_directories( "include" )
+include_directories("include")
 
 # add dependencies
-include_directories( ${ImageProcessing_SOURCE_DIR}/include )
-include_directories( ${Classification_SOURCE_DIR}/include )
-include_directories( ${Detection_SOURCE_DIR}/include )
-include_directories( ${Boost_INCLUDE_DIRS} )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
+include_directories(${ImageProcessing_SOURCE_DIR}/include)
+include_directories(${Classification_SOURCE_DIR}/include)
+include_directories(${Detection_SOURCE_DIR}/include)
+include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 # make library
-add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
+add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
 target_link_libraries(${SUBPROJECT_NAME} Classification ImageProcessing ${Boost_LIBRARIES} ${OpenCV_LIBS})

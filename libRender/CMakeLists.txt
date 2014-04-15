@@ -11,17 +11,23 @@ find_package(OpenCV 2.4.3 REQUIRED core imgproc highgui)
 find_package(Boost 1.48.0 REQUIRED)
 if(Boost_FOUND)
   message(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
-ELSE(Boost_FOUND)
+else(Boost_FOUND)
   message(FATAL_ERROR "Boost not found")
-ENDIF()
+endif()
 
-set(CMAKE_AUTOMOC ON) # Todo: Probably make dependent on WITH_RENDER_OPENGL
-find_package(Qt5Core REQUIRED)
-find_package(Qt5Gui REQUIRED)
-message(STATUS "Qt5 EGL include dir: ${Qt5Gui_EGL_INCLUDE_DIRS}")
-message(STATUS "Qt5 OpenGL include dir: ${Qt5Gui_OPENGL_INCLUDE_DIRS}")
-message(STATUS "Qt5 EGL library: ${Qt5Gui_EGL_LIBRARIES}")
-message(STATUS "Qt5 OpenGL library: ${Qt5Gui_OPENGL_LIBRARIES}")
+if(WITH_RENDER_QOPENGL)
+	set(CMAKE_AUTOMOC ON)
+	find_package(Qt5Core REQUIRED)
+	find_package(Qt5Gui REQUIRED)
+	message(STATUS "Qt5 EGL include dir: ${Qt5Gui_EGL_INCLUDE_DIRS}")
+	message(STATUS "Qt5 OpenGL include dir: ${Qt5Gui_OPENGL_INCLUDE_DIRS}")
+	message(STATUS "Qt5 EGL library: ${Qt5Gui_EGL_LIBRARIES}")
+	message(STATUS "Qt5 OpenGL library: ${Qt5Gui_OPENGL_LIBRARIES}")
+else()
+	#set(KINECT_LIBNAME "")
+endif()
+
+
 
 #Source and header files:
 set(SOURCE

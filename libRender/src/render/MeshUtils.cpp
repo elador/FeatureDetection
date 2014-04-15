@@ -270,6 +270,7 @@ bool MeshUtils::isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Poin
 	return (u >= 0) && (v >= 0) && (u + v < 1);
 }
 
+#ifdef WITH_RENDER_QOPENGL
 // framebuffer where to extract the texture from
 // note: framebuffer should have size of the image (ok not necessarily. What about mobile?) (well it should, to get optimal quality (and everywhere the same quality)?)
 cv::Mat MeshUtils::extractTexture(render::Mesh mesh, QMatrix4x4 mvpMatrix, int viewportWidth, int viewportHeight, cv::Mat framebuffer) { // Change QMatrix4x4 to cv::Mat so that software-renderer is not dependent on Qt?
@@ -339,6 +340,7 @@ cv::Mat MeshUtils::extractTexture(render::Mesh mesh, QMatrix4x4 mvpMatrix, int v
 	}
 	return textureMap;
 }
+#endif
 
 	} /* namespace utils */
 } /* namespace render */

@@ -14,7 +14,9 @@
 
 #include "opencv2/core/core.hpp"
 #include "boost/optional/optional.hpp"
-#include <QMatrix4x4>
+#ifdef WITH_RENDER_QOPENGL
+	#include <QMatrix4x4>
+#endif
 
 namespace render {
 
@@ -35,8 +37,9 @@ public:
 	bool doBackfaceCulling = false; ///< If true, only draw triangles with vertices ordered CCW in screen-space
 	bool doTexturing = false; ///< Desc.
 
-	//ifdef WITH_RENDER_QT? WITH_RENDER_QOPENGL?
+#ifdef WITH_RENDER_QOPENGL
 	std::pair<cv::Mat, cv::Mat> render(Mesh mesh, QMatrix4x4 mvp);
+#endif
 	std::pair<cv::Mat, cv::Mat> render(Mesh mesh, cv::Mat mvp);
 	
 	void enableTexturing(bool doTexturing) {

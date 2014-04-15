@@ -1,31 +1,31 @@
-SET( SUBPROJECT_NAME Linear )
-PROJECT( ${SUBPROJECT_NAME} )
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
-SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
-SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
+set(SUBPROJECT_NAME Linear)
+project(${SUBPROJECT_NAME})
+cmake_minimum_required(VERSION 2.8)
+set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
+set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies
-FIND_PACKAGE(BLAS REQUIRED)
+find_package(BLAS REQUIRED)
 
-FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core)
+find_package(OpenCV 2.4.3 REQUIRED core)
 
 # source and header files
-SET(HEADERS
+set(HEADERS
 	include/tron.h
 	include/linear.h
 	include/liblinear/LibLinearClassifier.hpp
 	include/liblinear/LibLinearUtils.hpp
 )
-SET(SOURCE
+set(SOURCE
 	src/tron.cpp
 	src/linear.cpp
 	src/liblinear/LibLinearClassifier.cpp
 	src/liblinear/LibLinearUtils.cpp
 )
 
-include_directories( "include" )
+include_directories("include")
 
 # add dependencies
 include_directories(${Classification_SOURCE_DIR}/include)

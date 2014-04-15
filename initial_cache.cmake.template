@@ -52,4 +52,4 @@
 set(WITH_MSKINECT_SDK OFF CACHE BOOL "Enables the use of a Kinect as a webcam (using the MS Kinect SDK for Windows)" FORCE)
 set(WITH_MATLAB_CLASSIFIER OFF CACHE BOOL "Enables support for loading Matlab classifiers (e.g. WVMs) in libClassification and certain apps" FORCE)
 set(WITH_LIBLINEAR_CLASSIFIER OFF CACHE BOOL "Enables support for loading libLinear classifiers in certain apps (needs BLAS)" FORCE)
-set(WITH_RENDER_QOPENGL OFF CACHE BOOL "Enables support for a QOpenGL-based renderer in addition to the software renderer. (requires Qt5)" FORCE)
+set(WITH_RENDER_QOPENGL OFF CACHE BOOL "Enables support for a QOpenGL-based renderer in addition to the software renderer and a few interop functions (requires Qt5)" FORCE)

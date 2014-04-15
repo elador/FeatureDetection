@@ -4,6 +4,7 @@
  *  Created on: 04.04.2014
  *      Author: Patrik Huber
  */
+#ifdef WITH_RENDER_QOPENGL
 
 #include "render/QOpenGLRenderer.hpp"
 
@@ -193,3 +194,5 @@ void QOpenGLRenderer::render(render::Mesh mesh, QMatrix4x4 mvp)
 }
 
 } /* namespace render */
+
+#endif /* WITH_RENDER_QOPENGL */

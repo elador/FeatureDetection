@@ -20,7 +20,7 @@ option(WITH_MATLAB_CLASSIFIER "Enables support for loading Matlab classifiers (e
 message(STATUS "WITH_MATLAB_CLASSIFIER: ${WITH_MATLAB_CLASSIFIER}")
 option(WITH_LIBLINEAR_CLASSIFIER "Enables support for loading libLinear classifiers in certain apps (needs BLAS)" OFF)
 message(STATUS "WITH_LIBLINEAR_CLASSIFIER: ${WITH_LIBLINEAR_CLASSIFIER}")
-option(WITH_RENDER_QOPENGL "Enables support for a QOpenGL-based renderer in addition to the software renderer. (requires Qt5)" OFF)
+option(WITH_RENDER_QOPENGL "Enables support for a QOpenGL-based renderer in addition to the software renderer and a few interop functions (requires Qt5)" OFF)
 message(STATUS "WITH_RENDER_QOPENGL: ${WITH_RENDER_QOPENGL}")
 
 # Core libraries

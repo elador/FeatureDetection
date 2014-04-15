@@ -9,6 +9,8 @@
 #ifndef QOPENGLRENDERER_HPP_
 #define QOPENGLRENDERER_HPP_
 
+#ifdef WITH_RENDER_QOPENGL
+
 #include "QtGui/QOpenGLFunctions"
 #include "QtGui/QOpenGLShaderProgram"
 
@@ -83,5 +85,7 @@ static const char *fragmentShaderSource =
 "}\n";
 
  } /* namespace render */
+
+#endif /* WITH_RENDER_QOPENGL */
 
 #endif /* QOPENGLRENDERER_HPP_ */

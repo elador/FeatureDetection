@@ -22,6 +22,7 @@ using std::ceil;
 
 namespace render {
 
+#ifdef WITH_RENDER_QOPENGL
 pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, QMatrix4x4 mvp)
 {
 	// We assign the values one-by-one since if we used
@@ -34,6 +35,7 @@ pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, QMatrix4x4 mvp)
 		mvp(3, 0), mvp(3, 1), mvp(3, 2), mvp(3, 3));
 	return render(mesh, ocv_mvp);
 }
+#endif
 
 pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, Mat mvp)
 {
