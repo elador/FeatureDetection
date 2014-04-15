@@ -22,6 +22,8 @@ option(WITH_LIBLINEAR_CLASSIFIER "Enables support for loading libLinear classifi
 message(STATUS "WITH_LIBLINEAR_CLASSIFIER: ${WITH_LIBLINEAR_CLASSIFIER}")
 option(WITH_RENDER_QOPENGL "Enables support for a QOpenGL-based renderer in addition to the software renderer and a few interop functions (requires Qt5)" OFF)
 message(STATUS "WITH_RENDER_QOPENGL: ${WITH_RENDER_QOPENGL}")
+option(WITH_MORPHABLEMODEL_HDF5 "Enables support for loading statismo .h5 Morphable Models (requires HDF5)" OFF)
+message(STATUS "WITH_MORPHABLEMODEL_HDF5: ${WITH_MORPHABLEMODEL_HDF5}")
 
 # Core libraries
 add_subdirectory(libLogging)			# Text logging
@@ -61,7 +63,7 @@ add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes;
 
 # 3DMM fitting
 #add_subdirectory(fitter)			# Experimental app (compiles)
-add_subdirectory(softwareRendererTestApp)
+#add_subdirectory(softwareRendererTestApp)
 
 # Tools
 #add_subdirectory(landmarkVisualiser)	# Simple app to read landmarks and images and display them

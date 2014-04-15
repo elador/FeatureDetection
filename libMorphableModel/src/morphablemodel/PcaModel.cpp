@@ -9,8 +9,9 @@
 
 #include "logging/LoggerFactory.hpp"
 
-#include "H5Cpp.h"
-
+#ifdef WITH_MORPHABLEMODEL_HDF5
+	#include "H5Cpp.h"
+#endif
 #include "boost/lexical_cast.hpp"
 #include "boost/algorithm/string.hpp"
 
@@ -32,6 +33,7 @@ PcaModel::PcaModel()
 	engine.seed();
 }
 
+#ifdef WITH_MORPHABLEMODEL_HDF5
 PcaModel PcaModel::loadStatismoModel(path h5file, PcaModel::ModelType modelType)
 {
 	logging::Logger logger = Loggers->getLogger("shapemodels");
@@ -170,6 +172,7 @@ PcaModel PcaModel::loadStatismoModel(path h5file, PcaModel::ModelType modelType)
 	h5Model.close();
 	return model;
 }
+#endif
 
 PcaModel PcaModel::loadScmModel(path modelFilename, path landmarkVertexMappingFile, PcaModel::ModelType modelType)
 {

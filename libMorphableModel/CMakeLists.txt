@@ -1,8 +1,8 @@
-SET( SUBPROJECT_NAME MorphableModel )
-PROJECT( ${SUBPROJECT_NAME} )
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11) # we can change this back as soon as we don't need libRender anymore (or libRender doesn't need Qt/OpenGL anymore)
-SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
-SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
+set(SUBPROJECT_NAME MorphableModel)
+project(${SUBPROJECT_NAME})
+cmake_minimum_required(VERSION 2.8.11) # we can change this back as soon as we don't need libRender anymore (or libRender doesn't need Qt/OpenGL anymore)
+set( ${SUBPROJECT_NAME}_VERSION_MAJOR 0)
+set( ${SUBPROJECT_NAME}_VERSION_MINOR 1)
 
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
@@ -11,16 +11,18 @@ find_package(Boost 1.48.0 COMPONENTS system filesystem REQUIRED)
 
 find_package(OpenCV 2.4.3 REQUIRED core calib3d)
 
-#Hdf5:
-IF(WIN32)
-	find_package(HDF5 REQUIRED COMPONENTS C CXX NAMES hdf5) # COMPONENTS doesn't seem to work. NAMES puts it in Config-mode
-	set (HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIR}) # According to hdf5 cmake file, should use *_DIRS, but they don't define it in hdf5-config.cmake. So if we use the Config-mode with NAMES, it isn't set, but it is, when used as in linux.
-ELSE()
-	#find_package (HDF5 REQUIRED CONFIG)
-	find_package(HDF5 REQUIRED COMPONENTS C CXX) # works on windows as well but links to dll's instead of lib's...
-ENDIF()
-message(STATUS "HDF5 includes at: ${HDF5_INCLUDE_DIRS}")
-message(STATUS "HDF5 libraries at: ${HDF5_LIBRARIES}")
+if(WITH_MORPHABLEMODEL_HDF5)
+	if(WIN32)
+		find_package(HDF5 REQUIRED COMPONENTS C CXX NAMES hdf5) # COMPONENTS doesn't seem to work. NAMES puts it in Config-mode
+		set (HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIR}) # According to hdf5 cmake file, should use *_DIRS, but they don't define it in hdf5-config.cmake. So if we use the Config-mode with NAMES, it isn't set, but it is, when used as in linux.
+	else()
+		#find_package (HDF5 REQUIRED CONFIG)
+		find_package(HDF5 REQUIRED COMPONENTS C CXX) # works on windows as well but links to dll's instead of lib's...
+	endif()
+	message(STATUS "HDF5 includes at: ${HDF5_INCLUDE_DIRS}")
+	message(STATUS "HDF5 libraries at: ${HDF5_LIBRARIES}")
+	include_directories(${HDF5_INCLUDE_DIRS})
+endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 find_package(Eigen3 REQUIRED)
@@ -50,7 +52,6 @@ include_directories("include")
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
-include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${Render_SOURCE_DIR}/include)
 include_directories(${ImageIO_SOURCE_DIR}/include)
 include_directories(${Logging_SOURCE_DIR}/include)
