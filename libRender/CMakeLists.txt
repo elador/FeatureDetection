@@ -56,4 +56,8 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 #Make the library
 add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
-target_link_libraries(${SUBPROJECT_NAME} Qt5::Core Qt5::Gui ${Qt5Gui_EGL_LIBRARIES} ${Qt5Gui_OPENGL_LIBRARIES} ${OpenCV_LIBS})
+if(WITH_RENDER_QOPENGL)
+	target_link_libraries(${SUBPROJECT_NAME} Qt5::Core Qt5::Gui ${Qt5Gui_EGL_LIBRARIES} ${Qt5Gui_OPENGL_LIBRARIES} ${OpenCV_LIBS})
+else()
+	target_link_libraries(${SUBPROJECT_NAME} ${OpenCV_LIBS})
+endif()

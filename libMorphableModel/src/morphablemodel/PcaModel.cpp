@@ -33,10 +33,14 @@ PcaModel::PcaModel()
 	engine.seed();
 }
 
-#ifdef WITH_MORPHABLEMODEL_HDF5
 PcaModel PcaModel::loadStatismoModel(path h5file, PcaModel::ModelType modelType)
 {
 	logging::Logger logger = Loggers->getLogger("shapemodels");
+#ifndef WITH_MORPHABLEMODEL_HDF5
+	string logMessage("PcaModel: Cannot load a statismo model. Please re-run CMake with WITH_MORPHABLEMODEL_HDF5 set to ON.");
+	logger.error(logMessage);
+	throw std::runtime_error(logMessage);
+#else
 	PcaModel model;
 
 	// Load the shape or color model from the .h5 file
@@ -171,8 +175,8 @@ PcaModel PcaModel::loadStatismoModel(path h5file, PcaModel::ModelType modelType)
 
 	h5Model.close();
 	return model;
-}
 #endif
+}
 
 PcaModel PcaModel::loadScmModel(path modelFilename, path landmarkVertexMappingFile, PcaModel::ModelType modelType)
 {

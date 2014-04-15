@@ -32,7 +32,7 @@ class SoftwareRenderer
 {
 public:
 	//SoftwareRenderer();
-	//SoftwareRenderer(unsigned int screenWidth, unsigned int screenHeight);
+	SoftwareRenderer(unsigned int viewportWidth, unsigned int viewportHeight);
 
 	bool doBackfaceCulling = false; ///< If true, only draw triangles with vertices ordered CCW in screen-space
 	bool doTexturing = false; ///< Desc.
@@ -41,6 +41,8 @@ public:
 	std::pair<cv::Mat, cv::Mat> render(Mesh mesh, QMatrix4x4 mvp);
 #endif
 	std::pair<cv::Mat, cv::Mat> render(Mesh mesh, cv::Mat mvp);
+
+	cv::Vec3f projectVertex(cv::Vec4f vertex, cv::Mat mvp);
 	
 	void enableTexturing(bool doTexturing) {
 		this->doTexturing = doTexturing;
