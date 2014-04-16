@@ -1,38 +1,35 @@
-SET( SUBPROJECT_NAME landmarkConverter )	# my own variable, not cmake's
-PROJECT( ${SUBPROJECT_NAME} )
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
-SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
-SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
+set(SUBPROJECT_NAME landmarkConverter)
+project(${SUBPROJECT_NAME})
+cmake_minimum_required(VERSION 2.8)
+set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
+set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
-#OpenCV:
-FIND_PACKAGE( OpenCV 2.4.3 REQUIRED core )
-MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
-MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
+# find dependencies:
+find_package(OpenCV 2.4.3 REQUIRED core)
 
-#Boost:
-FIND_PACKAGE(Boost 1.48.0 COMPONENTS program_options system filesystem REQUIRED) # others (e.g.): system filesystem
+find_package(Boost 1.48.0 COMPONENTS program_options system filesystem REQUIRED)
 if(Boost_FOUND)
-  MESSAGE(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
-ELSE(Boost_FOUND)
-  MESSAGE(FATAL_ERROR "Boost not found")
-ENDIF()
+  message(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
+else(Boost_FOUND)
+  message(FATAL_ERROR "Boost not found")
+endif()
 
 #Source and header files:
-SET(SOURCE
+set(SOURCE
 	landmarkConverter.cpp
 )
 
-SET(HEADERS
+set(HEADERS
 )
 
-ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
+add_executable(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
 
-include_directories( ${Boost_INCLUDE_DIRS} )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
-include_directories( ${Logging_SOURCE_DIR}/include )
-include_directories( ${ImageIO_SOURCE_DIR}/include )
+include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(${Logging_SOURCE_DIR}/include)
+include_directories(${ImageIO_SOURCE_DIR}/include)
 
 #Make the app depend on the libraries
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} ImageIO  Logging ${Boost_LIBRARIES} ${OpenCV_LIBS} )
+target_link_libraries(${SUBPROJECT_NAME} ImageIO  Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})

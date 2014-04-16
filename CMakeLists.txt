@@ -66,8 +66,8 @@ add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes;
 #add_subdirectory(softwareRendererTestApp)
 
 # Tools
-#add_subdirectory(landmarkVisualiser)	# Simple app to read landmarks and images and display them
-#add_subdirectory(landmarkConverter)		# Simple app to convert landmarks from one format into another
+add_subdirectory(landmarkVisualiser)	# Simple app to read landmarks and images and display them
+add_subdirectory(landmarkConverter)		# Simple app to convert landmarks from one format into another
 
 # Face-recognition
 #add_subdirectory(frRunCogExp)		# App for doing face recognition tests with a gallery and probe images
