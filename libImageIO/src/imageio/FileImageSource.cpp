@@ -10,8 +10,12 @@
 #include <stdexcept>
 
 using cv::imread;
+using cv::Mat;
 using boost::filesystem::exists;
+using boost::filesystem::path;
 using std::sort;
+using std::string;
+using std::vector;
 using std::runtime_error;
 
 namespace imageio {
