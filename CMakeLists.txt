@@ -62,7 +62,8 @@ add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes;
 #add_subdirectory(sdmEvaluation)			# App to evaluate an SDM landmark model on images, given ground-truth landmarks
 
 # 3DMM fitting
-#add_subdirectory(fitter)			# Experimental app (compiles)
+add_subdirectory(fitter2)			# Experimental Fitting-app using the Software Renderer (for one image)
+#add_subdirectory(fitter)			# Experimental app QtGui fitter, not for use
 #add_subdirectory(softwareRendererTestApp)
 
 # Tools

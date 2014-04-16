@@ -22,6 +22,7 @@ if(WITH_MORPHABLEMODEL_HDF5)
 	message(STATUS "HDF5 includes at: ${HDF5_INCLUDE_DIRS}")
 	message(STATUS "HDF5 libraries at: ${HDF5_LIBRARIES}")
 	include_directories(${HDF5_INCLUDE_DIRS})
+	add_definitions(-DWITH_MORPHABLEMODEL_HDF5)
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)

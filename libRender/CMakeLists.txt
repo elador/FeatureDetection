@@ -23,6 +23,7 @@ if(WITH_RENDER_QOPENGL)
 	message(STATUS "Qt5 OpenGL include dir: ${Qt5Gui_OPENGL_INCLUDE_DIRS}")
 	message(STATUS "Qt5 EGL library: ${Qt5Gui_EGL_LIBRARIES}")
 	message(STATUS "Qt5 OpenGL library: ${Qt5Gui_OPENGL_LIBRARIES}")
+	add_definitions(-DWITH_RENDER_QOPENGL)
 endif()
 
 #Source and header files:
