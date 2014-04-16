@@ -34,7 +34,7 @@ public:
 	~IbugLandmarkFormatParser();
 
 	/**
-	 * Reads the landmark data for one single image and returns all its landmarks (TODO in tlms format).
+	 * Reads the landmark data for one single image and returns all its landmarks.
 	 *
 	 * @param[in] landmarkFilePath A path to a .pts file.
 	 * @return A map with one entry containing the basename of the file and

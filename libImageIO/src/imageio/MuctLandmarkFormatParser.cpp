@@ -38,6 +38,7 @@ const map<path, LandmarkCollection> MuctLandmarkFormatParser::read(path landmark
 	while(getline(csvFile, line))
 	{
 		vector<string> tokens;
+		boost::trim_right_if(line, boost::is_any_of("\r")); // Windows line-endings are \r\n, Linux only \n. Thus, when a file has been created on windows and is read on linux, we need to remove the trailing \r.
 		boost::split(tokens, line, boost::is_any_of(","));
 		path imageName = tokens[0];
 		LandmarkCollection landmarks;

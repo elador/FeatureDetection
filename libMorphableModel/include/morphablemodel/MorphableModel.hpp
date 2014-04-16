@@ -24,7 +24,11 @@
 namespace morphablemodel {
 
 /**
- * Desc
+ * A class representing a 3D Morphable Model.
+ * It consists of a shape- and albedo (texture) PCA model.
+ * 
+ * For the general idea of 3DMMs see T. Vetter, V. Blanz,
+ * 'A Morphable Model for the Synthesis of 3D Faces', SIGGRAPH 1999
  */
 class MorphableModel  {
 public:
@@ -113,8 +117,8 @@ public:
 	//void setHasTextureCoordinates(bool hasTextureCoordinates);
 	
 private:
-	PcaModel shapeModel; ///< A PCA model over the shape
-	PcaModel colorModel; ///< A PCA model over vertex color information
+	PcaModel shapeModel; ///< A PCA model of the shape
+	PcaModel colorModel; ///< A PCA model of vertex color information
 
 	bool hasTextureCoordinates = false; ///< 
 

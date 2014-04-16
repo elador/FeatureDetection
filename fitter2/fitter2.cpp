@@ -98,10 +98,9 @@ int main(int argc, char *argv[])
 	string verboseLevelConsole;
 	path inputFilename;
 	path configFilename;
-	shared_ptr<ImageSource> imageSource;
 	path inputLandmarks;
 	string landmarkType;
-	path outputPath;
+	path outputPath(".");
 
 	try {
 		po::options_description desc("Allowed options");
@@ -156,14 +155,14 @@ int main(int argc, char *argv[])
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 	appLogger.debug("Using config: " + configFilename.string());
 
-	shared_ptr<ImageSource> fileImgSrc;
+	// Load the image
+	shared_ptr<ImageSource> imageSource;
 	try {
-		fileImgSrc = make_shared<FileImageSource>(inputFilename.string());
+		imageSource = make_shared<FileImageSource>(inputFilename.string());
 	} catch(const std::runtime_error& e) {
 		appLogger.error(e.what());
 		return EXIT_FAILURE;
 	}
-	imageSource = fileImgSrc;
 
 	// Load the ground truth
 	shared_ptr<LabeledImageSource> labeledImageSource;
@@ -180,8 +179,9 @@ int main(int argc, char *argv[])
 		cout << "Error: Invalid ground truth type." << endl;
 		return EXIT_FAILURE;
 	}
-
 	labeledImageSource = make_shared<NamedLabeledImageSource>(imageSource, landmarkSource);
+	
+	// Load the config file
 	ptree pt;
 	try {
 		boost::property_tree::info_parser::read_info(configFilename.string(), pt);
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
 	}
-
+	// Load the Morphable Model
 	morphablemodel::MorphableModel morphableModel;
 	try {
 		morphableModel = morphablemodel::MorphableModel::load(pt.get_child("morphableModel"));
