@@ -46,7 +46,6 @@ include_directories("include")
 # add dependencies
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
-include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${Render_SOURCE_DIR}/include)
 include_directories(${ImageIO_SOURCE_DIR}/include)
 include_directories(${Logging_SOURCE_DIR}/include)
