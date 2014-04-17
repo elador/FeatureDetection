@@ -1,8 +1,8 @@
 set(SUBPROJECT_NAME MorphableModel)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8.11) # we can change this back as soon as we don't need libRender anymore (or libRender doesn't need Qt/OpenGL anymore)
-set( ${SUBPROJECT_NAME}_VERSION_MAJOR 0)
-set( ${SUBPROJECT_NAME}_VERSION_MINOR 1)
+set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
+set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
@@ -25,21 +25,15 @@ if(WITH_MORPHABLEMODEL_HDF5)
 	add_definitions(-DWITH_MORPHABLEMODEL_HDF5)
 endif()
 
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-find_package(Eigen3 REQUIRED)
-message(STATUS "Eigen3 found: ${EIGEN3_FOUND}")
-message(STATUS "Eigen3 include dir found at ${EIGEN3_INCLUDE_DIR}")
-message(STATUS "Eigen3 version: ${EIGEN3_VERSION}")
-
 # source and header files
-SET(HEADERS
+set(HEADERS
 	include/morphablemodel/PcaModel.hpp
 	include/morphablemodel/MorphableModel.hpp
 	include/morphablemodel/OpenCVCameraEstimation.hpp
 	include/morphablemodel/AffineCameraEstimation.hpp
 	include/morphablemodel/Hdf5Utils.hpp
 )
-SET(SOURCE
+set(SOURCE
 	src/morphablemodel/PcaModel.cpp
 	src/morphablemodel/MorphableModel.cpp
 	src/morphablemodel/OpenCVCameraEstimation.cpp
@@ -58,5 +52,5 @@ include_directories(${ImageIO_SOURCE_DIR}/include)
 include_directories(${Logging_SOURCE_DIR}/include)
 
 # make library
-add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
+add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
 target_link_libraries(${SUBPROJECT_NAME} Render Logging ${OpenCV_LIBS} ${Boost_LIBRARIES} ${HDF5_LIBRARIES})
