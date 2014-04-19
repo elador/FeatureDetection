@@ -1,0 +1,20 @@
+; Mapping from the 68-point iBug annotations to the Surrey DID format (3DMM vertex indices).
+; Partial mapping
+; Created by: Patrik Huber, 19.04.2014
+
+landmarkMappings ; A mapping from input landmarks (iBug, lhs) to output landmarks (DID, rhs)
+{
+	  9    35 ; chin tip (4) - the DID point is probably higher up
+	 20   233 ; right eyebrow middle (20)
+	 25   666 ; left eyebrow middle (24)
+	 31   114 ; nose-tip (3)
+	 34   270 ; nose-lip junction (28)
+	 37   177 ; right eye outer-corner (1)
+	 40   181 ; right eye inner-corner (5)
+	 43   614 ; left eye inner-corner (8)
+	 46   610 ; left eye outer-corner (2)
+	 49   398 ; right mouth corner (12)
+	 52   329 ; upper lip middle top (14)
+	 55   812 ; left mouth corner (13)
+	 58   411 ; lower lip middle bottom (17)
+}
