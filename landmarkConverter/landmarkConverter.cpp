@@ -44,6 +44,7 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/lexical_cast.hpp"
 
+#include "imageio/LandmarkMapper.hpp"
 #include "imageio/DefaultNamedLandmarkSource.hpp"
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/RectLandmark.hpp"
@@ -157,28 +158,12 @@ int main(int argc, char *argv[])
 	}
 
 	// Load the mapping file
-	map<string, string> landmarkMappings;
-	ptree pt;
+	LandmarkMapper landmarkMapper;
 	try {
-		boost::property_tree::info_parser::read_info(landmarkMappingsFile.string(), pt);
-	}
-	catch (const boost::property_tree::ptree_error& error) {
-		appLogger.error(error.what());
-		return EXIT_FAILURE;
-	}
-	try { // TODO: Make a LandmarkMapping class and put this into (c'tor ptree, return map) or load()
-		ptree ptLandmarkMappings = pt.get_child("landmarkMappings");
-		for (const auto& mapping : ptLandmarkMappings) {
-			landmarkMappings.insert(make_pair(mapping.first, mapping.second.get_value<string>()));
-		}
-		appLogger.info("Loaded a list of " + lexical_cast<string>(landmarkMappings.size()) + " landmark mappings.");
-	}
-	catch (const boost::property_tree::ptree_error& error) {
-		appLogger.error(string("Error while parsing the mappings file: ") + error.what());
-		return EXIT_FAILURE;
+		landmarkMapper = LandmarkMapper::load(landmarkMappingsFile);
 	}
 	catch (const std::runtime_error& error) {
-		appLogger.error(string("Error while parsing the mappings file: ") + error.what());
+		appLogger.error(error.what());
 		return EXIT_FAILURE;
 	}
 
@@ -202,32 +187,8 @@ int main(int argc, char *argv[])
 
 	while(landmarkSource->next()) {
 		appLogger.info("Converting " + landmarkSource->getName().string());
-		LandmarkCollection lms = landmarkSource->getLandmarks();
-		const auto& oldLandmarks = lms.getLandmarks();
-		LandmarkCollection convertedLandmarks;
-		for (const auto& old : oldLandmarks) {
-			if (landmarkMappings.find(old->getName()) != end(landmarkMappings))	{
-				std::string mappedId = landmarkMappings.at(old->getName());
-				shared_ptr<Landmark> convertedLandmark;
-				switch (old->getType())
-				{
-				case Landmark::LandmarkType::MODEL:
-					convertedLandmark = make_shared<ModelLandmark>(mappedId, old->getPosition3D(), old->isVisible());
-					break;
-				case Landmark::LandmarkType::RECT:
-					convertedLandmark = make_shared<RectLandmark>(mappedId, old->getPosition2D(), old->getSize(), old->isVisible());
-					break;
-				default:
-					appLogger.error("Encountered an unknown LandmarkType. Please update this switch-statement.");
-					throw std::runtime_error("Encountered an unknown LandmarkType. Please update this switch-statement.");
-					break;
-				}
-				convertedLandmarks.insert(convertedLandmark);
-			}
-			else {
-				appLogger.info("Could not find the current landmark \"" + old->getName() + "\" in the landmarks-mapping, not writing this landmark into the output file.");
-			}
-		}
+		LandmarkCollection originalLandmarks = landmarkSource->getLandmarks();
+		LandmarkCollection convertedLandmarks = landmarkMapper.convert(originalLandmarks);
 		
 		path outputFilename = outputLandmarks / landmarkSource->getName().stem();
 		landmarkSink->add(convertedLandmarks, outputFilename);

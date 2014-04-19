@@ -251,58 +251,61 @@ int main(int argc, char *argv[])
 	// End Affine est.
 
 	// Estimate the shape coefficients
+	vector<float> fittedCoeffs;
+	{
+		// $\hat{V} \in R^{3N\times m-1}$, subselect the rows of the eigenvector matrix $V$ associated with the $N$ feature points
+		// And we insert a row of zeros after every third row, resulting in matrix $\hat{V}_h \in R^{4N\times m-1}$:
+		Mat V_hat_h = Mat::zeros(4 * landmarks.size(), morphableModel.getShapeModel().getNumberOfPrincipalComponents(), CV_32FC1);
+		int rowIndex = 0;
+		for (const auto& lm : landmarks) {
+			Mat basisRows = morphableModel.getShapeModel().getPcaBasis(lm.getName()); // getPcaBasis should return the not-normalized basis I think
+			basisRows.copyTo(V_hat_h.rowRange(rowIndex, rowIndex + 3));
+			rowIndex += 4; // replace 3 rows and skip the 4th one, it has all zeros
+		}
+		// Form a block diagonal matrix $P \in R^{3N\times 4N}$ in which the camera matrix C (P_Affine, affineCam) is placed on the diagonal:
+		Mat P = Mat::zeros(3 * landmarks.size(), 4 * landmarks.size(), CV_32FC1);
+		for (int i = 0; i < landmarks.size(); ++i) {
+			Mat submatrixToReplace = P.colRange(4 * i, (4 * i) + 4).rowRange(3 * i, (3 * i) + 3);
+			affineCam.copyTo(submatrixToReplace);
+		}
+		// The variances: We set the 3D and 2D variances to one static value for now. $sigma^2_2D = sqrt(1) + sqrt(3)^2 = 4$
+		float sigma_2D = std::sqrt(4);
+		Mat Sigma = Mat::zeros(3 * landmarks.size(), 3 * landmarks.size(), CV_32FC1);
+		for (int i = 0; i < 3 * landmarks.size(); ++i) {
+			Sigma.at<float>(i, i) = 1.0f / sigma_2D;
+		}
+		Mat Omega = Sigma.t() * Sigma;
+		// The landmarks in matrix notation (in homogeneous coordinates), $3N\times 1$
+		Mat y = Mat::ones(3 * landmarks.size(), 1, CV_32FC1);
+		for (int i = 0; i < landmarks.size(); ++i) {
+			y.at<float>(3 * i, 0) = landmarks[i].getX();
+			y.at<float>((3 * i) + 1, 0) = landmarks[i].getY();
+			// the position (3*i)+2 stays 1 (homogeneous coordinate)
+		}
+		// The mean, with an added homogeneous coordinate (x_1, y_1, z_1, 1, x_2, ...)^t
+		Mat v_bar = Mat::ones(4 * landmarks.size(), 1, CV_32FC1);
+		for (int i = 0; i < landmarks.size(); ++i) {
+			Vec3f modelMean = morphableModel.getShapeModel().getMeanAtPoint(landmarks[i].getName());
+			v_bar.at<float>(4 * i, 0) = modelMean[0];
+			v_bar.at<float>((4 * i) + 1, 0) = modelMean[1];
+			v_bar.at<float>((4 * i) + 2, 0) = modelMean[2];
+			// the position (4*i)+3 stays 1 (homogeneous coordinate)
+		}
 
-	// $\hat{V} \in R^{3N\times m-1}$, subselect the rows of the eigenvector matrix $V$ associated with the $N$ feature points
-	// And we insert a row of zeros after every third row, resulting in matrix $\hat{V}_h \in R^{4N\times m-1}$:
-	Mat V_hat_h = Mat::zeros(4 * landmarks.size(), morphableModel.getShapeModel().getNumberOfPrincipalComponents(), CV_32FC1);
-	int rowIndex = 0;
-	for (const auto& lm : landmarks) {
-		Mat basisRows = morphableModel.getShapeModel().getPcaBasis(lm.getName()); // getPcaBasis should return the not-normalized basis I think
-		basisRows.copyTo(V_hat_h.rowRange(rowIndex, rowIndex + 3));
-		rowIndex += 4; // replace 3 rows and skip the 4th one, it has all zeros
+		// Bring into standard regularised quadratic form with diagonal distance matrix Omega
+		Mat A = P * V_hat_h;
+		Mat b = P * v_bar - y;
+		//Mat c_s; // The x, we solve for this! (the variance-normalized shape parameter vector, $c_s = [a_1/sigma_{s,1} , ..., a_m-1/sigma_{s,m-1}]^t$
+		float lambda = 0.1f; // lambdaIn; //0.01f; // The weight of the regularisation
+		int numShapePc = morphableModel.getShapeModel().getNumberOfPrincipalComponents();
+		Mat AtOmegaA = A.t() * Omega * A;
+		Mat AtOmegaAReg = AtOmegaA + lambda * Mat::eye(numShapePc, numShapePc, CV_32FC1);
+		Mat AtOmegaARegInv = AtOmegaAReg.inv(/*cv::DECOMP_SVD*/); // check if invertible. Use Eigen? Regularisation? (see SDM). Maybe we need pseudo-inverse.
+		Mat AtOmegatb = A.t() * Omega.t() * b;
+		Mat c_s = -AtOmegaARegInv * AtOmegatb;
+		fittedCoeffs = vector<float>(c_s);
 	}
-	// Form a block diagonal matrix $P \in R^{3N\times 4N}$ in which the camera matrix C (P_Affine, affineCam) is placed on the diagonal:
-	Mat P = Mat::zeros(3 * landmarks.size(), 4 * landmarks.size(), CV_32FC1);
-	for (int i = 0; i < landmarks.size(); ++i) {
-		Mat submatrixToReplace = P.colRange(4 * i, (4 * i) + 4).rowRange(3 * i, (3 * i) + 3);
-		affineCam.copyTo(submatrixToReplace);
-	}
-	// The variances: We set the 3D and 2D variances to one static value for now. $sigma^2_2D = sqrt(1) + sqrt(3)^2 = 4$
-	float sigma_2D = std::sqrt(4);
-	Mat Sigma = Mat::zeros(3 * landmarks.size(), 3 * landmarks.size(), CV_32FC1);
-	for (int i = 0; i < 3 * landmarks.size(); ++i) {
-		Sigma.at<float>(i, i) = 1.0f / sigma_2D;
-	}
-	Mat Omega = Sigma.t() * Sigma;
-	// The landmarks in matrix notation (in homogeneous coordinates), $3N\times 1$
-	Mat y = Mat::ones(3 * landmarks.size(), 1, CV_32FC1);
-	for (int i = 0; i < landmarks.size(); ++i) {
-		y.at<float>(3 * i, 0) = landmarks[i].getX();
-		y.at<float>((3 * i) + 1, 0) = landmarks[i].getY();
-		// the position (3*i)+2 stays 1 (homogeneous coordinate)
-	}
-	// The mean, with an added homogeneous coordinate (x_1, y_1, z_1, 1, x_2, ...)^t
-	Mat v_bar = Mat::ones(4 * landmarks.size(), 1, CV_32FC1);
-	for (int i = 0; i < landmarks.size(); ++i) {
-		Vec3f modelMean = morphableModel.getShapeModel().getMeanAtPoint(landmarks[i].getName());
-		v_bar.at<float>(4 * i, 0) = modelMean[0];
-		v_bar.at<float>((4 * i) + 1, 0) = modelMean[1];
-		v_bar.at<float>((4 * i) + 2, 0) = modelMean[2];
-		// the position (4*i)+3 stays 1 (homogeneous coordinate)
-	}
-
-	// Bring into standard regularised quadratic form with diagonal distance matrix Omega
-	Mat A = P * V_hat_h;
-	Mat b = P * v_bar - y;
-	//Mat c_s; // The x, we solve for this! (the variance-normalized shape parameter vector, $c_s = [a_1/sigma_{s,1} , ..., a_m-1/sigma_{s,m-1}]^t$
-	float lambda = 0.1f; // lambdaIn; //0.01f; // The weight of the regularisation
-	int numShapePc = morphableModel.getShapeModel().getNumberOfPrincipalComponents();
-	Mat AtOmegaA = A.t() * Omega * A;
-	Mat AtOmegaAReg = AtOmegaA + lambda * Mat::eye(numShapePc, numShapePc, CV_32FC1);
-	Mat AtOmegaARegInv = AtOmegaAReg.inv(/*cv::DECOMP_SVD*/);
-	Mat AtOmegatb = A.t() * Omega.t() * b;
-	Mat c_s = -AtOmegaARegInv * AtOmegatb;
-	vector<float> fittedCoeffs(c_s);
+	
 
 	// End estimate the shape coefficients
 

@@ -1,17 +1,15 @@
-SET( SUBPROJECT_NAME ImageIO )
-PROJECT( ${SUBPROJECT_NAME} )
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
-SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
-SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
+set(SUBPROJECT_NAME ImageIO)
+project(${SUBPROJECT_NAME})
+cmake_minimum_required(VERSION 2.8)
+set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
+set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies
-FIND_PACKAGE(Boost 1.48.0 COMPONENTS system filesystem REQUIRED)
+find_package(Boost 1.48.0 COMPONENTS system filesystem REQUIRED)
 
-FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core highgui)
-MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
-MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
+find_package(OpenCV 2.4.3 REQUIRED core highgui)
 
 if(WITH_MSKINECT_SDK)
 	# Include Microsoft Kinect SDK (Windows)
@@ -25,7 +23,7 @@ else()
 endif()
 
 # source and header files
-SET(HEADERS
+set(HEADERS
 	include/imageio/BobotLandmarkSink.hpp
 	include/imageio/BobotLandmarkSource.hpp
 	include/imageio/CameraImageSource.hpp
@@ -47,6 +45,7 @@ SET(HEADERS
 	include/imageio/LandmarkCollection.hpp
 	include/imageio/LandmarkFileGatherer.hpp
 	include/imageio/LandmarkFormatParser.hpp
+	include/imageio/LandmarkMapper.hpp
 	include/imageio/LandmarkSource.hpp
 	include/imageio/LandmarksHelper.hpp
 	include/imageio/LfpwLandmarkFormatParser.hpp
@@ -67,7 +66,7 @@ SET(HEADERS
 	include/imageio/VideoImageSink.hpp
 	include/imageio/VideoImageSource.hpp
 )
-SET(SOURCE
+set(SOURCE
 	src/imageio/BobotLandmarkSink.cpp
 	src/imageio/BobotLandmarkSource.cpp
 	src/imageio/CameraImageSource.cpp
@@ -83,6 +82,7 @@ SET(SOURCE
 	src/imageio/KinectImageSource.cpp
 	src/imageio/LandmarkCollection.cpp
 	src/imageio/LandmarkFileGatherer.cpp
+	src/imageio/LandmarkMapper.cpp
 	src/imageio/LfpwLandmarkFormatParser.cpp
 	src/imageio/LstLandmarkFormatParser.cpp
 	src/imageio/ModelLandmark.cpp
@@ -99,10 +99,10 @@ SET(SOURCE
 	src/imageio/VideoImageSource.cpp
 )
 
-include_directories( "include" )
-include_directories( ${Logging_SOURCE_DIR}/include )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
-include_directories( ${Boost_INCLUDE_DIRS} )
+include_directories("include")
+include_directories(${Logging_SOURCE_DIR}/include)
+include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS})
 
 # make library
 add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})

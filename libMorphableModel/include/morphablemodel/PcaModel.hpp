@@ -124,7 +124,7 @@ public:
 	/**
 	 * Return the value of the mean at a given landmark.
 	 *
-	 * @param[in] landmarkIdentifier A landmark identifier (e.g. "center.nose.tip").
+	 * @param[in] landmarkIdentifier A landmark identifier (e.g. "center.nose.tip"). At the moment, this is the vertex id.
 	 * @return A Vec3f containing the values at the given landmark.
 	 * @throws out_of_range exception if the landmarkIdentifier does not exist in the model. // TODO test the javadoc!
 	 */

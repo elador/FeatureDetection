@@ -294,7 +294,22 @@ int main(int argc, char *argv[])
 
 		res = r.projectVertex(newSampleMesh.vertex[randomVertex].position, modelMatrix);
 		double zBufferValue = framebuffersPose.second.at<double>(static_cast<int>(cvRound(res[1])), static_cast<int>(cvRound(res[0])));
-		if (res[2] > zBufferValue + 0.00004) { // we apply a threshold because our projectVertex is somehow a little bit off, probably because rasterTriangle() works a bit different? (offset, rounding, ...).
+		Point2i centerPixel(floor(res[0]), floor(res[1]));
+		int minzx = std::max(0, centerPixel.x - 1);
+		int maxzx = std::min(centerPixel.x + 1, framebuffersPose.second.cols - 1);
+		int minzy = std::max(0, centerPixel.y - 1);
+		int maxzy = std::min(centerPixel.y + 1, framebuffersPose.second.rows - 1);
+		bool isVisible = false;
+		for (int x = minzx; x < maxzx; ++x) {
+			for (int y = minzy; y < maxzy; ++y) {
+				double zBufferValue = framebuffersPose.second.at<double>(y, x);
+				if (res[2] <= zBufferValue) {
+					isVisible = true;
+				}
+			}
+		}
+		if (isVisible == false) {
+		//if (res[2] > zBufferValue + 0.00004) { // we apply a threshold because our projectVertex is somehow a little bit off, probably because rasterTriangle() works a bit different? (offset, rounding, ...).
 			// But caution, this hack depends on the resolution of the z-buffer?
 			// not visible
 			cv::circle(framebuffersPose.first, cv::Point(res[0], res[1]), 3, cv::Scalar(255, 0, 128));
