@@ -146,7 +146,7 @@ cv::Mat AffineCameraEstimation::estimate(std::vector<imageio::ModelLandmark> ima
 	C_tilde.at<float>(1, 1) = p_8.at<float>(5, 0);
 	C_tilde.at<float>(1, 2) = p_8.at<float>(6, 0);
 	C_tilde.at<float>(1, 3) = p_8.at<float>(7, 0);
-	C_tilde.at<float>(2, 3) = 1;
+	C_tilde.at<float>(2, 3) = 1; // the last row is [0 0 0 1]
 
 	Mat P_Affine = T.inv() * C_tilde * U;
 

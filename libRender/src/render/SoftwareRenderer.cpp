@@ -44,8 +44,8 @@ pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, QMatrix4x4 mvp)
 pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, Mat mvp)
 {
 	colorBuffer = Mat::zeros(viewportHeight, viewportWidth, CV_8UC4);
-	//depthBuffer = Mat::ones(viewportHeight, viewportWidth, CV_64FC1) * 1000000;
-	depthBuffer = Mat::ones(viewportHeight, viewportWidth, CV_64FC1) * -0.88;
+	depthBuffer = Mat::ones(viewportHeight, viewportWidth, CV_64FC1) * 1000000;
+	//depthBuffer = Mat::ones(viewportHeight, viewportWidth, CV_64FC1) * -0.88;
 
 	vector<TriangleToRasterize> trisToRaster;
 
@@ -83,10 +83,10 @@ pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, Mat mvp)
 				visibilityBits[k] |= 4;
 			if (yOverW > 1)
 				visibilityBits[k] |= 8;
-			if (zOverW < -1)
-				visibilityBits[k] |= 16;
-			if (zOverW > 1)
-				visibilityBits[k] |= 32;
+			//if (zOverW < -1) // these 4 lines somehow only clip against the back-plane of the frustum?
+				//visibilityBits[k] |= 16;
+			//if (zOverW > 1)
+				//visibilityBits[k] |= 32;
 		} // if all bits are 0, then it's inside the frustum
 		// all vertices are not visible - reject the triangle.
 		if ((visibilityBits[0] & visibilityBits[1] & visibilityBits[2]) > 0)
@@ -202,7 +202,7 @@ boost::optional<TriangleToRasterize> SoftwareRenderer::processProspectiveTri(Ver
 	if (t.maxX <= t.minX || t.maxY <= t.minY)
 		return boost::none;
 
-	// Which of these is for texturing, what for perspective?
+	// Which of these is for texturing, mipmapping, what for perspective?
 	// for partial derivatives computation
 	t.alphaPlane = plane(Vec3f(t.v0.position[0], t.v0.position[1], t.v0.texcrd[0] * t.one_over_z0),
 		Vec3f(t.v1.position[0], t.v1.position[1], t.v1.texcrd[0] * t.one_over_z1),
@@ -255,7 +255,7 @@ void SoftwareRenderer::rasterTriangle(TriangleToRasterize triangle)
 
 				double z_affine = alpha*(double)t.v0.position[2] + beta*(double)t.v1.position[2] + gamma*(double)t.v2.position[2];
 				// The '<= 1.0' clips against the far-plane in NDC. We clip against the near-plane earlier.
-				if (z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol) && z_affine <= 1.0)
+				if (z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol)/* && z_affine <= 1.0*/)
 				{
 					// perspective-correct barycentric weights
 					double d = alpha*t.one_over_z0 + beta*t.one_over_z1 + gamma*t.one_over_z2;

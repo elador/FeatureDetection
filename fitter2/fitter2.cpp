@@ -53,6 +53,8 @@
 #include "morphablemodel/AffineCameraEstimation.hpp"
 #include "morphablemodel/OpenCVCameraEstimation.hpp"
 
+#include "render/SoftwareRenderer.hpp"
+
 #include "imageio/ImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
 #include "imageio/FileListImageSource.hpp"
@@ -63,23 +65,25 @@
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/IbugLandmarkFormatParser.hpp"
 #include "imageio/DidLandmarkFormatParser.hpp"
+#include "imageio/LandmarkMapper.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
 using namespace imageio;
 namespace po = boost::program_options;
-using std::cout;
-using std::endl;
-using boost::property_tree::ptree;
-using boost::filesystem::path;
-using boost::lexical_cast;
+using logging::Logger;
+using logging::LoggerFactory;
+using logging::LogLevel;
+using render::Mesh;
 using cv::Mat;
 using cv::Point2f;
 using cv::Vec3f;
 using cv::Scalar;
-using logging::Logger;
-using logging::LoggerFactory;
-using logging::LogLevel;
+using boost::property_tree::ptree;
+using boost::filesystem::path;
+using boost::lexical_cast;
+using std::cout;
+using std::endl;
 
 template<class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
@@ -147,6 +151,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	
+	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("morphablemodel").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("render").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("fitter").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
@@ -216,6 +221,7 @@ int main(int argc, char *argv[])
 	morphablemodel::AffineCameraEstimation affineCameraEstimation(morphableModel);
 	vector<imageio::ModelLandmark> landmarks;
 
+	LandmarkMapper landmarkMapper(path("C:\\Users\\Patrik\\Documents\\GitHub\\FeatureDetection\\libImageIO\\share\\landmarkMappings\\ibug2did.txt"));
 
 	labeledImageSource->next();
 	start = std::chrono::system_clock::now();
@@ -223,20 +229,30 @@ int main(int argc, char *argv[])
 	img = labeledImageSource->getImage();
 
 	LandmarkCollection lms = labeledImageSource->getLandmarks();
-	vector<shared_ptr<Landmark>> lmsv = lms.getLandmarks();
+	LandmarkCollection didLms = landmarkMapper.convert(lms);
 	landmarks.clear();
 	Mat landmarksImage = img.clone(); // blue rect = the used landmarks
-	for (const auto& lm : lmsv) {
+	for (const auto& lm : didLms.getLandmarks()) {
 		lm->draw(landmarksImage);
-		//if (lm->getName() == "right.eye.corner_outer" || lm->getName() == "right.eye.corner_inner" || lm->getName() == "left.eye.corner_outer" || lm->getName() == "left.eye.corner_inner" || lm->getName() == "center.nose.tip" || lm->getName() == "right.lips.corner" || lm->getName() == "left.lips.corner") {
 		landmarks.emplace_back(imageio::ModelLandmark(lm->getName(), lm->getPosition2D()));
 		cv::rectangle(landmarksImage, cv::Point(cvRound(lm->getX() - 2.0f), cvRound(lm->getY() - 2.0f)), cv::Point(cvRound(lm->getX() + 2.0f), cvRound(lm->getY() + 2.0f)), cv::Scalar(255, 0, 0));
-		//}
 	}
 
 	// Start affine camera estimation (Aldrian paper)
 	Mat affineCamLandmarksProjectionImage = landmarksImage.clone(); // the affine LMs are currently not used (don't know how to render without z-vals)
-	Mat affineCam = affineCameraEstimation.estimate(landmarks);
+	
+	// Test: Instead of estimating the cam in screen space, we convert the landmarks to clip-space ([-1, 1] x ...) first.
+	// We also need to flip the y-coords because the image-origin is top-left while in clip-space, top is +1 and bottom is -1.
+	vector<imageio::ModelLandmark> landmarksClipSpace;
+	for (const auto& lm : landmarks) {
+		float x_cs = lm.getX() / (img.cols / 2.0f) - 1.0f;
+		float y_cs = lm.getY() / (img.rows / 2.0f) - 1.0f;
+		y_cs *= -1.0f;
+		imageio::ModelLandmark lmcs(lm.getName(), Vec3f(x_cs, y_cs, 0.0f), lm.isVisible());
+		landmarksClipSpace.push_back(lmcs);
+	}
+	
+	Mat affineCam = affineCameraEstimation.estimate(landmarksClipSpace);
 	for (const auto& lm : landmarks) {
 		Vec3f tmp = morphableModel.getShapeModel().getMeanAtPoint(lm.getName());
 		Mat p(4, 1, CV_32FC1);
@@ -245,10 +261,13 @@ int main(int argc, char *argv[])
 		p.at<float>(2, 0) = tmp[2];
 		p.at<float>(3, 0) = 1;
 		Mat p2d = affineCam * p;
+		p2d.at<float>(0, 0) = (p2d.at<float>(0, 0) + 1.0f) * (img.cols / 2.0f);
+		p2d.at<float>(1, 0) = img.rows - (p2d.at<float>(1, 0) + 1.0f) * (img.rows / 2.0f);
 		Point2f pp(p2d.at<float>(0, 0), p2d.at<float>(1, 0)); // Todo: check
 		cv::circle(affineCamLandmarksProjectionImage, pp, 4.0f, Scalar(0.0f, 255.0f, 0.0f));
 	}
 	// End Affine est.
+	Mat fullAffineCam = affineCameraEstimation.calculateFullMatrix(affineCam);
 
 	// Estimate the shape coefficients
 	vector<float> fittedCoeffs;
@@ -305,23 +324,25 @@ int main(int argc, char *argv[])
 		Mat c_s = -AtOmegaARegInv * AtOmegatb;
 		fittedCoeffs = vector<float>(c_s);
 	}
-	
-
 	// End estimate the shape coefficients
+
+	//Mesh mesh = morphableModel.drawSample(fittedCoeffs, vector<float>());
+	Mesh mesh = morphableModel.getMean();
+	render::SoftwareRenderer swr(img.cols, img.rows);
+	float aspect = (float)img.cols / float(img.rows);
+	Mat ortho = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.01f, 100.0f);
+	Mat model = render::utils::MatrixUtils::createScalingMatrix(1.0f / 140.0f, 1.0f / 140.0f, 1.0f / 140.0f);
+	Mat cam = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -2.0f);
+	Mat mytransf = ortho * cam * model;
+	//auto fb = swr.render(mesh, ortho * cam * model);
+	fullAffineCam.at<float>(2, 3) = fullAffineCam.at<float>(2, 2);
+	fullAffineCam.at<float>(2, 2) = 1.0f;
+	swr.doBackfaceCulling = true;
+	auto fb = swr.render(mesh, fullAffineCam);
+
 
 	//std::shared_ptr<render::Mesh> meanMesh = std::make_shared<render::Mesh>(morphableModel.getMean());
 	//render::Mesh::writeObj(*meanMesh.get(), "C:\\Users\\Patrik\\Documents\\GitHub\\mean.obj");
-
-	//const float aspect = (float)img.cols / (float)img.rows; // 640/480
-	//render::Camera camera(Vec3f(0.0f, 0.0f, 0.0f), /*horizontalAngle*/0.0f*(CV_PI / 180.0f), /*verticalAngle*/0.0f*(CV_PI / 180.0f), render::Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, /*zNear*/-0.1f, /*zFar*/-100.0f));
-	/*render::SoftwareRenderer r(img.cols, img.rows, camera); // 640, 480
-	r.perspectiveDivision = render::SoftwareRenderer::PerspectiveDivision::None;
-	r.doClippingInNDC = false;
-	r.directToScreenTransform = true;
-	r.doWindowTransform = false;
-	r.setObjectToScreenTransform(shapemodels::AffineCameraEstimation::calculateFullMatrix(affineCam));
-	r.draw(meshToDraw, nullptr);
-	Mat buff = r.getImage();*/
 
 	/*
 	std::ofstream myfile;
@@ -337,8 +358,6 @@ int main(int argc, char *argv[])
 	//std::shared_ptr<render::Mesh> meshToDraw = std::make_shared<render::Mesh>(morphableModel.drawSample(fittedCoeffs, vector<float>(morphableModel.getColorModel().getNumberOfPrincipalComponents(), 0.0f)));
 	//render::Mesh::writeObj(*meshToDraw.get(), "C:\\Users\\Patrik\\Documents\\GitHub\\fittedMesh.obj");
 
-	//r.resetBuffers();
-	//r.draw(meshToDraw, nullptr);
 	// TODO: REPROJECT THE POINTS FROM THE C_S MODEL HERE AND SEE IF THE LMS REALLY GO FURTHER OUT OR JUST THE REST OF THE MESH
 
 	//cv::imshow(windowName, img);
