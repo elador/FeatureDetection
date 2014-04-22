@@ -20,16 +20,27 @@ class FixedTrainableProbabilisticSvmClassifier : public TrainableProbabilisticSv
 public:
 
 	/**
-	 * Constructs a new fixed trainable probabilistic SVM classifier.
+	 * Constructs a new fixed trainable probabilistic SVM classifier with the given logistic parameters.
+	 *
+	 * @param[in] trainableSvm The trainable SVM classifier.
+	 * @param[in] logisticA Parameter a of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
+	 * @param[in] logisticB Parameter b of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
+	 */
+	FixedTrainableProbabilisticSvmClassifier(std::shared_ptr<TrainableSvmClassifier> trainableSvm, double logisticA, double logisticB) :
+			TrainableProbabilisticSvmClassifier(trainableSvm, 0, 0), logisticA(logisticA), logisticB(logisticB) {}
+
+	/**
+	 * Constructs a new fixed trainable probabilistic SVM classifier that computes the logistic parameters from the
+	 * given probabilities and mean SVM outputs.
 	 *
 	 * @param[in] trainableSvm The trainable SVM classifier.
 	 * @param[in] highProb The probability of the mean output of positive samples.
 	 * @param[in] lowProb The probability of the mean output of negative samples.
-	 * @param[in] The estimated mean SVM output of the positive samples.
-	 * @param[in] The estimated mean SVM output of the negative samples.
+	 * @param[in] meanPosOutput The estimated mean SVM output of the positive samples.
+	 * @param[in] meanNegOutput The estimated mean SVM output of the negative samples.
 	 */
 	FixedTrainableProbabilisticSvmClassifier(std::shared_ptr<TrainableSvmClassifier> trainableSvm,
-			double highProb = 0.95, double lowProb = 0.05, double meanPosOutput = 1.01, double meanNegOutput = -1.01) :
+			double highProb, double lowProb, double meanPosOutput, double meanNegOutput) :
 					TrainableProbabilisticSvmClassifier(trainableSvm, 0, 0, highProb, lowProb) {
 		pair<double, double> logisticParameters = computeLogisticParameters(meanPosOutput, meanNegOutput);
 		logisticA = logisticParameters.first;

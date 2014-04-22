@@ -14,18 +14,18 @@ MaxWeightPositionExtractor::MaxWeightPositionExtractor() {}
 
 MaxWeightPositionExtractor::~MaxWeightPositionExtractor() {}
 
-optional<Sample> MaxWeightPositionExtractor::extract(const vector<Sample>& samples) {
-	Sample best;
+shared_ptr<Sample> MaxWeightPositionExtractor::extract(const vector<shared_ptr<Sample>>& samples) {
+	shared_ptr<Sample> best;
 	double maxWeight = 0;
-	for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample) {
+	for (shared_ptr<Sample> sample : samples) {
 		if (sample->getWeight() > maxWeight) {
 			maxWeight = sample->getWeight();
-			best = *sample;
+			best = sample;
 		}
 	}
-	if (maxWeight > 0 && best.isObject())
-		return optional<Sample>(best);
-	return optional<Sample>();
+	if (maxWeight > 0 && best->isObject())
+		return best;
+	return shared_ptr<Sample>();
 }
 
 } /* namespace condensation */

@@ -4,6 +4,7 @@
  *  Created on: 12.12.2012
  *      Author: Patrik Huber
  */
+#ifdef WITH_MORPHABLEMODEL_HDF5
 
 #include "morphablemodel/Hdf5Utils.hpp"
 
@@ -204,3 +205,5 @@ render::Mesh Hdf5Utils::readFromHdf5(std::string filename)
 
 	} /* namespace utils */
 } /* namespace morphablemodel */
+
+#endif /* WITH_MORPHABLEMODEL_HDF5 */

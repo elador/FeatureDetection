@@ -43,7 +43,7 @@ public:
 	 *
 	 * @param[in] sample The sample whose weight will be changed according to the likelihood.
 	 */
-	virtual void evaluate(Sample& sample) = 0;
+	virtual void evaluate(Sample& sample) const = 0;
 
 	/**
 	 * Changes the weights of samples according to the likelihood of an object existing at that positions an image. Can
@@ -52,10 +52,10 @@ public:
 	 * @param[in] image The image.
 	 * @param[in] samples The samples whose weight will be changed according to the likelihoods.
 	 */
-	virtual void evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples) {
+	virtual void evaluate(shared_ptr<VersionedImage> image, vector<shared_ptr<Sample>>& samples) {
 		update(image);
-		for (Sample& sample : samples)
-			evaluate(sample);
+		for (shared_ptr<Sample> sample : samples)
+			evaluate(*sample);
 	}
 };
 

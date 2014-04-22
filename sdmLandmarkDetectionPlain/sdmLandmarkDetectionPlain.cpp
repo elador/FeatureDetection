@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 	Loggers->getLogger("sdmLandmarkDetectionPlain").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("sdmLandmarkDetectionPlain");
 
-	appLogger.info("Verbose level for console output: " + logging::loglevelToString(logLevel));
+	appLogger.info("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
 	if (!boost::filesystem::exists(inputFilename)) {
 		appLogger.error("The input image given does not exist.");

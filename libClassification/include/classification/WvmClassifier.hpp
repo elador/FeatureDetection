@@ -48,6 +48,14 @@ public:
 	bool classify(pair<int, double> levelAndDistance) const;
 
 	/**
+	 * Computes the classification confidence given the distance of a feature vector to the decision hyperplane.
+	 *
+	 * @param[in] levelAndDistance The index of the last used filter and distance of that filter level.
+	 * @return A pair containing the binary classification result and the confidence of the classification.
+	 */
+	pair<bool, double> getConfidence(pair<int, double> levelAndDistance) const;
+
+	/**
 	 * Computes the approximate distance of a feature vector to the decision hyperplane. This is the real distance
 	 * without any influence by the offset for configuring the operating point of the SVM.
 	 *

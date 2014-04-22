@@ -57,8 +57,8 @@ void LibSvmClassifier::createParameters(const shared_ptr<Kernel> kernel, double 
 		param->nu = cnu;
 		param->svm_type = ONE_CLASS;
 		param->nr_weight = 0;
-		param->weight_label = (int*)malloc(param->nr_weight * sizeof(int));
-		param->weight = (double*)malloc(param->nr_weight * sizeof(double));
+		param->weight_label = nullptr;
+		param->weight = nullptr;
 	} else {
 		param->C = cnu;
 		param->svm_type = C_SVC;

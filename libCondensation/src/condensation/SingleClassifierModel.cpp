@@ -26,7 +26,7 @@ void SingleClassifierModel::update(shared_ptr<VersionedImage> image) {
 	featureExtractor->update(image);
 }
 
-void SingleClassifierModel::evaluate(Sample& sample) {
+void SingleClassifierModel::evaluate(Sample& sample) const {
 	shared_ptr<Patch> patch = featureExtractor->extract(sample.getX(), sample.getY(), sample.getWidth(), sample.getHeight());
 	if (patch) {
 		pair<bool, double> result = classify(patch);
@@ -38,7 +38,7 @@ void SingleClassifierModel::evaluate(Sample& sample) {
 	}
 }
 
-pair<bool, double> SingleClassifierModel::classify(shared_ptr<Patch> patch) {
+pair<bool, double> SingleClassifierModel::classify(shared_ptr<Patch> patch) const {
 	auto resIt = cache.find(patch);
 	if (resIt == cache.end()) {
 		pair<bool, double> result = classifier->getProbability(patch->getData());

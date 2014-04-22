@@ -47,7 +47,10 @@ pair<bool, double> ProbabilisticRvmClassifier::getConfidence(const Mat& featureV
 }
 
 pair<bool, double> ProbabilisticRvmClassifier::getProbability(const Mat& featureVector) const {
-	pair<int, double> levelAndDistance = rvm->computeHyperplaneDistance(featureVector);
+	return getProbability(rvm->computeHyperplaneDistance(featureVector));
+}
+
+pair<bool, double> ProbabilisticRvmClassifier::getProbability(pair<int, double> levelAndDistance) const {
 	// Do sigmoid stuff:
 	// NOTE Patrik: Here we calculate the probability for all RVM patches, also of those that
 	//      did not run up to the last filter. Those probabilities are wrong, but for the face-

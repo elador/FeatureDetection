@@ -14,6 +14,7 @@
 #include <stdexcept>
 
 using std::invalid_argument;
+using std::make_shared;
 
 namespace condensation {
 
@@ -45,32 +46,18 @@ void ResamplingSampler::init(const Mat& image) {
 	transitionModel->init(image);
 }
 
-void ResamplingSampler::sample(const vector<Sample>& samples, vector<Sample>& newSamples, const Mat& image, const optional<Sample>& target) {
-	unsigned int count = this->count;
+void ResamplingSampler::sample(const vector<shared_ptr<Sample>>& samples, vector<shared_ptr<Sample>>& newSamples,
+		const Mat& image, const shared_ptr<Sample> target) {
 	resamplingAlgorithm->resample(samples, (int)((1 - randomRate) * count), newSamples);
 	transitionModel->predict(newSamples, image, target);
-	for (auto sample = newSamples.begin(); sample != newSamples.end(); ++sample) {
-		if (!isValid(*sample, image))
-			sampleValid(*sample, image);
-	}
-	// add new random samples
-	Sample newSample;
 	while (newSamples.size() < count) {
-		sampleValid(newSample, image);
+		shared_ptr<Sample> newSample = make_shared<Sample>();
+		sampleValues(*newSample, image);
 		newSamples.push_back(newSample);
 	}
 }
 
-bool ResamplingSampler::isValid(const Sample& sample, const Mat& image) {
-	int halfSize = sample.getSize() / 2;
-	int x = sample.getX() - halfSize;
-	int y = sample.getY() - halfSize;
-	return sample.getSize() >= minSize && sample.getSize() <= maxSize
-			&& x >= 0 && x + sample.getSize() <= image.cols
-			&& y >= 0 && y + sample.getSize() <= image.rows;
-}
-
-void ResamplingSampler::sampleValid(Sample& sample, const Mat& image) {
+void ResamplingSampler::sampleValues(Sample& sample, const Mat& image) {
 	double sizeFactor = realDistribution(generator) * (static_cast<double>(maxSize) / static_cast<double>(minSize) - 1.0) + 1.0;
 	int size = cvRound(sizeFactor * minSize);
 	int halfSize = size / 2;

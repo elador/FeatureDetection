@@ -14,11 +14,11 @@ FilteringPositionExtractor::FilteringPositionExtractor(shared_ptr<PositionExtrac
 
 FilteringPositionExtractor::~FilteringPositionExtractor() {}
 
-optional<Sample> FilteringPositionExtractor::extract(const vector<Sample>& samples) {
-	vector<Sample> objects;
-	for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample) {
+shared_ptr<Sample> FilteringPositionExtractor::extract(const vector<shared_ptr<Sample>>& samples) {
+	vector<shared_ptr<Sample>> objects;
+	for (const shared_ptr<Sample>& sample : samples) {
 		if (sample->isObject())
-			objects.push_back((*sample));
+			objects.push_back(sample);
 	}
 	return extractor->extract(objects);
 }

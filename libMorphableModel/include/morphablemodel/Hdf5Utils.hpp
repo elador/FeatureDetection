@@ -9,6 +9,8 @@
 #ifndef HDF5UTILS_HPP_
 #define HDF5UTILS_HPP_
 
+#ifdef WITH_MORPHABLEMODEL_HDF5
+
 #include "render/Mesh.hpp"
 
 #include "H5Cpp.h"
@@ -40,5 +42,7 @@ namespace morphablemodel {
 
 	} /* namespace utils */
 } /* namespace morphablemodel */
+
+#endif /* WITH_MORPHABLEMODEL_HDF5 */
 
 #endif /* HDF5UTILS_HPP_ */

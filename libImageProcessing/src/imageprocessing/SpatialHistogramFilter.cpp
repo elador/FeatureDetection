@@ -70,18 +70,17 @@ Mat SpatialHistogramFilter::applyTo(const Mat& image, Mat& filtered) const {
 
 void SpatialHistogramFilter::createBlockHistograms(const Mat& cellHistograms, Mat& blockHistograms, int binCount,
 		int cellRowCount, int cellColumnCount, int blockWidth, int blockHeight, bool concatenate) const {
-	const float* cellHistogramsValues = cellHistograms.ptr<float>();
 	int blockHistogramSize = concatenate ? blockWidth * blockHeight * binCount : binCount;
 	int blockRowCount = cellRowCount - blockHeight + 1;
 	int blockColumnCount = cellColumnCount - blockWidth + 1;
-	blockHistograms = Mat::zeros(1, blockRowCount * blockColumnCount * blockHistogramSize, CV_32F);
+	blockHistograms = Mat::zeros(blockRowCount, blockColumnCount, CV_32FC(blockHistogramSize));
 	float* blockHistogramValues = blockHistograms.ptr<float>();
 	for (int blockRow = 0; blockRow < blockRowCount; ++blockRow) {
 		for (int blockCol = 0; blockCol < blockColumnCount; ++blockCol) {
 			Mat blockHistogram(1, blockHistogramSize, CV_32F, blockHistogramValues);
 			for (int cellRow = blockRow; cellRow < blockRow + blockHeight; ++cellRow) {
 				for (int cellCol = blockCol; cellCol < blockCol + blockWidth; ++cellCol) {
-					const float* cellHistogramValues = cellHistogramsValues + cellRow * cellColumnCount * binCount + cellCol * binCount;
+					const float* cellHistogramValues = cellHistograms.ptr<float>(cellRow, cellCol);
 					for (int bin = 0; bin < binCount; ++bin)
 						blockHistogramValues[bin] += cellHistogramValues[bin];
 					if (concatenate) // if histograms should be concatenated,

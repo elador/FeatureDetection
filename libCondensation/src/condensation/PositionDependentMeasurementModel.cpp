@@ -65,15 +65,15 @@ void PositionDependentMeasurementModel::update(shared_ptr<VersionedImage> image)
 	measurementModel->update(image);
 }
 
-void PositionDependentMeasurementModel::evaluate(Sample& sample) {
+void PositionDependentMeasurementModel::evaluate(Sample& sample) const {
 	measurementModel->evaluate(sample);
 }
 
-void PositionDependentMeasurementModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples) {
+void PositionDependentMeasurementModel::evaluate(shared_ptr<VersionedImage> image, vector<shared_ptr<Sample>>& samples) {
 	measurementModel->evaluate(image, samples);
 }
 
-bool PositionDependentMeasurementModel::isUsable() {
+bool PositionDependentMeasurementModel::isUsable() const {
 	return usable;
 }
 
@@ -82,7 +82,12 @@ void PositionDependentMeasurementModel::reset() {
 	usable = false;
 }
 
-bool PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples, const Sample& target) {
+bool PositionDependentMeasurementModel::initialize(shared_ptr<VersionedImage> image, Sample& target) {
+	vector<shared_ptr<Sample>> empty;
+	return adapt(image, empty, target);
+}
+
+bool PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, const vector<shared_ptr<Sample>>& samples, const Sample& target) {
 	if (!isUsable()) {
 		frameCount++;
 		if (frameCount < startFrameCount)
@@ -163,7 +168,7 @@ bool PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 	if (sampleAdditionalNegatives > 0) {
 		vector<Sample> additionalNegatives;
 		additionalNegatives.reserve(sampleAdditionalNegatives);
-		for (auto sample = samples.cbegin(); sample != samples.cend(); ++sample) {
+		for (shared_ptr<Sample> sample : samples) {
 			if (sample->getX() <= xLowBound || sample->getX() >= xHighBound
 					|| sample->getY() <= yLowBound || sample->getY() >= yHighBound
 					|| sample->getSize() <= sizeLowBound || sample->getSize() >= sizeHighBound) {
@@ -221,7 +226,7 @@ bool PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, 
 	return true;
 }
 
-bool PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, const vector<Sample>& samples) {
+bool PositionDependentMeasurementModel::adapt(shared_ptr<VersionedImage> image, const vector<shared_ptr<Sample>>& samples) {
 	if (isUsable())
 		frameCount++;
 	if (frameCount == stopFrameCount) {

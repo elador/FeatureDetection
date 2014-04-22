@@ -63,7 +63,7 @@ Mat ExtendedHogFilter::applyTo(const Mat& image, Mat& filtered) const {
 
 void ExtendedHogFilter::createDescriptors(const Mat& histograms, Mat& descriptors,
 		int binCount, bool signedAndUnsigned, int cellRowCount, int cellColumnCount, float alpha) const {
-	Mat energies = Mat::zeros(1, cellRowCount * cellColumnCount, CV_32F);
+	Mat energies = Mat::zeros(cellRowCount, cellColumnCount, CV_32F);
 	const float* histogramsValues = histograms.ptr<float>();
 	float* energiesValues = energies.ptr<float>();
 
@@ -71,17 +71,17 @@ void ExtendedHogFilter::createDescriptors(const Mat& histograms, Mat& descriptor
 	if (signedAndUnsigned) { // signed and unsigned gradients should be combined into descriptor
 
 		// compute gradient energy over cells
-		int halfBins = binCount / 2;
+		int binHalfCount = binCount / 2;
 		for (int cellIndex = 0; cellIndex < cellRowCount * cellColumnCount; ++cellIndex) {
 			const float* histogramValues = histogramsValues + cellIndex * binCount;
-			for (int bin = 0; bin < halfBins; ++bin) {
-				float sum = histogramValues[bin] + histogramValues[bin + halfBins];
+			for (int binIndex = 0; binIndex < binHalfCount; ++binIndex) {
+				float sum = histogramValues[binIndex] + histogramValues[binIndex + binHalfCount];
 				energiesValues[cellIndex] += sum * sum;
 			}
 		}
 
 		// create descriptors
-		descriptors.create(1, cellRowCount * cellColumnCount * (binCount + halfBins + 4), CV_32F);
+		descriptors.create(cellRowCount, cellColumnCount, CV_32FC(binCount + binHalfCount + 4));
 		float* values = descriptors.ptr<float>();
 		for (int cellRow = 0; cellRow < cellRowCount; ++cellRow) {
 			for (int cellCol = 0; cellCol < cellColumnCount; ++cellCol) {
@@ -92,15 +92,15 @@ void ExtendedHogFilter::createDescriptors(const Mat& histograms, Mat& descriptor
 				int c1 = cellCol;
 				int c0 = std::max(0, cellCol - 1);
 				int c2 = std::min(cellCol + 1, cellColumnCount - 1);
-				float sqn00 = energiesValues[r0 * cellColumnCount + c0];
-				float sqn01 = energiesValues[r0 * cellColumnCount + c1];
-				float sqn02 = energiesValues[r0 * cellColumnCount + c2];
-				float sqn10 = energiesValues[r1 * cellColumnCount + c0];
-				float sqn11 = energiesValues[r1 * cellColumnCount + c1];
-				float sqn12 = energiesValues[r1 * cellColumnCount + c2];
-				float sqn20 = energiesValues[r2 * cellColumnCount + c0];
-				float sqn21 = energiesValues[r2 * cellColumnCount + c1];
-				float sqn22 = energiesValues[r2 * cellColumnCount + c2];
+				float sqn00 = energies.at<float>(r0, c0);
+				float sqn01 = energies.at<float>(r0, c1);
+				float sqn02 = energies.at<float>(r0, c2);
+				float sqn10 = energies.at<float>(r1, c0);
+				float sqn11 = energies.at<float>(r1, c1);
+				float sqn12 = energies.at<float>(r1, c2);
+				float sqn20 = energies.at<float>(r2, c0);
+				float sqn21 = energies.at<float>(r2, c1);
+				float sqn22 = energies.at<float>(r2, c2);
 				float n1 = 1.f / sqrt(sqn00 + sqn01 + sqn10 + sqn11 + eps);
 				float n2 = 1.f / sqrt(sqn01 + sqn02 + sqn11 + sqn12 + eps);
 				float n3 = 1.f / sqrt(sqn10 + sqn11 + sqn20 + sqn21 + eps);
@@ -112,12 +112,12 @@ void ExtendedHogFilter::createDescriptors(const Mat& histograms, Mat& descriptor
 				float t4 = 0;
 
 				// signed orientation features (aka contrast-sensitive)
-				for (int bin = 0; bin < binCount; ++bin) {
-					float h1 = std::min(alpha, cellHistogramValues[bin] * n1);
-					float h2 = std::min(alpha, cellHistogramValues[bin] * n2);
-					float h3 = std::min(alpha, cellHistogramValues[bin] * n3);
-					float h4 = std::min(alpha, cellHistogramValues[bin] * n4);
-					values[bin] = 0.5 * (h1 + h2 + h3 + h4);
+				for (int binIndex = 0; binIndex < binCount; ++binIndex) {
+					float h1 = std::min(alpha, cellHistogramValues[binIndex] * n1);
+					float h2 = std::min(alpha, cellHistogramValues[binIndex] * n2);
+					float h3 = std::min(alpha, cellHistogramValues[binIndex] * n3);
+					float h4 = std::min(alpha, cellHistogramValues[binIndex] * n4);
+					values[binIndex] = 0.5 * (h1 + h2 + h3 + h4);
 					t1 += h1;
 					t2 += h2;
 					t3 += h3;
@@ -126,15 +126,15 @@ void ExtendedHogFilter::createDescriptors(const Mat& histograms, Mat& descriptor
 				values += binCount;
 
 				// unsigned orientation features (aka contrast-insensitive)
-				for (int bin = 0; bin < halfBins; ++bin) {
-					float sum = cellHistogramValues[bin] + cellHistogramValues[bin + halfBins];
+				for (int binIndex = 0; binIndex < binHalfCount; ++binIndex) {
+					float sum = cellHistogramValues[binIndex] + cellHistogramValues[binIndex + binHalfCount];
 					float h1 = std::min(alpha, sum * n1);
 					float h2 = std::min(alpha, sum * n2);
 					float h3 = std::min(alpha, sum * n3);
 					float h4 = std::min(alpha, sum * n4);
-					values[bin] = 0.5 * (h1 + h2 + h3 + h4);
+					values[binIndex] = 0.5 * (h1 + h2 + h3 + h4);
 				}
-				values += halfBins;
+				values += binHalfCount;
 
 				// energy features
 				values[0] = 0.2357 * t1;
@@ -149,12 +149,12 @@ void ExtendedHogFilter::createDescriptors(const Mat& histograms, Mat& descriptor
 		// compute gradient energy over cells
 		for (int cellIndex = 0; cellIndex < cellRowCount * cellColumnCount; ++cellIndex) {
 			const float* histogramValues = histogramsValues + cellIndex * binCount;
-			for (int bin = 0; bin < binCount; ++bin)
-				energiesValues[cellIndex] += histogramValues[bin] * histogramValues[bin];
+			for (int binIndex = 0; binIndex < binCount; ++binIndex)
+				energiesValues[cellIndex] += histogramValues[binIndex] * histogramValues[binIndex];
 		}
 
 		// create descriptors
-		descriptors.create(1, cellRowCount * cellColumnCount * (binCount + 4), CV_32F);
+		descriptors.create(cellRowCount, cellColumnCount, CV_32FC(binCount + 4));
 		float* values = descriptors.ptr<float>();
 		for (int cellRow = 0; cellRow < cellRowCount; ++cellRow) {
 			for (int cellCol = 0; cellCol < cellColumnCount; ++cellCol) {
@@ -165,15 +165,15 @@ void ExtendedHogFilter::createDescriptors(const Mat& histograms, Mat& descriptor
 				int c1 = cellCol;
 				int c0 = std::max(cellCol - 1, 0);
 				int c2 = std::min(cellCol + 1, cellColumnCount - 1);
-				float sqn00 = energiesValues[r0 * cellColumnCount + c0];
-				float sqn01 = energiesValues[r0 * cellColumnCount + c1];
-				float sqn02 = energiesValues[r0 * cellColumnCount + c2];
-				float sqn10 = energiesValues[r1 * cellColumnCount + c0];
-				float sqn11 = energiesValues[r1 * cellColumnCount + c1];
-				float sqn12 = energiesValues[r1 * cellColumnCount + c2];
-				float sqn20 = energiesValues[r2 * cellColumnCount + c0];
-				float sqn21 = energiesValues[r2 * cellColumnCount + c1];
-				float sqn22 = energiesValues[r2 * cellColumnCount + c2];
+				float sqn00 = energies.at<float>(r0, c0);
+				float sqn01 = energies.at<float>(r0, c1);
+				float sqn02 = energies.at<float>(r0, c2);
+				float sqn10 = energies.at<float>(r1, c0);
+				float sqn11 = energies.at<float>(r1, c1);
+				float sqn12 = energies.at<float>(r1, c2);
+				float sqn20 = energies.at<float>(r2, c0);
+				float sqn21 = energies.at<float>(r2, c1);
+				float sqn22 = energies.at<float>(r2, c2);
 				float n1 = 1.f / sqrt(sqn00 + sqn01 + sqn10 + sqn11 + eps);
 				float n2 = 1.f / sqrt(sqn01 + sqn02 + sqn11 + sqn12 + eps);
 				float n3 = 1.f / sqrt(sqn10 + sqn11 + sqn20 + sqn21 + eps);
@@ -185,12 +185,12 @@ void ExtendedHogFilter::createDescriptors(const Mat& histograms, Mat& descriptor
 				float t4 = 0;
 
 				// orientation features
-				for (int bin = 0; bin < binCount; ++bin) {
-					float h1 = std::min(alpha, cellHistogramValues[bin] * n1);
-					float h2 = std::min(alpha, cellHistogramValues[bin] * n2);
-					float h3 = std::min(alpha, cellHistogramValues[bin] * n3);
-					float h4 = std::min(alpha, cellHistogramValues[bin] * n4);
-					values[bin] = 0.5 * (h1 + h2 + h3 + h4);
+				for (int binIndex = 0; binIndex < binCount; ++binIndex) {
+					float h1 = std::min(alpha, cellHistogramValues[binIndex] * n1);
+					float h2 = std::min(alpha, cellHistogramValues[binIndex] * n2);
+					float h3 = std::min(alpha, cellHistogramValues[binIndex] * n3);
+					float h4 = std::min(alpha, cellHistogramValues[binIndex] * n4);
+					values[binIndex] = 0.5 * (h1 + h2 + h3 + h4);
 					t1 += h1;
 					t2 += h2;
 					t3 += h3;

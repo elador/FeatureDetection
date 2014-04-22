@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 	Loggers->getLogger("sdmEvaluation").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("sdmEvaluation");
 
-	appLogger.debug("Verbose level for console output: " + logging::loglevelToString(logLevel));
+	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
 	if (inputPaths.size() > 1) {
 		// We assume the user has given several, valid images

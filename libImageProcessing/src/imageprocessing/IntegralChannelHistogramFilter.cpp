@@ -31,7 +31,7 @@ Mat IntegralChannelHistogramFilter::applyTo(const Mat& image, Mat& filtered) con
 	double shift = 1.0 - overlap;
 	double blockWidth = (image.cols - 1) / (1 + (blockColumns - 1) * shift);
 	double blockHeight = (image.rows - 1) / (1 + (blockRows - 1) * shift);
-	filtered.create(1, blockRows * blockColumns * bins, CV_32F);
+	filtered.create(blockRows, blockColumns, CV_32FC(bins));
 	float* histogramValues = filtered.ptr<float>();
 	float factor = 1.f / 255.f;
 	for (unsigned int i = 0; i < blockRows; ++i) {

@@ -7,7 +7,7 @@
 
 #include "Benchmark.hpp"
 #include "imageio/ImageSource.hpp"
-#include "imageio/OrderedLandmarkSource.hpp"
+#include "imageio/LandmarkSource.hpp"
 #include "imageio/VideoImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
 #include "imageio/BobotLandmarkSource.hpp"
@@ -47,7 +47,9 @@
 #include "classification/TrainableProbabilisticSvmClassifier.hpp"
 #include "classification/FixedTrainableProbabilisticSvmClassifier.hpp"
 #include "libsvm/LibSvmClassifier.hpp"
-#include "liblinear/LibLinearClassifier.hpp"
+#ifdef WITH_LIBLINEAR_CLASSIFIER
+	#include "liblinear/LibLinearClassifier.hpp"
+#endif
 #include "boost/property_tree/ptree.hpp"
 #include "boost/property_tree/info_parser.hpp"
 #include "boost/optional/optional.hpp"
@@ -60,7 +62,6 @@ using namespace imageio;
 using namespace imageprocessing;
 using namespace classification;
 using libsvm::LibSvmClassifier;
-using liblinear::LibLinearClassifier;
 using boost::property_tree::ptree;
 using boost::property_tree::info_parser::read_info;
 using boost::optional;
@@ -335,13 +336,13 @@ shared_ptr<Kernel> createKernel(ptree& config) {
 	}
 }
 
-unique_ptr<ExampleManagement> createExampleManagement(ptree& config, shared_ptr<BinaryClassifier> classifier) {
+unique_ptr<ExampleManagement> createExampleManagement(ptree& config, shared_ptr<BinaryClassifier> classifier, bool positive) {
 	if (config.get_value<string>() == "unlimited") {
 		return unique_ptr<ExampleManagement>(new UnlimitedExampleManagement(config.get<size_t>("required")));
 	} else if (config.get_value<string>() == "agebased") {
 		return unique_ptr<ExampleManagement>(new AgeBasedExampleManagement(config.get<size_t>("capacity"), config.get<size_t>("required")));
 	} else if (config.get_value<string>() == "confidencebased") {
-		return unique_ptr<ExampleManagement>(new ConfidenceBasedExampleManagement(classifier, config.get<size_t>("capacity"), config.get<size_t>("required")));
+		return unique_ptr<ExampleManagement>(new ConfidenceBasedExampleManagement(classifier, positive, config.get<size_t>("capacity"), config.get<size_t>("required")));
 	} else {
 		throw invalid_argument("invalid example management type: " + config.get_value<string>());
 	}
@@ -351,9 +352,9 @@ shared_ptr<TrainableSvmClassifier> createLibSvmClassifier(ptree& config, shared_
 	if (config.get_value<string>() == "binary") {
 		shared_ptr<LibSvmClassifier> trainableSvm = make_shared<LibSvmClassifier>(kernel, config.get<double>("C"));
 		trainableSvm->setPositiveExampleManagement(
-				unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm)));
+				unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm, true)));
 		trainableSvm->setNegativeExampleManagement(
-				unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("negativeExamples"), trainableSvm)));
+				unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("negativeExamples"), trainableSvm, false)));
 		optional<ptree&> negativesConfig = config.get_child_optional("staticNegativeExamples");
 		if (negativesConfig && negativesConfig->get_value<bool>()) {
 			trainableSvm->loadStaticNegatives(negativesConfig->get<string>("filename"),
@@ -363,7 +364,7 @@ shared_ptr<TrainableSvmClassifier> createLibSvmClassifier(ptree& config, shared_
 	} else if (config.get_value<string>() == "one-class") {
 		shared_ptr<LibSvmClassifier> trainableSvm = make_shared<LibSvmClassifier>(kernel, config.get<double>("nu"), true);
 		trainableSvm->setPositiveExampleManagement(
-				unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm)));
+				unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm, true)));
 		return trainableSvm;
 	} else {
 		throw invalid_argument("invalid libSVM training type: " + config.get_value<string>());
@@ -371,17 +372,21 @@ shared_ptr<TrainableSvmClassifier> createLibSvmClassifier(ptree& config, shared_
 }
 
 shared_ptr<TrainableSvmClassifier> createLibLinearClassifier(ptree& config) {
-	shared_ptr<LibLinearClassifier> trainableSvm = make_shared<LibLinearClassifier>(config.get<double>("C"), config.get<bool>("bias"));
+#ifdef WITH_LIBLINEAR_CLASSIFIER
+	shared_ptr<liblinear::LibLinearClassifier> trainableSvm = make_shared<liblinear::LibLinearClassifier>(config.get<double>("C"), config.get<bool>("bias"));
 	trainableSvm->setPositiveExampleManagement(
-			unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm)));
+			unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm, true)));
 	trainableSvm->setNegativeExampleManagement(
-			unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("negativeExamples"), trainableSvm)));
+			unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("negativeExamples"), trainableSvm, false)));
 	optional<ptree&> negativesConfig = config.get_child_optional("staticNegativeExamples");
 	if (negativesConfig && negativesConfig->get_value<bool>()) {
 		trainableSvm->loadStaticNegatives(negativesConfig->get<string>("filename"),
 				negativesConfig->get<int>("amount"), negativesConfig->get<double>("scale"));
 	}
 	return trainableSvm;
+#else
+	throw std::runtime_error("Cannot load a LibLinear classifier. Run CMake with WITH_LIBLINEAR_CLASSIFIER set to ON to enable.");
+#endif // WITH_LIBLINEAR_CLASSIFIER
 }
 
 shared_ptr<TrainableProbabilisticClassifier> createTrainableProbabilisticSvm(
@@ -391,10 +396,13 @@ shared_ptr<TrainableProbabilisticClassifier> createTrainableProbabilisticSvm(
 		svm = make_shared<TrainableProbabilisticSvmClassifier>(trainableSvm,
 				config.get<int>("positiveExamples"), config.get<int>("negativeExamples"),
 				config.get<double>("positiveProbability"), config.get<double>("negativeProbability"));
-	else if (config.get_value<string>() == "fixed")
+	else if (config.get_value<string>() == "precomputed")
 		svm = make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm,
 				config.get<double>("positiveProbability"), config.get<double>("negativeProbability"),
 				config.get<double>("positiveMean"), config.get<double>("negativeMean"));
+	else if (config.get_value<string>() == "predefined")
+		svm = make_shared<FixedTrainableProbabilisticSvmClassifier>(trainableSvm,
+				config.get<double>("logisticA"), config.get<double>("logisticB"));
 	else
 		throw invalid_argument("invalid probabilistic SVM type: " + config.get_value<string>());
 	if (config.get<string>("adjustThreshold") != "no")
@@ -454,7 +462,7 @@ void runTest(Benchmark& benchmark, ptree& config) {
 		imageSource = make_shared<DirectoryImageSource>(*directory);
 	else
 		throw invalid_argument("either a video file or a directory must be given for test " + config.get_value<string>());
-	shared_ptr<OrderedLandmarkSource> landmarkSource = make_shared<BobotLandmarkSource>(imageSource, config.get<string>("groundTruth"));
+	shared_ptr<LandmarkSource> landmarkSource = make_shared<BobotLandmarkSource>(config.get<string>("groundTruth"), imageSource);
 	shared_ptr<LabeledImageSource> source = make_shared<OrderedLabeledImageSource>(imageSource, landmarkSource);
 	benchmark.run(config.get_value<string>(), source);
 }

@@ -26,7 +26,7 @@ public:
 	 * @param[in] kernelSize The size of the Sobel kernel. Must be 1, 3, 5, 7 or CV_SCHARR.
 	 * @param[in] blurKernelSize The size of the blurring kernel for additional smoothing. If 0, no additional smoothing will be applied.
 	 */
-	explicit GradientFilter(int kernelSize, int blurKernelSize = 3);
+	explicit GradientFilter(int kernelSize, int blurKernelSize = 0);
 
 	~GradientFilter();
 

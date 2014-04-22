@@ -12,6 +12,9 @@
 #include "boost/random/normal_distribution.hpp"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/variate_generator.hpp"
+#include <memory>
+
+using std::shared_ptr;
 
 namespace condensation {
 
@@ -24,49 +27,49 @@ public:
 	/**
 	 * Constructs a new simple transition model.
 	 *
-	 * @param[in] positionScatter The scatter that controls the diffusion of the position.
-	 * @param[in] velocityScatter The scatter that controls the diffusion of the velocity.
+	 * @param[in] positionDeviation Standard deviation of the translation noise.
+	 * @param[in] sizeDeviation Standard deviation of the scale change noise.
 	 */
-	explicit SimpleTransitionModel(double positionScatter = 0.05, double velocityScatter = 0.1);
+	explicit SimpleTransitionModel(double positionDeviation, double sizeDeviation);
 
 	~SimpleTransitionModel();
 
 	void init(const Mat& image);
 
-	void predict(vector<Sample>& samples, const Mat& image, const optional<Sample>& target);
+	void predict(vector<shared_ptr<Sample>>& samples, const Mat& image, const shared_ptr<Sample> target);
 
 	/**
-	 * @return The scatter that controls the diffusion of the position.
+	 * @return The standard deviation of the translation noise.
 	 */
-	double getPositionScatter() {
-		return positionScatter;
+	double getPositionDeviation() const {
+		return positionDeviation;
 	}
 
 	/**
-	 * @param[in] scatter The new scatter that controls the diffusion of the position.
+	 * @param[in] deviation The new standard deviation of the translation noise.
 	 */
-	void setPositionScatter(double scatter) {
-		this->positionScatter = scatter;
+	void setPositionDeviation(double deviation) {
+		this->positionDeviation = deviation;
 	}
 
 	/**
-	 * @return The scatter that controls the diffusion of the velocity.
+	 * @return The standard deviation of the scale change noise.
 	 */
-	double getVelocityScatter() {
-		return velocityScatter;
+	double getSizeDeviation() const {
+		return sizeDeviation;
 	}
 
 	/**
-	 * @param[in] scatter The new scatter that controls the diffusion of the velocity.
+	 * @param[in] deviation The new standard deviation of the scale change noise.
 	 */
-	void setVelocityScatter(double scatter) {
-		this->velocityScatter = scatter;
+	void setSizeDeviation(double deviation) {
+		this->sizeDeviation = deviation;
 	}
 
 private:
 
-	double positionScatter; ///< The scatter that controls the diffusion of the position.
-	double velocityScatter; ///< The scatter that controls the diffusion of the velocity.
+	double positionDeviation; ///< Standard deviation of the translation noise.
+	double sizeDeviation;     ///< Standard deviation of the scale change noise.
 	boost::variate_generator<boost::mt19937, boost::normal_distribution<>> generator; ///< Random number generator.
 };
 

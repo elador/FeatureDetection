@@ -31,6 +31,8 @@ public:
 	~Mesh();
 
 	std::vector<render::Vertex> vertex;
+	// To not have to copy the vertices, for OpenGL, the option below would be better:
+	// But what about the whole pipeline (e.g. SW-Rend.), is it beneficial having a Vertex (& Triangle)-class?
 	//std::vector<cv::Vec3f> vertex;	// g: cv::Vec3f
 	//std::vector<cv::Vec3f> normal;	// g: cv::Vec3f
 	//std::vector<cv::Vec3f> texcrd;	// g: cv::Vec3f, texture coordinates uvw

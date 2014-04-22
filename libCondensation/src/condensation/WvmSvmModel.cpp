@@ -34,7 +34,7 @@ void WvmSvmModel::update(shared_ptr<VersionedImage> image) {
 	featureExtractor->update(image);
 }
 
-void WvmSvmModel::evaluate(Sample& sample) {
+void WvmSvmModel::evaluate(Sample& sample) const {
 	shared_ptr<Patch> patch = featureExtractor->extract(sample.getX(), sample.getY(), sample.getWidth(), sample.getHeight());
 	if (!patch) {
 		sample.setObject(false);
@@ -59,11 +59,11 @@ void WvmSvmModel::evaluate(Sample& sample) {
 	}
 }
 
-void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<Sample>& samples) {
+void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<shared_ptr<Sample>>& samples) {
 	update(image);
 	vector<shared_ptr<ClassifiedPatch>> remainingPatches;
 	unordered_map<shared_ptr<Patch>, vector<Sample*>> patch2samples;
-	for (auto sample = samples.begin(); sample != samples.end(); ++sample) {
+	for (shared_ptr<Sample> sample : samples) {
 		sample->setObject(false);
 		shared_ptr<Patch> patch = featureExtractor->extract(sample->getX(), sample->getY(), sample->getWidth(), sample->getHeight());
 		if (!patch) {

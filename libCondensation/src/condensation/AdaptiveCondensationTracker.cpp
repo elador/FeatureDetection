@@ -11,6 +11,7 @@
 #include "condensation/MeasurementModel.hpp"
 #include "condensation/AdaptiveMeasurementModel.hpp"
 #include "condensation/PositionExtractor.hpp"
+#include "condensation/StateValidator.hpp"
 #include "imageprocessing/VersionedImage.hpp"
 #include <stdexcept>
 
@@ -29,7 +30,12 @@ AdaptiveCondensationTracker::AdaptiveCondensationTracker(shared_ptr<Sampler> sam
 				image(make_shared<VersionedImage>()),
 				sampler(sampler),
 				measurementModel(measurementModel),
-				extractor(extractor) {}
+				extractor(extractor),
+				validators() {
+	shared_ptr<StateValidator> validator = std::dynamic_pointer_cast<StateValidator>(measurementModel);
+	if (validator)
+		addValidator(validator);
+}
 
 AdaptiveCondensationTracker::~AdaptiveCondensationTracker() {}
 
@@ -41,13 +47,13 @@ bool AdaptiveCondensationTracker::initialize(const Mat& imageData, const Rect& p
 	image->setData(imageData);
 	samples.clear();
 	Sample::setAspectRatio(positionData.width, positionData.height);
-	state = optional<Sample>(Sample(
-			positionData.x + positionData.width / 2, positionData.y + positionData.height / 2, positionData.width));
+	state = make_shared<Sample>(
+			positionData.x + positionData.width / 2, positionData.y + positionData.height / 2, positionData.width);
 	sampler->init(imageData);
-	measurementModel->adapt(image, samples, *state);
+	measurementModel->initialize(image, *state);
 	if (measurementModel->isUsable()) {
 		for (int i = 0; i < initialCount; ++i)
-			samples.push_back(*state);
+			samples.push_back(state);
 	}
 	return measurementModel->isUsable();
 }
@@ -56,11 +62,21 @@ optional<Rect> AdaptiveCondensationTracker::process(const Mat& imageData) {
 	if (!measurementModel->isUsable())
 		throw runtime_error("AdaptiveCondensationTracker: Is not usable (was not initialized or was resetted)");
 	image->setData(imageData);
-	oldSamples = samples;
+	samples.swap(oldSamples);
+	samples.clear();
 	sampler->sample(oldSamples, samples, image->getData(), state);
-	// evaluate samples and extract position
+	// evaluate samples and extract state
 	measurementModel->evaluate(image, samples);
 	state = extractor->extract(samples);
+	// validate target state
+	if (state) {
+		for (shared_ptr<StateValidator>& validator : validators) {
+			if (!validator->isValid(*state, samples, image)) {
+				state.reset();
+				break;
+			}
+		}
+	}
 	// update model
 	if (state)
 		adapted = measurementModel->adapt(image, samples, *state);
@@ -70,6 +86,30 @@ optional<Rect> AdaptiveCondensationTracker::process(const Mat& imageData) {
 	if (state)
 		return optional<Rect>(state->getBounds());
 	return optional<Rect>();
+}
+
+bool AdaptiveCondensationTracker::hasAdapted() {
+	return adapted;
+}
+
+shared_ptr<Sample> AdaptiveCondensationTracker::getState() {
+	return state;
+}
+
+const vector<shared_ptr<Sample>>& AdaptiveCondensationTracker::getSamples() const {
+	return samples;
+}
+
+shared_ptr<Sampler> AdaptiveCondensationTracker::getSampler() {
+	return sampler;
+}
+
+void AdaptiveCondensationTracker::setSampler(shared_ptr<Sampler> sampler) {
+	this->sampler = sampler;
+}
+
+void AdaptiveCondensationTracker::addValidator(shared_ptr<StateValidator> validator) {
+	validators.push_back(validator);
 }
 
 } /* namespace condensation */

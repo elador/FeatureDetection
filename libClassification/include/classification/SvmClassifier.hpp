@@ -46,6 +46,14 @@ public:
 	bool classify(double hyperplaneDistance) const;
 
 	/**
+	 * Computes the classification confidence given the distance of a feature vector to the decision hyperplane.
+	 *
+	 * @param[in] hyperplaneDistance The distance of a feature vector to the decision hyperplane.
+	 * @return A pair containing the binary classification result and the confidence of the classification.
+	 */
+	pair<bool, double> getConfidence(double hyperplaneDistance) const;
+
+	/**
 	 * Computes the distance of a feature vector to the decision hyperplane. This is the real distance without
 	 * any influence by the offset for configuring the operating point of the SVM.
 	 *
@@ -78,6 +86,20 @@ public:
 	 * @return The newly created SVM classifier.
 	 */
 	static shared_ptr<SvmClassifier> loadFromText(const string& classifierFilename);
+
+	/**
+	 * @return The support vectors.
+	 */
+	const vector<Mat>& getSupportVectors() const {
+		return supportVectors;
+	}
+
+	/**
+	 * @return The coefficients of the support vectors.
+	 */
+	const vector<float>& getCoefficients() const {
+		return coefficients;
+	}
 
 private:
 

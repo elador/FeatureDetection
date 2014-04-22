@@ -1,5 +1,5 @@
 /*
- * loglevels.hpp
+ * LogLevels.hpp
  *
  *  Created on: 01.03.2013
  *      Author: Patrik Huber
@@ -11,12 +11,10 @@
 
 #include <string>
 
-using std::string;
-
 namespace logging {
 
 /**
- * The loglevels used.
+ * The log-levels used.
  *
  * TODO is this ok here? Is there a better place? If we place it in the LoggerFactory or Logger, we have circular dependencies?
  */
@@ -36,30 +34,30 @@ enum class LogLevel {
  * @param[in] logLevel The LogLevel that will be converted to a string.
  * @return The LogLevel as a string.
  */
-static string loglevelToString(LogLevel logLevel)
+static std::string logLevelToString(LogLevel logLevel)
 {
 	switch (logLevel)
 	{
 	case LogLevel::Panic:
-		return string("PANIC");
+		return std::string("PANIC");
 		break;
 	case LogLevel::Error:
-		return string("ERROR");
+		return std::string("ERROR");
 		break;
 	case LogLevel::Warn:
-		return string("WARN");
+		return std::string("WARN");
 		break;
 	case LogLevel::Info:
-		return string("INFO");
+		return std::string("INFO");
 		break;
 	case LogLevel::Debug:
-		return string("DEBUG");
+		return std::string("DEBUG");
 		break;
 	case LogLevel::Trace:
-		return string("TRACE");
+		return std::string("TRACE");
 		break;
 	default:
-		return string("UNDEFINEDLOGLEVEL");
+		return std::string("UNDEFINEDLOGLEVEL");
 		break;
 	}
 }

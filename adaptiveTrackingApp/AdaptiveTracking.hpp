@@ -21,8 +21,6 @@
 #include "classification/TrainableProbabilisticClassifier.hpp"
 #include "condensation/CondensationTracker.hpp"
 #include "condensation/AdaptiveCondensationTracker.hpp"
-#include "condensation/AdaptiveMeasurementModel.hpp"
-#include "condensation/MeasurementModel.hpp"
 #include "condensation/SimpleTransitionModel.hpp"
 #include "condensation/OpticalFlowTransitionModel.hpp"
 #include "condensation/ResamplingSampler.hpp"
@@ -60,9 +58,8 @@ private:
 	enum class Initialization { AUTOMATIC, MANUAL, GROUND_TRUTH };
 
 	static void adaptiveChanged(int state, void* userdata);
-	static void scatterChanged(int state, void* userdata);
-	static void positionScatterChanged(int state, void* userdata);
-	static void velocityScatterChanged(int state, void* userdata);
+	static void positionDeviationChanged(int state, void* userdata);
+	static void sizeDeviationChanged(int state, void* userdata);
 	static void initialSamplerChanged(int state, void* userdata);
 	static void initialSampleCountChanged(int state, void* userdata);
 	static void initialRandomRateChanged(int state, void* userdata);
@@ -82,7 +79,7 @@ private:
 	shared_ptr<HistogramFilter> createHistogramFilter(unsigned int bins, ptree& config);
 	shared_ptr<FeatureExtractor> wrapFeatureExtractor(shared_ptr<FeatureExtractor> featureExtractor, float scaleFactor);
 	shared_ptr<Kernel> createKernel(ptree& config);
-	unique_ptr<ExampleManagement> createExampleManagement(ptree& config, shared_ptr<BinaryClassifier> classifier);
+	unique_ptr<ExampleManagement> createExampleManagement(ptree& config, shared_ptr<BinaryClassifier> classifier, bool positive);
 	shared_ptr<TrainableSvmClassifier> createLibSvmClassifier(ptree& config, shared_ptr<Kernel> kernel);
 	shared_ptr<TrainableSvmClassifier> createLibLinearClassifier(ptree& config);
 	shared_ptr<TrainableProbabilisticClassifier> createTrainableProbabilisticClassifier(ptree& config);
@@ -94,7 +91,7 @@ private:
 	void drawCrosshair(Mat& image);
 	void drawBox(Mat& image);
 	void drawGroundTruth(Mat& image, const LandmarkCollection& target);
-	void drawTarget(Mat& image, optional<Rect> target, optional<Sample> state, bool usedAdaptive, bool adapted);
+	void drawTarget(Mat& image, optional<Rect> target, bool usedAdaptive, bool adapted);
 
 	static const string videoWindowName;
 	static const string controlWindowName;
@@ -116,11 +113,8 @@ private:
 
 	Initialization initialization;
 	shared_ptr<DirectPyramidFeatureExtractor> pyramidExtractor;
-	shared_ptr<FeatureExtractor> adaptiveFeatureExtractor;
 	unique_ptr<CondensationTracker> initialTracker;
 	unique_ptr<AdaptiveCondensationTracker> adaptiveTracker;
-	shared_ptr<MeasurementModel> staticMeasurementModel;
-	shared_ptr<AdaptiveMeasurementModel> adaptiveMeasurementModel;
 	shared_ptr<SimpleTransitionModel> simpleTransitionModel;
 	shared_ptr<OpticalFlowTransitionModel> opticalFlowTransitionModel;
 	shared_ptr<ResamplingSampler> initialResamplingSampler;

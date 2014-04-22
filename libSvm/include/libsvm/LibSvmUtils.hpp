@@ -164,7 +164,10 @@ private:
 	template<class T>
 	void fillMat(cv::Mat& vector, const struct svm_node *node, int size) const;
 
-	mutable int matType; ///< The type of the support vector data.
+	mutable int matRows;  ///< The row count of the support vector data.
+	mutable int matCols;  ///< The column count of the support vector data.
+	mutable int matType;  ///< The type of the support vector data.
+	mutable int matDepth; ///< The depth of the support vector data.
 	mutable int dimensions; ///< The amount of dimensions of the feature vectors.
 	mutable std::unordered_map<const struct svm_node*, cv::Mat> node2example; ///< Maps libSVM nodes to the training examples they were created with.
 	NodeDeleter nodeDeleter; ///< Deleter of libSVM nodes that removes the node from the map.

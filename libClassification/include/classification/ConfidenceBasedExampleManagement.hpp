@@ -25,16 +25,18 @@ public:
 	 * Constructs a new confidence based example management.
 	 *
 	 * @param[in] classifier Classifier for computing the confidences of the training examples.
+	 * @param[in] positive Flag that indicates whether this set contains positive training examples.
 	 * @param[in] capacity Maximum amount of stored training examples.
 	 * @param[in] requiredSize Minimum amount of training examples required for training.
 	 */
-	ConfidenceBasedExampleManagement(const std::shared_ptr<BinaryClassifier>& classifier, size_t capacity, size_t requiredSize = 1);
+	ConfidenceBasedExampleManagement(const std::shared_ptr<BinaryClassifier>& classifier, bool positive, size_t capacity, size_t requiredSize = 1);
 
 	void add(const std::vector<cv::Mat>& newExamples);
 
 private:
 
 	const std::shared_ptr<BinaryClassifier> classifier; ///< Classifier for computing the confidences of the training examples.
+	bool positive; ///< Flag that indicates whether this set contains positive training examples.
 };
 
 } /* namespace classification */

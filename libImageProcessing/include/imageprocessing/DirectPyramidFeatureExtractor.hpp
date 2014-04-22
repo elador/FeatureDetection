@@ -9,15 +9,14 @@
 #define DIRECTPYRAMIDFEATUREEXTRACTOR_HPP_
 
 #include "imageprocessing/PyramidFeatureExtractor.hpp"
-#include "imageprocessing/ImagePyramid.hpp"
-#include "imageprocessing/ImagePyramidLayer.hpp"
-#include <vector>
 
 using cv::Rect;
 using std::vector;
 
 namespace imageprocessing {
 
+class ImagePyramid;
+class ImagePyramidLayer;
 class ImageFilter;
 class ChainedFilter;
 
@@ -45,11 +44,22 @@ public:
 	 * @param[in] height The height of the image data of the extracted patches.
 	 * @param[in] minWidth The width of the smallest patches that will be extracted.
 	 * @param[in] maxWidth The width of the biggest patches that will be extracted.
+	 * @param[in] octaveLayerCount The number of layers per octave.
+	 */
+	DirectPyramidFeatureExtractor(int width, int height, int minWidth, int maxWidth, int octaveLayerCount = 5);
+
+	/**
+	 * Constructs a new direct pyramid feature extractor that internally builds its own image pyramid.
+	 *
+	 * @param[in] width The width of the image data of the extracted patches.
+	 * @param[in] height The height of the image data of the extracted patches.
+	 * @param[in] minWidth The width of the smallest patches that will be extracted.
+	 * @param[in] maxWidth The width of the biggest patches that will be extracted.
 	 * @param[in] incrementalScaleFactor The incremental scale factor between two layers of the pyramid.
 	 */
 	DirectPyramidFeatureExtractor(int width, int height, int minWidth, int maxWidth, double incrementalScaleFactor = 0.85);
 
-	~DirectPyramidFeatureExtractor();
+	virtual ~DirectPyramidFeatureExtractor();
 
 	/**
 	 * Adds an image filter to the image pyramid that is applied to the original image.
@@ -72,13 +82,9 @@ public:
 	 */
 	void addPatchFilter(shared_ptr<ImageFilter> filter);
 
-	void update(const Mat& image) {
-		pyramid->update(image);
-	}
+	void update(const Mat& image);
 
-	void update(shared_ptr<VersionedImage> image) {
-		pyramid->update(image);
-	}
+	void update(shared_ptr<VersionedImage> image);
 
 	/**
 	 * Extracts a patch from the corresponding image pyramid. The given width will be used to determine the appropriate
@@ -92,7 +98,7 @@ public:
 	 * @param[in] height The height of the patch in the original image.
 	 * @return The extracted patch or an empty pointer in case the patch could not be extracted.
 	 */
-	shared_ptr<Patch> extract(int x, int y, int width, int height) const;
+	virtual shared_ptr<Patch> extract(int x, int y, int width, int height) const;
 
 	/**
 	 * Extracts several patches from the layers of the corresponding image pyramid.
@@ -105,7 +111,7 @@ public:
 	 * @param[in] stepLayer The step size for proceeding to the next layer (values greater than one will skip layers).
 	 * @return The extracted patches.
 	 */
-	vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(),
+	virtual vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(),
 			int firstLayer = -1, int lastLayer = -1, int stepLayer = 1) const;
 
 	/**
@@ -116,19 +122,7 @@ public:
 	 * @param[in] y The y-coordinate of the patch center inside the layer.
 	 * @return The extracted patch or an empty pointer in case the patch could not be extracted.
 	 */
-	shared_ptr<Patch> extract(int layer, int x, int y) const;
-
-	/**
-	 * Given a region of interest around patches (patches are completely within the region), compute a region of
-	 * interest of the center points of the patches. The given region will be shrunk by half of the patch width
-	 * or height on all four sides.
-	 *
-	 * @param[in] The region of interest of patches that are completely within that region.
-	 * @return The region of interest of the same patches, so (at least) their center points are within that region.
-	 */
-	Rect getCenterRoi(const Rect& roi) const {
-		return Rect(roi.x + patchWidth / 2, roi.y + patchHeight / 2, roi.width - patchWidth, roi.height - patchHeight);
-	}
+	virtual shared_ptr<Patch> extract(int layer, int x, int y) const;
 
 	/**
 	 * Determines the index of the pyramid layer that approximately contains patches of the given width. The height will
@@ -138,78 +132,53 @@ public:
 	 * @param[in] height The height of the patches in the original image.
 	 * @return The index of the pyramid layer or -1 if there is no layer with an appropriate patch size.
 	 */
-	int getLayerIndex(int width, int height) const {
-		const shared_ptr<ImagePyramidLayer> layer = getLayer(width);
-		return layer ? layer->getIndex() : -1;
-	}
+	int getLayerIndex(int width, int height) const;
 
-	double getMinScaleFactor() const {
-		return pyramid->getMinScaleFactor();
-	}
+	double getMinScaleFactor() const;
 
-	double getMaxScaleFactor() const {
-		return pyramid->getMaxScaleFactor();
-	}
+	double getMaxScaleFactor() const;
 
-	double getIncrementalScaleFactor() const {
-		return pyramid->getIncrementalScaleFactor();
-	}
+	double getIncrementalScaleFactor() const;
 
-	Size getPatchSize() const {
-		return Size(getPatchWidth(), getPatchHeight());
-	}
+	Size getPatchSize() const;
 
-	Size getImageSize() const {
-		return pyramid->getImageSize();
-	}
+	Size getImageSize() const;
 
-	vector<Size> getLayerSizes() const {
-		return pyramid->getLayerSizes();
-	}
+	virtual vector<pair<int, double>> getLayerScales() const;
+
+	vector<Size> getLayerSizes() const;
 
 	vector<Size> getPatchSizes() const;
 
 	/**
 	 * @return The image pyramid.
 	 */
-	shared_ptr<ImagePyramid> getPyramid() {
-		return pyramid;
-	}
+	shared_ptr<ImagePyramid> getPyramid();
 
 	/**
 	 * @return The image pyramid.
 	 */
-	const shared_ptr<ImagePyramid> getPyramid() const {
-		return pyramid;
-	}
+	const shared_ptr<ImagePyramid> getPyramid() const;
 
 	/**
 	 * @return The width of the image data of the extracted patches.
 	 */
-	int getPatchWidth() const {
-		return patchWidth;
-	}
+	int getPatchWidth() const;
 
 	/**
 	 * @param[in] width The new width of the image data of the extracted patches.
 	 */
-	void setPatchWidth(int width) {
-		patchWidth = width;
-	}
+	void setPatchWidth(int width);
 
 	/**
 	 * @return The height of the image data of the extracted patches.
 	 */
-	int getPatchHeight() const {
-		return patchHeight;
-	}
+	int getPatchHeight() const;
 
 	/**
 	 * @param[in] height The new height of the image data of the extracted patches.
 	 */
-	void setPatchHeight(int height) {
-		patchHeight = height;
-	}
+	void setPatchHeight(int height);
 
 	/**
 	 * Changes the size of the image data of the extracted patches.
@@ -217,12 +186,27 @@ public:
 	 * @param[in] width The new width of the image data of the extracted patches.
 	 * @param[in] height The new height of the image data of the extracted patches.
 	 */
-	void setPatchSize(int width, int height) {
-		patchWidth = width;
-		patchHeight = height;
-	}
+	void setPatchSize(int width, int height);
 
-private:
+protected:
+
+	/**
+	 * Computes the scaled representation of an original value (coordinate, size, ...) and rounds accordingly.
+	 *
+	 * @param[in] layer The pyramid layer.
+	 * @param[in] value The value in the original image.
+	 * @return The corresponding value in the layer.
+	 */
+	virtual int getScaled(const ImagePyramidLayer& layer, int value) const;
+
+	/**
+	 * Computes the original representation of a scaled value (coordinate, size, ...) and rounds accordingly.
+	 *
+	 * @param[in] layer The pyramid layer.
+	 * @param[in] value The value in this layer.
+	 * @return corresponding The value in the original image.
+	 */
+	virtual int getOriginal(const ImagePyramidLayer& layer, int value) const;
 
 	/**
 	 * Determines the pyramid layer that approximately contains patches of the given width.
@@ -230,10 +214,30 @@ private:
 	 * @param[in] width The width of the patches in the original image.
 	 * @return The pyramid layer or an empty pointer if there is no layer with an appropriate patch width.
 	 */
-	const shared_ptr<ImagePyramidLayer> getLayer(int width) const {
-		double scaleFactor = static_cast<double>(patchWidth) / static_cast<double>(width);
-		return pyramid->getLayer(scaleFactor);
-	}
+	virtual const shared_ptr<ImagePyramidLayer> getLayer(int width) const;
+
+	/**
+	 * Creates a new image pyramid whose min and max scale factors are chosen to enable the extraction of patches
+	 * of certain widths.
+	 *
+	 * @param[in] width The width of the extracted patch data.
+	 * @param[in] minWidth The width of the smallest patches that will be extracted.
+	 * @param[in] maxWidth The width of the biggest patches that will be extracted.
+	 * @param[in] octaveLayerCount The number of layers per octave.
+	 * @return A newly created image pyramid.
+	 */
+	static shared_ptr<ImagePyramid> createPyramid(int width, int minWidth, int maxWidth, int octaveLayerCount);
+
+private:
+
+	/**
+	 * Extracts a feature vector from a certain location (patch) of a pyramid layer.
+	 *
+	 * @param[in] layer The pyramid layer.
+	 * @param[in] bounds The patch bounds.
+	 * @return A pointer to the patch (with its feature vector) that might be empty if the patch could not be created.
+	 */
+	shared_ptr<Patch> extract(const ImagePyramidLayer& layer, const Rect bounds) const;
 
 	shared_ptr<ImagePyramid> pyramid; ///< The image pyramid.
 	int patchWidth;  ///< The width of the image data of the extracted patches.

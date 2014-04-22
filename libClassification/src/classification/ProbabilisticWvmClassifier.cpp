@@ -37,7 +37,10 @@ pair<bool, double> ProbabilisticWvmClassifier::getConfidence(const Mat& featureV
 }
 
 pair<bool, double> ProbabilisticWvmClassifier::getProbability(const Mat& featureVector) const {
-	pair<int, double> levelAndDistance = wvm->computeHyperplaneDistance(featureVector);
+	return getProbability(wvm->computeHyperplaneDistance(featureVector));
+}
+
+pair<bool, double> ProbabilisticWvmClassifier::getProbability(pair<int, double> levelAndDistance) const {
 	// Do sigmoid stuff:
 	// NOTE Patrik: Here we calculate the probability for all WVM patches, also of those that
 	//      did not run up to the last filter. Those probabilities are wrong, but for the face-

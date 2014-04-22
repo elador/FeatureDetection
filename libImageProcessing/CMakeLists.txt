@@ -4,7 +4,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
-MESSAGE(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
+message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies
 FIND_PACKAGE(Boost 1.48.0 REQUIRED) # We only need the headers
@@ -18,13 +18,17 @@ SET(HEADERS
 	include/imageprocessing/BinningFilter.hpp
 	include/imageprocessing/CachingFeatureExtractor.hpp
 	include/imageprocessing/CachingPyramidFeatureExtractor.hpp
+	include/imageprocessing/CellBasedPyramidFeatureExtractor.hpp
 	include/imageprocessing/ChainedFilter.hpp
 	include/imageprocessing/ColorBinningFilter.hpp
 	include/imageprocessing/ColorChannelFilter.hpp
 	include/imageprocessing/ColorSpaceConversionFilter.hpp
+	include/imageprocessing/CompleteExtendedHogFilter.hpp
 	include/imageprocessing/ConversionFilter.hpp
+	include/imageprocessing/ConvolutionFilter.hpp
 	include/imageprocessing/DirectImageFeatureExtractor.hpp
 	include/imageprocessing/DirectPyramidFeatureExtractor.hpp
+	include/imageprocessing/ExtendedHogFeatureExtractor.hpp
 	include/imageprocessing/ExtendedHogFilter.hpp
 	include/imageprocessing/FeatureExtractor.hpp
 	include/imageprocessing/FilteringFeatureExtractor.hpp
@@ -68,13 +72,17 @@ SET(HEADERS
 SET(SOURCE
 	src/imageprocessing/CachingFeatureExtractor.cpp
 	src/imageprocessing/CachingPyramidFeatureExtractor.cpp
+	src/imageprocessing/CellBasedPyramidFeatureExtractor.cpp
 	src/imageprocessing/ChainedFilter.cpp
 	src/imageprocessing/ColorBinningFilter.cpp
 	src/imageprocessing/ColorChannelFilter.cpp
 	src/imageprocessing/ColorSpaceConversionFilter.cpp
+	src/imageprocessing/CompleteExtendedHogFilter.cpp
 	src/imageprocessing/ConversionFilter.cpp
+	src/imageprocessing/ConvolutionFilter.cpp
 	src/imageprocessing/DirectImageFeatureExtractor.cpp
 	src/imageprocessing/DirectPyramidFeatureExtractor.cpp
+	src/imageprocessing/ExtendedHogFeatureExtractor.cpp
 	src/imageprocessing/ExtendedHogFilter.cpp
 	src/imageprocessing/GammaCorrectionFilter.cpp
 	src/imageprocessing/GradientBinningFilter.cpp
@@ -116,3 +124,4 @@ include_directories( ${Logging_SOURCE_DIR}/include )
 
 # make library
 add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
+target_link_libraries(${SUBPROJECT_NAME} Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})

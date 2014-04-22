@@ -1,38 +1,33 @@
-SET( SUBPROJECT_NAME Render )	# my own variable, not cmake's
-PROJECT( ${SUBPROJECT_NAME} )
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11)
-SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
-SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
+set(SUBPROJECT_NAME Render)
+project(${SUBPROJECT_NAME})
+cmake_minimum_required(VERSION 2.8.11)
+set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
+set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 
-MESSAGE(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
+message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
-#OpenCV:
-FIND_PACKAGE( OpenCV 2.4.3 REQUIRED core imgproc highgui)
-MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
-MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
+find_package(OpenCV 2.4.3 REQUIRED core imgproc highgui)
 
-#Boost:
-#FIND_PACKAGE(Boost 1.48.0 COMPONENTS random REQUIRED)
-FIND_PACKAGE(Boost 1.48.0 REQUIRED)
+find_package(Boost 1.48.0 REQUIRED)
 if(Boost_FOUND)
-  MESSAGE(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
-ELSE(Boost_FOUND)
-  MESSAGE(FATAL_ERROR "Boost not found")
-ENDIF()
+  message(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
+else(Boost_FOUND)
+  message(FATAL_ERROR "Boost not found")
+endif()
 
-set(CMAKE_AUTOMOC ON) # Todo: Probably make dependent on WITH_RENDER_OPENGL
-find_package(Qt5Core REQUIRED)
-find_package(Qt5Gui REQUIRED)
-#find_package(Qt5OpenGL REQUIRED)
-#find_package(Qt5Widgets REQUIRED)
-
-message(status "EGL inc: ${Qt5Gui_EGL_INCLUDE_DIRS}")
-message(status "OpenGL inc: ${Qt5Gui_OPENGL_INCLUDE_DIRS}")
-message(status "EGL libs: ${Qt5Gui_EGL_LIBRARIES}")
-message(status "OpenGL libs: ${Qt5Gui_OPENGL_LIBRARIES}")
+if(WITH_RENDER_QOPENGL)
+	set(CMAKE_AUTOMOC ON)
+	find_package(Qt5Core REQUIRED)
+	find_package(Qt5Gui REQUIRED)
+	message(STATUS "Qt5 EGL include dir: ${Qt5Gui_EGL_INCLUDE_DIRS}")
+	message(STATUS "Qt5 OpenGL include dir: ${Qt5Gui_OPENGL_INCLUDE_DIRS}")
+	message(STATUS "Qt5 EGL library: ${Qt5Gui_EGL_LIBRARIES}")
+	message(STATUS "Qt5 OpenGL library: ${Qt5Gui_OPENGL_LIBRARIES}")
+	add_definitions(-DWITH_RENDER_QOPENGL)
+endif()
 
 #Source and header files:
-SET(SOURCE
+set(SOURCE
 	src/render/QOpenGLRenderer.cpp
 	src/render/SoftwareRenderer.cpp
 	src/render/Vertex.cpp
@@ -44,7 +39,7 @@ SET(SOURCE
 	src/render/MeshUtils.cpp
 )
 
-SET(HEADERS
+set(HEADERS
 	include/render/QOpenGLRenderer.hpp
 	include/render/SoftwareRenderer.hpp
 	include/render/Vertex.hpp
@@ -56,12 +51,14 @@ SET(HEADERS
 	include/render/MeshUtils.hpp
 )
 
-include_directories( "include" )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
-INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
+include_directories("include")
+include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS})
 
 #Make the library
-add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
-
-# Required to find the headers. See our github issue.
-TARGET_LINK_LIBRARIES( ${SUBPROJECT_NAME} Qt5::Core Qt5::Gui ${Qt5Gui_EGL_LIBRARIES} ${Qt5Gui_OPENGL_LIBRARIES} )
+add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
+if(WITH_RENDER_QOPENGL)
+	target_link_libraries(${SUBPROJECT_NAME} Qt5::Core Qt5::Gui ${Qt5Gui_EGL_LIBRARIES} ${Qt5Gui_OPENGL_LIBRARIES} ${OpenCV_LIBS})
+else()
+	target_link_libraries(${SUBPROJECT_NAME} ${OpenCV_LIBS})
+endif()

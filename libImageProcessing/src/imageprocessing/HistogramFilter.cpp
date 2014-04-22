@@ -26,10 +26,9 @@ void HistogramFilter::createCellHistograms(const Mat& image, Mat& histograms, in
 	if (image.depth() != CV_8U)
 		throw runtime_error("HistogramFilter: image must have a depth of CV_8U");
 
-	histograms = Mat::zeros(1, rowCount * columnCount * binCount, CV_32F);
+	histograms = Mat::zeros(rowCount, columnCount, CV_32FC(binCount));
 	float factor = 1.f / 255.f;
 	if (interpolate) { // bilinear interpolation between cells
-		float* histogramsValues = histograms.ptr<float>();
 		createCache(rowCache, image.rows, rowCount);
 		createCache(colCache, image.cols, columnCount);
 		if (image.channels() == 1) { // bin information only, no weights
@@ -37,63 +36,63 @@ void HistogramFilter::createCellHistograms(const Mat& image, Mat& histograms, in
 				const uchar* rowValues = image.ptr<uchar>(imageRow);
 				int rowIndex0 = rowCache[imageRow].index;
 				int rowIndex1 = rowIndex0 + 1;
-				float rowWeight0 = rowCache[imageRow].weight;
-				float rowWeight1 = 1.f - rowWeight0;
+				float rowWeight1 = rowCache[imageRow].weight;
+				float rowWeight0 = 1.f - rowWeight1;
 				for (int imageCol = 0; imageCol < image.cols; ++imageCol) {
 					uchar bin = rowValues[imageCol];
 
 					int colIndex0 = colCache[imageCol].index;
 					int colIndex1 = colIndex0 + 1;
-					float colWeight0 = colCache[imageCol].weight;
-					float colWeight1 = 1.f - colWeight0;
-					if (colIndex0 >= 0 && rowIndex0 >= 0) {
-						float* histogramValues = histogramsValues + rowIndex0 * columnCount * binCount + colIndex0 * binCount;
-						histogramValues[bin] += colWeight1 * rowWeight1;
+					float colWeight1 = colCache[imageCol].weight;
+					float colWeight0 = 1.f - colWeight1;
+					if (rowIndex0 >= 0 && colIndex0 >= 0) {
+						float* histogramValues = histograms.ptr<float>(rowIndex0, colIndex0);
+						histogramValues[bin] += rowWeight0 * colWeight0;
 					}
-					if (colIndex1 < columnCount && rowIndex0 >= 0) {
-						float* histogramValues = histogramsValues + rowIndex0 * columnCount * binCount + colIndex1 * binCount;
-						histogramValues[bin] += colWeight0 * rowWeight1;
+					if (rowIndex0 >= 0 && colIndex1 < columnCount) {
+						float* histogramValues = histograms.ptr<float>(rowIndex0, colIndex1);
+						histogramValues[bin] += rowWeight0 * colWeight1;
 					}
-					if (colIndex0 >= 0 && rowIndex1 < rowCount) {
-						float* histogramValues = histogramsValues + rowIndex1 * columnCount * binCount + colIndex0 * binCount;
-						histogramValues[bin] += colWeight1 * rowWeight0;
+					if (rowIndex1 < rowCount && colIndex0 >= 0) {
+						float* histogramValues = histograms.ptr<float>(rowIndex1, colIndex0);
+						histogramValues[bin] += rowWeight1 * colWeight0;
 					}
-					if (colIndex1 < columnCount && rowIndex1 < rowCount) {
-						float* histogramValues = histogramsValues + rowIndex1 * columnCount * binCount + colIndex1 * binCount;
-						histogramValues[bin] += colWeight0 * rowWeight0;
+					if (rowIndex1 < rowCount && colIndex1 < columnCount) {
+						float* histogramValues = histograms.ptr<float>(rowIndex1, colIndex1);
+						histogramValues[bin] += rowWeight1 * colWeight1;
 					}
 				}
 			}
 		} else if (image.channels() == 2) { // bin index and weight available
 			for (int imageRow = 0; imageRow < image.rows; ++imageRow) {
 				const Vec2b* rowValues = image.ptr<Vec2b>(imageRow);
-				int rowInedx0 = rowCache[imageRow].index;
-				int rowIndex1 = rowInedx0 + 1;
-				float rowWeight0 = rowCache[imageRow].weight;
-				float rowWeight1 = 1.f - rowWeight0;
+				int rowIndex0 = rowCache[imageRow].index;
+				int rowIndex1 = rowIndex0 + 1;
+				float rowWeight1 = rowCache[imageRow].weight;
+				float rowWeight0 = 1.f - rowWeight1;
 				for (int imageCol = 0; imageCol < image.cols; ++imageCol) {
 					uchar bin = rowValues[imageCol][0];
 					float weight = factor * rowValues[imageCol][1];
 
 					int colIndex0 = colCache[imageCol].index;
 					int colIndex1 = colIndex0 + 1;
-					float colWeight0 = colCache[imageCol].weight;
-					float colWeight1 = 1.f - colWeight0;
-					if (colIndex0 >= 0 && rowInedx0 >= 0) {
-						float* histogramValues = histogramsValues + rowInedx0 * columnCount * binCount + colIndex0 * binCount;
-						histogramValues[bin] += weight * colWeight1 * rowWeight1;
+					float colWeight1 = colCache[imageCol].weight;
+					float colWeight0 = 1.f - colWeight1;
+					if (rowIndex0 >= 0 && colIndex0 >= 0) {
+						float* histogramValues = histograms.ptr<float>(rowIndex0, colIndex0);
+						histogramValues[bin] += weight * rowWeight0 * colWeight0;
 					}
-					if (colIndex1 < columnCount && rowInedx0 >= 0) {
-						float* histogramValues = histogramsValues + rowInedx0 * columnCount * binCount + colIndex1 * binCount;
-						histogramValues[bin] += weight * colWeight0 * rowWeight1;
+					if (rowIndex0 >= 0 && colIndex1 < columnCount) {
+						float* histogramValues = histograms.ptr<float>(rowIndex0, colIndex1);
+						histogramValues[bin] += weight * rowWeight0 * colWeight1;
 					}
-					if (colIndex0 >= 0 && rowIndex1 < rowCount) {
-						float* histogramValues = histogramsValues + rowIndex1 * columnCount * binCount + colIndex0 * binCount;
-						histogramValues[bin] += weight * colWeight1 * rowWeight0;
+					if (rowIndex1 < rowCount && colIndex0 >= 0) {
+						float* histogramValues = histograms.ptr<float>(rowIndex1, colIndex0);
+						histogramValues[bin] += weight * rowWeight1 * colWeight0;
 					}
-					if (colIndex1 < columnCount && rowIndex1 < rowCount) {
-						float* histogramValues = histogramsValues + rowIndex1 * columnCount * binCount + colIndex1 * binCount;
-						histogramValues[bin] += weight * colWeight0 * rowWeight0;
+					if (rowIndex1 < rowCount && colIndex1 < columnCount) {
+						float* histogramValues = histograms.ptr<float>(rowIndex1, colIndex1);
+						histogramValues[bin] += weight * rowWeight1 * colWeight1;
 					}
 				}
 			}
@@ -102,8 +101,8 @@ void HistogramFilter::createCellHistograms(const Mat& image, Mat& histograms, in
 				const Vec4b* rowValues = image.ptr<Vec4b>(imageRow);
 				int rowIndex0 = rowCache[imageRow].index;
 				int rowIndex1 = rowIndex0 + 1;
-				float rowWeight0 = rowCache[imageRow].weight;
-				float rowWeight1 = 1.f - rowWeight0;
+				float rowWeight1 = rowCache[imageRow].weight;
+				float rowWeight0 = 1.f - rowWeight1;
 				for (int imageCol = 0; imageCol < image.cols; ++imageCol) {
 					uchar bin1 = rowValues[imageCol][0];
 					float weight1 = factor * rowValues[imageCol][1];
@@ -112,27 +111,27 @@ void HistogramFilter::createCellHistograms(const Mat& image, Mat& histograms, in
 
 					int colIndex0 = colCache[imageCol].index;
 					int colIndex1 = colIndex0 + 1;
-					float colWeight0 = colCache[imageCol].weight;
-					float colWeight1 = 1.f - colWeight0;
-					if (colIndex0 >= 0 && rowIndex0 >= 0) {
-						float* histogramValues = histogramsValues + rowIndex0 * columnCount * binCount + colIndex0 * binCount;
-						histogramValues[bin1] += weight1 * colWeight1 * rowWeight1;
-						histogramValues[bin2] += weight2 * colWeight1 * rowWeight1;
+					float colWeight1 = colCache[imageCol].weight;
+					float colWeight0 = 1.f - colWeight1;
+					if (rowIndex0 >= 0 && colIndex0 >= 0) {
+						float* histogramValues = histograms.ptr<float>(rowIndex0, colIndex0);
+						histogramValues[bin1] += weight1 * rowWeight0 * colWeight0;
+						histogramValues[bin2] += weight2 * rowWeight0 * colWeight0;
 					}
-					if (colIndex1 < columnCount && rowIndex0 >= 0) {
-						float* histogramValues = histogramsValues + rowIndex0 * columnCount * binCount + colIndex1 * binCount;
-						histogramValues[bin1] += weight1 * colWeight0 * rowWeight1;
-						histogramValues[bin2] += weight2 * colWeight0 * rowWeight1;
+					if (rowIndex0 >= 0 && colIndex1 < columnCount) {
+						float* histogramValues = histograms.ptr<float>(rowIndex0, colIndex1);
+						histogramValues[bin1] += weight1 * rowWeight0 * colWeight1;
+						histogramValues[bin2] += weight2 * rowWeight0 * colWeight1;
 					}
-					if (colIndex0 >= 0 && rowIndex1 < rowCount) {
-						float* histogramValues = histogramsValues + rowIndex1 * columnCount * binCount + colIndex0 * binCount;
-						histogramValues[bin1] += weight1 * colWeight1 * rowWeight0;
-						histogramValues[bin2] += weight2 * colWeight1 * rowWeight0;
+					if (rowIndex1 < rowCount && colIndex0 >= 0) {
+						float* histogramValues = histograms.ptr<float>(rowIndex1, colIndex0);
+						histogramValues[bin1] += weight1 * rowWeight1 * colWeight0;
+						histogramValues[bin2] += weight2 * rowWeight1 * colWeight0;
 					}
-					if (colIndex1 < columnCount && rowIndex1 < rowCount) {
-						float* histogramValues = histogramsValues + rowIndex1 * columnCount * binCount + colIndex1 * binCount;
-						histogramValues[bin1] += weight1 * colWeight0 * rowWeight0;
-						histogramValues[bin2] += weight2 * colWeight0 * rowWeight0;
+					if (rowIndex1 < rowCount && colIndex1 < columnCount) {
+						float* histogramValues = histograms.ptr<float>(rowIndex1, colIndex1);
+						histogramValues[bin1] += weight1 * rowWeight1 * colWeight1;
+						histogramValues[bin2] += weight2 * rowWeight1 * colWeight1;
 					}
 				}
 			}

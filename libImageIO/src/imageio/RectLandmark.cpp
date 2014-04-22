@@ -9,6 +9,7 @@
 
 using cv::Rect_;
 using cv::Rect;
+using cv::Point;
 using cv::Point2f;
 using cv::Size2f;
 using cv::Vec2f;
@@ -61,8 +62,13 @@ bool RectLandmark::isClose(const Landmark& landmark, const float similarity) con
 }
 
 void RectLandmark::draw(Mat& image, const Scalar& color, float width) const {
-	if (isVisible())
-		cv::rectangle(image, getRect(), color, width);
+	if (isVisible()) {
+		Rect_<float> floatRect = getRect();
+		Rect intRect(
+				Point(cvRound(floatRect.tl().x), cvRound(floatRect.tl().y)),
+				Point(cvRound(floatRect.br().x), cvRound(floatRect.br().y)));
+		cv::rectangle(image, intRect, color, width);
+	}
 }
 
 } /* namespace imageio */

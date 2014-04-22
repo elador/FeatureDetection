@@ -10,8 +10,12 @@
 #include <stdexcept>
 
 using cv::imread;
+using cv::Mat;
 using boost::filesystem::exists;
+using boost::filesystem::path;
 using std::sort;
+using std::string;
+using std::vector;
 using std::runtime_error;
 
 namespace imageio {
@@ -57,19 +61,19 @@ void FileImageSource::reset()
 bool FileImageSource::next()
 {
 	index++;
-	return index < files.size();
+	return index < static_cast<int>(files.size());
 }
 
 const Mat FileImageSource::getImage() const
 {
-	if (index < 0 || index >= files.size())
+	if (index < 0 || index >= static_cast<int>(files.size()))
 		return Mat();
 	return imread(files[index].string(), 1);
 }
 
 path FileImageSource::getName() const
 {
-	if (index < 0 || index >= files.size())
+	if (index < 0 || index >= static_cast<int>(files.size()))
 		return path();
 	return files[index];
 }

@@ -1,10 +1,12 @@
 ; Mapping from the 68-point MUCT annotations to the Surrey DID format (3DMM vertex indices).
-;
+; Partial mapping
+; Created by: Patrik Huber, 19.04.2014
+
 landmarkMappings ; A mapping from input landmarks (Muct, lhs) to output landmarks (DID, rhs)
 {
-	27  1 ; right eye outer-corner
-	32  2 ; left eye outer-corner
-	48 12 ; right mouth corner
-	54 13 ; left mouth corner
-	67  3 ; nose-tip
+	27   177 ; right eye outer-corner (1)
+	32   610 ; left eye outer-corner (2)
+	48   398 ; right mouth corner (12)
+	54   812 ; left mouth corner (13)
+	67   114 ; nose-tip (3)
 }

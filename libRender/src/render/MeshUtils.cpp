@@ -16,6 +16,7 @@
 
 using cv::Mat;
 using cv::Point2f;
+using cv::Scalar;
 
 namespace render {
 	namespace utils {
@@ -26,7 +27,7 @@ Mesh MeshUtils::createCube()
 	cube.vertex.resize(24);
 
 	for (int i = 0; i < 24; i++)
-		cube.vertex[i].color = cv::Vec3f(1.0f, 1.0f, 0.0f);
+		cube.vertex[i].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
 
 	cube.vertex[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
 	cube.vertex[0].texcrd = cv::Vec2f(0.0f, 0.0f);
@@ -226,11 +227,23 @@ shared_ptr<Mesh> MeshUtils::createTriangle()
 	vi[0] = 0; vi[1] = 1; vi[2] = 2;
 	triangle->tvi.push_back(vi);
 	
-	triangle->texture = std::make_shared<Texture>();
-	triangle->texture->createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\up.png");
+	//triangle->texture = std::make_shared<Texture>();
+	//triangle->texture->createFromFile("C:\\Users\\Patrik\\Cloud\\PhD\\up.png");
 	triangle->hasTexture = false;
 
 	return triangle;
+}
+
+cv::Mat MeshUtils::drawTexCoords(Mesh mesh)
+{
+	Mat texImg(512, 512, CV_8UC4, cv::Scalar(0.0f, 0.0f, 0.0f, 255.0f));
+	//texImg.s
+	for (const auto& triIdx : mesh.tvi) {
+		cv::line(texImg, Point2f(mesh.vertex[triIdx[0]].texcrd[0] * texImg.cols, mesh.vertex[triIdx[0]].texcrd[1] * texImg.rows), Point2f(mesh.vertex[triIdx[1]].texcrd[0] * texImg.cols, mesh.vertex[triIdx[1]].texcrd[1] * texImg.rows), Scalar(255.0f, 0.0f, 0.0f));
+		cv::line(texImg, Point2f(mesh.vertex[triIdx[1]].texcrd[0] * texImg.cols, mesh.vertex[triIdx[1]].texcrd[1] * texImg.rows), Point2f(mesh.vertex[triIdx[2]].texcrd[0] * texImg.cols, mesh.vertex[triIdx[2]].texcrd[1] * texImg.rows), Scalar(255.0f, 0.0f, 0.0f));
+		cv::line(texImg, Point2f(mesh.vertex[triIdx[2]].texcrd[0] * texImg.cols, mesh.vertex[triIdx[2]].texcrd[1] * texImg.rows), Point2f(mesh.vertex[triIdx[0]].texcrd[0] * texImg.cols, mesh.vertex[triIdx[0]].texcrd[1] * texImg.rows), Scalar(255.0f, 0.0f, 0.0f));
+	}
+	return texImg;
 }
 
 // Returns true if inside the tri or on the border
@@ -257,6 +270,7 @@ bool MeshUtils::isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Poin
 	return (u >= 0) && (v >= 0) && (u + v < 1);
 }
 
+#ifdef WITH_RENDER_QOPENGL
 // framebuffer where to extract the texture from
 // note: framebuffer should have size of the image (ok not necessarily. What about mobile?) (well it should, to get optimal quality (and everywhere the same quality)?)
 cv::Mat MeshUtils::extractTexture(render::Mesh mesh, QMatrix4x4 mvpMatrix, int viewportWidth, int viewportHeight, cv::Mat framebuffer) { // Change QMatrix4x4 to cv::Mat so that software-renderer is not dependent on Qt?
@@ -326,7 +340,7 @@ cv::Mat MeshUtils::extractTexture(render::Mesh mesh, QMatrix4x4 mvpMatrix, int v
 	}
 	return textureMap;
 }
-
+#endif
 
 	} /* namespace utils */
 } /* namespace render */

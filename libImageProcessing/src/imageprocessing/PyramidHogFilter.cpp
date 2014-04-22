@@ -33,7 +33,7 @@ PyramidHogFilter::~PyramidHogFilter() {}
 
 Mat PyramidHogFilter::applyTo(const Mat& image, Mat& filtered) const {
 	int realBinCount = signedAndUnsigned ? 3 * binCount / 2 : binCount;
-	filtered = Mat::zeros(1, histogramCount * realBinCount, CV_32F);
+	filtered = Mat::zeros(1, histogramCount, CV_32FC(realBinCount));
 	float* cellHistogramsValues = filtered.ptr<float>() + (histogramCount - (1 << (2 * maxLevel))) * realBinCount;
 	createCellHistograms(image, cellHistogramsValues, maxLevel, binCount, interpolate, signedAndUnsigned);
 	for (int level = maxLevel - 1; level >= 0; --level) {

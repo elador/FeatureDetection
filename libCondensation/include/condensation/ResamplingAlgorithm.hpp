@@ -9,8 +9,10 @@
 #define RESAMPLINGALGORITHM_HPP_
 
 #include <vector>
+#include <memory>
 
 using std::vector;
+using std::shared_ptr;
 
 namespace condensation {
 
@@ -31,7 +33,7 @@ public:
 	 * @param[in] count The amount of resulting samples.
 	 * @param[in,out] newSamples The vector to insert the new samples into.
 	 */
-	virtual void resample(const vector<Sample>& samples, unsigned int count, vector<Sample>& newSamples) = 0;
+	virtual void resample(const vector<shared_ptr<Sample>>& samples, unsigned int count, vector<shared_ptr<Sample>>& newSamples) = 0;
 };
 
 } /* namespace condensation */

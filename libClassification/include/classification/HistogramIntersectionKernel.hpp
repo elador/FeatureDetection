@@ -31,8 +31,8 @@ public:
 	~HistogramIntersectionKernel() {}
 
 	double compute(const Mat& lhs, const Mat& rhs) const {
-		if (lhs.channels() > 1 || rhs.channels() > 1)
-			throw invalid_argument("HistogramIntersectionKernel: arguments have to have only one channel");
+		if (!lhs.isContinuous() || !rhs.isContinuous())
+			throw invalid_argument("HistogramIntersectionKernel: arguments have to be continuous");
 		if (lhs.flags != rhs.flags)
 			throw invalid_argument("HistogramIntersectionKernel: arguments have to have the same type");
 		if (lhs.rows * lhs.cols != rhs.rows * rhs.cols)
@@ -54,12 +54,12 @@ private:
 	 * @return The sum of the squared differences.
 	 */
 	double computeSumOfMinimums(const Mat& lhs, const Mat& rhs) const {
-		switch (lhs.type()) {
+		switch (lhs.depth()) {
 			case CV_8U: return computeSumOfMinimums_uchar(lhs, rhs);
 			case CV_32S: return computeSumOfMinimums_any<int>(lhs, rhs);
 			case CV_32F: return computeSumOfMinimums_any<float>(lhs, rhs);
 		}
-		throw invalid_argument("HistogramIntersectionKernel: arguments have to be of type CV_8U, CV_32S or CV_32F");
+		throw invalid_argument("HistogramIntersectionKernel: arguments have to be of depth CV_8U, CV_32S or CV_32F");
 	}
 
 	/**
@@ -70,10 +70,11 @@ private:
 	 * @return The sum of the minimums.
 	 */
 	int computeSumOfMinimums_uchar(const Mat& lhs, const Mat& rhs) const {
-		const uchar* lvalues = lhs.ptr<uchar>(0);
-		const uchar* rvalues = rhs.ptr<uchar>(0);
+		const uchar* lvalues = lhs.ptr<uchar>();
+		const uchar* rvalues = rhs.ptr<uchar>();
 		int sum = 0;
-		for (int i = 0; i < lhs.rows * lhs.cols; ++i)
+		size_t size = lhs.total() * lhs.channels();
+		for (size_t i = 0; i < size; ++i)
 			sum += std::min(lvalues[i], rvalues[i]);
 		return sum;
 	}
@@ -87,10 +88,11 @@ private:
 	 */
 	template<class T>
 	float computeSumOfMinimums_any(const Mat& lhs, const Mat& rhs) const {
-		const T* lvalues = lhs.ptr<T>(0);
-		const T* rvalues = rhs.ptr<T>(0);
+		const T* lvalues = lhs.ptr<T>();
+		const T* rvalues = rhs.ptr<T>();
 		float sum = 0;
-		for (int i = 0; i < lhs.rows * lhs.cols; ++i)
+		size_t size = lhs.total() * lhs.channels();
+		for (size_t i = 0; i < size; ++i)
 			sum += std::min(lvalues[i], rvalues[i]);
 		return sum;
 	}

@@ -28,7 +28,7 @@ ConsoleAppender::~ConsoleAppender() {}
 void ConsoleAppender::log(const LogLevel logLevel, const string loggerName, const string logMessage)
 {
 	if(logLevel <= this->logLevel)
-		cout << getCurrentTime() << ' ' << loglevelToString(logLevel) << ' ' << "[" << loggerName << "] " << logMessage << std::endl;
+		cout << getCurrentTime() << ' ' << logLevelToString(logLevel) << ' ' << "[" << loggerName << "] " << logMessage << std::endl;
 }
 
 string ConsoleAppender::getCurrentTime()

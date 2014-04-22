@@ -22,15 +22,12 @@ template <class S, class T> static inline void clone(T*& dst, S* src, int n)
 #define Malloc(type,n) (type *)malloc((n)*sizeof(type))
 #define INF HUGE_VAL
 
+#if 0
 static void print_string_stdout(const char *s)
 {
 	fputs(s,stdout);
 	fflush(stdout);
 }
-
-static void (*liblinear_print_string) (const char *) = &print_string_stdout;
-
-#if 0
 static void info(const char *fmt,...)
 {
 	char buf[BUFSIZ];
@@ -42,7 +39,10 @@ static void info(const char *fmt,...)
 }
 #else
 static void info(const char *fmt,...) {}
+static void print_string_stdout(const char *s) {}
 #endif
+
+static void (*liblinear_print_string) (const char *) = &print_string_stdout;
 
 class l2r_lr_fun: public function
 {

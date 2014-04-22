@@ -4,8 +4,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
 SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
 
-MESSAGE(STATUS "Configuring ${SUBPROJECT_NAME}:")
-MESSAGE(STATUS "-------------------------------")
+message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 #OpenCV:
 FIND_PACKAGE( OpenCV 2.4.3 REQUIRED core imgproc highgui)

@@ -17,11 +17,6 @@
 #include "opencv2/core/core.hpp"
 #include <vector>
 
-using boost::filesystem::path;
-using std::vector;
-using std::string;
-using cv::Mat;
-
 namespace imageio {
 
 /**
@@ -35,14 +30,14 @@ public:
 	 *
 	 * @param[in] filePath The path and filename of the image.
 	 */
-	explicit FileImageSource(const string& filePath);
+	explicit FileImageSource(const std::string& filePath);
 
 	/**
 	 * Constructs a new file image source from a vector of files.
 	 *
 	 * @param[in] filePaths A vector with all the filenames.
 	 */
-	explicit FileImageSource(vector<string> filePaths);
+	explicit FileImageSource(std::vector<std::string> filePaths);
 
 	~FileImageSource();
 
@@ -50,15 +45,15 @@ public:
 
 	bool next();
 
-	const Mat getImage() const;
+	const cv::Mat getImage() const;
 
-	path getName() const;
+	boost::filesystem::path getName() const;
 
-	vector<path> getNames() const;
+	std::vector<boost::filesystem::path> getNames() const;
 
 private:
-	vector<path> files; ///< The files of the given directory, ordered by name.
-	int index;			///< The index of the next file.
+	std::vector<boost::filesystem::path> files; ///< The files of the given directory, ordered by name.
+	int index; ///< The index of the next file.
 
 };
 

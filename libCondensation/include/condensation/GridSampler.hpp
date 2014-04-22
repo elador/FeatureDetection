@@ -32,7 +32,8 @@ public:
 
 	void init(const Mat& image);
 
-	void sample(const vector<Sample>& samples, vector<Sample>& newSamples, const Mat& image, const optional<Sample>& target);
+	void sample(const vector<shared_ptr<Sample>>& samples, vector<shared_ptr<Sample>>& newSamples,
+			const Mat& image, const shared_ptr<Sample> target);
 
 private:
 

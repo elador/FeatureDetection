@@ -9,6 +9,8 @@
 #ifndef QOPENGLRENDERER_HPP_
 #define QOPENGLRENDERER_HPP_
 
+#ifdef WITH_RENDER_QOPENGL
+
 #include "QtGui/QOpenGLFunctions"
 #include "QtGui/QOpenGLShaderProgram"
 
@@ -30,7 +32,10 @@ public:
 		this->retinaScale = retinaScale;
 	};
 	// maybe make a setMesh(), to avoid copying the mesh in every frame
-	void render(Mesh mesh);
+	void render(Mesh mesh, QMatrix4x4 mvp);
+
+	// Warning: Performs full rendering of the frame in the current OpenGL context.
+	// getFramebuffer(Mesh, QMatrix4x4);
 private:
 	QOpenGLShaderProgram *m_program;
 	QOpenGLContext* qOpenGlContext;
@@ -80,5 +85,7 @@ static const char *fragmentShaderSource =
 "}\n";
 
  } /* namespace render */
+
+#endif /* WITH_RENDER_QOPENGL */
 
 #endif /* QOPENGLRENDERER_HPP_ */

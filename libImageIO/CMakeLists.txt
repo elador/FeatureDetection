@@ -1,28 +1,29 @@
-SET( SUBPROJECT_NAME ImageIO ) # my own variable, not cmake's
-PROJECT( ${SUBPROJECT_NAME} )
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
-SET( ${SUBPROJECT_NAME}_VERSION_MAJOR 0 )
-SET( ${SUBPROJECT_NAME}_VERSION_MINOR 1 )
+set(SUBPROJECT_NAME ImageIO)
+project(${SUBPROJECT_NAME})
+cmake_minimum_required(VERSION 2.8)
+set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
+set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 
-MESSAGE(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
+message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies
-#FIND_PACKAGE(Boost 1.48.0 COMPONENTS filesystem REQUIRED)	# Patrik: I think we need 'system' too, if the app doesn't link to it, ImageIO fails to link.
-FIND_PACKAGE(Boost 1.48.0 REQUIRED) # We only want the headers in the lib?
-FIND_PACKAGE(OpenCV 2.4.3 REQUIRED core)
-MESSAGE(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
-MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
+find_package(Boost 1.48.0 COMPONENTS system filesystem REQUIRED)
 
-IF(WITH_MSKINECT_SDK)
+find_package(OpenCV 2.4.3 REQUIRED core highgui)
+
+if(WITH_MSKINECT_SDK)
 	# Include Microsoft Kinect SDK (Windows)
-	SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
-	FIND_PACKAGE(KinectSDK REQUIRED)
-	INCLUDE_DIRECTORIES(${KinectSDK_INCLUDE_DIR})
+	set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+	find_package(KinectSDK REQUIRED)
+	include_directories(${KinectSDK_INCLUDE_DIR})
+	set(KINECT_LIBNAME ${KinectSDK_LIBRARIES})
 	add_definitions(-DWITH_MSKINECT_SDK)
-ENDIF()
+else()
+	set(KINECT_LIBNAME "")
+endif()
 
 # source and header files
-SET(HEADERS
+set(HEADERS
 	include/imageio/BobotLandmarkSink.hpp
 	include/imageio/BobotLandmarkSource.hpp
 	include/imageio/CameraImageSource.hpp
@@ -44,6 +45,7 @@ SET(HEADERS
 	include/imageio/LandmarkCollection.hpp
 	include/imageio/LandmarkFileGatherer.hpp
 	include/imageio/LandmarkFormatParser.hpp
+	include/imageio/LandmarkMapper.hpp
 	include/imageio/LandmarkSource.hpp
 	include/imageio/LandmarksHelper.hpp
 	include/imageio/LfpwLandmarkFormatParser.hpp
@@ -58,11 +60,13 @@ SET(HEADERS
 	include/imageio/RectLandmark.hpp
 	include/imageio/RectLandmarkSink.hpp
 	include/imageio/RepeatingFileImageSource.hpp
+	include/imageio/SimpleLandmarkSink.hpp
+	include/imageio/SimpleLandmarkSource.hpp
 	include/imageio/TlmsLandmarkFormatParser.hpp
 	include/imageio/VideoImageSink.hpp
 	include/imageio/VideoImageSource.hpp
 )
-SET(SOURCE
+set(SOURCE
 	src/imageio/BobotLandmarkSink.cpp
 	src/imageio/BobotLandmarkSource.cpp
 	src/imageio/CameraImageSource.cpp
@@ -78,6 +82,7 @@ SET(SOURCE
 	src/imageio/KinectImageSource.cpp
 	src/imageio/LandmarkCollection.cpp
 	src/imageio/LandmarkFileGatherer.cpp
+	src/imageio/LandmarkMapper.cpp
 	src/imageio/LfpwLandmarkFormatParser.cpp
 	src/imageio/LstLandmarkFormatParser.cpp
 	src/imageio/ModelLandmark.cpp
@@ -87,15 +92,18 @@ SET(SOURCE
 	src/imageio/RectLandmark.cpp
 	src/imageio/RectLandmarkSink.cpp
 	src/imageio/RepeatingFileImageSource.cpp
+	src/imageio/SimpleLandmarkSink.cpp
+	src/imageio/SimpleLandmarkSource.cpp
 	src/imageio/TlmsLandmarkFormatParser.cpp
 	src/imageio/VideoImageSink.cpp
 	src/imageio/VideoImageSource.cpp
 )
 
-include_directories( "include" )
-include_directories( ${Logging_SOURCE_DIR}/include )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
-include_directories( ${Boost_INCLUDE_DIRS} )
+include_directories("include")
+include_directories(${Logging_SOURCE_DIR}/include)
+include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS})
 
 # make library
-add_library( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
+add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
+target_link_libraries(${SUBPROJECT_NAME} Logging ${KINECT_LIBNAME} ${Boost_LIBRARIES} ${OpenCV_LIBS})
