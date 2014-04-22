@@ -5,7 +5,6 @@
 
 landmarkMappings ; A mapping from input landmarks (Muct, lhs) to output landmarks (DID, rhs)
 {
-
 	27   177 ; right eye outer-corner (1)
 	32   610 ; left eye outer-corner (2)
 	48   398 ; right mouth corner (12)
@@ -26,7 +25,4 @@ landmarkMappings ; A mapping from input landmarks (Muct, lhs) to output landmark
 	15   658 ; left eyebrow outer corner (22)
 	18   590 ; left eyebrow inner corner (23)
 	41   270 ; nose lip junction (28)
-	
-	
-
 }
