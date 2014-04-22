@@ -57,6 +57,7 @@
 #include "imageio/EmptyLandmarkSource.hpp"
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/IbugLandmarkFormatParser.hpp"
+#include "imageio/MuctLandmarkFormatParser.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -233,7 +234,10 @@ int main(int argc, char *argv[])
 		} else if(boost::iequals(landmarkType, "ibug")) {
 			landmarkFormatParser = make_shared<IbugLandmarkFormatParser>();
 			landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".pts", GatherMethod::ONE_FILE_PER_IMAGE_SAME_DIR, groundtruthDirs), landmarkFormatParser);
-		} else {
+        } else if (boost::iequals(landmarkType, "muct76-opencv")) {
+            landmarkFormatParser = make_shared<MuctLandmarkFormatParser>();
+            landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(shared_ptr<ImageSource>(), string(), GatherMethod::SEPARATE_FILES, groundtruthDirs), landmarkFormatParser);
+        } else {
 			cout << "Error: Invalid ground truth type." << endl;
 			return EXIT_FAILURE;
 		}
