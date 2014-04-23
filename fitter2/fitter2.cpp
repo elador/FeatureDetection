@@ -85,6 +85,44 @@ using boost::lexical_cast;
 using std::cout;
 using std::endl;
 
+// alpha = 4th channel. 0 = fully transparent, 255 = not transparent.
+// input: backgroundImage needs to be 8UC3, overlayImage 8UC4
+// overlayFactor: the alpha gets multiplied with this. make less transparent.
+// returns: img with same type as backgroundImage.
+cv::Mat alphaBlend(cv::Mat backgroundImage, cv::Mat overlayImage, float overlayFactor = 1.0f) {
+	if (backgroundImage.rows != overlayImage.rows || backgroundImage.cols != overlayImage.cols)	{
+		// both images must have the same dimensions.
+		return cv::Mat();
+	}
+	if (overlayImage.channels() != 4) {
+		// overlayImage must have 4 channels
+		return cv::Mat();
+	}
+	// check if format is RGBA or BGRA, i.e. that alpha is the 4th channel?
+	Mat outputImage(backgroundImage.rows, backgroundImage.cols, backgroundImage.type());
+	for (int y = 0; y < outputImage.rows; ++y) { // todo: check which loop should be the outer, i.e. which one is faster
+		for (int x = 0; x < outputImage.cols; ++x) {
+			cv::Vec3b overlayValues(overlayImage.at<cv::Vec4b>(y, x)[0], overlayImage.at<cv::Vec4b>(y, x)[1], overlayImage.at<cv::Vec4b>(y, x)[2]);
+			float alpha = static_cast<float>(overlayImage.at<cv::Vec4b>(y, x)[3]) / 255.0f;
+			alpha *= overlayFactor;
+			outputImage.at<cv::Vec3b>(y, x) = (1.0f - alpha) * backgroundImage.at<cv::Vec3b>(y, x) + alpha * overlayValues;
+		}
+	}
+	return outputImage;
+}
+
+float lambda = 1.0f;
+int lambda_slider = 10;
+int lambda_slider_max = 500;
+bool renderNew = true;
+
+void on_trackbar(int, void*)
+{
+	//lambda = static_cast<float>(lambda_slider) / static_cast<float>(lambda_slider_max);
+	lambda = static_cast<float>(lambda_slider) / 10.0f;
+	renderNew = true;
+}
+
 template<class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 {
@@ -207,7 +245,9 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	
-	//const string windowName = "win";
+	const string windowName = "win";
+	cv::namedWindow(windowName);
+	cv::createTrackbar("Lambda", windowName, &lambda_slider, lambda_slider_max, on_trackbar);
 
 	// Create the output directory if it doesn't exist yet
 	if (!boost::filesystem::exists(outputPath)) {
@@ -220,6 +260,7 @@ int main(int argc, char *argv[])
 	morphablemodel::OpenCVCameraEstimation epnpCameraEstimation(morphableModel); // todo: this can all go to only init once
 	morphablemodel::AffineCameraEstimation affineCameraEstimation(morphableModel);
 	vector<imageio::ModelLandmark> landmarks;
+	//float lambda = 1.0f;
 
 	LandmarkMapper landmarkMapper(path("C:\\Users\\Patrik\\Documents\\GitHub\\FeatureDetection\\libImageIO\\share\\landmarkMappings\\ibug2did.txt"));
 
@@ -269,6 +310,15 @@ int main(int argc, char *argv[])
 	// End Affine est.
 	Mat fullAffineCam = affineCameraEstimation.calculateFullMatrix(affineCam);
 
+	Mat blendedImg;
+	while (true)
+	{
+	if (renderNew)
+	{
+	
+	start = std::chrono::system_clock::now();
+	appLogger.info("Starting to process " + labeledImageSource->getName().string());
+
 	// Estimate the shape coefficients
 	vector<float> fittedCoeffs;
 	{
@@ -288,17 +338,18 @@ int main(int argc, char *argv[])
 			affineCam.copyTo(submatrixToReplace);
 		}
 		// The variances: We set the 3D and 2D variances to one static value for now. $sigma^2_2D = sqrt(1) + sqrt(3)^2 = 4$
-		float sigma_2D = std::sqrt(4);
+		// As we optimize in clip-space now, we need to divide the 2D (pixel) variance by img.width / 2.0f
+		float sigma_2D_3D = std::sqrt(1) + std::sqrt(3.0f / (img.cols / 2.0f));
 		Mat Sigma = Mat::zeros(3 * landmarks.size(), 3 * landmarks.size(), CV_32FC1);
 		for (int i = 0; i < 3 * landmarks.size(); ++i) {
-			Sigma.at<float>(i, i) = 1.0f / sigma_2D;
+			Sigma.at<float>(i, i) = 1.0f / sigma_2D_3D;
 		}
 		Mat Omega = Sigma.t() * Sigma;
 		// The landmarks in matrix notation (in homogeneous coordinates), $3N\times 1$
 		Mat y = Mat::ones(3 * landmarks.size(), 1, CV_32FC1);
 		for (int i = 0; i < landmarks.size(); ++i) {
-			y.at<float>(3 * i, 0) = landmarks[i].getX();
-			y.at<float>((3 * i) + 1, 0) = landmarks[i].getY();
+			y.at<float>(3 * i, 0) = landmarksClipSpace[i].getX(); //landmarks[i].getX();
+			y.at<float>((3 * i) + 1, 0) = landmarksClipSpace[i].getY(); //landmarks[i].getY();
 			// the position (3*i)+2 stays 1 (homogeneous coordinate)
 		}
 		// The mean, with an added homogeneous coordinate (x_1, y_1, z_1, 1, x_2, ...)^t
@@ -315,7 +366,7 @@ int main(int argc, char *argv[])
 		Mat A = P * V_hat_h;
 		Mat b = P * v_bar - y;
 		//Mat c_s; // The x, we solve for this! (the variance-normalized shape parameter vector, $c_s = [a_1/sigma_{s,1} , ..., a_m-1/sigma_{s,m-1}]^t$
-		float lambda = 0.1f; // lambdaIn; //0.01f; // The weight of the regularisation
+		//float lambda = 10.0f; // lambdaIn; //0.01f; // The weight of the regularisation
 		int numShapePc = morphableModel.getShapeModel().getNumberOfPrincipalComponents();
 		Mat AtOmegaA = A.t() * Omega * A;
 		Mat AtOmegaAReg = AtOmegaA + lambda * Mat::eye(numShapePc, numShapePc, CV_32FC1);
@@ -326,8 +377,8 @@ int main(int argc, char *argv[])
 	}
 	// End estimate the shape coefficients
 
-	//Mesh mesh = morphableModel.drawSample(fittedCoeffs, vector<float>());
-	Mesh mesh = morphableModel.getMean();
+	Mesh mesh = morphableModel.drawSample(fittedCoeffs, vector<float>());
+	//Mesh mesh = morphableModel.getMean();
 	render::SoftwareRenderer swr(img.cols, img.rows);
 	float aspect = (float)img.cols / float(img.rows);
 	Mat ortho = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.01f, 100.0f);
@@ -344,30 +395,29 @@ int main(int argc, char *argv[])
 	//std::shared_ptr<render::Mesh> meanMesh = std::make_shared<render::Mesh>(morphableModel.getMean());
 	//render::Mesh::writeObj(*meanMesh.get(), "C:\\Users\\Patrik\\Documents\\GitHub\\mean.obj");
 
-	/*
-	std::ofstream myfile;
-	path coeffsFilename = outputPath / labeledImageSource->getName().stem();
-	myfile.open(coeffsFilename.string() + ".txt");
-	for (int i = 0; i < fittedCoeffs.size(); ++i) {
-	myfile << fittedCoeffs[i] * std::sqrt(morphableModel.getShapeModel().getEigenvalue(i)) << std::endl;
-
-	}
-	myfile.close();
-	*/
-
 	//std::shared_ptr<render::Mesh> meshToDraw = std::make_shared<render::Mesh>(morphableModel.drawSample(fittedCoeffs, vector<float>(morphableModel.getColorModel().getNumberOfPrincipalComponents(), 0.0f)));
 	//render::Mesh::writeObj(*meshToDraw.get(), "C:\\Users\\Patrik\\Documents\\GitHub\\fittedMesh.obj");
 
 	// TODO: REPROJECT THE POINTS FROM THE C_S MODEL HERE AND SEE IF THE LMS REALLY GO FURTHER OUT OR JUST THE REST OF THE MESH
 
-	//cv::imshow(windowName, img);
-	//cv::waitKey(5);
-
-
 	end = std::chrono::system_clock::now();
 	int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 	appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds)+"ms.\n");
 
+	blendedImg = alphaBlend(affineCamLandmarksProjectionImage, fb.first, 0.8f);
+	//cv::addWeighted(landmarksImage, 0.5, fb.first, 0.5, 0.0, blendedImg);
+	renderNew = false;
+	} // end if renderNew
+
+	cv::imshow(windowName, blendedImg);
+	char key = cv::waitKey(30);
+	if (key == 'i')
+		lambda += 0.5f;
+	if (key == 'j')
+		lambda -= 0.5f;
+
+	appLogger.info("Lambda: " + lexical_cast<string>(lambda));
+	}
 
 	return 0;
 }
