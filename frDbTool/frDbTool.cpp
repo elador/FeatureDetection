@@ -68,7 +68,7 @@ using namespace std;
 using namespace imageio;
 using logging::Logger;
 using logging::LoggerFactory;
-using logging::loglevel;
+using logging::LogLevel;
 using boost::make_indirect_iterator;
 using boost::property_tree::ptree;
 using boost::property_tree::info_parser::read_info;
@@ -392,7 +392,7 @@ int main(int argc, char *argv[])
 	}
 
 
-	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(loglevel::TRACE));
+	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(LogLevel::Trace));
 
 	path fvsdkBins = "C:\\Users\\Patrik\\Cloud\\PhD\\FVSDK_bins\\";
 	path firOutDir = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\FIRs\\";

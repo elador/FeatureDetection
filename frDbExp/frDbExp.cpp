@@ -70,7 +70,7 @@ using namespace std;
 using namespace imageio;
 using logging::Logger;
 using logging::LoggerFactory;
-using logging::loglevel;
+using logging::LogLevel;
 using boost::make_indirect_iterator;
 using boost::property_tree::ptree;
 using boost::property_tree::info_parser::read_info;
