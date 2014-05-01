@@ -32,4 +32,4 @@ include_directories(${Logging_SOURCE_DIR}/include)
 include_directories(${ImageIO_SOURCE_DIR}/include)
 
 #Make the app depend on the libraries
-target_link_libraries(${SUBPROJECT_NAME} ImageIO  Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(${SUBPROJECT_NAME} ImageIO Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})
