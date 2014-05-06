@@ -75,8 +75,10 @@ private:
 	 * Entry of the cache for the linear interpolation.
 	 */
 	struct CacheEntry {
-		int index;    ///< First index (second one is index + 1).
-		float weight; ///< Weight of the second index (weight of first index is 1 - weight).
+		int index1;    ///< First index.
+		int index2;    ///< Second index.
+		float weight1; ///< Weight of the first index.
+		float weight2; ///< Weight of the second index.
 	};
 
 	/**

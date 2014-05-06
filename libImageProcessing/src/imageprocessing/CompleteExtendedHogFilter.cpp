@@ -43,12 +43,12 @@ CompleteExtendedHogFilter::CompleteExtendedHogFilter(size_t cellSize, size_t bin
 				binIndex = direction * binCount / CV_PI;
 			}
 			if (interpolateBins) {
-				binInformation.index1 = static_cast<uchar>(floor(binIndex)) % binCount;
-				binInformation.index2 = static_cast<uchar>(ceil(binIndex)) % binCount;
-				binInformation.weight2 = cv::saturate_cast<uchar>(255 * magnitude * (binIndex - floor(binIndex)));
-				binInformation.weight1 = cv::saturate_cast<uchar>(255 * magnitude - binInformation.weight2);
+				binInformation.index1 = static_cast<int>(floor(binIndex)) % binCount;
+				binInformation.index2 = static_cast<int>(ceil(binIndex)) % binCount;
+				binInformation.weight2 = static_cast<float>(magnitude * (binIndex - floor(binIndex)));
+				binInformation.weight1 = static_cast<float>(magnitude - binInformation.weight2);
 			} else {
-				binInformation.index1 = cvRound(binIndex) % binCount;
+				binInformation.index1 = static_cast<int>(round(binIndex)) % binCount;
 				binInformation.weight1 = static_cast<float>(magnitude);
 				binInformation.index2 = binInformation.index1;
 				binInformation.weight2 = 0;
@@ -102,10 +102,6 @@ void CompleteExtendedHogFilter::createLut(vector<BinInformation>& lut, size_t si
 }
 
 void CompleteExtendedHogFilter::buildInitialHistograms(Mat& histograms, const Mat& image, size_t cellRowCount, size_t cellColumnCount) const {
-	// TODO remove color-test
-//	if (image.type() != CV_8UC1 && image.type() != CV_8UC3)
-//		throw invalid_argument("CompleteExtendedHogFilter: image must be of type CV_8UC1 or CV_8UC3");
-//	const bool rgb = image.type() == CV_8UC3;
 	if (image.type() != CV_8UC1)
 		throw invalid_argument("CompleteExtendedHogFilter: image must be of type CV_8UC1");
 
@@ -126,40 +122,6 @@ void CompleteExtendedHogFilter::buildInitialHistograms(Mat& histograms, const Ma
 			float colWeight1 = columnLut[x].weight1;
 			float colWeight2 = columnLut[x].weight2;
 
-			// TODO remove color-test
-//			BinInformation binInformation;
-//			if (rgb) {
-//				cv::Vec3b xPlusOne = image.at<cv::Vec3b>(y, std::min(width - 1, x + 1));
-//				cv::Vec3b xMinusOne = image.at<cv::Vec3b>(y, std::max(0, static_cast<int>(x) - 1));
-//				cv::Vec3b yPlusOne = image.at<cv::Vec3b>(std::min(height - 1, y + 1), x);
-//				cv::Vec3b yMinusOne = image.at<cv::Vec3b>(std::max(0, static_cast<int>(y) - 1), x);
-//				int bdx = xPlusOne[0] - xMinusOne[0] + 256;
-//				int bdy = yPlusOne[0] - yMinusOne[0] + 256;
-//				int gdx = xPlusOne[1] - xMinusOne[1] + 256;
-//				int gdy = yPlusOne[1] - yMinusOne[1] + 256;
-//				int rdx = xPlusOne[2] - xMinusOne[2] + 256;
-//				int rdy = yPlusOne[2] - yMinusOne[2] + 256;
-//				const BinInformation& blueBin = binLut[bdx * 512 + bdy];
-//				const BinInformation& greenBin = binLut[gdx * 512 + gdy];
-//				const BinInformation& redBin = binLut[rdx * 512 + rdy];
-//				if (blueBin.weight1 + blueBin.weight2 > greenBin.weight1 + greenBin.weight2) {
-//					if (blueBin.weight1 + blueBin.weight2 > redBin.weight1 + redBin.weight2) {
-//						binInformation = blueBin;
-//					} else {
-//						binInformation = redBin;
-//					}
-//				} else {
-//					if (greenBin.weight1 + greenBin.weight2 > redBin.weight1 + redBin.weight2) {
-//						binInformation = greenBin;
-//					} else {
-//						binInformation = redBin;
-//					}
-//				}
-//			} else {
-//				int dx = image.at<uchar>(y, std::min(width - 1, x + 1)) - image.at<uchar>(y, std::max(0, static_cast<int>(x) - 1)) + 256;
-//				int dy = image.at<uchar>(std::min(height - 1, y + 1), x) - image.at<uchar>(std::max(0, static_cast<int>(y) - 1), x) + 256;
-//				binInformation = binLut[dx * 512 + dy];
-//			}
 			int dx = image.at<uchar>(y, std::min(width - 1, x + 1)) - image.at<uchar>(y, std::max(0, static_cast<int>(x) - 1)) + 256;
 			int dy = image.at<uchar>(std::min(height - 1, y + 1), x) - image.at<uchar>(std::max(0, static_cast<int>(y) - 1), x) + 256;
 			const BinInformation& binInformation = binLut[dx * 512 + dy];
