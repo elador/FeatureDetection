@@ -22,21 +22,18 @@ using std::shared_ptr;
 namespace condensation {
 
 ClassificationBasedStateValidator::ClassificationBasedStateValidator(
-		shared_ptr<FeatureExtractor> extractor, shared_ptr<BinaryClassifier> classifier) :
-				extractor(extractor), classifier(classifier) {}
+		shared_ptr<FeatureExtractor> extractor, shared_ptr<BinaryClassifier> classifier, vector<double> sizes, vector<double> displacements) :
+				extractor(extractor), classifier(classifier), sizes(sizes), displacements(displacements) {}
 
 bool ClassificationBasedStateValidator::isValid(const Sample& target,
 		const vector<shared_ptr<Sample>>& samples, shared_ptr<VersionedImage> image) {
-	// TODO replace magic numbers by parameters given to the constructor
 	extractor->update(image);
-	double scale = 0.87;
-	for (int s = -1; s <= 1; ++s) {
-		int size = static_cast<int>(std::round(target.getSize() * std::pow(scale, s)));
-		double step = size / 19.;
-		for (int xs = -2; xs <= 2; ++xs) {
-			int x = target.getX() + static_cast<int>(std::round(xs * step));
-			for (int ys = -2; ys <= 2; ++ys) {
-				int y = target.getY() + static_cast<int>(std::round(ys * step));
+	for (double scale : sizes) {
+		int size = static_cast<int>(std::round(scale * target.getSize()));
+		for (double offsetX : displacements) {
+			int x = target.getX() + static_cast<int>(std::round(offsetX * size));
+			for (double offsetY : displacements) {
+				int y = target.getY() + static_cast<int>(std::round(offsetY * size));
 				Sample s(x, y, size);
 				shared_ptr<Patch> patch = extractor->extract(s.getX(), s.getY(), s.getWidth(), s.getHeight());
 				if (patch && classifier->classify(patch->getData()))

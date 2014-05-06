@@ -425,6 +425,24 @@ shared_ptr<TrainableProbabilisticClassifier> HeadTracking::createTrainableProbab
 	return svm;
 }
 
+/**
+ * Extracts double values from a string.
+ */
+static vector<double> readValues(string text) {
+	int count = std::count_if(text.begin(), text.end(), [](const char c) {
+		return std::isblank(c);
+	});
+	vector<double> values;
+	values.reserve(count + 1);
+	string value;
+	istringstream stream(text);
+	while (stream.good() && !stream.fail()) {
+		stream >> value;
+		values.push_back(std::stod(value));
+	}
+	return values;
+}
+
 void HeadTracking::initTracking(ptree& config) {
 	// create base pyramid
 	shared_ptr<ImagePyramid> pyramid;
@@ -558,7 +576,9 @@ void HeadTracking::initTracking(ptree& config) {
 	if (config.get<string>("validator") == "rvm") {
 		shared_ptr<FeatureExtractor> validatorExtractor = createFeatureExtractor(pyramid, config.get_child("validator.feature"));
 		shared_ptr<BinaryClassifier> validatorClassifier = RvmClassifier::load(config.get_child("validator"));
-		adaptiveTracker->addValidator(make_shared<ClassificationBasedStateValidator>(validatorExtractor, validatorClassifier));
+		adaptiveTracker->addValidator(make_shared<ClassificationBasedStateValidator>(
+				validatorExtractor, validatorClassifier,
+				readValues(config.get<string>("validator.sizes")), readValues(config.get<string>("validator.displacements"))));
 	} else if (config.get<string>("validator") != "none") {
 		throw invalid_argument("HeadTracking: invalid validator type: " + config.get<string>("validator"));
 	}
