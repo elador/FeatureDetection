@@ -29,7 +29,7 @@ namespace condensation {
 
 class Sampler;
 class MeasurementModel;
-class PositionExtractor;
+class StateExtractor;
 
 /**
  * Tracker of a single object in image/video streams based on the Condensation algorithm (aka Particle Filter).
@@ -42,10 +42,10 @@ public:
 	 *
 	 * @param[in] sampler The sampler.
 	 * @param[in] measurementModel The measurement model.
-	 * @param[in] extractor The position extractor.
+	 * @param[in] extractor The state extractor.
 	 */
 	CondensationTracker(shared_ptr<Sampler> sampler, shared_ptr<MeasurementModel> measurementModel,
-			shared_ptr<PositionExtractor> extractor);
+			shared_ptr<StateExtractor> extractor);
 
 	~CondensationTracker();
 
@@ -89,12 +89,12 @@ private:
 
 	vector<shared_ptr<Sample>> samples;    ///< The current samples.
 	vector<shared_ptr<Sample>> oldSamples; ///< The previous samples.
-	shared_ptr<Sample> state;    ///< The estimated state.
+	shared_ptr<Sample> state;              ///< The estimated state.
 
 	shared_ptr<VersionedImage> image;              ///< The image used for evaluation.
 	shared_ptr<Sampler> sampler;                   ///< The sampler.
 	shared_ptr<MeasurementModel> measurementModel; ///< The measurement model.
-	shared_ptr<PositionExtractor> extractor;       ///< The position extractor.
+	shared_ptr<StateExtractor> extractor;          ///< The state extractor.
 };
 
 } /* namespace condensation */

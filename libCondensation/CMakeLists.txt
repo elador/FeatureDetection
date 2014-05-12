@@ -19,15 +19,14 @@ set(HEADERS
 	include/condensation/CondensationTracker.hpp
 	include/condensation/ExtendedHogBasedMeasurementModel.hpp
 	include/condensation/FilteringClassifierModel.hpp
-	include/condensation/FilteringPositionExtractor.hpp
+	include/condensation/FilteringStateExtractor.hpp
 	include/condensation/GridSampler.hpp
 	include/condensation/LowVarianceSampling.hpp
-	include/condensation/MaxWeightPositionExtractor.hpp
+	include/condensation/MaxWeightStateExtractor.hpp
 	include/condensation/MeasurementModel.hpp
 	include/condensation/OpticalFlowTransitionModel.hpp
 	include/condensation/PartiallyAdaptiveCondensationTracker.hpp
 	include/condensation/PositionDependentMeasurementModel.hpp
-	include/condensation/PositionExtractor.hpp
 	include/condensation/ResamplingAlgorithm.hpp
 	include/condensation/ResamplingSampler.hpp
 	include/condensation/Sample.hpp
@@ -35,9 +34,10 @@ set(HEADERS
 	include/condensation/SelfLearningMeasurementModel.hpp
 	include/condensation/SimpleTransitionModel.hpp
 	include/condensation/SingleClassifierModel.hpp
+	include/condensation/StateExtractor.hpp
 	include/condensation/StateValidator.hpp
 	include/condensation/TransitionModel.hpp
-	include/condensation/WeightedMeanPositionExtractor.hpp
+	include/condensation/WeightedMeanStateExtractor.hpp
 	include/condensation/WvmSvmModel.hpp
 )
 set(SOURCE
@@ -46,10 +46,10 @@ set(SOURCE
 	src/condensation/CondensationTracker.cpp
 	src/condensation/ExtendedHogBasedMeasurementModel.cpp
 	src/condensation/FilteringClassifierModel.cpp
-	src/condensation/FilteringPositionExtractor.cpp
+	src/condensation/FilteringStateExtractor.cpp
 	src/condensation/GridSampler.cpp
 	src/condensation/LowVarianceSampling.cpp
-	src/condensation/MaxWeightPositionExtractor.cpp
+	src/condensation/MaxWeightStateExtractor.cpp
 	src/condensation/OpticalFlowTransitionModel.cpp
 	src/condensation/PartiallyAdaptiveCondensationTracker.cpp
 	src/condensation/PositionDependentMeasurementModel.cpp
@@ -58,7 +58,7 @@ set(SOURCE
 	src/condensation/SelfLearningMeasurementModel.cpp
 	src/condensation/SimpleTransitionModel.cpp
 	src/condensation/SingleClassifierModel.cpp
-	src/condensation/WeightedMeanPositionExtractor.cpp
+	src/condensation/WeightedMeanStateExtractor.cpp
 	src/condensation/WvmSvmModel.cpp
 )
 

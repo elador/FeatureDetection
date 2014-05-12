@@ -73,9 +73,8 @@
 #include "condensation/WvmSvmModel.hpp"
 #include "condensation/SelfLearningMeasurementModel.hpp"
 #include "condensation/PositionDependentMeasurementModel.hpp"
-#include "condensation/FilteringPositionExtractor.hpp"
-#include "condensation/WeightedMeanPositionExtractor.hpp"
-#include "condensation/MaxWeightPositionExtractor.hpp"
+#include "condensation/FilteringStateExtractor.hpp"
+#include "condensation/WeightedMeanStateExtractor.hpp"
 #include "condensation/Sample.hpp"
 #include "boost/program_options.hpp"
 #include "boost/property_tree/info_parser.hpp"
@@ -517,10 +516,9 @@ void AdaptiveTracking::initTracking(ptree& config) {
 			config.get<double>("adaptive.resampling.minSize"), config.get<double>("adaptive.resampling.maxSize"));
 	gridSampler = make_shared<GridSampler>(config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"),
 			1 / pyramid->getIncrementalScaleFactor(), 0.1);
-	shared_ptr<PositionExtractor> positionExtractor
-			= make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>());
+	shared_ptr<StateExtractor> stateExtractor = make_shared<FilteringStateExtractor>(make_shared<WeightedMeanStateExtractor>());
 	adaptiveTracker = unique_ptr<AdaptiveCondensationTracker>(new AdaptiveCondensationTracker(
-			adaptiveResamplingSampler, adaptiveMeasurementModel, positionExtractor,
+			adaptiveResamplingSampler, adaptiveMeasurementModel, stateExtractor,
 			config.get<unsigned int>("adaptive.resampling.particleCount")));
 	useAdaptive = true;
 
@@ -543,7 +541,7 @@ void AdaptiveTracking::initTracking(ptree& config) {
 				make_shared<LowVarianceSampling>(), transitionModel,
 				config.get<double>("initial.resampling.minSize"), config.get<double>("initial.resampling.maxSize"));
 		initialTracker = unique_ptr<CondensationTracker>(new CondensationTracker(
-				initialResamplingSampler, staticMeasurementModel, positionExtractor));
+				initialResamplingSampler, staticMeasurementModel, stateExtractor));
 	} else if (config.get<string>("initial") == "manual") {
 		initialization = Initialization::MANUAL;
 	} else if (config.get<string>("initial") == "groundtruth") {

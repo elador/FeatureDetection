@@ -37,8 +37,8 @@
 #include "condensation/SimpleTransitionModel.hpp"
 #include "condensation/WvmSvmModel.hpp"
 #include "condensation/SingleClassifierModel.hpp"
-#include "condensation/FilteringPositionExtractor.hpp"
-#include "condensation/WeightedMeanPositionExtractor.hpp"
+#include "condensation/FilteringStateExtractor.hpp"
+#include "condensation/WeightedMeanStateExtractor.hpp"
 #include "condensation/Sample.hpp"
 #include "boost/optional.hpp"
 #include "boost/program_options.hpp"
@@ -124,7 +124,7 @@ void FaceTracking::initTracking() {
 			transitionModel, 80, 480);
 	gridSampler = make_shared<GridSampler>(80, 480, 1 / featureExtractor->getPyramid()->getIncrementalScaleFactor(), 0.1);
 	tracker = unique_ptr<CondensationTracker>(new CondensationTracker(
-			resamplingSampler, measurementModel, make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>())));
+			resamplingSampler, measurementModel, make_shared<FilteringStateExtractor>(make_shared<WeightedMeanStateExtractor>())));
 }
 
 void FaceTracking::initGui() {

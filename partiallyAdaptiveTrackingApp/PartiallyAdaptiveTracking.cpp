@@ -40,8 +40,8 @@
 #include "condensation/WvmSvmModel.hpp"
 #include "condensation/SelfLearningMeasurementModel.hpp"
 #include "condensation/PositionDependentMeasurementModel.hpp"
-#include "condensation/FilteringPositionExtractor.hpp"
-#include "condensation/WeightedMeanPositionExtractor.hpp"
+#include "condensation/FilteringStateExtractor.hpp"
+#include "condensation/WeightedMeanStateExtractor.hpp"
 #include "condensation/Sample.hpp"
 #include "boost/program_options.hpp"
 #include "boost/property_tree/info_parser.hpp"
@@ -193,7 +193,7 @@ void PartiallyAdaptiveTracking::initTracking(ptree config) {
 			1 / patchExtractor->getPyramid()->getIncrementalScaleFactor(), 0.1);
 	tracker = unique_ptr<PartiallyAdaptiveCondensationTracker>(new PartiallyAdaptiveCondensationTracker(
 			resamplingSampler, staticMeasurementModel, adaptiveMeasurementModel,
-			make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>())));
+			make_shared<FilteringStateExtractor>(make_shared<WeightedMeanStateExtractor>())));
 //	tracker->setUseAdaptiveModel(false);
 }
 

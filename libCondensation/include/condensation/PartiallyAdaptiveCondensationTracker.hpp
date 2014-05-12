@@ -30,7 +30,7 @@ namespace condensation {
 class Sampler;
 class MeasurementModel;
 class AdaptiveMeasurementModel;
-class PositionExtractor;
+class StateExtractor;
 
 /**
  * Condensation tracker that tries to adapt to the appearance of the tracked object over time.
@@ -50,10 +50,10 @@ public:
 	 * @param[in] sampler The sampler.
 	 * @param[in] initialMeasurementModel The initial static measurement model.
 	 * @param[in] measurementModel The adaptive measurement model.
-	 * @param[in] extractor The position extractor.
+	 * @param[in] extractor The state extractor.
 	 */
 	PartiallyAdaptiveCondensationTracker(shared_ptr<Sampler> sampler, shared_ptr<MeasurementModel> initialMeasurementModel,
-			shared_ptr<AdaptiveMeasurementModel> measurementModel, shared_ptr<PositionExtractor> extractor);
+			shared_ptr<AdaptiveMeasurementModel> measurementModel, shared_ptr<StateExtractor> extractor);
 
 	~PartiallyAdaptiveCondensationTracker();
 
@@ -116,16 +116,16 @@ private:
 
 	vector<shared_ptr<Sample>> samples;    ///< The current samples.
 	vector<shared_ptr<Sample>> oldSamples; ///< The previous samples.
-	shared_ptr<Sample> state;    ///< The estimated state.
+	shared_ptr<Sample> state;              ///< The estimated state.
 
-	bool useAdaptiveModel;        ///< Flag that indicates whether the adaptive measurement model should be used.
-	bool usedAdaptiveModel;       ///< Flag that indicates whether the adaptive measurement model was used.
+	bool useAdaptiveModel;  ///< Flag that indicates whether the adaptive measurement model should be used.
+	bool usedAdaptiveModel; ///< Flag that indicates whether the adaptive measurement model was used.
 
 	shared_ptr<VersionedImage> image;                      ///< The image used for evaluation.
 	shared_ptr<Sampler> sampler;                           ///< The sampler.
 	shared_ptr<MeasurementModel> initialMeasurementModel;  ///< The initial static measurement model.
 	shared_ptr<AdaptiveMeasurementModel> measurementModel; ///< The adaptive measurement model.
-	shared_ptr<PositionExtractor> extractor;               ///< The position extractor.
+	shared_ptr<StateExtractor> extractor;                  ///< The state extractor.
 };
 
 } /* namespace condensation */

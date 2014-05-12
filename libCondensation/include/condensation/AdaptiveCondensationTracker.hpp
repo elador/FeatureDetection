@@ -35,7 +35,7 @@ namespace condensation {
 class Sampler;
 class MeasurementModel;
 class AdaptiveMeasurementModel;
-class PositionExtractor;
+class StateExtractor;
 class StateValidator;
 
 /**
@@ -53,11 +53,11 @@ public:
 	 *
 	 * @param[in] sampler The sampler.
 	 * @param[in] measurementModel The adaptive measurement model.
-	 * @param[in] extractor The position extractor.
+	 * @param[in] extractor The state extractor.
 	 * @param[in] initialCount The initial amount of particles.
 	 */
 	AdaptiveCondensationTracker(shared_ptr<Sampler> sampler,
-			shared_ptr<AdaptiveMeasurementModel> measurementModel, shared_ptr<PositionExtractor> extractor, int initialCount);
+			shared_ptr<AdaptiveMeasurementModel> measurementModel, shared_ptr<StateExtractor> extractor, int initialCount);
 
 	~AdaptiveCondensationTracker();
 
@@ -118,16 +118,16 @@ public:
 
 private:
 
-	int initialCount;          ///< The initial amount of particles.
+	int initialCount;                      ///< The initial amount of particles.
 	vector<shared_ptr<Sample>> samples;    ///< The current samples.
 	vector<shared_ptr<Sample>> oldSamples; ///< The previous samples.
-	shared_ptr<Sample> state;    ///< The estimated state.
-	bool adapted;              ///< Flag that indicates whether the tracker has adapted to the current appearance.
+	shared_ptr<Sample> state;              ///< The estimated state.
+	bool adapted;                          ///< Flag that indicates whether the tracker has adapted to the current appearance.
 
 	shared_ptr<VersionedImage> image;                      ///< The image used for evaluation.
 	shared_ptr<Sampler> sampler;                           ///< The sampler.
 	shared_ptr<AdaptiveMeasurementModel> measurementModel; ///< The adaptive measurement model.
-	shared_ptr<PositionExtractor> extractor;               ///< The position extractor.
+	shared_ptr<StateExtractor> extractor;                  ///< The state extractor.
 	vector<shared_ptr<StateValidator>> validators;         ///< The validators of the target position.
 };
 

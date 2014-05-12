@@ -1,26 +1,26 @@
 /*
- * WeightedMeanPositionExtractor.cpp
+ * WeightedMeanStateExtractor.cpp
  *
  *  Created on: 19.07.2012
  *      Author: poschmann
  */
 
-#include "condensation/WeightedMeanPositionExtractor.hpp"
+#include "condensation/WeightedMeanStateExtractor.hpp"
 #include "condensation/Sample.hpp"
 #include <unordered_map>
 #include <algorithm>
 
+using std::vector;
+using std::shared_ptr;
+using std::make_shared;
 using std::unordered_map;
 using std::pair;
-using std::make_shared;
 
 namespace condensation {
 
-WeightedMeanPositionExtractor::WeightedMeanPositionExtractor() {}
+WeightedMeanStateExtractor::WeightedMeanStateExtractor() {}
 
-WeightedMeanPositionExtractor::~WeightedMeanPositionExtractor() {}
-
-shared_ptr<Sample> WeightedMeanPositionExtractor::extract(const vector<shared_ptr<Sample>>& samples) {
+shared_ptr<Sample> WeightedMeanStateExtractor::extract(const vector<shared_ptr<Sample>>& samples) {
 	unordered_map<int, vector<shared_ptr<Sample>>> clusters;
 	for (const shared_ptr<Sample>& sample : samples)
 		clusters[sample->getClusterId()].push_back(sample);

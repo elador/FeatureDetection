@@ -10,7 +10,7 @@
 #include "condensation/Sampler.hpp"
 #include "condensation/MeasurementModel.hpp"
 #include "condensation/AdaptiveMeasurementModel.hpp"
-#include "condensation/PositionExtractor.hpp"
+#include "condensation/StateExtractor.hpp"
 #include "imageprocessing/VersionedImage.hpp"
 
 using std::make_shared;
@@ -19,7 +19,7 @@ namespace condensation {
 
 PartiallyAdaptiveCondensationTracker::PartiallyAdaptiveCondensationTracker(shared_ptr<Sampler> sampler,
 		shared_ptr<MeasurementModel> initialMeasurementModel, shared_ptr<AdaptiveMeasurementModel> measurementModel,
-		shared_ptr<PositionExtractor> extractor) :
+		shared_ptr<StateExtractor> extractor) :
 				samples(),
 				oldSamples(),
 				state(),

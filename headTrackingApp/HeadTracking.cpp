@@ -75,8 +75,8 @@
 #include "condensation/SelfLearningMeasurementModel.hpp"
 #include "condensation/PositionDependentMeasurementModel.hpp"
 #include "condensation/ExtendedHogBasedMeasurementModel.hpp"
-#include "condensation/FilteringPositionExtractor.hpp"
-#include "condensation/WeightedMeanPositionExtractor.hpp"
+#include "condensation/FilteringStateExtractor.hpp"
+#include "condensation/WeightedMeanStateExtractor.hpp"
 #include "condensation/Sample.hpp"
 #include "condensation/ClassificationBasedStateValidator.hpp"
 #include "boost/program_options.hpp"
@@ -431,10 +431,8 @@ static vector<double> readValues(string text) {
 	boost::char_separator<char> sep(" ");
 	boost::tokenizer<boost::char_separator<char>> tokens(text, sep);
 	vector<double> values;
-	for (const string& token : tokens) {
+	for (const string& token : tokens)
 		values.push_back(std::stod(token));
-		std::cout << std::stod(token) << std::endl;
-	}
 	return values;
 }
 
@@ -560,10 +558,9 @@ void HeadTracking::initTracking(ptree& config) {
 			config.get<double>("adaptive.resampling.minSize"), config.get<double>("adaptive.resampling.maxSize"));
 	gridSampler = make_shared<GridSampler>(config.get<int>("pyramid.patch.minWidth"), config.get<int>("pyramid.patch.maxWidth"),
 			1 / pyramid->getIncrementalScaleFactor(), 0.1);
-	shared_ptr<PositionExtractor> positionExtractor
-			= make_shared<FilteringPositionExtractor>(make_shared<WeightedMeanPositionExtractor>());
+	shared_ptr<StateExtractor> stateExtractor = make_shared<FilteringStateExtractor>(make_shared<WeightedMeanStateExtractor>());
 	adaptiveTracker = unique_ptr<AdaptiveCondensationTracker>(new AdaptiveCondensationTracker(
-			adaptiveResamplingSampler, adaptiveMeasurementModel, positionExtractor,
+			adaptiveResamplingSampler, adaptiveMeasurementModel, stateExtractor,
 			config.get<unsigned int>("adaptive.resampling.particleCount")));
 	useAdaptive = true;
 

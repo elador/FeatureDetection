@@ -10,7 +10,7 @@
 #include "condensation/Sampler.hpp"
 #include "condensation/MeasurementModel.hpp"
 #include "condensation/AdaptiveMeasurementModel.hpp"
-#include "condensation/PositionExtractor.hpp"
+#include "condensation/StateExtractor.hpp"
 #include "condensation/StateValidator.hpp"
 #include "imageprocessing/VersionedImage.hpp"
 #include <stdexcept>
@@ -21,7 +21,7 @@ using std::runtime_error;
 namespace condensation {
 
 AdaptiveCondensationTracker::AdaptiveCondensationTracker(shared_ptr<Sampler> sampler,
-		shared_ptr<AdaptiveMeasurementModel> measurementModel, shared_ptr<PositionExtractor> extractor, int initialCount) :
+		shared_ptr<AdaptiveMeasurementModel> measurementModel, shared_ptr<StateExtractor> extractor, int initialCount) :
 				initialCount(initialCount),
 				samples(),
 				oldSamples(),

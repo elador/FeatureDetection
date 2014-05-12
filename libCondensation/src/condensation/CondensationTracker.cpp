@@ -9,7 +9,7 @@
 #include "condensation/CondensationTracker.hpp"
 #include "condensation/Sampler.hpp"
 #include "condensation/MeasurementModel.hpp"
-#include "condensation/PositionExtractor.hpp"
+#include "condensation/StateExtractor.hpp"
 #include "imageprocessing/VersionedImage.hpp"
 
 using std::make_shared;
@@ -17,7 +17,7 @@ using std::make_shared;
 namespace condensation {
 
 CondensationTracker::CondensationTracker(shared_ptr<Sampler> sampler,
-		shared_ptr<MeasurementModel> measurementModel, shared_ptr<PositionExtractor> extractor) :
+		shared_ptr<MeasurementModel> measurementModel, shared_ptr<StateExtractor> extractor) :
 				samples(),
 				oldSamples(),
 				state(),
