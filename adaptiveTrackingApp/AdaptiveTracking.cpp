@@ -80,7 +80,6 @@
 #include "boost/program_options.hpp"
 #include "boost/property_tree/info_parser.hpp"
 #include "boost/optional.hpp"
-#include "boost/lexical_cast.hpp"
 #include <vector>
 #include <iostream>
 #include <chrono>
@@ -94,7 +93,6 @@ using libsvm::LibSvmClassifier;
 using cv::Point;
 using cv::Rect;
 using boost::property_tree::info_parser::read_info;
-using boost::lexical_cast;
 using std::milli;
 using std::move;
 using std::ostringstream;
@@ -763,8 +761,8 @@ void AdaptiveTracking::onMouse(int event, int x, int y, int, void* userdata) {
 					double patchWidth = sqrt(dimension / aspectRatio);
 					double patchHeight = aspectRatio * patchWidth;
 					tracking->pyramidExtractor->setPatchSize(cvRound(patchWidth), cvRound(patchHeight));
-					log.info("Initialized patch size at " + lexical_cast<string>(tracking->pyramidExtractor->getPatchWidth())
-							+ " x " + lexical_cast<string>(tracking->pyramidExtractor->getPatchHeight()));
+					log.info("Initialized patch size at " + std::to_string(tracking->pyramidExtractor->getPatchWidth())
+							+ " x " + std::to_string(tracking->pyramidExtractor->getPatchHeight()));
 				}
 
 				int tries = 0;
@@ -773,7 +771,7 @@ void AdaptiveTracking::onMouse(int event, int x, int y, int, void* userdata) {
 					tracking->adaptiveUsable = tracking->adaptiveTracker->initialize(tracking->frame, position);
 				}
 				if (tracking->adaptiveUsable) {
-					log.info("Initialized adaptive tracking after " + lexical_cast<string>(tries) + " tries");
+					log.info("Initialized adaptive tracking after " + std::to_string(tries) + " tries");
 					tracking->storedX = -1;
 					tracking->storedY = -1;
 					tracking->currentX = -1;
@@ -783,7 +781,7 @@ void AdaptiveTracking::onMouse(int event, int x, int y, int, void* userdata) {
 					tracking->drawTarget(image, optional<Rect>(position), true, true);
 					imshow(videoWindowName, image);
 				} else {
-					log.warn("Could not initialize tracker after " + lexical_cast<string>(tries) + " tries (patch too small/big?)");
+					log.warn("Could not initialize tracker after " + std::to_string(tries) + " tries (patch too small/big?)");
 					std::cerr << "Could not initialize tracker - press 'q' to quit program" << std::endl;
 					tracking->stop();
 					while ('q' != (char)cv::waitKey(10));
@@ -863,16 +861,16 @@ void AdaptiveTracking::run() {
 								double patchWidth = sqrt(dimension / aspectRatio);
 								double patchHeight = aspectRatio * patchWidth;
 								pyramidExtractor->setPatchSize(cvRound(patchWidth), cvRound(patchHeight));
-								log.info("Initialized patch size at " + lexical_cast<string>(pyramidExtractor->getPatchWidth())
-										+ " x " + lexical_cast<string>(pyramidExtractor->getPatchHeight()));
+								log.info("Initialized patch size at " + std::to_string(pyramidExtractor->getPatchWidth())
+										+ " x " + std::to_string(pyramidExtractor->getPatchHeight()));
 							}
 							tries++;
 							adaptiveUsable = adaptiveTracker->initialize(frame, bounds);
 							drawTarget(image, optional<Rect>(bounds), true, true);
 							if (adaptiveUsable) {
-								log.info("Initialized adaptive tracking after " + lexical_cast<string>(tries) + " tries");
+								log.info("Initialized adaptive tracking after " + std::to_string(tries) + " tries");
 							} else if (tries == 10) {
-								log.warn("Could not initialize tracker after " + lexical_cast<string>(tries) + " tries (patch too small/big?)");
+								log.warn("Could not initialize tracker after " + std::to_string(tries) + " tries (patch too small/big?)");
 								std::cerr << "Could not initialize tracker - press 'q' to quit program" << std::endl;
 								stop();
 								while ('q' != (char)cv::waitKey(10));

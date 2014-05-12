@@ -82,7 +82,7 @@
 #include "boost/program_options.hpp"
 #include "boost/property_tree/info_parser.hpp"
 #include "boost/optional.hpp"
-#include "boost/lexical_cast.hpp"
+#include "boost/tokenizer.hpp"
 #include <vector>
 #include <iostream>
 #include <chrono>
@@ -96,7 +96,6 @@ using libsvm::LibSvmClassifier;
 using cv::Point;
 using cv::Rect;
 using boost::property_tree::info_parser::read_info;
-using boost::lexical_cast;
 using std::milli;
 using std::move;
 using std::ostringstream;
@@ -429,16 +428,12 @@ shared_ptr<TrainableProbabilisticClassifier> HeadTracking::createTrainableProbab
  * Extracts double values from a string.
  */
 static vector<double> readValues(string text) {
-	int count = std::count_if(text.begin(), text.end(), [](const char c) {
-		return std::isblank(c);
-	});
+	boost::char_separator<char> sep(" ");
+	boost::tokenizer<boost::char_separator<char>> tokens(text, sep);
 	vector<double> values;
-	values.reserve(count + 1);
-	string value;
-	istringstream stream(text);
-	while (stream.good() && !stream.fail()) {
-		stream >> value;
-		values.push_back(std::stod(value));
+	for (const string& token : tokens) {
+		values.push_back(std::stod(token));
+		std::cout << std::stod(token) << std::endl;
 	}
 	return values;
 }
@@ -812,7 +807,7 @@ void HeadTracking::onMouse(int event, int x, int y, int, void* userdata) {
 					tracking->adaptiveUsable = tracking->adaptiveTracker->initialize(tracking->frame, position);
 				}
 				if (tracking->adaptiveUsable) {
-					log.info("Initialized adaptive tracking after " + lexical_cast<string>(tries) + " tries");
+					log.info("Initialized adaptive tracking after " + std::to_string(tries) + " tries");
 					tracking->storedX = -1;
 					tracking->storedY = -1;
 					tracking->currentX = -1;
@@ -822,7 +817,7 @@ void HeadTracking::onMouse(int event, int x, int y, int, void* userdata) {
 					tracking->drawTarget(image, optional<Rect>(position), true, true);
 					imshow(videoWindowName, image);
 				} else {
-					log.warn("Could not initialize tracker after " + lexical_cast<string>(tries) + " tries (patch too small/big?)");
+					log.warn("Could not initialize tracker after " + std::to_string(tries) + " tries (patch too small/big?)");
 					std::cerr << "Could not initialize tracker - press 'q' to quit program" << std::endl;
 					tracking->stop();
 					while ('q' != (char)cv::waitKey(10));
@@ -901,9 +896,9 @@ void HeadTracking::run() {
 						adaptiveUsable = adaptiveTracker->initialize(frame, bounds);
 						drawTarget(image, optional<Rect>(bounds), true, true);
 						if (adaptiveUsable) {
-							log.info("Initialized adaptive tracking after " + lexical_cast<string>(tries) + " tries");
+							log.info("Initialized adaptive tracking after " + std::to_string(tries) + " tries");
 						} else if (tries == 10) {
-							log.warn("Could not initialize tracker after " + lexical_cast<string>(tries) + " tries (patch too small/big?)");
+							log.warn("Could not initialize tracker after " + std::to_string(tries) + " tries (patch too small/big?)");
 							std::cerr << "Could not initialize tracker - press 'q' to quit program" << std::endl;
 							stop();
 							while ('q' != (char)cv::waitKey(10));
