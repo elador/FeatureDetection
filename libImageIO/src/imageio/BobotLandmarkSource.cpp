@@ -30,12 +30,12 @@ namespace imageio {
 const string BobotLandmarkSource::landmarkName = "target";
 
 BobotLandmarkSource::BobotLandmarkSource(const string& filename, int imageWidth, int imageHeight) :
-		imageWidth(imageWidth), imageHeight(imageHeight), imageSource(), positions(), name2index(), index2name(), index(-1) {
+		imageWidth(imageWidth), imageHeight(imageHeight), imageSource(), videoFilename(), positions(), name2index(), index2name(), index(-1) {
 	readPositions(filename);
 }
 
 BobotLandmarkSource::BobotLandmarkSource(const string& filename, shared_ptr<ImageSource> imageSource) :
-		imageWidth(0), imageHeight(0), imageSource(imageSource), positions(), name2index(), index2name(), index(-1) {
+		imageWidth(0), imageHeight(0), imageSource(imageSource), videoFilename(), positions(), name2index(), index2name(), index(-1) {
 	readPositions(filename);
 }
 
@@ -46,7 +46,7 @@ void BobotLandmarkSource::readPositions(const string& filename) {
 	if (!file.is_open())
 		throw invalid_argument("BobotLandmarkSource: file \"" + filename + "\" cannot be opened");
 	if (file.good())
-		std::getline(file, line); // ignore first line (contains video file name)
+		std::getline(file, videoFilename);
 	Rect_<float> position;
 	while (file.good()) {
 		if (!std::getline(file, line))
@@ -61,6 +61,10 @@ void BobotLandmarkSource::readPositions(const string& filename) {
 		positions.push_back(position);
 		name2index.emplace(name, positions.size() - 1);
 	}
+}
+
+const string& BobotLandmarkSource::getVideoFilename() const {
+	return videoFilename;
 }
 
 void BobotLandmarkSource::reset() {

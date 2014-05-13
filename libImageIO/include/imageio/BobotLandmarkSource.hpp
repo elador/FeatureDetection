@@ -47,6 +47,11 @@ public:
 	 */
 	BobotLandmarkSource(const std::string& filename, std::shared_ptr<ImageSource> imageSource);
 
+	/**
+	 * @return The name/path of the video file associated with this landmark source (first line of file).
+	 */
+	const std::string& getVideoFilename() const;
+
 	void reset();
 
 	bool next();
@@ -70,6 +75,7 @@ private:
 	mutable int imageWidth;  ///< The width of the images.
 	mutable int imageHeight; ///< The height of the images.
 	std::shared_ptr<ImageSource> imageSource; ///< The source of the images. Is assumed to be at the same position as this landmark source.
+	std::string videoFilename; ///< The name/path of the video file associated with this landmark source (first line of file).
 	std::vector<cv::Rect_<float>> positions; ///< The target positions inside each image.
 	std::unordered_map<std::string, size_t> name2index; ///< Mapping between image name and position index.
 	std::unordered_map<size_t, std::string> index2name; ///< Mapping between position index and image name.
