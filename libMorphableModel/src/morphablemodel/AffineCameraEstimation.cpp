@@ -34,7 +34,7 @@ AffineCameraEstimation::AffineCameraEstimation(/* const? shared_ptr? */Morphable
 cv::Mat AffineCameraEstimation::estimate(std::vector<imageio::ModelLandmark> imagePoints, std::vector<int> vertexIds /*= std::vector<int>()*/)
 {
 	if (imagePoints.size() < 4) {
-		Loggers->getLogger("shapemodels").error("AffineCameraEstimation: Number of points given needs to be equal to or larger than 4.");
+		Loggers->getLogger("morphablemodel").error("AffineCameraEstimation: Number of points given needs to be equal to or larger than 4.");
 		throw std::runtime_error("AffineCameraEstimation: Number of points given needs to be equal to or larger than 4.");
 	}
 
@@ -51,7 +51,7 @@ cv::Mat AffineCameraEstimation::estimate(std::vector<imageio::ModelLandmark> ima
 		matModelPoints.at<float>(row, 2) = tmp[2];
 		++row;
 	}
-	Mat tmpOrigImgPoints = matImagePoints.clone(); // temp for testing
+	//Mat tmpOrigImgPoints = matImagePoints.clone(); // Temp for testing: Save the original coordinates.
 	// translate the centroid of the image points to the origin:
 	Mat imagePointsMean; // use non-homogeneous coords for the next few steps? (less submatrices etc overhead)
 	cv::reduce(matImagePoints, imagePointsMean, 0, CV_REDUCE_AVG);
@@ -68,22 +68,25 @@ cv::Mat AffineCameraEstimation::estimate(std::vector<imageio::ModelLandmark> ima
 	float scaleFactor = std::sqrt(2)/averageNorm;
 	matImagePoints *= scaleFactor; // add unit homogeneous component here
 	// The points in matImagePoints now have a RMS distance from the origin of sqrt(2).
+	// The normalisation matrix so that the 2D points are mean-free and their norm is as described above.
 	Mat T = Mat::zeros(3, 3, CV_32FC1);
 	T.at<float>(0, 0) = scaleFactor; // s_x
 	T.at<float>(1, 1) = scaleFactor; // s_y
 	T.at<float>(0, 2) = -imagePointsMean.at<float>(0, 0) * scaleFactor; // t_x
 	T.at<float>(1, 2) = -imagePointsMean.at<float>(0, 1) * scaleFactor; // t_y
 	T.at<float>(2, 2) = 1;
-
+	
+	/* // Test-code 2D, check if first point is normalised correctly (mean+norm)
 	Vec3f testPoint;
 	testPoint[0] = tmpOrigImgPoints.row(0).at<float>(0);
 	testPoint[1] = tmpOrigImgPoints.row(0).at<float>(1);
 	testPoint[2] = 1;
 	Mat testPointM(testPoint);
 	Mat res = T * testPointM;
+	*/
 
 	// center the model points to the origin:
-	Mat tmpOrigMdlPoints = matModelPoints.clone(); // temp for testing
+	Mat tmpOrigMdlPoints = matModelPoints.clone(); // Temp for testing: Save the original coordinates.
 	// translate the centroid of the model points to the origin:
 	Mat modelPointsMean; // use non-homogeneous coords for the next few steps? (less submatrices etc overhead)
 	cv::reduce(matModelPoints, modelPointsMean, 0, CV_REDUCE_AVG);
@@ -100,6 +103,7 @@ cv::Mat AffineCameraEstimation::estimate(std::vector<imageio::ModelLandmark> ima
 	scaleFactor = std::sqrt(3) / averageNorm;
 	matModelPoints *= scaleFactor; // add unit homogeneous component here
 	// The points in matModelPoints now have a RMS distance from the origin of sqrt(3).
+	// The normalisation matrix so that the 3D points are mean-free and their norm is as described above.
 	Mat U = Mat::zeros(4, 4, CV_32FC1);
 	U.at<float>(0, 0) = scaleFactor; // s_x
 	U.at<float>(1, 1) = scaleFactor; // s_y
@@ -109,6 +113,7 @@ cv::Mat AffineCameraEstimation::estimate(std::vector<imageio::ModelLandmark> ima
 	U.at<float>(2, 3) = -modelPointsMean.at<float>(0, 2) * scaleFactor; // t_z
 	U.at<float>(3, 3) = 1;
 
+	 // Test-code 2D, check if first point is normalised correctly (mean+norm)
 	Vec4f testPoint3d;
 	testPoint3d[0] = tmpOrigMdlPoints.row(6).at<float>(0);
 	testPoint3d[1] = tmpOrigMdlPoints.row(6).at<float>(1);
@@ -116,6 +121,7 @@ cv::Mat AffineCameraEstimation::estimate(std::vector<imageio::ModelLandmark> ima
 	testPoint3d[3] = 1;
 	Mat testPointM3d(testPoint3d);
 	Mat res3d = U * testPointM3d;
+	
 
 	// Estimate the normalized camera matrix (C tilde).
 	// We are solving the system $A_8 * p_8 = b$
@@ -150,7 +156,7 @@ cv::Mat AffineCameraEstimation::estimate(std::vector<imageio::ModelLandmark> ima
 
 	Mat P_Affine = T.inv() * C_tilde * U;
 
-	Mat restest = P_Affine * testPointM3d;
+	//Mat restest = P_Affine * testPointM3d;
 
 	return P_Affine;
 }
