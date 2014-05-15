@@ -125,14 +125,8 @@ cv::Mat AffineCameraEstimation::estimate(std::vector<imageio::ModelLandmark> ima
 	}
 	Mat p_8 = A_8.inv(cv::DECOMP_SVD) * b;
 	Mat C_tilde = Mat::zeros(3, 4, CV_32FC1);
-	C_tilde.at<float>(0, 0) = p_8.at<float>(0, 0); // could maybe made faster by assigning the whole row/col-range if possible?
-	C_tilde.at<float>(0, 1) = p_8.at<float>(1, 0);
-	C_tilde.at<float>(0, 2) = p_8.at<float>(2, 0);
-	C_tilde.at<float>(0, 3) = p_8.at<float>(3, 0);
-	C_tilde.at<float>(1, 0) = p_8.at<float>(4, 0);
-	C_tilde.at<float>(1, 1) = p_8.at<float>(5, 0);
-	C_tilde.at<float>(1, 2) = p_8.at<float>(6, 0);
-	C_tilde.at<float>(1, 3) = p_8.at<float>(7, 0);
+	C_tilde.row(0) = p_8.rowRange(0, 4).t(); // The first row of C_tilde consists of the first 4 entries of the col-vector p_8
+	C_tilde.row(1) = p_8.rowRange(4, 8).t(); // Second row = last 4 entries
 	C_tilde.at<float>(2, 3) = 1; // the last row is [0 0 0 1]
 
 	Mat P_Affine = T.inv() * C_tilde * U;

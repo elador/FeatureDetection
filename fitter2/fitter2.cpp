@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
 		Mat p2d = affineCam * p; // transform to clip space
 		p2d.at<float>(0, 0) = (p2d.at<float>(0, 0) + 1.0f) * (img.cols / 2.0f); // window transform
 		p2d.at<float>(1, 0) = img.rows - (p2d.at<float>(1, 0) + 1.0f) * (img.rows / 2.0f);
-		Point2f pp(p2d.at<float>(0, 0), p2d.at<float>(1, 0)); // Todo: check
+		Point2f pp(p2d.at<float>(0, 0), p2d.at<float>(1, 0));
 		cv::circle(affineCamLandmarksProjectionImage, pp, 4.0f, Scalar(0.0f, 255.0f, 0.0f));
 	}
 	// End Affine est.
