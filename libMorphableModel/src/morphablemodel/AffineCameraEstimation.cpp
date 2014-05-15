@@ -76,15 +76,6 @@ cv::Mat AffineCameraEstimation::estimate(std::vector<imageio::ModelLandmark> ima
 	T.at<float>(1, 2) = -imagePointsMean.at<float>(0, 1) * scaleFactor; // t_y
 	T.at<float>(2, 2) = 1;
 	
-	/* // Test-code 2D, check if first point is normalised correctly (mean+norm)
-	Vec3f testPoint;
-	testPoint[0] = tmpOrigImgPoints.row(0).at<float>(0);
-	testPoint[1] = tmpOrigImgPoints.row(0).at<float>(1);
-	testPoint[2] = 1;
-	Mat testPointM(testPoint);
-	Mat res = T * testPointM;
-	*/
-
 	// center the model points to the origin:
 	Mat tmpOrigMdlPoints = matModelPoints.clone(); // Temp for testing: Save the original coordinates.
 	// translate the centroid of the model points to the origin:
@@ -112,16 +103,6 @@ cv::Mat AffineCameraEstimation::estimate(std::vector<imageio::ModelLandmark> ima
 	U.at<float>(1, 3) = -modelPointsMean.at<float>(0, 1) * scaleFactor; // t_y
 	U.at<float>(2, 3) = -modelPointsMean.at<float>(0, 2) * scaleFactor; // t_z
 	U.at<float>(3, 3) = 1;
-
-	 // Test-code 2D, check if first point is normalised correctly (mean+norm)
-	Vec4f testPoint3d;
-	testPoint3d[0] = tmpOrigMdlPoints.row(6).at<float>(0);
-	testPoint3d[1] = tmpOrigMdlPoints.row(6).at<float>(1);
-	testPoint3d[2] = tmpOrigMdlPoints.row(6).at<float>(2);
-	testPoint3d[3] = 1;
-	Mat testPointM3d(testPoint3d);
-	Mat res3d = U * testPointM3d;
-	
 
 	// Estimate the normalized camera matrix (C tilde).
 	// We are solving the system $A_8 * p_8 = b$
@@ -155,9 +136,6 @@ cv::Mat AffineCameraEstimation::estimate(std::vector<imageio::ModelLandmark> ima
 	C_tilde.at<float>(2, 3) = 1; // the last row is [0 0 0 1]
 
 	Mat P_Affine = T.inv() * C_tilde * U;
-
-	//Mat restest = P_Affine * testPointM3d;
-
 	return P_Affine;
 }
 
