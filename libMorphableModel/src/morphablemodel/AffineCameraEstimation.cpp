@@ -135,26 +135,25 @@ cv::Mat AffineCameraEstimation::estimate(std::vector<imageio::ModelLandmark> ima
 
 cv::Mat AffineCameraEstimation::calculateFullMatrix(cv::Mat affineCameraMatrix)
 {
-	//affineCameraMatrix is the original 3x4 affine matrix. But we return a 4x4 matrix with a z - rotation(viewing - direction) as well(for the z - buffering)
-	/* affineCam = (cv::Mat_<float>(3, 4) << 1, 0, 0, 0,
-	0, 1, 0, 0,
-	0, 0, 0, 1); */
+	//affineCameraMatrix is the original 3x4 affine matrix. But we return a 4x4 matrix with a z-rotation (viewing direction) as well(for the z-buffering)
+	// Take the cross product of row 0 with row 1 to get the direction perpendicular to the viewing plane (= the viewing direction).
+	// Todo: We should check if we look/project into the right direction - the sign could be wrong?
 	Mat affineCamZ = affineCameraMatrix.row(0).colRange(0, 3).cross(affineCameraMatrix.row(1).colRange(0, 3));
 	affineCamZ /= cv::norm(affineCamZ, cv::NORM_L2);
 
-	// Replace the third row with the camera-direction (z)
-	// Todo: Take care of sign
-	Mat affineCamSubMat = affineCameraMatrix.row(2).colRange(0, 3);
-	affineCamZ.copyTo(affineCamSubMat);
-	affineCameraMatrix.at<float>(2, 3) = 0;
-
+	// The 4x4 affine camera matrix
 	Mat affineCamFull = Mat::zeros(4, 4, CV_32FC1);
+
+	// Replace the third row with the camera-direction (z)
+	Mat affineCamSubMat = affineCamFull.row(2).colRange(0, 3);
+	affineCamZ.copyTo(affineCamSubMat); // Set first 3 components. 4th component stays 0.
+	
+	// Copy the first 2 rows from the input matrix
 	Mat affineCamFullSub = affineCamFull.rowRange(0, 2);
-	affineCameraMatrix.rowRange(0, 2).copyTo(affineCamFullSub);
-	affineCamFullSub = affineCamFull.row(2).colRange(0, 3);
-	affineCamZ.copyTo(affineCamFullSub);
-	affineCamFull.at<float>(2, 3) = 0.0f;
-	affineCamFull.at<float>(3, 3) = 1.0f; // 4th row is (0, 0, 0, 1)
+	affineCameraMatrix.rowRange(0, 2).copyTo(affineCamFullSub); 
+	
+	// The 4th row is (0, 0, 0, 1):
+	affineCamFull.at<float>(3, 3) = 1.0f; 
 
 	return affineCamFull;
 }

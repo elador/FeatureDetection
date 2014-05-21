@@ -119,7 +119,7 @@ bool renderNew = true;
 void on_trackbar(int, void*)
 {
 	//lambda = static_cast<float>(lambda_slider) / static_cast<float>(lambda_slider_max);
-	lambda = static_cast<float>(lambda_slider) / 10.0f;
+	lambda = static_cast<float>(lambda_slider) / 100.0f;
 	renderNew = true;
 }
 
@@ -308,7 +308,6 @@ int main(int argc, char *argv[])
 		cv::circle(affineCamLandmarksProjectionImage, pp, 4.0f, Scalar(0.0f, 255.0f, 0.0f));
 	}
 	// End Affine est.
-	Mat fullAffineCam = affineCameraEstimation.calculateFullMatrix(affineCam);
 
 	Mat blendedImg;
 	while (true)
@@ -338,19 +337,21 @@ int main(int argc, char *argv[])
 			affineCam.copyTo(submatrixToReplace);
 		}
 		// The variances: We set the 3D and 2D variances to one static value for now. $sigma^2_2D = sqrt(1) + sqrt(3)^2 = 4$
-		// As we optimize in clip-space now, we need to divide the 2D (pixel) variance by img.width / 2.0f
-		float sigma_2D_3D = std::sqrt(1) + std::sqrt(3.0f / (img.cols / 2.0f));
+		float landmarkVariance = 2.0f; // variance of the landmarks (e.g. the landmark detectors), in pixels
+		landmarkVariance /= (img.cols / 2.0f); // As we optimize in clip-space now, divide the 2D pixel variance by (img.width / 2.0f). We divide by 2 because we scale from [0, img.width] to [-1, 1].
+		float sigma_2D_3D = std::sqrt(1) + std::sqrt(landmarkVariance); // standard deviation
+		// Note: Isn't it a bit strange to add those as they have different units/normalisations? Check the paper.
 		Mat Sigma = Mat::zeros(3 * landmarks.size(), 3 * landmarks.size(), CV_32FC1);
 		for (int i = 0; i < 3 * landmarks.size(); ++i) {
-			Sigma.at<float>(i, i) = 1.0f / sigma_2D_3D;
+			Sigma.at<float>(i, i) = 1.0f / sigma_2D_3D; // the higher the sigma_2D_3D, the smaller the diagonal entries of Sigma will be
 		}
-		Mat Omega = Sigma.t() * Sigma;
+		Mat Omega = Sigma.t() * Sigma; // just squares the diagonal
 		// The landmarks in matrix notation (in homogeneous coordinates), $3N\times 1$
 		Mat y = Mat::ones(3 * landmarks.size(), 1, CV_32FC1);
 		for (int i = 0; i < landmarks.size(); ++i) {
 			y.at<float>(3 * i, 0) = landmarksClipSpace[i].getX(); //landmarks[i].getX();
 			y.at<float>((3 * i) + 1, 0) = landmarksClipSpace[i].getY(); //landmarks[i].getY();
-			// the position (3*i)+2 stays 1 (homogeneous coordinate)
+			//y.at<float>((3 * i) + 2, 0) = 1; // already 1, stays (homogeneous coordinate)
 		}
 		// The mean, with an added homogeneous coordinate (x_1, y_1, z_1, 1, x_2, ...)^t
 		Mat v_bar = Mat::ones(4 * landmarks.size(), 1, CV_32FC1);
@@ -359,12 +360,12 @@ int main(int argc, char *argv[])
 			v_bar.at<float>(4 * i, 0) = modelMean[0];
 			v_bar.at<float>((4 * i) + 1, 0) = modelMean[1];
 			v_bar.at<float>((4 * i) + 2, 0) = modelMean[2];
-			// the position (4*i)+3 stays 1 (homogeneous coordinate)
+			//v_bar.at<float>((4 * i) + 3, 0) = 1; // already 1, stays (homogeneous coordinate)
 		}
 
 		// Bring into standard regularised quadratic form with diagonal distance matrix Omega
-		Mat A = P * V_hat_h;
-		Mat b = P * v_bar - y;
+		Mat A = P * V_hat_h; // camera matrix times the basis
+		Mat b = P * v_bar - y; // camera matrix times the mean, minus the landmarks.
 		//Mat c_s; // The x, we solve for this! (the variance-normalized shape parameter vector, $c_s = [a_1/sigma_{s,1} , ..., a_m-1/sigma_{s,m-1}]^t$
 		//float lambda = 10.0f; // lambdaIn; //0.01f; // The weight of the regularisation
 		int numShapePc = morphableModel.getShapeModel().getNumberOfPrincipalComponents();
@@ -372,12 +373,14 @@ int main(int argc, char *argv[])
 		Mat AtOmegaAReg = AtOmegaA + lambda * Mat::eye(numShapePc, numShapePc, CV_32FC1);
 		Mat AtOmegaARegInv = AtOmegaAReg.inv(/*cv::DECOMP_SVD*/); // check if invertible. Use Eigen? Regularisation? (see SDM). Maybe we need pseudo-inverse.
 		Mat AtOmegatb = A.t() * Omega.t() * b;
-		Mat c_s = -AtOmegaARegInv * AtOmegatb;
+		Mat c_s = -AtOmegaARegInv * AtOmegatb; // Note/Todo: We get coefficients ~ N(0, sigma) I think. They are not multiplied with the eigenvalues.
 		fittedCoeffs = vector<float>(c_s);
 	}
 	// End estimate the shape coefficients
 
-	Mesh mesh = morphableModel.drawSample(fittedCoeffs, vector<float>());
+	// Todo: 1) check the matrices for different lambdas. 2) write out the obj and see if the LM locations might be right.
+
+	Mesh mesh = morphableModel.drawSample(fittedCoeffs, vector<float>()); // takes standard-normal (not-normalised) coefficients
 	//Mesh mesh = morphableModel.getMean();
 	render::SoftwareRenderer swr(img.cols, img.rows);
 	float aspect = (float)img.cols / float(img.rows);
@@ -386,7 +389,8 @@ int main(int argc, char *argv[])
 	Mat cam = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -2.0f);
 	Mat mytransf = ortho * cam * model;
 	//auto fb = swr.render(mesh, ortho * cam * model);
-	fullAffineCam.at<float>(2, 3) = fullAffineCam.at<float>(2, 2);
+	Mat fullAffineCam = affineCameraEstimation.calculateFullMatrix(affineCam);
+	fullAffineCam.at<float>(2, 3) = fullAffineCam.at<float>(2, 2); // Todo: Find out and document why this is necessary!
 	fullAffineCam.at<float>(2, 2) = 1.0f;
 	swr.doBackfaceCulling = true;
 	auto fb = swr.render(mesh, fullAffineCam);
@@ -412,9 +416,9 @@ int main(int argc, char *argv[])
 	cv::imshow(windowName, blendedImg);
 	char key = cv::waitKey(30);
 	if (key == 'i')
-		lambda += 0.5f;
+		lambda += 0.1f;
 	if (key == 'j')
-		lambda -= 0.5f;
+		lambda -= 0.1f;
 
 	appLogger.info("Lambda: " + lexical_cast<string>(lambda));
 	}

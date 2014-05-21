@@ -465,21 +465,26 @@ cv::Mat PcaModel::getPcaBasis() const
 cv::Mat PcaModel::getPcaBasis(std::string landmarkIdentifier) const
 {
 	//int vertexId = landmarkVertexMap.at(landmarkIdentifier); // Todo: Hacky
-	int vertexId = boost::lexical_cast<int>(landmarkIdentifier);
+	int vertexId = boost::lexical_cast<int>(landmarkIdentifier); // Document behaviour. What to pass?
 	vertexId *= 3;
 
 	Mat sqrtOfEigenvalues = eigenvalues.clone();
 	for (unsigned int i = 0; i < eigenvalues.rows; ++i)	{ // only do in case of Surrey model...
 		sqrtOfEigenvalues.at<float>(i) = std::sqrt(eigenvalues.at<float>(i));
 	}
-	Mat unnormalizedBasis = pcaBasis.rowRange(vertexId, vertexId + 3).clone(); // we dont want to modify the original basis...
+
+	Mat unnormalizedBasis = pcaBasis.rowRange(vertexId, vertexId + 3).clone(); // We don't want to modify the original basis!
+
+	// Normalise the basis:
+	//Mat normalizedBasis = unnormalizedBasis * sqrtOfEigenvalues;
 	for (int basis = 0; basis < unnormalizedBasis.cols; ++basis) {
 		Mat normalizedBasis = unnormalizedBasis.col(basis).mul(sqrtOfEigenvalues.at<float>(basis));
 		normalizedBasis.copyTo(unnormalizedBasis.col(basis));
 	}
-	//Mat normalizedBasis = unnormalizedBasis * sqrtOfEigenvalues;
-	return unnormalizedBasis;
+
+	return unnormalizedBasis; // now contains the normalised basis - we multiplied it with sqrt(evals) in the previous loop.
 	
+	// In the case where we don't have to normalise the basis, we could just do:
 	//return pcaBasis.rowRange(vertexId, vertexId + 3);
 }
 
