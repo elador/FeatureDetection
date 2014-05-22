@@ -49,6 +49,8 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/lexical_cast.hpp"
 
+#include "Eigen/Dense"
+
 #include "morphablemodel/MorphableModel.hpp"
 #include "morphablemodel/AffineCameraEstimation.hpp"
 #include "morphablemodel/OpenCVCameraEstimation.hpp"
@@ -119,7 +121,7 @@ bool renderNew = true;
 void on_trackbar(int, void*)
 {
 	//lambda = static_cast<float>(lambda_slider) / static_cast<float>(lambda_slider_max);
-	lambda = static_cast<float>(lambda_slider) / 100.0f;
+	lambda = static_cast<float>(lambda_slider) / 1000.0f;
 	renderNew = true;
 }
 
@@ -339,7 +341,7 @@ int main(int argc, char *argv[])
 		// The variances: We set the 3D and 2D variances to one static value for now. $sigma^2_2D = sqrt(1) + sqrt(3)^2 = 4$
 		float landmarkVariance = 2.0f; // variance of the landmarks (e.g. the landmark detectors), in pixels
 		landmarkVariance /= (img.cols / 2.0f); // As we optimize in clip-space now, divide the 2D pixel variance by (img.width / 2.0f). We divide by 2 because we scale from [0, img.width] to [-1, 1].
-		float sigma_2D_3D = std::sqrt(1) + std::sqrt(landmarkVariance); // standard deviation
+		float sigma_2D_3D = /*std::sqrt(1) +*/ std::sqrt(landmarkVariance); // standard deviation
 		// Note: Isn't it a bit strange to add those as they have different units/normalisations? Check the paper.
 		Mat Sigma = Mat::zeros(3 * landmarks.size(), 3 * landmarks.size(), CV_32FC1);
 		for (int i = 0; i < 3 * landmarks.size(); ++i) {
@@ -368,10 +370,21 @@ int main(int argc, char *argv[])
 		Mat b = P * v_bar - y; // camera matrix times the mean, minus the landmarks.
 		//Mat c_s; // The x, we solve for this! (the variance-normalized shape parameter vector, $c_s = [a_1/sigma_{s,1} , ..., a_m-1/sigma_{s,m-1}]^t$
 		//float lambda = 10.0f; // lambdaIn; //0.01f; // The weight of the regularisation
+		//lambda = 0.00f;
 		int numShapePc = morphableModel.getShapeModel().getNumberOfPrincipalComponents();
 		Mat AtOmegaA = A.t() * Omega * A;
 		Mat AtOmegaAReg = AtOmegaA + lambda * Mat::eye(numShapePc, numShapePc, CV_32FC1);
-		Mat AtOmegaARegInv = AtOmegaAReg.inv(/*cv::DECOMP_SVD*/); // check if invertible. Use Eigen? Regularisation? (see SDM). Maybe we need pseudo-inverse.
+		// Invert using OpenCV:
+		Mat AtOmegaARegInv = AtOmegaAReg.inv(cv::DECOMP_SVD); // DECOMP_SVD calculates the pseudo-inverse if the matrix is not invertible.
+		// Invert (and perform some sanity checks) using Eigen:
+		/*
+		Eigen::Map<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> AtOmegaAReg_Eigen(AtOmegaAReg.ptr<float>(), AtOmegaAReg.rows, AtOmegaAReg.cols);
+		Eigen::FullPivLU<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> luOfAtOmegaAReg(AtOmegaAReg_Eigen); // Calculate the full-pivoting LU decomposition of the regularized AtA. Note: We could also try FullPivHouseholderQR if our system is non-minimal (i.e. there are more constraints than unknowns).
+		float rankOfAtOmegaAReg = luOfAtOmegaAReg.rank();
+		bool isAtOmegaARegInvertible = luOfAtOmegaAReg.isInvertible();
+		Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> AtARegInv_EigenFullLU = luOfAtOmegaAReg.inverse();
+		Mat AtOmegaARegInvFullLU(AtARegInv_EigenFullLU.rows(), AtARegInv_EigenFullLU.cols(), CV_32FC1, AtARegInv_EigenFullLU.data()); // create an OpenCV Mat header for the Eigen data
+		*/
 		Mat AtOmegatb = A.t() * Omega.t() * b;
 		Mat c_s = -AtOmegaARegInv * AtOmegatb; // Note/Todo: We get coefficients ~ N(0, sigma) I think. They are not multiplied with the eigenvalues.
 		fittedCoeffs = vector<float>(c_s);
@@ -393,7 +406,8 @@ int main(int argc, char *argv[])
 	fullAffineCam.at<float>(2, 3) = fullAffineCam.at<float>(2, 2); // Todo: Find out and document why this is necessary!
 	fullAffineCam.at<float>(2, 2) = 1.0f;
 	swr.doBackfaceCulling = true;
-	auto fb = swr.render(mesh, fullAffineCam);
+	auto fb = swr.render(mesh, fullAffineCam); // hmm, do we have the z-test disabled?
+	//Mesh::writeObj(mesh, "C:/Users/Patrik/Documents/GitHub/out/m_1.0.obj");
 
 
 	//std::shared_ptr<render::Mesh> meanMesh = std::make_shared<render::Mesh>(morphableModel.getMean());
@@ -408,17 +422,25 @@ int main(int argc, char *argv[])
 	int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 	appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds)+"ms.\n");
 
-	blendedImg = alphaBlend(affineCamLandmarksProjectionImage, fb.first, 0.8f);
+	blendedImg = alphaBlend(affineCamLandmarksProjectionImage, fb.first, 0.9f);
 	//cv::addWeighted(landmarksImage, 0.5, fb.first, 0.5, 0.0, blendedImg);
 	renderNew = false;
 	} // end if renderNew
 
 	cv::imshow(windowName, blendedImg);
 	char key = cv::waitKey(30);
-	if (key == 'i')
-		lambda += 0.1f;
-	if (key == 'j')
-		lambda -= 0.1f;
+	if (key == 'i') {
+		lambda += 0.005f;
+		renderNew = true;
+	}
+	if (key == 'j') {
+		lambda -= 0.005f;
+		renderNew = true;
+	}
+	if (key == 'k') {
+		lambda = 0.0f;
+		renderNew = true;
+	}
 
 	appLogger.info("Lambda: " + lexical_cast<string>(lambda));
 	}

@@ -16,7 +16,15 @@ else(Boost_FOUND)
   message(FATAL_ERROR "Boost not found")
 endif()
 
-#Source and header files:
+# Todo: ifdef this or rather move to library anyway
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+find_package(Eigen3 REQUIRED)
+message(STATUS "Eigen3 found: ${EIGEN3_FOUND}")
+message(STATUS "Eigen3 include dir found at ${EIGEN3_INCLUDE_DIR}")
+message(STATUS "Eigen3 version: ${EIGEN3_VERSION}")
+include_directories(${EIGEN3_INCLUDE_DIR})
+
+# Source and header files:
 set(SOURCE
 	fitter2.cpp
 )
