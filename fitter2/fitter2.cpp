@@ -54,6 +54,7 @@
 #include "morphablemodel/MorphableModel.hpp"
 #include "morphablemodel/AffineCameraEstimation.hpp"
 #include "morphablemodel/OpenCVCameraEstimation.hpp"
+#include "morphablemodel/LinearShapeFitting.hpp"
 
 #include "render/SoftwareRenderer.hpp"
 
@@ -115,13 +116,13 @@ cv::Mat alphaBlend(cv::Mat backgroundImage, cv::Mat overlayImage, float overlayF
 
 float lambda = 1.0f;
 int lambda_slider = 10;
-int lambda_slider_max = 500;
+int lambda_slider_max = 1000;
 bool renderNew = true;
 
 void on_trackbar(int, void*)
 {
 	//lambda = static_cast<float>(lambda_slider) / static_cast<float>(lambda_slider_max);
-	lambda = static_cast<float>(lambda_slider) / 1000.0f;
+	lambda = static_cast<float>(lambda_slider) / 5000.0f;
 	renderNew = true;
 }
 
@@ -391,8 +392,6 @@ int main(int argc, char *argv[])
 	}
 	// End estimate the shape coefficients
 
-	// Todo: 1) check the matrices for different lambdas. 2) write out the obj and see if the LM locations might be right.
-
 	Mesh mesh = morphableModel.drawSample(fittedCoeffs, vector<float>()); // takes standard-normal (not-normalised) coefficients
 	//Mesh mesh = morphableModel.getMean();
 	render::SoftwareRenderer swr(img.cols, img.rows);
@@ -430,11 +429,11 @@ int main(int argc, char *argv[])
 	cv::imshow(windowName, blendedImg);
 	char key = cv::waitKey(30);
 	if (key == 'i') {
-		lambda += 0.005f;
+		lambda += 0.03f;
 		renderNew = true;
 	}
 	if (key == 'j') {
-		lambda -= 0.005f;
+		lambda -= 0.03f;
 		renderNew = true;
 	}
 	if (key == 'k') {

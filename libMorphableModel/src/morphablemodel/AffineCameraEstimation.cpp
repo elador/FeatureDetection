@@ -9,15 +9,8 @@
 
 #include "logging/LoggerFactory.hpp"
 
-#include "opencv2/core/core_c.h"
-/*
-#include "boost/lexical_cast.hpp"
-#include <exception>
+#include "opencv2/core/core_c.h" // for CV_REDUCE_AVG
 
-using cv::Vec3f;
-using boost::lexical_cast;
-using std::string;
-*/
 using logging::LoggerFactory;
 using cv::Mat;
 using cv::Vec3f;

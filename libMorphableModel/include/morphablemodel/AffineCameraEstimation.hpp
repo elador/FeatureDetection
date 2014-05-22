@@ -4,7 +4,6 @@
  *  Created on: 31.12.2013
  *      Author: Patrik Huber
  */
-
 #pragma once
 
 #ifndef AFFINECAMERAESTIMATION_HPP_
@@ -16,7 +15,7 @@
 
 #include "opencv2/core/core.hpp"
 
-#include <utility>
+//#include <utility>
 #include <vector>
 
 namespace morphablemodel {

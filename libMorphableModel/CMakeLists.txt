@@ -31,6 +31,7 @@ set(HEADERS
 	include/morphablemodel/MorphableModel.hpp
 	include/morphablemodel/OpenCVCameraEstimation.hpp
 	include/morphablemodel/AffineCameraEstimation.hpp
+	include/morphablemodel/LinearShapeFitting.hpp
 	include/morphablemodel/Hdf5Utils.hpp
 )
 set(SOURCE
@@ -38,6 +39,7 @@ set(SOURCE
 	src/morphablemodel/MorphableModel.cpp
 	src/morphablemodel/OpenCVCameraEstimation.cpp
 	src/morphablemodel/AffineCameraEstimation.cpp
+	src/morphablemodel/LinearShapeFitting.cpp
 	src/morphablemodel/Hdf5Utils.cpp
 )
 
