@@ -257,13 +257,9 @@ int main(int argc, char *argv[])
 		boost::filesystem::create_directory(outputPath);
 	}
 	
-
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img;
-	morphablemodel::OpenCVCameraEstimation epnpCameraEstimation(morphableModel); // todo: this can all go to only init once
-	morphablemodel::AffineCameraEstimation affineCameraEstimation(morphableModel);
 	vector<imageio::ModelLandmark> landmarks;
-	//float lambda = 1.0f;
 
 	LandmarkMapper landmarkMapper(path("C:\\Users\\Patrik\\Documents\\GitHub\\FeatureDetection\\libImageIO\\share\\landmarkMappings\\ibug2did.txt"));
 
@@ -296,7 +292,7 @@ int main(int argc, char *argv[])
 		landmarksClipSpace.push_back(lmcs);
 	}
 	
-	Mat affineCam = affineCameraEstimation.estimate(landmarksClipSpace);
+	Mat affineCam = morphablemodel::estimateAffineCamera(landmarksClipSpace, morphableModel);
 	for (const auto& lm : landmarks) {
 		Vec3f tmp = morphableModel.getShapeModel().getMeanAtPoint(lm.getName());
 		Mat p(4, 1, CV_32FC1);
@@ -337,7 +333,7 @@ int main(int argc, char *argv[])
 	Mat cam = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -2.0f);
 	Mat mytransf = ortho * cam * model;
 	//auto fb = swr.render(mesh, ortho * cam * model);
-	Mat fullAffineCam = affineCameraEstimation.calculateFullMatrix(affineCam);
+	Mat fullAffineCam = morphablemodel::calculateAffineZDirection(affineCam);
 	fullAffineCam.at<float>(2, 3) = fullAffineCam.at<float>(2, 2); // Todo: Find out and document why this is necessary!
 	fullAffineCam.at<float>(2, 2) = 1.0f;
 	swr.doBackfaceCulling = true;

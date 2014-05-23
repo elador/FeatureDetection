@@ -4,7 +4,6 @@
  *  Created on: 15.12.2013
  *      Author: Patrik Huber
  */
-
 #pragma once
 
 #ifndef OPENCVCAMERAESTIMATION_HPP_

@@ -15,48 +15,36 @@
 
 #include "opencv2/core/core.hpp"
 
-//#include <utility>
 #include <vector>
 
 namespace morphablemodel {
 
 /**
  * The Gold Standard Algorithm for estimating an affine
- * camera matrix P_A from world to image correspondences.
+ * camera matrix from world to image correspondences.
  * See Algorithm 7.2 in Multiple View Geometry, Hartley &
- * Zisserman, 2nd Edition, 2003
- * 
+ * Zisserman, 2nd Edition, 2003.
+ * Optionally, a vector of vertex-ids can be given for landmarks
+ * not defined in the Morphable Model (e.g. face-contour vertices) - not implemented yet!
+ *
+ * @param[in] imagePoints A list of 2D image points
+ * @param[in] morphableModel The 3D model whose correspondences are used to estimate the camera
+ * @param[in] vertexIds An optional list of vertex ids if not all given imagePoints have a corresponding point in the model. TODO: Should this better be a map that is used in addition to the standard lookup?
+ * @return A 3x4 affine camera matrix (the third row is [0, 0, 0, 1]).
  */
-class AffineCameraEstimation  {
-public:
+cv::Mat estimateAffineCamera(std::vector<imageio::ModelLandmark> imagePoints, MorphableModel morphableModel, std::vector<int> vertexIds=std::vector<int>());
 
-	/**
-	 * Constructs a new instance of the CameraEstimation algorithm.
-	 *
-	 * @param[in] MorphableModel The Morphable Model whose shape-model
-	 *                           is used to estimate the camera pose.
-	 */
-	AffineCameraEstimation(/* const? shared_ptr? */MorphableModel morphableModel);
-
-	/**
-	 * Takes 2D landmarks, finds the corresponding landmarks in the
-	 * 3D model and estimates camera rotation and translation.
-	 * Optionally, a vector of vertex-ids can be given for landmarks
-	 * not defined in the Morphable Model (e.g. face-contour vertices).
-	 *
-	 * @param[in] imagePoints Bla
-	 * @param[in] intrinsicCameraMatrix Has to be 64F I think!
-	 * @param[in] vertexIds Bla
-	 * @return Bla R, t
-	 */
-	cv::Mat estimate(std::vector<imageio::ModelLandmark> imagePoints, std::vector<int> vertexIds = std::vector<int>());
-
-	// in: 3x4. Out: 4x4 (z-dir from cross-product)
-	static cv::Mat calculateFullMatrix(cv::Mat affineCameraMatrix);
-
-private:
-	MorphableModel morphableModel;
-};
+/**
+ * Takes a 3x4 affine camera matrix, calculates the
+ * viewing direction using the cross-product of the first
+ * and second row and returns a 4x4 affine camera matrix.
+ * Caution: The camera might look the wrong way, we don't
+ * check for that.
+ *
+ * @param[in] affineCameraMatrix A 3x4 affine camera matrix
+ * @return A 4x4 affine camera matrix (the fourth row is [0, 0, 0, 1]).
+ */
+cv::Mat calculateAffineZDirection(cv::Mat affineCameraMatrix);
 
 } /* namespace morphablemodel */
 #endif /* AFFINECAMERAESTIMATION_HPP_ */

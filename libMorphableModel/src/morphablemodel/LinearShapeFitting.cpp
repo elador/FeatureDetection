@@ -15,7 +15,7 @@ using std::vector;
 
 namespace morphablemodel {
 
-vector<float> fitShapeToLandmarksLinear(MorphableModel morphableModel, Mat affineCameraMatrix, vector<imageio::ModelLandmark> landmarks, float lambda/*=0.015f*/, boost::optional<int> numCoefficientsToFit/*=boost::optional<int>()*/, boost::optional<float> detectorStandardDeviation/*=boost::optional<float>()*/, boost::optional<float> modelStandardDeviation/*=boost::optional<float>()*/)
+vector<float> fitShapeToLandmarksLinear(MorphableModel morphableModel, Mat affineCameraMatrix, vector<imageio::ModelLandmark> landmarks, float lambda/*=20.0f*/, boost::optional<int> numCoefficientsToFit/*=boost::optional<int>()*/, boost::optional<float> detectorStandardDeviation/*=boost::optional<float>()*/, boost::optional<float> modelStandardDeviation/*=boost::optional<float>()*/)
 {
 	// Not used yet
 	//int numCoeffsToFit = numCoefficientsToFit.get_value_or(morphableModel.getShapeModel().getNumberOfPrincipalComponents());

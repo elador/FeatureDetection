@@ -19,19 +19,14 @@ using std::vector;
 
 namespace morphablemodel {
 
-AffineCameraEstimation::AffineCameraEstimation(/* const? shared_ptr? */MorphableModel morphableModel) : morphableModel(morphableModel)
-{
-
-}
-
-cv::Mat AffineCameraEstimation::estimate(std::vector<imageio::ModelLandmark> imagePoints, std::vector<int> vertexIds /*= std::vector<int>()*/)
+Mat estimateAffineCamera(vector<imageio::ModelLandmark> imagePoints, MorphableModel morphableModel, vector<int> vertexIds/*=std::vector<int>()*/)
 {
 	if (imagePoints.size() < 4) {
 		Loggers->getLogger("morphablemodel").error("AffineCameraEstimation: Number of points given needs to be equal to or larger than 4.");
 		throw std::runtime_error("AffineCameraEstimation: Number of points given needs to be equal to or larger than 4.");
 	}
 
-	// Todo: Currently, the optional vertexIds is not used
+	// Todo: Currently, the optional vertexIds are not used
 	Mat matImagePoints(imagePoints.size(), 2, CV_32FC1);
 	Mat matModelPoints(imagePoints.size(), 3, CV_32FC1);
 	int row = 0;
@@ -126,7 +121,7 @@ cv::Mat AffineCameraEstimation::estimate(std::vector<imageio::ModelLandmark> ima
 	return P_Affine;
 }
 
-cv::Mat AffineCameraEstimation::calculateFullMatrix(cv::Mat affineCameraMatrix)
+Mat calculateAffineZDirection(Mat affineCameraMatrix)
 {
 	//affineCameraMatrix is the original 3x4 affine matrix. But we return a 4x4 matrix with a z-rotation (viewing direction) as well(for the z-buffering)
 	// Take the cross product of row 0 with row 1 to get the direction perpendicular to the viewing plane (= the viewing direction).
