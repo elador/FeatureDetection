@@ -54,4 +54,4 @@ include_directories(${Logging_SOURCE_DIR}/include)
 
 # make library
 add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
-target_link_libraries(${SUBPROJECT_NAME} Render Logging ${OpenCV_LIBS} ${Boost_LIBRARIES} ${HDF5_LIBRARIES})
+target_link_libraries(${SUBPROJECT_NAME} ImageIO Render Logging ${OpenCV_LIBS} ${Boost_LIBRARIES} ${HDF5_LIBRARIES})

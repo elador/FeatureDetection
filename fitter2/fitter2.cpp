@@ -122,7 +122,7 @@ bool renderNew = true;
 void on_trackbar(int, void*)
 {
 	//lambda = static_cast<float>(lambda_slider) / static_cast<float>(lambda_slider_max);
-	lambda = static_cast<float>(lambda_slider) / 5000.0f;
+	lambda = static_cast<float>(lambda_slider) / 10.0f;
 	renderNew = true;
 }
 
@@ -322,75 +322,11 @@ int main(int argc, char *argv[])
 	appLogger.info("Starting to process " + labeledImageSource->getName().string());
 
 	// Estimate the shape coefficients
-	vector<float> fittedCoeffs;
-	{
-		// $\hat{V} \in R^{3N\times m-1}$, subselect the rows of the eigenvector matrix $V$ associated with the $N$ feature points
-		// And we insert a row of zeros after every third row, resulting in matrix $\hat{V}_h \in R^{4N\times m-1}$:
-		Mat V_hat_h = Mat::zeros(4 * landmarks.size(), morphableModel.getShapeModel().getNumberOfPrincipalComponents(), CV_32FC1);
-		int rowIndex = 0;
-		for (const auto& lm : landmarks) {
-			Mat basisRows = morphableModel.getShapeModel().getPcaBasis(lm.getName()); // getPcaBasis should return the not-normalized basis I think
-			basisRows.copyTo(V_hat_h.rowRange(rowIndex, rowIndex + 3));
-			rowIndex += 4; // replace 3 rows and skip the 4th one, it has all zeros
-		}
-		// Form a block diagonal matrix $P \in R^{3N\times 4N}$ in which the camera matrix C (P_Affine, affineCam) is placed on the diagonal:
-		Mat P = Mat::zeros(3 * landmarks.size(), 4 * landmarks.size(), CV_32FC1);
-		for (int i = 0; i < landmarks.size(); ++i) {
-			Mat submatrixToReplace = P.colRange(4 * i, (4 * i) + 4).rowRange(3 * i, (3 * i) + 3);
-			affineCam.copyTo(submatrixToReplace);
-		}
-		// The variances: We set the 3D and 2D variances to one static value for now. $sigma^2_2D = sqrt(1) + sqrt(3)^2 = 4$
-		float landmarkVariance = 2.0f; // variance of the landmarks (e.g. the landmark detectors), in pixels
-		landmarkVariance /= (img.cols / 2.0f); // As we optimize in clip-space now, divide the 2D pixel variance by (img.width / 2.0f). We divide by 2 because we scale from [0, img.width] to [-1, 1].
-		float sigma_2D_3D = /*std::sqrt(1) +*/ std::sqrt(landmarkVariance); // standard deviation
-		// Note: Isn't it a bit strange to add those as they have different units/normalisations? Check the paper.
-		Mat Sigma = Mat::zeros(3 * landmarks.size(), 3 * landmarks.size(), CV_32FC1);
-		for (int i = 0; i < 3 * landmarks.size(); ++i) {
-			Sigma.at<float>(i, i) = 1.0f / sigma_2D_3D; // the higher the sigma_2D_3D, the smaller the diagonal entries of Sigma will be
-		}
-		Mat Omega = Sigma.t() * Sigma; // just squares the diagonal
-		// The landmarks in matrix notation (in homogeneous coordinates), $3N\times 1$
-		Mat y = Mat::ones(3 * landmarks.size(), 1, CV_32FC1);
-		for (int i = 0; i < landmarks.size(); ++i) {
-			y.at<float>(3 * i, 0) = landmarksClipSpace[i].getX(); //landmarks[i].getX();
-			y.at<float>((3 * i) + 1, 0) = landmarksClipSpace[i].getY(); //landmarks[i].getY();
-			//y.at<float>((3 * i) + 2, 0) = 1; // already 1, stays (homogeneous coordinate)
-		}
-		// The mean, with an added homogeneous coordinate (x_1, y_1, z_1, 1, x_2, ...)^t
-		Mat v_bar = Mat::ones(4 * landmarks.size(), 1, CV_32FC1);
-		for (int i = 0; i < landmarks.size(); ++i) {
-			Vec3f modelMean = morphableModel.getShapeModel().getMeanAtPoint(landmarks[i].getName());
-			v_bar.at<float>(4 * i, 0) = modelMean[0];
-			v_bar.at<float>((4 * i) + 1, 0) = modelMean[1];
-			v_bar.at<float>((4 * i) + 2, 0) = modelMean[2];
-			//v_bar.at<float>((4 * i) + 3, 0) = 1; // already 1, stays (homogeneous coordinate)
-		}
-
-		// Bring into standard regularised quadratic form with diagonal distance matrix Omega
-		Mat A = P * V_hat_h; // camera matrix times the basis
-		Mat b = P * v_bar - y; // camera matrix times the mean, minus the landmarks.
-		//Mat c_s; // The x, we solve for this! (the variance-normalized shape parameter vector, $c_s = [a_1/sigma_{s,1} , ..., a_m-1/sigma_{s,m-1}]^t$
-		//float lambda = 10.0f; // lambdaIn; //0.01f; // The weight of the regularisation
-		//lambda = 0.00f;
-		int numShapePc = morphableModel.getShapeModel().getNumberOfPrincipalComponents();
-		Mat AtOmegaA = A.t() * Omega * A;
-		Mat AtOmegaAReg = AtOmegaA + lambda * Mat::eye(numShapePc, numShapePc, CV_32FC1);
-		// Invert using OpenCV:
-		Mat AtOmegaARegInv = AtOmegaAReg.inv(cv::DECOMP_SVD); // DECOMP_SVD calculates the pseudo-inverse if the matrix is not invertible.
-		// Invert (and perform some sanity checks) using Eigen:
-		/*
-		Eigen::Map<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> AtOmegaAReg_Eigen(AtOmegaAReg.ptr<float>(), AtOmegaAReg.rows, AtOmegaAReg.cols);
-		Eigen::FullPivLU<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> luOfAtOmegaAReg(AtOmegaAReg_Eigen); // Calculate the full-pivoting LU decomposition of the regularized AtA. Note: We could also try FullPivHouseholderQR if our system is non-minimal (i.e. there are more constraints than unknowns).
-		float rankOfAtOmegaAReg = luOfAtOmegaAReg.rank();
-		bool isAtOmegaARegInvertible = luOfAtOmegaAReg.isInvertible();
-		Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> AtARegInv_EigenFullLU = luOfAtOmegaAReg.inverse();
-		Mat AtOmegaARegInvFullLU(AtARegInv_EigenFullLU.rows(), AtARegInv_EigenFullLU.cols(), CV_32FC1, AtARegInv_EigenFullLU.data()); // create an OpenCV Mat header for the Eigen data
-		*/
-		Mat AtOmegatb = A.t() * Omega.t() * b;
-		Mat c_s = -AtOmegaARegInv * AtOmegatb; // Note/Todo: We get coefficients ~ N(0, sigma) I think. They are not multiplied with the eigenvalues.
-		fittedCoeffs = vector<float>(c_s);
-	}
-	// End estimate the shape coefficients
+	// Detector variances: Should not be in pixels. Should be normalised by the IED. Normalise by the image dimensions is not a good idea either, it has nothing to do with it.
+	// Let's just set it to some (hopefully) reasonable value for now:
+	//float landmarkVariance = 2.0f; // variance of the landmarks (e.g. the landmark detectors), in pixels
+	//landmarkVariance /= (img.cols / 2.0f); // As we optimize in clip-space now, divide the 2D pixel variance by (img.width / 2.0f). We divide by 2 because we scale from [0, img.width] to [-1, 1].
+	vector<float> fittedCoeffs = fitShapeToLandmarksLinear(morphableModel, affineCam, landmarksClipSpace, lambda);
 
 	Mesh mesh = morphableModel.drawSample(fittedCoeffs, vector<float>()); // takes standard-normal (not-normalised) coefficients
 	//Mesh mesh = morphableModel.getMean();
