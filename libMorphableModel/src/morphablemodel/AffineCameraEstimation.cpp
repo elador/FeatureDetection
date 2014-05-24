@@ -146,4 +146,36 @@ Mat calculateAffineZDirection(Mat affineCameraMatrix)
 	return affineCamFull;
 }
 
+cv::Vec2f projectAffine(cv::Vec3f vertex, cv::Mat affineCameraMatrix, int screenWidth, int screenHeight)
+{
+	Mat vertex4(4, 1, CV_32FC1);
+	vertex4.at<float>(0, 0) = vertex[0];
+	vertex4.at<float>(1, 0) = vertex[1];
+	vertex4.at<float>(2, 0) = vertex[2];
+	vertex4.at<float>(3, 0) = 1;
+	// Transform to clip space:
+	Mat clipCoords = affineCameraMatrix * vertex4;
+	// Take the x and y coordinates in clip space and apply the window transform:
+	cv::Vec2f screenCoords = clipToScreenSpace(cv::Vec2f(clipCoords.rowRange(0, 2)), screenWidth, screenHeight);
+	return screenCoords;
+}
+
+cv::Vec2f clipToScreenSpace(cv::Vec2f clipCoordinates, int screenWidth, int screenHeight)
+{
+	// Window transform:
+	float x_ss = (clipCoordinates[0] + 1.0f) * (screenWidth / 2.0f);
+	float y_ss = screenHeight - (clipCoordinates[1] + 1.0f) * (screenHeight / 2.0f); // also flip y
+	return cv::Vec2f(x_ss, y_ss);
+}
+
+cv::Vec2f screenToClipSpace(cv::Vec2f screenCoordinates, int screenWidth, int screenHeight)
+{
+	float x_cs = screenCoordinates[0] / (screenWidth / 2.0f) - 1.0f;
+	float y_cs = screenCoordinates[1] / (screenHeight / 2.0f) - 1.0f;
+	y_cs *= -1.0f;
+	return cv::Vec2f(x_cs, y_cs);
+}
+
+
+
 } /* namespace morphablemodel */

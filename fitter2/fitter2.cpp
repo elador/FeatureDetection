@@ -281,32 +281,22 @@ int main(int argc, char *argv[])
 	// Start affine camera estimation (Aldrian paper)
 	Mat affineCamLandmarksProjectionImage = landmarksImage.clone(); // the affine LMs are currently not used (don't know how to render without z-vals)
 	
-	// Test: Instead of estimating the cam in screen space, we convert the landmarks to clip-space ([-1, 1] x ...) first.
-	// We also need to flip the y-coords because the image-origin is top-left while in clip-space, top is +1 and bottom is -1.
+	// Convert the landmarks to clip-space
 	vector<imageio::ModelLandmark> landmarksClipSpace;
 	for (const auto& lm : landmarks) {
-		float x_cs = lm.getX() / (img.cols / 2.0f) - 1.0f;
-		float y_cs = lm.getY() / (img.rows / 2.0f) - 1.0f;
-		y_cs *= -1.0f;
-		imageio::ModelLandmark lmcs(lm.getName(), Vec3f(x_cs, y_cs, 0.0f), lm.isVisible());
+		cv::Vec2f clipCoords = morphablemodel::screenToClipSpace(lm.getPosition2D(), img.cols, img.rows);
+		imageio::ModelLandmark lmcs(lm.getName(), Vec3f(clipCoords[0], clipCoords[1], 0.0f), lm.isVisible());
 		landmarksClipSpace.push_back(lmcs);
 	}
 	
 	Mat affineCam = morphablemodel::estimateAffineCamera(landmarksClipSpace, morphableModel);
+
+	// Render the mean-face landmarks projected using the estimated camera:
 	for (const auto& lm : landmarks) {
-		Vec3f tmp = morphableModel.getShapeModel().getMeanAtPoint(lm.getName());
-		Mat p(4, 1, CV_32FC1);
-		p.at<float>(0, 0) = tmp[0];
-		p.at<float>(1, 0) = tmp[1];
-		p.at<float>(2, 0) = tmp[2];
-		p.at<float>(3, 0) = 1;
-		Mat p2d = affineCam * p; // transform to clip space
-		p2d.at<float>(0, 0) = (p2d.at<float>(0, 0) + 1.0f) * (img.cols / 2.0f); // window transform
-		p2d.at<float>(1, 0) = img.rows - (p2d.at<float>(1, 0) + 1.0f) * (img.rows / 2.0f);
-		Point2f pp(p2d.at<float>(0, 0), p2d.at<float>(1, 0));
-		cv::circle(affineCamLandmarksProjectionImage, pp, 4.0f, Scalar(0.0f, 255.0f, 0.0f));
+		Vec3f modelPoint = morphableModel.getShapeModel().getMeanAtPoint(lm.getName());
+		cv::Vec2f screenPoint = morphablemodel::projectAffine(modelPoint, affineCam, img.cols, img.rows);
+		cv::circle(affineCamLandmarksProjectionImage, Point2f(screenPoint), 4.0f, Scalar(0.0f, 255.0f, 0.0f));
 	}
-	// End Affine est.
 
 	Mat blendedImg;
 	while (true)
@@ -317,11 +307,9 @@ int main(int argc, char *argv[])
 	start = std::chrono::system_clock::now();
 	appLogger.info("Starting to process " + labeledImageSource->getName().string());
 
-	// Estimate the shape coefficients
-	// Detector variances: Should not be in pixels. Should be normalised by the IED. Normalise by the image dimensions is not a good idea either, it has nothing to do with it.
-	// Let's just set it to some (hopefully) reasonable value for now:
-	//float landmarkVariance = 2.0f; // variance of the landmarks (e.g. the landmark detectors), in pixels
-	//landmarkVariance /= (img.cols / 2.0f); // As we optimize in clip-space now, divide the 2D pixel variance by (img.width / 2.0f). We divide by 2 because we scale from [0, img.width] to [-1, 1].
+	// Estimate the shape coefficients:
+	// Detector variances: Should not be in pixels. Should be normalised by the IED. Normalise by the image dimensions is not a good idea either, it has nothing to do with it. See comment in fitShapeToLandmarksLinear().
+	// Let's just use the hopefully reasonably set default value for now (around 3 pixels)
 	vector<float> fittedCoeffs = fitShapeToLandmarksLinear(morphableModel, affineCam, landmarksClipSpace, lambda);
 
 	Mesh mesh = morphableModel.drawSample(fittedCoeffs, vector<float>()); // takes standard-normal (not-normalised) coefficients
