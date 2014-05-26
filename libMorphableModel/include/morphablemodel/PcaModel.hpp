@@ -27,9 +27,9 @@
 namespace morphablemodel {
 
 /**
- * A PCA-model that consists of:
+ * This class represents a PCA-model that consists of:
  *   - a mean vector (y x z)
- *   - a PCA basis matrix
+ *   - a PCA basis matrix (unnormalized and normalized)
  *   - a PCA variance vector
  *   - optionally a scalar with the noise variance.
  *
@@ -155,8 +155,45 @@ public:
 	 */
 	cv::Mat drawSample(std::vector<float> coefficients);
 
-	cv::Mat getPcaBasis() const;
-	cv::Mat getPcaBasis(std::string landmarkIdentifier) const;
+	/**
+	* Returns The PCA basis matrix, i.e. the eigenvectors.
+	* Each column of the matrix is an eigenvector.
+	* The returned basis is normalized, i.e. every eigenvector
+	* is normalized by multiplying it with its eigenvalue.
+	* Returns a clone of the matrix so that the original cannot
+	* be modified.
+	*
+	* @return Returns the normalized PCA basis matrix.
+	*/
+	cv::Mat getNormalizedPcaBasis() const;
+	
+	/**
+	* Returns the PCA basis for a particular vertex. The vertex
+	* is specified by a landmark identifier that the model can
+	* translate into a vertex number.
+	* The returned basis is normalized, i.e. every eigenvector
+	* is normalized by multiplying it with its eigenvalue.
+	* Returns a clone of the matrix so that the original cannot
+	* be modified.
+	*
+	* @param[in] landmarkIdentifier At the moment, we have to pass the vertex id. TODO: Somehow work with a mapping. Use our new mapper class?
+	* @return Todo.
+	*/
+	cv::Mat getNormalizedPcaBasis(std::string landmarkIdentifier) const;
+
+	/**
+	* Returns the PCA basis for a particular vertex. The vertex
+	* is specified by a landmark identifier that the model can
+	* translate into a vertex number.
+	* The returned basis is not normalized, i.e. the eigenvectors
+	* are not pre-normalized by multiplying them with their eigenvalues.
+	* Returns a clone of the matrix so that the original cannot
+	* be modified.
+	*
+	* @param[in] landmarkIdentifier At the moment, we have to pass the vertex id. TODO: Somehow work with a mapping. Use our new mapper class?
+	* @return Todo.
+	*/
+	cv::Mat getUnnormalizedPcaBasis(std::string landmarkIdentifier) const;
 
 	float getEigenvalue(unsigned int index) const;
 
@@ -164,13 +201,39 @@ private:
 	std::mt19937 engine; ///< A Mersenne twister MT19937 engine
 	std::map<std::string, int> landmarkVertexMap; ///< Holds the translation from feature point name (e.g. "center.nose.tip") to the vertex number in the model
 	
-	cv::Mat mean; ///< A 3m x 1 col-vector (xyzxyz...)', where m is the number of model-vertices
-	cv::Mat pcaBasis; ///< m x n (rows x cols) = numShapeDims x numShapePcaCoeffs, (=eigenvector matrix V)
+	cv::Mat mean; ///< A 3m x 1 col-vector (xyzxyz...)', where m is the number of model-vertices.
+	cv::Mat normalizedPcaBasis; ///< The normalized PCA basis matrix. m x n (rows x cols) = numShapeDims x numShapePcaCoeffs, (=eigenvector matrix V). Each column is an eigenvector.
+	cv::Mat unnormalizedPcaBasis; ///< The unnormalized PCA basis matrix. m x n (rows x cols) = numShapeDims x numShapePcaCoeffs, (=eigenvector matrix V). Each column is an eigenvector.
+	
 	cv::Mat eigenvalues; ///< A col-vector of the eigenvalues (variances in the PCA space).
 
 	std::vector<std::array<int, 3>> triangleList; ///< List of triangles that make up the mesh of the model. (Note: Does every PCA model has a triangle-list? Use Mesh here instead?)
-
 };
+
+/**
+ * Takes an unnormalized PCA basis matrix (a matrix consisting
+ * of the eigenvectors and normalizes it, i.e. multiplies each
+ * eigenvector by the square root of its corresponding
+ * eigenvalue.
+ *
+ * @param[in] unnormalizedBasis An unnormalized PCA basis matrix.
+ * @param[in] eigenvalues A row or column vector of eigenvalues.
+ * @return The normalized PCA basis matrix.
+ */
+cv::Mat normalizePcaBasis(cv::Mat unnormalizedBasis, cv::Mat eigenvalues);
+
+/**
+ * Takes a normalized PCA basis matrix (a matrix consisting
+ * of the eigenvectors and denormalizes it, i.e. multiplies each
+ * eigenvector by 1 over the square root of its corresponding
+ * eigenvalue.
+ * Note: UNTESTED
+ *
+ * @param[in] normalizedBasis A normalized PCA basis matrix.
+ * @param[in] eigenvalues A row or column vector of eigenvalues.
+ * @return The unnormalized PCA basis matrix.
+ */
+cv::Mat unnormalizePcaBasis(cv::Mat normalizedBasis, cv::Mat eigenvalues);
 
 } /* namespace morphablemodel */
 #endif /* PCAMODEL_HPP_ */

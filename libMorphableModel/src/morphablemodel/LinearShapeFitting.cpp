@@ -25,7 +25,7 @@ vector<float> fitShapeToLandmarksLinear(MorphableModel morphableModel, Mat affin
 	Mat V_hat_h = Mat::zeros(4 * landmarks.size(), morphableModel.getShapeModel().getNumberOfPrincipalComponents(), CV_32FC1);
 	int rowIndex = 0;
 	for (const auto& lm : landmarks) {
-		Mat basisRows = morphableModel.getShapeModel().getPcaBasis(lm.getName()); // getPcaBasis should return the not-normalized basis I think
+		Mat basisRows = morphableModel.getShapeModel().getNormalizedPcaBasis(lm.getName()); // In the paper, the not-normalized basis might be used? I'm not sure, check it. It's even a mess in the paper. PH 26.5.2014: I think the normalized basis is fine/better.
 		basisRows.copyTo(V_hat_h.rowRange(rowIndex, rowIndex + 3));
 		rowIndex += 4; // replace 3 rows and skip the 4th one, it has all zeros
 	}
@@ -41,7 +41,7 @@ vector<float> fitShapeToLandmarksLinear(MorphableModel morphableModel, Mat affin
 	//                         Now we're in clip-coords ([-1, 1]) and take 0.16 of the range [-1, 1], 0.16/2 = 0.08, and then the standard deviation of the detector is 3.75% of 0.08, i.e. 0.0375*0.08 = 0.003.
 	// 3D (model) variance: 0.0f. It only makes sense to set it to something when we have a different variance for different vertices.
 	float sigma_2D_3D = detectorStandardDeviation.get_value_or(0.003f) + modelStandardDeviation.get_value_or(0.0f);
-	// Note: Isn't it a bit strange to add those as they have different units/normalisations? Check the paper.
+	// Note: Isn't it a bit strange to add those as they have different units/normalizations? Check the paper.
 	Mat Sigma = Mat::zeros(3 * landmarks.size(), 3 * landmarks.size(), CV_32FC1);
 	for (int i = 0; i < 3 * landmarks.size(); ++i) {
 		Sigma.at<float>(i, i) = 1.0f / sigma_2D_3D; // the higher the sigma_2D_3D, the smaller the diagonal entries of Sigma will be

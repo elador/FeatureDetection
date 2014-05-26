@@ -35,7 +35,7 @@ PcaModel::PcaModel()
 
 PcaModel PcaModel::loadStatismoModel(path h5file, PcaModel::ModelType modelType)
 {
-	logging::Logger logger = Loggers->getLogger("shapemodels");
+	logging::Logger logger = Loggers->getLogger("morphablemodel");
 #ifndef WITH_MORPHABLEMODEL_HDF5
 	string logMessage("PcaModel: Cannot load a statismo model. Please re-run CMake with WITH_MORPHABLEMODEL_HDF5 set to ON.");
 	logger.error(logMessage);
@@ -72,7 +72,7 @@ PcaModel PcaModel::loadStatismoModel(path h5file, PcaModel::ModelType modelType)
 	dsMean.getSpace().getSimpleExtentDims(dims, NULL);	// dsMean.getSpace() leaks memory... maybe a hdf5 bug, maybe vlenReclaim(...) could be a fix. No idea.
 	//H5::DataSpace dsp = dsMean.getSpace();
 	//dsp.close();
-	Loggers->getLogger("shapemodels").debug("Dimensions of the model mean: " + lexical_cast<string>(dims[0]));
+	Loggers->getLogger("morphablemodel").debug("Dimensions of the model mean: " + lexical_cast<string>(dims[0]));
 	model.mean = Mat(1, dims[0], CV_32FC1); // Use a row-vector, because of faster memory access and I'm not sure the memory block is allocated contiguously if we have multiple rows.
 	dsMean.read(model.mean.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
 	model.mean = model.mean.t(); // Transpose it to a col-vector
@@ -81,19 +81,22 @@ PcaModel PcaModel::loadStatismoModel(path h5file, PcaModel::ModelType modelType)
 	// Read the eigenvalues
 	dsMean = modelReconstructive.openDataSet("./pcaVariance");
 	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
-	Loggers->getLogger("shapemodels").debug("Dimensions of the pcaVariance: " + lexical_cast<string>(dims[0]));
+	Loggers->getLogger("morphablemodel").debug("Dimensions of the pcaVariance: " + lexical_cast<string>(dims[0]));
 	model.eigenvalues = Mat(1, dims[0], CV_32FC1);
 	dsMean.read(model.eigenvalues.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
 	model.eigenvalues = model.eigenvalues.t();
 	dsMean.close();
 
-	// Read the PCA basis matrix
+	// Read the PCA basis matrix. It is stored normalized.
 	dsMean = modelReconstructive.openDataSet("./pcaBasis");
 	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
-	Loggers->getLogger("shapemodels").debug("Dimensions of the PCA basis matrix: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
-	model.pcaBasis = Mat(dims[0], dims[1], CV_32FC1);
-	dsMean.read(model.pcaBasis.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
+	Loggers->getLogger("morphablemodel").debug("Dimensions of the PCA basis matrix: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
+	model.normalizedPcaBasis = Mat(dims[0], dims[1], CV_32FC1);
+	dsMean.read(model.normalizedPcaBasis.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
 	dsMean.close();
+
+	// Un-normalize the basis and store the unnormalized basis as well, i.e. multiply each eigenvector by 1 over its eigenvalue.
+	model.unnormalizedPcaBasis = unnormalizePcaBasis(model.normalizedPcaBasis, model.eigenvalues);
 
 	modelReconstructive.close(); // close the model-group
 
@@ -108,7 +111,7 @@ PcaModel PcaModel::loadStatismoModel(path h5file, PcaModel::ModelType modelType)
 	H5::Group representerGroup = h5Model.openGroup(representerGroupName);
 	dsMean = representerGroup.openDataSet("./reference-mesh/triangle-list");
 	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
-	Loggers->getLogger("shapemodels").debug("Dimensions of the triangle-list: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
+	Loggers->getLogger("morphablemodel").debug("Dimensions of the triangle-list: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
 	Mat triangles(dims[0], dims[1], CV_32SC1);
 	dsMean.read(triangles.ptr<int>(0), H5::PredType::NATIVE_INT32);
 	dsMean.close();
@@ -125,7 +128,7 @@ PcaModel PcaModel::loadStatismoModel(path h5file, PcaModel::ModelType modelType)
 	representerGroup = h5Model.openGroup(representerGroupName);
 	dsMean = representerGroup.openDataSet("./reference-mesh/vertex-coordinates");
 	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
-	Loggers->getLogger("shapemodels").debug("Dimensions of the reference-mesh vertex-coordinates matrix: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
+	Loggers->getLogger("morphablemodel").debug("Dimensions of the reference-mesh vertex-coordinates matrix: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
 	Mat referenceMesh(dims[0], dims[1], CV_32FC1);
 	dsMean.read(referenceMesh.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
 	dsMean.close();
@@ -141,7 +144,7 @@ PcaModel PcaModel::loadStatismoModel(path h5file, PcaModel::ModelType modelType)
 	dsMean = landmarksGroup.openDataSet("./text");
 	
 	H5std_string outputString;
-	Loggers->getLogger("shapemodels").debug("Reading landmark information from the model.");
+	Loggers->getLogger("morphablemodel").debug("Reading landmark information from the model.");
 	dsMean.read(outputString, dsMean.getStrType());
 	dsMean.close();
 	landmarksGroup.close();
@@ -180,7 +183,7 @@ PcaModel PcaModel::loadStatismoModel(path h5file, PcaModel::ModelType modelType)
 
 PcaModel PcaModel::loadScmModel(path modelFilename, path landmarkVertexMappingFile, PcaModel::ModelType modelType)
 {
-	logging::Logger logger = Loggers->getLogger("shapemodels");
+	logging::Logger logger = Loggers->getLogger("morphablemodel");
 	PcaModel model;
 
 	// Load the landmarks mappings
@@ -261,13 +264,13 @@ PcaModel PcaModel::loadScmModel(path modelFilename, path landmarkVertexMappingFi
 	}
 
 	// Read shape projection matrix
-	Mat pcaBasisShape(numShapeDims, numShapePcaCoeffs, CV_32FC1); // m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
-	logger.debug("Loading PCA basis matrix with " + lexical_cast<string>(pcaBasisShape.rows) + " rows and " + lexical_cast<string>(pcaBasisShape.cols) + "cols.");
+	Mat unnormalizedPcaBasisShape(numShapeDims, numShapePcaCoeffs, CV_32FC1); // m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
+	logger.debug("Loading PCA basis matrix with " + lexical_cast<string>(unnormalizedPcaBasisShape.rows) + " rows and " + lexical_cast<string>(unnormalizedPcaBasisShape.cols) + "cols.");
 	for (unsigned int col = 0; col < numShapePcaCoeffs; ++col) {
 		for (unsigned int row = 0; row < numShapeDims; ++row) {
 			double var = 0.0;
 			modelFile.read(reinterpret_cast<char*>(&var), 8);
-			pcaBasisShape.at<float>(row, col) = static_cast<float>(var);
+			unnormalizedPcaBasisShape.at<float>(row, col) = static_cast<float>(var);
 		}
 	}
 
@@ -306,9 +309,13 @@ PcaModel PcaModel::loadScmModel(path modelFilename, path landmarkVertexMappingFi
 		eigenvaluesShape.at<float>(i, 0) = static_cast<float>(var);
 	}
 
+	// We read the unnormalized basis from the file. Now let's normalize it and store the normalized basis separately.
+	Mat normalizedPcaBasisShape = normalizePcaBasis(unnormalizedPcaBasisShape, eigenvaluesShape);
+
 	if (modelType == ModelType::SHAPE) {
 		model.mean = meanShape;
-		model.pcaBasis = pcaBasisShape;
+		model.unnormalizedPcaBasis = unnormalizedPcaBasisShape; // read from the file
+		model.normalizedPcaBasis = normalizedPcaBasisShape;
 		model.eigenvalues = eigenvaluesShape;
 		model.triangleList = triangleList;
 
@@ -324,13 +331,13 @@ PcaModel PcaModel::loadScmModel(path modelFilename, path landmarkVertexMappingFi
 	modelFile.read(reinterpret_cast<char*>(&numTexturePcaCoeffs), 4);
 	modelFile.read(reinterpret_cast<char*>(&numTextureDims), 4);
 	// Read color projection matrix
-	Mat pcaBasisColor(numTextureDims, numTexturePcaCoeffs, CV_32FC1);
-	logger.debug("Loading PCA basis matrix with " + lexical_cast<string>(pcaBasisShape.rows) + " rows and " + lexical_cast<string>(pcaBasisShape.cols) + "cols.");
+	Mat unnormalizedPcaBasisColor(numTextureDims, numTexturePcaCoeffs, CV_32FC1);
+	logger.debug("Loading PCA basis matrix with " + lexical_cast<string>(unnormalizedPcaBasisColor.rows) + " rows and " + lexical_cast<string>(unnormalizedPcaBasisColor.cols) + "cols.");
 	for (unsigned int col = 0; col < numTexturePcaCoeffs; ++col) {
 		for (unsigned int row = 0; row < numTextureDims; ++row) {
 			double var = 0.0;
 			modelFile.read(reinterpret_cast<char*>(&var), 8);
-			pcaBasisColor.at<float>(row, col) = static_cast<float>(var);
+			unnormalizedPcaBasisColor.at<float>(row, col) = static_cast<float>(var);
 		}
 	}
 
@@ -362,9 +369,13 @@ PcaModel PcaModel::loadScmModel(path modelFilename, path landmarkVertexMappingFi
 		eigenvaluesColor.at<float>(i, 0) = static_cast<float>(var);
 	}
 
+	// We read the unnormalized basis from the file. Now let's normalize it and store the normalized basis separately.
+	Mat normalizedPcaBasisColor = normalizePcaBasis(unnormalizedPcaBasisColor, eigenvaluesColor);
+
 	if (modelType == ModelType::COLOR) {
 		model.mean = meanColor;
-		model.pcaBasis = pcaBasisColor;
+		model.unnormalizedPcaBasis = unnormalizedPcaBasisColor; // read from the file
+		model.normalizedPcaBasis = normalizedPcaBasisColor;
 		model.eigenvalues = eigenvaluesColor;
 		model.triangleList = triangleList;
 
@@ -380,13 +391,15 @@ PcaModel PcaModel::loadScmModel(path modelFilename, path landmarkVertexMappingFi
 
 unsigned int PcaModel::getNumberOfPrincipalComponents() const
 {
-	return pcaBasis.cols;
+	// Note: we could assert(normalizedPcaBasis.cols==unnormalizedPcaBasis.cols)
+	return normalizedPcaBasis.cols;
 }
 
 
 unsigned int PcaModel::getDataDimension() const
 {
-	return pcaBasis.rows;
+	// Note: we could assert(normalizedPcaBasis.rows==unnormalizedPcaBasis.rows)
+	return normalizedPcaBasis.rows;
 }
 
 
@@ -451,23 +464,25 @@ Mat PcaModel::drawSample(vector<float> coefficients)
 	//Mat smallBasis = pcaBasis(cv::Rect(0, 0, 55, 100));
 	//Mat smallMean = mean(cv::Rect(0, 0, 1, 100));
 
-	Mat modelSample = mean + pcaBasis * alphas.mul(sqrtOfEigenvalues); // Surr
+	//Mat modelSample = mean + pcaBasis * alphas.mul(sqrtOfEigenvalues); // Surr
 	//Mat modelSample = mean + pcaBasis * alphas; // Bsl .h5 old
+	// Not necessary anymore: We can now just do:
+	Mat modelSample = mean + normalizedPcaBasis * alphas;
 
 	return modelSample;
 }
 
-cv::Mat PcaModel::getPcaBasis() const
+cv::Mat PcaModel::getNormalizedPcaBasis() const
 {
-	return pcaBasis;
+	return normalizedPcaBasis.clone();
 }
 
-cv::Mat PcaModel::getPcaBasis(std::string landmarkIdentifier) const
+cv::Mat PcaModel::getNormalizedPcaBasis(std::string landmarkIdentifier) const
 {
 	//int vertexId = landmarkVertexMap.at(landmarkIdentifier); // Todo: Hacky
 	int vertexId = boost::lexical_cast<int>(landmarkIdentifier); // Document behaviour. What to pass?
 	vertexId *= 3;
-
+	/*
 	Mat sqrtOfEigenvalues = eigenvalues.clone();
 	for (unsigned int i = 0; i < eigenvalues.rows; ++i)	{ // only do in case of Surrey model...
 		sqrtOfEigenvalues.at<float>(i) = std::sqrt(eigenvalues.at<float>(i));
@@ -483,14 +498,46 @@ cv::Mat PcaModel::getPcaBasis(std::string landmarkIdentifier) const
 	}
 
 	return unnormalizedBasis; // now contains the normalised basis - we multiplied it with sqrt(evals) in the previous loop.
-	
+	*/
 	// In the case where we don't have to normalise the basis, we could just do:
-	//return pcaBasis.rowRange(vertexId, vertexId + 3);
+	return normalizedPcaBasis.rowRange(vertexId, vertexId + 3);
 }
 
 float PcaModel::getEigenvalue(unsigned int index) const
 {
 	return eigenvalues.at<float>(index);
+}
+
+cv::Mat normalizePcaBasis(cv::Mat unnormalizedBasis, cv::Mat eigenvalues)
+{
+	Mat normalizedPcaBasis(unnormalizedBasis.size(), unnormalizedBasis.type()); // empty matrix with the same dimensions
+	Mat sqrtOfEigenvalues = eigenvalues.clone();
+	for (unsigned int i = 0; i < eigenvalues.rows; ++i)	{
+		sqrtOfEigenvalues.at<float>(i) = std::sqrt(eigenvalues.at<float>(i));
+	}
+	// Normalize the basis: We multiply each eigenvector (i.e. each column) with the square root of its corresponding eigenvalue
+	for (int basis = 0; basis < unnormalizedBasis.cols; ++basis) {
+		Mat normalizedEigenvector = unnormalizedBasis.col(basis).mul(sqrtOfEigenvalues.at<float>(basis));
+		normalizedEigenvector.copyTo(normalizedPcaBasis.col(basis));
+	}
+	
+	return normalizedPcaBasis;
+}
+
+cv::Mat unnormalizePcaBasis(cv::Mat normalizedBasis, cv::Mat eigenvalues)
+{
+	Mat unnormalizedBasis(normalizedBasis.size(), normalizedBasis.type()); // empty matrix with the same dimensions
+	Mat oneOverSqrtOfEigenvalues = eigenvalues.clone();
+	for (unsigned int i = 0; i < eigenvalues.rows; ++i)	{
+		oneOverSqrtOfEigenvalues.at<float>(i) = 1.0f / std::sqrt(eigenvalues.at<float>(i));
+	}
+	// De-normalize the basis: We multiply each eigenvector (i.e. each column) with 1 over the square root of its corresponding eigenvalue
+	for (int basis = 0; basis < normalizedBasis.cols; ++basis) {
+		Mat unnormalizedEigenvector = normalizedBasis.col(basis).mul(oneOverSqrtOfEigenvalues.at<float>(basis));
+		unnormalizedEigenvector.copyTo(unnormalizedBasis.col(basis));
+	}
+
+	return unnormalizedBasis;
 }
 
 } /* namespace morphablemodel */
