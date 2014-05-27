@@ -1,11 +1,11 @@
 /*
- * sdmLandmarkDetection.cpp
+ * sdmSimpleLandmarkDetection.cpp
  *
  *  Created on: 24.03.2014
  *      Author: Patrik Huber
  *
  *  Example command-line arguments to run:
- *    sdmLandmarkDetectionPlain -v -i /home/user/image.png -m /home/user/hogModel.txt -f /opt/opencv/data/haarcascades/haarcascade_frontalface_alt2.xml -o /home/user/
+ *    sdmSimpleLandmarkDetection -v -i /home/user/image.png -m /home/user/hogModel.txt -f /opt/opencv/data/haarcascades/haarcascade_frontalface_alt2.xml -o /home/user/
  */
 
 #include "opencv2/core/core.hpp"
@@ -90,8 +90,8 @@ int main(int argc, char *argv[])
 	}
 	
 	Loggers->getLogger("superviseddescentmodel").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Loggers->getLogger("sdmLandmarkDetectionPlain").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Logger appLogger = Loggers->getLogger("sdmLandmarkDetectionPlain");
+	Loggers->getLogger("sdmSimpleLandmarkDetection").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Logger appLogger = Loggers->getLogger("sdmSimpleLandmarkDetection");
 
 	appLogger.info("Verbose level for console output: " + logging::logLevelToString(logLevel));
 

@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME sdmLandmarkDetection)
+set(SUBPROJECT_NAME sdmSimpleLandmarkDetection)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -7,7 +7,7 @@ set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # Find dependencies:
-find_package(OpenCV 2.4.3 REQUIRED core imgproc highgui objdetect)
+find_package(OpenCV 2.4.3 REQUIRED core imgproc highgui objdetect features2d nonfree)
 message(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
@@ -20,7 +20,7 @@ endif()
 
 # Source and header files:
 set(SOURCE
-	sdmLandmarkDetection.cpp
+	sdmSimpleLandmarkDetection.cpp
 )
 
 set(HEADERS
@@ -31,8 +31,7 @@ add_executable(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${Logging_SOURCE_DIR}/include)
-include_directories(${ImageIO_SOURCE_DIR}/include)
 include_directories(${SupervisedDescentModel_SOURCE_DIR}/include)
 
 # Make the app depend on the libraries
-target_link_libraries(${SUBPROJECT_NAME} SupervisedDescentModel ImageIO ${KINECT_LIBNAME} Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(${SUBPROJECT_NAME} SupervisedDescentModel Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})
