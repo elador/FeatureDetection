@@ -427,7 +427,7 @@ Vec3f PcaModel::getMeanAtPoint(unsigned int vertexIndex) const
 	return Vec3f(mean.at<float>(vertexIndex), mean.at<float>(vertexIndex+1), mean.at<float>(vertexIndex+2));
 }
 
-Mat PcaModel::drawSample(float sigma /*= 1.0f*/)
+Mat PcaModel::drawSample(float sigma/*=1.0f*/)
 {
 	std::normal_distribution<float> distribution(0.0f, sigma); // TODO: c'tor takes the stddev. Update all the documentation!!!
 
@@ -456,6 +456,7 @@ Mat PcaModel::drawSample(float sigma /*= 1.0f*/)
 Mat PcaModel::drawSample(vector<float> coefficients)
 {
 	Mat alphas(coefficients);
+	/*
 	Mat sqrtOfEigenvalues = eigenvalues.clone();
 	for (unsigned int i = 0; i < eigenvalues.rows; ++i)	{
 		sqrtOfEigenvalues.at<float>(i) = std::sqrt(eigenvalues.at<float>(i));
@@ -466,6 +467,7 @@ Mat PcaModel::drawSample(vector<float> coefficients)
 
 	//Mat modelSample = mean + pcaBasis * alphas.mul(sqrtOfEigenvalues); // Surr
 	//Mat modelSample = mean + pcaBasis * alphas; // Bsl .h5 old
+	*/
 	// Not necessary anymore: We can now just do:
 	Mat modelSample = mean + normalizedPcaBasis * alphas;
 
