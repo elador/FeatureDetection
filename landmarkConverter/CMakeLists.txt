@@ -16,7 +16,7 @@ else(Boost_FOUND)
   message(FATAL_ERROR "Boost not found")
 endif()
 
-#Source and header files:
+# Source and header files:
 set(SOURCE
 	landmarkConverter.cpp
 )
@@ -31,5 +31,5 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${Logging_SOURCE_DIR}/include)
 include_directories(${ImageIO_SOURCE_DIR}/include)
 
-#Make the app depend on the libraries
+# Make the app depend on the libraries
 target_link_libraries(${SUBPROJECT_NAME} ImageIO Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})

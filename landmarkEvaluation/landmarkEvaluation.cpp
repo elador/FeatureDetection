@@ -63,7 +63,7 @@ using boost::filesystem::path;
 using cv::Mat;
 using logging::Logger;
 using logging::LoggerFactory;
-using logging::loglevel;
+using logging::LogLevel;
 
 
 template<class T>
@@ -118,13 +118,13 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	loglevel logLevel;
-	if (boost::iequals(verboseLevelConsole, "PANIC")) logLevel = loglevel::PANIC;
-	else if (boost::iequals(verboseLevelConsole, "ERROR")) logLevel = loglevel::ERROR;
-	else if (boost::iequals(verboseLevelConsole, "WARN")) logLevel = loglevel::WARN;
-	else if (boost::iequals(verboseLevelConsole, "INFO")) logLevel = loglevel::INFO;
-	else if (boost::iequals(verboseLevelConsole, "DEBUG")) logLevel = loglevel::DEBUG;
-	else if (boost::iequals(verboseLevelConsole, "TRACE")) logLevel = loglevel::TRACE;
+	LogLevel logLevel;
+	if (boost::iequals(verboseLevelConsole, "PANIC")) logLevel = LogLevel::Panic;
+	else if (boost::iequals(verboseLevelConsole, "ERROR")) logLevel = LogLevel::Error;
+	else if (boost::iequals(verboseLevelConsole, "WARN")) logLevel = LogLevel::Warn;
+	else if (boost::iequals(verboseLevelConsole, "INFO")) logLevel = LogLevel::Info;
+	else if (boost::iequals(verboseLevelConsole, "DEBUG")) logLevel = LogLevel::Debug;
+	else if (boost::iequals(verboseLevelConsole, "TRACE")) logLevel = LogLevel::Trace;
 	else {
 		cout << "Error: Invalid loglevel." << endl;
 		return EXIT_FAILURE;
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 	Loggers->getLogger("landmarkEvaluation").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("landmarkEvaluation");
 
-	appLogger.debug("Verbose level for console output: " + logging::loglevelToString(logLevel));
+	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 	appLogger.debug("Using config: " + configFilename.string());
 
 	// TODO:

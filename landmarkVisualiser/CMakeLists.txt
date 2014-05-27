@@ -16,7 +16,7 @@ else(Boost_FOUND)
   message(FATAL_ERROR "Boost not found")
 endif()
 
-#Source and header files:
+# Source and header files:
 set(SOURCE
 	landmarkVisualiser.cpp
 )
