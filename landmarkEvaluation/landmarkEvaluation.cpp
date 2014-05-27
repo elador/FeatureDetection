@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 		po::notify(vm);
 
 		if (vm.count("help")) {
-			cout << "Usage: fitter [options]\n";
+			cout << "Usage: landmarkEvaluation [options]\n";
 			cout << desc;
 			return EXIT_SUCCESS;
 		}

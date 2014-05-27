@@ -166,7 +166,7 @@ cv::Mat LandmarkBasedSupervisedDescentTraining::calculateMean(std::vector<cv::Ma
 		throw std::runtime_error(msg);
 		break;
 	}
-	saveShapeInstanceToMLtxt(modelMean, "mean.txt");
+	//saveShapeInstanceToMLtxt(modelMean, "mean.txt");
 	return modelMean;
 }
 
@@ -340,11 +340,9 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 
 	// Rescale the model-mean, and the mean variances as well: (only necessary if our mean is not normalized to V&J face-box directly in first steps)
 	// TODO add a flag?
-	std::pair<Mat, ModelVariance> pp = rescaleModel(modelMean, modelVariance);
-	modelMean = pp.first;
-	modelVariance = pp.second;
+	std::tie(modelMean, modelVariance) = rescaleModel(modelMean, modelVariance);
 
-	saveShapeInstanceToMLtxt(modelMean, "mean.txt");
+	//saveShapeInstanceToMLtxt(modelMean, "mean.txt");
 
 	// 3. For every training image:
 	// Store the initial shape estimate (x_0) of the image (using the rescaled mean), plus generate 10 samples and store them as well
@@ -366,11 +364,11 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 	Mat deltaShape = groundtruthShapes - initialShape;
 	// Calculate and print our starting error:
 	double avgErrx0 = cv::norm(deltaShape, cv::NORM_L1) / (deltaShape.rows * deltaShape.cols); // TODO: Doesn't say much, need to normalize by IED! But maybe not at training time, should work with all landmarks
-	logger.debug("LM-SDM training: Average pixel error starting from the mean initialization: " + lexical_cast<string>(avgErrx0));
+	logger.debug("Training: Average pixel error starting from the mean initialization: " + lexical_cast<string>(avgErrx0));
 
 	// 6. Learn a regressor for every cascade step
 	for (int currentCascadeStep = 0; currentCascadeStep < numCascadeSteps; ++currentCascadeStep) {
-		logger.debug("LM-SDM training: Training regressor " + lexical_cast<string>(currentCascadeStep));
+		logger.debug("Training regressor " + lexical_cast<string>(currentCascadeStep));
 		// b) Extract the features at all landmark locations initialShape (Paper: SIFT, 32x32 (?))
 		//int featureDimension = 128;
 		Mat featureMatrix;// = Mat::ones(initialShape.rows, (featureDimension * numModelLandmarks) + 1, CV_32FC1); // Our 'A'. The last column stays all 1's; it's for learning the offset/bias
@@ -444,7 +442,7 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 		if (!regularisation.regulariseAffineComponent) {
 			regulariser.at<float>(regulariser.rows - 1, regulariser.cols - 1) = 0.0f; // no lambda for the bias
 		}
-		//		solve for x!
+		// solve for x!
 		Mat AtAReg = AtA + regulariser;
 		if (!AtAReg.isContinuous()) {
 			std::string msg("Matrix is not continuous. This should not happen as we allocate it directly.");
@@ -476,7 +474,7 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 		Mat AtARegInvFullLU(AtARegInv_EigenFullLU.rows(), AtARegInv_EigenFullLU.cols(), CV_32FC1, AtARegInv_EigenFullLU.data()); // create an OpenCV Mat header for the Eigen data
 		std::chrono::time_point<std::chrono::system_clock> inverseTimeEnd = std::chrono::system_clock::now();
 		elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(inverseTimeEnd - inverseTimeStart).count();
-		logger.debug("Inverting the regularized AtA took " + lexical_cast<string>(elapsed_mseconds)+"ms.");
+		logger.debug("Inverting the regularized AtA took " + lexical_cast<string>(elapsed_mseconds) + "ms.");
 		//Mat AtARegInvOCV = AtAReg.inv(); // slow OpenCV inv() for comparison
 
 		// Todo(1): Moving AtA by lambda should move the eigenvalues by lambda, however, it does not. It did however on an early test (with rand maybe?).
@@ -521,7 +519,7 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 		deltaShape = groundtruthShapes - initialShape;
 		// the error:
 		double avgErr = cv::norm(deltaShape, cv::NORM_L1) / (deltaShape.rows * deltaShape.cols); // TODO: Doesn't say much, need to normalize by IED! But maybe not at training time, should work with all landmarks
-		logger.debug("LM-SDM training: Average pixel error after applying all learned regressors: " + lexical_cast<string>(avgErr));
+		logger.debug("Average pixel error after applying all learned regressors: " + lexical_cast<string>(avgErr));
 	}
 
 	// Do the following:

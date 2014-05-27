@@ -75,7 +75,7 @@ public:
 	};
 
 	std::string getParameterString() const {
-		return "";
+		return std::string();
 	};
 };
 

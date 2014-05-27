@@ -1,5 +1,5 @@
 /*
- * sdmTracking.cpp
+ * sdmTraining.cpp
  *
  *  Created on: 11.01.2014
  *      Author: Patrik Huber
@@ -39,7 +39,6 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/objdetect/objdetect.hpp"
 
-
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
@@ -75,6 +74,7 @@ using boost::property_tree::ptree;
 using boost::filesystem::path;
 using boost::lexical_cast;
 using cv::Mat;
+using cv::Rect;
 using logging::Logger;
 using logging::LoggerFactory;
 using logging::LogLevel;
@@ -338,20 +338,19 @@ int main(int argc, char *argv[])
 		
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 
-	string faceDetectionModel("C:\\opencv\\opencv_2.4.8_prebuilt\\sources\\data\\haarcascades\\haarcascade_frontalface_alt2.xml"); // sgd: "../models/haarcascade_frontalface_alt2.xml"
+	string faceDetectionModel("C:\\opencv\\opencv_2.4.8_prebuilt\\sources\\data\\haarcascades\\haarcascade_frontalface_alt2.xml");
 	cv::CascadeClassifier faceCascade;
 	if (!faceCascade.load(faceDetectionModel))
 	{
 		cout << "Error loading face detection model." << endl;
 		return EXIT_FAILURE;
 	}
-	
+
 	// App-config:
 	FilterByFaceDetection filterByFaceDetection = FilterByFaceDetection::VIOLAJONES;
 	// Add a switch "use_GT_as_detectionResults" ?
 	
 	// Our data:
-	using cv::Rect;
 	vector<Mat> trainingImages;
 	vector<Mat> trainingGroundtruthLandmarks;
 	vector<Rect> trainingFaceboxes;
