@@ -1,5 +1,5 @@
 /*
- * SimpleLandmarkSink.hpp
+ * SingleLandmarkSink.hpp
  *
  *  Created on: 21.01.2014
  *      Author: poschmann
@@ -17,21 +17,21 @@ namespace imageio {
 class Landmark;
 
 /**
- * Landmark source that writes rectangular landmarks to a file, one per frame and line. One landmark of
+ * Landmark sink that writes rectangular landmarks to a file, one per frame and line. One landmark of
  * each added collection will be written to the file and results in one line. There will be four values:
  * the x and y coordinate of the upper left corner, followed by the width and height. If the landmark is
  * invisible, all values will be zero. There will be whitespaces between the values.
  */
-class SimpleLandmarkSink : public OrderedLandmarkSink {
+class SingleLandmarkSink : public OrderedLandmarkSink {
 public:
 
 	/**
 	 * Constructs a new simple landmark sink.
 	 *
 	 * @param[in] precision The decimal precision of the output.
-	 * @param[in] landmarkName The name of the landmark. Can be ommitted if there is only one landmark per image.
+	 * @param[in] landmarkName The name of the landmark. Can be omitted if there is only one landmark per image.
 	 */
-	explicit SimpleLandmarkSink(size_t precision = 0, const std::string& landmarkName = "");
+	explicit SingleLandmarkSink(size_t precision = 0, const std::string& landmarkName = "");
 
 	/**
 	 * Constructs a new simple landmark sink and opens a file to write into.
@@ -40,7 +40,7 @@ public:
 	 * @param[in] precision The decimal precision of the output.
 	 * @param[in] landmarkName The name of the landmark. Can be ommitted if there is only one landmark per image.
 	 */
-	explicit SimpleLandmarkSink(const std::string& filename, size_t precision = 0, const std::string& landmarkName = "");
+	explicit SingleLandmarkSink(const std::string& filename, size_t precision = 0, const std::string& landmarkName = "");
 
 	bool isOpen();
 
@@ -51,8 +51,8 @@ public:
 	void add(const LandmarkCollection& collection);
 
 private:
-	SimpleLandmarkSink(SimpleLandmarkSink& other);        // Copy c'tor and assignment operator private
-	SimpleLandmarkSink operator=(SimpleLandmarkSink rhs); // since we own an ofstream object.
+	SingleLandmarkSink(SingleLandmarkSink& other);        // Copy c'tor and assignment operator private
+	SingleLandmarkSink operator=(SingleLandmarkSink rhs); // since we own an ofstream object.
 
 	/**
 	 * Extracts the landmark that should be written to the file. If the landmark name is an empty string, the first

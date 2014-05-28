@@ -1,11 +1,11 @@
 /*
- * SimpleLandmarkSink.cpp
+ * SingleLandmarkSink.cpp
  *
  *  Created on: 21.01.2014
  *      Author: poschmann
  */
 
-#include "imageio/SimpleLandmarkSink.hpp"
+#include "imageio/SingleLandmarkSink.hpp"
 #include "imageio/Landmark.hpp"
 #include "imageio/LandmarkCollection.hpp"
 #include "opencv2/core/core.hpp"
@@ -19,34 +19,34 @@ using std::runtime_error;
 
 namespace imageio {
 
-SimpleLandmarkSink::SimpleLandmarkSink(size_t precision, const string& landmarkName) : landmarkName(landmarkName), output() {
+SingleLandmarkSink::SingleLandmarkSink(size_t precision, const string& landmarkName) : landmarkName(landmarkName), output() {
 	output.setf(std::ios_base::fixed, std::ios_base::floatfield);
 	output.precision(precision);
 }
 
-SimpleLandmarkSink::SimpleLandmarkSink(const string& filename, size_t precision, const string& landmarkName) :
+SingleLandmarkSink::SingleLandmarkSink(const string& filename, size_t precision, const string& landmarkName) :
 		landmarkName(landmarkName), output(filename) {
 	output.setf(std::ios_base::fixed, std::ios_base::floatfield);
 	output.precision(precision);
 }
 
-bool SimpleLandmarkSink::isOpen() {
+bool SingleLandmarkSink::isOpen() {
 	return output.is_open();
 }
 
-void SimpleLandmarkSink::open(const string& filename) {
+void SingleLandmarkSink::open(const string& filename) {
 	if (isOpen())
-		throw runtime_error("SimpleLandmarkSink: sink is already open");
+		throw runtime_error("SingleLandmarkSink: sink is already open");
 	output.open(filename);
 }
 
-void SimpleLandmarkSink::close() {
+void SingleLandmarkSink::close() {
 	output.close();
 }
 
-void SimpleLandmarkSink::add(const LandmarkCollection& collection) {
+void SingleLandmarkSink::add(const LandmarkCollection& collection) {
 	if (!isOpen())
-		throw runtime_error("SimpleLandmarkSink: sink is not open");
+		throw runtime_error("SingleLandmarkSink: sink is not open");
 	const shared_ptr<Landmark> landmark = getLandmark(collection);
 	if (landmark->isVisible()) {
 		Rect_<float> rect = landmark->getRect();
@@ -56,7 +56,7 @@ void SimpleLandmarkSink::add(const LandmarkCollection& collection) {
 	}
 }
 
-const shared_ptr<Landmark> SimpleLandmarkSink::getLandmark(const LandmarkCollection& collection) {
+const shared_ptr<Landmark> SingleLandmarkSink::getLandmark(const LandmarkCollection& collection) {
 	if (landmarkName.empty())
 		return collection.getLandmark();
 	return collection.getLandmark(landmarkName);
