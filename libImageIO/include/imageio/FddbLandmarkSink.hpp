@@ -23,7 +23,7 @@ class Landmark;
  * Landmark sink that writes landmarks to a file using the format of 
  * the FDDB face-detection benchmark. http://vis-www.cs.umass.edu/fddb/
  */
-class FddbLandmarkSink  {
+class FddbLandmarkSink { // TODO: Shouldn't we derive from Ordered/NamedLandmarkSink? Probably we can't, since add() is different (needs the detection score)
 public:
 
 	/**

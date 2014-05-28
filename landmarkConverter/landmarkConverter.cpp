@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 		LandmarkCollection originalLandmarks = landmarkSource->getLandmarks();
 		LandmarkCollection convertedLandmarks = landmarkMapper.convert(originalLandmarks);
 		
-		path outputFilename = outputLandmarks / landmarkSource->getName().stem();
+		path outputFilename = outputLandmarks / landmarkSource->getName().stem(); // Todo: Add file-extension
 		landmarkSink->add(convertedLandmarks, outputFilename);
 	}
 	appLogger.info("Finished converting all landmarks.");

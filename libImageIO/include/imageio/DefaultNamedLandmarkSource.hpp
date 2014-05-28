@@ -51,7 +51,7 @@ public:
 private:
 	std::map<boost::filesystem::path, LandmarkCollection> landmarkCollections;		///< Holds all the landmarks for all images.
 	std::map<boost::filesystem::path, LandmarkCollection>::const_iterator index;	///< The current landmark position in the landmarkCollections map.
-	bool iteratorIsBeforeBegin;	///< This is a little hacky because we can't set index to -1 so that it points to the first valid element after one call to next().
+	bool iteratorIsBeforeBegin;	///< Specifies whether we have started iterating through the landmarks yet. This is a little hack because we can't set index to -1 so that it points to the first valid element after one call to next().
 };
 
 } /* namespace imageio */

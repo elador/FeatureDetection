@@ -20,14 +20,14 @@ namespace imageio {
 class LandmarkCollection;
 
 /**
- * Landmark source that writes rectangular landmarks to a
+ * Landmark sink that writes rectangular landmarks to a
  * file using a format of one line per landmark in the form 
  * of 'landmarkName topLeftX topLeftY width height'.
  * Generates one landmark file for each image (i.e. for
  * each call of the 'write' method).
  *
  */
-class RectLandmarkSink {
+class RectLandmarkSink { // TODO: We should probably derive from Ordered/NamedLandmarkSink. Also this seems to be the same as SimpleLandmarkSink?
 public:
 
 	/**
