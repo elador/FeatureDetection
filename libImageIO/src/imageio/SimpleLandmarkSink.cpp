@@ -49,7 +49,7 @@ void SimpleLandmarkSink::add(const LandmarkCollection& collection) {
 		throw runtime_error("SimpleLandmarkSink: sink is not open");
 	const shared_ptr<Landmark> landmark = getLandmark(collection);
 	if (landmark->isVisible()) {
-		Rect_<float> rect = getLandmark(collection)->getRect();
+		Rect_<float> rect = landmark->getRect();
 		output << rect.x << ' ' << rect.y << ' ' << rect.width << ' ' << rect.height << '\n';
 	} else {
 		output << "0 0 0 0\n";
