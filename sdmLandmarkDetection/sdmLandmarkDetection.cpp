@@ -35,6 +35,7 @@
 #include "imageio/FileListImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
 #include "imageio/CameraImageSource.hpp"
+#include "imageio/SimpleModelLandmarkSink.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -90,7 +91,7 @@ int main(int argc, char *argv[])
 			("face-detector,f", po::value<path>(&faceDetectorFilename)->required(),
 				"Path to an XML CascadeClassifier from OpenCV.")
 			("output,o", po::value<path>(&outputDirectory)->required(),
-				"Output directory for the result images.")
+				"Output directory for the result images and landmarks.")
 		;
 
 		po::positional_options_description p;
@@ -98,17 +99,18 @@ int main(int argc, char *argv[])
 
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
-		po::notify(vm);
-
 		if (vm.count("help")) {
 			cout << "Usage: sdmLandmarkDetection [options]\n";
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
+		po::notify(vm);
 
-	} catch(std::exception& e) {
-		cout << e.what() << endl;
-		return EXIT_FAILURE;
+	}
+	catch (po::error& e) {
+		cout << "Error while parsing command-line arguments: " << e.what() << endl;
+		cout << "Use --help to display a list of options." << endl;
+		return EXIT_SUCCESS;
 	}
 
 	LogLevel logLevel;
@@ -187,6 +189,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	std::unique_ptr<NamedLandmarkSink> landmarkSink(new SimpleModelLandmarkSink());
+	//std::unique_ptr<NamedLandmarkSink> landmarkSink = std::make_unique<SimpleModelLandmarkSink>();
+
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img;
 
@@ -212,9 +217,10 @@ int main(int argc, char *argv[])
 		float score, notFace = 0.5;
 		
 		// face detection
-		faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
+		//faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
+		faceCascade.detectMultiScale(img, faces);
 		if (faces.empty()) {
-			// no face found, output the unmodified image
+			// no face found, output the unmodified image. don't create a file for the (non-existing) landmarks.
 			imwrite((outputDirectory / imageSource->getName().filename()).string(), landmarksImage);
 			continue;
 		}
@@ -231,9 +237,12 @@ int main(int argc, char *argv[])
 			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + lmModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 255.0f, 0.0f));
 		}
 		// save the image
-		imwrite((outputDirectory / imageSource->getName().filename()).string(), landmarksImage);
+		path outputFilename = outputDirectory / imageSource->getName().filename();
+		imwrite(outputFilename.string(), landmarksImage);
 		// write out the landmarks to a file
-
+		LandmarkCollection landmarks = lmModel.getAsLandmarks(modelShape);
+		outputFilename.replace_extension(".txt");
+		landmarkSink->add(landmarks, outputFilename.string());
 
 		end = std::chrono::system_clock::now();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();

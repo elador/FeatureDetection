@@ -45,7 +45,8 @@ include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${Logging_SOURCE_DIR}/include)
+include_directories(${ImageIO_SOURCE_DIR}/include)
 
 # make library
 add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
-target_link_libraries(${SUBPROJECT_NAME} Logging ${OpenCV_LIBS} ${Boost_LIBRARIES})
+target_link_libraries(${SUBPROJECT_NAME} ImageIO Logging ${OpenCV_LIBS} ${Boost_LIBRARIES})

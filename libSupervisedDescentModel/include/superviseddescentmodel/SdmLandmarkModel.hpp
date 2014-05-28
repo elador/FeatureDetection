@@ -11,11 +11,11 @@
 #define SDMLANDMARKMODEL_HPP_
 
 #include "superviseddescentmodel/DescriptorExtractor.hpp"
+#include "imageio/LandmarkCollection.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/nonfree/nonfree.hpp"
-
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
@@ -87,6 +87,15 @@ public:
 
 	//std::vector<cv::Point2f> getLandmarksAsPoints(cv::Mat or vector<float> alphas or empty(=mean));
 	std::vector<cv::Point2f> getMeanAsPoints() const;
+
+	/**
+	 * Get the model's points as a LandmarkCollection.
+	 * If nothing passed, return the mean.
+	 *
+	 * @param[in] modelInstance Todo.
+	 * @return Todo.
+	 */
+	imageio::LandmarkCollection getAsLandmarks(cv::Mat modelInstance = cv::Mat()) const;
 
 	cv::Point2f getLandmarkAsPoint(std::string landmarkIdentifier, cv::Mat modelInstance=cv::Mat()) const;
 

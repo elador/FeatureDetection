@@ -7,6 +7,7 @@
 
 #include "superviseddescentmodel/SdmLandmarkModel.hpp"
 
+#include "imageio/ModelLandmark.hpp"
 #include "logging/LoggerFactory.hpp"
 
 #include "opencv2/core/core.hpp"
@@ -129,7 +130,9 @@ SdmLandmarkModel SdmLandmarkModel::load(boost::filesystem::path filename)
 	SdmLandmarkModel model;
 	std::ifstream file(filename.string());
 	if (!file.is_open()) {
-		throw std::runtime_error("Given SDM model file could not be opened.");
+		string errorMessage = "Given SDM model file could not be opened: " + filename.string();
+		logger.error(errorMessage);
+		throw std::runtime_error(errorMessage);
 	}
 	std::string line;
 	vector<string> stringContainer;
@@ -219,6 +222,28 @@ SdmLandmarkModel SdmLandmarkModel::load(boost::filesystem::path filename)
 	}
 
 	return model;
+}
+
+imageio::LandmarkCollection SdmLandmarkModel::getAsLandmarks(cv::Mat modelInstance /*= cv::Mat()*/) const
+{
+	imageio::LandmarkCollection landmarks;
+	if (modelInstance.empty()) {
+		// a model instance was not provided, return the mean landmarks
+		for (size_t i = 0; i < landmarkIdentifier.size(); ++i) {
+			landmarks.insert(make_shared<imageio::ModelLandmark>(landmarkIdentifier[i], meanLandmarks.at<float>(i), meanLandmarks.at<float>(i + getNumLandmarks())));
+		}
+	}
+	else {
+		// check if the provided model instance is of correct size, then, return it as a LandmarkCollection
+		if (modelInstance.rows != getNumLandmarks() * 2) {
+			throw std::runtime_error("SdmLandmarkModel: The model instance given has a different number of landmarks than the called model. Please make sure that the instance you give is generated from the model you are calling.");
+		}
+		for (size_t i = 0; i < landmarkIdentifier.size(); ++i) {
+			landmarks.insert(make_shared<imageio::ModelLandmark>(landmarkIdentifier[i], modelInstance.at<float>(i), modelInstance.at<float>(i + getNumLandmarks())));
+		}
+	}
+
+	return landmarks;
 }
 
 }
