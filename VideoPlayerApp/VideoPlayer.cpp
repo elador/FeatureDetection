@@ -10,7 +10,7 @@
 #include "logging/Logger.hpp"
 #include "logging/ConsoleAppender.hpp"
 #include "imageio/BobotLandmarkSource.hpp"
-#include "imageio/SimpleLandmarkSource.hpp"
+#include "imageio/SingleLandmarkSource.hpp"
 #include "imageio/VideoImageSource.hpp"
 #include "imageio/DirectoryImageSource.hpp"
 #include "imageio/VideoImageSink.hpp"

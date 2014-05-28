@@ -1,5 +1,5 @@
 /*
- * SimpleLandmarkSource.hpp
+ * SingleLandmarkSource.hpp
  *
  *  Created on: 21.01.2014
  *      Author: poschmann
@@ -26,7 +26,7 @@ class ImageSource;
  * width and height. If width or height is less than one, then the target is considered invisible. The values
  * should be separated by white space or a delimiter character (delimiter and whitespace is also allowed).
  */
-class SimpleLandmarkSource : public NamedLandmarkSource {
+class SingleLandmarkSource : public NamedLandmarkSource {
 public:
 
 	/**
@@ -34,7 +34,7 @@ public:
 	 *
 	 * @param[in] filename The name of the file containing the landmark data.
 	 */
-	SimpleLandmarkSource(const std::string& filename);
+	SingleLandmarkSource(const std::string& filename);
 
 	void reset();
 

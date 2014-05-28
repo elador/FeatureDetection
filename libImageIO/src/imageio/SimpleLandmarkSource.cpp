@@ -1,11 +1,11 @@
 /*
- * SimpleLandmarkSource.cpp
+ * SingleLandmarkSource.cpp
  *
  *  Created on: 21.01.2014
  *      Author: poschmann
  */
 
-#include "imageio/SimpleLandmarkSource.hpp"
+#include "imageio/SingleLandmarkSource.hpp"
 #include "imageio/ImageSource.hpp"
 #include "imageio/RectLandmark.hpp"
 #include <fstream>
@@ -27,14 +27,14 @@ using std::invalid_argument;
 
 namespace imageio {
 
-const string SimpleLandmarkSource::landmarkName = "target";
+const string SingleLandmarkSource::landmarkName = "target";
 
-SimpleLandmarkSource::SimpleLandmarkSource(const string& filename) : positions(), index(-1) {
+SingleLandmarkSource::SingleLandmarkSource(const string& filename) : positions(), index(-1) {
 	string line;
 	char separator;
 	std::ifstream file(filename.c_str());
 	if (!file.is_open())
-		throw invalid_argument("SimpleLandmarkSource: file \"" + filename + "\" cannot be opened");
+		throw invalid_argument("SingleLandmarkSource: file \"" + filename + "\" cannot be opened");
 	Rect_<float> position;
 	while (file.good()) {
 		if (!std::getline(file, line))
@@ -60,21 +60,21 @@ SimpleLandmarkSource::SimpleLandmarkSource(const string& filename) : positions()
 	}
 }
 
-void SimpleLandmarkSource::reset() {
+void SingleLandmarkSource::reset() {
 	index = -1;
 }
 
-bool SimpleLandmarkSource::next() {
+bool SingleLandmarkSource::next() {
 	index++;
 	return index < static_cast<int>(positions.size());
 }
 
-LandmarkCollection SimpleLandmarkSource::get(const path& imagePath) {
+LandmarkCollection SingleLandmarkSource::get(const path& imagePath) {
 	index = std::stoi(imagePath.string());
 	return getLandmarks();
 }
 
-LandmarkCollection SimpleLandmarkSource::getLandmarks() const {
+LandmarkCollection SingleLandmarkSource::getLandmarks() const {
 	LandmarkCollection collection;
 	if (index >= 0 && index < static_cast<int>(positions.size())) {
 		const Rect_<float>& position = positions[index];
@@ -86,7 +86,7 @@ LandmarkCollection SimpleLandmarkSource::getLandmarks() const {
 	return collection;
 }
 
-path SimpleLandmarkSource::getName() const {
+path SingleLandmarkSource::getName() const {
 	return path(std::to_string(index));
 }
 

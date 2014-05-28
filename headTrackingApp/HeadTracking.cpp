@@ -11,7 +11,7 @@
 #include "logging/ConsoleAppender.hpp"
 #include "imageio/LandmarkSource.hpp"
 #include "imageio/BobotLandmarkSource.hpp"
-#include "imageio/SimpleLandmarkSource.hpp"
+#include "imageio/SingleLandmarkSource.hpp"
 #include "imageio/EmptyLandmarkSource.hpp"
 #include "imageio/CameraImageSource.hpp"
 #include "imageio/VideoImageSource.hpp"
@@ -1058,7 +1058,7 @@ int main(int argc, char *argv[]) {
 	if (useGroundTruth && bobot)
 		landmarkSource.reset(new BobotLandmarkSource(groundTruthFilename, imageSource));
 	else if (useGroundTruth)
-		landmarkSource.reset(new SimpleLandmarkSource(groundTruthFilename));
+		landmarkSource.reset(new SingleLandmarkSource(groundTruthFilename));
 	else
 		landmarkSource.reset(new EmptyLandmarkSource());
 	unique_ptr<LabeledImageSource> labeledImageSource(new OrderedLabeledImageSource(imageSource, landmarkSource));
