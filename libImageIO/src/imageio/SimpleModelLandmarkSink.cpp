@@ -1,11 +1,11 @@
 /*
- * DidLandmarkSink.cpp
+ * SimpleModelLandmarkSink.cpp
  *
- *  Created on: 05.04.2014
+ *  Created on: 28.05.2014
  *      Author: Patrik Huber
  */
 
-#include "imageio/DidLandmarkSink.hpp"
+#include "imageio/SimpleModelLandmarkSink.hpp"
 #include "imageio/Landmark.hpp"
 #include "imageio/LandmarkCollection.hpp"
 
@@ -15,19 +15,19 @@ using boost::filesystem::path;
 
 namespace imageio {
 
-void DidLandmarkSink::add(const LandmarkCollection& collection, path filename)
+void SimpleModelLandmarkSink::add(const LandmarkCollection& collection, path filename)
 {
-	filename.replace_extension(".did");
+	//filename.replace_extension(".txt");
 	std::ofstream outputFile(filename.string());
 
 	if (!outputFile.is_open()) {
 		// TODO log
-		throw std::runtime_error("DidLandmarkSink: Error creating the output file " + filename.string());
+		throw std::runtime_error("SimpleModelLandmarkSink: Error creating the output file " + filename.string());
 	}
 
 	const auto& landmarks = collection.getLandmarks();
 	for (const auto& lm : landmarks) {
-		outputFile << std::round(lm->getX()) << " " << std::round(lm->getY()) << " " << lm->getName() << std::endl;
+		outputFile << lm->getName() << " " << lm->getX() << " " << lm->getY() << std::endl;
 	}
 
 	outputFile.close();

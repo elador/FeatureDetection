@@ -1,13 +1,13 @@
 /*
- * DidLandmarkSink.hpp
+ * SimpleModelLandmarkSink.hpp
  *
  *  Created on: 05.04.2014
  *      Author: Patrik Huber
  */
 #pragma once
 
-#ifndef DIDLANDMARKSINK_HPP_
-#define DIDLANDMARKSINK_HPP_
+#ifndef SIMPLEMODELLANDMARKSINK_HPP_
+#define SIMPLEMODELLANDMARKSINK_HPP_
 
 #include "imageio/NamedLandmarkSink.hpp"
 
@@ -22,22 +22,22 @@ namespace imageio {
 class LandmarkCollection;
 
 /**
- * Sink for landmark collections where each landmark
- * is saved to a separate file in the Surrey DID
- * format. Each line is 'x y vertexId'.
- * TODO/Note: x and y are ints? What about float? CHECK!
+ * Sink for landmark collections where each collection
+ * is saved to a separate file.
+ * Each line (i.e. each landmark) in a file is written
+ * as 'name x y'.
  */
-class DidLandmarkSink : public NamedLandmarkSink {
+class SimpleModelLandmarkSink : public NamedLandmarkSink {
 public:
 
 	/**
 	 * Adds a landmark collection and saves it to the given file.
 	 *
 	 * @param[in] collection The landmark collection.
-	 * @param[in] filename The file to which to save the landmarks. The current file extension will be replaced by '.did', or, if none given, it will be added.
+	 * @param[in] filename The file to which to save the landmarks, including file extension.
 	 */
 	void add(const LandmarkCollection& collection, boost::filesystem::path filename);
 };
 
 } /* namespace imageio */
-#endif /* DIDLANDMARKSINK_HPP_ */
+#endif /* SIMPLEMODELLANDMARKSINK_HPP_ */

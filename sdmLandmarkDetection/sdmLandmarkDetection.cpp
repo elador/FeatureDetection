@@ -232,10 +232,12 @@ int main(int argc, char *argv[])
 		}
 		// save the image
 		imwrite((outputDirectory / imageSource->getName().filename()).string(), landmarksImage);
+		// write out the landmarks to a file
+
 
 		end = std::chrono::system_clock::now();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-		appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
+		appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.");
 	}
 
 	return 0;
