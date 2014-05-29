@@ -27,28 +27,31 @@ using std::make_pair;
 
 namespace imageio {
 
-IbugLandmarkFormatParser::~IbugLandmarkFormatParser() {}
-
 const map<path, LandmarkCollection> IbugLandmarkFormatParser::read(path landmarkFilePath)
 {
 	map<path, LandmarkCollection> allLandmarks;
 	LandmarkCollection landmarks;
 
-	ifstream ifLM(landmarkFilePath.string());
+	ifstream landmarksFile(landmarkFilePath.string());
+	if (!landmarksFile.is_open()) {
+		string logMessage("Could not open landmark file: " + landmarkFilePath.string());
+		// Todo: Log
+		throw std::runtime_error(logMessage);
+	}
 	string line;
-	getline(ifLM, line); // Skip the first 3 lines, they're header lines
-	getline(ifLM, line);
-	getline(ifLM, line);
+	getline(landmarksFile, line); // Skip the first 3 lines, they're header lines
+	getline(landmarksFile, line);
+	getline(landmarksFile, line);
 
 	int landmarkId = 1; // The landmarks are ordered in the .pts file
-	while(getline(ifLM, line))
+	while(getline(landmarksFile, line))
 	{
 		if (line == "}") {
 			break;
 		}
-		stringstream ssLine(line);
+		stringstream lineStream(line);
 		Vec3f position(0.0f, 0.0f, 0.0f);
-		if (!(ssLine >> position[0] >> position[1])) {
+		if (!(lineStream >> position[0] >> position[1])) {
 			throw std::runtime_error("Landmark format error while parsing a line.");
 		}
 		// From the iBug website:

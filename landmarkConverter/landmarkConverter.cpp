@@ -115,7 +115,6 @@ int main(int argc, char *argv[])
 			return EXIT_SUCCESS;
 		}
 		po::notify(vm);
-
 	}
 	catch (po::error& e) {
 		cout << "Error while parsing command-line arguments: " << e.what() << endl;

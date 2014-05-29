@@ -33,7 +33,7 @@ vector<path> LandmarkFileGatherer::gather(const shared_ptr<const ImageSource> im
 {
 	Logger logger = Loggers->getLogger("imageio");
 
-	vector<path> paths;
+	vector<path> landmarkFiles;
 
 	if (gatherMethod == GatherMethod::ONE_FILE_PER_IMAGE_SAME_DIR)
 	{
@@ -42,10 +42,10 @@ vector<path> LandmarkFileGatherer::gather(const shared_ptr<const ImageSource> im
 			path landmarkFile = currentImagePath;
 			landmarkFile.replace_extension(fileExtension);
 			if (!is_regular_file(landmarkFile)) {
-				logger.warn("Could not find a landmark-file for image: " + currentImagePath.string() + ". Was looking for: " + landmarkFile.string());
+				logger.warn("Could not find a landmark file for image: " + currentImagePath.string() + ". Was looking for: " + landmarkFile.string());
 				continue;
 			}
-			paths.push_back(landmarkFile);
+			landmarkFiles.push_back(landmarkFile);
 		}
 	}
 	else if (gatherMethod == GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS)
@@ -62,7 +62,7 @@ vector<path> LandmarkFileGatherer::gather(const shared_ptr<const ImageSource> im
 			path landmarkFile = currentImagePath;
 			landmarkFile.replace_extension(fileExtension);
 			if (is_regular_file(landmarkFile)) {
-				paths.push_back(landmarkFile);
+				landmarkFiles.push_back(landmarkFile);
 				landmarkFileFound = true;
 			}
 
@@ -74,7 +74,7 @@ vector<path> LandmarkFileGatherer::gather(const shared_ptr<const ImageSource> im
 					landmarkFile /= imageBasename;
 					landmarkFile.replace_extension(path(fileExtension));
 					if (is_regular_file(landmarkFile)) {
-						paths.push_back(landmarkFile);
+						landmarkFiles.push_back(landmarkFile);
 						landmarkFileFound = true;
 						break;
 					}				
@@ -89,22 +89,51 @@ vector<path> LandmarkFileGatherer::gather(const shared_ptr<const ImageSource> im
 	else if (gatherMethod == GatherMethod::SEPARATE_FILES)
 	{
 		if (additionalPaths.empty()) {
-			logger.warn("GatherMethod::SEPARATE_FILES was specified, but no additional files were provided. Unable to find any landmarks files.");
-			return paths;
+			logger.warn("GatherMethod::SEPARATE_FILES was specified, but no additional files were provided. No landmarks will be loaded.");
+			return vector<path>();
 		}
 		for (const auto& additionalPath : additionalPaths) {
 			if (is_regular_file(additionalPath)) {
-				paths.push_back(additionalPath);
+				landmarkFiles.push_back(additionalPath);
 			} else {
 				logger.warn("Filename for landmarks provided, but could not find file: " + additionalPath.string());
 			}
 		}
-		if (paths.empty()) {
+		if (landmarkFiles.empty()) {
 			logger.warn("Filenames for gathering landmarks were provided, but could not find any of the files.");
 		}
 	}
+	else if (gatherMethod == GatherMethod::SEPARATE_FOLDERS)
+	{
+		for (const auto& directory : additionalPaths) {
+			if (!boost::filesystem::exists(directory)) {
+				logger.warn("The following folder specified to load landmarks from does not exist: " + directory.string());
+				continue;
+			}
+			if (!boost::filesystem::is_directory(directory)) {
+				logger.warn("The following folder specified to load landmarks from is not a directory: " + directory.string());
+				continue;
+			}
+			// It is a valid directory, go on:
+			vector<path> allFiles;
+			std::copy(boost::filesystem::directory_iterator(directory), boost::filesystem::directory_iterator(), std::back_inserter(allFiles));
 
-	return paths;
+			vector<string> landmarkExtensions = { fileExtension };
+
+			auto newFilesEnd = std::remove_if(begin(allFiles), end(allFiles), [&](const path& file) {
+				string extension = file.extension().string();
+				std::transform(begin(extension), end(extension), begin(extension), ::tolower);
+				return std::none_of(begin(landmarkExtensions), end(landmarkExtensions), [&](const string& imageExtension) {
+					return imageExtension == extension;
+				});
+			});
+			allFiles.erase(newFilesEnd, end(allFiles));
+			// Add to the vector where we're gathering all landmark files:
+			landmarkFiles.insert(end(landmarkFiles), begin(allFiles), end(allFiles));
+		}
+	}
+
+	return landmarkFiles;
 }
 
 } /* namespace imageio */

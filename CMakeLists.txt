@@ -62,7 +62,7 @@ add_subdirectory(VideoPlayerApp)		# App for playing videos, showing landmarks an
 add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
 add_subdirectory(sdmLandmarkDetection)	# Run the SDM landmark detection on one or several images.
 add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
-add_subdirectory(sdmEvaluation)			# App to evaluate an SDM landmark model on images, given ground-truth landmarks
+add_subdirectory(sdmEvaluation)			# App to evaluate an SDM landmark model on images, given ground-truth landmarks. Can soon be deleted, will be superseded by landmarkEvaluation.
 
 # 3DMM fitting:
 add_subdirectory(fitter2)			# Experimental Fitting-app using the Software Renderer (for one image)
@@ -80,7 +80,7 @@ add_subdirectory(landmarkConverter)		# Simple app to convert landmarks from one 
 
 # ============================================================================
 # Experimental, non-working or deprecated:
-add_subdirectory(landmarkEvaluation)	# Simple app to read detected landmarks and groundtruth (and an optional config to specify which landmarks to compare) and writes the differences to a file.
+add_subdirectory(landmarkEvaluation)	# Read detected and ground-truth landmarks and perform an evaluation.
 #add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature point detection app. (Note: Check if we can delete it)
 #add_subdirectory(facemodelTracking)		# Todo - doesn't compile atm
 #add_subdirectory(sdmTracking)			# Experimental app TODO

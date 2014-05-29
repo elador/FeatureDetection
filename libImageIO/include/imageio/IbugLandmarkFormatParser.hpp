@@ -31,8 +31,6 @@ namespace imageio {
 class IbugLandmarkFormatParser : public LandmarkFormatParser {
 public:
 
-	~IbugLandmarkFormatParser();
-
 	/**
 	 * Reads the landmark data for one single image and returns all its landmarks.
 	 *

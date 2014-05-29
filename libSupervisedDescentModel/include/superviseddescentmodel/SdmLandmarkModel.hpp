@@ -155,7 +155,8 @@ public:
 	cv::Mat alignRigid(cv::Mat modelShape, cv::Rect faceBox) const {
 		// we assume we get passed a col-vec. For convenience, we keep it.
 		if (modelShape.cols != 1) {
-			// error bzw convert
+			throw std::runtime_error("The supplied model shape does not have one column (i.e. it doesn't seem to be a column-vector).");
+			// We could also check if it's a row-vector and if yes, transpose.
 		}
 		Mat xCoords = modelShape.rowRange(0, modelShape.rows / 2);
 		Mat yCoords = modelShape.rowRange(modelShape.rows / 2, modelShape.rows);		

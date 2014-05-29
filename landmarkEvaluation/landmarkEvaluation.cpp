@@ -51,6 +51,7 @@
 #include "imageio/EmptyLandmarkSource.hpp"
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/IbugLandmarkFormatParser.hpp"
+#include "imageio/SimpleModelLandmarkFormatParser.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -81,41 +82,43 @@ int main(int argc, char *argv[])
 #endif
 
 	string verboseLevelConsole;
-	path configFilename, inputPath, groundtruthPath;
+	path configFilename, inputPath, groundtruthPath, outputFilename;
 	string inputType, groundtruthType;
 
 	try {
 		po::options_description desc("Allowed options");
 		desc.add_options()
 			("help,h",
-			"produce help message")
+				"produce help message")
 			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO", "show messages with INFO loglevel or below."),
-			"specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
+				"specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
 			("config,c", po::value<path>(&configFilename)->required(),
-			"path to a config (.cfg) file")
+				"path to a config (.cfg) file")
 			("input,i", po::value<path>(&inputPath)->required(),
-			"input landmarks")
+				"input landmarks")
 			("input-type,s", po::value<string>(&inputType)->required(),
-			"specify the type of landmarks to load: ibug")
+				"specify the type of landmarks to load: simple")
 			("groundtruth,g", po::value<path>(&groundtruthPath)->required(),
-			"gt landmarks")
+				"groundtruth landmarks")
 			("groundtruth-type,t", po::value<string>(&groundtruthType)->required(),
-			"specify the type of landmarks to load: ibug")
+				"specify the type of landmarks to load: ibug")
+			("output,o", po::value<path>(&outputFilename),
+				"output filename to write the normalized landmark errors to")
 			;
 
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
-		po::notify(vm);
-
 		if (vm.count("help")) {
 			cout << "Usage: landmarkEvaluation [options]\n";
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
+		po::notify(vm);
 	}
-	catch (std::exception& e) {
-		cout << e.what() << endl;
-		return EXIT_FAILURE;
+	catch (po::error& e) {
+		cout << "Error while parsing command-line arguments: " << e.what() << endl;
+		cout << "Use --help to display a list of options." << endl;
+		return EXIT_SUCCESS;
 	}
 
 	LogLevel logLevel;
@@ -130,31 +133,42 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
+	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("landmarkEvaluation").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("landmarkEvaluation");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 	appLogger.debug("Using config: " + configFilename.string());
 
-	// TODO:
-	// Gave up for now. Reasons:
-	// - Not possible to loop over LandmarkSource
-	// - No GatherMethod suitable. GatherMethod::SEPARATE_FILES maybe.
+	// output: the avg-err plus a file with the differences (+comments?) for matlab.
 
 	// Load the ground truth
 	shared_ptr<NamedLandmarkSource> groundtruthSource;
-	vector<path> groundtruthDirs; groundtruthDirs.push_back(groundtruthPath);
+	vector<path> groundtruthDirs{ groundtruthPath };
 	shared_ptr<LandmarkFormatParser> landmarkFormatParser;
-	if (boost::iequals(groundtruthType, "lst")) {
-		//landmarkFormatParser = make_shared<LstLandmarkFormatParser>();
-		//landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, string(), GatherMethod::SEPARATE_FILES, groundtruthDirs), landmarkFormatParser);
-	}
-	else if (boost::iequals(groundtruthType, "ibug")) {
+	if (boost::iequals(groundtruthType, "ibug")) {
 		landmarkFormatParser = make_shared<IbugLandmarkFormatParser>();
-		groundtruthSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(nullptr, ".pts", GatherMethod::SEPARATE_FILES, groundtruthDirs), landmarkFormatParser);
+		groundtruthSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(nullptr, ".pts", GatherMethod::SEPARATE_FOLDERS, groundtruthDirs), landmarkFormatParser);
 	}
 	else {
-		cout << "Error: Invalid ground truth type." << endl;
+		appLogger.error("Error: Invalid ground-truth landmarks type.");
+		return EXIT_FAILURE;
+	}
+
+	// Load the landmarks to compare against, usually automatically detected landmarks:
+	shared_ptr<NamedLandmarkSource> inputSource;
+	vector<path> inputDirs{ inputPath };
+	shared_ptr<LandmarkFormatParser> landmarkFormatParserInput;
+	if (boost::iequals(inputType, "ibug")) {
+		landmarkFormatParserInput = make_shared<IbugLandmarkFormatParser>();
+		inputSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(nullptr, ".pts", GatherMethod::SEPARATE_FOLDERS, inputDirs), landmarkFormatParserInput);
+	}
+	else if (boost::iequals(inputType, "simple")) {
+		landmarkFormatParserInput = make_shared<SimpleModelLandmarkFormatParser>();
+		inputSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(nullptr, ".txt", GatherMethod::SEPARATE_FOLDERS, inputDirs), landmarkFormatParserInput);
+	}
+	else {
+		appLogger.error("Error: Invalid input landmarks type.");
 		return EXIT_FAILURE;
 	}
 
@@ -167,14 +181,48 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
+	// Create the output file if one was specified on the command line
+	std::ofstream outputFile;
+	if (!outputFilename.empty()) {
+		outputFile.open(outputFilename.string());
+		if (!outputFile.is_open()) {
+			appLogger.error("An output filename was specified, but the file could not be created: " + outputFilename.string());
+			return EXIT_FAILURE;
+		}
+	}
 
-	vector<imageio::ModelLandmark> landmarks;
+	vector<float> differences;
 
 	appLogger.info("Starting to process...");
 
-	//while (groundtruthSource->get()) {
+	// Loop over the input landmarks
+	while (inputSource->next())	{
+		path filename = inputSource->getName();
+		LandmarkCollection detected = inputSource->getLandmarks();
+		LandmarkCollection groundtruth;
+		try {
+			groundtruth = groundtruthSource->get(filename);
+		}
+		catch (std::out_of_range& e) {
+			appLogger.warn("Skipping this input file. This is probably not expected.");
+			continue;
+		}
+		
+
+		float difference = 0.3f;
+		differences.push_back(difference);
+		if (!outputFilename.empty()) {
+			outputFile << difference << endl;
+		}
+
+	}
 	
-	//}
+	// close the file if we had opened it before
+	if (!outputFilename.empty()) {
+		outputFile.close();
+	}
+
+	appLogger.info("Finished processing all input landmarks.");
 
 	return 0;
 }

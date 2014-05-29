@@ -25,9 +25,10 @@ namespace imageio {
  */
 enum class GatherMethod { // Change all enum classes to camelCase?
 	SEPARATE_FILES,		// Use one or more separate, user-specified files.
+	SEPARATE_FOLDERS,	// Use one or more separate, user-specified folders. Loading all files in these folders with a specified file extension.
 	ONE_FILE_PER_IMAGE_SAME_DIR,	// Look for the landmark file in the same directory as the image resides.
 	ONE_FILE_PER_IMAGE_DIFFERENT_DIRS // Look for the landmark file in the directory of the image as well as
-									  // in all additional directories specified. Uses the first occurence of the file.
+									  // in all additional directories specified. Uses the first occurrence of the file.
 	// Todo: separate SAME_DIR / DIFFERENT_DIRS, assign powers of 2 and use logical operators?
 };
 
@@ -59,7 +60,7 @@ public:
 	 * Todo: ImageSource could also be an optional parameter (only needed for GatherMethod::ONE_FILE_PER_IMAGE_*)
 	 *
 	 * @param[in] imageSource An ImageSource, needed for knowing the filenames to load.
-	 * @param[in] fileFxtension The file extension of the landmark files to load. TODO add doku: with or without the dot? (.tlms or tlms?)
+	 * @param[in] fileFxtension The file extension of the landmark files to load, including a preceding dot (e.g. ".txt").
 	 * @param[in] gatherMethod The method with which to gather the landmark files.
 	 * @param[in] additionalPaths One or more additional paths to files or directories, depending on the type of GatherMethod. Default: empty vector.
 	 * @return A vector containing the full paths to all the landmark files gathered.
