@@ -62,7 +62,6 @@ add_subdirectory(VideoPlayerApp)		# App for playing videos, showing landmarks an
 add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
 add_subdirectory(sdmLandmarkDetection)	# Run the SDM landmark detection on one or several images.
 add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
-add_subdirectory(sdmEvaluation)			# App to evaluate an SDM landmark model on images, given ground-truth landmarks. Can soon be deleted, will be superseded by landmarkEvaluation.
 
 # 3DMM fitting:
 add_subdirectory(fitter2)			# Experimental Fitting-app using the Software Renderer (for one image)
@@ -72,6 +71,7 @@ add_subdirectory(fitter2)			# Experimental Fitting-app using the Software Render
 # Tools:
 add_subdirectory(landmarkVisualiser)	# Simple app to read landmarks and images and display them
 add_subdirectory(landmarkConverter)		# Simple app to convert landmarks from one format into another
+add_subdirectory(landmarkEvaluation)	# Read detected and ground-truth landmarks and perform an evaluation.
 
 # Face-recognition:
 #add_subdirectory(frRunCogExp)		# App for doing face recognition tests with a gallery and probe images
@@ -80,11 +80,10 @@ add_subdirectory(landmarkConverter)		# Simple app to convert landmarks from one 
 
 # ============================================================================
 # Experimental, non-working or deprecated:
-add_subdirectory(landmarkEvaluation)	# Read detected and ground-truth landmarks and perform an evaluation.
 #add_subdirectory(faceDetectApp)			# The new, smart face- and facial feature point detection app. (Note: Check if we can delete it)
 #add_subdirectory(facemodelTracking)		# Todo - doesn't compile atm
 #add_subdirectory(sdmTracking)			# Experimental app TODO
-add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
+#add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
 #add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
 #add_subdirectory(ffpDetectAppExp)		# Experimental playground for FFD with the 3DMM/POSIT
 #add_subdirectory(trackerAppERT)		# kind of deprecated, was only a test. But can use this to see how to make a real-time tracker.
