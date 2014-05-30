@@ -65,6 +65,7 @@ add_subdirectory(sdmLandmarkDetection)	# Run the SDM landmark detection on one o
 add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
 
 # 3DMM fitting:
+add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
 add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
 
 # Tools:
