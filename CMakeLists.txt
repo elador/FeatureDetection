@@ -80,8 +80,6 @@ add_subdirectory(landmarkEvaluation)	# Read detected and ground-truth landmarks 
 
 # ============================================================================
 # Experimental, non-working or deprecated:
-#add_subdirectory(faceDetectAppICVSS)	# A smarter face- and facial feature point detection app that works with non-frontal faces and probability maps. Deprecated, used for the ICVSS2013 poster.
-#add_subdirectory(facemodelTracking)		# Was just a quick prototype - can be archived.
 #add_subdirectory(sdmTracking)			# Experimental app TODO
 #add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
 #add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
