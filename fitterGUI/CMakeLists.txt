@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME fitter2)
+set(SUBPROJECT_NAME fitterGUI)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -26,7 +26,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 # Source and header files:
 set(SOURCE
-	fitter2.cpp
+	fitterGUI.cpp
 )
 
 set(HEADERS
@@ -42,5 +42,5 @@ include_directories(${ImageIO_SOURCE_DIR}/include)
 include_directories(${Render_SOURCE_DIR}/include)
 include_directories(${MorphableModel_SOURCE_DIR}/include)
 
-#Make the app depend on the libraries
+# Make the app depend on the libraries
 target_link_libraries(${SUBPROJECT_NAME} ImageIO ${KINECT_LIBNAME} MorphableModel Render Logging ${Boost_LIBRARIES} ${OpenCV_LIBS} ${HDF5_LIBRARIES})

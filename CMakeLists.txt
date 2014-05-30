@@ -64,8 +64,7 @@ add_subdirectory(sdmLandmarkDetection)	# Run the SDM landmark detection on one o
 add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
 
 # 3DMM fitting:
-add_subdirectory(fitter2)			# Experimental Fitting-app using the Software Renderer (for one image)
-#add_subdirectory(softwareRendererTestApp)
+add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
 
 # Tools:
 add_subdirectory(landmarkVisualiser)	# Simple app to read landmarks and images and display them
@@ -79,8 +78,9 @@ add_subdirectory(landmarkEvaluation)	# Read detected and ground-truth landmarks 
 
 # ============================================================================
 # Experimental, non-working or deprecated:
-#add_subdirectory(sdmTracking)			# Experimental app TODO
+#add_subdirectory(sdmTracking)			# Experimental app that does tracking using an SDM model.
 #add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
+#add_subdirectory(softwareRendererTestApp) # Contains a QOpenGL and SW-renderer and was used to compare both, including shape-fitting.
 #add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
-#add_subdirectory(ffpDetectAppExp)		# Experimental playground for FFD with the 3DMM/POSIT
+#add_subdirectory(ffpDetectAppExp)		# Old experimental playground for FFD with the 3DMM/POSIT. It's deprecated (uses old code from libShapeModels). Used to generate the results for the FDDB benchmark.
 #add_subdirectory(patchConverter)	# Converts patches (in .txt format) to other feature spaces (e.g. gray to WHI)
