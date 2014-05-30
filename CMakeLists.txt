@@ -83,6 +83,4 @@ add_subdirectory(landmarkEvaluation)	# Read detected and ground-truth landmarks 
 #add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
 #add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
 #add_subdirectory(ffpDetectAppExp)		# Experimental playground for FFD with the 3DMM/POSIT
-#add_subdirectory(trackerAppERT)		# kind of deprecated, was only a test. But can use this to see how to make a real-time tracker.
 #add_subdirectory(patchConverter)	# Converts patches (in .txt format) to other feature spaces (e.g. gray to WHI)
-#add_subdirectory(libShapeModels)		# Kind of deprecated. Head/face specific things; 2D/3D models; Combining feature points
