@@ -31,6 +31,7 @@
 #include <chrono>
 #include <memory>
 #include <iostream>
+#include <numeric>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -181,6 +182,24 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
+	string rightEye;
+	string leftEye;
+	try {
+		ptree ptParameters = pt.get_child("interEyeDistance");
+		rightEye = ptParameters.get<string>("rightEye");
+		leftEye = ptParameters.get<string>("leftEye");
+	}
+	catch (const boost::property_tree::ptree_error& error) {
+		appLogger.error("Parsing config: " + string(error.what()));
+		return EXIT_FAILURE;
+	}
+
+	// Process the interEyeDistance landmarks - one or two identifiers might be given
+	vector<string> rightEyeIdentifiers;
+	boost::split(rightEyeIdentifiers, rightEye, boost::is_any_of(" "));
+	vector<string> leftEyeIdentifiers;
+	boost::split(leftEyeIdentifiers, leftEye, boost::is_any_of(" "));
+
 	// Create the output file if one was specified on the command line
 	std::ofstream outputFile;
 	if (!outputFilename.empty()) {
@@ -204,18 +223,47 @@ int main(int argc, char *argv[])
 			groundtruth = groundtruthSource->get(filename);
 		}
 		catch (std::out_of_range& e) {
-			appLogger.warn("Skipping this input file. This is probably not expected.");
+			appLogger.warn("No groundtruth for this input file available. Skipping this file. This is probably not expected.");
 			continue;
 		}
-		
 
-		float difference = 0.3f;
-		differences.push_back(difference);
-		if (!outputFilename.empty()) {
-			outputFile << difference << endl;
+		// Calculate the inter-eye distance of the groundtruth face. Which landmarks to take for that is specified in the config, it
+		// might be one or two, and we calculate the average if them (per eye). For example, it might be the outer eye-corners.
+		cv::Vec2f rightEyeCenter(0.0f, 0.0f);
+		for (const auto& rightEyeIdentifyer : rightEyeIdentifiers) {
+			rightEyeCenter += groundtruth.getLandmark(rightEyeIdentifyer)->getPosition2D();
 		}
+		rightEyeCenter /= static_cast<float>(rightEyeIdentifiers.size());
+		cv::Vec2f leftEyeCenter(0.0f, 0.0f);
+		for (const auto& leftEyeIdentifyer : leftEyeIdentifiers) {
+			leftEyeCenter += groundtruth.getLandmark(leftEyeIdentifyer)->getPosition2D();
+		}
+		leftEyeCenter /= static_cast<float>(leftEyeIdentifiers.size());
 
-	}
+		cv::Scalar interEyeDistance = cv::norm(rightEyeCenter, leftEyeCenter, cv::NORM_L2);
+
+		// Compare groundtruth and detected landmarks
+		if (!outputFilename.empty()) {
+			// write out the filename
+			outputFile << "# " << inputSource->getName() << endl;
+		}
+		for (const auto& detectedLandmark : detected.getLandmarks()) {
+
+			shared_ptr<Landmark> groundtruthLandmark = groundtruth.getLandmark(detectedLandmark->getName()); // Todo: Handle case when LM not found
+			cv::Point2f gt = groundtruthLandmark->getPoint2D();
+			cv::Point2f det = detectedLandmark->getPoint2D();
+
+			float dx = (gt.x - det.x);
+			float dy = (gt.y - det.y);
+			float difference = std::sqrt(dx*dx + dy*dy);
+			difference = difference / interEyeDistance[0]; // normalize by the IED
+
+			if (!outputFilename.empty()) {
+				outputFile << difference << " # " << detectedLandmark->getName() << endl;
+			}
+			differences.push_back(difference);
+		} // for each landmark
+	} // for each image
 	
 	// close the file if we had opened it before
 	if (!outputFilename.empty()) {
@@ -224,5 +272,55 @@ int main(int argc, char *argv[])
 
 	appLogger.info("Finished processing all input landmarks.");
 
+	float averageError = std::accumulate(begin(differences), end(differences), 0.0f) / static_cast<float>(differences.size());
+	appLogger.info("Average error (normalized by inter-eye distance) over all landmarks and all images: " + std::to_string(averageError));
+
 	return 0;
 }
+
+/*
+// FACE STUFF
+// Skip any face with w or h < 20
+vector<cv::Rect> definiteFaces;
+for (const auto& f : faces) { // faces from V&J
+if (f.width >= 20 && f.height >= 20) {
+definiteFaces.push_back(f);
+}
+}
+// calculate the center of the bounding boxes
+vector<Point2f> faceboxCenters;
+for (const auto& f : faces) {
+faceboxCenters.push_back(Point2f(f.x + f.width / 2.0f, f.y + f.height / 2.0f));
+}
+// calculate the center of the ground-truth landmarks
+Mat gtLmsRowX(1, lmv.size(), CV_32FC1);
+Mat gtLmsRowY(1, lmv.size(), CV_32FC1);
+int idx = 0;
+for (const auto& l : lmv) {
+gtLmsRowX.at<float>(idx) = l->getX();
+gtLmsRowY.at<float>(idx) = l->getY();
+++idx;
+}
+double minWidth, maxWidth, minHeight, maxHeight;
+cv::minMaxIdx(gtLmsRowX, &minWidth, &maxWidth);
+cv::minMaxIdx(gtLmsRowY, &minHeight, &maxHeight);
+cv::Point2f groundtruthCenter(cv::mean(gtLmsRowX)[0], cv::mean(gtLmsRowY)[0]); // we could subtract some offset here from 'y' (w.r.t. the IED) because the center of mass of the landmarks is below the face-box center of V&J.
+
+vector<float> gtToFbDistances;
+for (const auto& f : faceboxCenters) {
+cv::Scalar distance = cv::norm(Vec2f(f), Vec2f(groundtruthCenter), cv::NORM_L2);
+gtToFbDistances.push_back(distance[0]);
+}
+
+const auto minDistIt = std::min_element(std::begin(gtToFbDistances), std::end(gtToFbDistances));
+const auto minDistIdx = std::distance(std::begin(gtToFbDistances), minDistIt);
+
+if (gtToFbDistances[minDistIdx] > ((maxWidth - minWidth) + (maxHeight - minHeight)) / 2.0f || faces[minDistIdx].width*1.2f < (maxWidth - minWidth)) {
+// the chosen facebox is smaller than the max-width of the ground-truth landmarks (slightly adjusted because the V&J fb seems rather small)
+// or
+// the center of the chosen facebox is further away than the avg(width+height) of the gt (i.e. the point is outside the bbox enclosing the gt-lms)
+// ==> skip the image
+continue;
+}
+*/
+// END face box stuff (with landmarks)
