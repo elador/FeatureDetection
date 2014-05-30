@@ -189,6 +189,10 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (!boost::filesystem::exists(outputDirectory)) {
+		boost::filesystem::create_directory(outputDirectory);
+	}
+
 	std::unique_ptr<NamedLandmarkSink> landmarkSink(new SimpleModelLandmarkSink());
 	//std::unique_ptr<NamedLandmarkSink> landmarkSink = std::make_unique<SimpleModelLandmarkSink>();
 
