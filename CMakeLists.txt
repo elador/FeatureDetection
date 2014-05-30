@@ -65,7 +65,6 @@ add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on
 
 # 3DMM fitting:
 add_subdirectory(fitter2)			# Experimental Fitting-app using the Software Renderer (for one image)
-add_subdirectory(fitter)			# Experimental app QtGui fitter, not for use
 #add_subdirectory(softwareRendererTestApp)
 
 # Tools:
