@@ -1,7 +1,7 @@
 /*
- * fitterGUI.cpp
+ * fitter.cpp
  *
- *  Created on: 16.04.2014
+ *  Created on: 30.05.2014
  *      Author: Patrik Huber
  */
 
