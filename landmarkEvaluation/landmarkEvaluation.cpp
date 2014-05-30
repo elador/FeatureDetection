@@ -67,6 +67,25 @@ using logging::Logger;
 using logging::LoggerFactory;
 using logging::LogLevel;
 
+cv::Rect faceboxFromLandmarks(LandmarkCollection landmarks)
+{
+	// Split the x and y coordinates
+	Mat xCoordinates(1, landmarks.getLandmarks().size(), CV_32FC1);
+	Mat yCoordinates(1, landmarks.getLandmarks().size(), CV_32FC1);
+	int idx = 0;
+	for (const auto& l : landmarks.getLandmarks()) {
+		xCoordinates.at<float>(idx) = l->getX();
+		yCoordinates.at<float>(idx) = l->getY();
+		++idx;
+	}
+	// Find the bounding box
+	double minWidth, maxWidth, minHeight, maxHeight;
+	cv::minMaxIdx(xCoordinates, &minWidth, &maxWidth);
+	cv::minMaxIdx(yCoordinates, &minHeight, &maxHeight);
+	//cv::Point2f groundtruthCenter(cv::mean(xCoordinates)[0], cv::mean(yCoordinates)[0]); // we could subtract some offset here from 'y' (w.r.t. the IED) because the center of mass of the landmarks is below the face-box center of V&J. But this is only necessary if we compare this Rect to a V&J facebox.
+	// Actually, we just return the bounding box around the points
+	return cv::Rect(minWidth, minHeight, maxWidth - minWidth, maxHeight - minHeight);
+}
 
 template<class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
@@ -213,6 +232,8 @@ int main(int argc, char *argv[])
 	vector<float> differences;
 
 	appLogger.info("Starting to process...");
+	int totalImages = 0;
+	int usedImages = 0;
 
 	// Loop over the input landmarks
 	while (inputSource->next())	{
@@ -226,6 +247,8 @@ int main(int argc, char *argv[])
 			appLogger.warn("No groundtruth for this input file available. Skipping this file. This is probably not expected.");
 			continue;
 		}
+
+		++totalImages;
 
 		// Calculate the inter-eye distance of the groundtruth face. Which landmarks to take for that is specified in the config, it
 		// might be one or two, and we calculate the average if them (per eye). For example, it might be the outer eye-corners.
@@ -241,6 +264,30 @@ int main(int argc, char *argv[])
 		leftEyeCenter /= static_cast<float>(leftEyeIdentifiers.size());
 
 		cv::Scalar interEyeDistance = cv::norm(rightEyeCenter, leftEyeCenter, cv::NORM_L2);
+
+		// See if we discard the detection result:
+		// Ideally, we'd use the detected V&J face box here and skip any face with w or h < 20.
+		// If the actual detection and evaluation were in one program, this would also allow us to select the correct box for landmark detection, if V&J finds several. We would then select the one where the box-centers are closest.
+		// But as we don't have it (without further modifications), we use the face box approximated from the landmarks.
+
+		cv::Rect groundtruthFacebox = faceboxFromLandmarks(groundtruth);
+		cv::Rect detectedFacebox = faceboxFromLandmarks(detected);
+		cv::Vec2f groundtruthCenter(groundtruthFacebox.x + groundtruthFacebox.width / 2.0f, groundtruthFacebox.y + groundtruthFacebox.height / 2.0f);
+		cv::Vec2f detectedCenter(detectedFacebox.x + detectedFacebox.width / 2.0f, detectedFacebox.y + detectedFacebox.height / 2.0f);
+
+		cv::Scalar distance = cv::norm(groundtruthCenter, detectedCenter, cv::NORM_L2);
+
+		if (detectedFacebox.width < 25 || detectedFacebox.height < 25) { // Todo: Those params could go into the config.
+			continue;
+		}
+
+		if (distance[0] > (groundtruthFacebox.width + groundtruthFacebox.height) / 2.0f || detectedFacebox.width * 1.5f < groundtruthFacebox.width) {
+			// the chosen facebox is smaller than the max-width of the ground-truth landmarks (slightly adjusted because the V&J fb seems rather small)
+			// or
+			// the center of the chosen facebox is further away than the avg(width+height) of the gt (i.e. the point is outside the bbox enclosing the gt-lms)
+			// ==> skip the image
+			continue;
+		}
 
 		// Compare groundtruth and detected landmarks
 		if (!outputFilename.empty()) {
@@ -263,6 +310,7 @@ int main(int argc, char *argv[])
 			}
 			differences.push_back(difference);
 		} // for each landmark
+		++usedImages;
 	} // for each image
 	
 	// close the file if we had opened it before
@@ -272,55 +320,10 @@ int main(int argc, char *argv[])
 
 	appLogger.info("Finished processing all input landmarks.");
 
+	appLogger.info("Images used to calculate the error: " + std::to_string(usedImages) + " out of " + std::to_string(totalImages) + ", " + std::to_string(static_cast<float>(usedImages) / static_cast<float>(totalImages) * 100.0f) + "%.");
+
 	float averageError = std::accumulate(begin(differences), end(differences), 0.0f) / static_cast<float>(differences.size());
 	appLogger.info("Average error (normalized by inter-eye distance) over all landmarks and all images: " + std::to_string(averageError));
 
 	return 0;
 }
-
-/*
-// FACE STUFF
-// Skip any face with w or h < 20
-vector<cv::Rect> definiteFaces;
-for (const auto& f : faces) { // faces from V&J
-if (f.width >= 20 && f.height >= 20) {
-definiteFaces.push_back(f);
-}
-}
-// calculate the center of the bounding boxes
-vector<Point2f> faceboxCenters;
-for (const auto& f : faces) {
-faceboxCenters.push_back(Point2f(f.x + f.width / 2.0f, f.y + f.height / 2.0f));
-}
-// calculate the center of the ground-truth landmarks
-Mat gtLmsRowX(1, lmv.size(), CV_32FC1);
-Mat gtLmsRowY(1, lmv.size(), CV_32FC1);
-int idx = 0;
-for (const auto& l : lmv) {
-gtLmsRowX.at<float>(idx) = l->getX();
-gtLmsRowY.at<float>(idx) = l->getY();
-++idx;
-}
-double minWidth, maxWidth, minHeight, maxHeight;
-cv::minMaxIdx(gtLmsRowX, &minWidth, &maxWidth);
-cv::minMaxIdx(gtLmsRowY, &minHeight, &maxHeight);
-cv::Point2f groundtruthCenter(cv::mean(gtLmsRowX)[0], cv::mean(gtLmsRowY)[0]); // we could subtract some offset here from 'y' (w.r.t. the IED) because the center of mass of the landmarks is below the face-box center of V&J.
-
-vector<float> gtToFbDistances;
-for (const auto& f : faceboxCenters) {
-cv::Scalar distance = cv::norm(Vec2f(f), Vec2f(groundtruthCenter), cv::NORM_L2);
-gtToFbDistances.push_back(distance[0]);
-}
-
-const auto minDistIt = std::min_element(std::begin(gtToFbDistances), std::end(gtToFbDistances));
-const auto minDistIdx = std::distance(std::begin(gtToFbDistances), minDistIt);
-
-if (gtToFbDistances[minDistIdx] > ((maxWidth - minWidth) + (maxHeight - minHeight)) / 2.0f || faces[minDistIdx].width*1.2f < (maxWidth - minWidth)) {
-// the chosen facebox is smaller than the max-width of the ground-truth landmarks (slightly adjusted because the V&J fb seems rather small)
-// or
-// the center of the chosen facebox is further away than the avg(width+height) of the gt (i.e. the point is outside the bbox enclosing the gt-lms)
-// ==> skip the image
-continue;
-}
-*/
-// END face box stuff (with landmarks)
