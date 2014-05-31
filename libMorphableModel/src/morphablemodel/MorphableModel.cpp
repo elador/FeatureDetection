@@ -31,7 +31,7 @@ MorphableModel::MorphableModel()
 	
 }
 
-MorphableModel MorphableModel::load(boost::property_tree::ptree configTree)
+morphablemodel::MorphableModel MorphableModel::load(const boost::property_tree::ptree configTree)
 {
 	MorphableModel morphableModel;
 	path filename = configTree.get<path>("filename");

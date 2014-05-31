@@ -3,6 +3,10 @@
  *
  *  Created on: 30.05.2014
  *      Author: Patrik Huber
+ *
+ * Example:
+ * fitter -c ../../FeatureDetection/fitter/share/configs/default.cfg -i ../../data/iBug_lfpw/testset/image_0001.png -l ../../data/iBug_lfpw/testset/image_0001.pts -t ibug -m ../../FeatureDetection/libImageIO/share/landmarkMappings/ibug2did.txt -o ../../out/fitter/
+ *   
  */
 
 // For memory leak debugging: http://msdn.microsoft.com/en-us/library/x98tx3cf(v=VS.100).aspx
@@ -88,43 +92,6 @@ using boost::lexical_cast;
 using std::cout;
 using std::endl;
 
-// alpha = 4th channel. 0 = fully transparent, 255 = not transparent.
-// input: backgroundImage needs to be 8UC3, overlayImage 8UC4
-// overlayFactor: the alpha gets multiplied with this. make less transparent.
-// returns: img with same type as backgroundImage.
-cv::Mat alphaBlend(cv::Mat backgroundImage, cv::Mat overlayImage, float overlayFactor = 1.0f) {
-	if (backgroundImage.rows != overlayImage.rows || backgroundImage.cols != overlayImage.cols)	{
-		// both images must have the same dimensions.
-		return cv::Mat();
-	}
-	if (overlayImage.channels() != 4) {
-		// overlayImage must have 4 channels
-		return cv::Mat();
-	}
-	// check if format is RGBA or BGRA, i.e. that alpha is the 4th channel?
-	Mat outputImage(backgroundImage.rows, backgroundImage.cols, backgroundImage.type());
-	for (int y = 0; y < outputImage.rows; ++y) { // todo: check which loop should be the outer, i.e. which one is faster
-		for (int x = 0; x < outputImage.cols; ++x) {
-			cv::Vec3b overlayValues(overlayImage.at<cv::Vec4b>(y, x)[0], overlayImage.at<cv::Vec4b>(y, x)[1], overlayImage.at<cv::Vec4b>(y, x)[2]);
-			float alpha = static_cast<float>(overlayImage.at<cv::Vec4b>(y, x)[3]) / 255.0f;
-			alpha *= overlayFactor;
-			outputImage.at<cv::Vec3b>(y, x) = (1.0f - alpha) * backgroundImage.at<cv::Vec3b>(y, x) + alpha * overlayValues;
-		}
-	}
-	return outputImage;
-}
-
-float lambda = 1.0f;
-int lambda_slider = 10;
-int lambda_slider_max = 1000;
-bool renderNew = true;
-
-void on_trackbar(int, void*)
-{
-	//lambda = static_cast<float>(lambda_slider) / static_cast<float>(lambda_slider_max);
-	lambda = static_cast<float>(lambda_slider) / 10.0f;
-	renderNew = true;
-}
 
 template<class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
@@ -145,7 +112,8 @@ int main(int argc, char *argv[])
 	path configFilename;
 	path inputLandmarks;
 	string landmarkType;
-	path outputPath(".");
+	path landmarkMappings;
+	path outputPath;
 
 	try {
 		po::options_description desc("Allowed options");
@@ -162,6 +130,10 @@ int main(int argc, char *argv[])
 				"input landmarks")
 			("landmark-type,t", po::value<string>(&landmarkType)->required(),
 				"specify the type of landmarks: ibug")
+			("landmark-mappings,m", po::value<path>(&landmarkMappings)->required(),
+				"a mapping-file that maps from the input landmarks to landmark identifiers in the model's format")
+			("output,o", po::value<path>(&outputPath)->default_value("."),
+				"path to an output folder")
 		;
 
 		po::variables_map vm;
@@ -227,10 +199,10 @@ int main(int argc, char *argv[])
 	}
 	labeledImageSource = make_shared<NamedLabeledImageSource>(imageSource, landmarkSource);
 	
-	// Load the config file
-	ptree pt;
+	// Read the config file
+	ptree config;
 	try {
-		boost::property_tree::info_parser::read_info(configFilename.string(), pt);
+		boost::property_tree::info_parser::read_info(configFilename.string(), config);
 	} catch(const boost::property_tree::ptree_error& error) {
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
@@ -238,7 +210,7 @@ int main(int argc, char *argv[])
 	// Load the Morphable Model
 	morphablemodel::MorphableModel morphableModel;
 	try {
-		morphableModel = morphablemodel::MorphableModel::load(pt.get_child("morphableModel"));
+		morphableModel = morphablemodel::MorphableModel::load(config.get_child("morphableModel"));
 	} catch (const boost::property_tree::ptree_error& error) {
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
@@ -247,10 +219,6 @@ int main(int argc, char *argv[])
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
 	}
-	
-	const string windowName = "win";
-	cv::namedWindow(windowName);
-	cv::createTrackbar("Lambda", windowName, &lambda_slider, lambda_slider_max, on_trackbar);
 
 	// Create the output directory if it doesn't exist yet
 	if (!boost::filesystem::exists(outputPath)) {
@@ -260,8 +228,9 @@ int main(int argc, char *argv[])
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img;
 	vector<imageio::ModelLandmark> landmarks;
+	float lambda = 15.0f;
 
-	LandmarkMapper landmarkMapper(path("C:\\Users\\Patrik\\Documents\\GitHub\\FeatureDetection\\libImageIO\\share\\landmarkMappings\\ibug2did.txt"));
+	LandmarkMapper landmarkMapper(landmarkMappings);
 
 	labeledImageSource->next();
 	start = std::chrono::system_clock::now();
@@ -298,15 +267,6 @@ int main(int argc, char *argv[])
 		cv::circle(affineCamLandmarksProjectionImage, Point2f(screenPoint), 4.0f, Scalar(0.0f, 255.0f, 0.0f));
 	}
 
-	Mat blendedImg;
-	while (true)
-	{
-	if (renderNew)
-	{
-	
-	start = std::chrono::system_clock::now();
-	appLogger.info("Starting to process " + labeledImageSource->getName().string());
-
 	// Estimate the shape coefficients:
 	// Detector variances: Should not be in pixels. Should be normalised by the IED. Normalise by the image dimensions is not a good idea either, it has nothing to do with it. See comment in fitShapeToLandmarksLinear().
 	// Let's just use the hopefully reasonably set default value for now (around 3 pixels)
@@ -314,55 +274,53 @@ int main(int argc, char *argv[])
 
 	Mesh mesh = morphableModel.drawSample(fittedCoeffs, vector<float>()); // takes standard-normal (not-normalised) coefficients
 	//Mesh mesh = morphableModel.getMean();
-	render::SoftwareRenderer swr(img.cols, img.rows);
+	render::SoftwareRenderer softwareRenderer(img.cols, img.rows);
 	float aspect = (float)img.cols / float(img.rows);
 	Mat ortho = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.01f, 100.0f);
 	Mat model = render::utils::MatrixUtils::createScalingMatrix(1.0f / 140.0f, 1.0f / 140.0f, 1.0f / 140.0f);
 	Mat cam = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -2.0f);
 	Mat mytransf = ortho * cam * model;
-	//auto fb = swr.render(mesh, ortho * cam * model);
+	//auto framebuffer = softwareRenderer.render(mesh, ortho * cam * model);
 	Mat fullAffineCam = morphablemodel::calculateAffineZDirection(affineCam);
 	fullAffineCam.at<float>(2, 3) = fullAffineCam.at<float>(2, 2); // Todo: Find out and document why this is necessary!
 	fullAffineCam.at<float>(2, 2) = 1.0f;
-	swr.doBackfaceCulling = true;
-	auto fb = swr.render(mesh, fullAffineCam); // hmm, do we have the z-test disabled?
-	//Mesh::writeObj(mesh, "C:/Users/Patrik/Documents/GitHub/out/m_1.0.obj");
+	softwareRenderer.doBackfaceCulling = true;
+	auto framebuffer = softwareRenderer.render(mesh, fullAffineCam); // hmm, do we have the z-test disabled?
+	
 
 
-	//std::shared_ptr<render::Mesh> meanMesh = std::make_shared<render::Mesh>(morphableModel.getMean());
-	//render::Mesh::writeObj(*meanMesh.get(), "C:\\Users\\Patrik\\Documents\\GitHub\\mean.obj");
+	// Write:
+	// ptree .fit file: cam-params, model-file, model-params-fn(alphas)
+	// alphas
+	// texmap
 
-	//std::shared_ptr<render::Mesh> meshToDraw = std::make_shared<render::Mesh>(morphableModel.drawSample(fittedCoeffs, vector<float>(morphableModel.getColorModel().getNumberOfPrincipalComponents(), 0.0f)));
-	//render::Mesh::writeObj(*meshToDraw.get(), "C:\\Users\\Patrik\\Documents\\GitHub\\fittedMesh.obj");
-
-	// TODO: REPROJECT THE POINTS FROM THE C_S MODEL HERE AND SEE IF THE LMS REALLY GO FURTHER OUT OR JUST THE REST OF THE MESH
+	if (config.get_child("output", ptree()).get<bool>("copyInputImage", false)) {
+		path outInputImage = outputPath / labeledImageSource->getName().filename();
+		cv::imwrite(outInputImage.string(), img);
+	}
+	if (config.get_child("output", ptree()).get<bool>("landmarksImage", false)) {
+		path outLandmarksImage = outputPath / labeledImageSource->getName().stem();
+		outLandmarksImage += "_landmarks.png";
+		cv::imwrite(outLandmarksImage.string(), framebuffer.first);
+	}
+	if (config.get_child("output", ptree()).get<bool>("writeObj", false)) {
+		path outMesh = outputPath / labeledImageSource->getName().stem();
+		outMesh.replace_extension("obj");
+		Mesh::writeObj(mesh, outMesh.string());
+	}
+	if (config.get_child("output", ptree()).get<bool>("renderResult", false)) {
+		path outRenderResult = outputPath / labeledImageSource->getName().stem();
+		outRenderResult += "_render.png";
+		cv::imwrite(outRenderResult.string(), framebuffer.first);
+	}
+	if (config.get_child("output", ptree()).get<bool>("frontalRendering", false)) {
+		throw std::runtime_error("Not implemented yet, please disable.");
+	}
+	
 
 	end = std::chrono::system_clock::now();
 	int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 	appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds)+"ms.\n");
-
-	blendedImg = alphaBlend(affineCamLandmarksProjectionImage, fb.first, 0.9f);
-	//cv::addWeighted(landmarksImage, 0.5, fb.first, 0.5, 0.0, blendedImg);
-	renderNew = false;
-	} // end if renderNew
-
-	cv::imshow(windowName, blendedImg);
-	char key = cv::waitKey(30);
-	if (key == 'i') {
-		lambda += 0.03f;
-		renderNew = true;
-	}
-	if (key == 'j') {
-		lambda -= 0.03f;
-		renderNew = true;
-	}
-	if (key == 'k') {
-		lambda = 0.0f;
-		renderNew = true;
-	}
-
-	appLogger.info("Lambda: " + lexical_cast<string>(lambda));
-	}
 
 	return 0;
 }
