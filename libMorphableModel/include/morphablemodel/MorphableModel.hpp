@@ -49,7 +49,7 @@ public:
 	* @param[in] configTree A node of a ptree.
 	* @return A morphable model.
 	*/
-	static MorphableModel load(boost::property_tree::ptree configTree);
+	static MorphableModel load(const boost::property_tree::ptree configTree);
 	
 	/**
 	 * Todo.
