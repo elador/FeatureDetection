@@ -91,9 +91,18 @@ void VideoPlayer::play(shared_ptr<ImageSource> imageSource,
 
 int main(int argc, char *argv[]) {
 	if (argc < 2) {
-		cout << "usage: ./VideoPlayer video [landmarks1 [landmarks2 [landmarks3 ...]]] [-o output framerate]" << endl;
+		cout << "usage: ./VideoPlayer video [-s landmarks1 [landmarks2 [...]]] [-b landmarks1 [landmarks2 [...]]] [-o output framerate [codec]]" << endl;
+		cout << "where" << endl;
+		cout << " video ... video file or image directory" << endl;
+		cout << " -s ... specifying that the following landmark files have a simple format" << endl;
+		cout << " -b ... specifying that the following landmark files have the BoBoT format" << endl;
+		cout << " landmarks# ... file containing landmark data in the specified format" << endl;
+		cout << " -o ... flag for indicating the output specification" << endl;
+		cout << " output ... video file for saving the output (video with bounding boxes)" << endl;
+		cout << " framerate ... framerate of the resulting video (should be the same as the input video)" << endl;
+		cout << " codec ... four digit video codec (MJPG, DIVX, ...)" << endl;
 		cout << "example(1): ./VideoPlayer /path/to/image/directory" << endl;
-		cout << "example(2): ./VideoPlayer path/to/myvideo.avi path/to/landmarks1.txt -o video-with-landmarks.avi 25" << endl;
+		cout << "example(2): ./VideoPlayer path/to/myvideo.avi -s path/to/landmarks1.txt path/to/landmarks2.txt -o video-with-landmarks.avi 25" << endl;
 		return 0;
 	}
 
@@ -106,16 +115,32 @@ int main(int argc, char *argv[]) {
 	else
 		imageSource.reset(new VideoImageSource(sourceFile.string()));
 
+	enum GroundTruthType { UNKNOWN, SIMPLE, BOBOT };
+	GroundTruthType type = GroundTruthType::UNKNOWN;
 	vector<shared_ptr<LandmarkSource>> landmarkSources;
 	int i = 2;
 	for (; i < argc; ++i) {
-		if (argv[i][0] == '-')
-			break;
+		if (argv[i][0] == '-') {
+			string option = string(argv[i]);
+			if ("-s" == option)
+				type = GroundTruthType::SIMPLE;
+			else if ("-b" == option)
+				type = GroundTruthType::BOBOT;
+			else if ("-o" == option)
+				break;
+			else
+				throw invalid_argument("unknown option " + option);
+			continue;
+		}
 		path landmarkFile(argv[i]);
 		if (!exists(landmarkFile))
 			throw invalid_argument("landmark file " + landmarkFile.string() + " does not exist");
-		landmarkSources.push_back(make_shared<BobotLandmarkSource>(landmarkFile.string(), imageSource));
-//		landmarks.push_back(make_shared<SimpleLandmarkSource>(landmarkFile.string())); // TODO
+		if (type == GroundTruthType::SIMPLE)
+			landmarkSources.push_back(make_shared<SingleLandmarkSource>(landmarkFile.string()));
+		else if (type == GroundTruthType::BOBOT)
+			landmarkSources.push_back(make_shared<BobotLandmarkSource>(landmarkFile.string(), imageSource));
+		else
+			throw invalid_argument("no type specified for landmark file " + landmarkFile.string() + " (needs option -s or -b before giving landmark files)");
 	}
 
 	shared_ptr<ImageSink> imageSink;
@@ -128,7 +153,14 @@ int main(int argc, char *argv[]) {
 		if (exists(outputFile))
 			throw invalid_argument("output file \"" + outputFile.string() + "\" does already exist");
 		double outputFps = std::stod(argv[i + 2]);
-		imageSink = make_shared<VideoImageSink>(outputFile.string(), outputFps, CV_FOURCC('D','I','V','X'));
+		int codec = CV_FOURCC('M', 'J', 'P', 'G');
+		if (i + 3 < argc) {
+			string fourcc = string(argv[i + 3]);
+			if (fourcc.length() != 4)
+				throw invalid_argument("codec must consist of four characters to be valid");
+			codec = CV_FOURCC(fourcc[0], fourcc[1], fourcc[2], fourcc[3]);
+		}
+		imageSink = make_shared<VideoImageSink>(outputFile.string(), outputFps, codec);
 	}
 
 	Logger& log = Loggers->getLogger("app");

@@ -128,7 +128,7 @@ void ExtendedHogBasedMeasurementModel::evaluate(shared_ptr<VersionedImage> image
 				for (shared_ptr<Sample>& sample : samples) {
 					sample->setWeight(0);
 					sample->setScore(0);
-					sample->setObject(false);
+					sample->setTarget(false);
 				}
 			}
 		} else { // target was not lost
@@ -168,7 +168,7 @@ void ExtendedHogBasedMeasurementModel::evaluate(Sample& sample) const {
 	if (!useSlidingWindow) {
 		shared_ptr<Patch> patch = featureExtractor->extract(sample.getX(), sample.getY(), sample.getWidth(), sample.getHeight());
 		if (!patch) {
-			sample.setObject(false);
+			sample.setTarget(false);
 			sample.setWeight(0);
 			sample.setScore(0);
 		} else {
@@ -178,14 +178,14 @@ void ExtendedHogBasedMeasurementModel::evaluate(Sample& sample) const {
 			sample.setWeight(sample.getWeight() * globalLikelihood);
 			sample.setScore(score);
 			if (targetLost)
-				sample.setObject(result.first);
+				sample.setTarget(result.first);
 			else
-				sample.setObject(true);
+				sample.setTarget(true);
 		}
 	} else {
 		shared_ptr<Patch> patch = featureExtractor->extract(sample.getX(), sample.getY(), sample.getWidth(), sample.getHeight());
 		if (!patch) {
-			sample.setObject(false);
+			sample.setTarget(false);
 			sample.setWeight(0);
 			sample.setScore(0);
 		} else {
@@ -196,9 +196,9 @@ void ExtendedHogBasedMeasurementModel::evaluate(Sample& sample) const {
 			sample.setWeight(sample.getWeight() * globalLikelihood);
 			sample.setScore(score);
 			if (targetLost)
-				sample.setObject(result.first);
+				sample.setTarget(result.first);
 			else
-				sample.setObject(score > rejectionThreshold);
+				sample.setTarget(score > rejectionThreshold);
 		}
 	}
 }
@@ -543,7 +543,7 @@ vector<Mat> ExtendedHogBasedMeasurementModel::createPositiveTrainingExamples(con
 		vector<shared_ptr<Sample>>& cluster = it->second;
 		vector<double> weights(cluster.size());
 		std::transform(cluster.begin(), cluster.end(), weights.begin(), [](const shared_ptr<Sample>& sample) {
-			if (sample->isObject())
+			if (sample->isTarget())
 				return sample->getWeight();
 			return 0.0;
 		});

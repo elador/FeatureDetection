@@ -28,7 +28,7 @@ public:
 	 */
 	Sample() :
 			x(0), y(0), size(0), vx(0), vy(0), vsize(1),
-			weight(1), score(0), object(false), clusterId(getNextClusterId()), ancestor() {}
+			weight(1), score(0), target(false), clusterId(getNextClusterId()), ancestor() {}
 
 	/**
 	 * Constructs a new sample with velocities of zero and a weight of one.
@@ -39,7 +39,7 @@ public:
 	 */
 	Sample(int x, int y, int size) :
 			x(x), y(y), size(size), vx(0), vy(0), vsize(1),
-			weight(1), score(0), object(false), clusterId(getNextClusterId()), ancestor() {}
+			weight(1), score(0), target(false), clusterId(getNextClusterId()), ancestor() {}
 
 	/**
 	 * Constructs a new sample with a weight of one.
@@ -53,7 +53,7 @@ public:
 	 */
 	Sample(int x, int y, int size, int vx, int vy, float vsize) :
 			x(x), y(y), size(size), vx(vx), vy(vy), vsize(vsize),
-			weight(1), score(0), object(false), clusterId(getNextClusterId()), ancestor() {}
+			weight(1), score(0), target(false), clusterId(getNextClusterId()), ancestor() {}
 
 	/**
 	 * Constructs a new descendant of a sample.
@@ -63,7 +63,7 @@ public:
 	 */
 	explicit Sample(std::shared_ptr<Sample> other, double weight = 1) :
 		x(other->x), y(other->y), size(other->size), vx(other->vx), vy(other->vy), vsize(other->vsize),
-		weight(weight), score(0), object(false), clusterId(other->clusterId), ancestor(other) {}
+		weight(weight), score(0), target(false), clusterId(other->clusterId), ancestor(other) {}
 
 	/**
 	 * @return The square bounding box representing this sample.
@@ -203,19 +203,19 @@ public:
 	}
 
 	/**
-	 * @return True if this sample represents the object, false otherwise.
+	 * @return True if this sample represents the target, false otherwise.
 	 */
-	bool isObject() const {
-		return object;// TODO isTarget klingt besser
+	bool isTarget() const {
+		return target;
 	}
 
 	/**
-	 * Changes whether this sample represents the object.
+	 * Changes whether this sample represents the target.
 	 *
-	 * @param[in] object Flag that indicates whether this sample represents the object.
+	 * @param[in] target Flag that indicates whether this sample represents the target.
 	 */
-	void setObject(bool object) {
-		this->object = object;// TODO setIsTarget klingt besser
+	void setTarget(bool target) {
+		this->target = target;
 	}
 
 	/**
@@ -340,7 +340,7 @@ private:
 	float vsize;   ///< The change of the size (factor).
 	double weight; ///< The weight.
 	double score;  ///< The classifier score.
-	bool object;   ///< Flag that indicates whether this sample represents the object.
+	bool target;   ///< Flag that indicates whether this sample represents the target.
 	int clusterId; ///< ID of the cluster this sample belongs to.
 	std::shared_ptr<Sample> ancestor; ///< The ancestor sample.
 };

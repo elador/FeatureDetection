@@ -32,7 +32,7 @@ class MeasurementModel;
 class StateExtractor;
 
 /**
- * Tracker of a single object in image/video streams based on the Condensation algorithm (aka Particle Filter).
+ * Tracker of a single target in image/video streams based on the Condensation algorithm (aka Particle Filter).
  */
 class CondensationTracker {
 public:
@@ -50,15 +50,15 @@ public:
 	~CondensationTracker();
 
 	/**
-	 * Processes the next image and returns the most probable object position.
+	 * Processes the next image and returns the most probable target position.
 	 *
 	 * @param[in] image The next image.
-	 * @return The bounding box around the most probable object position if there is an object.
+	 * @return The bounding box around the most probable target position if found, none otherwise.
 	 */
 	optional<Rect> process(const Mat& image);
 
 	/**
-	 * @return The estimated state.
+	 * @return The estimated target state.
 	 */
 	shared_ptr<Sample> getState() {
 		return state;
@@ -89,7 +89,7 @@ private:
 
 	vector<shared_ptr<Sample>> samples;    ///< The current samples.
 	vector<shared_ptr<Sample>> oldSamples; ///< The previous samples.
-	shared_ptr<Sample> state;              ///< The estimated state.
+	shared_ptr<Sample> state;              ///< The estimated target state.
 
 	shared_ptr<VersionedImage> image;              ///< The image used for evaluation.
 	shared_ptr<Sampler> sampler;                   ///< The sampler.

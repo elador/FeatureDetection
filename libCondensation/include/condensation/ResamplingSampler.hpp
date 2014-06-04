@@ -89,9 +89,7 @@ private:
 	unsigned int count; ///< The number of samples.
 	double randomRate;  ///< The percentage of samples that should be equally distributed.
 	shared_ptr<ResamplingAlgorithm> resamplingAlgorithm; ///< The resampling algorithm.
-public: // TODO
 	shared_ptr<TransitionModel> transitionModel;         ///< The transition model.
-private: // TODO
 
 	int minSize; ///< The minimum size of a sample.
 	int maxSize; ///< The maximum size of a sample.

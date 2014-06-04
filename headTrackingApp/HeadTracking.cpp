@@ -728,11 +728,11 @@ void HeadTracking::drawDebug(Mat& image, bool usedAdaptive) {
 	if (drawSamples) {
 		const std::vector<shared_ptr<Sample>>& samples = usedAdaptive ? adaptiveTracker->getSamples() : initialTracker->getSamples();
 		for (const shared_ptr<Sample>& sample : samples) {
-			if (!sample->isObject())
+			if (!sample->isTarget())
 				cv::circle(image, Point(sample->getX(), sample->getY()), 3, black);
 		}
 		for (const shared_ptr<Sample>& sample : samples) {
-			if (sample->isObject()) {
+			if (sample->isTarget()) {
 				cv::Scalar color(0, sample->getWeight() * 255, sample->getWeight() * 255);
 				cv::circle(image, Point(sample->getX(), sample->getY()), 3, color);
 			}
@@ -887,8 +887,7 @@ void HeadTracking::run() {
 					Rect bounds(
 							Point(cvRound(floatBounds.tl().x), cvRound(floatBounds.tl().y)),
 							Point(cvRound(floatBounds.br().x), cvRound(floatBounds.br().y)));
-					// TODO
-					if (frameIndex > 80 && landmark->isVisible() && bounds.x >= 0 && bounds.y >= 0 && bounds.br().x < image.cols && bounds.br().y < image.rows) {
+					if (landmark->isVisible() && bounds.x >= 0 && bounds.y >= 0 && bounds.br().x < image.cols && bounds.br().y < image.rows) {
 						tries++;
 						adaptiveUsable = adaptiveTracker->initialize(frame, bounds);
 						drawTarget(image, optional<Rect>(bounds), true, true);
@@ -935,7 +934,7 @@ void HeadTracking::run() {
 			steady_clock::time_point condensationStart = steady_clock::now();
 			bool usedAdaptive = false;
 			bool adapted = false;
-			boost::optional<Rect> position = adaptiveTracker->process(frame);
+			optional<Rect> position = adaptiveTracker->process(frame);
 			usedAdaptive = true;
 			adapted = adaptiveTracker->hasAdapted();
 			steady_clock::time_point condensationEnd = steady_clock::now();

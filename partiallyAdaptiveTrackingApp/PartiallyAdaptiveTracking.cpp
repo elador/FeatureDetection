@@ -273,7 +273,7 @@ void PartiallyAdaptiveTracking::drawDebug(cv::Mat& image) {
 	if (drawSamples) {
 		const std::vector<shared_ptr<Sample>> samples = tracker->getSamples();
 		for (const shared_ptr<Sample>& sample : samples) {
-			const cv::Scalar& color = sample->isObject() ? cv::Scalar(0, 0, sample->getWeight() * 255) : black;
+			const cv::Scalar& color = sample->isTarget() ? cv::Scalar(0, 0, sample->getWeight() * 255) : black;
 			cv::circle(image, cv::Point(sample->getX(), sample->getY()), 3, color);
 		}
 	}

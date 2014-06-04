@@ -685,11 +685,11 @@ void AdaptiveTracking::drawDebug(Mat& image, bool usedAdaptive) {
 	if (drawSamples) {
 		const std::vector<shared_ptr<Sample>>& samples = usedAdaptive ? adaptiveTracker->getSamples() : initialTracker->getSamples();
 		for (const shared_ptr<Sample>& sample : samples) {
-			if (!sample->isObject())
+			if (!sample->isTarget())
 				cv::circle(image, Point(sample->getX(), sample->getY()), 3, black);
 		}
 		for (const shared_ptr<Sample>& sample : samples) {
-			if (sample->isObject()) {
+			if (sample->isTarget()) {
 				cv::Scalar color(0, sample->getWeight() * 255, sample->getWeight() * 255);
 				cv::circle(image, Point(sample->getX(), sample->getY()), 3, color);
 			}
@@ -840,9 +840,6 @@ void AdaptiveTracking::run() {
 					stop();
 					while ('q' != (char)cv::waitKey(10));
 				} else {
-					overlapSum += 1;
-					hitCount++;
-					frameCount++;
 					frame = imageSource->getImage();
 					frame.copyTo(image);
 					drawGroundTruth(image, imageSource->getLandmarks());
@@ -863,10 +860,20 @@ void AdaptiveTracking::run() {
 										+ " x " + std::to_string(pyramidExtractor->getPatchHeight()));
 							}
 							tries++;
-							adaptiveUsable = adaptiveTracker->initialize(frame, bounds);
-							drawTarget(image, optional<Rect>(bounds), true, true);
+							optional<Rect> position = adaptiveTracker->initialize(frame, bounds);
+							adaptiveUsable = position;
+							drawTarget(image, position, true, true);
 							if (adaptiveUsable) {
 								log.info("Initialized adaptive tracking after " + std::to_string(tries) + " tries");
+								frameCount++;
+								Rect_<float> a = bounds;
+								Rect_<float> b = *position;
+								double intersectionArea = (a & b).area();
+								double unionArea = a.area() + b.area() - intersectionArea;
+								double overlap = unionArea > 0 ? intersectionArea / unionArea : 0;
+								overlapSum += overlap;
+								if (overlap >= 0.5)
+									hitCount++;
 							} else if (tries == 10) {
 								log.warn("Could not initialize tracker after " + std::to_string(tries) + " tries (patch too small/big?)");
 								std::cerr << "Could not initialize tracker - press 'q' to quit program" << std::endl;
@@ -901,7 +908,7 @@ void AdaptiveTracking::run() {
 			if (!imageSource->next()) {
 				std::cerr << "Could not capture frame - press 'q' to quit program" << std::endl;
 				stop();
-				while ('q' != (char)cv::waitKey(10)); // TODO why 10? check HeadTracking
+				while ('q' != (char)cv::waitKey(10));
 			} else {
 				frames++;
 				frame = imageSource->getImage();
@@ -912,7 +919,7 @@ void AdaptiveTracking::run() {
 				steady_clock::time_point condensationStart = steady_clock::now();
 				bool usedAdaptive = false;
 				bool adapted = false;
-				boost::optional<Rect> position;
+				optional<Rect> position;
 				if (useAdaptive) {
 					if (adaptiveUsable) {
 						position = adaptiveTracker->process(frame);
@@ -928,7 +935,7 @@ void AdaptiveTracking::run() {
 				}
 				steady_clock::time_point condensationEnd = steady_clock::now();
 
-				if (landmark && landmark->isVisible()) {
+				if (landmark) {
 					frameCount++;
 					if (position) {
 						Rect_<float> a = landmark->getRect();

@@ -24,7 +24,7 @@ shared_ptr<Sample> MaxWeightStateExtractor::extract(const vector<shared_ptr<Samp
 			best = sample;
 		}
 	}
-	if (maxWeight > 0 && best->isObject())
+	if (maxWeight > 0 && best->isTarget())
 		return best;
 	return shared_ptr<Sample>();
 }

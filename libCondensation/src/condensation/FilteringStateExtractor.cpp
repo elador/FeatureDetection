@@ -18,7 +18,7 @@ FilteringStateExtractor::FilteringStateExtractor(shared_ptr<StateExtractor> extr
 shared_ptr<Sample> FilteringStateExtractor::extract(const vector<shared_ptr<Sample>>& samples) {
 	vector<shared_ptr<Sample>> objects;
 	for (const shared_ptr<Sample>& sample : samples) {
-		if (sample->isObject())
+		if (sample->isTarget())
 			objects.push_back(sample);
 	}
 	return extractor->extract(objects);

@@ -37,7 +37,7 @@ void WvmSvmModel::update(shared_ptr<VersionedImage> image) {
 void WvmSvmModel::evaluate(Sample& sample) const {
 	shared_ptr<Patch> patch = featureExtractor->extract(sample.getX(), sample.getY(), sample.getWidth(), sample.getHeight());
 	if (!patch) {
-		sample.setObject(false);
+		sample.setTarget(false);
 		sample.setWeight(0);
 	} else {
 		pair<bool, double> wvmResult;
@@ -50,10 +50,10 @@ void WvmSvmModel::evaluate(Sample& sample) const {
 		}
 		if (wvmResult.first) {
 			pair<bool, double> svmResult = svm->getProbability(patch->getData());
-			sample.setObject(svmResult.first);
+			sample.setTarget(svmResult.first);
 			sample.setWeight(wvmResult.second * svmResult.second);
 		} else {
-			sample.setObject(false);
+			sample.setTarget(false);
 			sample.setWeight(0.5 * wvmResult.second);
 		}
 	}
@@ -64,7 +64,7 @@ void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<shared_ptr<S
 	vector<shared_ptr<ClassifiedPatch>> remainingPatches;
 	unordered_map<shared_ptr<Patch>, vector<Sample*>> patch2samples;
 	for (shared_ptr<Sample> sample : samples) {
-		sample->setObject(false);
+		sample->setTarget(false);
 		shared_ptr<Patch> patch = featureExtractor->extract(sample->getX(), sample->getY(), sample->getWidth(), sample->getHeight());
 		if (!patch) {
 			sample->setWeight(0);
@@ -96,7 +96,7 @@ void WvmSvmModel::evaluate(shared_ptr<VersionedImage> image, vector<shared_ptr<S
 			vector<Sample*>& patchSamples = patch2samples[patch];
 			for (auto sit = patchSamples.begin(); sit != patchSamples.end(); ++sit) {
 				Sample* sample = (*sit);
-				sample->setObject(result.first);
+				sample->setTarget(result.first);
 				sample->setWeight(2 * sample->getWeight() * result.second);
 			}
 			patchSamples.clear();

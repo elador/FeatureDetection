@@ -95,13 +95,8 @@ void ExtendedHogFeatureExtractor::update(shared_ptr<VersionedImage> image) {
 }
 
 shared_ptr<Patch> ExtendedHogFeatureExtractor::extract(int x, int y, int width, int height) const {
-	// TODO "richtig" runden besser?
-//	int width = static_cast<int>(std::round(widthFactor * sample.getWidth()));
-//	int height = static_cast<int>(std::round(heightFactor * sample.getHeight()));
-	// TODO alte variante mit abrunden, damit ergebnisse wie im paper - zumindest für online gestellten code...
-	width = static_cast<int>(widthFactor * width);
-	height = static_cast<int>(heightFactor * height);
-
+	width = static_cast<int>(std::round(widthFactor * width));
+	height = static_cast<int>(std::round(heightFactor * height));
 	double scaleFactor = static_cast<double>(patchWidth) / static_cast<double>(width);
 	const shared_ptr<ImagePyramidLayer> layer = pyramid->getLayer(scaleFactor);
 	if (!layer)
@@ -118,7 +113,7 @@ shared_ptr<Patch> ExtendedHogFeatureExtractor::extract(int x, int y, int width, 
 	} else { // patch is partially outside the image
 		vector<int> rowIndices = createIndexLut(image.rows, bounds.y, bounds.height);
 		vector<int> colIndices = createIndexLut(image.cols, bounds.x, bounds.width);
-		if (image.type() == CV_8UC1)// TODO typ nur uchar in veroeffentlichung - hier keine typabfrage noetig, aber am funktionsbeginn
+		if (image.type() == CV_8UC1)
 			patchData = createPatchData<uchar>(image, rowIndices, colIndices);
 		else if (image.type() == CV_8UC2)
 			patchData = createPatchData<cv::Vec2b>(image, rowIndices, colIndices);

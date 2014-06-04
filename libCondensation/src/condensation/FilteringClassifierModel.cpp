@@ -47,13 +47,13 @@ void FilteringClassifierModel::evaluate(Sample& sample) const {
 		if (passesFilter(sample)) {
 			measurementModel->evaluate(sample);
 		} else {
-			sample.setObject(false);
+			sample.setTarget(false);
 			sample.setWeight(0);
 		}
 	} else { // behavior == Behavior::KEEP_WEIGHT
 		measurementModel->evaluate(sample);
-		if (sample.isObject() && !passesFilter(sample))
-			sample.setObject(false);
+		if (sample.isTarget() && !passesFilter(sample))
+			sample.setTarget(false);
 	}
 }
 
@@ -64,7 +64,7 @@ void FilteringClassifierModel::evaluate(shared_ptr<VersionedImage> image, vector
 			if (passesFilter(*sample)) {
 				measurementModel->evaluate(*sample);
 			} else {
-				sample->setObject(false);
+				sample->setTarget(false);
 				sample->setWeight(0);
 			}
 		}
@@ -73,8 +73,8 @@ void FilteringClassifierModel::evaluate(shared_ptr<VersionedImage> image, vector
 		featureExtractor->update(image);
 		measurementModel->evaluate(image, samples);
 		for (shared_ptr<Sample> sample : samples) {
-			if (sample->isObject() && !passesFilter(*sample))
-				sample->setObject(false);
+			if (sample->isTarget() && !passesFilter(*sample))
+				sample->setTarget(false);
 		}
 	}
 }

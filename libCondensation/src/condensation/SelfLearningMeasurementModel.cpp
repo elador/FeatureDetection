@@ -47,7 +47,7 @@ void SelfLearningMeasurementModel::update(shared_ptr<VersionedImage> image) {
 void SelfLearningMeasurementModel::evaluate(Sample& sample) const {
 	shared_ptr<Patch> patch = featureExtractor->extract(sample.getX(), sample.getY(), sample.getWidth(), sample.getHeight());
 	if (!patch) {
-		sample.setObject(false);
+		sample.setTarget(false);
 		sample.setWeight(0);
 	} else {
 		pair<bool, double> result;
@@ -58,7 +58,7 @@ void SelfLearningMeasurementModel::evaluate(Sample& sample) const {
 		} else {
 			result = resIt->second;
 		}
-		sample.setObject(result.first);
+		sample.setTarget(result.first);
 		if (result.second > positiveThreshold)
 			positiveTrainingExamples.push_back(make_shared<ClassifiedPatch>(patch, result));
 		else if (result.second < negativeThreshold)

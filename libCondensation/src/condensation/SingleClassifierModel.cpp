@@ -30,10 +30,10 @@ void SingleClassifierModel::evaluate(Sample& sample) const {
 	shared_ptr<Patch> patch = featureExtractor->extract(sample.getX(), sample.getY(), sample.getWidth(), sample.getHeight());
 	if (patch) {
 		pair<bool, double> result = classify(patch);
-		sample.setObject(result.first);
+		sample.setTarget(result.first);
 		sample.setWeight(result.second);
 	} else {
-		sample.setObject(false);
+		sample.setTarget(false);
 		sample.setWeight(0);
 	}
 }

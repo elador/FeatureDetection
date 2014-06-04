@@ -33,11 +33,11 @@ class AdaptiveMeasurementModel;
 class StateExtractor;
 
 /**
- * Condensation tracker that tries to adapt to the appearance of the tracked object over time.
+ * Condensation tracker that tries to adapt to the appearance of the tracked target over time.
  *
  * This condensation tracker makes use of two measurement models: a static one and an adaptive one. The
  * tracking starts with the static measurement model, while the adaptive one gets trained with the position
- * of the tracked object. If the adaptive model is usable, the static model gets replaced. If the object
+ * of the tracked target. If the adaptive model is usable, the static model gets replaced. If the object
  * disappears for a certain amount of time (or is simply not found for some reason), the static measurement
  * model may be used again.
  */
@@ -58,15 +58,15 @@ public:
 	~PartiallyAdaptiveCondensationTracker();
 
 	/**
-	 * Processes the next image and returns the most probable object position.
+	 * Processes the next image and returns the most probable target position.
 	 *
 	 * @param[in] image The next image.
-	 * @return The bounding box around the most probable object position if there is an object.
+	 * @return The bounding box around the most probable target position if found, none otherwise.
 	 */
 	optional<Rect> process(const Mat& image);
 
 	/**
-	 * @return The estimated state.
+	 * @return The estimated target state.
 	 */
 	shared_ptr<Sample> getState() {
 		return state;
@@ -116,7 +116,7 @@ private:
 
 	vector<shared_ptr<Sample>> samples;    ///< The current samples.
 	vector<shared_ptr<Sample>> oldSamples; ///< The previous samples.
-	shared_ptr<Sample> state;              ///< The estimated state.
+	shared_ptr<Sample> state;              ///< The estimated target state.
 
 	bool useAdaptiveModel;  ///< Flag that indicates whether the adaptive measurement model should be used.
 	bool usedAdaptiveModel; ///< Flag that indicates whether the adaptive measurement model was used.
