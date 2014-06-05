@@ -7,6 +7,10 @@
 
 #include "imageprocessing/ParallelFilter.hpp"
 
+using cv::Mat;
+using std::vector;
+using std::shared_ptr;
+
 namespace imageprocessing {
 
 ParallelFilter::ParallelFilter() : filters() {}
@@ -24,8 +28,6 @@ ParallelFilter::ParallelFilter(
 	filters[1] = filter2;
 	filters[2] = filter3;
 }
-
-ParallelFilter::~ParallelFilter() {}
 
 void ParallelFilter::add(shared_ptr<ImageFilter> filter) {
 	filters.push_back(filter);

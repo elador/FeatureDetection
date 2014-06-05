@@ -31,11 +31,9 @@ public:
 	IntegralChannelHistogramFilter(unsigned int blockRows, unsigned int blockColumns, double overlap = 0,
 			Normalization normalization = Normalization::L2NORM);
 
-	~IntegralChannelHistogramFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
 private:
 

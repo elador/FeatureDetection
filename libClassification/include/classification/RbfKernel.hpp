@@ -14,9 +14,6 @@
 #include "classification/KernelVisitor.hpp"
 #include <stdexcept>
 
-using cv::Mat;
-using std::invalid_argument;
-
 namespace classification {
 
 /**
@@ -32,15 +29,13 @@ public:
 	 */
 	explicit RbfKernel(double gamma) : gamma(gamma) {}
 
-	~RbfKernel() {}
-
-	double compute(const Mat& lhs, const Mat& rhs) const {
+	double compute(const cv::Mat& lhs, const cv::Mat& rhs) const {
 		if (!lhs.isContinuous() || !rhs.isContinuous())
-			throw invalid_argument("RbfKernel: arguments have to be continuous");
+			throw std::invalid_argument("RbfKernel: arguments have to be continuous");
 		if (lhs.flags != rhs.flags)
-			throw invalid_argument("RbfKernel: arguments have to have the same type");
+			throw std::invalid_argument("RbfKernel: arguments have to have the same type");
 		if (lhs.total() != rhs.total())
-			throw invalid_argument("RbfKernel: arguments have to have the same length");
+			throw std::invalid_argument("RbfKernel: arguments have to have the same length");
 		return exp(-gamma * computeSumOfSquaredDifferences(lhs, rhs));
 	}
 
@@ -64,13 +59,13 @@ private:
 	 * @param[in] rhs The second vector.
 	 * @return The sum of the squared differences.
 	 */
-	double computeSumOfSquaredDifferences(const Mat& lhs, const Mat& rhs) const {
+	double computeSumOfSquaredDifferences(const cv::Mat& lhs, const cv::Mat& rhs) const {
 		switch (lhs.depth()) {
 			case CV_8U: return computeSumOfSquaredDifferences_uchar(lhs, rhs);
 			case CV_32S: return computeSumOfSquaredDifferences_any<int>(lhs, rhs);
 			case CV_32F: return computeSumOfSquaredDifferences_any<float>(lhs, rhs);
 		}
-		throw invalid_argument("RbfKernel: arguments have to be of depth CV_8U, CV_32S or CV_32F");
+		throw std::invalid_argument("RbfKernel: arguments have to be of depth CV_8U, CV_32S or CV_32F");
 	}
 
 	/**
@@ -80,7 +75,7 @@ private:
 	 * @param[in] rhs The second vector.
 	 * @return The sum of the squared differences.
 	 */
-	int computeSumOfSquaredDifferences_uchar(const Mat& lhs, const Mat& rhs) const {
+	int computeSumOfSquaredDifferences_uchar(const cv::Mat& lhs, const cv::Mat& rhs) const {
 		const uchar* lvalues = lhs.ptr<uchar>();
 		const uchar* rvalues = rhs.ptr<uchar>();
 		int sum = 0;
@@ -100,7 +95,7 @@ private:
 	 * @return The sum of the squared differences.
 	 */
 	template<class T>
-	float computeSumOfSquaredDifferences_any(const Mat& lhs, const Mat& rhs) const {
+	float computeSumOfSquaredDifferences_any(const cv::Mat& lhs, const cv::Mat& rhs) const {
 		const T* lvalues = lhs.ptr<T>();
 		const T* rvalues = rhs.ptr<T>();
 		float sum = 0;

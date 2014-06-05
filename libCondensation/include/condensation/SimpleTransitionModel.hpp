@@ -14,8 +14,6 @@
 #include "boost/random/variate_generator.hpp"
 #include <memory>
 
-using std::shared_ptr;
-
 namespace condensation {
 
 /**
@@ -32,11 +30,9 @@ public:
 	 */
 	explicit SimpleTransitionModel(double positionDeviation, double sizeDeviation);
 
-	~SimpleTransitionModel();
+	void init(const cv::Mat& image);
 
-	void init(const Mat& image);
-
-	void predict(vector<shared_ptr<Sample>>& samples, const Mat& image, const shared_ptr<Sample> target);
+	void predict(std::vector<std::shared_ptr<Sample>>& samples, const cv::Mat& image, const std::shared_ptr<Sample> target);
 
 	/**
 	 * @return The standard deviation of the translation noise.

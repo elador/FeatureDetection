@@ -100,6 +100,7 @@ using std::milli;
 using std::move;
 using std::ostringstream;
 using std::istringstream;
+using std::invalid_argument;
 
 namespace po = boost::program_options;
 

@@ -30,11 +30,9 @@ public:
 	 */
 	explicit IntegralImageFilter(int type = -1);
 
-	~IntegralImageFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
 private:
 

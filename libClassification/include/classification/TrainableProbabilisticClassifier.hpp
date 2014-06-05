@@ -32,7 +32,7 @@ public:
 	 * @param[in] newNegativeExamples The new negative training and test examples.
 	 * @return True if this classifier was trained successfully and may be used, false otherwise.
 	 */
-	virtual bool retrain(const vector<Mat>& newPositiveExamples, const vector<Mat>& newNegativeExamples) = 0;
+	virtual bool retrain(const std::vector<cv::Mat>& newPositiveExamples, const std::vector<cv::Mat>& newNegativeExamples) = 0;
 
 	/**
 	 * Re-trains this classifier incrementally, adding new training examples. The test examples will be used to
@@ -45,8 +45,8 @@ public:
 	 * @param[in] newNegativeTestExamples The new negative test examples.
 	 * @return True if this classifier was trained successfully and may be used, false otherwise.
 	 */
-	virtual bool retrain(const vector<Mat>& newPositiveExamples, const vector<Mat>& newNegativeExamples,
-			const vector<Mat>& newPositiveTestExamples, const vector<Mat>& newNegativeTestExamples) = 0;
+	virtual bool retrain(const std::vector<cv::Mat>& newPositiveExamples, const std::vector<cv::Mat>& newNegativeExamples,
+			const std::vector<cv::Mat>& newPositiveTestExamples, const std::vector<cv::Mat>& newNegativeTestExamples) = 0;
 };
 
 } /* namespace classification */

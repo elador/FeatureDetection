@@ -11,13 +11,9 @@
 #include <vector>
 #include <memory>
 
-using std::vector;
-using std::shared_ptr;
-
 namespace imageprocessing {
 	class VersionedImage;
 }
-using imageprocessing::VersionedImage;
 
 namespace condensation {
 
@@ -36,7 +32,7 @@ public:
 	 *
 	 * @param[in] image The new image data.
 	 */
-	virtual void update(shared_ptr<VersionedImage> image) = 0;
+	virtual void update(std::shared_ptr<imageprocessing::VersionedImage> image) = 0;
 
 	/**
 	 * Changes the weight of the sample according to the likelihood of an object existing at that positions an image.
@@ -52,9 +48,9 @@ public:
 	 * @param[in] image The image.
 	 * @param[in] samples The samples whose weight will be changed according to the likelihoods.
 	 */
-	virtual void evaluate(shared_ptr<VersionedImage> image, vector<shared_ptr<Sample>>& samples) {
+	virtual void evaluate(std::shared_ptr<imageprocessing::VersionedImage> image, std::vector<std::shared_ptr<Sample>>& samples) {
 		update(image);
-		for (shared_ptr<Sample> sample : samples)
+		for (std::shared_ptr<Sample> sample : samples)
 			evaluate(*sample);
 	}
 };

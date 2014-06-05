@@ -10,8 +10,6 @@
 
 #include "opencv2/core/core.hpp"
 
-using cv::Mat;
-
 namespace imageprocessing {
 
 /**
@@ -30,28 +28,26 @@ public:
 	 *
 	 * @param[in] data The image data.
 	 */
-	explicit VersionedImage(const Mat& data) : data(data), version(0) {}
-
-	~VersionedImage() {}
+	explicit VersionedImage(const cv::Mat& data) : data(data), version(0) {}
 
 	/**
 	 * @return The image data.
 	 */
-	Mat& getData() {
+	cv::Mat& getData() {
 		return data;
 	}
 
 	/**
 	 * @return The image data.
 	 */
-	const Mat& getData() const {
+	const cv::Mat& getData() const {
 		return data;
 	}
 
 	/**
 	 * @param[in] data The new image data.
 	 */
-	void setData(const Mat& data) {
+	void setData(const cv::Mat& data) {
 		this->data = data;
 		version++;
 	}
@@ -65,8 +61,8 @@ public:
 
 private:
 
-	Mat data;    ///< The image data.
-	int version; ///< The version number.
+	cv::Mat data; ///< The image data.
+	int version;  ///< The version number.
 };
 
 } /* namespace imageprocessing */

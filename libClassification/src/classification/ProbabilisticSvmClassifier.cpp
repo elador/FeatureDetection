@@ -21,8 +21,13 @@
 
 using logging::Logger;
 using logging::LoggerFactory;
+using cv::Mat;
 using boost::filesystem::path;
+using boost::property_tree::ptree;
+using std::pair;
+using std::string;
 using std::make_pair;
+using std::shared_ptr;
 using std::make_shared;
 using std::runtime_error;
 
@@ -33,8 +38,6 @@ ProbabilisticSvmClassifier::ProbabilisticSvmClassifier(shared_ptr<Kernel> kernel
 
 ProbabilisticSvmClassifier::ProbabilisticSvmClassifier(shared_ptr<SvmClassifier> svm, double logisticA, double logisticB) :
 		svm(svm), logisticA(logisticA), logisticB(logisticB) {}
-
-ProbabilisticSvmClassifier::~ProbabilisticSvmClassifier() {}
 
 bool ProbabilisticSvmClassifier::classify(const Mat& featureVector) const {
 	return svm->classify(featureVector);

@@ -15,18 +15,13 @@
 #include <string>
 #include <functional>
 
-using cv::Mat;
-using std::function;
-
 namespace imageprocessing {
 class FeatureExtractor;
 }
-using imageprocessing::FeatureExtractor;
 
 namespace classification {
 class TrainableProbabilisticClassifier;
 }
-using classification::TrainableProbabilisticClassifier;
 
 namespace condensation {
 
@@ -45,7 +40,8 @@ public:
 	 * @param[in] classifier The classifier that is used for evaluating of the particles.
 	 */
 	PositionDependentMeasurementModel(
-			shared_ptr<FeatureExtractor> featureExtractor, shared_ptr<TrainableProbabilisticClassifier> classifier);
+			std::shared_ptr<imageprocessing::FeatureExtractor> featureExtractor,
+			std::shared_ptr<classification::TrainableProbabilisticClassifier> classifier);
 
 	/**
 	 * Constructs a new position dependent measurement model that wraps another measurement model used for evaluation.
@@ -54,24 +50,24 @@ public:
 	 * @param[in] featureExtractor The feature extractor.
 	 * @param[in] classifier The classifier that is used for evaluating of the particles.
 	 */
-	PositionDependentMeasurementModel(shared_ptr<MeasurementModel> measurementModel,
-			shared_ptr<FeatureExtractor> featureExtractor, shared_ptr<TrainableProbabilisticClassifier> classifier);
+	PositionDependentMeasurementModel(
+			std::shared_ptr<MeasurementModel> measurementModel,
+			std::shared_ptr<imageprocessing::FeatureExtractor> featureExtractor,
+			std::shared_ptr<classification::TrainableProbabilisticClassifier> classifier);
 
-	~PositionDependentMeasurementModel();
-
-	void update(shared_ptr<VersionedImage> image);
+	void update(std::shared_ptr<imageprocessing::VersionedImage> image);
 
 	void evaluate(Sample& sample) const;
 
-	void evaluate(shared_ptr<VersionedImage> image, vector<shared_ptr<Sample>>& samples);
+	void evaluate(std::shared_ptr<imageprocessing::VersionedImage> image, std::vector<std::shared_ptr<Sample>>& samples);
 
 	bool isUsable() const;
 
-	bool initialize(shared_ptr<VersionedImage> image, Sample& target);
+	bool initialize(std::shared_ptr<imageprocessing::VersionedImage> image, Sample& target);
 
-	bool adapt(shared_ptr<VersionedImage> image, const vector<shared_ptr<Sample>>& samples, const Sample& target);
+	bool adapt(std::shared_ptr<imageprocessing::VersionedImage> image, const std::vector<std::shared_ptr<Sample>>& samples, const Sample& target);
 
-	bool adapt(shared_ptr<VersionedImage> image, const vector<shared_ptr<Sample>>& samples);
+	bool adapt(std::shared_ptr<imageprocessing::VersionedImage> image, const std::vector<std::shared_ptr<Sample>>& samples);
 
 	void reset();
 
@@ -133,7 +129,7 @@ private:
 	 * @param[in] image The image.
 	 * @return The new sample.
 	 */
-	Sample createRandomSample(const Mat& image);
+	Sample createRandomSample(const cv::Mat& image);
 
 	/**
 	 * Creates a list of feature vectors from the given samples.
@@ -142,16 +138,16 @@ private:
 	 * @param[in] pred Predicate that determines whether a feature vector should be used for training.
 	 * @return The extracted feature vectors.
 	 */
-	vector<Mat> getFeatureVectors(vector<Sample>& samples, function<bool(Mat&)> pred);
+	std::vector<cv::Mat> getFeatureVectors(std::vector<Sample>& samples, std::function<bool(cv::Mat&)> pred);
 
 	boost::mt19937 generator;          ///< Random number generator.
 	boost::uniform_int<> distribution; ///< Uniform integer distribution.
 
-	shared_ptr<MeasurementModel> measurementModel;           ///< The model used for evaluating the particles.
-	shared_ptr<FeatureExtractor> featureExtractor;           ///< The feature extractor.
-	shared_ptr<TrainableProbabilisticClassifier> classifier; ///< The classifier that is used for evaluating of the particles.
+	std::shared_ptr<MeasurementModel> measurementModel; ///< The model used for evaluating the particles.
+	std::shared_ptr<imageprocessing::FeatureExtractor> featureExtractor; ///< The feature extractor.
+	std::shared_ptr<classification::TrainableProbabilisticClassifier> classifier; ///< The classifier that is used for evaluating of the particles.
 
-	bool usable;         ///< Flag that indicates whether this model may be used for evaluation.
+	bool usable; ///< Flag that indicates whether this model may be used for evaluation.
 	unsigned int frameCount;      ///< Count of frames without detections if usable, count of frames with detections otherwise.
 	unsigned int startFrameCount; ///< The amount of subsequent frames with detections that leads to being usable.
 	unsigned int stopFrameCount;  ///< The amount of subsequent frames without any detection that leads to not being usable again.

@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <vector>
 
+using cv::Mat;
 using cv::Vec2b;
 using std::invalid_argument;
 using std::vector;
@@ -18,8 +19,6 @@ namespace imageprocessing {
 IntegralGradientFilter::IntegralGradientFilter(int rows, int cols) : rows(rows), cols(cols) {}
 
 IntegralGradientFilter::IntegralGradientFilter(int count) : rows(count), cols(count) {}
-
-IntegralGradientFilter::~IntegralGradientFilter() {}
 
 Mat IntegralGradientFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.type() != CV_32SC1)

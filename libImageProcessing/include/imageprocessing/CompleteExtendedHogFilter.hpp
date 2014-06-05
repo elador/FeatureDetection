@@ -89,7 +89,7 @@ private:
 	 * @param[in] cellRowCount The cell row count that fits into the image.
 	 * @param[in] cellColumnCount The cell column count that fits into the image.
 	 */
-	void buildInitialHistograms(Mat& histograms, const Mat& image, size_t cellRowCount, size_t cellColumnCount) const;
+	void buildInitialHistograms(cv::Mat& histograms, const cv::Mat& image, size_t cellRowCount, size_t cellColumnCount) const;
 
 	/**
 	 * Builds the descriptor of each cell using its histogram data.
@@ -99,7 +99,7 @@ private:
 	 * @param[in] cellColumnCount The cell column count that fits into the image.
 	 * @param[in] descriptorSize The value count of the descriptors.
 	 */
-	void buildDescriptors(Mat& descriptors, size_t cellRowCount, size_t cellColumnCount, size_t descriptorSize) const;
+	void buildDescriptors(cv::Mat& descriptors, size_t cellRowCount, size_t cellColumnCount, size_t descriptorSize) const;
 
 	size_t cellSize; ///< The width and height of the cells.
 	size_t binCount; ///< The amount of bins inside the histogram.

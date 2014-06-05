@@ -7,11 +7,11 @@
 
 #include "imageprocessing/ImagePyramidLayer.hpp"
 
+using cv::Mat;
+
 namespace imageprocessing {
 
 ImagePyramidLayer::ImagePyramidLayer(int index, double scaleFactor, const Mat& scaledImage) :
 		index(index), scaleFactor(scaleFactor), scaledImage(scaledImage) {}
-
-ImagePyramidLayer::~ImagePyramidLayer() {}
 
 } /* namespace imageprocessing */

@@ -8,6 +8,7 @@
 #include "imageprocessing/CompleteExtendedHogFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using std::vector;
 using std::invalid_argument;
 

@@ -8,6 +8,9 @@
 #include "imageprocessing/GradientBinningFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
+using cv::Vec2b;
+using cv::Vec4b;
 using std::invalid_argument;
 
 namespace imageprocessing {

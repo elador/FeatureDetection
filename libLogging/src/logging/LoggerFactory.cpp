@@ -9,7 +9,9 @@
 #include <utility>
 #include <sstream>
 
+using std::map;
 using std::pair;
+using std::string;
 using std::ostringstream;
 
 namespace logging {

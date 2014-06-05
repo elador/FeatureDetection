@@ -13,8 +13,12 @@
 #include "imageprocessing/Patch.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using cv::Rect;
 using cv::Point;
+using std::pair;
+using std::vector;
+using std::shared_ptr;
 using std::make_shared;
 using std::invalid_argument;
 

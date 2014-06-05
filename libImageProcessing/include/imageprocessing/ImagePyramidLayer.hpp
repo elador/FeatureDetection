@@ -10,9 +10,6 @@
 
 #include "opencv2/core/core.hpp"
 
-using cv::Mat;
-using cv::Size;
-
 namespace imageprocessing {
 
 /**
@@ -28,9 +25,7 @@ public:
 	 * @param[in] scaleFactor The scale factor of this layer compared to the original image.
 	 * @param[in] scaledImage The scaled image.
 	 */
-	explicit ImagePyramidLayer(int index, double scaleFactor, const Mat& scaledImage);
-
-	~ImagePyramidLayer();
+	explicit ImagePyramidLayer(int index, double scaleFactor, const cv::Mat& scaledImage);
 
 	/**
 	 * Computes the scaled representation of an original value (coordinate, size, ...) and rounds accordingly.
@@ -55,8 +50,8 @@ public:
 	/**
 	 * @return The size of this layer (size of the scaled image).
 	 */
-	Size getSize() const {
-		return Size(scaledImage.cols, scaledImage.rows);
+	cv::Size getSize() const {
+		return cv::Size(scaledImage.cols, scaledImage.rows);
 	}
 
 	/**
@@ -76,14 +71,14 @@ public:
 	/**
 	 * @return The scaled image.
 	 */
-	const Mat& getScaledImage() const {
+	const cv::Mat& getScaledImage() const {
 		return scaledImage;
 	}
 
 	/**
 	 * @return The scaled image.
 	 */
-	Mat& getScaledImage() {
+	cv::Mat& getScaledImage() {
 		return scaledImage;
 	}
 
@@ -91,7 +86,7 @@ private:
 
 	int index;          ///< The index of this layer (0 is the original sized layer).
 	double scaleFactor; ///< The scale factor of this layer compared to the original image.
-	Mat scaledImage;    ///< The scaled image.
+	cv::Mat scaledImage;    ///< The scaled image.
 };
 
 } /* namespace imageprocessing */

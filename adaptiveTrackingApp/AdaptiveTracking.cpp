@@ -91,11 +91,13 @@ using namespace std::chrono;
 using libsvm::LibSvmClassifier;
 using cv::Point;
 using cv::Rect;
+using cv::Rect_;
 using boost::property_tree::info_parser::read_info;
 using std::milli;
 using std::move;
 using std::ostringstream;
 using std::istringstream;
+using std::invalid_argument;
 
 namespace po = boost::program_options;
 

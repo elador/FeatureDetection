@@ -14,16 +14,9 @@
 #include <memory>
 #include <vector>
 
-using cv::Mat;
-using cv::Rect;
-using boost::optional;
-using std::vector;
-using std::shared_ptr;
-
 namespace imageprocessing {
 class VersionedImage;
 }
-using imageprocessing::VersionedImage;
 
 namespace condensation {
 
@@ -44,10 +37,9 @@ public:
 	 * @param[in] measurementModel The measurement model.
 	 * @param[in] extractor The state extractor.
 	 */
-	CondensationTracker(shared_ptr<Sampler> sampler, shared_ptr<MeasurementModel> measurementModel,
-			shared_ptr<StateExtractor> extractor);
+	CondensationTracker(std::shared_ptr<Sampler> sampler, std::shared_ptr<MeasurementModel> measurementModel,
+			std::shared_ptr<StateExtractor> extractor);
 
-	~CondensationTracker();
 
 	/**
 	 * Processes the next image and returns the most probable target position.
@@ -55,46 +47,46 @@ public:
 	 * @param[in] image The next image.
 	 * @return The bounding box around the most probable target position if found, none otherwise.
 	 */
-	optional<Rect> process(const Mat& image);
+	boost::optional<cv::Rect> process(const cv::Mat& image);
 
 	/**
 	 * @return The estimated target state.
 	 */
-	shared_ptr<Sample> getState() {
+	std::shared_ptr<Sample> getState() {
 		return state;
 	}
 
 	/**
 	 * @return The current samples.
 	 */
-	inline const vector<shared_ptr<Sample>>& getSamples() const {
+	inline const std::vector<std::shared_ptr<Sample>>& getSamples() const {
 		return samples;
 	}
 
 	/**
 	 * @return The sampler.
 	 */
-	inline shared_ptr<Sampler> getSampler() {
+	inline std::shared_ptr<Sampler> getSampler() {
 		return sampler;
 	}
 
 	/**
 	 * @param[in] sampler The new sampler.
 	 */
-	inline void setSampler(shared_ptr<Sampler> sampler) {
+	inline void setSampler(std::shared_ptr<Sampler> sampler) {
 		this->sampler = sampler;
 	}
 
 private:
 
-	vector<shared_ptr<Sample>> samples;    ///< The current samples.
-	vector<shared_ptr<Sample>> oldSamples; ///< The previous samples.
-	shared_ptr<Sample> state;              ///< The estimated target state.
+	std::vector<std::shared_ptr<Sample>> samples;    ///< The current samples.
+	std::vector<std::shared_ptr<Sample>> oldSamples; ///< The previous samples.
+	std::shared_ptr<Sample> state;                   ///< The estimated target state.
 
-	shared_ptr<VersionedImage> image;              ///< The image used for evaluation.
-	shared_ptr<Sampler> sampler;                   ///< The sampler.
-	shared_ptr<MeasurementModel> measurementModel; ///< The measurement model.
-	shared_ptr<StateExtractor> extractor;          ///< The state extractor.
+	std::shared_ptr<imageprocessing::VersionedImage> image; ///< The image used for evaluation.
+	std::shared_ptr<Sampler> sampler;                   ///< The sampler.
+	std::shared_ptr<MeasurementModel> measurementModel; ///< The measurement model.
+	std::shared_ptr<StateExtractor> extractor;          ///< The state extractor.
 };
 
 } /* namespace condensation */

@@ -28,6 +28,7 @@ using namespace superviseddescentmodel;
 namespace po = boost::program_options;
 using std::cout;
 using std::endl;
+using std::make_shared;
 using boost::filesystem::path;
 using cv::Mat;
 using cv::Point2f;

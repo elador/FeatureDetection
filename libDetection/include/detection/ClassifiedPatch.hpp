@@ -11,10 +11,6 @@
 #include "imageprocessing/Patch.hpp"
 #include <memory>
 
-using imageprocessing::Patch;
-using std::shared_ptr;
-using std::pair;
-
 namespace detection {
 
 /**
@@ -30,7 +26,7 @@ public:
 	 * @param[in] positive Flag that indicates whether the patch was classified as positive.
 	 * @param[in] probability Probability of the patch being positive (optional).
 	 */
-	ClassifiedPatch(shared_ptr<Patch> patch, bool positive, double probability = 0.5) :
+	ClassifiedPatch(std::shared_ptr<imageprocessing::Patch> patch, bool positive, double probability = 0.5) :
 			patch(patch), positive(positive), probability(probability) {}
 
 	/**
@@ -39,22 +35,20 @@ public:
 	 * @param[in] patch The actual patch.
 	 * @param[in] result The probabilistic classification result.
 	 */
-	ClassifiedPatch(shared_ptr<Patch> patch, pair<bool, double> result) :
+	ClassifiedPatch(std::shared_ptr<imageprocessing::Patch> patch, std::pair<bool, double> result) :
 			patch(patch), positive(result.first), probability(result.second) {}
-
-	~ClassifiedPatch() {}
 
 	/**
 	 * @return The actual patch.
 	 */
-	shared_ptr<Patch> getPatch() {
+	std::shared_ptr<imageprocessing::Patch> getPatch() {
 		return patch;
 	}
 
 	/**
 	 * @return The actual patch.
 	 */
-	const shared_ptr<Patch> getPatch() const {
+	const std::shared_ptr<imageprocessing::Patch> getPatch() const {
 		return patch;
 	}
 
@@ -97,9 +91,9 @@ public:
 
 private:
 
-	shared_ptr<Patch> patch; ///< The actual patch.
-	bool positive;           ///< Flag that indicates whether the patch was classified as positive.
-	double probability;      ///< Probability of the patch being positive.
+	std::shared_ptr<imageprocessing::Patch> patch; ///< The actual patch.
+	bool positive; ///< Flag that indicates whether the patch was classified as positive.
+	double probability; ///< Probability of the patch being positive.
 };
 
 } /* namespace detection */

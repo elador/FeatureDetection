@@ -8,11 +8,12 @@
 #include "logging/Logger.hpp"
 #include "logging/Appender.hpp"
 
+using std::string;
+using std::shared_ptr;
+
 namespace logging {
 
 Logger::Logger(string name) : name(name), appenders() {}
-
-Logger::~Logger() {}
 
 void Logger::log(const LogLevel logLevel, string logMessage)
 {

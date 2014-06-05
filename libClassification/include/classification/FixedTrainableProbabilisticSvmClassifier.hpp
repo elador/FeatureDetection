@@ -42,7 +42,7 @@ public:
 	FixedTrainableProbabilisticSvmClassifier(std::shared_ptr<TrainableSvmClassifier> trainableSvm,
 			double highProb, double lowProb, double meanPosOutput, double meanNegOutput) :
 					TrainableProbabilisticSvmClassifier(trainableSvm, 0, 0, highProb, lowProb) {
-		pair<double, double> logisticParameters = computeLogisticParameters(meanPosOutput, meanNegOutput);
+		std::pair<double, double> logisticParameters = computeLogisticParameters(meanPosOutput, meanNegOutput);
 		logisticA = logisticParameters.first;
 		logisticB = logisticParameters.second;
 	}

@@ -11,15 +11,18 @@
 #include "imageprocessing/FeatureExtractor.hpp"
 #include "classification/ProbabilisticClassifier.hpp"
 
-using std::make_shared;
+using imageprocessing::Patch;
+using imageprocessing::VersionedImage;
+using imageprocessing::FeatureExtractor;
+using classification::ProbabilisticClassifier;
+using std::pair;
+using std::shared_ptr;
 
 namespace condensation {
 
 SingleClassifierModel::SingleClassifierModel(shared_ptr<FeatureExtractor> featureExtractor,
 		shared_ptr<ProbabilisticClassifier> classifier) :
 				featureExtractor(featureExtractor), classifier(classifier), cache() {}
-
-SingleClassifierModel::~SingleClassifierModel() {}
 
 void SingleClassifierModel::update(shared_ptr<VersionedImage> image) {
 	cache.clear();

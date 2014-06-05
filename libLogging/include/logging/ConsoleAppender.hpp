@@ -30,8 +30,6 @@ public:
 	 */
 	ConsoleAppender(LogLevel logLevel);
 
-	~ConsoleAppender();
-
 	/**
 	 * Logs a message to the text console.
 	 *
@@ -39,7 +37,7 @@ public:
 	 * @param[in] loggerName The name of the logger that is logging the message.
 	 * @param[in] logMessage The log-message itself.
 	 */
-	void log(const LogLevel logLevel, const string loggerName, const string logMessage);
+	void log(const LogLevel logLevel, const std::string loggerName, const std::string logMessage);
 
 private:
 
@@ -48,7 +46,7 @@ private:
 	 *
 	 * @return The formatted time.
 	 */
-	string getCurrentTime();
+	std::string getCurrentTime();
 
 };
 

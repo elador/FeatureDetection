@@ -14,10 +14,6 @@
 #include <string>
 #include <vector>
 
-using cv::Mat;
-using std::string;
-using std::vector;
-
 namespace classification {
 
 /**
@@ -31,11 +27,11 @@ public:
 	 *
 	 * @param[in] kernel The kernel function.
 	 */
-	explicit SvmClassifier(shared_ptr<Kernel> kernel);
+	explicit SvmClassifier(std::shared_ptr<Kernel> kernel);
 
-	bool classify(const Mat& featureVector) const;
+	bool classify(const cv::Mat& featureVector) const;
 
-	pair<bool, double> getConfidence(const Mat& featureVector) const;
+	std::pair<bool, double> getConfidence(const cv::Mat& featureVector) const;
 
 	/**
 	 * Determines the classification result given the distance of a feature vector to the decision hyperplane.
@@ -51,7 +47,7 @@ public:
 	 * @param[in] hyperplaneDistance The distance of a feature vector to the decision hyperplane.
 	 * @return A pair containing the binary classification result and the confidence of the classification.
 	 */
-	pair<bool, double> getConfidence(double hyperplaneDistance) const;
+	std::pair<bool, double> getConfidence(double hyperplaneDistance) const;
 
 	/**
 	 * Computes the distance of a feature vector to the decision hyperplane. This is the real distance without
@@ -60,7 +56,7 @@ public:
 	 * @param[in] featureVector The feature vector.
 	 * @return The distance of the feature vector to the decision hyperplane.
 	 */
-	double computeHyperplaneDistance(const Mat& featureVector) const;
+	double computeHyperplaneDistance(const cv::Mat& featureVector) const;
 
 	/**
 	 * Changes the parameters of this SVM.
@@ -69,7 +65,7 @@ public:
 	 * @param[in] coefficients The coefficients of the support vectors.
 	 * @param[in] bias The bias.
 	 */
-	void setSvmParameters(vector<Mat> supportVectors, vector<float> coefficients, double bias);
+	void setSvmParameters(std::vector<cv::Mat> supportVectors, std::vector<float> coefficients, double bias);
 
 	/**
 	 * Creates a new SVM classifier from the parameters given in some Matlab file.
@@ -77,7 +73,7 @@ public:
 	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
 	 * @return The newly created SVM classifier.
 	 */
-	static shared_ptr<SvmClassifier> loadFromMatlab(const string& classifierFilename);
+	static std::shared_ptr<SvmClassifier> loadFromMatlab(const std::string& classifierFilename);
 
 	/**
 	 * Creates a new SVM classifier from the parameters given in some text file.
@@ -85,26 +81,26 @@ public:
 	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
 	 * @return The newly created SVM classifier.
 	 */
-	static shared_ptr<SvmClassifier> loadFromText(const string& classifierFilename);
+	static std::shared_ptr<SvmClassifier> loadFromText(const std::string& classifierFilename);
 
 	/**
 	 * @return The support vectors.
 	 */
-	const vector<Mat>& getSupportVectors() const {
+	const std::vector<cv::Mat>& getSupportVectors() const {
 		return supportVectors;
 	}
 
 	/**
 	 * @return The coefficients of the support vectors.
 	 */
-	const vector<float>& getCoefficients() const {
+	const std::vector<float>& getCoefficients() const {
 		return coefficients;
 	}
 
 private:
 
-	vector<Mat> supportVectors; ///< The support vectors.
-	vector<float> coefficients; ///< The coefficients of the support vectors.
+	std::vector<cv::Mat> supportVectors; ///< The support vectors.
+	std::vector<float> coefficients; ///< The coefficients of the support vectors.
 };
 
 } /* namespace classification */

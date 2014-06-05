@@ -14,7 +14,13 @@
 #include "classification/TrainableProbabilisticClassifier.hpp"
 
 using imageprocessing::Patch;
+using imageprocessing::VersionedImage;
 using imageprocessing::FeatureExtractor;
+using classification::TrainableProbabilisticClassifier;
+using cv::Mat;
+using std::vector;
+using std::function;
+using std::shared_ptr;
 using std::make_shared;
 
 namespace condensation {
@@ -58,8 +64,6 @@ PositionDependentMeasurementModel::PositionDependentMeasurementModel(shared_ptr<
 				sampleAdditionalNegatives(10),
 				sampleTestNegatives(10),
 				exploitSymmetry(false) {}
-
-PositionDependentMeasurementModel::~PositionDependentMeasurementModel() {}
 
 void PositionDependentMeasurementModel::update(shared_ptr<VersionedImage> image) {
 	measurementModel->update(image);

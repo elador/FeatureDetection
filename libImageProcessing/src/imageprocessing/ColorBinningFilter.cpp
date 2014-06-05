@@ -8,6 +8,7 @@
 #include "imageprocessing/ColorBinningFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using cv::Vec3b;
 using cv::Vec4b;
 using std::invalid_argument;
@@ -25,8 +26,6 @@ ColorBinningFilter::ColorBinningFilter(unsigned int bins) : bins(bins) {
 		color2bin[hue] = binData;
 	}
 }
-
-ColorBinningFilter::~ColorBinningFilter() {}
 
 unsigned int ColorBinningFilter::getBinCount() const {
 	return bins;

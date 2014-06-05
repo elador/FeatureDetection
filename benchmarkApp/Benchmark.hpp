@@ -21,6 +21,7 @@ using imageprocessing::FeatureExtractor;
 using classification::TrainableProbabilisticClassifier;
 //using classification::TrainableOneClassSvmClassifier;
 using cv::Rect_;
+using std::vector;
 using std::shared_ptr;
 using std::ostream;
 

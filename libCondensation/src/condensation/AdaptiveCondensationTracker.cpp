@@ -15,6 +15,12 @@
 #include "imageprocessing/VersionedImage.hpp"
 #include <stdexcept>
 
+using imageprocessing::VersionedImage;
+using cv::Mat;
+using cv::Rect;
+using boost::optional;
+using std::vector;
+using std::shared_ptr;
 using std::make_shared;
 using std::runtime_error;
 
@@ -36,8 +42,6 @@ AdaptiveCondensationTracker::AdaptiveCondensationTracker(shared_ptr<Sampler> sam
 	if (validator)
 		addValidator(validator);
 }
-
-AdaptiveCondensationTracker::~AdaptiveCondensationTracker() {}
 
 void AdaptiveCondensationTracker::reset() {
 	measurementModel->reset();

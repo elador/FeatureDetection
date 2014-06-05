@@ -17,7 +17,9 @@
 using logging::Logger;
 using logging::LoggerFactory;
 using boost::filesystem::path;
-// Todo: vector shouldn't be in namespace. Maybe from logger? Clean-up.
+using std::string;
+using std::vector;
+using std::shared_ptr;
 
 namespace imageio {
 

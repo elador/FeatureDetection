@@ -14,8 +14,6 @@
 #include "boost/random/uniform_real.hpp"
 #include <memory>
 
-using std::shared_ptr;
-
 namespace condensation {
 
 class ResamplingAlgorithm;
@@ -38,15 +36,13 @@ public:
 	 * @param[in] minSize The minimum size of a sample.
 	 * @param[in] maxSize The maximum size of a sample.
 	 */
-	ResamplingSampler(unsigned int count, double randomRate, shared_ptr<ResamplingAlgorithm> resamplingAlgorithm,
-			shared_ptr<TransitionModel> transitionModel, int minSize, int maxSize);
+	ResamplingSampler(unsigned int count, double randomRate, std::shared_ptr<ResamplingAlgorithm> resamplingAlgorithm,
+			std::shared_ptr<TransitionModel> transitionModel, int minSize, int maxSize);
 
-	~ResamplingSampler();
+	void init(const cv::Mat& image);
 
-	void init(const Mat& image);
-
-	void sample(const vector<shared_ptr<Sample>>& samples, vector<shared_ptr<Sample>>& newSamples,
-			const Mat& image, const shared_ptr<Sample> target);
+	void sample(const std::vector<std::shared_ptr<Sample>>& samples, std::vector<std::shared_ptr<Sample>>& newSamples,
+			const cv::Mat& image, const std::shared_ptr<Sample> target);
 
 	/**
 	 * @return The number of samples.
@@ -84,12 +80,12 @@ private:
 	 * @param[in,out] sample The sample.
 	 * @param[in] image The image.
 	 */
-	void sampleValues(Sample& sample, const Mat& image);
+	void sampleValues(Sample& sample, const cv::Mat& image);
 
 	unsigned int count; ///< The number of samples.
 	double randomRate;  ///< The percentage of samples that should be equally distributed.
-	shared_ptr<ResamplingAlgorithm> resamplingAlgorithm; ///< The resampling algorithm.
-	shared_ptr<TransitionModel> transitionModel;         ///< The transition model.
+	std::shared_ptr<ResamplingAlgorithm> resamplingAlgorithm; ///< The resampling algorithm.
+	std::shared_ptr<TransitionModel> transitionModel;         ///< The transition model.
 
 	int minSize; ///< The minimum size of a sample.
 	int maxSize; ///< The maximum size of a sample.

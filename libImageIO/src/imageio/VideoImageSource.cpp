@@ -6,13 +6,11 @@
  */
 
 #include "imageio/VideoImageSource.hpp"
-#include "boost/lexical_cast.hpp"
 #include <iostream>
 #include <string>
 #include <stdexcept>
 
 using cv::Mat;
-using boost::lexical_cast;
 using boost::filesystem::path;
 using std::vector;
 using std::string;
@@ -52,13 +50,13 @@ const Mat VideoImageSource::getImage() const
 
 path VideoImageSource::getName() const
 {
-	return path(lexical_cast<string>(frameCounter));
+	return path(std::to_string(frameCounter));
 }
 
 vector<path> VideoImageSource::getNames() const
 {
 	vector<path> tmp;
-	tmp.push_back(path(lexical_cast<string>(frameCounter)));
+	tmp.push_back(path(std::to_string(frameCounter)));
 	return tmp;
 }
 

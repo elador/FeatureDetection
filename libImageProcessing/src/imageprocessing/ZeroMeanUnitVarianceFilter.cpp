@@ -8,6 +8,7 @@
 #include "imageprocessing/ZeroMeanUnitVarianceFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using cv::Scalar;
 using cv::meanStdDev;
 using std::invalid_argument;
@@ -15,8 +16,6 @@ using std::invalid_argument;
 namespace imageprocessing {
 
 ZeroMeanUnitVarianceFilter::ZeroMeanUnitVarianceFilter() {}
-
-ZeroMeanUnitVarianceFilter::~ZeroMeanUnitVarianceFilter() {}
 
 Mat ZeroMeanUnitVarianceFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.channels() > 1)

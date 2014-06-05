@@ -7,11 +7,11 @@
 
 #include "imageprocessing/ReshapingFilter.hpp"
 
+using cv::Mat;
+
 namespace imageprocessing {
 
 ReshapingFilter::ReshapingFilter(int rows, int channels) : rows(rows), channels(channels) {}
-
-ReshapingFilter::~ReshapingFilter() {}
 
 Mat ReshapingFilter::applyTo(const Mat& image, Mat& filtered) const {
 	image.copyTo(filtered);

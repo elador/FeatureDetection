@@ -15,9 +15,6 @@
 #include <memory>
 #include <string>
 
-using std::shared_ptr;
-using std::string;
-
 namespace classification {
 
 /**
@@ -32,7 +29,7 @@ public:
 	 *
 	 * @param[in] kernel The kernel function.
 	 */
-	explicit VectorMachineClassifier(shared_ptr<Kernel> kernel);
+	explicit VectorMachineClassifier(std::shared_ptr<Kernel> kernel);
 
 	virtual ~VectorMachineClassifier();
 
@@ -53,14 +50,14 @@ public:
 	/**
 	 * @return The kernel function.
 	 */
-	shared_ptr<Kernel> getKernel() {
+	std::shared_ptr<Kernel> getKernel() {
 		return kernel;
 	}
 
 	/**
 	 * @return The kernel function.
 	 */
-	const shared_ptr<Kernel> getKernel() const {
+	const std::shared_ptr<Kernel> getKernel() const {
 		return kernel;
 	}
 
@@ -73,7 +70,7 @@ public:
 
 protected:
 
-	shared_ptr<Kernel> kernel; ///< The kernel function.
+	std::shared_ptr<Kernel> kernel; ///< The kernel function.
 	float bias;      ///< The bias that is subtracted from the sum over all scaled kernel values.
 	float threshold; ///< The threshold to compare the hyperplane distance against for determining the label.
 					 // Larger => weniger patches drueber(mehr rejected, langsamer), dh. mehr fn(FRR), weniger fp(FAR)

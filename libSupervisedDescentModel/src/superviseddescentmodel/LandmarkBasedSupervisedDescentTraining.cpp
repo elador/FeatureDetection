@@ -27,6 +27,7 @@ using cv::Mat;
 using cv::Rect;
 using cv::Scalar;
 using std::string;
+using std::shared_ptr;
 
 namespace superviseddescentmodel {
 

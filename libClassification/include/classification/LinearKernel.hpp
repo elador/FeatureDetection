@@ -11,8 +11,6 @@
 #include "classification/Kernel.hpp"
 #include "classification/KernelVisitor.hpp"
 
-using cv::Mat;
-
 namespace classification {
 
 /**
@@ -26,9 +24,7 @@ public:
 	 */
 	explicit LinearKernel() {}
 
-	~LinearKernel() {}
-
-	double compute(const Mat& lhs, const Mat& rhs) const {
+	double compute(const cv::Mat& lhs, const cv::Mat& rhs) const {
 		return lhs.dot(rhs);
 	}
 

@@ -14,9 +14,6 @@
 #include "classification/KernelVisitor.hpp"
 #include <stdexcept>
 
-using cv::Mat;
-using std::invalid_argument;
-
 namespace classification {
 
 /**
@@ -35,9 +32,7 @@ public:
 	explicit PolynomialKernel(double alpha, double constant = 0, int degree = 2) :
 			alpha(alpha), constant(constant), degree(degree) {}
 
-	~PolynomialKernel() {}
-
-	double compute(const Mat& lhs, const Mat& rhs) const {
+	double compute(const cv::Mat& lhs, const cv::Mat& rhs) const {
 		return powi(alpha * lhs.dot(rhs) + constant, degree);
 	}
 

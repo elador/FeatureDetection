@@ -11,8 +11,6 @@
 #include "imageprocessing/PyramidFeatureExtractor.hpp"
 #include <unordered_map>
 
-using std::unordered_map;
-
 namespace imageprocessing {
 
 /**
@@ -94,7 +92,7 @@ private:
 		/**
 		 * @return The cache.
 		 */
-		unordered_map<CacheKey, shared_ptr<Patch>, CacheKey::hash>& getCache() {
+		std::unordered_map<CacheKey, std::shared_ptr<Patch>, CacheKey::hash>& getCache() {
 			return cache;
 		}
 
@@ -102,7 +100,7 @@ private:
 
 		int index;          ///< The index of this layer (0 is the original sized layer).
 		double scaleFactor; ///< The scale factor of this layer compared to the original image.
-		unordered_map<CacheKey, shared_ptr<Patch>, CacheKey::hash> cache; ///< The cache.
+		std::unordered_map<CacheKey, std::shared_ptr<Patch>, CacheKey::hash> cache; ///< The cache.
 	};
 
 public:
@@ -116,20 +114,18 @@ public:
 	 */
 	enum class Strategy { SHARING, COPYING, INPUT_COPYING, OUTPUT_COPYING };
 
-	explicit CachingPyramidFeatureExtractor(shared_ptr<PyramidFeatureExtractor> extractor, Strategy strategy = Strategy::COPYING);
+	explicit CachingPyramidFeatureExtractor(std::shared_ptr<PyramidFeatureExtractor> extractor, Strategy strategy = Strategy::COPYING);
 
-	~CachingPyramidFeatureExtractor();
+	void update(const cv::Mat& image);
 
-	void update(const Mat& image);
+	void update(std::shared_ptr<VersionedImage> image);
 
-	void update(shared_ptr<VersionedImage> image);
+	std::shared_ptr<Patch> extract(int x, int y, int width, int height) const;
 
-	shared_ptr<Patch> extract(int x, int y, int width, int height) const;
-
-	vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(),
+	std::vector<std::shared_ptr<Patch>> extract(int stepX, int stepY, cv::Rect roi = cv::Rect(),
 			int firstLayer = -1, int lastLayer = -1, int stepLayer = 1) const;
 
-	shared_ptr<Patch> extract(int layer, int x, int y) const;
+	std::shared_ptr<Patch> extract(int layer, int x, int y) const;
 
 	int getLayerIndex(int width, int height) const {
 		return extractor->getLayerIndex(width, height);
@@ -147,23 +143,23 @@ public:
 		return extractor->getIncrementalScaleFactor();
 	}
 
-	Size getPatchSize() const {
+	cv::Size getPatchSize() const {
 		return extractor->getPatchSize();
 	}
 
-	Size getImageSize() const {
+	cv::Size getImageSize() const {
 		return extractor->getImageSize();
 	}
 
-	vector<pair<int, double>> getLayerScales() const {
+	std::vector<std::pair<int, double>> getLayerScales() const {
 		return extractor->getLayerScales();
 	}
 
-	vector<Size> getLayerSizes() const {
+	std::vector<cv::Size> getLayerSizes() const {
 		return extractor->getLayerSizes();
 	}
 
-	vector<Size> getPatchSizes() const {
+	std::vector<cv::Size> getPatchSizes() const {
 		return extractor->getPatchSizes();
 	}
 
@@ -174,17 +170,17 @@ private:
 	 */
 	void buildCache();
 
-	shared_ptr<Patch> extractSharing(CacheLayer& layer, int x, int y) const;
+	std::shared_ptr<Patch> extractSharing(CacheLayer& layer, int x, int y) const;
 
-	shared_ptr<Patch> extractCopying(CacheLayer& layer, int x, int y) const;
+	std::shared_ptr<Patch> extractCopying(CacheLayer& layer, int x, int y) const;
 
-	shared_ptr<Patch> extractInputCopying(CacheLayer& layer, int x, int y) const;
+	std::shared_ptr<Patch> extractInputCopying(CacheLayer& layer, int x, int y) const;
 
-	shared_ptr<Patch> extractOutputCopying(CacheLayer& layer, int x, int y) const;
+	std::shared_ptr<Patch> extractOutputCopying(CacheLayer& layer, int x, int y) const;
 
-	shared_ptr<PyramidFeatureExtractor> extractor; ///< The underlying feature extractor.
-	mutable vector<CacheLayer> cache; ///< The current cache of stored patches.
-	mutable int firstCacheIndex;      ///< The index of the first stored cache layer.
+	std::shared_ptr<PyramidFeatureExtractor> extractor; ///< The underlying feature extractor.
+	mutable std::vector<CacheLayer> cache; ///< The current cache of stored patches.
+	mutable int firstCacheIndex;           ///< The index of the first stored cache layer.
 	Strategy strategy; ///< The caching strategy (copies of patches will be stored vs. patches will be shared).
 	int version; ///< The version number.
 };

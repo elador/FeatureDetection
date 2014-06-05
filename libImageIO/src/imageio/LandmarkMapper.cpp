@@ -19,6 +19,7 @@ using boost::property_tree::ptree;
 using boost::lexical_cast;
 using std::string;
 using std::shared_ptr;
+using std::make_shared;
 
 namespace imageio {
 

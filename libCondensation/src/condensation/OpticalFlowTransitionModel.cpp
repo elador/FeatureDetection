@@ -11,9 +11,16 @@
 #include <ctime>
 #include <cmath>
 
+using cv::Mat;
+using cv::Size;
+using cv::Scalar;
+using cv::Point2f;
 using cv::BORDER_REPLICATE;
-using std::make_pair;
 using std::sort;
+using std::pair;
+using std::vector;
+using std::make_pair;
+using std::shared_ptr;
 
 namespace condensation {
 
@@ -67,8 +74,6 @@ OpticalFlowTransitionModel::OpticalFlowTransitionModel(shared_ptr<TransitionMode
 		gridPoint.y += gridY;
 	}
 }
-
-OpticalFlowTransitionModel::~OpticalFlowTransitionModel() {}
 
 const Mat OpticalFlowTransitionModel::makeGrayscale(const Mat& image) const {
 	if (image.channels() == 1)

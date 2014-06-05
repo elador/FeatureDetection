@@ -8,6 +8,7 @@
 #include "imageprocessing/UnitNormFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using std::invalid_argument;
 
 namespace imageprocessing {
@@ -15,8 +16,6 @@ namespace imageprocessing {
 const float UnitNormFilter::eps = 1e-4;
 
 UnitNormFilter::UnitNormFilter(int normType) : normType(normType) {}
-
-UnitNormFilter::~UnitNormFilter() {}
 
 Mat UnitNormFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.channels() > 1)

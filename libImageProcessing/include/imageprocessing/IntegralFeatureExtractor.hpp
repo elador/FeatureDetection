@@ -25,22 +25,20 @@ public:
 	 *
 	 * @param[in] extractor The underlying feature extractor.
 	 */
-	explicit IntegralFeatureExtractor(shared_ptr<FeatureExtractor> extractor) : extractor(extractor) {}
+	explicit IntegralFeatureExtractor(std::shared_ptr<FeatureExtractor> extractor) : extractor(extractor) {}
 
-	~IntegralFeatureExtractor() {}
-
-	void update(const Mat& image) {
+	void update(const cv::Mat& image) {
 		extractor->update(image);
 	}
 
-	void update(shared_ptr<VersionedImage> image) {
+	void update(std::shared_ptr<VersionedImage> image) {
 		extractor->update(image);
 	}
 
-	shared_ptr<Patch> extract(int x, int y, int width, int height) const {
+	std::shared_ptr<Patch> extract(int x, int y, int width, int height) const {
 		int offsetX = width % 2 == 0 ? 0 : 1;
 		int offsetY = height % 2 == 0 ? 0 : 1;
-		shared_ptr<Patch> patch = extractor->extract(x + offsetX, y + offsetY, width + 1, height + 1);
+		std::shared_ptr<Patch> patch = extractor->extract(x + offsetX, y + offsetY, width + 1, height + 1);
 		if (patch) {
 			patch->setX(patch->getX() - offsetX);
 			patch->setY(patch->getY() - offsetY);
@@ -52,7 +50,7 @@ public:
 
 private:
 
-	shared_ptr<FeatureExtractor> extractor; ///< The underlying feature extractor.
+	std::shared_ptr<FeatureExtractor> extractor; ///< The underlying feature extractor.
 };
 
 } /* namespace imageprocessing */

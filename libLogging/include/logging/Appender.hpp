@@ -12,8 +12,6 @@
 #include "logging/LogLevels.hpp"
 #include <string>
 
-using std::string;
-
 namespace logging {
 
 /**
@@ -43,7 +41,7 @@ public:
 	 * @param[in] loggerName The name of the logger that is logging the message.
 	 * @param[in] logMessage The message to be logged.
 	 */
-	virtual void log(const LogLevel logLevel, const string loggerName, const string logMessage) = 0;	// const?
+	virtual void log(const LogLevel logLevel, const std::string loggerName, const std::string logMessage) = 0;	// const?
 
 	/**
 	 * Tests if this appender is actually doing logging at the given log-level.

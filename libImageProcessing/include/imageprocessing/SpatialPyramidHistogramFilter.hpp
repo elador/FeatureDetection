@@ -35,11 +35,9 @@ public:
 	 */
 	SpatialPyramidHistogramFilter(int binCount, int levelCount, bool interpolate = false, Normalization normalization = Normalization::NONE);
 
-	~SpatialPyramidHistogramFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
 protected:
 
@@ -56,7 +54,7 @@ private:
 	 * @param[in] binCount Bin count of the histogram.
 	 * @param[in] interpolate Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
 	 */
-	void createCellHistograms(const Mat& image, float* histogramsValues, int level, int binCount, bool interpolate) const;
+	void createCellHistograms(const cv::Mat& image, float* histogramsValues, int level, int binCount, bool interpolate) const;
 
 	/**
 	 * Creates the histograms of a pyramid level by combining a block of 2x2 histograms of the previous level to one histogram.

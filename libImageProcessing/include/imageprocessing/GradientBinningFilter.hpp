@@ -11,10 +11,6 @@
 #include "imageprocessing/BinningFilter.hpp"
 #include <array>
 
-using cv::Vec2b;
-using cv::Vec4b;
-using std::array;
-
 namespace imageprocessing {
 
 /**
@@ -43,7 +39,7 @@ public:
 
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
 	unsigned int getBinCount() const;
 
@@ -51,8 +47,8 @@ private:
 
 	unsigned int bins;                   ///< The amount of bins.
 	bool interpolate;                    ///< Flag that indicates whether the bin weight should be divided between the closest bins.
-	array<Vec2b, 256 * 256> oneBinCodes; ///< The look-up table of bin codes (no interpolation), the gradient codes are used as the index.
-	array<Vec4b, 256 * 256> twoBinCodes; ///< The look-up table of bin codes (with interpolation), the gradient codes are used as the index.
+	std::array<cv::Vec2b, 256 * 256> oneBinCodes; ///< The look-up table of bin codes (no interpolation), the gradient codes are used as the index.
+	std::array<cv::Vec4b, 256 * 256> twoBinCodes; ///< The look-up table of bin codes (with interpolation), the gradient codes are used as the index.
 	int resultType;                      ///< The type of the filtered images.
 };
 

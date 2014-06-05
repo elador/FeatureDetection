@@ -10,16 +10,21 @@
 #include "imageprocessing/Patch.hpp"
 #include <stdexcept>
 
+using cv::Mat;
+using cv::Size;
+using cv::Rect;
 using cv::Point;
+using std::pair;
+using std::vector;
+using std::shared_ptr;
 using std::make_shared;
+using std::unordered_map;
 using std::invalid_argument;
 
 namespace imageprocessing {
 
 CachingPyramidFeatureExtractor::CachingPyramidFeatureExtractor(shared_ptr<PyramidFeatureExtractor> extractor, Strategy strategy) :
 		extractor(extractor), cache(), firstCacheIndex(0), strategy(strategy), version(-1) {}
-
-CachingPyramidFeatureExtractor::~CachingPyramidFeatureExtractor() {}
 
 void CachingPyramidFeatureExtractor::buildCache() {
 	cache.clear();

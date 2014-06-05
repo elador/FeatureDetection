@@ -7,6 +7,10 @@
 
 #include "classification/ProbabilisticTwoStageClassifier.hpp"
 
+using cv::Mat;
+using std::pair;
+using std::shared_ptr;
+
 namespace classification {
 
 ProbabilisticTwoStageClassifier::ProbabilisticTwoStageClassifier(

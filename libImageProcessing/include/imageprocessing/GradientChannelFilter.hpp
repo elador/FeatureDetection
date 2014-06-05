@@ -11,8 +11,6 @@
 #include "imageprocessing/ImageFilter.hpp"
 #include <array>
 
-using std::array;
-
 namespace imageprocessing {
 
 /**
@@ -34,11 +32,9 @@ public:
 	 */
 	GradientChannelFilter(unsigned int bins, bool magnitude, bool signedGradients = false);
 
-	~GradientChannelFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
 private:
 
@@ -52,7 +48,7 @@ private:
 
 	unsigned int bins; ///< The amount of bins.
 	bool magnitude;    ///< Flag that indicates whether the result should have an additional magnitude channel.
-	array<BinData, 256 * 256> gradient2bin; ///< The look-up table of bin data given a gradient code.
+	std::array<BinData, 256 * 256> gradient2bin; ///< The look-up table of bin data given a gradient code.
 };
 
 } /* namespace imageprocessing */

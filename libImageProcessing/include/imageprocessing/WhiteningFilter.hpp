@@ -30,13 +30,11 @@ public:
 	 */
 	WhiteningFilter(float alpha = 1, float cutoffFrequency = 0.390625);
 
-	~WhiteningFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
-	void applyInPlace(Mat& image) const;
+	void applyInPlace(cv::Mat& image) const;
 
 private:
 
@@ -47,13 +45,13 @@ private:
 	 * @param[in] height The height of the image (and filter).
 	 * @return The filter of the given size.
 	 */
-	const Mat& getFilter(int width, int height) const;
+	const cv::Mat& getFilter(int width, int height) const;
 
 	float alpha;           ///< Decay of modulus of spectrum is assumed as 1/frequency^alpha.
 	float cutoffFrequency; ///< The cut-off frequency of the additional low-pass filter (only applied when greater than zero).
-	mutable Mat filter;       ///< The current filter.
-	mutable Mat floatImage;   ///< Temporal buffer for the float conversion of the image.
-	mutable Mat fourierImage; ///< Temporal buffer for the Fourier transformation of the image.
+	mutable cv::Mat filter;       ///< The current filter.
+	mutable cv::Mat floatImage;   ///< Temporal buffer for the float conversion of the image.
+	mutable cv::Mat fourierImage; ///< Temporal buffer for the Fourier transformation of the image.
 };
 
 } /* namespace imageprocessing */

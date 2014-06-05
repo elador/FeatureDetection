@@ -8,8 +8,10 @@
 #include "imageprocessing/HistogramFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using cv::Vec2b;
 using cv::Vec4b;
+using std::vector;
 using std::runtime_error;
 
 namespace imageprocessing {
@@ -17,8 +19,6 @@ namespace imageprocessing {
 const float HistogramFilter::eps = 1e-4;
 
 HistogramFilter::HistogramFilter(Normalization normalization) : normalization(normalization),	rowCache(), colCache() {}
-
-HistogramFilter::~HistogramFilter() {}
 
 void HistogramFilter::createCellHistograms(const Mat& image, Mat& histograms, int binCount, int rowCount, int columnCount, bool interpolate) const {
 	if (image.channels() != 1 && image.channels() != 2 && image.channels() != 4)

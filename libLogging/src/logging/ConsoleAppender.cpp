@@ -14,6 +14,7 @@
 #include <cstdint>
 
 using std::cout;
+using std::string;
 using std::ostringstream;
 using std::chrono::system_clock;
 using std::chrono::duration;
@@ -22,8 +23,6 @@ using std::chrono::duration_cast;
 namespace logging {
 
 ConsoleAppender::ConsoleAppender(LogLevel logLevel) : Appender(logLevel) {}
-
-ConsoleAppender::~ConsoleAppender() {}
 
 void ConsoleAppender::log(const LogLevel logLevel, const string loggerName, const string logMessage)
 {

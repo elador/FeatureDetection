@@ -11,10 +11,6 @@
 #include "imageprocessing/PyramidFeatureExtractor.hpp"
 #include "imageprocessing/ChainedFilter.hpp"
 #include "imageprocessing/Patch.hpp"
-#include "boost/iterator/indirect_iterator.hpp"
-
-using boost::indirect_iterator;
-using std::make_shared;
 
 namespace imageprocessing {
 
@@ -29,45 +25,43 @@ public:
 	 *
 	 * @param[in] extractor The underlying pyramid feature extractor.
 	 */
-	FilteringPyramidFeatureExtractor(shared_ptr<PyramidFeatureExtractor> extractor) :
-		extractor(extractor), patchFilter(make_shared<ChainedFilter>()) {}
-
-	~FilteringPyramidFeatureExtractor() {}
+	FilteringPyramidFeatureExtractor(std::shared_ptr<PyramidFeatureExtractor> extractor) :
+		extractor(extractor), patchFilter(std::make_shared<ChainedFilter>()) {}
 
 	/**
 	 * Adds a new filter that is applied to the patches.
 	 *
 	 * @param[in] filter The new patch filter.
 	 */
-	void addPatchFilter(shared_ptr<ImageFilter> filter) {
+	void addPatchFilter(std::shared_ptr<ImageFilter> filter) {
 		patchFilter->add(filter);
 	}
 
-	void update(const Mat& image) {
+	void update(const cv::Mat& image) {
 		extractor->update(image);
 	}
 
-	void update(shared_ptr<VersionedImage> image) {
+	void update(std::shared_ptr<VersionedImage> image) {
 		extractor->update(image);
 	}
 
-	shared_ptr<Patch> extract(int x, int y, int width, int height) const {
-		shared_ptr<Patch> patch = extractor->extract(x, y, width, height);
+	std::shared_ptr<Patch> extract(int x, int y, int width, int height) const {
+		std::shared_ptr<Patch> patch = extractor->extract(x, y, width, height);
 		if (patch)
 			patchFilter->applyInPlace(patch->getData());
 		return patch;
 	}
 
-	vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(),
+	std::vector<std::shared_ptr<Patch>> extract(int stepX, int stepY, cv::Rect roi = cv::Rect(),
 			int firstLayer = -1, int lastLayer = -1, int stepLayer = 1) const {
-		vector<shared_ptr<Patch>> patches = extractor->extract(stepX, stepY, roi, firstLayer, lastLayer, stepLayer);
-		for (shared_ptr<Patch>& patch : patches)
+		std::vector<std::shared_ptr<Patch>> patches = extractor->extract(stepX, stepY, roi, firstLayer, lastLayer, stepLayer);
+		for (std::shared_ptr<Patch>& patch : patches)
 			patchFilter->applyInPlace(patch->getData());
 		return patches;
 	}
 
-	shared_ptr<Patch> extract(int layer, int x, int y) const {
-		shared_ptr<Patch> patch = extractor->extract(layer, x, y);
+	std::shared_ptr<Patch> extract(int layer, int x, int y) const {
+		std::shared_ptr<Patch> patch = extractor->extract(layer, x, y);
 		if (patch)
 			patchFilter->applyInPlace(patch->getData());
 		return patch;
@@ -89,30 +83,30 @@ public:
 		return extractor->getIncrementalScaleFactor();
 	}
 
-	Size getPatchSize() const {
+	cv::Size getPatchSize() const {
 		return extractor->getPatchSize();
 	}
 
-	Size getImageSize() const {
+	cv::Size getImageSize() const {
 		return extractor->getImageSize();
 	}
 
-	vector<pair<int, double>> getLayerScales() const {
+	std::vector<std::pair<int, double>> getLayerScales() const {
 		return extractor->getLayerScales();
 	}
 
-	vector<Size> getLayerSizes() const {
+	std::vector<cv::Size> getLayerSizes() const {
 		return extractor->getLayerSizes();
 	}
 
-	vector<Size> getPatchSizes() const {
+	std::vector<cv::Size> getPatchSizes() const {
 		return extractor->getPatchSizes();
 	}
 
 private:
 
-	shared_ptr<PyramidFeatureExtractor> extractor; ///< The underlying feature extractor.
-	shared_ptr<ChainedFilter> patchFilter;         ///< Filter that is applied to the patches.
+	std::shared_ptr<PyramidFeatureExtractor> extractor; ///< The underlying feature extractor.
+	std::shared_ptr<ChainedFilter> patchFilter;         ///< Filter that is applied to the patches.
 };
 
 } /* namespace imageprocessing */

@@ -36,11 +36,9 @@ public:
 	 */
 	explicit GradientSumFilter(int count);
 
-	~GradientSumFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
 private:
 

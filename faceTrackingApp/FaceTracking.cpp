@@ -51,6 +51,7 @@ using namespace logging;
 using namespace imageprocessing;
 using namespace classification;
 using namespace std::chrono;
+using cv::Rect;
 using std::milli;
 using std::move;
 using std::ostringstream;

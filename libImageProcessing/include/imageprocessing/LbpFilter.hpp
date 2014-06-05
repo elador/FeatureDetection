@@ -13,13 +13,6 @@
 #include <array>
 #include <stdexcept>
 
-using cv::Ptr;
-using cv::Size;
-using cv::Point;
-using cv::BaseFilter;
-using std::array;
-using std::invalid_argument;
-
 namespace imageprocessing {
 
 /**
@@ -48,13 +41,11 @@ public:
 	 */
 	explicit LbpFilter(Type type = Type::LBP8);
 
-	~LbpFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
-	void applyInPlace(Mat& image) const;
+	void applyInPlace(cv::Mat& image) const;
 
 	unsigned int getBinCount() const;
 
@@ -74,35 +65,33 @@ private:
 	 * @param[in] imageType The type of the image data.
 	 */
 	template <template <typename A> class T>
-	Ptr<BaseFilter> createBaseFilter(int imageType) const {
+	cv::Ptr<cv::BaseFilter> createBaseFilter(int imageType) const {
 		switch (imageType) {
-			case CV_8U:  return Ptr<BaseFilter>(new T<uchar>());
-			case CV_8S:  return Ptr<BaseFilter>(new T<char>());
-			case CV_16U: return Ptr<BaseFilter>(new T<ushort>());
-			case CV_16S: return Ptr<BaseFilter>(new T<short>());
-			case CV_32S: return Ptr<BaseFilter>(new T<int>());
-			case CV_32F: return Ptr<BaseFilter>(new T<float>());
-			case CV_64F: return Ptr<BaseFilter>(new T<double>());
-			default: throw invalid_argument("LbpFilter: unsupported image type " + imageType);
+			case CV_8U:  return cv::Ptr<cv::BaseFilter>(new T<uchar>());
+			case CV_8S:  return cv::Ptr<cv::BaseFilter>(new T<char>());
+			case CV_16U: return cv::Ptr<cv::BaseFilter>(new T<ushort>());
+			case CV_16S: return cv::Ptr<cv::BaseFilter>(new T<short>());
+			case CV_32S: return cv::Ptr<cv::BaseFilter>(new T<int>());
+			case CV_32F: return cv::Ptr<cv::BaseFilter>(new T<float>());
+			case CV_64F: return cv::Ptr<cv::BaseFilter>(new T<double>());
+			default: throw std::invalid_argument("LbpFilter: unsupported image type " + imageType);
 		}
 	}
 
-	Type type;             ///< The local binary pattern type.
-	array<uchar, 256> map; ///< Maps values from LBP code to bin indices, putting all the non-uniform patterns into one bin.
+	Type type; ///< The local binary pattern type.
+	std::array<uchar, 256> map; ///< Maps values from LBP code to bin indices, putting all the non-uniform patterns into one bin.
 
 	/**
 	 * The LBP-8 filter.
 	 */
 	template <typename T>
-	class Lbp8Filter : public BaseFilter {
+	class Lbp8Filter : public cv::BaseFilter {
 	public:
 
 		Lbp8Filter() {
-			anchor = Point(1, 1);
-			ksize = Size(3, 3);
+			anchor = cv::Point(1, 1);
+			ksize = cv::Size(3, 3);
 		}
-
-		~Lbp8Filter() {}
 
 		void operator()(const uchar** src, uchar* dst, int dststep, int height, int width, int cn) {
 			for (int y = 0; y < height; ++y, dst += dststep) {
@@ -130,15 +119,13 @@ private:
 	 * The LBP-4 filter.
 	 */
 	template <typename T>
-	class Lbp4Filter : public BaseFilter {
+	class Lbp4Filter : public cv::BaseFilter {
 	public:
 
 		Lbp4Filter() {
-			anchor = Point(1, 1);
-			ksize = Size(3, 3);
+			anchor = cv::Point(1, 1);
+			ksize = cv::Size(3, 3);
 		}
-
-		~Lbp4Filter() {}
 
 		void operator()(const uchar** src, uchar* dst, int dststep, int height, int width, int cn) {
 			for (int y = 0; y < height; ++y, dst += dststep) {
@@ -162,15 +149,13 @@ private:
 	 * The rotated LBP-4 filter.
 	 */
 	template <typename T>
-	class RotatedLbp4Filter : public BaseFilter {
+	class RotatedLbp4Filter : public cv::BaseFilter {
 	public:
 
 		RotatedLbp4Filter() {
-			anchor = Point(1, 1);
-			ksize = Size(3, 3);
+			anchor = cv::Point(1, 1);
+			ksize = cv::Size(3, 3);
 		}
-
-		~RotatedLbp4Filter() {}
 
 		void operator()(const uchar** src, uchar* dst, int dststep, int height, int width, int cn) {
 			for (int y = 0; y < height; ++y, dst += dststep) {

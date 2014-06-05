@@ -10,8 +10,6 @@
 
 #include "imageprocessing/ImageFilter.hpp"
 
-using cv::Vec;
-
 namespace imageprocessing {
 
 /**
@@ -23,11 +21,9 @@ public:
 
 	GradientMagnitudeFilter();
 
-	~GradientMagnitudeFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
 private:
 
@@ -41,9 +37,9 @@ private:
 	 * @param[in] delta The offset of the gradients (in case the image has an unsigned data type).
 	 */
 	template<class T>
-	void computeMagnitude(const Mat& image, Mat& filtered, int rows, int cols, double delta = 0) const {
+	void computeMagnitude(const cv::Mat& image, cv::Mat& filtered, int rows, int cols, double delta = 0) const {
 		for (int row = 0; row < rows; ++row) {
-			const Vec<T, 2> *gradientRow = image.ptr<Vec<T, 2>>(row);
+			const cv::Vec<T, 2> *gradientRow = image.ptr<cv::Vec<T, 2>>(row);
 			T *magnitudeRow = filtered.ptr<T>(row);
 			for (int col = 0; col < cols; ++col) {
 				double x = static_cast<double>(gradientRow[col][0]) - delta;

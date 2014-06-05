@@ -11,8 +11,6 @@
 #include "imageprocessing/FeatureExtractor.hpp"
 #include <unordered_map>
 
-using std::unordered_map;
-
 namespace imageprocessing {
 
 /**
@@ -36,8 +34,6 @@ private:
 		 * @param[in] height The height of the patch.
 		 */
 		CacheKey(int x, int y, int width, int height) : x(x), y(y), width(width), height(height) {}
-
-		~CacheKey() {}
 
 		bool operator==(const CacheKey& other) const {
 			return x == other.x && y == other.y && width == other.width && height == other.height;
@@ -81,28 +77,26 @@ public:
 	 * @param[in] extractor The underlying feature extractor.
 	 * @param[in] strategy The caching strategy (copies of patches will be stored vs. patches will be shared).
 	 */
-	explicit CachingFeatureExtractor(shared_ptr<FeatureExtractor> extractor, Strategy strategy = Strategy::COPYING);
+	explicit CachingFeatureExtractor(std::shared_ptr<FeatureExtractor> extractor, Strategy strategy = Strategy::COPYING);
 
-	~CachingFeatureExtractor();
+	void update(const cv::Mat& image);
 
-	void update(const Mat& image);
+	void update(std::shared_ptr<VersionedImage> image);
 
-	void update(shared_ptr<VersionedImage> image);
-
-	shared_ptr<Patch> extract(int x, int y, int width, int height) const;
+	std::shared_ptr<Patch> extract(int x, int y, int width, int height) const;
 
 private:
 
-	shared_ptr<Patch> extractSharing(int x, int y, int width, int height) const;
+	std::shared_ptr<Patch> extractSharing(int x, int y, int width, int height) const;
 
-	shared_ptr<Patch> extractCopying(int x, int y, int width, int height) const;
+	std::shared_ptr<Patch> extractCopying(int x, int y, int width, int height) const;
 
-	shared_ptr<Patch> extractInputCopying(int x, int y, int width, int height) const;
+	std::shared_ptr<Patch> extractInputCopying(int x, int y, int width, int height) const;
 
-	shared_ptr<Patch> extractOutputCopying(int x, int y, int width, int height) const;
+	std::shared_ptr<Patch> extractOutputCopying(int x, int y, int width, int height) const;
 
-	shared_ptr<FeatureExtractor> extractor; ///< The underlying feature extractor.
-	mutable unordered_map<CacheKey, shared_ptr<Patch>, KeyHash> cache; ///< The current cache of stored patches.
+	std::shared_ptr<FeatureExtractor> extractor; ///< The underlying feature extractor.
+	mutable std::unordered_map<CacheKey, std::shared_ptr<Patch>, KeyHash> cache; ///< The current cache of stored patches.
 	Strategy strategy; ///< The caching strategy (copies of patches will be stored vs. patches will be shared).
 	int version; ///< The version number.
 };

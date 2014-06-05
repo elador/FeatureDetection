@@ -6,18 +6,16 @@
  */
 
 #include "imageio/KinectImageSource.hpp"
-#include "boost/lexical_cast.hpp"
 #include <iostream>
 
 using cv::Mat;
-using boost::lexical_cast;
 using boost::filesystem::path;
 using std::string;
 using std::vector;
 
 namespace imageio {
 
-KinectImageSource::KinectImageSource(int device) : ImageSource(lexical_cast<string>(device)), frame() {
+KinectImageSource::KinectImageSource(int device) : ImageSource(std::to_string(device)), frame() {
 
 #ifdef WITH_MSKINECT_SDK
 	m_pColorStreamHandle = INVALID_HANDLE_VALUE;

@@ -12,9 +12,6 @@
 #include <vector>
 #include <memory>
 
-using std::vector;
-using std::shared_ptr;
-
 namespace imageprocessing {
 
 /**
@@ -34,7 +31,7 @@ public:
 	 *
 	 * @param[in] filters The filters in order of application.
 	 */
-	explicit ChainedFilter(vector<shared_ptr<ImageFilter>> filters);
+	explicit ChainedFilter(std::vector<std::shared_ptr<ImageFilter>> filters);
 
 	/**
 	 * Constructs a new chained image filter with two filters.
@@ -42,7 +39,7 @@ public:
 	 * @param[in] filter1 The first image filter.
 	 * @param[in] filter2 The second image filter.
 	 */
-	ChainedFilter(shared_ptr<ImageFilter> filter1, shared_ptr<ImageFilter> filter2);
+	ChainedFilter(std::shared_ptr<ImageFilter> filter1, std::shared_ptr<ImageFilter> filter2);
 
 	/**
 	 * Constructs a new chained image filter with three filters.
@@ -51,26 +48,24 @@ public:
 	 * @param[in] filter2 The second image filter.
 	 * @param[in] filter3 The third image filter.
 	 */
-	ChainedFilter(shared_ptr<ImageFilter> filter1, shared_ptr<ImageFilter> filter2, shared_ptr<ImageFilter> filter3);
-
-	~ChainedFilter();
+	ChainedFilter(std::shared_ptr<ImageFilter> filter1, std::shared_ptr<ImageFilter> filter2, std::shared_ptr<ImageFilter> filter3);
 
 	/**
 	 * Adds a new image filter that is applied after the currently existing filters.
 	 *
 	 * @param[in] filter The new image filter.
 	 */
-	void add(shared_ptr<ImageFilter> filter);
+	void add(std::shared_ptr<ImageFilter> filter);
 
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
-	void applyInPlace(Mat& image) const;
+	void applyInPlace(cv::Mat& image) const;
 
 private:
 
-	vector<shared_ptr<ImageFilter>> filters; ///< The filters in order of application.
+	std::vector<std::shared_ptr<ImageFilter>> filters; ///< The filters in order of application.
 };
 
 } /* namespace imageprocessing */

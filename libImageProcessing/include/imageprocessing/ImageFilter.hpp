@@ -10,8 +10,6 @@
 
 #include "opencv2/core/core.hpp"
 
-using cv::Mat;
-
 namespace imageprocessing {
 
 /**
@@ -33,8 +31,8 @@ public:
 	 * @param[in] image The image that should be filtered.
 	 * @return The filtered image.
 	 */
-	Mat applyTo(const Mat& image) const {
-		Mat filtered;
+	cv::Mat applyTo(const cv::Mat& image) const {
+		cv::Mat filtered;
 		applyTo(image, filtered);
 		return filtered;
 	}
@@ -46,14 +44,14 @@ public:
 	 * @param[out] filtered The image for writing the filtered data into.
 	 * @return The filtered image.
 	 */
-	virtual Mat applyTo(const Mat& image, Mat& filtered) const = 0;
+	virtual cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const = 0;
 
 	/**
 	 * Applies this filter to an image, writing the filtered data into the image itself.
 	 *
 	 * @param[in,out] image The image that should be filtered.
 	 */
-	virtual void applyInPlace(Mat& image) const {
+	virtual void applyInPlace(cv::Mat& image) const {
 		image = applyTo(image);
 	}
 };

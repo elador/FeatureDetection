@@ -8,6 +8,7 @@
 #include "imageprocessing/GradientChannelFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using std::invalid_argument;
 
 namespace imageprocessing {
@@ -53,8 +54,6 @@ GradientChannelFilter::GradientChannelFilter(unsigned int bins, bool magnitude, 
 		++gradientCode.gradient.x;
 	}
 }
-
-GradientChannelFilter::~GradientChannelFilter() {}
 
 Mat GradientChannelFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.type() != CV_8UC2)

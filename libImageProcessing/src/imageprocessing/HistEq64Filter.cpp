@@ -7,6 +7,8 @@
 
 #include "imageprocessing/HistEq64Filter.hpp"
 
+using cv::Mat;
+
 namespace imageprocessing {
 
 HistEq64Filter::HistEq64Filter() {

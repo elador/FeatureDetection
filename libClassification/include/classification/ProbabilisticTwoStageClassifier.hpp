@@ -11,8 +11,6 @@
 #include "classification/ProbabilisticClassifier.hpp"
 #include <memory>
 
-using std::shared_ptr;
-
 namespace classification {
 
 /**
@@ -29,20 +27,21 @@ public:
 	 * @param[in] first The first classifier.
 	 * @param[in] second The second classifier.
 	 */
-	explicit ProbabilisticTwoStageClassifier(shared_ptr<ProbabilisticClassifier> first, shared_ptr<ProbabilisticClassifier> second);
+	explicit ProbabilisticTwoStageClassifier(
+			std::shared_ptr<ProbabilisticClassifier> first, std::shared_ptr<ProbabilisticClassifier> second);
 
 	virtual ~ProbabilisticTwoStageClassifier();
 
-	bool classify(const Mat& featureVector) const;
+	bool classify(const cv::Mat& featureVector) const;
 
-	pair<bool, double> getConfidence(const Mat& featureVector) const;
+	std::pair<bool, double> getConfidence(const cv::Mat& featureVector) const;
 
-	pair<bool, double> getProbability(const Mat& featureVector) const;
+	std::pair<bool, double> getProbability(const cv::Mat& featureVector) const;
 
 private:
 
-	shared_ptr<ProbabilisticClassifier> first;  ///< The first classifier.
-	shared_ptr<ProbabilisticClassifier> second; ///< The second classifier.
+	std::shared_ptr<ProbabilisticClassifier> first;  ///< The first classifier.
+	std::shared_ptr<ProbabilisticClassifier> second; ///< The second classifier.
 };
 
 } /* namespace classification */

@@ -12,20 +12,14 @@
 #include <unordered_map>
 #include <utility>
 
-using std::unordered_map;
-using std::pair;
-
 namespace imageprocessing {
 class FeatureExtractor;
 class Patch;
 }
-using imageprocessing::FeatureExtractor;
-using imageprocessing::Patch;
 
 namespace classification {
 class ProbabilisticClassifier;
 }
-using classification::ProbabilisticClassifier;
 
 namespace condensation {
 
@@ -41,11 +35,10 @@ public:
 	 * @param[in] featureExtractor The feature extractor.
 	 * @param[in] classifier The classifier.
 	 */
-	SingleClassifierModel(shared_ptr<FeatureExtractor> featureExtractor, shared_ptr<ProbabilisticClassifier> classifier);
+	SingleClassifierModel(std::shared_ptr<imageprocessing::FeatureExtractor> featureExtractor,
+			std::shared_ptr<classification::ProbabilisticClassifier> classifier);
 
-	~SingleClassifierModel();
-
-	void update(shared_ptr<VersionedImage> image);
+	void update(std::shared_ptr<imageprocessing::VersionedImage> image);
 
 	void evaluate(Sample& sample) const;
 
@@ -59,11 +52,11 @@ private:
 	 * @param[in] patch The patch.
 	 * @return The classification result.
 	 */
-	pair<bool, double> classify(shared_ptr<Patch> patch) const;
+	std::pair<bool, double> classify(std::shared_ptr<imageprocessing::Patch> patch) const;
 
-	shared_ptr<FeatureExtractor> featureExtractor;  ///< The feature extractor.
-	shared_ptr<ProbabilisticClassifier> classifier; ///< The classifier.
-	mutable unordered_map<shared_ptr<Patch>, pair<bool, double>> cache; ///< The classification result cache.
+	std::shared_ptr<imageprocessing::FeatureExtractor> featureExtractor; ///< The feature extractor.
+	std::shared_ptr<classification::ProbabilisticClassifier> classifier; ///< The classifier.
+	mutable std::unordered_map<std::shared_ptr<imageprocessing::Patch>, std::pair<bool, double>> cache; ///< The classification result cache.
 };
 
 } /* namespace condensation */

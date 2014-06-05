@@ -40,8 +40,8 @@ public:
 	 * @param[in] cols The column count of cells.
 	 * @param[in] rows The row count of cells.
 	 */
-	ExtendedHogFeatureExtractor(shared_ptr<ImagePyramid> pyramid,
-			shared_ptr<CompleteExtendedHogFilter> ehogFilter, int cols, int rows);
+	ExtendedHogFeatureExtractor(std::shared_ptr<ImagePyramid> pyramid,
+			std::shared_ptr<CompleteExtendedHogFilter> ehogFilter, int cols, int rows);
 
 	/**
 	 * Constructs a new extended HOG feature extractor on top of the given image pyramid. The images of the pyramid
@@ -52,7 +52,7 @@ public:
 	 * @param[in] cols The column count of cells.
 	 * @param[in] rows The row count of cells.
 	 */
-	ExtendedHogFeatureExtractor(shared_ptr<ImagePyramid> pyramid, shared_ptr<ExtendedHogFilter> ehogFilter, int cols, int rows);
+	ExtendedHogFeatureExtractor(std::shared_ptr<ImagePyramid> pyramid, std::shared_ptr<ExtendedHogFilter> ehogFilter, int cols, int rows);
 
 	/**
 	 * Constructs a new extended HOG feature extractor that creates an image pyramid from the given patch widths.
@@ -65,7 +65,7 @@ public:
 	 * @param[in] maxWidth The width of the biggest patches that will be extracted.
 	 * @param[in] octaveLayerCount The number of layers per octave.
 	 */
-	ExtendedHogFeatureExtractor(shared_ptr<CompleteExtendedHogFilter> ehogFilter,
+	ExtendedHogFeatureExtractor(std::shared_ptr<CompleteExtendedHogFilter> ehogFilter,
 			int cols, int rows, int minWidth, int maxWidth, int octaveLayerCount = 5);
 
 	/**
@@ -82,8 +82,8 @@ public:
 	 * @param[in] maxWidth The width of the biggest patches that will be extracted.
 	 * @param[in] octaveLayerCount The number of layers per octave.
 	 */
-	ExtendedHogFeatureExtractor(shared_ptr<GradientFilter> gradientFilter,
-			shared_ptr<GradientBinningFilter> binningFilter, shared_ptr<ExtendedHogFilter> ehogFilter,
+	ExtendedHogFeatureExtractor(std::shared_ptr<GradientFilter> gradientFilter,
+			std::shared_ptr<GradientBinningFilter> binningFilter, std::shared_ptr<ExtendedHogFilter> ehogFilter,
 			int cols, int rows, int minWidth, int maxWidth, int octaveLayerCount = 5);
 
 	/**
@@ -93,21 +93,21 @@ public:
 	 */
 	ExtendedHogFeatureExtractor(const ExtendedHogFeatureExtractor& other);
 
-	void update(const Mat& image);
+	void update(const cv::Mat& image);
 
-	void update(shared_ptr<VersionedImage> image);
+	void update(std::shared_ptr<VersionedImage> image);
 
-	shared_ptr<Patch> extract(int x, int y, int width, int height) const;
-
-	/**
-	 * @return The image pyramid.
-	 */
-	shared_ptr<ImagePyramid> getPyramid();
+	std::shared_ptr<Patch> extract(int x, int y, int width, int height) const;
 
 	/**
 	 * @return The image pyramid.
 	 */
-	const shared_ptr<ImagePyramid> getPyramid() const;
+	std::shared_ptr<ImagePyramid> getPyramid();
+
+	/**
+	 * @return The image pyramid.
+	 */
+	const std::shared_ptr<ImagePyramid> getPyramid() const;
 
 	/**
 	 * @return The width of the image data of the extracted patches (before applying the extended HOG filter).
@@ -131,7 +131,7 @@ private:
 	 * @param[in] octaveLayerCount The number of layers per octave.
 	 * @return A newly created image pyramid.
 	 */
-	static shared_ptr<ImagePyramid> createPyramid(int width, int minWidth, int maxWidth, int octaveLayerCount);
+	static std::shared_ptr<ImagePyramid> createPyramid(int width, int minWidth, int maxWidth, int octaveLayerCount);
 
 	/**
 	 * Creates the look-up table for the image indices that are used to retrieve the patch data.
@@ -163,8 +163,8 @@ private:
 		return patch;
 	}
 
-	shared_ptr<ImagePyramid> pyramid; ///< Image pyramid.
-	shared_ptr<ImageFilter> ehogFilter; ///< Extended HOG filter that is applied to the patches.
+	std::shared_ptr<ImagePyramid> pyramid; ///< Image pyramid.
+	std::shared_ptr<ImageFilter> ehogFilter; ///< Extended HOG filter that is applied to the patches.
 	int patchWidth;  ///< Width of the image data of the extracted patches.
 	int patchHeight; ///< Height of the image data of the extracted patches.
 	int cellSize; ///< Width and height of the cells.

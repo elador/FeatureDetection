@@ -26,20 +26,20 @@ public:
 	 * @param[in] second The second classifier (that will be re-trained).
 	 */
 	TrainableProbabilisticTwoStageClassifier(
-			shared_ptr<ProbabilisticClassifier> first, shared_ptr<TrainableProbabilisticClassifier> second) :
+			std::shared_ptr<ProbabilisticClassifier> first, std::shared_ptr<TrainableProbabilisticClassifier> second) :
 					ProbabilisticTwoStageClassifier(first, second), trainable(second) {}
 
 	~TrainableProbabilisticTwoStageClassifier() {}
 
-	bool classify(const Mat& featureVector) const {
+	bool classify(const cv::Mat& featureVector) const {
 		return ProbabilisticTwoStageClassifier::classify(featureVector);
 	}
 
-	pair<bool, double> getConfidence(const Mat& featureVector) const {
+	std::pair<bool, double> getConfidence(const cv::Mat& featureVector) const {
 		return ProbabilisticTwoStageClassifier::getConfidence(featureVector);
 	}
 
-	pair<bool, double> getProbability(const Mat& featureVector) const {
+	std::pair<bool, double> getProbability(const cv::Mat& featureVector) const {
 		return ProbabilisticTwoStageClassifier::getProbability(featureVector);
 	}
 
@@ -47,12 +47,12 @@ public:
 		return trainable->isUsable();
 	}
 
-	bool retrain(const vector<Mat>& newPositiveExamples, const vector<Mat>& newNegativeExamples) {
+	bool retrain(const std::vector<cv::Mat>& newPositiveExamples, const std::vector<cv::Mat>& newNegativeExamples) {
 		return trainable->retrain(newPositiveExamples, newNegativeExamples);
 	}
 
-	bool retrain(const vector<Mat>& newPositiveExamples, const vector<Mat>& newNegativeExamples,
-			const vector<Mat>& newPositiveTestExamples, const vector<Mat>& newNegativeTestExamples) {
+	bool retrain(const std::vector<cv::Mat>& newPositiveExamples, const std::vector<cv::Mat>& newNegativeExamples,
+			const std::vector<cv::Mat>& newPositiveTestExamples, const std::vector<cv::Mat>& newNegativeTestExamples) {
 		return trainable->retrain(newPositiveExamples, newNegativeExamples, newPositiveTestExamples, newNegativeTestExamples);
 	}
 
@@ -62,7 +62,7 @@ public:
 
 private:
 
-	shared_ptr<TrainableProbabilisticClassifier> trainable; ///< The classifier that will be trained.
+	std::shared_ptr<TrainableProbabilisticClassifier> trainable; ///< The classifier that will be trained.
 };
 
 } /* namespace classification */

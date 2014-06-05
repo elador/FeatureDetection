@@ -6,11 +6,10 @@
  */
 
 #include "imageprocessing/GradientSumFilter.hpp"
-#include "boost/lexical_cast.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using cv::Vec2b;
-using boost::lexical_cast;
 using std::invalid_argument;
 using std::string;
 
@@ -20,15 +19,13 @@ GradientSumFilter::GradientSumFilter(int rows, int cols) : rows(rows), cols(cols
 
 GradientSumFilter::GradientSumFilter(int count) : rows(count), cols(count) {}
 
-GradientSumFilter::~GradientSumFilter() {}
-
 Mat GradientSumFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.type() != CV_8UC2)
 		throw invalid_argument("GradientSumFilter: the image must be of type CV_8UC2");
 	if (image.rows % rows != 0)
-		throw invalid_argument("GradientSumFilter: image row count (" + lexical_cast<string>(image.rows) + ") is not divisible by cell count (" + lexical_cast<string>(rows) + ")");
+		throw invalid_argument("GradientSumFilter: image row count (" + std::to_string(image.rows) + ") is not divisible by cell count (" + std::to_string(rows) + ")");
 	if (image.cols % cols != 0)
-		throw invalid_argument("GradientSumFilter: image column count (" + lexical_cast<string>(image.cols) + ") is not divisible by cell count (" + lexical_cast<string>(cols) + ")");
+		throw invalid_argument("GradientSumFilter: image column count (" + std::to_string(image.cols) + ") is not divisible by cell count (" + std::to_string(cols) + ")");
 
 	filtered.create(1, rows * cols * 4, CV_32FC1);
 	int cellWidth = image.cols / cols;

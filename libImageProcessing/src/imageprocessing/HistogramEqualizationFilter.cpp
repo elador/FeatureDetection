@@ -8,11 +8,11 @@
 #include "imageprocessing/HistogramEqualizationFilter.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
+using cv::Mat;
+
 namespace imageprocessing {
 
 HistogramEqualizationFilter::HistogramEqualizationFilter() {}
-
-HistogramEqualizationFilter::~HistogramEqualizationFilter() {}
 
 Mat HistogramEqualizationFilter::applyTo(const Mat& image, Mat& filtered) const {
 	cv::equalizeHist(image, filtered);

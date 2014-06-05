@@ -13,9 +13,6 @@
 #include "opencv2/core/core.hpp"
 #include <utility>
 
-using cv::Mat;
-using std::pair;
-
 namespace classification {
 
 /**
@@ -32,7 +29,7 @@ public:
 	 * @param[in] featureVector The feature vector.
 	 * @return True if the feature vector was positively classified, false otherwise.
 	 */
-	virtual bool classify(const Mat& featureVector) const = 0;
+	virtual bool classify(const cv::Mat& featureVector) const = 0;
 
 	/**
 	 * Computes the classification confidence of a feature vector. The confidence value will
@@ -42,7 +39,7 @@ public:
 	 * @param[in] featureVector The feature vector.
 	 * @return A pair containing the binary classification result and the confidence of the classification.
 	 */
-	virtual pair<bool, double> getConfidence(const Mat& featureVector) const = 0;
+	virtual std::pair<bool, double> getConfidence(const cv::Mat& featureVector) const = 0;
 };
 
 } /* namespace classification */

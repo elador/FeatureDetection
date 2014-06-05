@@ -26,13 +26,11 @@ public:
 	 */
 	explicit ReshapingFilter(int rows, int channels = 0);
 
-	~ReshapingFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
-	void applyInPlace(Mat& image) const;
+	void applyInPlace(cv::Mat& image) const;
 
 private:
 

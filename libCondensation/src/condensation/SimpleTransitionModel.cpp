@@ -10,13 +10,15 @@
 #include <ctime>
 #include <cmath>
 
+using cv::Mat;
+using std::vector;
+using std::shared_ptr;
+
 namespace condensation {
 
 SimpleTransitionModel::SimpleTransitionModel(double positionDeviation, double sizeDeviation) :
 		positionDeviation(positionDeviation), sizeDeviation(sizeDeviation),
 		generator(boost::mt19937(time(0)), boost::normal_distribution<>()) {}
-
-SimpleTransitionModel::~SimpleTransitionModel() {}
 
 void SimpleTransitionModel::init(const Mat& image) {}
 

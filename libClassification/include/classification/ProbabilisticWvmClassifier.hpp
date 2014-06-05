@@ -13,10 +13,6 @@
 #include "boost/property_tree/ptree.hpp"
 #include <memory>
 
-using boost::property_tree::ptree;
-using std::shared_ptr;
-using std::string;
-
 namespace classification {
 
 class WvmClassifier;
@@ -37,15 +33,13 @@ public:
 	 * @param[in] logisticA Parameter a of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 	 * @param[in] logisticB Parameter b of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 	 */
-	explicit ProbabilisticWvmClassifier(shared_ptr<WvmClassifier> wvm, double logisticA = 0.00556, double logisticB = -2.95);
+	explicit ProbabilisticWvmClassifier(std::shared_ptr<WvmClassifier> wvm, double logisticA = 0.00556, double logisticB = -2.95);
 
-	~ProbabilisticWvmClassifier();
+	bool classify(const cv::Mat& featureVector) const;
 
-	bool classify(const Mat& featureVector) const;
+	std::pair<bool, double> getConfidence(const cv::Mat& featureVector) const;
 
-	pair<bool, double> getConfidence(const Mat& featureVector) const;
-
-	pair<bool, double> getProbability(const Mat& featureVector) const;
+	std::pair<bool, double> getProbability(const cv::Mat& featureVector) const;
 
 	/**
 	 * Computes the probability for being positive given the distance of a feature vector to the decision hyperplane.
@@ -53,7 +47,7 @@ public:
 	 * @param[in] levelAndDistance The index of the last used filter and distance of that filter level.
 	 * @return A pair containing the binary classification result and a probability between zero and one for being positive.
 	 */
-	pair<bool, double> getProbability(pair<int, double> levelAndDistance) const;
+	std::pair<bool, double> getProbability(std::pair<int, double> levelAndDistance) const;
 
 	/**
 	 * Creates a new probabilistic WVM classifier from the parameters given in some Matlab file. Loads the logistic function's
@@ -64,7 +58,7 @@ public:
 	 * @param[in] thresholdsFilename The name of the file containing the thresholds of the filter levels and the logistic function's parameters.
 	 * @return The newly created probabilistic WVM classifier.
 	 */
-	static std::pair<double, double> loadSigmoidParamsFromMatlab(const string& thresholdsFilename);
+	static std::pair<double, double> loadSigmoidParamsFromMatlab(const std::string& thresholdsFilename);
 
 	/**
 	 * Creates a new probabilistic WVM classifier from the parameters given in some Matlab file. Loads the logistic function's
@@ -76,7 +70,7 @@ public:
 	 * @param[in] thresholdsFilename The name of the file containing the thresholds of the filter levels and the logistic function's parameters.
 	 * @return The newly created probabilistic WVM classifier.
 	 */
-	static shared_ptr<ProbabilisticWvmClassifier> loadFromMatlab(const string& classifierFilename, const string& thresholdsFilename);
+	static std::shared_ptr<ProbabilisticWvmClassifier> loadFromMatlab(const std::string& classifierFilename, const std::string& thresholdsFilename);
 
 	/**
 	 * Creates a new probabilistic WVM classifier from the parameters given in the ptree sub-tree. Loads the logistic function's
@@ -86,25 +80,25 @@ public:
 	 * @param[in] subtree The subtree containing the config information for this classifier.
 	 * @return The newly created probabilistic WVM classifier.
 	 */
-	static shared_ptr<ProbabilisticWvmClassifier> load(const ptree& subtree);
+	static std::shared_ptr<ProbabilisticWvmClassifier> load(const boost::property_tree::ptree& subtree);
 
 	/**
 	 * @return The actual WVM.
 	 */
-	shared_ptr<WvmClassifier> getWvm() {
+	std::shared_ptr<WvmClassifier> getWvm() {
 		return wvm;
 	}
 
 	/**
 	 * @return The actual WVM.
 	 */
-	const shared_ptr<WvmClassifier> getWvm() const {
+	const std::shared_ptr<WvmClassifier> getWvm() const {
 		return wvm;
 	}
 
 private:
 
-	shared_ptr<WvmClassifier> wvm; ///< The actual WVM.
+	std::shared_ptr<WvmClassifier> wvm; ///< The actual WVM.
 	double logisticA; ///< Parameter a of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 	double logisticB; ///< Parameter b of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 };

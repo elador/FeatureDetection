@@ -17,10 +17,6 @@
 #include <string>
 #include <memory>
 
-using std::map;
-using std::string;
-using std::make_shared;
-
 namespace logging {
 
 #define Loggers LoggerFactory::Instance()
@@ -46,7 +42,7 @@ public:
 	 * @param[in] name The name of the logger.
 	 * @return The specified logger or a new one that logs nothing, if not yet created.
 	 */
-	Logger& getLogger(const string name);
+	Logger& getLogger(const std::string name);
 
 	/**
 	 * Extracts the file basename and returns the logger for the file or a new logger with no logging if it hasn't been created yet.
@@ -54,7 +50,7 @@ public:
 	 * @param[in] name The file name or full file path.
 	 * @return The specified logger or a new one if not yet created.
 	 */
-	Logger& getLoggerFor(const string fileName);
+	Logger& getLoggerFor(const std::string fileName);
 
 	/**
 	 * Loads all the loggers and their configuration from a config file. TODO!
@@ -62,10 +58,10 @@ public:
 	 * @param[in] filename The name of the config file to load.
 	 * @return Maybe something
 	 */
-	void load(const string filename) {}; // Make static?
+	void load(const std::string filename) {}; // Make static?
 
 private:
-	map<string, Logger> loggers;	///< A map of all the loggers and their names.
+	std::map<std::string, Logger> loggers;	///< A map of all the loggers and their names.
 };
 
 } /* namespace logging */

@@ -10,8 +10,11 @@
 #include <algorithm>
 #include <stdexcept>
 
+using cv::Mat;
 using std::min;
 using std::max;
+using std::vector;
+using std::shared_ptr;
 using std::invalid_argument;
 using std::make_shared;
 
@@ -28,8 +31,6 @@ GridSampler::GridSampler(int minSize, int maxSize, float sizeScale, float stepSi
 	if (sizeScale <= 0)
 		throw invalid_argument("GridSampler: The step size must be greater than zero");
 }
-
-GridSampler::~GridSampler() {}
 
 void GridSampler::init(const Mat& image) {}
 

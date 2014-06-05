@@ -11,9 +11,6 @@
 #include <vector>
 #include <memory>
 
-using std::vector;
-using std::shared_ptr;
-
 namespace condensation {
 
 class Sample;
@@ -33,7 +30,8 @@ public:
 	 * @param[in] count The amount of resulting samples.
 	 * @param[in,out] newSamples The vector to insert the new samples into.
 	 */
-	virtual void resample(const vector<shared_ptr<Sample>>& samples, unsigned int count, vector<shared_ptr<Sample>>& newSamples) = 0;
+	virtual void resample(const std::vector<std::shared_ptr<Sample>>& samples,
+			size_t count, std::vector<std::shared_ptr<Sample>>& newSamples) = 0;
 };
 
 } /* namespace condensation */

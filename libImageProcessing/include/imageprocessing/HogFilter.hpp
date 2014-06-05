@@ -49,11 +49,9 @@ public:
 	HogFilter(int binCount, int cellWidth, int cellHeight, int blockWidth, int blockHeight,
 			bool interpolate = false, bool signedAndUnsigned = false);
 
-	~HogFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
 private:
 
@@ -70,7 +68,7 @@ private:
 	 * @param[in] blockHeight Height of the blocks (in amount of cells).
 	 * @param[in] signedAndUnsigned Flag that indicates whether signed and unsigned gradients should be used.
 	 */
-	void createBlockHistograms(const Mat& cellHistograms, const Mat& cellEnergies, Mat& blockHistograms,
+	void createBlockHistograms(const cv::Mat& cellHistograms, const cv::Mat& cellEnergies, cv::Mat& blockHistograms,
 			int binCount, int cellRowCount, int cellColumnCount, int blockWidth, int blockHeight, bool signedAndUnsigned) const;
 
 	/**
@@ -83,7 +81,7 @@ private:
 	 * @param[in] cellColumnCount Column count of the cell grid.
 	 * @param[in] signedAndUnsigned Flag that indicates whether signed and unsigned gradients should be used.
 	 */
-	void computeCellEnergies(const Mat& cellHistograms, Mat& cellEnergies,
+	void computeCellEnergies(const cv::Mat& cellHistograms, cv::Mat& cellEnergies,
 			int binCount, int cellRowCount, int cellColumnCount, bool signedAndUnsigned) const;
 
 	int binCount;    ///< The amount of bins inside the histogram.

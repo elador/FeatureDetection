@@ -10,9 +10,6 @@
 
 #include "opencv2/core/core.hpp"
 
-using cv::Mat;
-using cv::Rect;
-
 namespace imageprocessing {
 
 /**
@@ -36,7 +33,7 @@ public:
 	 * @param[in] height The original height.
 	 * @param[in] data The patch data (might be an image patch or a feature vector).
 	 */
-	explicit Patch(int x, int y, int width, int height, const Mat& data) :
+	explicit Patch(int x, int y, int width, int height, const cv::Mat& data) :
 			x(x), y(y), width(width), height(height), data(data) {}
 
 	/**
@@ -99,8 +96,8 @@ public:
 	/**
 	 * @return The bounding rectangle of this patch.
 	 */
-	Rect getBounds() const {
-		return Rect(x - width / 2, y - height / 2, width, height);
+	cv::Rect getBounds() const {
+		return cv::Rect(x - width / 2, y - height / 2, width, height);
 	}
 
 	/**
@@ -176,14 +173,14 @@ public:
 	/**
 	 * @return The patch data (might be an image patch or a feature vector).
 	 */
-	Mat& getData() {
+	cv::Mat& getData() {
 		return data;
 	}
 
 	/**
 	 * @return The patch data (might be an image patch or a feature vector).
 	 */
-	const Mat& getData() const {
+	const cv::Mat& getData() const {
 		return data;
 	}
 
@@ -208,7 +205,7 @@ private:
 	int y;        ///< The original y-coordinate of the center of this patch.
 	int width;    ///< The original width.
 	int height;   ///< The original height.
-	Mat data;     ///< The patch data (might be an image patch or a feature vector).
+	cv::Mat data; ///< The patch data (might be an image patch or a feature vector).
 };
 
 } /* namespace imageprocessing */

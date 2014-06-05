@@ -12,10 +12,6 @@
 #include <vector>
 #include <memory>
 
-using cv::Mat;
-using std::vector;
-using std::shared_ptr;
-
 namespace condensation {
 
 class Sample;
@@ -33,7 +29,7 @@ public:
 	 *
 	 * @param[in] image The current image.
 	 */
-	virtual void init(const Mat& image) = 0;
+	virtual void init(const cv::Mat& image) = 0;
 
 	/**
 	 * Creates new samples.
@@ -43,8 +39,8 @@ public:
 	 * @param[in] image The new image.
 	 * @param[in] target The previous target state.
 	 */
-	virtual void sample(const vector<shared_ptr<Sample>>& samples, vector<shared_ptr<Sample>>& newSamples,
-			const Mat& image, const shared_ptr<Sample> target) = 0;
+	virtual void sample(const std::vector<std::shared_ptr<Sample>>& samples, std::vector<std::shared_ptr<Sample>>& newSamples,
+			const cv::Mat& image, const std::shared_ptr<Sample> target) = 0;
 };
 
 } /* namespace condensation */

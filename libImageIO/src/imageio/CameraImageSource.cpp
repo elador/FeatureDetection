@@ -6,11 +6,9 @@
  */
 
 #include "imageio/CameraImageSource.hpp"
-#include "boost/lexical_cast.hpp"
 #include <iostream>
 #include <string>
 
-using boost::lexical_cast;
 using boost::filesystem::path;
 using cv::Mat;
 using std::string;
@@ -21,9 +19,9 @@ using std::runtime_error;
 namespace imageio {
 
 CameraImageSource::CameraImageSource(int device) :
-		ImageSource(lexical_cast<string>(device)), device(device), capture(device), frame(), frameCounter(0) {
+		ImageSource(std::to_string(device)), device(device), capture(device), frame(), frameCounter(0) {
 	if (!capture.isOpened())
-		throw invalid_argument("Could not open stream from device " + lexical_cast<string>(device));
+		throw invalid_argument("Could not open stream from device " + std::to_string(device));
 }
 
 CameraImageSource::~CameraImageSource() {
@@ -34,7 +32,7 @@ void CameraImageSource::reset()
 {
 	capture.release();
 	if (!capture.open(device))
-		throw runtime_error("Could not open stream from device " + lexical_cast<string>(device));
+		throw runtime_error("Could not open stream from device " + std::to_string(device));
 	frameCounter = 0;
 }
 
@@ -51,13 +49,13 @@ const Mat CameraImageSource::getImage() const
 
 path CameraImageSource::getName() const
 {
-	return path(lexical_cast<string>(frameCounter));
+	return path(std::to_string(frameCounter));
 }
 
 vector<path> CameraImageSource::getNames() const
 {
 	vector<path> tmp;
-	tmp.push_back(path(lexical_cast<string>(frameCounter)));
+	tmp.push_back(path(std::to_string(frameCounter)));
 	return tmp;
 }
 

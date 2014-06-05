@@ -7,6 +7,8 @@
 
 #include "classification/VectorMachineClassifier.hpp"
 
+using std::shared_ptr;
+
 namespace classification {
 
 VectorMachineClassifier::VectorMachineClassifier(shared_ptr<Kernel> kernel) :

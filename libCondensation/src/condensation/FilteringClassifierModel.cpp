@@ -12,7 +12,15 @@
 #include "imageprocessing/FeatureExtractor.hpp"
 #include "classification/BinaryClassifier.hpp"
 
+using imageprocessing::Patch;
+using imageprocessing::VersionedImage;
+using imageprocessing::FeatureExtractor;
+using classification::BinaryClassifier;
+using classification::ProbabilisticClassifier;
+using std::vector;
+using std::shared_ptr;
 using std::make_shared;
+using std::unordered_map;
 
 namespace condensation {
 

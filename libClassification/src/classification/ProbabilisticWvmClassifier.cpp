@@ -16,7 +16,12 @@
 
 using logging::Logger;
 using logging::LoggerFactory;
+using cv::Mat;
+using boost::property_tree::ptree;
+using std::pair;
+using std::string;
 using std::make_pair;
+using std::shared_ptr;
 using std::make_shared;
 using std::invalid_argument;
 using std::runtime_error;
@@ -25,8 +30,6 @@ namespace classification {
 
 ProbabilisticWvmClassifier::ProbabilisticWvmClassifier(shared_ptr<WvmClassifier> wvm, double logisticA, double logisticB) :
 		wvm(wvm), logisticA(logisticA), logisticB(logisticB) {}
-
-ProbabilisticWvmClassifier::~ProbabilisticWvmClassifier() {}
 
 bool ProbabilisticWvmClassifier::classify(const Mat& featureVector) const {
 	return wvm->classify(featureVector);

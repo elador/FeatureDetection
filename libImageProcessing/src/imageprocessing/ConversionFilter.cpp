@@ -7,11 +7,11 @@
 
 #include "imageprocessing/ConversionFilter.hpp"
 
+using cv::Mat;
+
 namespace imageprocessing {
 
 ConversionFilter::ConversionFilter(int type, double alpha, double beta) : type(type), alpha(alpha), beta(beta) {}
-
-ConversionFilter::~ConversionFilter() {}
 
 Mat ConversionFilter::applyTo(const Mat& image, Mat& filtered) const {
 	image.convertTo(filtered, type, alpha, beta);

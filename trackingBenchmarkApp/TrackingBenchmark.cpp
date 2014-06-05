@@ -90,10 +90,12 @@ using namespace std::chrono;
 using libsvm::LibSvmClassifier;
 using cv::Point;
 using cv::Rect;
+using cv::Rect_;
 using boost::property_tree::info_parser::read_info;
 using boost::lexical_cast;
 using std::milli;
 using std::move;
+using std::ofstream;
 using std::ostringstream;
 using std::istringstream;
 using std::runtime_error;
@@ -534,7 +536,7 @@ std::pair<double, double> TrackingBenchmark::runTest(shared_ptr<LabeledImageSour
 			steady_clock::time_point condensationStart = steady_clock::now();
 			optional<Rect> position = tracker->initialize(frame, bounds);
 			if (!position)
-				throw runtime_error("Adaptive tracker could not be initialized with " + boost::lexical_cast<string>(bounds));
+				throw runtime_error("Adaptive tracker could not be initialized with " + lexical_cast<string>(bounds));
 			steady_clock::time_point condensationEnd = steady_clock::now();
 			condensationTime += duration_cast<milliseconds>(condensationEnd - condensationStart);
 			LandmarkCollection collection;

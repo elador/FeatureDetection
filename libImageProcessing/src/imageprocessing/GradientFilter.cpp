@@ -9,6 +9,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using std::invalid_argument;
 
 namespace imageprocessing {
@@ -17,8 +18,6 @@ GradientFilter::GradientFilter(int kernelSize, int blurKernelSize) : kernelSize(
 	if (kernelSize != 1 && kernelSize != 3 && kernelSize != 5 && kernelSize != 7 && kernelSize != CV_SCHARR)
 		throw invalid_argument("GradientFilter: the kernel size must be 1, 3, 5, 7 or CV_SCHARR");
 }
-
-GradientFilter::~GradientFilter() {}
 
 double GradientFilter::getScale(int kernelSize) const {
 	if (kernelSize == 1)

@@ -12,8 +12,6 @@
 #include "imageprocessing/ChainedFilter.hpp"
 #include "imageprocessing/Patch.hpp"
 
-using std::make_shared;
-
 namespace imageprocessing {
 
 /**
@@ -27,30 +25,28 @@ public:
 	 *
 	 * @param[in] extractor The underlying feature extractor.
 	 */
-	explicit FilteringFeatureExtractor(shared_ptr<FeatureExtractor> extractor) :
-			extractor(extractor), patchFilter(make_shared<ChainedFilter>()) {}
-
-	~FilteringFeatureExtractor() {}
+	explicit FilteringFeatureExtractor(std::shared_ptr<FeatureExtractor> extractor) :
+			extractor(extractor), patchFilter(std::make_shared<ChainedFilter>()) {}
 
 	/**
 	 * Adds a new filter that is applied to the patches.
 	 *
 	 * @param[in] filter The new patch filter.
 	 */
-	void addPatchFilter(shared_ptr<ImageFilter> filter) {
+	void addPatchFilter(std::shared_ptr<ImageFilter> filter) {
 		patchFilter->add(filter);
 	}
 
-	void update(const Mat& image) {
+	void update(const cv::Mat& image) {
 		extractor->update(image);
 	}
 
-	void update(shared_ptr<VersionedImage> image) {
+	void update(std::shared_ptr<VersionedImage> image) {
 		extractor->update(image);
 	}
 
-	shared_ptr<Patch> extract(int x, int y, int width, int height) const {
-		shared_ptr<Patch> patch = extractor->extract(x, y, width, height);
+	std::shared_ptr<Patch> extract(int x, int y, int width, int height) const {
+		std::shared_ptr<Patch> patch = extractor->extract(x, y, width, height);
 		if (patch)
 			patchFilter->applyInPlace(patch->getData());
 		return patch;
@@ -58,8 +54,8 @@ public:
 
 private:
 
-	shared_ptr<FeatureExtractor> extractor; ///< The underlying feature extractor.
-	shared_ptr<ChainedFilter> patchFilter;  ///< Filter that is applied to the patches.
+	std::shared_ptr<FeatureExtractor> extractor; ///< The underlying feature extractor.
+	std::shared_ptr<ChainedFilter> patchFilter;  ///< Filter that is applied to the patches.
 };
 
 } /* namespace imageprocessing */

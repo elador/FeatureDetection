@@ -14,17 +14,10 @@
 #include <memory>
 #include <vector>
 
-using cv::Mat;
-using cv::Rect;
-using boost::optional;
-using std::vector;
-using std::shared_ptr;
-
 namespace imageprocessing {
 class VersionedImage;
 class DirectPyramidFeatureExtractor;
 }
-using imageprocessing::VersionedImage;
 
 namespace classification {
 class ProbabilisticClassifier;
@@ -56,10 +49,8 @@ public:
 	 * @param[in] extractor The state extractor.
 	 * @param[in] initialCount The initial amount of particles.
 	 */
-	AdaptiveCondensationTracker(shared_ptr<Sampler> sampler,
-			shared_ptr<AdaptiveMeasurementModel> measurementModel, shared_ptr<StateExtractor> extractor, int initialCount);
-
-	~AdaptiveCondensationTracker();
+	AdaptiveCondensationTracker(std::shared_ptr<Sampler> sampler, std::shared_ptr<AdaptiveMeasurementModel> measurementModel,
+			std::shared_ptr<StateExtractor> extractor, int initialCount);
 
 	/**
 	 * Initializes this tracker at the given position. May need several subsequent initializations before
@@ -69,7 +60,7 @@ public:
 	 * @param[in] position The current position of the target that should be tracked.
 	 * @return The bounding box around the initial target position if the tracker is usable, none otherwise.
 	 */
-	optional<Rect> initialize(const Mat& image, const Rect& position);
+	boost::optional<cv::Rect> initialize(const cv::Mat& image, const cv::Rect& position);
 
 	/**
 	 * Processes the next image and returns the most probable object position.
@@ -77,7 +68,7 @@ public:
 	 * @param[in] image The next image.
 	 * @return The bounding box around the most probable target position if found, none otherwise.
 	 */
-	optional<Rect> process(const Mat& image);
+	boost::optional<cv::Rect> process(const cv::Mat& image);
 
 	/**
 	 * Resets this tracker to its uninitialized state, so it has to be initialized again.
@@ -92,43 +83,43 @@ public:
 	/**
 	 * @return The estimated target state.
 	 */
-	shared_ptr<Sample> getState();
+	std::shared_ptr<Sample> getState();
 
 	/**
 	 * @return The current samples.
 	 */
-	const vector<shared_ptr<Sample>>& getSamples() const;
+	const std::vector<std::shared_ptr<Sample>>& getSamples() const;
 
 	/**
 	 * @return The sampler.
 	 */
-	shared_ptr<Sampler> getSampler();
+	std::shared_ptr<Sampler> getSampler();
 
 	/**
 	 * @param[in] sampler The new sampler.
 	 */
-	void setSampler(shared_ptr<Sampler> sampler);
+	void setSampler(std::shared_ptr<Sampler> sampler);
 
 	/**
 	 * Adds a validator.
 	 *
 	 * @param[in] validator The new target state validator.
 	 */
-	void addValidator(shared_ptr<StateValidator> validator);
+	void addValidator(std::shared_ptr<StateValidator> validator);
 
 private:
 
-	int initialCount;                      ///< The initial amount of particles.
-	vector<shared_ptr<Sample>> samples;    ///< The current samples.
-	vector<shared_ptr<Sample>> oldSamples; ///< The previous samples.
-	shared_ptr<Sample> state;              ///< The estimated target state.
-	bool adapted;                          ///< Flag that indicates whether the tracker has adapted to the current appearance.
+	int initialCount; ///< The initial amount of particles.
+	std::vector<std::shared_ptr<Sample>> samples;    ///< The current samples.
+	std::vector<std::shared_ptr<Sample>> oldSamples; ///< The previous samples.
+	std::shared_ptr<Sample> state;                   ///< The estimated target state.
+	bool adapted; ///< Flag that indicates whether the tracker has adapted to the current appearance.
 
-	shared_ptr<VersionedImage> image;                      ///< The image used for evaluation.
-	shared_ptr<Sampler> sampler;                           ///< The sampler.
-	shared_ptr<AdaptiveMeasurementModel> measurementModel; ///< The adaptive measurement model.
-	shared_ptr<StateExtractor> extractor;                  ///< The state extractor.
-	vector<shared_ptr<StateValidator>> validators;         ///< The validators of the target position.
+	std::shared_ptr<imageprocessing::VersionedImage> image;     ///< The image used for evaluation.
+	std::shared_ptr<Sampler> sampler;                           ///< The sampler.
+	std::shared_ptr<AdaptiveMeasurementModel> measurementModel; ///< The adaptive measurement model.
+	std::shared_ptr<StateExtractor> extractor;                  ///< The state extractor.
+	std::vector<std::shared_ptr<StateValidator>> validators;    ///< The validators of the target position.
 };
 
 } /* namespace condensation */

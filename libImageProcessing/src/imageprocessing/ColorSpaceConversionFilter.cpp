@@ -8,11 +8,11 @@
 #include "imageprocessing/ColorSpaceConversionFilter.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
+using cv::Mat;
+
 namespace imageprocessing {
 
 ColorSpaceConversionFilter::ColorSpaceConversionFilter(int conversion) : conversion(conversion) {}
-
-ColorSpaceConversionFilter::~ColorSpaceConversionFilter() {}
 
 Mat ColorSpaceConversionFilter::applyTo(const Mat& image, Mat& filtered) const {
 	cv::cvtColor(image, filtered, conversion);

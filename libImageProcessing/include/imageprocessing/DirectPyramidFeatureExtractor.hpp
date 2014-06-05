@@ -10,9 +10,6 @@
 
 #include "imageprocessing/PyramidFeatureExtractor.hpp"
 
-using cv::Rect;
-using std::vector;
-
 namespace imageprocessing {
 
 class ImagePyramid;
@@ -35,7 +32,7 @@ public:
 	 * @param[in] width The width of the image data of the extracted patches.
 	 * @param[in] height The height of the image data of the extracted patches.
 	 */
-	DirectPyramidFeatureExtractor(shared_ptr<ImagePyramid> pyramid, int width, int height);
+	DirectPyramidFeatureExtractor(std::shared_ptr<ImagePyramid> pyramid, int width, int height);
 
 	/**
 	 * Constructs a new direct pyramid feature extractor that internally builds its own image pyramid.
@@ -66,25 +63,25 @@ public:
 	 *
 	 * @param[in] filter The new image filter.
 	 */
-	void addImageFilter(shared_ptr<ImageFilter> filter);
+	void addImageFilter(std::shared_ptr<ImageFilter> filter);
 
 	/**
 	 * Adds an image filter to the image pyramid that is applied to the down-scaled images.
 	 *
 	 * @param[in] filter The new layer filter.
 	 */
-	void addLayerFilter(shared_ptr<ImageFilter> filter);
+	void addLayerFilter(std::shared_ptr<ImageFilter> filter);
 
 	/**
 	 * Adds a new filter that is applied to the patches.
 	 *
 	 * @param[in] filter The new patch filter.
 	 */
-	void addPatchFilter(shared_ptr<ImageFilter> filter);
+	void addPatchFilter(std::shared_ptr<ImageFilter> filter);
 
-	void update(const Mat& image);
+	void update(const cv::Mat& image);
 
-	void update(shared_ptr<VersionedImage> image);
+	void update(std::shared_ptr<VersionedImage> image);
 
 	/**
 	 * Extracts a patch from the corresponding image pyramid. The given width will be used to determine the appropriate
@@ -98,7 +95,7 @@ public:
 	 * @param[in] height The height of the patch in the original image.
 	 * @return The extracted patch or an empty pointer in case the patch could not be extracted.
 	 */
-	virtual shared_ptr<Patch> extract(int x, int y, int width, int height) const;
+	virtual std::shared_ptr<Patch> extract(int x, int y, int width, int height) const;
 
 	/**
 	 * Extracts several patches from the layers of the corresponding image pyramid.
@@ -111,7 +108,7 @@ public:
 	 * @param[in] stepLayer The step size for proceeding to the next layer (values greater than one will skip layers).
 	 * @return The extracted patches.
 	 */
-	virtual vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(),
+	virtual std::vector<std::shared_ptr<Patch>> extract(int stepX, int stepY, cv::Rect roi = cv::Rect(),
 			int firstLayer = -1, int lastLayer = -1, int stepLayer = 1) const;
 
 	/**
@@ -122,7 +119,7 @@ public:
 	 * @param[in] y The y-coordinate of the patch center inside the layer.
 	 * @return The extracted patch or an empty pointer in case the patch could not be extracted.
 	 */
-	virtual shared_ptr<Patch> extract(int layer, int x, int y) const;
+	virtual std::shared_ptr<Patch> extract(int layer, int x, int y) const;
 
 	/**
 	 * Determines the index of the pyramid layer that approximately contains patches of the given width. The height will
@@ -140,25 +137,25 @@ public:
 
 	double getIncrementalScaleFactor() const;
 
-	Size getPatchSize() const;
+	cv::Size getPatchSize() const;
 
-	Size getImageSize() const;
+	cv::Size getImageSize() const;
 
-	virtual vector<pair<int, double>> getLayerScales() const;
+	virtual std::vector<std::pair<int, double>> getLayerScales() const;
 
-	vector<Size> getLayerSizes() const;
+	std::vector<cv::Size> getLayerSizes() const;
 
-	vector<Size> getPatchSizes() const;
-
-	/**
-	 * @return The image pyramid.
-	 */
-	shared_ptr<ImagePyramid> getPyramid();
+	std::vector<cv::Size> getPatchSizes() const;
 
 	/**
 	 * @return The image pyramid.
 	 */
-	const shared_ptr<ImagePyramid> getPyramid() const;
+	std::shared_ptr<ImagePyramid> getPyramid();
+
+	/**
+	 * @return The image pyramid.
+	 */
+	const std::shared_ptr<ImagePyramid> getPyramid() const;
 
 	/**
 	 * @return The width of the image data of the extracted patches.
@@ -214,7 +211,7 @@ protected:
 	 * @param[in] width The width of the patches in the original image.
 	 * @return The pyramid layer or an empty pointer if there is no layer with an appropriate patch width.
 	 */
-	virtual const shared_ptr<ImagePyramidLayer> getLayer(int width) const;
+	virtual const std::shared_ptr<ImagePyramidLayer> getLayer(int width) const;
 
 	/**
 	 * Creates a new image pyramid whose min and max scale factors are chosen to enable the extraction of patches
@@ -226,7 +223,7 @@ protected:
 	 * @param[in] octaveLayerCount The number of layers per octave.
 	 * @return A newly created image pyramid.
 	 */
-	static shared_ptr<ImagePyramid> createPyramid(int width, int minWidth, int maxWidth, int octaveLayerCount);
+	static std::shared_ptr<ImagePyramid> createPyramid(int width, int minWidth, int maxWidth, int octaveLayerCount);
 
 private:
 
@@ -237,12 +234,12 @@ private:
 	 * @param[in] bounds The patch bounds.
 	 * @return A pointer to the patch (with its feature vector) that might be empty if the patch could not be created.
 	 */
-	shared_ptr<Patch> extract(const ImagePyramidLayer& layer, const Rect bounds) const;
+	std::shared_ptr<Patch> extract(const ImagePyramidLayer& layer, const cv::Rect bounds) const;
 
-	shared_ptr<ImagePyramid> pyramid; ///< The image pyramid.
+	std::shared_ptr<ImagePyramid> pyramid; ///< The image pyramid.
 	int patchWidth;  ///< The width of the image data of the extracted patches.
 	int patchHeight; ///< The height of the image data of the extracted patches.
-	shared_ptr<ChainedFilter> patchFilter; ///< Filter that is applied to the patches.
+	std::shared_ptr<ChainedFilter> patchFilter; ///< Filter that is applied to the patches.
 };
 
 } /* namespace imageprocessing */

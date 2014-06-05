@@ -56,10 +56,13 @@ using namespace imageprocessing;
 using namespace classification;
 using namespace libsvm;
 using namespace std::chrono;
+using cv::Rect;
+using boost::optional;
 using boost::property_tree::info_parser::read_info;
 using std::milli;
 using std::move;
 using std::ostringstream;
+using std::invalid_argument;
 
 namespace po = boost::program_options;
 

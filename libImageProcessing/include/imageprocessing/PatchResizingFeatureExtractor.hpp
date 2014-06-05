@@ -29,21 +29,19 @@ public:
 	 * @param[in] yOffset The y-offset relative to the original patch height.
 	 * @param[in] xOffset The x-offset relative to the original patch width.
 	 */
-	PatchResizingFeatureExtractor(shared_ptr<FeatureExtractor> extractor, double factor, double yOffset = 0, double xOffset = 0) :
+	PatchResizingFeatureExtractor(std::shared_ptr<FeatureExtractor> extractor, double factor, double yOffset = 0, double xOffset = 0) :
 			extractor(extractor), factor(factor), yOffset(yOffset), xOffset(xOffset) {}
 
-	~PatchResizingFeatureExtractor() {}
-
-	void update(const Mat& image) {
+	void update(const cv::Mat& image) {
 		extractor->update(image);
 	}
 
-	void update(shared_ptr<VersionedImage> image) {
+	void update(std::shared_ptr<VersionedImage> image) {
 		extractor->update(image);
 	}
 
-	shared_ptr<Patch> extract(int x, int y, int width, int height) const {
-		shared_ptr<Patch> patch = extractor->extract(
+	std::shared_ptr<Patch> extract(int x, int y, int width, int height) const {
+		std::shared_ptr<Patch> patch = extractor->extract(
 				cvRound(x + xOffset * width), cvRound(y + yOffset * height),
 				cvRound(factor * width), cvRound(factor * height));
 		if (patch) {
@@ -57,10 +55,10 @@ public:
 
 private:
 
-	shared_ptr<FeatureExtractor> extractor; ///< The underlying feature extractor.
-	double factor;                          ///< The patch resizing factor.
-	double yOffset;                         ///< The y-offset relative to the original patch height.
-	double xOffset;                         ///< The x-offset relative to the original patch height.
+	std::shared_ptr<FeatureExtractor> extractor; ///< The underlying feature extractor.
+	double factor;  ///< The patch resizing factor.
+	double yOffset; ///< The y-offset relative to the original patch height.
+	double xOffset; ///< The x-offset relative to the original patch height.
 };
 
 } /* namespace imageprocessing */

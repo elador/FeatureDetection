@@ -12,9 +12,6 @@
 #include "classification/KernelVisitor.hpp"
 #include <stdexcept>
 
-using cv::Mat;
-using std::invalid_argument;
-
 namespace classification {
 
 /**
@@ -28,15 +25,13 @@ public:
 	 */
 	HistogramIntersectionKernel() {}
 
-	~HistogramIntersectionKernel() {}
-
-	double compute(const Mat& lhs, const Mat& rhs) const {
+	double compute(const cv::Mat& lhs, const cv::Mat& rhs) const {
 		if (!lhs.isContinuous() || !rhs.isContinuous())
-			throw invalid_argument("HistogramIntersectionKernel: arguments have to be continuous");
+			throw std::invalid_argument("HistogramIntersectionKernel: arguments have to be continuous");
 		if (lhs.flags != rhs.flags)
-			throw invalid_argument("HistogramIntersectionKernel: arguments have to have the same type");
+			throw std::invalid_argument("HistogramIntersectionKernel: arguments have to have the same type");
 		if (lhs.rows * lhs.cols != rhs.rows * rhs.cols)
-			throw invalid_argument("HistogramIntersectionKernel: arguments have to have the same length");
+			throw std::invalid_argument("HistogramIntersectionKernel: arguments have to have the same length");
 		return computeSumOfMinimums(lhs, rhs);
 	}
 
@@ -53,13 +48,13 @@ private:
 	 * @param[in] rhs The second vector.
 	 * @return The sum of the squared differences.
 	 */
-	double computeSumOfMinimums(const Mat& lhs, const Mat& rhs) const {
+	double computeSumOfMinimums(const cv::Mat& lhs, const cv::Mat& rhs) const {
 		switch (lhs.depth()) {
 			case CV_8U: return computeSumOfMinimums_uchar(lhs, rhs);
 			case CV_32S: return computeSumOfMinimums_any<int>(lhs, rhs);
 			case CV_32F: return computeSumOfMinimums_any<float>(lhs, rhs);
 		}
-		throw invalid_argument("HistogramIntersectionKernel: arguments have to be of depth CV_8U, CV_32S or CV_32F");
+		throw std::invalid_argument("HistogramIntersectionKernel: arguments have to be of depth CV_8U, CV_32S or CV_32F");
 	}
 
 	/**
@@ -69,7 +64,7 @@ private:
 	 * @param[in] rhs The second vector.
 	 * @return The sum of the minimums.
 	 */
-	int computeSumOfMinimums_uchar(const Mat& lhs, const Mat& rhs) const {
+	int computeSumOfMinimums_uchar(const cv::Mat& lhs, const cv::Mat& rhs) const {
 		const uchar* lvalues = lhs.ptr<uchar>();
 		const uchar* rvalues = rhs.ptr<uchar>();
 		int sum = 0;
@@ -87,7 +82,7 @@ private:
 	 * @return The sum of the minimums.
 	 */
 	template<class T>
-	float computeSumOfMinimums_any(const Mat& lhs, const Mat& rhs) const {
+	float computeSumOfMinimums_any(const cv::Mat& lhs, const cv::Mat& rhs) const {
 		const T* lvalues = lhs.ptr<T>();
 		const T* rvalues = rhs.ptr<T>();
 		float sum = 0;

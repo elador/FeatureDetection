@@ -21,8 +21,13 @@
 
 using logging::Logger;
 using logging::LoggerFactory;
+using cv::Mat;
 using boost::filesystem::path;
+using boost::property_tree::ptree;
+using std::pair;
+using std::string;
 using std::make_pair;
+using std::shared_ptr;
 using std::make_shared;
 using std::invalid_argument;
 using std::runtime_error;
@@ -35,8 +40,6 @@ ProbabilisticRvmClassifier::ProbabilisticRvmClassifier() :
 
 ProbabilisticRvmClassifier::ProbabilisticRvmClassifier(shared_ptr<RvmClassifier> rvm, double logisticA, double logisticB) :
 		rvm(rvm), logisticA(logisticA), logisticB(logisticB) {}
-
-ProbabilisticRvmClassifier::~ProbabilisticRvmClassifier() {}
 
 bool ProbabilisticRvmClassifier::classify(const Mat& featureVector) const {
 	return rvm->classify(featureVector);

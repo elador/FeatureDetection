@@ -81,9 +81,9 @@ public:
 
 	bool initialize(std::shared_ptr<imageprocessing::VersionedImage> image, Sample& target);
 
-	bool adapt(std::shared_ptr<imageprocessing::VersionedImage> image, const std::vector<shared_ptr<Sample>>& samples, const Sample& target);
+	bool adapt(std::shared_ptr<imageprocessing::VersionedImage> image, const std::vector<std::shared_ptr<Sample>>& samples, const Sample& target);
 
-	bool adapt(std::shared_ptr<imageprocessing::VersionedImage> image, const std::vector<shared_ptr<Sample>>& samples);
+	bool adapt(std::shared_ptr<imageprocessing::VersionedImage> image, const std::vector<std::shared_ptr<Sample>>& samples);
 
 	void reset();
 

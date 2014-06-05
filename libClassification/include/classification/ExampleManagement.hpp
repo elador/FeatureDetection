@@ -8,7 +8,6 @@
 #ifndef EXAMPLEMANAGEMENT_HPP_
 #define EXAMPLEMANAGEMENT_HPP_
 
-//#include "classification/ExampleIterator.hpp"
 #include "opencv2/core/core.hpp"
 #include <vector>
 #include <memory>

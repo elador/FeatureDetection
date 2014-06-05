@@ -13,6 +13,9 @@
 #include <ctime>
 #include <stdexcept>
 
+using cv::Mat;
+using std::vector;
+using std::shared_ptr;
 using std::invalid_argument;
 using std::make_shared;
 
@@ -35,8 +38,6 @@ ResamplingSampler::ResamplingSampler(unsigned int count, double randomRate,
 		throw invalid_argument("ResamplingSampler: the maximum size must not be smaller than the minimum size");
 	setRandomRate(randomRate);
 }
-
-ResamplingSampler::~ResamplingSampler() {}
 
 void ResamplingSampler::init(const Mat& image) {
 	if (minSize > image.cols || minSize > image.rows)

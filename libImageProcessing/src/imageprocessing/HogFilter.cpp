@@ -8,6 +8,7 @@
 #include "imageprocessing/HogFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using std::invalid_argument;
 
 namespace imageprocessing {
@@ -53,8 +54,6 @@ HogFilter::HogFilter(int binCount, int cellWidth, int cellHeight, int blockWidth
 	if (signedAndUnsigned && binCount % 2 != 0)
 		throw invalid_argument("HogFilter: the bin size must be even for signed and unsigned gradients to be combined");
 }
-
-HogFilter::~HogFilter() {}
 
 Mat HogFilter::applyTo(const Mat& image, Mat& filtered) const {
 	int cellRowCount = cvRound(static_cast<double>(image.rows) / static_cast<double>(cellHeight));

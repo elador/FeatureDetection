@@ -11,7 +11,10 @@
 #include "imageprocessing/VersionedImage.hpp"
 #include "imageprocessing/Patch.hpp"
 
+using cv::Mat;
 using cv::Rect;
+using std::shared_ptr;
+using std::make_shared;
 
 namespace imageprocessing {
 
@@ -20,8 +23,6 @@ DirectImageFeatureExtractor::DirectImageFeatureExtractor() :
 		image(),
 		imageFilter(make_shared<ChainedFilter>()),
 		patchFilter(make_shared<ChainedFilter>()) {}
-
-DirectImageFeatureExtractor::~DirectImageFeatureExtractor() {}
 
 void DirectImageFeatureExtractor::addImageFilter(shared_ptr<ImageFilter> filter) {
 	imageFilter->add(filter);

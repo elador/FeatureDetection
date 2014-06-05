@@ -11,9 +11,6 @@
 #include "opencv2/core/core.hpp"
 #include <vector>
 
-using cv::Mat;
-using std::vector;
-
 namespace classification {
 
 /**
@@ -41,7 +38,7 @@ public:
 	 * @param[in] newNegativeExamples The new negative training examples.
 	 * @return True if this classifier was trained successfully and may be used, false otherwise.
 	 */
-	virtual bool retrain(const vector<Mat>& newPositiveExamples, const vector<Mat>& newNegativeExamples) = 0;
+	virtual bool retrain(const std::vector<cv::Mat>& newPositiveExamples, const std::vector<cv::Mat>& newNegativeExamples) = 0;
 
 	/**
 	 * Resets this classifier.

@@ -28,12 +28,10 @@ public:
 	 */
 	GridSampler(int minSize, int maxSize, float sizeScale, float stepSize);
 
-	~GridSampler();
+	void init(const cv::Mat& image);
 
-	void init(const Mat& image);
-
-	void sample(const vector<shared_ptr<Sample>>& samples, vector<shared_ptr<Sample>>& newSamples,
-			const Mat& image, const shared_ptr<Sample> target);
+	void sample(const std::vector<std::shared_ptr<Sample>>& samples, std::vector<std::shared_ptr<Sample>>& newSamples,
+			const cv::Mat& image, const std::shared_ptr<Sample> target);
 
 private:
 

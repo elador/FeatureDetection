@@ -16,11 +16,19 @@
 #include <functional>
 
 using imageprocessing::Patch;
+using imageprocessing::VersionedImage;
 using imageprocessing::FeatureExtractor;
+using classification::TrainableProbabilisticClassifier;
+using detection::ClassifiedPatch;
+using cv::Mat;
 using boost::make_indirect_iterator;
-using std::make_shared;
+using std::pair;
 using std::sort;
+using std::vector;
 using std::greater;
+using std::shared_ptr;
+using std::make_shared;
+using std::unordered_map;
 
 namespace condensation {
 
@@ -34,8 +42,6 @@ SelfLearningMeasurementModel::SelfLearningMeasurementModel(shared_ptr<FeatureExt
 				negativeThreshold(negativeThreshold),
 				positiveTrainingExamples(),
 				negativeTrainingExamples() {}
-
-SelfLearningMeasurementModel::~SelfLearningMeasurementModel() {}
 
 void SelfLearningMeasurementModel::update(shared_ptr<VersionedImage> image) {
 	cache.clear();

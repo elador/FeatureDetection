@@ -7,6 +7,10 @@
 
 #include "imageprocessing/ChainedFilter.hpp"
 
+using cv::Mat;
+using std::vector;
+using std::shared_ptr;
+
 namespace imageprocessing {
 
 ChainedFilter::ChainedFilter() : filters() {}
@@ -24,8 +28,6 @@ ChainedFilter::ChainedFilter(
 	filters[1] = filter2;
 	filters[2] = filter3;
 }
-
-ChainedFilter::~ChainedFilter() {}
 
 void ChainedFilter::add(shared_ptr<ImageFilter> filter) {
 	filters.push_back(filter);

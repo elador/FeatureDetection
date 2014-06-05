@@ -44,6 +44,8 @@ using namespace superviseddescentmodel;
 namespace po = boost::program_options;
 using std::cout;
 using std::endl;
+using std::shared_ptr;
+using std::make_shared;
 using boost::property_tree::ptree;
 using boost::filesystem::path;
 using boost::lexical_cast;

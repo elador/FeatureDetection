@@ -8,6 +8,7 @@
 #include "imageprocessing/ExtendedHogFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using std::invalid_argument;
 
 namespace imageprocessing {
@@ -49,8 +50,6 @@ ExtendedHogFilter::ExtendedHogFilter(int binCount, int cellWidth, int cellHeight
 	if (alpha <= 0)
 		throw invalid_argument("ExtendedHogFilter: alpha must be greater than zero");
 }
-
-ExtendedHogFilter::~ExtendedHogFilter() {}
 
 Mat ExtendedHogFilter::applyTo(const Mat& image, Mat& filtered) const {
 	int cellRowCount = cvRound(static_cast<double>(image.rows) / static_cast<double>(cellHeight));

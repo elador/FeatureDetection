@@ -12,6 +12,12 @@
 #include "condensation/StateExtractor.hpp"
 #include "imageprocessing/VersionedImage.hpp"
 
+using imageprocessing::VersionedImage;
+using cv::Mat;
+using cv::Rect;
+using boost::optional;
+using std::vector;
+using std::shared_ptr;
 using std::make_shared;
 
 namespace condensation {
@@ -25,8 +31,6 @@ CondensationTracker::CondensationTracker(shared_ptr<Sampler> sampler,
 				sampler(sampler),
 				measurementModel(measurementModel),
 				extractor(extractor) {}
-
-CondensationTracker::~CondensationTracker() {}
 
 optional<Rect> CondensationTracker::process(const Mat& imageData) {
 	image->setData(imageData);

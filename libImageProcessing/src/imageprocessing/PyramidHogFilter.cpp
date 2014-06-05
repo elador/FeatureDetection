@@ -8,6 +8,7 @@
 #include "imageprocessing/PyramidHogFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using std::invalid_argument;
 
 namespace imageprocessing {
@@ -28,8 +29,6 @@ PyramidHogFilter::PyramidHogFilter(int binCount, int levelCount, bool interpolat
 	for (int level = 0; level < levelCount; ++level)
 		histogramCount += 1 << (2 * level);
 }
-
-PyramidHogFilter::~PyramidHogFilter() {}
 
 Mat PyramidHogFilter::applyTo(const Mat& image, Mat& filtered) const {
 	int realBinCount = signedAndUnsigned ? 3 * binCount / 2 : binCount;

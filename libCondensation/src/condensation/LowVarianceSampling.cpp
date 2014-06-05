@@ -9,14 +9,15 @@
 #include "condensation/Sample.hpp"
 #include <ctime>
 
+using std::vector;
+using std::shared_ptr;
+
 namespace condensation {
 
 LowVarianceSampling::LowVarianceSampling() : generator(boost::mt19937(time(0))),
 		distribution(boost::uniform_01<>()) {}
 
-LowVarianceSampling::~LowVarianceSampling() {}
-
-void LowVarianceSampling::resample(const vector<shared_ptr<Sample>>& samples, unsigned int count, vector<shared_ptr<Sample>>& newSamples) {
+void LowVarianceSampling::resample(const vector<shared_ptr<Sample>>& samples, size_t count, vector<shared_ptr<Sample>>& newSamples) {
 	newSamples.reserve(count);
 	if (samples.size() > 0) {
 		double weightSum = computeWeightSum(samples);

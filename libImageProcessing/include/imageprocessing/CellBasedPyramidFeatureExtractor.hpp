@@ -45,12 +45,12 @@ public:
 	 * @param[in] cols The cell column count of the extracted patches.
 	 * @param[in] rows The cell row count of the extracted patches.
 	 */
-	CellBasedPyramidFeatureExtractor(shared_ptr<ImagePyramid> pyramid, int cellSize, int cols, int rows);
+	CellBasedPyramidFeatureExtractor(std::shared_ptr<ImagePyramid> pyramid, int cellSize, int cols, int rows);
 
-	vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(),
+	std::vector<std::shared_ptr<Patch>> extract(int stepX, int stepY, cv::Rect roi = cv::Rect(),
 			int firstLayer = -1, int lastLayer = -1, int stepLayer = 1) const;
 
-	vector<pair<int, double>> getLayerScales() const;
+	std::vector<std::pair<int, double>> getLayerScales() const;
 
 protected:
 
@@ -58,7 +58,7 @@ protected:
 
 	int getOriginal(const ImagePyramidLayer& layer, int value) const;
 
-	const shared_ptr<ImagePyramidLayer> getLayer(int width) const;
+	const std::shared_ptr<ImagePyramidLayer> getLayer(int width) const;
 
 private:
 

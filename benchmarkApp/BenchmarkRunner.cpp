@@ -62,6 +62,7 @@ using namespace imageio;
 using namespace imageprocessing;
 using namespace classification;
 using libsvm::LibSvmClassifier;
+using cv::Size;
 using boost::property_tree::ptree;
 using boost::property_tree::info_parser::read_info;
 using boost::optional;
@@ -73,6 +74,7 @@ using std::unique_ptr;
 using std::shared_ptr;
 using std::make_shared;
 using std::istringstream;
+using std::invalid_argument;
 
 LbpFilter::Type getLbpType(string type) {
 	if (type == "lbp8")

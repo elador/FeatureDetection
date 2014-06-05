@@ -8,13 +8,12 @@
 #include "imageprocessing/GrayscaleFilter.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
+using cv::Mat;
 using cv::cvtColor;
 
 namespace imageprocessing {
 
 GrayscaleFilter::GrayscaleFilter() {}
-
-GrayscaleFilter::~GrayscaleFilter() {}
 
 Mat GrayscaleFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.channels() > 1)

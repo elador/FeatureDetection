@@ -36,7 +36,7 @@ public:
 	 * @param[in] target The initial target position and sample.
 	 * @return True if the model was updated, false otherwise.
 	 */
-	virtual bool initialize(shared_ptr<VersionedImage> image, Sample& target) = 0;
+	virtual bool initialize(std::shared_ptr<imageprocessing::VersionedImage> image, Sample& target) = 0;
 
 	/**
 	 * Adapts this model to the given target.
@@ -46,7 +46,7 @@ public:
 	 * @param[in] target The estimated target position.
 	 * @return True if the model was updated, false otherwise.
 	 */
-	virtual bool adapt(shared_ptr<VersionedImage> image, const vector<shared_ptr<Sample>>& samples, const Sample& target) = 0;
+	virtual bool adapt(std::shared_ptr<imageprocessing::VersionedImage> image, const std::vector<std::shared_ptr<Sample>>& samples, const Sample& target) = 0;
 
 	/**
 	 * Adapts this model in case the target was not found.
@@ -55,7 +55,7 @@ public:
 	 * @param[in] samples The weighted samples.
 	 * @return True if the model was updated, false otherwise.
 	 */
-	virtual bool adapt(shared_ptr<VersionedImage> image, const vector<shared_ptr<Sample>>& samples) = 0;
+	virtual bool adapt(std::shared_ptr<imageprocessing::VersionedImage> image, const std::vector<std::shared_ptr<Sample>>& samples) = 0;
 
 	/**
 	 * Resets this model to its original state.

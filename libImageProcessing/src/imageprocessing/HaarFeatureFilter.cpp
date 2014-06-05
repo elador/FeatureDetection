@@ -8,6 +8,9 @@
 #include "imageprocessing/HaarFeatureFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
+using cv::Rect_;
+using std::vector;
 using std::invalid_argument;
 
 namespace imageprocessing {
@@ -34,8 +37,6 @@ HaarFeatureFilter::HaarFeatureFilter(vector<float> sizes, vector<float> coords, 
 HaarFeatureFilter::HaarFeatureFilter(vector<float> sizes, vector<float> xs, vector<float> ys, int types) : features() {
 	buildFeatures(sizes, xs, ys, types);
 }
-
-HaarFeatureFilter::~HaarFeatureFilter() {}
 
 void HaarFeatureFilter::buildFeatures(vector<float> sizes, unsigned int xCount, unsigned int yCount, int types) {
 	vector<float> xs(xCount);

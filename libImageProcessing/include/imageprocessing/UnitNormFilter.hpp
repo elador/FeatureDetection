@@ -29,13 +29,11 @@ public:
 	 */
 	UnitNormFilter(int normType = cv::NORM_L2);
 
-	~UnitNormFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
-	void applyInPlace(Mat& image) const;
+	void applyInPlace(cv::Mat& image) const;
 
 private:
 
@@ -44,7 +42,7 @@ private:
 	 *
 	 * @param[in,out] image The image that will be normalized. Has to be of type CV_32FC1.
 	 */
-	void normalize(Mat& image) const;
+	void normalize(cv::Mat& image) const;
 
 	static const float eps; ///< Small value being added to the norm to prevent division by zero.
 	int normType; ///< The norm type (see cv::norm).

@@ -14,26 +14,18 @@
 #include <unordered_map>
 #include <utility>
 
-using cv::Mat;
-using std::unordered_map;
-using std::pair;
-
 namespace imageprocessing {
 class Patch;
 class FeatureExtractor;
 }
-using imageprocessing::Patch;
-using imageprocessing::FeatureExtractor;
 
 namespace classification {
 class TrainableProbabilisticClassifier;
 }
-using classification::TrainableProbabilisticClassifier;
 
 namespace detection {
 class ClassifiedPatch;
 }
-using detection::ClassifiedPatch;
 
 namespace condensation {
 
@@ -52,12 +44,11 @@ public:
 	 * @param[in] positiveThreshold The certainty threshold for patches to be used as positive samples (must be exceeded).
 	 * @param[in] negativeThreshold The certainty threshold for patches to be used as negative samples (must fall below).
 	 */
-	SelfLearningMeasurementModel(shared_ptr<FeatureExtractor> featureExtractor,
-			shared_ptr<TrainableProbabilisticClassifier> classifier, double positiveThreshold = 0.85, double negativeThreshold = 0.05);
+	SelfLearningMeasurementModel(std::shared_ptr<imageprocessing::FeatureExtractor> featureExtractor,
+			std::shared_ptr<classification::TrainableProbabilisticClassifier> classifier,
+			double positiveThreshold = 0.85, double negativeThreshold = 0.05);
 
-	~SelfLearningMeasurementModel();
-
-	void update(shared_ptr<VersionedImage> image);
+	void update(std::shared_ptr<imageprocessing::VersionedImage> image);
 
 	void evaluate(Sample& sample) const;
 
@@ -67,11 +58,11 @@ public:
 		return usable;
 	}
 
-	bool initialize(shared_ptr<VersionedImage> image, Sample& target);
+	bool initialize(std::shared_ptr<imageprocessing::VersionedImage> image, Sample& target);
 
-	bool adapt(shared_ptr<VersionedImage> image, const vector<shared_ptr<Sample>>& samples, const Sample& target);
+	bool adapt(std::shared_ptr<imageprocessing::VersionedImage> image, const std::vector<std::shared_ptr<Sample>>& samples, const Sample& target);
 
-	bool adapt(shared_ptr<VersionedImage> image, const vector<shared_ptr<Sample>>& samples);
+	bool adapt(std::shared_ptr<imageprocessing::VersionedImage> image, const std::vector<std::shared_ptr<Sample>>& samples);
 
 	void reset();
 
@@ -83,7 +74,7 @@ private:
 	 * @param[in] pairs The extracted and classified patches.
 	 * @return The feature vectors.
 	 */
-	vector<Mat> getFeatureVectors(const vector<shared_ptr<ClassifiedPatch>>& patches);
+	std::vector<cv::Mat> getFeatureVectors(const std::vector<std::shared_ptr<detection::ClassifiedPatch>>& patches);
 
 	/**
 	 * Creates a list of feature vectors from the given samples.
@@ -91,16 +82,16 @@ private:
 	 * @param[in] samples The samples.
 	 * @return The extracted feature vectors.
 	 */
-	vector<Mat> getFeatureVectors(vector<shared_ptr<Sample>>& samples);
+	std::vector<cv::Mat> getFeatureVectors(std::vector<std::shared_ptr<Sample>>& samples);
 
-	shared_ptr<FeatureExtractor> featureExtractor; ///< The feature extractor used with the dynamic SVM.
-	shared_ptr<TrainableProbabilisticClassifier> classifier;    ///< The classifier that will be re-trained.
+	std::shared_ptr<imageprocessing::FeatureExtractor> featureExtractor; ///< The feature extractor used with the dynamic SVM.
+	std::shared_ptr<classification::TrainableProbabilisticClassifier> classifier; ///< The classifier that will be re-trained.
 	bool usable; ///< Flag that indicates whether this model may be used for evaluation.
-	mutable unordered_map<shared_ptr<Patch>, pair<bool, double>> cache; ///< The classification result cache.
+	mutable std::unordered_map<std::shared_ptr<imageprocessing::Patch>, std::pair<bool, double>> cache; ///< The classification result cache.
 	double positiveThreshold; ///< The threshold for samples to be used as positive training samples (must be exceeded).
 	double negativeThreshold; ///< The threshold for samples to be used as negative training samples (must fall below).
-	mutable vector<shared_ptr<ClassifiedPatch>> positiveTrainingExamples; ///< The positive training examples.
-	mutable vector<shared_ptr<ClassifiedPatch>> negativeTrainingExamples; ///< The negative training examples.
+	mutable std::vector<std::shared_ptr<detection::ClassifiedPatch>> positiveTrainingExamples; ///< The positive training examples.
+	mutable std::vector<std::shared_ptr<detection::ClassifiedPatch>> negativeTrainingExamples; ///< The negative training examples.
 };
 
 } /* namespace condensation */

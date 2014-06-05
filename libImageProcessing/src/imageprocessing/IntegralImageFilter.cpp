@@ -8,11 +8,11 @@
 #include "imageprocessing/IntegralImageFilter.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
+using cv::Mat;
+
 namespace imageprocessing {
 
 IntegralImageFilter::IntegralImageFilter(int type) : type(type) {}
-
-IntegralImageFilter::~IntegralImageFilter() {}
 
 Mat IntegralImageFilter::applyTo(const Mat& image, Mat& filtered) const {
 	cv::integral(image, filtered, type);

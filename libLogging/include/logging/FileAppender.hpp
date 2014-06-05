@@ -12,8 +12,6 @@
 #include "logging/Appender.hpp"
 #include <fstream>
 
-using std::ofstream;
-
 namespace logging {
 
 /**
@@ -29,7 +27,7 @@ public:
 	 * param[in] loglevel The LogLevel at which to log.
 	 * param[in] filename The full path to the file to log to.
 	 */
-	FileAppender(LogLevel logLevel, string filename);
+	FileAppender(LogLevel logLevel, std::string filename);
 
 	~FileAppender();
 
@@ -40,7 +38,7 @@ public:
 	 * @param[in] loggerName The name of the logger that is logging the message.
 	 * @param[in] logMessage The log-message itself.
 	 */
-	void log(const LogLevel logLevel, const string loggerName, const string logMessage);
+	void log(const LogLevel logLevel, const std::string loggerName, const std::string logMessage);
 
 private:
 
@@ -49,10 +47,10 @@ private:
 	 *
 	 * @return The formatted time.
 	 */
-	string getCurrentTime();
+	std::string getCurrentTime();
 
 	// TODO: We should make the copy constructor (and assignment operator?) private because we have an ofstream as member variable! Read that somewhere on stackoverflow.
-	ofstream file;
+	std::ofstream file;
 };
 
 } /* namespace logging */

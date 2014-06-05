@@ -34,11 +34,9 @@ public:
 	 */
 	PyramidHogFilter(int binCount, int levelCount, bool interpolate = false, bool signedAndUnsigned = false);
 
-	~PyramidHogFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
 protected:
 
@@ -56,7 +54,7 @@ private:
 	 * @param[in] interpolate Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
 	 * @param[in] signedAndUnsigned Flag that indicates whether signed and unsigned gradients should be used.
 	 */
-	void createCellHistograms(const Mat& image, float* histogramsValues, int level, int binCount, bool interpolate, bool signedAndUnsigned) const;
+	void createCellHistograms(const cv::Mat& image, float* histogramsValues, int level, int binCount, bool interpolate, bool signedAndUnsigned) const;
 
 	/**
 	 * Copies the cell histograms from source to destination. If both signed and unsigned gradients should be combined

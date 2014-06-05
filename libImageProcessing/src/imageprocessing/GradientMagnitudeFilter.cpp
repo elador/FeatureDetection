@@ -8,14 +8,13 @@
 #include "imageprocessing/GradientMagnitudeFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using cv::Vec2b;
 using std::invalid_argument;
 
 namespace imageprocessing {
 
 GradientMagnitudeFilter::GradientMagnitudeFilter() {}
-
-GradientMagnitudeFilter::~GradientMagnitudeFilter() {}
 
 Mat GradientMagnitudeFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.channels() != 2)

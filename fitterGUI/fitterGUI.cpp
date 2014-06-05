@@ -87,6 +87,7 @@ using boost::filesystem::path;
 using boost::lexical_cast;
 using std::cout;
 using std::endl;
+using std::make_shared;
 
 // alpha = 4th channel. 0 = fully transparent, 255 = not transparent.
 // input: backgroundImage needs to be 8UC3, overlayImage 8UC4

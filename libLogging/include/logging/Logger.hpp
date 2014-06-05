@@ -14,10 +14,6 @@
 #include <vector>
 #include <memory>
 
-using std::string;
-using std::vector;
-using std::shared_ptr;
-
 namespace logging {
 
 class Appender;
@@ -35,62 +31,60 @@ public:
 	 *
 	 * @param[in] name The name of the logger. Usually the namespace of the library it is working in.
 	 */
-	explicit Logger(string name);
-
-	~Logger();
+	explicit Logger(std::string name);
 
 	/**
 	 * Adds an appender to this logger.
 	 *
 	 * @param[in] The new appender.
 	 */
-	void addAppender(shared_ptr<Appender> appender);
+	void addAppender(std::shared_ptr<Appender> appender);
 
 	/**
 	 * Logs a message with log-level TRACE to all appenders (e.g. the console or a file).
 	 *
 	 * @param[in] logMessage The message to be logged.
 	 */
-	void trace(const string logMessage);
+	void trace(const std::string logMessage);
 
 	/**
 	 * Logs a message with log-level DEBUG to all appenders (e.g. the console or a file).
 	 *
 	 * @param[in] logMessage The message to be logged.
 	 */
-	void debug(const string logMessage);
+	void debug(const std::string logMessage);
 
 	/**
 	 * Logs a message with log-level INFO to all appenders (e.g. the console or a file).
 	 *
 	 * @param[in] logMessage The message to be logged.
 	 */
-	void info(const string logMessage);
+	void info(const std::string logMessage);
 
 	/**
 	 * Logs a message with log-level WARN to all appenders (e.g. the console or a file).
 	 *
 	 * @param[in] logMessage The message to be logged.
 	 */
-	void warn(const string logMessage);
+	void warn(const std::string logMessage);
 
 	/**
 	 * Logs a message with log-level ERROR to all appenders (e.g. the console or a file).
 	 *
 	 * @param[in] logMessage The message to be logged.
 	 */
-	void error(const string logMessage);
+	void error(const std::string logMessage);
 
 	/**
 	 * Logs a message with log-level PANIC to all appenders (e.g. the console or a file).
 	 *
 	 * @param[in] logMessage The message to be logged.
 	 */
-	void panic(const string logMessage);
+	void panic(const std::string logMessage);
 
 private:
-	vector<shared_ptr<Appender>> appenders;
-	string name;
+	std::string name;
+	std::vector<std::shared_ptr<Appender>> appenders;
 
 	/**
 	 * Logs a message to all appenders (e.g. the console or a file) with corresponding log-levels.
@@ -98,7 +92,7 @@ private:
 	 * @param[in] logLevel The log-level of the message.
 	 * @param[in] logMessage The message to be logged.
 	 */
-	void log(const LogLevel logLevel, const string logMessage);
+	void log(const LogLevel logLevel, const std::string logMessage);
 
 };
 

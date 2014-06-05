@@ -37,6 +37,7 @@ using namespace imageprocessing;
 using namespace condensation;
 using namespace classification;
 using cv::Mat;
+using cv::Rect;
 using boost::property_tree::ptree;
 using boost::optional;
 using std::string;

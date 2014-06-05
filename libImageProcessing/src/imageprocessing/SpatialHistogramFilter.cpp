@@ -8,6 +8,7 @@
 #include "imageprocessing/SpatialHistogramFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using std::invalid_argument;
 
 namespace imageprocessing {
@@ -51,8 +52,6 @@ SpatialHistogramFilter::SpatialHistogramFilter(int binCount, int cellWidth, int 
 	if (blockHeight <= 0)
 		throw invalid_argument("SpatialHistogramFilter: blockHeight must be greater than zero");
 }
-
-SpatialHistogramFilter::~SpatialHistogramFilter() {}
 
 Mat SpatialHistogramFilter::applyTo(const Mat& image, Mat& filtered) const {
 	int cellRowCount = cvRound(static_cast<double>(image.rows) / static_cast<double>(cellHeight));

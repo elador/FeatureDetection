@@ -10,6 +10,7 @@
 #include "classification/Kernel.hpp"
 
 using cv::Mat;
+using std::pair;
 using std::shared_ptr;
 using std::make_shared;
 

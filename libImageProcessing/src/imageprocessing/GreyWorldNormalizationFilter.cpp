@@ -8,6 +8,7 @@
 #include "imageprocessing/GreyWorldNormalizationFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using cv::Vec3b;
 using cv::saturate_cast;
 using std::invalid_argument;
@@ -15,8 +16,6 @@ using std::invalid_argument;
 namespace imageprocessing {
 
 GreyWorldNormalizationFilter::GreyWorldNormalizationFilter() {}
-
-GreyWorldNormalizationFilter::~GreyWorldNormalizationFilter() {}
 
 Mat GreyWorldNormalizationFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.type() != CV_8UC3)

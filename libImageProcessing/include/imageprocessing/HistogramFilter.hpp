@@ -11,8 +11,6 @@
 #include "imageprocessing/ImageFilter.hpp"
 #include <vector>
 
-using std::vector;
-
 namespace imageprocessing {
 
 /**
@@ -34,9 +32,7 @@ public:
 	 */
 	explicit HistogramFilter(Normalization normalization);
 
-	virtual ~HistogramFilter();
-
-	virtual Mat applyTo(const Mat& image, Mat& filtered) const = 0;
+	virtual cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const = 0;
 
 protected:
 
@@ -56,14 +52,14 @@ protected:
 	 * @param[in] columnCount Column count of the cell grid.
 	 * @param[in] interpolate Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
 	 */
-	void createCellHistograms(const Mat& image, Mat& histograms, int binCount, int rowCount, int columnCount, bool interpolate) const;
+	void createCellHistograms(const cv::Mat& image, cv::Mat& histograms, int binCount, int rowCount, int columnCount, bool interpolate) const;
 
 	/**
 	 * Normalizes the given histogram.
 	 *
 	 * @param[in,out] histogram The histogram that should be normalized.
 	 */
-	void normalize(Mat& histogram) const;
+	void normalize(cv::Mat& histogram) const;
 
 	static const float eps; ///< The small value being added to the norm to prevent division by zero.
 
@@ -88,14 +84,14 @@ private:
 	 * @param[in] size The necessary size of the cache.
 	 * @param[in] count The number of cells.
 	 */
-	void createCache(vector<CacheEntry>& cache, unsigned int size, int count) const;
+	void createCache(std::vector<CacheEntry>& cache, unsigned int size, int count) const;
 
 	/**
 	 * Normalizes the given histogram according to L2-norm.
 	 *
 	 * @param[in,out] histogram The histogram that should be normalized.
 	 */
-	void normalizeL2(Mat& histogram) const;
+	void normalizeL2(cv::Mat& histogram) const;
 
 	/**
 	 * Normalizes the given histogram according to L2-hys (L2-norm followed by clipping (limit maximum values to 0.2)
@@ -103,24 +99,24 @@ private:
 	 *
 	 * @param[in,out] histogram The histogram that should be normalized.
 	 */
-	void normalizeL2Hys(Mat& histogram) const;
+	void normalizeL2Hys(cv::Mat& histogram) const;
 
 	/**
 	 * Normalizes the given histogram according to L1-norm.
 	 *
 	 * @param[in,out] histogram The histogram that should be normalized.
 	 */
-	void normalizeL1(Mat& histogram) const;
+	void normalizeL1(cv::Mat& histogram) const;
 
 	/**
 	 * Normalizes the given histogram according to L1-sqrt (L1-norm followed by computing the square root over all elements).
 	 *
 	 * @param[in,out] histogram The histogram that should be normalized.
 	 */
-	void normalizeL1Sqrt(Mat& histogram) const;
+	void normalizeL1Sqrt(cv::Mat& histogram) const;
 
-	mutable vector<CacheEntry> rowCache; ///< Cache for the linear interpolation of the row indices.
-	mutable vector<CacheEntry> colCache; ///< Cache for the linear interpolation of the column indices.
+	mutable std::vector<CacheEntry> rowCache; ///< Cache for the linear interpolation of the row indices.
+	mutable std::vector<CacheEntry> colCache; ///< Cache for the linear interpolation of the column indices.
 };
 
 } /* namespace imageprocessing */

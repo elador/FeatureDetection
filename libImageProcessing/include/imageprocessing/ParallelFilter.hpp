@@ -12,9 +12,6 @@
 #include <memory>
 #include <vector>
 
-using std::shared_ptr;
-using std::vector;
-
 namespace imageprocessing {
 
 /**
@@ -34,7 +31,7 @@ public:
 	 *
 	 * @param[in] filters The image filters whose results should be combined.
 	 */
-	explicit ParallelFilter(vector<shared_ptr<ImageFilter>> filters);
+	explicit ParallelFilter(std::vector<std::shared_ptr<ImageFilter>> filters);
 
 	/**
 	 * Constructs a new parallel image filter that combines the results of two filters.
@@ -42,7 +39,7 @@ public:
 	 * @param[in] filter1 The first image filter.
 	 * @param[in] filter2 The second image filter.
 	 */
-	ParallelFilter(shared_ptr<ImageFilter> filter1, shared_ptr<ImageFilter> filter2);
+	ParallelFilter(std::shared_ptr<ImageFilter> filter1, std::shared_ptr<ImageFilter> filter2);
 
 	/**
 	 * Constructs a new parallel image filter that combines the results of three filters.
@@ -51,24 +48,22 @@ public:
 	 * @param[in] filter2 The second image filter.
 	 * @param[in] filter3 The third image filter.
 	 */
-	ParallelFilter(shared_ptr<ImageFilter> filter1, shared_ptr<ImageFilter> filter2, shared_ptr<ImageFilter> filter3);
-
-	~ParallelFilter();
+	ParallelFilter(std::shared_ptr<ImageFilter> filter1, std::shared_ptr<ImageFilter> filter2, std::shared_ptr<ImageFilter> filter3);
 
 	/**
 	 * Adds a new filter whose result should be combined with other filters.
 	 *
 	 * @param[in] filter The new filter.
 	 */
-	void add(shared_ptr<ImageFilter> filter);
+	void add(std::shared_ptr<ImageFilter> filter);
 
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
 private:
 
-	vector<shared_ptr<ImageFilter>> filters; ///< The image filters whose results should be combined.
+	std::vector<std::shared_ptr<ImageFilter>> filters; ///< The image filters whose results should be combined.
 };
 
 } /* namespace imageprocessing */

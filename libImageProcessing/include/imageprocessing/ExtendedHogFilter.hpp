@@ -11,8 +11,6 @@
 #include "imageprocessing/HistogramFilter.hpp"
 #include <vector>
 
-using std::vector;
-
 namespace imageprocessing {
 
 /**
@@ -58,11 +56,9 @@ public:
 	 */
 	ExtendedHogFilter(int binCount, int cellWidth, int cellHeight, bool interpolate, bool signedAndUnsigned, float alpha = 0.2);
 
-	~ExtendedHogFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
 	/**
 	 * @return The width of the cells.
@@ -91,7 +87,7 @@ private:
 	 * @param[in] cellCols Column count of the cell grid.
 	 * @param[in] alpha Truncation threshold of the orientation bin values (applied after normalization).
 	 */
-	void createDescriptors(const Mat& histograms, Mat& descriptors,
+	void createDescriptors(const cv::Mat& histograms, cv::Mat& descriptors,
 			int bins, bool signedAndUnsigned, int cellRows, int cellCols, float alpha) const;
 
 	int binCount;   ///< The amount of bins inside the histogram.

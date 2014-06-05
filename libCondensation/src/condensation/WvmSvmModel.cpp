@@ -16,18 +16,25 @@
 #include <utility>
 #include <functional>
 
+using imageprocessing::Patch;
+using imageprocessing::VersionedImage;
+using imageprocessing::FeatureExtractor;
+using classification::ProbabilisticWvmClassifier;
+using classification::ProbabilisticSvmClassifier;
 using detection::ClassifiedPatch;
 using boost::make_indirect_iterator;
-using std::make_shared;
+using std::pair;
+using std::vector;
 using std::greater;
+using std::shared_ptr;
+using std::make_shared;
+using std::unordered_map;
 
 namespace condensation {
 
 WvmSvmModel::WvmSvmModel(shared_ptr<FeatureExtractor> featureExtractor,
 		shared_ptr<ProbabilisticWvmClassifier> wvm, shared_ptr<ProbabilisticSvmClassifier> svm) :
 		featureExtractor(featureExtractor), wvm(wvm), svm(svm), cache() {}
-
-WvmSvmModel::~WvmSvmModel() {}
 
 void WvmSvmModel::update(shared_ptr<VersionedImage> image) {
 	cache.clear();

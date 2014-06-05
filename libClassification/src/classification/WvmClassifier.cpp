@@ -16,7 +16,11 @@
 
 using logging::Logger;
 using logging::LoggerFactory;
+using cv::Mat;
 using boost::lexical_cast;
+using std::pair;
+using std::string;
+using std::shared_ptr;
 using std::make_shared;
 using std::make_pair;
 using std::invalid_argument;

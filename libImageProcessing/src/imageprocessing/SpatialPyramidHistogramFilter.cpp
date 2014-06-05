@@ -9,6 +9,7 @@
 #include <vector>
 #include <stdexcept>
 
+using cv::Mat;
 using cv::Vec2b;
 using cv::Vec4b;
 using std::vector;
@@ -31,8 +32,6 @@ SpatialPyramidHistogramFilter::SpatialPyramidHistogramFilter(
 	for (int level = 0; level < levelCount; ++level)
 		histogramCount += 1 << (2 * level);
 }
-
-SpatialPyramidHistogramFilter::~SpatialPyramidHistogramFilter() {}
 
 Mat SpatialPyramidHistogramFilter::applyTo(const Mat& image, Mat& filtered) const {
 	filtered = Mat::zeros(1, histogramCount, CV_32FC(binCount));

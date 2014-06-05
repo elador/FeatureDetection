@@ -30,18 +30,16 @@ public:
 	 */
 	explicit GammaCorrectionFilter(double gamma);
 
-	~GammaCorrectionFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
-	void applyInPlace(Mat& image) const;
+	void applyInPlace(cv::Mat& image) const;
 
 private:
 
 	template<class T>
-	Mat applyGammaCorrection(const Mat& image, Mat& filtered) const {
+	cv::Mat applyGammaCorrection(const cv::Mat& image, cv::Mat& filtered) const {
 		int rows = image.rows;
 		int cols = image.cols;
 		filtered.create(image.rows, image.cols, image.type());
@@ -59,7 +57,7 @@ private:
 	}
 
 	double gamma; ///< The power of the intensity. Must be greater than zero.
-	Mat lut; ///< Look-up table of gamma corrected uchar values.
+	cv::Mat lut; ///< Look-up table of gamma corrected uchar values.
 };
 
 } /* namespace imageprocessing */

@@ -15,11 +15,6 @@
 #include <string>
 #include <vector>
 
-using boost::property_tree::ptree;
-using cv::Mat;
-using std::string;
-using std::vector;
-
 namespace classification {
 
 /**
@@ -42,13 +37,13 @@ public:
 	 *
 	 * @param[in] kernel The kernel function.
 	 */
-	explicit RvmClassifier(shared_ptr<Kernel> kernel, bool cascadedCoefficients = true);
+	explicit RvmClassifier(std::shared_ptr<Kernel> kernel, bool cascadedCoefficients = true);
 
 	~RvmClassifier();
 
-	bool classify(const Mat& featureVector) const;
+	bool classify(const cv::Mat& featureVector) const;
 
-	pair<bool, double> getConfidence(const Mat& featureVector) const;
+	std::pair<bool, double> getConfidence(const cv::Mat& featureVector) const;
 
 	/**
 	 * Determines the classification result given the distance of a feature vector to the decision hyperplane.
@@ -56,7 +51,7 @@ public:
 	 * @param[in] levelAndDistance The index of the last used filter and distance of that filter level.
 	 * @return True if feature vectors of the given distance would be classified positively, false otherwise.
 	 */
-	bool classify(pair<int, double> levelAndDistance) const;
+	bool classify(std::pair<int, double> levelAndDistance) const;
 
 	/**
 	 * Computes the classification confidence given the distance of a feature vector to the decision hyperplane.
@@ -64,7 +59,7 @@ public:
 	 * @param[in] levelAndDistance The index of the last used filter and distance of that filter level.
 	 * @return A pair containing the binary classification result and the confidence of the classification.
 	 */
-	pair<bool, double> getConfidence(pair<int, double> levelAndDistance) const;
+	std::pair<bool, double> getConfidence(std::pair<int, double> levelAndDistance) const;
 
 	/**
 	 * Computes the distance of a feature vector to the decision hyperplane. This is the real distance without
@@ -73,7 +68,7 @@ public:
 	 * @param[in] featureVector The feature vector.
 	 * @return A pair with the index of the last used filter and the distance to the decision hyperplane of that filter level.
 	 */
-	pair<int, double> computeHyperplaneDistance(const Mat& featureVector) const;
+	std::pair<int, double> computeHyperplaneDistance(const cv::Mat& featureVector) const;
 
 	/**
 	 * Computes the distance of a feature vector to the decision hyperplane. This is the real distance without
@@ -83,9 +78,9 @@ public:
 	 * @param[in] filterLevel The filter-level (i.e. the reduced vector in the cascade) at which to classify.
 	 * @return The distance of the feature vector to the decision hyperplane.
 	 */
-	double computeHyperplaneDistance(const Mat& featureVector, const size_t filterLevel) const;
+	double computeHyperplaneDistance(const cv::Mat& featureVector, const size_t filterLevel) const;
 
-	double computeHyperplaneDistanceCached(const Mat& featureVector, const size_t filterLevel, vector<double>& filterEvalCache) const;
+	double computeHyperplaneDistanceCached(const cv::Mat& featureVector, const size_t filterLevel, std::vector<double>& filterEvalCache) const;
 
 	/**
 	 * Returns the number of filters (RSVs) this RVM is currently using for classifying.
@@ -111,7 +106,7 @@ public:
 	 * @param[in] thresholdsFilename The name of the file containing the RVM thresholds.
 	 * @return The newly created RVM classifier.
 	 */
-	static shared_ptr<RvmClassifier> loadFromMatlab(const string& classifierFilename, const string& thresholdsFilename);
+	static std::shared_ptr<RvmClassifier> loadFromMatlab(const std::string& classifierFilename, const std::string& thresholdsFilename);
 
 	/**
 	 * Creates a new RVM classifier from the parameters given in the ptree sub-tree. Passes the
@@ -120,14 +115,14 @@ public:
 	 * @param[in] subtree The subtree containing the config information for this classifier.
 	 * @return The newly created RVM classifier.
 	 */
-	static shared_ptr<RvmClassifier> load(const ptree& subtree);
+	static std::shared_ptr<RvmClassifier> load(const boost::property_tree::ptree& subtree);
 
 private:
 
-	vector<Mat> supportVectors;				///< The support vectors (or here, RSVs).
-	vector<vector<float>> coefficients;		///< The coefficients of the support vectors. Each step in the cascade has its own set of coefficients.
-	int numFiltersToUse;					///< The number of filters to use out of the total number.
-	vector<float> hierarchicalThresholds;	///< A classification threshold for each filter.
+	std::vector<cv::Mat> supportVectors; ///< The support vectors (or here, RSVs).
+	std::vector<std::vector<float>> coefficients;	///< The coefficients of the support vectors. Each step in the cascade has its own set of coefficients.
+	int numFiltersToUse; ///< The number of filters to use out of the total number.
+	std::vector<float> hierarchicalThresholds; ///< A classification threshold for each filter.
 };
 
 } /* namespace classification */

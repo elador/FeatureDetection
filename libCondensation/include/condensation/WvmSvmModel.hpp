@@ -14,23 +14,15 @@
 #include <unordered_map>
 #include <utility>
 
-using std::shared_ptr;
-using std::unordered_map;
-using std::pair;
-
 namespace imageprocessing {
 class FeatureExtractor;
 class Patch;
 }
-using imageprocessing::FeatureExtractor;
-using imageprocessing::Patch;
 
 namespace classification {
 class ProbabilisticWvmClassifier;
 class ProbabilisticSvmClassifier;
 }
-using classification::ProbabilisticWvmClassifier;
-using classification::ProbabilisticSvmClassifier;
 
 namespace condensation {
 
@@ -51,24 +43,22 @@ public:
 	 * @param[in] svm The slower SVM.
 	 * TODO overlap elimination?
 	 */
-	WvmSvmModel(shared_ptr<FeatureExtractor> featureExtractor,
-			shared_ptr<ProbabilisticWvmClassifier> wvm, shared_ptr<ProbabilisticSvmClassifier> svm);
+	WvmSvmModel(std::shared_ptr<imageprocessing::FeatureExtractor> featureExtractor,
+			std::shared_ptr<classification::ProbabilisticWvmClassifier> wvm, std::shared_ptr<classification::ProbabilisticSvmClassifier> svm);
 
-	~WvmSvmModel();
-
-	void update(shared_ptr<VersionedImage> image);
+	void update(std::shared_ptr<imageprocessing::VersionedImage> image);
 
 	void evaluate(Sample& sample) const;
 
-	void evaluate(shared_ptr<VersionedImage> image, vector<shared_ptr<Sample>>& samples);
+	void evaluate(std::shared_ptr<imageprocessing::VersionedImage> image, std::vector<std::shared_ptr<Sample>>& samples);
 
 private:
 
-	shared_ptr<FeatureExtractor> featureExtractor; ///< The feature extractor.
-	shared_ptr<ProbabilisticWvmClassifier> wvm;    ///< The fast WVM.
-	shared_ptr<ProbabilisticSvmClassifier> svm;    ///< The slower SVM.
-	//shared_ptr<OverlapElimination> oe;      ///< The overlap elimination algorithm. TODO
-	mutable unordered_map<shared_ptr<Patch>, pair<bool, double>> cache; ///< The cache of the WVM classification results.
+	std::shared_ptr<imageprocessing::FeatureExtractor> featureExtractor; ///< The feature extractor.
+	std::shared_ptr<classification::ProbabilisticWvmClassifier> wvm; ///< The fast WVM.
+	std::shared_ptr<classification::ProbabilisticSvmClassifier> svm; ///< The slower SVM.
+	//std::shared_ptr<imageprocessing::OverlapElimination> oe; ///< The overlap elimination algorithm. TODO
+	mutable std::unordered_map<std::shared_ptr<imageprocessing::Patch>, std::pair<bool, double>> cache; ///< The cache of the WVM classification results.
 };
 
 } /* namespace condensation */

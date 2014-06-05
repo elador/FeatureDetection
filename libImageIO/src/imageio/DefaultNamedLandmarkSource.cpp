@@ -14,6 +14,9 @@
 using logging::Logger;
 using logging::LoggerFactory;
 using boost::filesystem::path;
+using std::map;
+using std::vector;
+using std::shared_ptr;
 
 namespace imageio {
 

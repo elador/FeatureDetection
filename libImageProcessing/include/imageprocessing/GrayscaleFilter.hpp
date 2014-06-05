@@ -24,13 +24,11 @@ public:
 	 */
 	GrayscaleFilter();
 
-	~GrayscaleFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
-	void applyInPlace(Mat& image) const;
+	void applyInPlace(cv::Mat& image) const;
 };
 
 } /* namespace imageprocessing */

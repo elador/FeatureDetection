@@ -27,13 +27,11 @@ public:
 	 */
 	explicit ConversionFilter(int type, double alpha = 1, double beta = 0);
 
-	~ConversionFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
-	void applyInPlace(Mat& image) const;
+	void applyInPlace(cv::Mat& image) const;
 
 private:
 

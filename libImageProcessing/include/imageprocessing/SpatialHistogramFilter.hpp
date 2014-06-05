@@ -53,11 +53,9 @@ public:
 	SpatialHistogramFilter(int binCount, int cellWidth, int cellHeight, int blockWidth, int blockHeight,
 			bool interpolate, bool concatenate = false, Normalization normalization = Normalization::NONE);
 
-	~SpatialHistogramFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
 private:
 
@@ -73,7 +71,7 @@ private:
 	 * @param[in] blockHeight Height of the blocks (in amount of cells).
 	 * @param[in] concatenate Flag that indicates whether the cell histograms of a block should be concatenated instead of added.
 	 */
-	void createBlockHistograms(const Mat& cellHistograms, Mat& blockHistograms, int binCount,
+	void createBlockHistograms(const cv::Mat& cellHistograms, cv::Mat& blockHistograms, int binCount,
 			int cellRowCount, int cellColumnCount, int blockWidth, int blockHeight, bool concatenate) const;
 
 	int binCount;    ///< The amount of bins inside the histogram.

@@ -10,9 +10,6 @@
 
 #include "imageprocessing/ImageFilter.hpp"
 
-using cv::Rect_;
-using std::vector;
-
 namespace imageprocessing {
 
 /**
@@ -46,7 +43,7 @@ public:
 	 * @param[in] count The length of the square grid.
 	 * @param[in] types The feature types.
 	 */
-	HaarFeatureFilter(vector<float> sizes, unsigned int count, int types = TYPES_ALL);
+	HaarFeatureFilter(std::vector<float> sizes, unsigned int count, int types = TYPES_ALL);
 
 	/**
 	 * Constructs a new Haar feature filter with the features being on an equal-distant grid.
@@ -56,7 +53,7 @@ public:
 	 * @param[in] yCount The vertical length of the grid.
 	 * @param[in] types The feature types.
 	 */
-	HaarFeatureFilter(vector<float> sizes, unsigned int xCount, unsigned int yCount, int types = TYPES_ALL);
+	HaarFeatureFilter(std::vector<float> sizes, unsigned int xCount, unsigned int yCount, int types = TYPES_ALL);
 
 	/**
 	 * Constructs a new Haar feature filter with the features being on a square grid.
@@ -65,7 +62,7 @@ public:
 	 * @param[in] coords The x and y coordinates of the grid points relative to the image size.
 	 * @param[in] types The feature types.
 	 */
-	HaarFeatureFilter(vector<float> sizes, vector<float> coords, int types = TYPES_ALL);
+	HaarFeatureFilter(std::vector<float> sizes, std::vector<float> coords, int types = TYPES_ALL);
 
 	/**
 	 * Constructs a new Haar feature filter with the features being on a grid.
@@ -75,13 +72,11 @@ public:
 	 * @param[in] ys The y coordinates of the grid points relative to the image size.
 	 * @param[in] types The feature types.
 	 */
-	HaarFeatureFilter(vector<float> sizes, vector<float> xs, vector<float> ys, int types = TYPES_ALL);
-
-	~HaarFeatureFilter();
+	HaarFeatureFilter(std::vector<float> sizes, std::vector<float> xs, std::vector<float> ys, int types = TYPES_ALL);
 
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
 private:
 
@@ -93,7 +88,7 @@ private:
 	 * @param[in] yCount The vertical length of the grid.
 	 * @param[in] types The feature types.
 	 */
-	void buildFeatures(vector<float> sizes, unsigned int xCount, unsigned int yCount, int types);
+	void buildFeatures(std::vector<float> sizes, unsigned int xCount, unsigned int yCount, int types);
 
 	/**
 	 * Builds the features being on a grid.
@@ -103,19 +98,19 @@ private:
 	 * @param[in] ys The y coordinates of the grid points relative to the image size.
 	 * @param[in] types The feature types.
 	 */
-	void buildFeatures(vector<float> s, vector<float> x, vector<float> y, int types);
+	void buildFeatures(std::vector<float> s, std::vector<float> x, std::vector<float> y, int types);
 
 	/**
 	 * Single haar feature that describes how to compute the feature value.
 	 */
 	struct HaarFeature {
-		vector<Rect_<float>> rects; ///< The rectangular areas to sum the intensity values over.
-		vector<float> weights;      ///< The weights of the areas.
-		float factor;               ///< The factor of the feature.
-		float area;                 ///< The area of the feature (sum of area of all rects).
+		std::vector<cv::Rect_<float>> rects; ///< The rectangular areas to sum the intensity values over.
+		std::vector<float> weights;          ///< The weights of the areas.
+		float factor; ///< The factor of the feature.
+		float area;   ///< The area of the feature (sum of area of all rects).
 	};
 
-	vector<HaarFeature> features; ///< The features.
+	std::vector<HaarFeature> features; ///< The features.
 };
 
 } /* namespace imageprocessing */

@@ -10,18 +10,10 @@
 #define PYRAMIDFEATUREEXTRACTOR_HPP_
 
 #include "imageprocessing/FeatureExtractor.hpp"
-//#include "imageprocessing/ImagePyramid.hpp"
 #include <vector>
 #include <utility>
 
-using cv::Rect;
-using cv::Size;
-using std::vector;
-using std::pair;
-
 namespace imageprocessing {
-
-//class ImagePyramid;	// Added by Patrik. See TODO at the bottom of file. Actually, if we keep this, I think we should really include the header here and not forward-declare (as there is no .cpp-file that includes the header).
 
 /**
  * Feature extractor whose features are patches of a constant size extracted from an image pyramid.
@@ -31,9 +23,9 @@ public:
 
 	virtual ~PyramidFeatureExtractor() {}
 
-	virtual void update(const Mat& image) = 0;
+	virtual void update(const cv::Mat& image) = 0;
 
-	virtual void update(shared_ptr<VersionedImage> image) = 0;
+	virtual void update(std::shared_ptr<VersionedImage> image) = 0;
 
 	/**
 	 * Extracts a patch from the corresponding image pyramid.
@@ -44,7 +36,7 @@ public:
 	 * @param[in] height The height of the patch in the original image.
 	 * @return The extracted patch or an empty pointer in case the patch could not be extracted.
 	 */
-	virtual shared_ptr<Patch> extract(int x, int y, int width, int height) const = 0;
+	virtual std::shared_ptr<Patch> extract(int x, int y, int width, int height) const = 0;
 
 	/**
 	 * Extracts several patches from the layers of the corresponding image pyramid.
@@ -57,7 +49,7 @@ public:
 	 * @param[in] stepLayer The step size for proceeding to the next layer (values greater than one will skip layers).
 	 * @return The extracted patches.
 	 */
-	virtual vector<shared_ptr<Patch>> extract(int stepX, int stepY, Rect roi = Rect(),
+	virtual std::vector<std::shared_ptr<Patch>> extract(int stepX, int stepY, cv::Rect roi = cv::Rect(),
 			int firstLayer = -1, int lastLayer = -1, int stepLayer = 1) const = 0;
 
 	/**
@@ -68,7 +60,7 @@ public:
 	 * @param[in] y The y-coordinate of the patch center inside the layer.
 	 * @return The extracted patch or an empty pointer in case the patch could not be extracted.
 	 */
-	virtual shared_ptr<Patch> extract(int layer, int x, int y) const = 0;
+	virtual std::shared_ptr<Patch> extract(int layer, int x, int y) const = 0;
 
 	/**
 	 * Determines the index of the pyramid layer that approximately contains patches of the given size.
@@ -97,43 +89,33 @@ public:
 	/**
 	 * @return The size of the extracted patches.
 	 */
-	virtual Size getPatchSize() const = 0;
+	virtual cv::Size getPatchSize() const = 0;
 
 	/**
 	 * @return The size of the original image.
 	 */
-	virtual Size getImageSize() const = 0;
+	virtual cv::Size getImageSize() const = 0;
 
 	/**
 	 * Determines the scale factors of each pyramid layer.
 	 *
 	 * @return Pairs containing the index and scale factor of each pyramid layer, beginning from the largest layer.
 	 */
-	virtual vector<pair<int, double>> getLayerScales() const = 0;
+	virtual std::vector<std::pair<int, double>> getLayerScales() const = 0;
 
 	/**
 	 * Determines the size of the scaled image of each pyramid layer.
 	 *
 	 * @return The sizes of the pyramid layer's scaled images, beginning from the largest layer.
 	 */
-	virtual vector<Size> getLayerSizes() const = 0;
+	virtual std::vector<cv::Size> getLayerSizes() const = 0;
 
 	/**
 	 * Determines the size of the patch of each pyramid layer when scaled to the original image.
 	 *
 	 * @return The sizes of the pyramid layer's patches, beginning from the smallest patch (largest layer).
 	 */
-	virtual vector<Size> getPatchSizes() const = 0;
-
-	/** TODO @Peter: Any reason for this getter to not be in the interface here?
-	 * @return The image pyramid.
-	 */
-	//virtual shared_ptr<ImagePyramid> getPyramid() = 0;	// We're going to try it a different way first
-
-	/** TODO @Peter: Any reason for this getter to not be in the interface here?
-	 * @return The image pyramid.
-	 */
-	//virtual const shared_ptr<ImagePyramid> getPyramid() const = 0; // We're going to try it a different way first
+	virtual std::vector<cv::Size> getPatchSizes() const = 0;
 };
 
 } /* namespace imageprocessing */

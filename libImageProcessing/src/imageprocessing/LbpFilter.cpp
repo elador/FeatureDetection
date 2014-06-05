@@ -7,9 +7,13 @@
 
 #include "imageprocessing/LbpFilter.hpp"
 
+using cv::Mat;
+using cv::Ptr;
+using cv::BaseFilter;
 using cv::BaseRowFilter;
 using cv::BaseColumnFilter;
 using cv::FilterEngine;
+using std::invalid_argument;
 
 namespace imageprocessing {
 
@@ -25,8 +29,6 @@ LbpFilter::LbpFilter(Type type) : type(type) {
 		}
 	}
 }
-
-LbpFilter::~LbpFilter() {}
 
 bool LbpFilter::isUniform(uchar code) const {
 	int transitions = 0;

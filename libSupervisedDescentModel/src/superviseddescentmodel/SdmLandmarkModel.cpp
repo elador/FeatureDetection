@@ -15,11 +15,14 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/lexical_cast.hpp"
 
+#include <memory>
 #include <fstream>
 
 using logging::Logger;
 using logging::LoggerFactory;
 using boost::lexical_cast;
+using std::shared_ptr;
+using std::make_shared;
 
 namespace superviseddescentmodel {
 

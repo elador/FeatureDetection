@@ -11,21 +11,15 @@
 #include "condensation/MeasurementModel.hpp"
 #include <unordered_map>
 
-using std::unordered_map;
-
 namespace imageprocessing {
 class FeatureExtractor;
 class Patch;
 }
-using imageprocessing::FeatureExtractor;
-using imageprocessing::Patch;
 
 namespace classification {
 class BinaryClassifier;
 class ProbabilisticClassifier;
 }
-using classification::BinaryClassifier;
-using classification::ProbabilisticClassifier;
 
 namespace condensation {
 
@@ -55,8 +49,12 @@ public:
 	 * @param[in] classifier The classifier that evaluates the samples.
 	 * @param[in] behavior The filtering behavior.
 	 */
-	FilteringClassifierModel(shared_ptr<FeatureExtractor> filterFeatureExtractor, shared_ptr<BinaryClassifier> filter,
-			shared_ptr<FeatureExtractor> featureExtractor, shared_ptr<ProbabilisticClassifier> classifier, Behavior behavior);
+	FilteringClassifierModel(
+			std::shared_ptr<imageprocessing::FeatureExtractor> filterFeatureExtractor,
+			std::shared_ptr<classification::BinaryClassifier> filter,
+			std::shared_ptr<imageprocessing::FeatureExtractor> featureExtractor,
+			std::shared_ptr<classification::ProbabilisticClassifier> classifier,
+			Behavior behavior);
 
 	/**
 	 * Constructs a new filtering classifier model.
@@ -66,16 +64,16 @@ public:
 	 * @param[in] measurementModel The measurement model used for evaluating the samples.
 	 * @param[in] behavior The filtering behavior.
 	 */
-	FilteringClassifierModel(shared_ptr<FeatureExtractor> filterFeatureExtractor, shared_ptr<BinaryClassifier> filter,
-			shared_ptr<MeasurementModel> measurementModel, Behavior behavior);
+	FilteringClassifierModel(std::shared_ptr<imageprocessing::FeatureExtractor> filterFeatureExtractor,
+			std::shared_ptr<classification::BinaryClassifier> filter, std::shared_ptr<MeasurementModel> measurementModel, Behavior behavior);
 
 	~FilteringClassifierModel();
 
-	void update(shared_ptr<VersionedImage> image);
+	void update(std::shared_ptr<imageprocessing::VersionedImage> image);
 
 	void evaluate(Sample& sample) const;
 
-	void evaluate(shared_ptr<VersionedImage> image, vector<shared_ptr<Sample>>& samples);
+	void evaluate(std::shared_ptr<imageprocessing::VersionedImage> image, std::vector<std::shared_ptr<Sample>>& samples);
 
 private:
 
@@ -93,13 +91,13 @@ private:
 	 * @param[in] patch The patch.
 	 * @return True if the patch passed the filter, false otherwise.
 	 */
-	bool passesFilter(const shared_ptr<Patch> patch) const;
+	bool passesFilter(const std::shared_ptr<imageprocessing::Patch> patch) const;
 
 	Behavior behavior; ///< The filtering behavior.
-	shared_ptr<MeasurementModel> measurementModel; ///< The measurement model.
-	shared_ptr<FeatureExtractor> featureExtractor; ///< The feature extractor used for the filter.
-	shared_ptr<BinaryClassifier> filter;           ///< The filtering classifier.
-	mutable unordered_map<shared_ptr<Patch>, bool> cache; ///< The filter result cache.
+	std::shared_ptr<MeasurementModel> measurementModel; ///< The measurement model.
+	std::shared_ptr<imageprocessing::FeatureExtractor> featureExtractor; ///< The feature extractor used for the filter.
+	std::shared_ptr<classification::BinaryClassifier> filter; ///< The filtering classifier.
+	mutable std::unordered_map<std::shared_ptr<imageprocessing::Patch>, bool> cache; ///< The filter result cache.
 };
 
 } /* namespace condensation */

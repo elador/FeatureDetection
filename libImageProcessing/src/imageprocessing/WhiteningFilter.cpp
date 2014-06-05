@@ -8,6 +8,7 @@
 #include "imageprocessing/WhiteningFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using cv::Vec2f;
 using std::invalid_argument;
 
@@ -15,8 +16,6 @@ namespace imageprocessing {
 
 WhiteningFilter::WhiteningFilter(float alpha, float cutoffFrequency) :
 		alpha(alpha), cutoffFrequency(cutoffFrequency), filter(Mat()), floatImage(Mat()), fourierImage(Mat()) {}
-
-WhiteningFilter::~WhiteningFilter() {}
 
 Mat WhiteningFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.channels() > 1)

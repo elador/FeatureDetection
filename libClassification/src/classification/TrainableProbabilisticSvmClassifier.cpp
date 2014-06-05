@@ -11,6 +11,9 @@
 #include "classification/SvmClassifier.hpp"
 #include <cmath>
 
+using cv::Mat;
+using std::pair;
+using std::vector;
 using std::shared_ptr;
 using std::make_shared;
 using std::make_pair;

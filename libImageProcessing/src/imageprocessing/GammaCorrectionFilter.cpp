@@ -8,6 +8,7 @@
 #include "imageprocessing/GammaCorrectionFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using std::invalid_argument;
 
 namespace imageprocessing {
@@ -17,8 +18,6 @@ GammaCorrectionFilter::GammaCorrectionFilter(double gamma) : gamma(gamma), lut(1
 	for (int i = 0; i < 256; ++i)
 		ptr[i] = cvRound(255 * pow(static_cast<double>(i) / 255.0, gamma));
 }
-
-GammaCorrectionFilter::~GammaCorrectionFilter() {}
 
 Mat GammaCorrectionFilter::applyTo(const Mat& image, Mat& filtered) const {
 	switch (image.type()) {

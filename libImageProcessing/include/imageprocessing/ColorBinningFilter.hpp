@@ -11,8 +11,6 @@
 #include "imageprocessing/BinningFilter.hpp"
 #include <array>
 
-using std::array;
-
 namespace imageprocessing {
 
 /**
@@ -31,11 +29,9 @@ public:
 	 */
 	explicit ColorBinningFilter(unsigned int bins);
 
-	~ColorBinningFilter();
-
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
 	unsigned int getBinCount() const;
 
@@ -49,8 +45,8 @@ private:
 		float weight1, weight2;
 	};
 
-	unsigned int bins;             ///< The amount of bins.
-	array<BinData, 181> color2bin; ///< The look-up table of bin data given a color value (hue).
+	unsigned int bins; ///< The amount of bins.
+	std::array<BinData, 181> color2bin; ///< The look-up table of bin data given a color value (hue).
 };
 
 } /* namespace imageprocessing */

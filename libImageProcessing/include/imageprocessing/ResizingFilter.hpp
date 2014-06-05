@@ -11,8 +11,6 @@
 #include "imageprocessing/ImageFilter.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-using cv::Size;
-
 namespace imageprocessing {
 
 /**
@@ -27,17 +25,15 @@ public:
 	 * @param[in] size The size of the filtered images.
 	 * @param[in] interpolation The interpolation method (see last parameter of cv::resize).
 	 */
-	explicit ResizingFilter(Size size, int interpolation = cv::INTER_AREA);
-
-	~ResizingFilter();
+	explicit ResizingFilter(cv::Size size, int interpolation = cv::INTER_AREA);
 
 	using ImageFilter::applyTo;
 
-	Mat applyTo(const Mat& image, Mat& filtered) const;
+	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
 private:
 
-	Size size;         ///< The size of the filtered images.
+	cv::Size size;     ///< The size of the filtered images.
 	int interpolation; ///< The interpolation method.
 };
 

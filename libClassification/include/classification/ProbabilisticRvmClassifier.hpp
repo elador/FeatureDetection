@@ -14,11 +14,6 @@
 #include <memory>
 #include <utility>
 
-using boost::property_tree::ptree;
-using std::shared_ptr;
-using std::string;
-using std::pair;
-
 namespace classification {
 
 class RvmClassifier;
@@ -43,15 +38,13 @@ public:
 	 * @param[in] logisticA Parameter a of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 	 * @param[in] logisticB Parameter b of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 	 */
-	explicit ProbabilisticRvmClassifier(shared_ptr<RvmClassifier> rvm, double logisticA = 0.00556, double logisticB = -2.95);
+	explicit ProbabilisticRvmClassifier(std::shared_ptr<RvmClassifier> rvm, double logisticA = 0.00556, double logisticB = -2.95);
 
-	~ProbabilisticRvmClassifier();
+	bool classify(const cv::Mat& featureVector) const;
 
-	bool classify(const Mat& featureVector) const;
+	std::pair<bool, double> getConfidence(const cv::Mat& featureVector) const;
 
-	pair<bool, double> getConfidence(const Mat& featureVector) const;
-
-	pair<bool, double> getProbability(const Mat& featureVector) const;
+	std::pair<bool, double> getProbability(const cv::Mat& featureVector) const;
 
 	/**
 	 * Computes the probability for being positive given the distance of a feature vector to the decision hyperplane.
@@ -59,9 +52,9 @@ public:
 	 * @param[in] levelAndDistance The index of the last used filter and distance of that filter level.
 	 * @return A pair containing the binary classification result and a probability between zero and one for being positive.
 	 */
-	pair<bool, double> getProbability(pair<int, double> levelAndDistance) const;
+	std::pair<bool, double> getProbability(std::pair<int, double> levelAndDistance) const;
 
-	pair<bool, double> classifyCached(const Mat& featureVector);
+	std::pair<bool, double> classifyCached(const cv::Mat& featureVector);
 
 	/**
 	 * Changes the logistic parameters of this probabilistic SVM.
@@ -77,7 +70,7 @@ public:
 	 * @param[in] logisticFilename The name of the Matlab-file containing the logistic function's parameters.
 	 * @return A pair (a, b) containing the logistic parameters.
 	 */
-	static pair<double, double> loadSigmoidParamsFromMatlab(const string& logisticFilename);
+	static std::pair<double, double> loadSigmoidParamsFromMatlab(const std::string& logisticFilename);
 
 	/**
 	 * Creates a new probabilistic RVM classifier from the parameters given in the ptree sub-tree. Loads the logistic function's
@@ -87,25 +80,25 @@ public:
 	 * @param[in] subtree The subtree containing the config information for this classifier.
 	 * @return The newly created probabilistic RVM classifier.
 	 */
-	static shared_ptr<ProbabilisticRvmClassifier> load(const ptree& subtree);
+	static std::shared_ptr<ProbabilisticRvmClassifier> load(const boost::property_tree::ptree& subtree);
 
 	/**
 	 * @return The actual RVM.
 	 */
-	shared_ptr<RvmClassifier> getRvm() {
+	std::shared_ptr<RvmClassifier> getRvm() {
 		return rvm;
 	}
 
 	/**
 	 * @return The actual RVM.
 	 */
-	const shared_ptr<RvmClassifier> getRvm() const {
+	const std::shared_ptr<RvmClassifier> getRvm() const {
 		return rvm;
 	}
 
 private:
 
-	shared_ptr<RvmClassifier> rvm; ///< The actual RVM.
+	std::shared_ptr<RvmClassifier> rvm; ///< The actual RVM.
 	double logisticA; ///< Parameter a of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 	double logisticB; ///< Parameter b of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 

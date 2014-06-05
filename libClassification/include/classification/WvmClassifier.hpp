@@ -14,10 +14,6 @@
 #include <string>
 #include <vector>
 
-using cv::Mat;
-using std::string;
-using std::vector;
-
 namespace classification {
 
 class IImg;
@@ -35,9 +31,9 @@ public:
 
 	~WvmClassifier();
 
-	bool classify(const Mat& featureVector) const;
+	bool classify(const cv::Mat& featureVector) const;
 
-	pair<bool, double> getConfidence(const Mat& featureVector) const;
+	std::pair<bool, double> getConfidence(const cv::Mat& featureVector) const;
 
 	/**
 	 * Determines the classification result given the distance of a feature vector to the decision hyperplane.
@@ -45,7 +41,7 @@ public:
 	 * @param[in] levelAndDistance The index of the last used filter and distance of that filter level.
 	 * @return True if feature vectors of the given distance would be classified positively, false otherwise.
 	 */
-	bool classify(pair<int, double> levelAndDistance) const;
+	bool classify(std::pair<int, double> levelAndDistance) const;
 
 	/**
 	 * Computes the classification confidence given the distance of a feature vector to the decision hyperplane.
@@ -53,7 +49,7 @@ public:
 	 * @param[in] levelAndDistance The index of the last used filter and distance of that filter level.
 	 * @return A pair containing the binary classification result and the confidence of the classification.
 	 */
-	pair<bool, double> getConfidence(pair<int, double> levelAndDistance) const;
+	std::pair<bool, double> getConfidence(std::pair<int, double> levelAndDistance) const;
 
 	/**
 	 * Computes the approximate distance of a feature vector to the decision hyperplane. This is the real distance
@@ -62,7 +58,7 @@ public:
 	 * @param[in] featureVector The feature vector.
 	 * @return A pair with the index of the last used filter and the distance to the decision hyperplane of that filter level.
 	 */
-	pair<int, double> computeHyperplaneDistance(const Mat& featureVector) const;
+	std::pair<int, double> computeHyperplaneDistance(const cv::Mat& featureVector) const;
 
 	/**
 	 * Creates a new WVM classifier from the parameters given in some Matlab file.
@@ -71,7 +67,7 @@ public:
 	 * @param[in] thresholdsFilename The name of the file containing the thresholds of the filter levels.
 	 * @return The newly created WVM classifier.
 	 */
-	static shared_ptr<WvmClassifier> loadFromMatlab(const string& classifierFilename, const string& thresholdsFilename);
+	static std::shared_ptr<WvmClassifier> loadFromMatlab(const std::string& classifierFilename, const std::string& thresholdsFilename);
 
 	int getNumUsedFilters(void);
 	void setNumUsedFilters(int);			 ///< Change the number of currently used wavelet-vectors
@@ -100,9 +96,9 @@ protected:
 	float* lin_thresholds;	///< arrays of the thresholds (the SVM's b). All values of this array (e.g. 280) are set to nonlin_threshold read from the detector .mat on load().
 	// This is then used inside WvmEvalHistEq64(). The same for all vectors. This could be just a float. Actually it can only be a float because it comes from param_nonlin1 in the .mat.
 
-	vector<float> hierarchicalThresholds;	///< a pixel whose correlation with filter i is > hierarchicalThresholds[i] 
+	std::vector<float> hierarchicalThresholds;	///< a pixel whose correlation with filter i is > hierarchicalThresholds[i]
 	// is retained for further investigation, if it is lower, it is classified as being not a face 
-	vector<float> hierarchicalThresholdsFromFile;	///< This is the same as hierarchicalThresholds. Checked on 17.11.12 - this is really not needed.
+	std::vector<float> hierarchicalThresholdsFromFile;	///< This is the same as hierarchicalThresholds. Checked on 17.11.12 - this is really not needed.
 	// hierarchicalThresholdsFromFile is only used for reading from the config, then not used anymore.
 
 	float limitReliabilityFilter;	///< This is added to hierarchicalThresholds on startup (read from the config, FD.limitReliabilityFilter), then not used anymore.

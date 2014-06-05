@@ -8,6 +8,7 @@
 #include "imageprocessing/IntegralChannelHistogramFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using std::invalid_argument;
 
 namespace imageprocessing {
@@ -20,8 +21,6 @@ IntegralChannelHistogramFilter::IntegralChannelHistogramFilter(
 	if (overlap < 0 || overlap >= 1)
 		throw invalid_argument("IntegralChannelHistogramFilter: the overlap must be between zero (inclusive) and one (exclusive)");
 }
-
-IntegralChannelHistogramFilter::~IntegralChannelHistogramFilter() {}
 
 Mat IntegralChannelHistogramFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.depth() != CV_32S)

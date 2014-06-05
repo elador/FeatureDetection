@@ -14,9 +14,6 @@
 #include "opencv2/core/core.hpp"
 #include <utility>
 
-using cv::Mat;
-using std::pair;
-
 namespace classification {
 
 /**
@@ -33,7 +30,7 @@ public:
 	 * @param[in] featureVector The feature vector.
 	 * @return A pair containing the binary classification result and a probability between zero and one for being positive.
 	 */
-	virtual pair<bool, double> getProbability(const Mat& featureVector) const = 0;
+	virtual std::pair<bool, double> getProbability(const cv::Mat& featureVector) const = 0;
 };
 
 } /* namespace classification */

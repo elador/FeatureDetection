@@ -8,6 +8,7 @@
 #include "imageprocessing/ColorChannelFilter.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using cv::Vec3b;
 using std::invalid_argument;
 
@@ -24,8 +25,6 @@ ColorChannelFilter::ColorChannelFilter(unsigned int bins, bool magnitude) : bins
 		color2bin[hue] = binData;
 	}
 }
-
-ColorChannelFilter::~ColorChannelFilter() {}
 
 Mat ColorChannelFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.type() != CV_8UC3)
