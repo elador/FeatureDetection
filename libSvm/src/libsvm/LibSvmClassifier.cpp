@@ -57,20 +57,13 @@ void LibSvmClassifier::createParameters(const shared_ptr<Kernel> kernel, double 
 	if (oneClass) {
 		param->nu = cnu;
 		param->svm_type = ONE_CLASS;
-		param->nr_weight = 0;
-		param->weight_label = nullptr;
-		param->weight = nullptr;
 	} else {
 		param->C = cnu;
 		param->svm_type = C_SVC;
-		param->nr_weight = 2;
-		param->weight_label = (int*)malloc(param->nr_weight * sizeof(int));
-		param->weight_label[0] = +1;
-		param->weight_label[1] = -1;
-		param->weight = (double*)malloc(param->nr_weight * sizeof(double));
-		param->weight[0] = 1;
-		param->weight[1] = 1;
 	}
+	param->nr_weight = 0;
+	param->weight_label = nullptr;
+	param->weight = nullptr;
 	param->shrinking = 0;
 	param->probability = 0;
 	param->gamma = 0; // necessary for kernels that do not use this parameter
@@ -123,10 +116,6 @@ bool LibSvmClassifier::retrain(const vector<Mat>& newPositiveExamples, const vec
 bool LibSvmClassifier::train() {
 	vector<unique_ptr<struct svm_node[], NodeDeleter>> positiveExamples = move(createNodes(this->positiveExamples.get()));
 	vector<unique_ptr<struct svm_node[], NodeDeleter>> negativeExamples = move(createNodes(this->negativeExamples.get()));
-	if (!oneClass) {
-		param->weight[0] = positiveExamples.size();
-		param->weight[1] = negativeExamples.size() + staticNegativeExamples.size();
-	}
 	unique_ptr<struct svm_problem, ProblemDeleter> problem = move(createProblem(
 			positiveExamples, negativeExamples, staticNegativeExamples));
 	const char* message = svm_check_parameter(problem.get(), param.get());
