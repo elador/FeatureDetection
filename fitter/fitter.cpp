@@ -91,6 +91,7 @@ using boost::filesystem::path;
 using boost::lexical_cast;
 using std::cout;
 using std::endl;
+using std::make_shared;
 
 
 template<class T>

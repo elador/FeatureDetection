@@ -24,7 +24,7 @@ option(WITH_RENDER_QOPENGL "Enables support for a QOpenGL-based renderer in addi
 message(STATUS "WITH_RENDER_QOPENGL: ${WITH_RENDER_QOPENGL}")
 option(WITH_MORPHABLEMODEL_HDF5 "Enables support for loading statismo .h5 Morphable Models (requires HDF5)" OFF)
 message(STATUS "WITH_MORPHABLEMODEL_HDF5: ${WITH_MORPHABLEMODEL_HDF5}")
-option(WITH_FITTING_LIBEIGEN "Uses libEigen for linear algebra operations in the fitting instead of OpenCV." OFF)
+option(WITH_FITTING_LIBEIGEN "Uses libEigen for linear algebra operations in the fitting instead of OpenCV." OFF) # not used yet
 message(STATUS "WITH_FITTING_LIBEIGEN: ${WITH_FITTING_LIBEIGEN}")
 
 
