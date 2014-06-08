@@ -1,6 +1,6 @@
 set(SUBPROJECT_NAME fitter)
 project(${SUBPROJECT_NAME})
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8) # Note: if we compile with Qt, we should enforce CMake 2.8.11
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
 set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 
@@ -15,6 +15,12 @@ if(Boost_FOUND)
 else(Boost_FOUND)
   message(FATAL_ERROR "Boost not found")
 endif()
+
+#TEMP
+	set(CMAKE_AUTOMOC ON)
+	find_package(Qt5Core REQUIRED)
+	find_package(Qt5Gui REQUIRED)
+	add_definitions(-DWITH_RENDER_QOPENGL)
 
 # Todo: ifdef this or rather move to library anyway
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
@@ -43,4 +49,4 @@ include_directories(${Render_SOURCE_DIR}/include)
 include_directories(${MorphableModel_SOURCE_DIR}/include)
 
 # Make the app depend on the libraries
-target_link_libraries(${SUBPROJECT_NAME} ImageIO MorphableModel Render Logging ${Boost_LIBRARIES} ${OpenCV_LIBS} ${HDF5_LIBRARIES})
+target_link_libraries(${SUBPROJECT_NAME} ImageIO MorphableModel Render Logging ${Boost_LIBRARIES} ${OpenCV_LIBS} ${HDF5_LIBRARIES} Qt5::Core Qt5::Gui ${Qt5Gui_EGL_LIBRARIES} ${Qt5Gui_OPENGL_LIBRARIES}) # 4 Qt TMP

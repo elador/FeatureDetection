@@ -27,8 +27,6 @@ namespace render {
 class Mesh
 {
 public:
-	Mesh();
-	~Mesh();
 
 	std::vector<render::Vertex> vertex;
 	// To not have to copy the vertices, for OpenGL, the option below would be better:
@@ -46,7 +44,7 @@ public:
 	//tmi
 	
 	//bool hasVertexColor;
-	bool hasTexture;
+	bool hasTexture = false;
 	std::string textureName;
 
 	std::shared_ptr<render::Texture> texture; // optimally, we'd use a TextureManager, or maybe a smart pointer, to not load/store a texture twice if two models use the same texture.

@@ -157,10 +157,10 @@ render::Mesh MorphableModel::drawSample(float sigma /*= 1.0f*/)
 
 render::Mesh MorphableModel::drawSample(vector<float> shapeCoefficients, vector<float> colorCoefficients)
 {
-	render::Mesh mean;
+	render::Mesh sample;
 
-	mean.tvi = shapeModel.getTriangleList();
-	mean.tci = colorModel.getTriangleList();
+	sample.tvi = shapeModel.getTriangleList();
+	sample.tci = colorModel.getTriangleList();
 
 	Mat shapeSample;
 	Mat colorSample;
@@ -180,20 +180,25 @@ render::Mesh MorphableModel::drawSample(vector<float> shapeCoefficients, vector<
 	unsigned int numVerticesColor = colorModel.getDataDimension() / 3;
 	if (numVertices != numVerticesColor) {
 		string msg("MorphableModel: The number of vertices of the shape and color models are not the same: " + lexical_cast<string>(numVertices) + " != " + lexical_cast<string>(numVerticesColor));
-		Loggers->getLogger("shapemodels").debug(msg);
+		Loggers->getLogger("morphablemodel").debug(msg);
 		throw std::runtime_error(msg);
 	}
 
-	mean.vertex.resize(numVertices);
+	sample.vertex.resize(numVertices);
 
 	for (unsigned int i = 0; i < numVertices; ++i) {
-		mean.vertex[i].position = Vec4f(shapeSample.at<float>(i*3 + 0), shapeSample.at<float>(i*3 + 1), shapeSample.at<float>(i*3 + 2), 1.0f);
-		mean.vertex[i].color = Vec3f(colorSample.at<float>(i*3 + 0), colorSample.at<float>(i*3 + 1), colorSample.at<float>(i*3 + 2));        // order in hdf5: RGB. Order in OCV: BGR. But order in vertex.color: RGB
+		sample.vertex[i].position = Vec4f(shapeSample.at<float>(i*3 + 0), shapeSample.at<float>(i*3 + 1), shapeSample.at<float>(i*3 + 2), 1.0f);
+		sample.vertex[i].color = Vec3f(colorSample.at<float>(i*3 + 0), colorSample.at<float>(i*3 + 1), colorSample.at<float>(i*3 + 2));        // order in hdf5: RGB. Order in OCV: BGR. But order in vertex.color: RGB
+		if (hasTextureCoordinates) {
+			sample.vertex[i].texcrd = textureCoordinates[i];
+		}
 	}
 
-	mean.hasTexture = false;
+	if (hasTextureCoordinates) {
+		sample.hasTexture = true; // Note: Actually it doesn't have a texture, just texture coordinates!
+	}
 
-	return mean;
+	return sample;
 }
 
 vector<Vec2f> MorphableModel::loadIsomap(path isomapFile)

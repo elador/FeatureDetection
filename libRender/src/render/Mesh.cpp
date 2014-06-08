@@ -13,16 +13,6 @@ using std::string;
 
 namespace render {
 
-Mesh::Mesh()
-{
-	hasTexture = false;
-}
-
-
-Mesh::~Mesh()
-{
-}
-
 void Mesh::writeObj(Mesh mesh, string filename)
 {
 	std::ofstream objFile(filename);
