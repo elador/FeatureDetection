@@ -62,31 +62,5 @@ cv::Mat calculateAffineZDirection(cv::Mat affineCameraMatrix);
  */
 cv::Vec2f projectAffine(cv::Vec3f vertex, cv::Mat affineCameraMatrix, int screenWidth, int screenHeight); // Could go into libRender, but Render doesn't have a dependency on libImageIO (yet). But we don't need ImageIO.
 
-/**
- * Transforms a point from clip space ([-1, 1] x [-1, 1]) to
- * image (screen) coordinates.
- * Note that the y-coordinate is flipped because the image origin
- * is top-left while in clip space top is +1 and bottom is -1.
- *
- * @param[in] clipCoordinates Todo
- * @param[in] screenWidth Todo
- * @param[in] screenHeight Todo
- * @return A vector with x and y coordinates transformed to clip space.
- */
-cv::Vec2f clipToScreenSpace(cv::Vec2f clipCoordinates, int screenWidth, int screenHeight); // To libRender?
-
-/**
- * Transforms a point from image (screen) coordinates to
- * clip space ([-1, 1] x [-1, 1]).
- * Note that the y-coordinate is flipped because the image origin
- * is top-left while in clip space top is +1 and bottom is -1.
- *
- * @param[in] screenCoordinates Todo
- * @param[in] screenWidth Todo
- * @param[in] screenHeight Todo
- * @return A vector with x and y coordinates transformed to clip space.
- */
-cv::Vec2f screenToClipSpace(cv::Vec2f screenCoordinates, int screenWidth, int screenHeight); // Could go into libRender, but Render doesn't have a dependency on libImageIO (yet). But we use Vec2f, not Landmark!
-
 } /* namespace morphablemodel */
 #endif /* AFFINECAMERAESTIMATION_HPP_ */
