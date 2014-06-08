@@ -19,7 +19,7 @@
 
 #include <vector>
 
-namespace morphablemodel {
+namespace fitting {
 
 /**
  * Fits the shape of a Morphable Model to .. (i.e. estimates the ML sol of the coeffs...) as in [1].
@@ -37,7 +37,7 @@ namespace morphablemodel {
  * @param[in] modelStandardDeviation The 3D standard deviation of each corresponding point (vertex) in the 3D model. Should be a vector with one value for every landmark point in the model? TODO: Also mention what unit.
  * @return The fitted shape-coefficients (alphas).
  */
-std::vector<float> fitShapeToLandmarksLinear(MorphableModel morphableModel, cv::Mat affineCameraMatrix, std::vector<imageio::ModelLandmark> landmarks, float lambda=20.0f, boost::optional<int> numCoefficientsToFit=boost::optional<int>(), boost::optional<float> detectorStandardDeviation=boost::optional<float>(), boost::optional<float> modelStandardDeviation=boost::optional<float>());
+std::vector<float> fitShapeToLandmarksLinear(morphablemodel::MorphableModel morphableModel, cv::Mat affineCameraMatrix, std::vector<imageio::ModelLandmark> landmarks, float lambda=20.0f, boost::optional<int> numCoefficientsToFit=boost::optional<int>(), boost::optional<float> detectorStandardDeviation=boost::optional<float>(), boost::optional<float> modelStandardDeviation=boost::optional<float>());
 
-} /* namespace morphablemodel */
+} /* namespace fitting */
 #endif /* LINEARSHAPEFITTING_HPP_ */

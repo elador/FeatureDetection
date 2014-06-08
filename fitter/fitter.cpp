@@ -56,9 +56,10 @@
 #include "Eigen/Dense"
 
 #include "morphablemodel/MorphableModel.hpp"
-#include "morphablemodel/AffineCameraEstimation.hpp"
-#include "morphablemodel/OpenCVCameraEstimation.hpp"
-#include "morphablemodel/LinearShapeFitting.hpp"
+
+#include "fitting/AffineCameraEstimation.hpp"
+#include "fitting/OpenCVCameraEstimation.hpp"
+#include "fitting/LinearShapeFitting.hpp"
 
 #include "render/SoftwareRenderer.hpp"
 #include "render/MeshUtils.hpp"
@@ -279,25 +280,25 @@ int main(int argc, char *argv[])
 		landmarksClipSpace.push_back(lmcs);
 	}
 	
-	Mat affineCam = morphablemodel::estimateAffineCamera(landmarksClipSpace, morphableModel);
+	Mat affineCam = fitting::estimateAffineCamera(landmarksClipSpace, morphableModel);
 
 	// Render the mean-face landmarks projected using the estimated camera:
 	for (const auto& lm : landmarks) {
 		Vec3f modelPoint = morphableModel.getShapeModel().getMeanAtPoint(lm.getName());
-		cv::Vec2f screenPoint = morphablemodel::projectAffine(modelPoint, affineCam, img.cols, img.rows);
+		cv::Vec2f screenPoint = fitting::projectAffine(modelPoint, affineCam, img.cols, img.rows);
 		cv::circle(affineCamLandmarksProjectionImage, Point2f(screenPoint), 4.0f, Scalar(0.0f, 255.0f, 0.0f));
 	}
 
 	// Estimate the shape coefficients:
 	// Detector variances: Should not be in pixels. Should be normalised by the IED. Normalise by the image dimensions is not a good idea either, it has nothing to do with it. See comment in fitShapeToLandmarksLinear().
 	// Let's just use the hopefully reasonably set default value for now (around 3 pixels)
-	vector<float> fittedCoeffs = fitShapeToLandmarksLinear(morphableModel, affineCam, landmarksClipSpace, lambda);
+	vector<float> fittedCoeffs = fitting::fitShapeToLandmarksLinear(morphableModel, affineCam, landmarksClipSpace, lambda);
 
 	// Obtain the full mesh and render it using the estimated camera:
 	Mesh mesh = morphableModel.drawSample(fittedCoeffs, vector<float>()); // takes standard-normal (not-normalised) coefficients
 
 	render::SoftwareRenderer softwareRenderer(img.cols, img.rows);
-	Mat fullAffineCam = morphablemodel::calculateAffineZDirection(affineCam);
+	Mat fullAffineCam = fitting::calculateAffineZDirection(affineCam);
 	fullAffineCam.at<float>(2, 3) = fullAffineCam.at<float>(2, 2); // Todo: Find out and document why this is necessary!
 	fullAffineCam.at<float>(2, 2) = 1.0f;
 	softwareRenderer.doBackfaceCulling = true;
@@ -359,7 +360,6 @@ int main(int argc, char *argv[])
 	if (config.get_child("output", ptree()).get<bool>("frontalRendering", false)) {
 		throw std::runtime_error("Not implemented yet, please disable.");
 	}
-	
 
 	end = std::chrono::system_clock::now();
 	int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();

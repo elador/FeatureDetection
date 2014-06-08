@@ -44,7 +44,8 @@ add_subdirectory(libDetection)			# Sliding-window detection, Skin detection (Not
 add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 
 add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
-add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes; Camera (Pose) estimation
+add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes
+add_subdirectory(libFitting)			# Camera (Pose) estimation and shape-fitting
 add_subdirectory(libSupervisedDescentModel) # A non-parametric model for landmark detection. Uses the supervised descent method.
 
 # Tracking apps:

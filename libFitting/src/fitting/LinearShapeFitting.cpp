@@ -5,15 +5,16 @@
  *      Author: Patrik Huber
  */
 
-#include "morphablemodel/LinearShapeFitting.hpp"
+#include "fitting/LinearShapeFitting.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
 using logging::LoggerFactory;
+using morphablemodel::MorphableModel;
 using cv::Mat;
 using std::vector;
 
-namespace morphablemodel {
+namespace fitting {
 
 vector<float> fitShapeToLandmarksLinear(MorphableModel morphableModel, Mat affineCameraMatrix, vector<imageio::ModelLandmark> landmarks, float lambda/*=20.0f*/, boost::optional<int> numCoefficientsToFit/*=boost::optional<int>()*/, boost::optional<float> detectorStandardDeviation/*=boost::optional<float>()*/, boost::optional<float> modelStandardDeviation/*=boost::optional<float>()*/)
 {
@@ -88,4 +89,4 @@ vector<float> fitShapeToLandmarksLinear(MorphableModel morphableModel, Mat affin
 	return vector<float>(c_s);
 }
 
-} /* namespace morphablemodel */
+} /* namespace fitting */

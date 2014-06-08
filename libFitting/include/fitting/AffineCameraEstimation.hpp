@@ -17,7 +17,7 @@
 
 #include <vector>
 
-namespace morphablemodel {
+namespace fitting {
 
 /**
  * The Gold Standard Algorithm for estimating an affine
@@ -32,7 +32,7 @@ namespace morphablemodel {
  * @param[in] vertexIds An optional list of vertex ids if not all given imagePoints have a corresponding point in the model. TODO: Should this better be a map that is used in addition to the standard lookup?
  * @return A 3x4 affine camera matrix (the third row is [0, 0, 0, 1]).
  */
-cv::Mat estimateAffineCamera(std::vector<imageio::ModelLandmark> imagePoints, MorphableModel morphableModel, std::vector<int> vertexIds=std::vector<int>());
+cv::Mat estimateAffineCamera(std::vector<imageio::ModelLandmark> imagePoints, morphablemodel::MorphableModel morphableModel, std::vector<int> vertexIds=std::vector<int>());
 
 /**
  * Takes a 3x4 affine camera matrix, calculates the
@@ -62,5 +62,5 @@ cv::Mat calculateAffineZDirection(cv::Mat affineCameraMatrix);
  */
 cv::Vec2f projectAffine(cv::Vec3f vertex, cv::Mat affineCameraMatrix, int screenWidth, int screenHeight); // Could go into libRender, but Render doesn't have a dependency on libImageIO (yet). But we don't need ImageIO.
 
-} /* namespace morphablemodel */
+} /* namespace fitting */
 #endif /* AFFINECAMERAESTIMATION_HPP_ */
