@@ -237,7 +237,6 @@ shared_ptr<Mesh> MeshUtils::createTriangle()
 cv::Mat MeshUtils::drawTexCoords(Mesh mesh)
 {
 	Mat texImg(512, 512, CV_8UC4, cv::Scalar(0.0f, 0.0f, 0.0f, 255.0f));
-	//texImg.s
 	for (const auto& triIdx : mesh.tvi) {
 		cv::line(texImg, Point2f(mesh.vertex[triIdx[0]].texcrd[0] * texImg.cols, mesh.vertex[triIdx[0]].texcrd[1] * texImg.rows), Point2f(mesh.vertex[triIdx[1]].texcrd[0] * texImg.cols, mesh.vertex[triIdx[1]].texcrd[1] * texImg.rows), Scalar(255.0f, 0.0f, 0.0f));
 		cv::line(texImg, Point2f(mesh.vertex[triIdx[1]].texcrd[0] * texImg.cols, mesh.vertex[triIdx[1]].texcrd[1] * texImg.rows), Point2f(mesh.vertex[triIdx[2]].texcrd[0] * texImg.cols, mesh.vertex[triIdx[2]].texcrd[1] * texImg.rows), Scalar(255.0f, 0.0f, 0.0f));

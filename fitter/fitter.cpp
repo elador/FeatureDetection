@@ -61,6 +61,8 @@
 #include "morphablemodel/LinearShapeFitting.hpp"
 
 #include "render/SoftwareRenderer.hpp"
+#include "render/MeshUtils.hpp"
+#include "QtGui/QMatrix4x4" // temp
 
 #include "imageio/ImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
@@ -93,6 +95,24 @@ using std::cout;
 using std::endl;
 using std::make_shared;
 
+cv::Mat affineCameraMatrixFromString(std::string cameraMatrixEntries)
+{
+	cv::Mat cameraMatrix;
+
+	return cameraMatrix;
+}
+
+std::string affineCameraMatrixToString(cv::Mat cameraMatrix)
+{
+	std::string cameraMatrixEntries;
+	for (auto i = 0; i < cameraMatrix.rows; ++i) {
+		for (auto j = 0; j < cameraMatrix.cols; ++j) {
+			cameraMatrixEntries += std::to_string(cameraMatrix.at<float>(i, j));
+			cameraMatrixEntries += string(" ");
+		}
+	}
+	return cameraMatrixEntries;
+}
 
 template<class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
@@ -283,16 +303,19 @@ int main(int argc, char *argv[])
 	softwareRenderer.doBackfaceCulling = true;
 	auto framebuffer = softwareRenderer.render(mesh, fullAffineCam); // hmm, do we have the z-test disabled?
 	
+	// Extract the texture
+	// Todo: check for if hasTexture, we can't do it if the model doesn't have texture coordinates
+	QMatrix4x4 mvpMatrixQ(fullAffineCam.ptr<float>(0));
+	
+	Mat crds = render::utils::MeshUtils::drawTexCoords(mesh);
 
+	render::utils::MeshUtils::extractTexture(mesh, mvpMatrixQ, img.cols, img.rows, img);
 
-	// Write:
-	// ptree .fit file: cam-params, model-file, model-params-fn(alphas)
-	// alphas
-	// texmap
-
+	// Write the fitting output files containing:
+	// - Camera parameters, fitting parameters, shape coefficients
 	ptree fittingFile;
 	fittingFile.put("camera", string("affine"));
-	fittingFile.put("camera.matrix", string("2 5.4 232.22"));
+	fittingFile.put("camera.matrix", affineCameraMatrixToString(fullAffineCam));
 
 	fittingFile.put("imageWidth", img.cols);
 	fittingFile.put("imageHeight", img.rows);
@@ -300,7 +323,6 @@ int main(int argc, char *argv[])
 	fittingFile.put("fittingParameters.lambda", lambda);
 
 	fittingFile.put("textureMap", path("C:/bla/texture.png").filename().string());
-	
 	fittingFile.put("model", config.get_child("morphableModel").get<string>("filename")); // This can throw, but the filename should really exist.
 	
 	// alphas:
@@ -309,6 +331,7 @@ int main(int argc, char *argv[])
 		fittingFile.put("shapeCoefficients." + std::to_string(i), fittedCoeffs[i]);
 	}
 
+	// Save the fitting file
 	path fittingFileName = outputPath / labeledImageSource->getName().stem();
 	fittingFileName += ".txt";
 	boost::property_tree::write_info(fittingFileName.string(), fittingFile);

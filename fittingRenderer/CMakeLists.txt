@@ -1,6 +1,6 @@
 set(SUBPROJECT_NAME fittingRenderer)
 project(${SUBPROJECT_NAME})
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8) # Note: if we compile with Qt, we should enforce CMake 2.8.11
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
 set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 
