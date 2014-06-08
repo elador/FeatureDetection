@@ -5,20 +5,21 @@
  *      Author: Patrik Huber
  */
 
-#include "morphablemodel/OpenCVCameraEstimation.hpp"
+#include "fitting/OpenCVCameraEstimation.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
 #include "opencv2/calib3d/calib3d.hpp"
 
 using logging::LoggerFactory;
+using morphablemodel::MorphableModel;
 using cv::Mat;
 using cv::Point2f;
 using cv::Point3f;
 using std::vector;
 using std::pair;
 
-namespace morphablemodel {
+namespace fitting {
 
 OpenCVCameraEstimation::OpenCVCameraEstimation(/* const? shared_ptr? */MorphableModel morphableModel) : morphableModel(morphableModel)
 {
@@ -77,4 +78,4 @@ cv::Mat OpenCVCameraEstimation::createIntrinsicCameraMatrix(float f, int w, int 
 	return camMatrix;
 }
 
-} /* namespace morphablemodel */
+} /* namespace fitting */

@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-namespace morphablemodel {
+namespace fitting {
 
 /**
  * A wrapper for the OpenCV solvePnP algorithm, that uses given
@@ -36,7 +36,7 @@ public:
 	 * @param[in] MorphableModel The Morphable Model whose shape-model
 	 *                           is used to estimate the camera pose.
 	 */
-	OpenCVCameraEstimation(/* const? shared_ptr? */MorphableModel morphableModel);
+	OpenCVCameraEstimation(/* const? shared_ptr? */morphablemodel::MorphableModel morphableModel);
 
 	/**
 	 * Takes 2D landmarks, finds the corresponding landmarks in the
@@ -55,8 +55,8 @@ public:
 	static cv::Mat createIntrinsicCameraMatrix(float f, int w, int h);
 
 private:
-	MorphableModel morphableModel;
+	morphablemodel::MorphableModel morphableModel;
 };
 
-} /* namespace morphablemodel */
+} /* namespace fitting */
 #endif /* OPENCVCAMERAESTIMATION_HPP_ */

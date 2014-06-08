@@ -5,7 +5,7 @@
  *      Author: Patrik Huber
  */
 
-#include "morphablemodel/AffineCameraEstimation.hpp"
+#include "fitting/AffineCameraEstimation.hpp"
 
 #include "render/utils.hpp"
 #include "logging/LoggerFactory.hpp"
@@ -13,12 +13,13 @@
 #include "opencv2/core/core_c.h" // for CV_REDUCE_AVG
 
 using logging::LoggerFactory;
+using morphablemodel::MorphableModel;
 using cv::Mat;
 using cv::Vec3f;
 using cv::Vec4f;
 using std::vector;
 
-namespace morphablemodel {
+namespace fitting {
 
 Mat estimateAffineCamera(vector<imageio::ModelLandmark> imagePoints, MorphableModel morphableModel, vector<int> vertexIds/*=std::vector<int>()*/)
 {
@@ -161,4 +162,4 @@ cv::Vec2f projectAffine(cv::Vec3f vertex, cv::Mat affineCameraMatrix, int screen
 	return screenCoords;
 }
 
-} /* namespace morphablemodel */
+} /* namespace fitting */

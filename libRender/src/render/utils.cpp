@@ -6,6 +6,9 @@
  */
 #include "render/utils.hpp"
 
+namespace render {
+	namespace utils {
+
 cv::Vec2f clipToScreenSpace(cv::Vec2f clipCoordinates, int screenWidth, int screenHeight)
 {
 	// Window transform:
@@ -21,3 +24,6 @@ cv::Vec2f screenToClipSpace(cv::Vec2f screenCoordinates, int screenWidth, int sc
 	y_cs *= -1.0f;
 	return cv::Vec2f(x_cs, y_cs);
 }
+
+	} /* namespace utils */
+} /* namespace render */

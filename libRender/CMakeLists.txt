@@ -6,6 +6,7 @@ set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
+# find dependencies
 find_package(OpenCV 2.4.3 REQUIRED core imgproc highgui)
 
 find_package(Boost 1.48.0 REQUIRED)
@@ -26,7 +27,7 @@ if(WITH_RENDER_QOPENGL)
 	add_definitions(-DWITH_RENDER_QOPENGL)
 endif()
 
-#Source and header files:
+# Source and header files:
 set(SOURCE
 	src/render/QOpenGLRenderer.cpp
 	src/render/SoftwareRenderer.cpp
@@ -57,7 +58,7 @@ include_directories("include")
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 
-#Make the library
+# Make the library
 add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
 if(WITH_RENDER_QOPENGL)
 	target_link_libraries(${SUBPROJECT_NAME} Qt5::Core Qt5::Gui ${Qt5Gui_EGL_LIBRARIES} ${Qt5Gui_OPENGL_LIBRARIES} ${OpenCV_LIBS})

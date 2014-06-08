@@ -7,7 +7,7 @@ set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies:
-find_package(OpenCV 2.4.3 REQUIRED core imgproc highgui calib3d objdetect)
+find_package(OpenCV 2.4.3 REQUIRED core imgproc)
 
 find_package(Boost 1.48.0 COMPONENTS program_options system filesystem REQUIRED)
 if(Boost_FOUND)
@@ -36,11 +36,11 @@ add_executable(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
 
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
-include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${Logging_SOURCE_DIR}/include)
 include_directories(${ImageIO_SOURCE_DIR}/include)
 include_directories(${Render_SOURCE_DIR}/include)
 include_directories(${MorphableModel_SOURCE_DIR}/include)
+include_directories(${Fitting_SOURCE_DIR}/include)
 
 # Make the app depend on the libraries
-target_link_libraries(${SUBPROJECT_NAME} ImageIO ${KINECT_LIBNAME} MorphableModel Render Logging ${Boost_LIBRARIES} ${OpenCV_LIBS} ${HDF5_LIBRARIES})
+target_link_libraries(${SUBPROJECT_NAME} Fitting MorphableModel Render ImageIO Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})
