@@ -37,6 +37,7 @@ set(SOURCE
 	src/render/Mesh.cpp
 	src/render/MatrixUtils.cpp
 	src/render/MeshUtils.cpp
+	src/render/utils.cpp
 )
 
 set(HEADERS
@@ -49,6 +50,7 @@ set(HEADERS
 	include/render/Mesh.hpp
 	include/render/MatrixUtils.hpp
 	include/render/MeshUtils.hpp
+	include/render/utils.hpp
 )
 
 include_directories("include")

@@ -62,7 +62,7 @@
 
 #include "render/SoftwareRenderer.hpp"
 #include "render/MeshUtils.hpp"
-#include "QtGui/QMatrix4x4" // temp
+#include "render/utils.hpp"
 
 #include "imageio/ImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
 	// Convert the landmarks to clip-space
 	vector<imageio::ModelLandmark> landmarksClipSpace;
 	for (const auto& lm : landmarks) {
-		cv::Vec2f clipCoords = morphablemodel::screenToClipSpace(lm.getPosition2D(), img.cols, img.rows);
+		cv::Vec2f clipCoords = render::utils::screenToClipSpace(lm.getPosition2D(), img.cols, img.rows);
 		imageio::ModelLandmark lmcs(lm.getName(), Vec3f(clipCoords[0], clipCoords[1], 0.0f), lm.isVisible());
 		landmarksClipSpace.push_back(lmcs);
 	}
