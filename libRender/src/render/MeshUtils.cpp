@@ -269,10 +269,9 @@ bool MeshUtils::isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Poin
 	return (u >= 0) && (v >= 0) && (u + v < 1);
 }
 
-#ifdef WITH_RENDER_QOPENGL
-// framebuffer where to extract the texture from
+// image: where to extract the texture from
 // note: framebuffer should have size of the image (ok not necessarily. What about mobile?) (well it should, to get optimal quality (and everywhere the same quality)?)
-cv::Mat MeshUtils::extractTexture(render::Mesh mesh, QMatrix4x4 mvpMatrix, int viewportWidth, int viewportHeight, cv::Mat framebuffer) { // Change QMatrix4x4 to cv::Mat so that software-renderer is not dependent on Qt?
+cv::Mat MeshUtils::extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, int viewportHeight, Mat image) {
 	// optional param cv::Mat textureMap = cv::Mat(512, 512, CV_8UC3) ?
 	//cv::Mat textureMap(512, 512, inputImage.type());
 	cv::Mat textureMap(512, 512, CV_8UC3);
@@ -281,27 +280,27 @@ cv::Mat MeshUtils::extractTexture(render::Mesh mesh, QMatrix4x4 mvpMatrix, int v
 
 		cv::Point2f srcTri[3];
 		cv::Point2f dstTri[3];
-		QVector4D vec(mesh.vertex[triangleIndices[0]].position[0], mesh.vertex[triangleIndices[0]].position[1], mesh.vertex[triangleIndices[0]].position[2], 1.0f);
-		QVector4D res = mvpMatrix * vec;
-		res /= res.w();
-		float x_w = (res.x() + 1)*(viewportWidth / 2.0f) + 0.0f; // OpenGL viewport transform (from NDC to viewport) (NDC=clipspace?)
-		float y_w = (res.y() + 1)*(viewportHeight / 2.0f) + 0.0f;
+		cv::Vec4f vec(mesh.vertex[triangleIndices[0]].position[0], mesh.vertex[triangleIndices[0]].position[1], mesh.vertex[triangleIndices[0]].position[2], 1.0f);
+		cv::Vec4f res = Mat(mvpMatrix * Mat(vec));
+		res /= res[3];
+		float x_w = (res[0] + 1)*(viewportWidth / 2.0f) + 0.0f; // OpenGL viewport transform (from NDC to viewport) (NDC=clipspace?)
+		float y_w = (res[1] + 1)*(viewportHeight / 2.0f) + 0.0f;
 		y_w = viewportHeight - y_w; // Qt: Origin top-left. OpenGL: bottom-left.
 		srcTri[0] = cv::Point2f(x_w, y_w);
 
-		vec = QVector4D(mesh.vertex[triangleIndices[1]].position[0], mesh.vertex[triangleIndices[1]].position[1], mesh.vertex[triangleIndices[1]].position[2], 1.0f);
-		res = mvpMatrix * vec;
-		res /= res.w();
-		x_w = (res.x() + 1)*(viewportWidth / 2.0f) + 0.0f;
-		y_w = (res.y() + 1)*(viewportHeight / 2.0f) + 0.0f;
+		vec = cv::Vec4f(mesh.vertex[triangleIndices[1]].position[0], mesh.vertex[triangleIndices[1]].position[1], mesh.vertex[triangleIndices[1]].position[2], 1.0f);
+		res = Mat(mvpMatrix * Mat(vec));
+		res /= res[3];
+		x_w = (res[0] + 1)*(viewportWidth / 2.0f) + 0.0f;
+		y_w = (res[1] + 1)*(viewportHeight / 2.0f) + 0.0f;
 		y_w = viewportHeight - y_w; // Qt: Origin top-left. OpenGL: bottom-left.
 		srcTri[1] = cv::Point2f(x_w, y_w);
 
-		vec = QVector4D(mesh.vertex[triangleIndices[2]].position[0], mesh.vertex[triangleIndices[2]].position[1], mesh.vertex[triangleIndices[2]].position[2], 1.0f);
-		res = mvpMatrix * vec;
-		res /= res.w();
-		x_w = (res.x() + 1)*(viewportWidth / 2.0f) + 0.0f;
-		y_w = (res.y() + 1)*(viewportHeight / 2.0f) + 0.0f;
+		vec = cv::Vec4f(mesh.vertex[triangleIndices[2]].position[0], mesh.vertex[triangleIndices[2]].position[1], mesh.vertex[triangleIndices[2]].position[2], 1.0f);
+		res = Mat(mvpMatrix * Mat(vec));
+		res /= res[3];
+		x_w = (res[0] + 1)*(viewportWidth / 2.0f) + 0.0f;
+		y_w = (res[1] + 1)*(viewportHeight / 2.0f) + 0.0f;
 		y_w = viewportHeight - y_w; // Qt: Origin top-left. OpenGL: bottom-left.
 		srcTri[2] = cv::Point2f(x_w, y_w);
 
@@ -312,7 +311,7 @@ cv::Mat MeshUtils::extractTexture(render::Mesh mesh, QMatrix4x4 mvpMatrix, int v
 		float src_tri_min_y = std::min(srcTri[0].y, std::min(srcTri[1].y, srcTri[2].y));
 		float src_tri_max_y = std::max(srcTri[0].y, std::max(srcTri[1].y, srcTri[2].y));
 
-		Mat inputImageRoi = framebuffer.rowRange(cvFloor(src_tri_min_y), cvCeil(src_tri_max_y)).colRange(cvFloor(src_tri_min_x), cvCeil(src_tri_max_x)); // We round down and up. ROI is possibly larger. But wrong pixels get thrown away later when we check if the point is inside the triangle? Correct?
+		Mat inputImageRoi = image.rowRange(cvFloor(src_tri_min_y), cvCeil(src_tri_max_y)).colRange(cvFloor(src_tri_min_x), cvCeil(src_tri_max_x)); // We round down and up. ROI is possibly larger. But wrong pixels get thrown away later when we check if the point is inside the triangle? Correct?
 		srcTri[0] -= Point2f(src_tri_min_x, src_tri_min_y);
 		srcTri[1] -= Point2f(src_tri_min_x, src_tri_min_y);
 		srcTri[2] -= Point2f(src_tri_min_x, src_tri_min_y); // shift all the points to correspond to the roi
@@ -325,7 +324,7 @@ cv::Mat MeshUtils::extractTexture(render::Mesh mesh, QMatrix4x4 mvpMatrix, int v
 		cv::Mat warp_mat = getAffineTransform(srcTri, dstTri);
 
 		/// Apply the Affine Transform just found to the src image
-		cv::Mat tmpDstBuffer = Mat::zeros(textureMap.rows, textureMap.cols, framebuffer.type()); // I think using the source-size here is not correct. The dst might be larger. We should warp the endpoints and set to max-w/h. No, I think it would be even better to directly warp to the final textureMap size. (so that the last step is only a 1:1 copy)
+		cv::Mat tmpDstBuffer = Mat::zeros(textureMap.rows, textureMap.cols, image.type()); // I think using the source-size here is not correct. The dst might be larger. We should warp the endpoints and set to max-w/h. No, I think it would be even better to directly warp to the final textureMap size. (so that the last step is only a 1:1 copy)
 		warpAffine(inputImageRoi, tmpDstBuffer, warp_mat, tmpDstBuffer.size(), cv::INTER_CUBIC, cv::BORDER_TRANSPARENT); // last row/col is zeros, depends on interpolation method. Maybe because of rounding or interpolation? So it cuts a little. Maybe try to implement by myself?
 
 		// only copy to final img if point is inside the triangle (or on the border)
@@ -339,7 +338,6 @@ cv::Mat MeshUtils::extractTexture(render::Mesh mesh, QMatrix4x4 mvpMatrix, int v
 	}
 	return textureMap;
 }
-#endif
 
 	} /* namespace utils */
 } /* namespace render */

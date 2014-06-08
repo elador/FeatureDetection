@@ -12,13 +12,11 @@
 #include "render/Mesh.hpp"
 
 #include "opencv2/core/core.hpp"
-#ifdef WITH_RENDER_QOPENGL
-	#include <QtGui/QMatrix4x4>
-#endif
 
 #include <memory>
 
 // Todo: Class with static methods? Or just functions? I don't know which method is better.
+// ==> go for free functions in the namespace!
 
 namespace render {
 
@@ -35,9 +33,7 @@ namespace render {
 			static cv::Mat drawTexCoords(Mesh);
 
 			static bool isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Point2f triV1, cv::Point2f triV2);
-#ifdef WITH_RENDER_QOPENGL
-			static cv::Mat extractTexture(render::Mesh mesh, QMatrix4x4 mvpMatrix, int viewportWidth, int viewportHeight, cv::Mat framebuffer); // Change QMatrix4x4 to cv::Mat so that tex-extraction is not dependent on Qt
-#endif
+			static cv::Mat extractTexture(render::Mesh mesh, cv::Mat mvpMatrix, int viewportWidth, int viewportHeight, cv::Mat image);
 		};
 
 	} /* namespace utils */

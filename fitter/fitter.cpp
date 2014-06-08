@@ -305,11 +305,11 @@ int main(int argc, char *argv[])
 	
 	// Extract the texture
 	// Todo: check for if hasTexture, we can't do it if the model doesn't have texture coordinates
-	QMatrix4x4 mvpMatrixQ(fullAffineCam.ptr<float>(0));
+	//QMatrix4x4 mvpMatrixQ(fullAffineCam.ptr<float>(0));
 	
 	Mat crds = render::utils::MeshUtils::drawTexCoords(mesh);
 
-	render::utils::MeshUtils::extractTexture(mesh, mvpMatrixQ, img.cols, img.rows, img);
+	render::utils::MeshUtils::extractTexture(mesh, fullAffineCam, img.cols, img.rows, img);
 
 	// Write the fitting output files containing:
 	// - Camera parameters, fitting parameters, shape coefficients
