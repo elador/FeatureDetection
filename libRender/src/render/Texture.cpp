@@ -16,22 +16,13 @@
 
 namespace render {
 
-Texture::Texture(void)
-{
-}
-
-Texture::~Texture(void)
-{
-}
-
-void Texture::createFromFile(const std::string& fileName, uchar mipmapsNum)
+void Texture::createFromFile(const std::string& fileName, unsigned int mipmapsNum)
 {
 	cv::Mat image;
 	try {
 		image = cv::imread(fileName);
-	} catch( cv::Exception& e ) {
-		const char* err_msg = e.what();
-		std::cout << "OpenCV Exception caught while loading the image: " << err_msg << std::endl;
+	} catch(cv::Exception& e) {
+		std::cout << "OpenCV Exception caught while loading the image: " << e.what() << std::endl;
 	}
 
 	if (image.empty()) {
@@ -39,7 +30,7 @@ void Texture::createFromFile(const std::string& fileName, uchar mipmapsNum)
 		exit(EXIT_FAILURE);
 	}
 
-	this->mipmapsNum = (mipmapsNum == 0 ? render::utils::MatrixUtils::getMaxPossibleMipmapsNum(image.cols, image.rows) : mipmapsNum);
+	this->mipmapsNum = (mipmapsNum == 0 ? render::utils::getMaxPossibleMipmapsNum(image.cols, image.rows) : mipmapsNum);
 	/*if (mipmapsNum == 0)
 	{
 		uchar mmn = render::utils::MatrixUtils::getMaxPossibleMipmapsNum(image.cols, image.rows);

@@ -168,7 +168,7 @@ boost::optional<TriangleToRasterize> SoftwareRenderer::processProspectiveTri(Ver
 	//float x_w = (res.x() + 1)*(viewportWidth / 2.0f) + 0.0f; // OpenGL viewport transform (from NDC to viewport) (NDC=clipspace?)
 	//float y_w = (res.y() + 1)*(viewportHeight / 2.0f) + 0.0f;
 	//y_w = viewportHeight - y_w; // Qt: Origin top-left. OpenGL: bottom-left. OCV: top-left.
-	t.v0.position[0] = (t.v0.position[0] + 1) * (viewportWidth / 2.0f);
+	t.v0.position[0] = (t.v0.position[0] + 1) * (viewportWidth / 2.0f); // TODO: We could use our clipToScreen...etc functions?
 	t.v0.position[1] = (t.v0.position[1] + 1) * (viewportHeight / 2.0f);
 	t.v0.position[1] = viewportHeight - t.v0.position[1];
 	t.v1.position[0] = (t.v1.position[0] + 1) * (viewportWidth / 2.0f);
@@ -300,7 +300,7 @@ void SoftwareRenderer::rasterTriangle(TriangleToRasterize triangle)
 					}
 
 					// clamp bytes to 255
-					unsigned char red = (unsigned char)(255.0f * min(pixelColor[0], 1.0f));
+					unsigned char red = (unsigned char)(255.0f * min(pixelColor[0], 1.0f)); // Todo: Proper casting (rounding?)
 					unsigned char green = (unsigned char)(255.0f * min(pixelColor[1], 1.0f));
 					unsigned char blue = (unsigned char)(255.0f * min(pixelColor[2], 1.0f));
 

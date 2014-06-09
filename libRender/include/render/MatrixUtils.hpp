@@ -29,23 +29,9 @@ namespace render {
 			static cv::Mat createPerspectiveProjectionMatrix(float l, float r, float b, float t, float n, float f);
 			static cv::Mat createPerspectiveProjectionMatrix(float verticalAngle, float aspectRatio, float nearPlane, float farPlane);
 
-			static unsigned char getMaxPossibleMipmapsNum(ushort width, ushort height)	// TODO: This belongs more in a ImageUtils, TextureUtils, or whatever...
-			{
-				unsigned char mipmapsNum = 1;
-				ushort size = std::max(width, height);
-
-				if (size == 1)
-					return 1;
-
-				do {
-					size >>= 1;
-					mipmapsNum++;
-				} while (size != 1);
-
-				return mipmapsNum;
-			}
-
 		};
+
+		unsigned int getMaxPossibleMipmapsNum(unsigned int width, unsigned int height);	// TODO: This belongs more in a ImageUtils, TextureUtils, or whatever... => render::utils::texturing
 
 	} /* namespace utils */
 
