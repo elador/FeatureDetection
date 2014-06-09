@@ -130,6 +130,9 @@ int main(int argc, char *argv[])
 	#endif
 	
 	string verboseLevelConsole;
+	bool useFileList = false;
+	bool useImage = false;
+	bool useDirectory = false;
 	path inputFilename;
 	path configFilename;
 	path inputLandmarks;
@@ -189,19 +192,59 @@ int main(int argc, char *argv[])
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("morphablemodel").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("render").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("fitting").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("fitter").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("fitter");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 	appLogger.debug("Using config: " + configFilename.string());
 
-	// Load the image
+	// We assume the user has given either an image, directory, or a .lst-file
+	if (inputFilename.extension().string() == ".lst" || inputFilename.extension().string() == ".txt") { // check for .lst or .txt first
+		useFileList = true;
+	}
+	else if (boost::filesystem::is_directory(inputFilename)) { // check if it's a directory
+		useDirectory = true;
+	}
+	else { // it must be an image
+		useImage = true;
+	}
+	
+	// Load the images
 	shared_ptr<ImageSource> imageSource;
-	try {
-		imageSource = make_shared<FileImageSource>(inputFilename.string());
-	} catch(const std::runtime_error& e) {
-		appLogger.error(e.what());
-		return EXIT_FAILURE;
+	if (useFileList == true) {
+		appLogger.info("Using file-list as input: " + inputFilename.string());
+		shared_ptr<ImageSource> fileListImgSrc; // TODO VS2013 change to unique_ptr, rest below also
+		try {
+			fileListImgSrc = make_shared<FileListImageSource>(inputFilename.string());
+		}
+		catch (const std::runtime_error& e) {
+			appLogger.error(e.what());
+			return EXIT_FAILURE;
+		}
+		imageSource = fileListImgSrc;
+	}
+	if (useImage == true) {
+		appLogger.info("Using input image: ");
+		shared_ptr<ImageSource> fileImgSrc;
+		try {
+			fileImgSrc = make_shared<FileImageSource>(inputFilename.string());
+		}
+		catch (const std::runtime_error& e) {
+			appLogger.error(e.what());
+			return EXIT_FAILURE;
+		}
+		imageSource = fileImgSrc;
+	}
+	if (useDirectory == true) {
+		appLogger.info("Using input images from directory: " + inputFilename.string());
+		try {
+			imageSource = make_shared<DirectoryImageSource>(inputFilename.string());
+		}
+		catch (const std::runtime_error& e) {
+			appLogger.error(e.what());
+			return EXIT_FAILURE;
+		}
 	}
 
 	// Load the ground truth
@@ -209,15 +252,31 @@ int main(int argc, char *argv[])
 	shared_ptr<NamedLandmarkSource> landmarkSource;
 	
 	shared_ptr<LandmarkFormatParser> landmarkFormatParser;
+	string landmarksFileExtension(".txt");
 	if(boost::iequals(landmarkType, "ibug")) {
 		landmarkFormatParser = make_shared<IbugLandmarkFormatParser>();
-		landmarkSource = make_shared<DefaultNamedLandmarkSource>(vector<path>{inputLandmarks}, landmarkFormatParser);
+		landmarksFileExtension = ".pts";
 	} else if (boost::iequals(landmarkType, "did")) {
 		landmarkFormatParser = make_shared<DidLandmarkFormatParser>();
-		landmarkSource = make_shared<DefaultNamedLandmarkSource>(vector<path>{inputLandmarks}, landmarkFormatParser);
+		landmarksFileExtension = ".did";
 	} else {
 		cout << "Error: Invalid ground truth type." << endl;
 		return EXIT_FAILURE;
+	}
+	if (useImage == true) {
+		// The user can either specify a filename, or, as in the other input-cases, a directory
+		if (boost::filesystem::is_directory(inputLandmarks)) {
+			landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, landmarksFileExtension, GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, vector<path>{ inputLandmarks }), landmarkFormatParser);
+		}
+		else {
+			landmarkSource = make_shared<DefaultNamedLandmarkSource>(vector<path>{ inputLandmarks }, landmarkFormatParser);
+		}
+	}
+	if (useFileList == true) {
+		landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, landmarksFileExtension, GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, vector<path>{ inputLandmarks }), landmarkFormatParser);
+	}
+	if (useDirectory == true) {
+		landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, landmarksFileExtension, GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, vector<path>{ inputLandmarks }), landmarkFormatParser);
 	}
 	labeledImageSource = make_shared<NamedLabeledImageSource>(imageSource, landmarkSource);
 	
@@ -250,133 +309,132 @@ int main(int argc, char *argv[])
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	Mat img;
 	vector<imageio::ModelLandmark> landmarks;
-	float lambda = 15.0f;
+	float lambda = config.get_child("fitting", ptree()).get<float>("lambda", 15.0f);
 
 	LandmarkMapper landmarkMapper(landmarkMappings);
 
-	labeledImageSource->next();
-	start = std::chrono::system_clock::now();
-	appLogger.info("Starting to process " + labeledImageSource->getName().string());
-	img = labeledImageSource->getImage();
+	while (labeledImageSource->next()) {
+		start = std::chrono::system_clock::now();
+		appLogger.info("Starting to process " + labeledImageSource->getName().string());
+		img = labeledImageSource->getImage();
 
-	LandmarkCollection lms = labeledImageSource->getLandmarks();
-	LandmarkCollection didLms = landmarkMapper.convert(lms);
-	landmarks.clear();
-	Mat landmarksImage = img.clone(); // blue rect = the used landmarks
-	for (const auto& lm : didLms.getLandmarks()) {
-		lm->draw(landmarksImage);
-		landmarks.emplace_back(imageio::ModelLandmark(lm->getName(), lm->getPosition2D()));
-		cv::rectangle(landmarksImage, cv::Point(cvRound(lm->getX() - 2.0f), cvRound(lm->getY() - 2.0f)), cv::Point(cvRound(lm->getX() + 2.0f), cvRound(lm->getY() + 2.0f)), cv::Scalar(255, 0, 0));
+		LandmarkCollection lms = labeledImageSource->getLandmarks();
+		LandmarkCollection didLms = landmarkMapper.convert(lms);
+		landmarks.clear();
+		Mat landmarksImage = img.clone(); // blue rect = the used landmarks
+		for (const auto& lm : didLms.getLandmarks()) {
+			lm->draw(landmarksImage);
+			landmarks.emplace_back(imageio::ModelLandmark(lm->getName(), lm->getPosition2D()));
+			cv::rectangle(landmarksImage, cv::Point(cvRound(lm->getX() - 2.0f), cvRound(lm->getY() - 2.0f)), cv::Point(cvRound(lm->getX() + 2.0f), cvRound(lm->getY() + 2.0f)), cv::Scalar(255, 0, 0));
+		}
+
+		// Start affine camera estimation (Aldrian paper)
+		Mat affineCamLandmarksProjectionImage = landmarksImage.clone(); // the affine LMs are currently not used (don't know how to render without z-vals)
+
+		// Convert the landmarks to clip-space
+		vector<imageio::ModelLandmark> landmarksClipSpace;
+		for (const auto& lm : landmarks) {
+			cv::Vec2f clipCoords = render::utils::screenToClipSpace(lm.getPosition2D(), img.cols, img.rows);
+			landmarksClipSpace.push_back(imageio::ModelLandmark(lm.getName(), Vec3f(clipCoords[0], clipCoords[1], 0.0f), lm.isVisible()));
+		}
+
+		Mat affineCam = fitting::estimateAffineCamera(landmarksClipSpace, morphableModel);
+
+		// Render the mean-face landmarks projected using the estimated camera:
+		for (const auto& lm : landmarks) {
+			Vec3f modelPoint = morphableModel.getShapeModel().getMeanAtPoint(lm.getName());
+			cv::Vec2f screenPoint = fitting::projectAffine(modelPoint, affineCam, img.cols, img.rows);
+			cv::circle(affineCamLandmarksProjectionImage, Point2f(screenPoint), 4.0f, Scalar(0.0f, 255.0f, 0.0f));
+		}
+
+		// Estimate the shape coefficients:
+		// Detector variances: Should not be in pixels. Should be normalised by the IED. Normalise by the image dimensions is not a good idea either, it has nothing to do with it. See comment in fitShapeToLandmarksLinear().
+		// Let's just use the hopefully reasonably set default value for now (around 3 pixels)
+		vector<float> fittedCoeffs = fitting::fitShapeToLandmarksLinear(morphableModel, affineCam, landmarksClipSpace, lambda);
+
+		// Obtain the full mesh and render it using the estimated camera:
+		Mesh mesh = morphableModel.drawSample(fittedCoeffs, vector<float>()); // takes standard-normal (not-normalised) coefficients
+
+		render::SoftwareRenderer softwareRenderer(img.cols, img.rows);
+		Mat fullAffineCam = fitting::calculateAffineZDirection(affineCam);
+		fullAffineCam.at<float>(2, 3) = fullAffineCam.at<float>(2, 2); // Todo: Find out and document why this is necessary!
+		fullAffineCam.at<float>(2, 2) = 1.0f;
+		softwareRenderer.doBackfaceCulling = true;
+		auto framebuffer = softwareRenderer.render(mesh, fullAffineCam); // hmm, do we have the z-test disabled?
+		Mat renderedModel = framebuffer.first.clone(); // we save that later, and the framebuffer gets overwritten
+
+		// Extract the texture
+		// Todo: check for if hasTexture, we can't do it if the model doesn't have texture coordinates
+		Mat textureMap = render::utils::MeshUtils::extractTexture(mesh, fullAffineCam, img.cols, img.rows, img);
+
+		// Save the extracted texture map (isomap):
+		path isomapFilename = outputPath / labeledImageSource->getName().stem();
+		isomapFilename += "_isomap.png";
+		cv::imwrite(isomapFilename.string(), textureMap);
+
+		// Render the shape-model with the extracted texture from a frontal viewpoint:
+		float aspect = static_cast<float>(img.cols) / static_cast<float>(img.rows);
+		Mat frontalCam = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f * aspect, 1.0f * aspect, -1.0f, 1.0f, 0.1f, 100.0f) * render::utils::MatrixUtils::createScalingMatrix(1.0f / 120.0f, 1.0f / 120.0f, 1.0f / 120.0f);
+		softwareRenderer.enableTexturing(true);
+		auto texture = make_shared<render::Texture>();
+		texture->createFromFile(isomapFilename.string());
+		softwareRenderer.setCurrentTexture(texture);
+		auto frFrontal = softwareRenderer.render(mesh, frontalCam);
+
+		// Write the fitting output files containing:
+		// - Camera parameters, fitting parameters, shape coefficients
+		ptree fittingFile;
+		fittingFile.put("camera", string("affine"));
+		fittingFile.put("camera.matrix", affineCameraMatrixToString(fullAffineCam));
+
+		fittingFile.put("imageWidth", img.cols);
+		fittingFile.put("imageHeight", img.rows);
+
+		fittingFile.put("fittingParameters.lambda", lambda);
+
+		fittingFile.put("textureMap", isomapFilename.filename().string());
+		fittingFile.put("model", config.get_child("morphableModel").get<string>("filename")); // This can throw, but the filename should really exist.
+
+		// alphas:
+		fittingFile.put("shapeCoefficients", "");
+		for (size_t i = 0; i < fittedCoeffs.size(); ++i) {
+			fittingFile.put("shapeCoefficients." + std::to_string(i), fittedCoeffs[i]);
+		}
+
+		// Save the fitting file
+		path fittingFileName = outputPath / labeledImageSource->getName().stem();
+		fittingFileName += ".txt";
+		boost::property_tree::write_info(fittingFileName.string(), fittingFile);
+
+		// Additional optional output, as set in the config file:
+		if (config.get_child("output", ptree()).get<bool>("copyInputImage", false)) {
+			path outInputImage = outputPath / labeledImageSource->getName().filename();
+			cv::imwrite(outInputImage.string(), img);
+		}
+		if (config.get_child("output", ptree()).get<bool>("landmarksImage", false)) {
+			path outLandmarksImage = outputPath / labeledImageSource->getName().stem();
+			outLandmarksImage += "_landmarks.png";
+			cv::imwrite(outLandmarksImage.string(), affineCamLandmarksProjectionImage);
+		}
+		if (config.get_child("output", ptree()).get<bool>("writeObj", false)) {
+			path outMesh = outputPath / labeledImageSource->getName().stem();
+			outMesh.replace_extension("obj");
+			Mesh::writeObj(mesh, outMesh.string());
+		}
+		if (config.get_child("output", ptree()).get<bool>("renderResult", false)) {
+			path outRenderResult = outputPath / labeledImageSource->getName().stem();
+			outRenderResult += "_render.png";
+			cv::imwrite(outRenderResult.string(), renderedModel);
+		}
+		if (config.get_child("output", ptree()).get<bool>("frontalRendering", false)) {
+			path outFrontalRenderResult = outputPath / labeledImageSource->getName().stem();
+			outFrontalRenderResult += "_render_frontal.png";
+			cv::imwrite(outFrontalRenderResult.string(), frFrontal.first);
+		}
+
+		end = std::chrono::system_clock::now();
+		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+		appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds)+"ms.");
 	}
-
-	// Start affine camera estimation (Aldrian paper)
-	Mat affineCamLandmarksProjectionImage = landmarksImage.clone(); // the affine LMs are currently not used (don't know how to render without z-vals)
-	
-	// Convert the landmarks to clip-space
-	vector<imageio::ModelLandmark> landmarksClipSpace;
-	for (const auto& lm : landmarks) {
-		cv::Vec2f clipCoords = render::utils::screenToClipSpace(lm.getPosition2D(), img.cols, img.rows);
-		imageio::ModelLandmark lmcs(lm.getName(), Vec3f(clipCoords[0], clipCoords[1], 0.0f), lm.isVisible());
-		landmarksClipSpace.push_back(lmcs);
-	}
-	
-	Mat affineCam = fitting::estimateAffineCamera(landmarksClipSpace, morphableModel);
-
-	// Render the mean-face landmarks projected using the estimated camera:
-	for (const auto& lm : landmarks) {
-		Vec3f modelPoint = morphableModel.getShapeModel().getMeanAtPoint(lm.getName());
-		cv::Vec2f screenPoint = fitting::projectAffine(modelPoint, affineCam, img.cols, img.rows);
-		cv::circle(affineCamLandmarksProjectionImage, Point2f(screenPoint), 4.0f, Scalar(0.0f, 255.0f, 0.0f));
-	}
-
-	// Estimate the shape coefficients:
-	// Detector variances: Should not be in pixels. Should be normalised by the IED. Normalise by the image dimensions is not a good idea either, it has nothing to do with it. See comment in fitShapeToLandmarksLinear().
-	// Let's just use the hopefully reasonably set default value for now (around 3 pixels)
-	vector<float> fittedCoeffs = fitting::fitShapeToLandmarksLinear(morphableModel, affineCam, landmarksClipSpace, lambda);
-
-	// Obtain the full mesh and render it using the estimated camera:
-	Mesh mesh = morphableModel.drawSample(fittedCoeffs, vector<float>()); // takes standard-normal (not-normalised) coefficients
-
-	render::SoftwareRenderer softwareRenderer(img.cols, img.rows);
-	Mat fullAffineCam = fitting::calculateAffineZDirection(affineCam);
-	fullAffineCam.at<float>(2, 3) = fullAffineCam.at<float>(2, 2); // Todo: Find out and document why this is necessary!
-	fullAffineCam.at<float>(2, 2) = 1.0f;
-	softwareRenderer.doBackfaceCulling = true;
-	auto framebuffer = softwareRenderer.render(mesh, fullAffineCam); // hmm, do we have the z-test disabled?
-	Mat renderedModel = framebuffer.first.clone();
-	
-	// Extract the texture
-	// Todo: check for if hasTexture, we can't do it if the model doesn't have texture coordinates
-	Mat textureMap = render::utils::MeshUtils::extractTexture(mesh, fullAffineCam, img.cols, img.rows, img);
-
-	// Save the extracted texture map (isomap):
-	path isomapFilename = outputPath / labeledImageSource->getName().stem();
-	isomapFilename += "_isomap.png";
-	cv::imwrite(isomapFilename.string(), textureMap);
-
-	// Render the shape-model with the extracted texture from a frontal viewpoint:
-	float aspect = static_cast<float>(img.cols) / static_cast<float>(img.rows);
-	Mat frontalCam = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f * aspect, 1.0f * aspect, -1.0f, 1.0f, 0.1f, 100.0f) * render::utils::MatrixUtils::createScalingMatrix(1.0f / 120.0f, 1.0f / 120.0f, 1.0f / 120.0f);
-	softwareRenderer.enableTexturing(true);
-	auto texture = make_shared<render::Texture>();
-	texture->createFromFile(isomapFilename.string());
-	softwareRenderer.setCurrentTexture(texture);
-	auto frFrontal = softwareRenderer.render(mesh, frontalCam);
-
-	// Write the fitting output files containing:
-	// - Camera parameters, fitting parameters, shape coefficients
-	ptree fittingFile;
-	fittingFile.put("camera", string("affine"));
-	fittingFile.put("camera.matrix", affineCameraMatrixToString(fullAffineCam));
-
-	fittingFile.put("imageWidth", img.cols);
-	fittingFile.put("imageHeight", img.rows);
-
-	fittingFile.put("fittingParameters.lambda", lambda);
-
-	fittingFile.put("textureMap", isomapFilename.filename().string());	
-	fittingFile.put("model", config.get_child("morphableModel").get<string>("filename")); // This can throw, but the filename should really exist.
-	
-	// alphas:
-	fittingFile.put("shapeCoefficients", "");
-	for (size_t i = 0; i < fittedCoeffs.size(); ++i) {
-		fittingFile.put("shapeCoefficients." + std::to_string(i), fittedCoeffs[i]);
-	}
-
-	// Save the fitting file
-	path fittingFileName = outputPath / labeledImageSource->getName().stem();
-	fittingFileName += ".txt";
-	boost::property_tree::write_info(fittingFileName.string(), fittingFile);
-
-	// Additional optional output, as set in the config file:
-	if (config.get_child("output", ptree()).get<bool>("copyInputImage", false)) {
-		path outInputImage = outputPath / labeledImageSource->getName().filename();
-		cv::imwrite(outInputImage.string(), img);
-	}
-	if (config.get_child("output", ptree()).get<bool>("landmarksImage", false)) {
-		path outLandmarksImage = outputPath / labeledImageSource->getName().stem();
-		outLandmarksImage += "_landmarks.png";
-		cv::imwrite(outLandmarksImage.string(), affineCamLandmarksProjectionImage);
-	}
-	if (config.get_child("output", ptree()).get<bool>("writeObj", false)) {
-		path outMesh = outputPath / labeledImageSource->getName().stem();
-		outMesh.replace_extension("obj");
-		Mesh::writeObj(mesh, outMesh.string());
-	}
-	if (config.get_child("output", ptree()).get<bool>("renderResult", false)) {
-		path outRenderResult = outputPath / labeledImageSource->getName().stem();
-		outRenderResult += "_render.png";
-		cv::imwrite(outRenderResult.string(), renderedModel);
-	}
-	if (config.get_child("output", ptree()).get<bool>("frontalRendering", false)) {
-		path outFrontalRenderResult = outputPath / labeledImageSource->getName().stem();
-		outFrontalRenderResult += "_render_frontal.png";
-		cv::imwrite(outFrontalRenderResult.string(), frFrontal.first);
-	}
-
-	end = std::chrono::system_clock::now();
-	int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-	appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds)+"ms.\n");
-
 	return 0;
 }

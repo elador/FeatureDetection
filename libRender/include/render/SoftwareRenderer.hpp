@@ -40,6 +40,10 @@ public:
 #ifdef WITH_RENDER_QOPENGL
 	std::pair<cv::Mat, cv::Mat> render(Mesh mesh, QMatrix4x4 mvp);
 #endif
+	// Note: returns a reference (Mat) to the framebuffer, not
+	// a clone! I.e. if you don't want your image to get
+	// overwritten by a second call to render(...), you have to
+	// clone.
 	std::pair<cv::Mat, cv::Mat> render(Mesh mesh, cv::Mat mvp);
 
 	cv::Vec3f projectVertex(cv::Vec4f vertex, cv::Mat mvp);
