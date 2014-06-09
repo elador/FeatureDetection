@@ -303,14 +303,25 @@ int main(int argc, char *argv[])
 	fullAffineCam.at<float>(2, 2) = 1.0f;
 	softwareRenderer.doBackfaceCulling = true;
 	auto framebuffer = softwareRenderer.render(mesh, fullAffineCam); // hmm, do we have the z-test disabled?
+	Mat renderedModel = framebuffer.first.clone();
 	
 	// Extract the texture
 	// Todo: check for if hasTexture, we can't do it if the model doesn't have texture coordinates
-	//QMatrix4x4 mvpMatrixQ(fullAffineCam.ptr<float>(0));
-	
-	Mat crds = render::utils::MeshUtils::drawTexCoords(mesh);
+	Mat textureMap = render::utils::MeshUtils::extractTexture(mesh, fullAffineCam, img.cols, img.rows, img);
 
-	render::utils::MeshUtils::extractTexture(mesh, fullAffineCam, img.cols, img.rows, img);
+	// Save the extracted texture map (isomap):
+	path isomapFilename = outputPath / labeledImageSource->getName().stem();
+	isomapFilename += "_isomap.png";
+	cv::imwrite(isomapFilename.string(), textureMap);
+
+	// Render the shape-model with the extracted texture from a frontal viewpoint:
+	float aspect = static_cast<float>(img.cols) / static_cast<float>(img.rows);
+	Mat frontalCam = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f * aspect, 1.0f * aspect, -1.0f, 1.0f, 0.1f, 100.0f) * render::utils::MatrixUtils::createScalingMatrix(1.0f / 120.0f, 1.0f / 120.0f, 1.0f / 120.0f);
+	softwareRenderer.enableTexturing(true);
+	auto texture = make_shared<render::Texture>();
+	texture->createFromFile(isomapFilename.string());
+	softwareRenderer.setCurrentTexture(texture);
+	auto frFrontal = softwareRenderer.render(mesh, frontalCam);
 
 	// Write the fitting output files containing:
 	// - Camera parameters, fitting parameters, shape coefficients
@@ -323,7 +334,7 @@ int main(int argc, char *argv[])
 
 	fittingFile.put("fittingParameters.lambda", lambda);
 
-	fittingFile.put("textureMap", path("C:/bla/texture.png").filename().string());
+	fittingFile.put("textureMap", isomapFilename.filename().string());	
 	fittingFile.put("model", config.get_child("morphableModel").get<string>("filename")); // This can throw, but the filename should really exist.
 	
 	// alphas:
@@ -345,7 +356,7 @@ int main(int argc, char *argv[])
 	if (config.get_child("output", ptree()).get<bool>("landmarksImage", false)) {
 		path outLandmarksImage = outputPath / labeledImageSource->getName().stem();
 		outLandmarksImage += "_landmarks.png";
-		cv::imwrite(outLandmarksImage.string(), framebuffer.first);
+		cv::imwrite(outLandmarksImage.string(), affineCamLandmarksProjectionImage);
 	}
 	if (config.get_child("output", ptree()).get<bool>("writeObj", false)) {
 		path outMesh = outputPath / labeledImageSource->getName().stem();
@@ -355,10 +366,12 @@ int main(int argc, char *argv[])
 	if (config.get_child("output", ptree()).get<bool>("renderResult", false)) {
 		path outRenderResult = outputPath / labeledImageSource->getName().stem();
 		outRenderResult += "_render.png";
-		cv::imwrite(outRenderResult.string(), framebuffer.first);
+		cv::imwrite(outRenderResult.string(), renderedModel);
 	}
 	if (config.get_child("output", ptree()).get<bool>("frontalRendering", false)) {
-		throw std::runtime_error("Not implemented yet, please disable.");
+		path outFrontalRenderResult = outputPath / labeledImageSource->getName().stem();
+		outFrontalRenderResult += "_render_frontal.png";
+		cv::imwrite(outFrontalRenderResult.string(), frFrontal.first);
 	}
 
 	end = std::chrono::system_clock::now();

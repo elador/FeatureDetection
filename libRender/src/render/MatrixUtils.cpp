@@ -112,5 +112,21 @@ cv::Mat MatrixUtils::createPerspectiveProjectionMatrix(float verticalAngle, floa
 	return perspective;
 }
 
+unsigned int getMaxPossibleMipmapsNum(unsigned int width, unsigned int height)	// TODO: This belongs more in a ImageUtils, TextureUtils, or whatever... => render::utils::texturing
+{
+	unsigned int mipmapsNum = 1;
+	unsigned int size = std::max(width, height);
+
+	if (size == 1)
+		return 1;
+
+	do {
+		size >>= 1;
+		mipmapsNum++;
+	} while (size != 1);
+
+	return mipmapsNum;
+}
+
 	} /* namespace utils */
 } /* namespace render */

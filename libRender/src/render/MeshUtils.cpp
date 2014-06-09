@@ -271,6 +271,7 @@ bool MeshUtils::isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Poin
 
 // image: where to extract the texture from
 // note: framebuffer should have size of the image (ok not necessarily. What about mobile?) (well it should, to get optimal quality (and everywhere the same quality)?)
+// note: mvpMatrix: Atm working with a 4x4 (full) affine. But anything would work, just take care with the w-division.
 cv::Mat MeshUtils::extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, int viewportHeight, Mat image) {
 	// optional param cv::Mat textureMap = cv::Mat(512, 512, CV_8UC3) ?
 	//cv::Mat textureMap(512, 512, inputImage.type());
