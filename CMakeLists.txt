@@ -83,6 +83,7 @@ add_subdirectory(frDbExp)		# App for doing experiments with the face recognition
 
 # ============================================================================
 # Experimental, non-working or deprecated:
+add_subdirectory(autoEncoderPlayground) # sparse autoencoder implementation
 #add_subdirectory(sdmTracking)			# Experimental app that does tracking using an SDM model.
 #add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
 #add_subdirectory(softwareRendererTestApp) # Contains a QOpenGL and SW-renderer and was used to compare both, including shape-fitting.
