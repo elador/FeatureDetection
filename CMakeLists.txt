@@ -69,6 +69,7 @@ add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on
 add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
 add_subdirectory(fittingRenderer)	# App to render fitting results
 add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
+add_subdirectory(fittingTools) # Tools for fitting and model-rendering (e.g. compare isomaps)
 
 # Tools:
 add_subdirectory(landmarkVisualiser)	# Simple app to read landmarks and images and display them

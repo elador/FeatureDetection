@@ -1,7 +1,7 @@
 /*
- * generateMultipieList.cpp
+ * compareIsomaps.cpp
  *
- *  Created on: 10.06.2014
+ *  Created on: 12.06.2014
  *      Author: Patrik Huber
  */
 
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm); // style(po::command_line_style::unix_style | po::command_line_style::allow_long_disguise)
 		if (vm.count("help")) {
-			cout << "Usage: generateMultipieList [options]\n";
+			cout << "Usage: compareIsomaps [options]\n";
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	Loggers->getLogger("generateMultipieList").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("compareIsomaps").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("generateMultipieList");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
@@ -111,60 +111,9 @@ int main(int argc, char *argv[])
 	path outputImageList(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\probe_p30.txt)");
 
 	path multipieRoot(R"(Z:\datasets\still01\multiPIE\data\)");
-	// MULTIPIE_ROOT_DIR/session0x/multiview/subjId/exprNum/camera/subj_session_expr_cam_imgNum.png
-	// Example: MULTIPIE_ROOT_DIR / 001 / 01 / 01_0 / 001_01_01_010_00.png
-	path session("session"); // add 01, 02, 03 or 04
-	path type("multiview"); // highres, movies or multiview - only multiview supported at the moment
-
-	vector<string> subjects{ }; // an empty vector means use all - only empty supported at the moment
-	vector<string> sessions{ "01" };
-	vector<string> recordingIds{ "01" }; // Not unique. E.g. in session01, id02 is smile, while in session02, id02 is surprise... So: Only enter 1 session + multiple recording Ids, OR, multiple sessions and 1 recording Id.
-	
-	vector<string> cameras{ "09_0", "20_0", "08_0", "19_0", "13_0", "04_1", "14_0", "05_0" }; // probes - +-60, 45, 30, 15 yaw angle
-	//vector<string> cameras{ "05_1" }; // gallery - frontal
-	vector<string> lighting{ "07" }; // probes
-	//vector<string> lighting{ "07" }; // gallery
 
 	std::ofstream filelist(outputImageList.string());
 	
-	for (auto&& sess : sessions) {
-		// Build the subject list
-		vector<string> subjectIds;
-		if (subjects.empty()) { // an empty vector means use all - only empty supported at the moment
-			path fullsession = session;
-			fullsession += sess;
-			path subjectsDir = multipieRoot / fullsession / type;
-			if (!fs::exists(subjectsDir))
-				throw std::runtime_error("Directory '" + subjectsDir.string() + "' does not exist.");
-			if (!fs::is_directory(subjectsDir))
-				throw std::runtime_error("'" + subjectsDir.string() + "' is not a directory.");
-			vector<path> subjectDirectories;
-			std::copy(fs::directory_iterator(subjectsDir), fs::directory_iterator(), std::back_inserter(subjectDirectories));
-			for (auto&& dir : subjectDirectories) {
-				if (fs::is_directory(dir))
-					subjectIds.push_back(dir.filename().string());
-			}
-		}
-		else {
-			subjectIds = subjects;
-		}
-		// Collect the files
-		for (auto&& subject : subjectIds) {
-			for (auto&& recording : recordingIds) {
-				for (auto&& camera : cameras) {
-					for (auto&& light : lighting) {
-						string cam = camera;
-						cam.erase(std::remove(begin(cam), end(cam), '_'), end(cam)); // remove the "_" to form the filename
-						string filename = subject + "_" + sess + "_" + recording + "_" + cam + "_" + light + ".png";
-						path fullsession = session;
-						fullsession += sess;
-						path fullFilePath = multipieRoot / fullsession / type / subject / recording / camera / filename;
-						filelist << fullFilePath.string() << endl;
-					}
-				}
-			}
-		}
-	}
 
 	filelist.close();
 	return 0;

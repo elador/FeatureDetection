@@ -23,8 +23,9 @@ namespace fitting {
 
 Mat estimateAffineCamera(vector<imageio::ModelLandmark> imagePoints, MorphableModel morphableModel, vector<int> vertexIds/*=std::vector<int>()*/)
 {
+	// Note/TODO: If this function is called with invalid imagePoints, i.e. landmark id's that are not in the 3DMM, nothing throws. Something, somewhere, should happen.
 	if (imagePoints.size() < 4) {
-		Loggers->getLogger("morphablemodel").error("AffineCameraEstimation: Number of points given needs to be equal to or larger than 4.");
+		Loggers->getLogger("fitting").error("AffineCameraEstimation: Number of points given needs to be equal to or larger than 4.");
 		throw std::runtime_error("AffineCameraEstimation: Number of points given needs to be equal to or larger than 4.");
 	}
 
