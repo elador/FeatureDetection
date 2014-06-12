@@ -36,7 +36,7 @@ LandmarkMapper::LandmarkMapper(boost::filesystem::path filename)
 		boost::property_tree::info_parser::read_info(filename.string(), configTree);
 	}
 	catch (const boost::property_tree::ptree_error& error) {
-		string errorMessage = string("LandmarkMapper: Error reading config file: ") + error.what();
+		string errorMessage = string("LandmarkMapper: Error reading landmark-mappings file: ") + error.what();
 		logger.error(errorMessage);
 		throw std::runtime_error(errorMessage);
 	}

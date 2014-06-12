@@ -198,8 +198,9 @@ int main(int argc, char *argv[])
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("morphablemodel").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("render").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Loggers->getLogger("fitter").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Logger appLogger = Loggers->getLogger("fitter");
+	Loggers->getLogger("fitting").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("fitterGUI").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Logger appLogger = Loggers->getLogger("fitterGUI");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 	appLogger.debug("Using config: " + configFilename.string());
@@ -322,8 +323,9 @@ int main(int argc, char *argv[])
 	Mat ortho = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.01f, 100.0f);
 	Mat model = render::utils::MatrixUtils::createScalingMatrix(1.0f / 140.0f, 1.0f / 140.0f, 1.0f / 140.0f);
 	Mat cam = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -2.0f);
-	Mat mytransf = ortho * cam * model;
-	//auto fb = swr.render(mesh, ortho * cam * model);
+	Mat rot = render::utils::MatrixUtils::createRotationMatrixY(0.78f);
+	//Mat mytransf = ortho * cam * model;
+	//auto fb = swr.render(mesh, ortho * cam * rot * model);
 	Mat fullAffineCam = fitting::calculateAffineZDirection(affineCam);
 	fullAffineCam.at<float>(2, 3) = fullAffineCam.at<float>(2, 2); // Todo: Find out and document why this is necessary!
 	fullAffineCam.at<float>(2, 2) = 1.0f;
@@ -342,7 +344,7 @@ int main(int argc, char *argv[])
 
 	end = std::chrono::system_clock::now();
 	int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-	appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds)+"ms.\n");
+	appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds)+"ms.");
 
 	blendedImg = alphaBlend(affineCamLandmarksProjectionImage, fb.first, 0.9f);
 	//cv::addWeighted(landmarksImage, 0.5, fb.first, 0.5, 0.0, blendedImg);

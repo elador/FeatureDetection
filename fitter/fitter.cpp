@@ -155,8 +155,8 @@ int main(int argc, char *argv[])
 				"input landmarks")
 			("landmark-type,t", po::value<string>(&landmarkType)->required(),
 				"specify the type of landmarks: ibug")
-			("landmark-mappings,m", po::value<path>(&landmarkMappings)->required(),
-				"a mapping-file that maps from the input landmarks to landmark identifiers in the model's format")
+			("landmark-mappings,m", po::value<path>(&landmarkMappings),
+				"an optional mapping-file that maps from the input landmarks to landmark identifiers in the model's format")
 			("output,o", po::value<path>(&outputPath)->default_value("."),
 				"path to an output folder")
 		;
@@ -258,7 +258,8 @@ int main(int argc, char *argv[])
 		landmarksFileExtension = ".pts";
 	} else if (boost::iequals(landmarkType, "did")) {
 		landmarkFormatParser = make_shared<DidLandmarkFormatParser>();
-		landmarksFileExtension = ".did";
+		//landmarksFileExtension = ".did";
+		landmarksFileExtension = ".pos";
 	} else {
 		cout << "Error: Invalid ground truth type." << endl;
 		return EXIT_FAILURE;
@@ -273,7 +274,8 @@ int main(int argc, char *argv[])
 		}
 	}
 	if (useFileList == true) {
-		landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, landmarksFileExtension, GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, vector<path>{ inputLandmarks }), landmarkFormatParser);
+		//landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, landmarksFileExtension, GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, vector<path>{ inputLandmarks }), landmarkFormatParser);
+		landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, landmarksFileExtension, GatherMethod::SEPARATE_FOLDERS_RECURSIVE, vector<path>{ inputLandmarks }), landmarkFormatParser);
 	}
 	if (useDirectory == true) {
 		landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, landmarksFileExtension, GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, vector<path>{ inputLandmarks }), landmarkFormatParser);
@@ -311,7 +313,12 @@ int main(int argc, char *argv[])
 	vector<imageio::ModelLandmark> landmarks;
 	float lambda = config.get_child("fitting", ptree()).get<float>("lambda", 15.0f);
 
-	LandmarkMapper landmarkMapper(landmarkMappings);
+	//LandmarkMapper landmarkMapper(landmarkMappings);
+	LandmarkMapper landmarkMapper;
+	if (!landmarkMappings.empty()) {
+		// the user has given a landmark mappings file on the console
+		landmarkMapper = LandmarkMapper(landmarkMappings);
+	} // Ideas for a better solution: A flag in LandmarkMapper, or polymorphism (IdentityLandmarkMapper), or in Mapper, if mapping empty, return input?, or...?
 
 	while (labeledImageSource->next()) {
 		start = std::chrono::system_clock::now();
@@ -319,7 +326,14 @@ int main(int argc, char *argv[])
 		img = labeledImageSource->getImage();
 
 		LandmarkCollection lms = labeledImageSource->getLandmarks();
-		LandmarkCollection didLms = landmarkMapper.convert(lms);
+		LandmarkCollection didLms;
+		if (!landmarkMappings.empty()) {
+			didLms = landmarkMapper.convert(lms);
+		}
+		else {
+			didLms = lms;
+		}
+
 		landmarks.clear();
 		Mat landmarksImage = img.clone(); // blue rect = the used landmarks
 		for (const auto& lm : didLms.getLandmarks()) {

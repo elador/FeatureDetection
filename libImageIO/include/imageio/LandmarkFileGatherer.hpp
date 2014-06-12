@@ -27,8 +27,11 @@ enum class GatherMethod { // Change all enum classes to camelCase?
 	SEPARATE_FILES,		// Use one or more separate, user-specified files.
 	SEPARATE_FOLDERS,	// Use one or more separate, user-specified folders. Loading all files in these folders with a specified file extension.
 	ONE_FILE_PER_IMAGE_SAME_DIR,	// Look for the landmark file in the same directory as the image resides.
-	ONE_FILE_PER_IMAGE_DIFFERENT_DIRS // Look for the landmark file in the directory of the image as well as
+	ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, // Look for the landmark file in the directory of the image as well as
 									  // in all additional directories specified. Uses the first occurrence of the file.
+	//ONE_FILE_PER_IMAGE_DIFFERENT_DIR_STRIP_IMGPATH // We need something like that for the MultiPIE IDIAP landmarks.
+	SEPARATE_FOLDERS_RECURSIVE // Another Like SEPARATE_FOLDERS, but recursively loops through the given directory and collects all the files.
+	// Rename ONE_FILE_PER_IMAGE to FROM_IMAGESOURCE or something similar?
 	// Todo: separate SAME_DIR / DIFFERENT_DIRS, assign powers of 2 and use logical operators?
 };
 

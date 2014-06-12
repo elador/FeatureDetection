@@ -121,7 +121,7 @@ vector<path> LandmarkFileGatherer::gather(const shared_ptr<const ImageSource> im
 			std::copy(boost::filesystem::directory_iterator(directory), boost::filesystem::directory_iterator(), std::back_inserter(allFiles));
 
 			vector<string> landmarkExtensions = { fileExtension };
-
+			// We've previously added all files in the directory, so now we'll remove the ones without the desired file extension
 			auto newFilesEnd = std::remove_if(begin(allFiles), end(allFiles), [&](const path& file) {
 				string extension = file.extension().string();
 				std::transform(begin(extension), end(extension), begin(extension), ::tolower);
@@ -130,6 +130,30 @@ vector<path> LandmarkFileGatherer::gather(const shared_ptr<const ImageSource> im
 				});
 			});
 			allFiles.erase(newFilesEnd, end(allFiles));
+			// Add to the vector where we're gathering all landmark files:
+			landmarkFiles.insert(end(landmarkFiles), begin(allFiles), end(allFiles));
+		}
+	}
+	else if (gatherMethod == GatherMethod::SEPARATE_FOLDERS_RECURSIVE)
+	{
+		for (const auto& directory : additionalPaths) {
+			if (!boost::filesystem::exists(directory)) {
+				logger.warn("The following folder specified to load landmarks from does not exist: " + directory.string());
+				continue;
+			}
+			if (!boost::filesystem::is_directory(directory)) {
+				logger.warn("The following folder specified to load landmarks from is not a directory: " + directory.string());
+				continue;
+			}
+			// It is a valid directory, go on, recursively inside all subdirectories
+			vector<path> allFiles;
+			for (boost::filesystem::recursive_directory_iterator end, dir(directory); dir != end; ++dir) {
+				if (boost::filesystem::is_regular_file(*dir)) {
+					if ((*dir).path().extension() == fileExtension) {
+						allFiles.push_back((*dir).path());
+					}
+				}
+			}
 			// Add to the vector where we're gathering all landmark files:
 			landmarkFiles.insert(end(landmarkFiles), begin(allFiles), end(allFiles));
 		}
