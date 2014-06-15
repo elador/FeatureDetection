@@ -1,0 +1,21 @@
+matching
+{
+	probe {
+		sigset "sigset.txt"
+		filesRootPath "pathToMultipie" ; root-path to the database, images or other image representation
+		fileName original ; original | basename; 
+		; below arguments are optional, to manipulate the image name. E.g. if we want to use isomaps
+		;filePrefix ""
+		;fileSuffix ""
+		;fileReplaceExtension ""
+	}
+	gallery {
+		sigset "sigset.txt"
+		filesRootPath "pathToMultipie" ; root-path to the database, images or other image representation
+		fileName original ; original | basename; 
+		; below arguments are optional, to manipulate the image name. E.g. if we want to use isomaps
+		;filePrefix ""
+		;fileSuffix ""
+		;fileReplaceExtension ""
+	}
+}
