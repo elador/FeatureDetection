@@ -6,6 +6,8 @@
  */
 #pragma once
 
+#include "facerecognition/FaceRecord.hpp"
+
 #ifndef FACERECOGNITION_UTILS_HPP_
 #define FACERECOGNITION_UTILS_HPP_
 
@@ -14,6 +16,8 @@
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
 #include "boost/filesystem/path.hpp"
+
+#include <vector>
 
 /**
  * The facerecognition::utils namespace contains utility
@@ -28,7 +32,7 @@ namespace facerecognition {
  * @param[in] in Todo
  * @return Todo.
  */
-void readSigset(boost::filesystem::path filename);
+std::vector<FaceRecord> readSigset(boost::filesystem::path filename);
 
 	} /* namespace utils */
 } /* namespace facerecognition */

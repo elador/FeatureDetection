@@ -11,4 +11,11 @@
 
 namespace facerecognition {
 
+facerecognition::FaceRecord createFaceRecord(boost::property_tree::ptree recordTree)
+{
+	FaceRecord faceRecord;
+
+	return faceRecord;
+}
+
 } /* namespace facerecognition */

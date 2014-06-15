@@ -13,11 +13,11 @@ images ; each entry here maps to a FaceRecord in the code
 		expression "neutral"
 		other ""
 	}
-	image {
+	image "" {
 		subjectIdentifier ""
 		imageName ""
 	}
-	image {
+	image "" {
 		subjectIdentifier ""
 		imageName ""
 	}
