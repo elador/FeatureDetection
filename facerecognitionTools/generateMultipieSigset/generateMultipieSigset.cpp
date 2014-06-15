@@ -1,5 +1,5 @@
 /*
- * generateMultipieList.cpp
+ * generateMultipieSigset.cpp
  *
  *  Created on: 10.06.2014
  *      Author: Patrik Huber
@@ -38,6 +38,9 @@
 #include "boost/algorithm/string.hpp"
 #include "boost/filesystem.hpp"
 
+#include "boost/property_tree/ptree.hpp"
+#include "boost/property_tree/info_parser.hpp"
+
 #include <iostream>
 #include <string>
 #include <memory>
@@ -50,6 +53,7 @@ using logging::Logger;
 using logging::LoggerFactory;
 using logging::LogLevel;
 using boost::filesystem::path;
+using boost::property_tree::ptree;
 using std::cout;
 using std::endl;
 using std::string;
@@ -102,11 +106,29 @@ int main(int argc, char *argv[])
 		cout << "Error: Invalid LogLevel." << endl;
 		return EXIT_FAILURE;
 	}
-
 	Loggers->getLogger("generateMultipieList").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("generateMultipieList");
-
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
+
+	ptree sigset;
+	try {
+		read_info(R"(C:\Users\Patrik\Documents\GitHub\FeatureDetection\facerecognitionTools\generateMultipieSigset\share\sigset\example.txt)", sigset);
+	}
+	catch (const boost::property_tree::ptree_error& error) {
+		appLogger.error(string("Error reading the sigset file: ") + error.what());
+		return EXIT_FAILURE;
+	}
+	try {
+		for (auto&& e : sigset) {
+			cout << e.first << " " << endl;
+//			cout << e.second << " " << endl;
+		}
+	}
+	catch (const boost::property_tree::ptree_error& error) {
+		appLogger.error("Parsing config: " + string(error.what()));
+		return EXIT_FAILURE;
+	}
+
 
 	path outputImageList(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\probe_m0.txt)");
 

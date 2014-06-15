@@ -1,0 +1,24 @@
+database "MultiPIE" ; 
+images
+{
+	image {
+		subjectIdentifier "001"
+		imageName ""
+		; the following is additional metadata that may or may not be available, depending on the database:
+		roll 0.0
+		pitch 0.0
+		yaw 0.0
+		session ""
+		lighting ""
+		expression ""
+		other ""
+	}
+	image {
+		subjectIdentifier ""
+		imageName ""
+	}
+	image {
+		subjectIdentifier ""
+		imageName ""
+	}
+}
