@@ -30,6 +30,9 @@
 
 #include "logging/LoggerFactory.hpp"
 
+#include "opencv2/core/core.hpp"
+#include "opencv2/highgui/highgui.hpp"
+
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
@@ -39,6 +42,7 @@
 #include "boost/filesystem.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <memory>
 #include <vector>
@@ -49,6 +53,7 @@ namespace fs = boost::filesystem;
 using logging::Logger;
 using logging::LoggerFactory;
 using logging::LogLevel;
+using cv::Mat;
 using boost::filesystem::path;
 using std::cout;
 using std::endl;
@@ -104,17 +109,68 @@ int main(int argc, char *argv[])
 	}
 
 	Loggers->getLogger("compareIsomaps").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Logger appLogger = Loggers->getLogger("generateMultipieList");
+	Logger appLogger = Loggers->getLogger("compareIsomaps");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
-	path outputImageList(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\probe_p30.txt)");
+	path testList(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\probe_0.txt)");
+	path groundtruthList(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\gallery.txt)");
 
-	path multipieRoot(R"(Z:\datasets\still01\multiPIE\data\)");
+	path testIsomaps(R"(C:\Users\Patrik\Documents\GitHub\experiments\fitter_output_probe_0\)");
+	path groundtruthIsomaps(R"(C:\Users\Patrik\Documents\GitHub\experiments\fitter_output_gallery\)");
 
-	std::ofstream filelist(outputImageList.string());
+	std::ifstream testFile(testList.string());
+	std::ifstream groundtruthFile(groundtruthList.string());
+
+	vector<path> testImages;
+	vector<path> groundtruthImages;
 	
+	// Load the images:
+	std::string line;
+	if (!testFile.is_open()) {
+		return EXIT_FAILURE;
+	}
+	while (std::getline(testFile, line))
+	{
+		testImages.emplace_back(line);
+	}
+	if (!groundtruthFile.is_open()) {
+		return EXIT_FAILURE;
+	}
+	while (std::getline(groundtruthFile, line))
+	{
+		groundtruthImages.emplace_back(line);
+	}
+	testFile.close();
+	groundtruthFile.close();
 
-	filelist.close();
+	if (testImages.size() != groundtruthImages.size()) {
+		return EXIT_FAILURE;
+	}
+
+	double totalNorm = 0.0;
+	// Compare each image:
+	for (auto i = 0; i < testImages.size(); ++i) {
+		string testImageFile = testImages[i].stem().string();
+		testImageFile += "_isomap.png";
+		Mat testIsomap = cv::imread((testIsomaps / testImageFile).string());
+
+		string groundtruthImageFile = groundtruthImages[i].stem().string();
+		groundtruthImageFile += "_isomap.png";
+		Mat groundtruthIsomap = cv::imread((groundtruthIsomaps / groundtruthImageFile).string());
+
+		testIsomap.convertTo(testIsomap, CV_32FC3);
+		groundtruthIsomap.convertTo(groundtruthIsomap, CV_32FC3);
+
+		//Mat diff = testIsomap - groundtruthIsomap;
+		double norm = cv::norm(testIsomap, groundtruthIsomap, cv::NORM_L2);
+		// The channels get combined as follows: The norms of each individual channel is
+		// computed. Afterwards, norm_total = sqrt(normR^2 + normG^2 + normB^2).
+		totalNorm += norm;
+	}
+	totalNorm = totalNorm / testImages.size();
+
+	appLogger.info("Total difference norm over all channels, averaged over all images: " + std::to_string(totalNorm));
+
 	return 0;
 }

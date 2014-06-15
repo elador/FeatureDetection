@@ -1,5 +1,5 @@
 /*
- * faceRecogTestApp.cpp
+ * frRunCogExp.cpp
  *
  *  Created on: 22.05.2013
  *      Author: Patrik Huber
@@ -119,27 +119,27 @@ int main(int argc, char *argv[])
 
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(LogLevel::Trace));
 
-	path fvsdkBins = "C:\\Users\\Patrik\\Cloud\\PhD\\FVSDK_bins\\";
-	path firOutDir = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\FIRs\\";
-	path scoreOutDir = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\scores\\";
-	path galleryFirList = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath_firlist.lst";
+	path fvsdkBins = R"(C:\Users\Patrik\Documents\GitHub\FVSDK_source\Release\)";
+	path firOutDir = R"(C:\Users\Patrik\Documents\GitHub\experiments\gallery_originalimgs_FIR\)";
+	//path scoreOutDir = R"(C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\scores\\)";
+	//path galleryFirList = R"(C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath_firlist.lst)";
 
-	shared_ptr<FileListImageSource> galleryImageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath.lst");
-	shared_ptr<ImageSource> probeImageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_probe_fullpath.lst");
+	shared_ptr<FileListImageSource> galleryImageSource = make_shared<FileListImageSource>(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\gallery.txt)");
+	//shared_ptr<ImageSource> probeImageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_probe_fullpath.lst");
 
 	Mat img;
 	string cmd;
 	// create all FIR's of gallery
-	/*
+	
 	while (galleryImageSource->next()) {
-		img = galleryImageSource->getImage();
-		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + galleryImageSource->getName().stem().string() + ".fir " + "-imgs " + galleryImageSource->getName().string();
+		//img = galleryImageSource->getImage();
+		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_9_5\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + galleryImageSource->getName().stem().string() + ".fir " + "-imgs " + galleryImageSource->getName().string();
 		int cmdRet = system(cmd.c_str());
-		cout << cmdRet;
+		cout << cmdRet << endl;
 	}
 
 	// create all FIR's of probes
-	
+	/*
 	while (probeImageSource->next()) {
 		img = probeImageSource->getImage();
 		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + probeImageSource->getName().stem().string() + ".fir " + "-imgs " + probeImageSource->getName().string();
