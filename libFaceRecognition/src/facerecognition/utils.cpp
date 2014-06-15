@@ -11,15 +11,16 @@
 
 using boost::property_tree::ptree;
 using boost::filesystem::path;
+using std::vector;
 
 namespace facerecognition {
 	namespace utils {
 
-void readSigset()
+std::vector<FaceRecord> readSigset(boost::filesystem::path filename)
 {
 	ptree sigset;
 	try {
-		read_info(R"(C:\Users\Patrik\Documents\GitHub\FeatureDetection\facerecognitionTools\generateMultipieSigset\share\sigset\example.txt)", sigset);
+		read_info(R"("C:\Users\Patrik\Documents\GitHub\FeatureDetection\libFaceRecognition\share\sigset\MultiPIE_example.txt")", sigset);
 	}
 	catch (const boost::property_tree::ptree_error& error) {
 		//appLogger.error(string("Error reading the sigset file: ") + error.what());
@@ -33,6 +34,8 @@ void readSigset()
 	catch (const boost::property_tree::ptree_error& error) {
 		//appLogger.error("Parsing config: " + string(error.what()));
 	}
+
+	return vector<FaceRecord>();
 }
 
 	} /* namespace utils */

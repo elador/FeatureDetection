@@ -14,6 +14,7 @@
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
 #include "boost/filesystem/path.hpp"
+#include "boost/property_tree/ptree.hpp"
 
 #include <string>
 
@@ -36,6 +37,14 @@ struct FaceRecord {
 	std::string expression{""};
 	std::string other{""};
 };
+
+/**
+* Desc.
+*
+* @param[in] in recordTree
+* @return Todo.
+*/
+FaceRecord createFaceRecord(boost::property_tree::ptree recordTree);
 
 } /* namespace facerecognition */
 #endif /* FACERECORD_HPP_ */
