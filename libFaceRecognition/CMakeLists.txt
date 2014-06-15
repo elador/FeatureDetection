@@ -14,24 +14,26 @@ else(Boost_FOUND)
   message(FATAL_ERROR "Boost not found")
 endif()
 
-find_package(OpenCV 2.4.3 REQUIRED core)
+#find_package(OpenCV 2.4.3 REQUIRED core)
 
 # source and header files
 set(HEADERS
 	include/facerecognition/FaceRecord.hpp
+	include/facerecognition/utils.hpp
 )
 set(SOURCE
 	src/facerecognition/FaceRecord.cpp
+	src/facerecognition/utils.cpp
 )
 
 include_directories("include")
 
 # add dependencies
 include_directories(${Boost_INCLUDE_DIRS})
-include_directories(${OpenCV_INCLUDE_DIRS})
-include_directories(${ImageIO_SOURCE_DIR}/include)
+#include_directories(${OpenCV_INCLUDE_DIRS})
+#include_directories(${ImageIO_SOURCE_DIR}/include)
 include_directories(${Logging_SOURCE_DIR}/include)
 
 # make library
 add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
-target_link_libraries(${SUBPROJECT_NAME} ImageIO Logging ${OpenCV_LIBS} ${Boost_LIBRARIES})
+target_link_libraries(${SUBPROJECT_NAME} Logging ${Boost_LIBRARIES}) # ${OpenCV_LIBS} ImageIO

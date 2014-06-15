@@ -1,0 +1,18 @@
+match {
+	probe "sigsetId" { ; the unique identifier from the sigset
+		image pathToImage1 ; the full path on the filesystem to the image used to generate the matching scores
+		image pathToImage2
+	}
+	gallery "sigsetId" {
+		image pathToImage2
+	}
+}
+match {
+	probe "sigsetId" {
+		image pathToImage1
+		image pathToImage2
+	}
+	gallery "sigsetId" {
+		image pathToImage2
+	}
+}

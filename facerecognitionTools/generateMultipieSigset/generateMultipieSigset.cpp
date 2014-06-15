@@ -106,31 +106,11 @@ int main(int argc, char *argv[])
 		cout << "Error: Invalid LogLevel." << endl;
 		return EXIT_FAILURE;
 	}
-	Loggers->getLogger("generateMultipieList").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Logger appLogger = Loggers->getLogger("generateMultipieList");
+	Loggers->getLogger("generateMultipieSigset").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Logger appLogger = Loggers->getLogger("generateMultipieSigset");
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
-	ptree sigset;
-	try {
-		read_info(R"(C:\Users\Patrik\Documents\GitHub\FeatureDetection\facerecognitionTools\generateMultipieSigset\share\sigset\example.txt)", sigset);
-	}
-	catch (const boost::property_tree::ptree_error& error) {
-		appLogger.error(string("Error reading the sigset file: ") + error.what());
-		return EXIT_FAILURE;
-	}
-	try {
-		for (auto&& e : sigset) {
-			cout << e.first << " " << endl;
-//			cout << e.second << " " << endl;
-		}
-	}
-	catch (const boost::property_tree::ptree_error& error) {
-		appLogger.error("Parsing config: " + string(error.what()));
-		return EXIT_FAILURE;
-	}
-
-
-	path outputImageList(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\probe_m0.txt)");
+	path outputSigset(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\probe_m0.txt)");
 
 	path multipieRoot(R"(Z:\datasets\still01\multiPIE\data\)");
 	// MULTIPIE_ROOT_DIR/session0x/multiview/subjId/exprNum/camera/subj_session_expr_cam_imgNum.png
@@ -148,8 +128,10 @@ int main(int argc, char *argv[])
 	vector<string> lighting{ "07" }; // probes
 	//vector<string> lighting{ "07" }; // gallery
 
-	std::ofstream filelist(outputImageList.string());
-	
+	std::ofstream filelist(outputSigset.string()); // del
+	ptree sigset;
+	sigset.put("database", "MultiPIE");
+
 	for (auto&& sess : sessions) {
 		// Build the subject list
 		vector<string> subjectIds;
@@ -183,12 +165,17 @@ int main(int argc, char *argv[])
 						fullsession += sess;
 						path fullFilePath = multipieRoot / fullsession / type / subject / recording / camera / filename;
 						filelist << fullFilePath.string() << endl;
+						// ptree
+						ptree entry;
+						entry.put("id", "001");
+						entry.put("img", "a.png");
+						sigset.add_child("images.image", entry); // TODO TEST
 					}
 				}
 			}
 		}
 	}
-
+	boost::property_tree::write_info("C:\\Users\\Patrik\\a.txt", sigset);
 	filelist.close();
 	return 0;
 }
