@@ -15,6 +15,7 @@
 #endif
 #include "boost/filesystem/path.hpp"
 #include "boost/property_tree/ptree.hpp"
+#include "boost/optional.hpp"
 
 #include <string>
 
@@ -27,11 +28,12 @@ namespace facerecognition {
 struct FaceRecord {
 	std::string identifier; ///< A unique (among the respective database) subject identifier.
 	std::string subjectId; ///< The ID of the subject.
+	boost::filesystem::path imagePath; ///< The full path to where the image inside the database can be found
 
 	// The following is additional metadata that may or may not be available, depending on the database:
-	float roll = 0.0f;
-	float pitch = 0.0;
-	float yaw = 0.0;
+	boost::optional<float> roll;
+	boost::optional<float> pitch;
+	boost::optional<float> yaw;
 	std::string session{""};
 	std::string lighting{""};
 	std::string expression{""};
