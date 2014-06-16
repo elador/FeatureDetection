@@ -108,11 +108,12 @@ int main(int argc, char *argv[])
 		cout << "Error: Invalid LogLevel." << endl;
 		return EXIT_FAILURE;
 	}
+	Loggers->getLogger("facerecognition").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("generateMatchlist").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("generateMatchlist");
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
-	path filename;
+	path filename{R"(C:\Users\Patrik\Documents\GitHub\FeatureDetection\libFaceRecognition\share\sigset\MultiPIE_example.txt)"};
 	vector<facerecognition::FaceRecord> sigset = facerecognition::utils::readSigset(filename);
 
 	

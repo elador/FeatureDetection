@@ -6,36 +6,57 @@
  */
 #include "facerecognition/utils.hpp"
 
+#include "logging/LoggerFactory.hpp"
+
 #include "boost/property_tree/ptree.hpp"
 #include "boost/property_tree/info_parser.hpp"
 
+//using logging::Logger;
+using logging::LoggerFactory;
 using boost::property_tree::ptree;
 using boost::filesystem::path;
 using std::vector;
+using std::string;
 
 namespace facerecognition {
 	namespace utils {
 
 std::vector<FaceRecord> readSigset(boost::filesystem::path filename)
 {
+	vector<FaceRecord> faceRecords;
 	ptree sigset;
 	try {
-		read_info(R"("C:\Users\Patrik\Documents\GitHub\FeatureDetection\libFaceRecognition\share\sigset\MultiPIE_example.txt")", sigset);
+		read_info(filename.string(), sigset);
 	}
 	catch (const boost::property_tree::ptree_error& error) {
-		//appLogger.error(string("Error reading the sigset file: ") + error.what());
+		string errorMessage{ string("Error reading the sigset file: ") + error.what() };
+		Loggers->getLogger("facerecognition").error(errorMessage);
+		throw error;
 	}
 	try {
-		for (auto&& e : sigset) {
-			//cout << e.first << " " << endl;
-			//			cout << e.second << " " << endl;
+		ptree images = sigset.get_child("images");
+		for (auto&& entry : images) {
+			FaceRecord record;
+			record.identifier = entry.second.get_value<string>(); // the unique identifier for this sigset entry
+			record.subjectId = entry.second.get<string>("subjectId");
+			record.imagePath = entry.second.get<path>("imagePath");
+			record.roll = entry.second.get_optional<float>("roll");
+			record.pitch = entry.second.get_optional<float>("pitch");
+			record.yaw = entry.second.get_optional<float>("yaw");
+			record.session = entry.second.get<string>("session", "");
+			record.lighting = entry.second.get<string>("lighting", "");
+			record.expression = entry.second.get<string>("expression", "");
+			record.other = entry.second.get<string>("other", "");
+			faceRecords.push_back(record);
 		}
 	}
 	catch (const boost::property_tree::ptree_error& error) {
-		//appLogger.error("Parsing config: " + string(error.what()));
+		string errorMessage{ string("Error parsing the sigset file: ") + error.what() };
+		Loggers->getLogger("facerecognition").error(errorMessage);
+		throw error;
 	}
 
-	return vector<FaceRecord>();
+	return faceRecords;
 }
 
 	} /* namespace utils */
