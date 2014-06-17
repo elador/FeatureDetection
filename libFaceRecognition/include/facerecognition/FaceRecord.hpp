@@ -25,7 +25,8 @@ namespace facerecognition {
  * Representation for a face record. Can e.g. come from MultiPIE or from PaSC XML.
  * Next, we probably need loader (or createFrom(...)), e.g. for MultiPIE load from the filename, from PaSC from XML.
  */
-struct FaceRecord {
+class FaceRecord {
+public:
 	std::string identifier; ///< A unique (among the respective database) subject identifier.
 	std::string subjectId; ///< The ID of the subject.
 	boost::filesystem::path imagePath; ///< The full path to where the image inside the database can be found
@@ -38,15 +39,25 @@ struct FaceRecord {
 	std::string lighting{""};
 	std::string expression{""};
 	std::string other{""};
-};
 
-/**
-* Desc.
-*
-* @param[in] in recordTree
-* @return Todo.
-*/
-FaceRecord createFaceRecord(boost::property_tree::ptree recordTree);
+	/**
+	* Desc.
+	*
+	* @param[in] in recordTree
+	* @return Todo.
+	*/
+	static FaceRecord createFrom(boost::property_tree::ptree recordTree);
+
+	/**
+	* Desc.
+	* Note: The name is odd, i.e. ptree entry = facerecognition::FaceRecord::convertTo(faceRecord);
+	* doesn't make so much sense.
+	*
+	* @param[in] in faceRecord
+	* @return Todo.
+	*/
+	static boost::property_tree::ptree convertTo(FaceRecord faceRecord);
+};
 
 } /* namespace facerecognition */
 #endif /* FACERECORD_HPP_ */
