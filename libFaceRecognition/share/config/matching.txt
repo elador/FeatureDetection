@@ -1,21 +1,35 @@
 matching
 {
-	probe { ; Todo: Multi-img goes here somehow! (maybe multiple of these?)
-		sigset "sigset.txt"
-		filesRootPath "pathToMultipie" ; root-path to the database, images or other image representation
-		fileName original ; original | basename; 
-		; below arguments are optional, to manipulate the image name. E.g. if we want to use isomaps
-		;filePrefix ""
-		;fileSuffix ""
-		;fileReplaceExtension ""
+	probe
+	{
+		file
+		{
+			name original ; original | basename ; use the original name as given in the record
+			rootPath "" ; root-path to the database, images or other image representation
+			; below arguments are optional, to manipulate the image name. E.g. if we want to use isomaps
+			;prefix ""
+			;suffix ""
+			;replaceExtension ""	
+		}
+		file ; multiple of those can be created for multi-image matching
+		{
+			name original ; original | basename ; use the original name as given in the record
+			; below arguments are optional, to manipulate the image name. E.g. if we want to use isomaps
+			;prefix ""
+			;suffix ""
+			;replaceExtension ""	
+		}
 	}
-	gallery {
-		sigset "sigset.txt"
-		filesRootPath "pathToMultipie" ; root-path to the database, images or other image representation
-		fileName original ; original | basename; 
-		; below arguments are optional, to manipulate the image name. E.g. if we want to use isomaps
-		;filePrefix ""
-		;fileSuffix ""
-		;fileReplaceExtension ""
+	gallery
+	{
+		file
+		{
+			name original ; original | basename ; use the original name as given in the record
+			rootPath "" ; root-path to the database, images or other image representation
+			; below arguments are optional, to manipulate the image name. E.g. if we want to use isomaps
+			;prefix ""
+			;suffix ""
+			;replaceExtension ""	
+		}
 	}
 }

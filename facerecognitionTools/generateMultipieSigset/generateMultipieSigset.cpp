@@ -157,8 +157,8 @@ int main(int argc, char *argv[])
 	vector<string> recordingIds{ "01" }; // Not unique. E.g. in session01, id02 is smile, while in session02, id02 is surprise... So: Only enter 1 session + multiple recording Ids, OR, multiple sessions and 1 recording Id.
 	
 	//vector<string> cameras{ "09_0", "20_0", "08_0", "19_0", "13_0", "04_1", "14_0", "05_0" }; // probes - +-60, 45, 30, 15 yaw angle
-	vector<string> cameras{ "13_0" }; // 
-	//vector<string> cameras{ "05_1" }; // gallery - frontal
+	//vector<string> cameras{ "13_0" }; // -30 yaw
+	vector<string> cameras{ "05_1" }; // gallery - frontal
 	vector<string> lighting{ "07" }; // probes
 	//vector<string> lighting{ "07" }; // gallery
 
@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
 						faceRecord.expression = recording;
 						faceRecord.other = "";
 						ptree entry = facerecognition::FaceRecord::convertTo(faceRecord);
-						sigset.add_child("images.image", entry);
+						sigset.add_child("records.record", entry);
 					}
 				}
 			}
