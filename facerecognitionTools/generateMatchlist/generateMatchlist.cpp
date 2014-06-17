@@ -113,9 +113,11 @@ int main(int argc, char *argv[])
 	Logger appLogger = Loggers->getLogger("generateMatchlist");
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
-	path probeSigsetFile{ R"(C:\Users\Patrik\Documents\GitHub\FeatureDetection\libFaceRecognition\share\sigset\MultiPIE_example.txt)" };
-	path gallerySigsetFile{ R"(C:\Users\Patrik\Documents\GitHub\FeatureDetection\libFaceRecognition\share\sigset\MultiPIE_example.txt)" };
-	path matchingConfigFile{ R"(C:\Users\Patrik\Documents\GitHub\FeatureDetection\libFaceRecognition\share\sigset\MultiPIE_example.txt)" };
+	path probeSigsetFile{ R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\probe_m30.sig.txt)" };
+	path gallerySigsetFile{ R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\gallery.sig.txt)" };
+	path matchingConfigFile{ R"(C:\Users\Patrik\Documents\GitHub\FeatureDetection\libFaceRecognition\share\config\matching.txt)" };
+	path matchlistFile{ R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\matchlist_p_m30_g.txt)" }; // output
+	path dataRoot{ R"(Z:\datasets\still01\multiPIE\data\)" };
 
 	// Read the probe and gallery sigset files
 	vector<facerecognition::FaceRecord> probeSigset = facerecognition::utils::readSigset(probeSigsetFile);
@@ -137,12 +139,12 @@ int main(int argc, char *argv[])
 
 	for (auto&& probe : probeSigset) {
 		ptree match;
-		match.put("id", "001");
-		match.put("img", "a.png");
-		matchlist.add_child("images.image", match);
+		match.put("probe", "someId");
+		match.put("image", "path/image.png");
+		matchlist.add_child("match", match);
 	}
 				
-	boost::property_tree::write_info("C:\\Users\\Patrik\\output_matchlist.txt", matchlist);
+	boost::property_tree::write_info(matchlistFile.string(), matchlist);
 	
 	return 0;
 }
