@@ -29,7 +29,7 @@ class FaceRecord {
 public:
 	std::string identifier; ///< A unique (among the respective database) subject identifier.
 	std::string subjectId; ///< The ID of the subject.
-	boost::filesystem::path imagePath; ///< The full path to where the image inside the database can be found
+	boost::filesystem::path dataPath; ///< The full path to where the image (or whatever data is associated with this record) inside the database can be found
 
 	// The following is additional metadata that may or may not be available, depending on the database:
 	boost::optional<float> roll;

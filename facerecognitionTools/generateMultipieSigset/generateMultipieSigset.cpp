@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
 						facerecognition::FaceRecord faceRecord;
 						faceRecord.identifier = path(filename).stem().string();
 						faceRecord.subjectId = subject;
-						faceRecord.imagePath = fullsession / type / subject / recording / camera / filename;
+						faceRecord.dataPath = fullsession / type / subject / recording / camera / filename;
 						auto angles = multiPieCameraToAngle(cam);
 						faceRecord.roll = std::get<0>(angles);
 						faceRecord.pitch = std::get<1>(angles);
