@@ -113,19 +113,36 @@ int main(int argc, char *argv[])
 	Logger appLogger = Loggers->getLogger("generateMatchlist");
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
-	path filename{R"(C:\Users\Patrik\Documents\GitHub\FeatureDetection\libFaceRecognition\share\sigset\MultiPIE_example.txt)"};
-	vector<facerecognition::FaceRecord> sigset = facerecognition::utils::readSigset(filename);
+	path probeSigsetFile{ R"(C:\Users\Patrik\Documents\GitHub\FeatureDetection\libFaceRecognition\share\sigset\MultiPIE_example.txt)" };
+	path gallerySigsetFile{ R"(C:\Users\Patrik\Documents\GitHub\FeatureDetection\libFaceRecognition\share\sigset\MultiPIE_example.txt)" };
+	path matchingConfigFile{ R"(C:\Users\Patrik\Documents\GitHub\FeatureDetection\libFaceRecognition\share\sigset\MultiPIE_example.txt)" };
 
-	
-// 	ptree sigset;
-// 	sigset.put("database", "MultiPIE");
-// 	
-// 	ptree entry;
-// 	entry.put("id", "001");
-// 	entry.put("img", "a.png");
-// 	sigset.add_child("images.image", entry); // TODO TEST
-// 				
-// 	boost::property_tree::write_info("C:\\Users\\Patrik\\a.txt", sigset);
+	// Read the probe and gallery sigset files
+	vector<facerecognition::FaceRecord> probeSigset = facerecognition::utils::readSigset(probeSigsetFile);
+	vector<facerecognition::FaceRecord> gallerySigset = facerecognition::utils::readSigset(gallerySigsetFile);
+
+	// Read the matching config file, and together with it, create the resulting matchlist:
+	ptree matchingConfig;
+	try {
+		boost::property_tree::read_info(matchingConfigFile.string(), matchingConfig);
+	}
+	catch (boost::property_tree::info_parser_error& e) {
+		string errorMessage{ string("Error reading the matching config file: ") + e.what() };
+		appLogger.error(errorMessage);
+		throw e;
+	}
+
+	// Create the matchlist
+	ptree matchlist;
+
+	for (auto&& probe : probeSigset) {
+		ptree match;
+		match.put("id", "001");
+		match.put("img", "a.png");
+		matchlist.add_child("images.image", match);
+	}
+				
+	boost::property_tree::write_info("C:\\Users\\Patrik\\output_matchlist.txt", matchlist);
 	
 	return 0;
 }

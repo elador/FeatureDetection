@@ -1,6 +1,6 @@
 matching
 {
-	probe {
+	probe { ; Todo: Multi-img goes here somehow! (maybe multiple of these?)
 		sigset "sigset.txt"
 		filesRootPath "pathToMultipie" ; root-path to the database, images or other image representation
 		fileName original ; original | basename; 

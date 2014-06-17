@@ -30,6 +30,8 @@
 
 #include "logging/LoggerFactory.hpp"
 
+#include "facerecognition/FaceRecord.hpp"
+
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
@@ -60,6 +62,38 @@ using std::string;
 using std::make_shared;
 using std::vector;
 
+std::tuple<float, float, float> multiPieCameraToAngle(std::string camera)
+{
+	std::tuple<float, float, float> angles; // YPR (Yaw, Pitch, Roll)
+	if (camera == "090")	{
+		angles = std::make_tuple(-60.0f, 0.0f, 0.0f);
+	}
+	else if (camera == "080") {
+		angles = std::make_tuple(-45.0f, 0.0f, 0.0f);
+	}
+	else if (camera == "130") { // subject looking right
+		angles = std::make_tuple(-30.0f, 0.0f, 0.0f);
+	}
+	else if (camera == "140") {
+		angles = std::make_tuple(-15.0f, 0.0f, 0.0f);
+	}
+	else if (camera == "051") { // frontal
+		angles = std::make_tuple(0.0f, 0.0f, 0.0f);
+	}
+	else if (camera == "050") {
+		angles = std::make_tuple(15.0f, 0.0f, 0.0f);
+	}
+	else if (camera == "041") { // subject looking left = positive = MPEG-standard
+		angles = std::make_tuple(30.0f, 0.0f, 0.0f);
+	}
+	else if (camera == "190") {
+		angles = std::make_tuple(45.0f, 0.0f, 0.0f);
+	}
+	else if (camera == "200") {
+		angles = std::make_tuple(60.0f, 0.0f, 0.0f);
+	}
+	return angles;
+};
 
 int main(int argc, char *argv[])
 {
@@ -110,12 +144,12 @@ int main(int argc, char *argv[])
 	Logger appLogger = Loggers->getLogger("generateMultipieSigset");
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
-	path outputSigset(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\probe_m0.txt)");
+	path outputSigset(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\probe_m30.sig.txt)");
 
 	path multipieRoot(R"(Z:\datasets\still01\multiPIE\data\)");
 	// MULTIPIE_ROOT_DIR/session0x/multiview/subjId/exprNum/camera/subj_session_expr_cam_imgNum.png
 	// Example: MULTIPIE_ROOT_DIR / 001 / 01 / 01_0 / 001_01_01_010_00.png
-	path session("session"); // add 01, 02, 03 or 04
+	string session("session"); // add 01, 02, 03 or 04
 	path type("multiview"); // highres, movies or multiview - only multiview supported at the moment
 
 	vector<string> subjects{ }; // an empty vector means use all - only empty supported at the moment
@@ -123,14 +157,13 @@ int main(int argc, char *argv[])
 	vector<string> recordingIds{ "01" }; // Not unique. E.g. in session01, id02 is smile, while in session02, id02 is surprise... So: Only enter 1 session + multiple recording Ids, OR, multiple sessions and 1 recording Id.
 	
 	//vector<string> cameras{ "09_0", "20_0", "08_0", "19_0", "13_0", "04_1", "14_0", "05_0" }; // probes - +-60, 45, 30, 15 yaw angle
-	vector<string> cameras{ "05_1" }; // 
+	vector<string> cameras{ "13_0" }; // 
 	//vector<string> cameras{ "05_1" }; // gallery - frontal
 	vector<string> lighting{ "07" }; // probes
 	//vector<string> lighting{ "07" }; // gallery
 
-	std::ofstream filelist(outputSigset.string()); // del
 	ptree sigset;
-	sigset.put("database", "MultiPIE");
+	//sigset.put("database", "MultiPIE");
 
 	for (auto&& sess : sessions) {
 		// Build the subject list
@@ -161,21 +194,27 @@ int main(int argc, char *argv[])
 						string cam = camera;
 						cam.erase(std::remove(begin(cam), end(cam), '_'), end(cam)); // remove the "_" to form the filename
 						string filename = subject + "_" + sess + "_" + recording + "_" + cam + "_" + light + ".png";
-						path fullsession = session;
-						fullsession += sess;
+						string fullsession = session + sess;
 						path fullFilePath = multipieRoot / fullsession / type / subject / recording / camera / filename;
-						filelist << fullFilePath.string() << endl;
-						// ptree
-						ptree entry;
-						entry.put("id", "001");
-						entry.put("img", "a.png");
-						sigset.add_child("images.image", entry); // TODO TEST
+						facerecognition::FaceRecord faceRecord;
+						faceRecord.identifier = path(filename).stem().string();
+						faceRecord.subjectId = subject;
+						faceRecord.imagePath = fullsession / type / subject / recording / camera / filename;
+						auto angles = multiPieCameraToAngle(cam);
+						faceRecord.roll = std::get<0>(angles);
+						faceRecord.pitch = std::get<1>(angles);
+						faceRecord.yaw = std::get<2>(angles);
+						faceRecord.session = fullsession;
+						faceRecord.lighting = light;
+						faceRecord.expression = recording;
+						faceRecord.other = "";
+						ptree entry = facerecognition::FaceRecord::convertTo(faceRecord);
+						sigset.add_child("images.image", entry);
 					}
 				}
 			}
 		}
 	}
-	boost::property_tree::write_info("C:\\Users\\Patrik\\a.txt", sigset);
-	filelist.close();
+	boost::property_tree::write_info(outputSigset.string(), sigset);
 	return 0;
 }

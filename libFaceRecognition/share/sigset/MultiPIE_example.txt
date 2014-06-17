@@ -1,7 +1,7 @@
 ; database "MultiPIE" ; 
 images ; each entry here maps to a FaceRecord in the code
 {
-	image "001_01_01_010_00.png" { ; a unique image identifier amongst the database that identifies this image
+	image "001_01_01_010_00" { ; a unique image identifier amongst the database that identifies this image
 		subjectId "001"
 		imagePath "001/01/01_0/001_01_01_010_00.png" ; the full path to where the image inside the database can be found
 		; the following is additional metadata that may or may not be available, depending on the database:
@@ -13,11 +13,11 @@ images ; each entry here maps to a FaceRecord in the code
 		expression "neutral"
 		other ""
 	}
-	image "002_01_01_010_00.png" {
+	image "002_01_01_010_00" {
 		subjectId "002"
 		imagePath "002/01/01_0/002_01_01_010_00.png"
 	}
-	image "003_01_01_010_00.png" {
+	image "003_01_01_010_00" {
 		subjectId "003"
 		imagePath "003/01/01_0/003_01_01_010_00.png"
 	}
