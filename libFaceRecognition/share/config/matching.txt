@@ -5,19 +5,19 @@ matching
 		file
 		{
 			name original ; original | basename ; use the original name as given in the record
-			rootPath "" ; root-path to the database, images or other image representation
+			rootPath "Z:\\datasets\\still01\\multiPIE\\data\\" ; root-path to the database, images or other image representation
 			; below arguments are optional, to manipulate the image name. E.g. if we want to use isomaps
 			;prefix ""
 			;suffix ""
-			;replaceExtension ""	
+			;replaceExtension ""
 		}
 		file ; multiple of those can be created for multi-image matching
 		{
-			name original ; original | basename ; use the original name as given in the record
-			; below arguments are optional, to manipulate the image name. E.g. if we want to use isomaps
+			name basename ; original | basename ; use the original name as given in the record
+			rootPath "C:\\Users\\Patrik\\Documents\\GitHub\\experiments\\fitter_output_probe_m30\\"
 			;prefix ""
-			;suffix ""
-			;replaceExtension ""	
+			suffix "_isomap"
+			;replaceExtension ".png"
 		}
 	}
 	gallery
@@ -25,11 +25,11 @@ matching
 		file
 		{
 			name original ; original | basename ; use the original name as given in the record
-			rootPath "" ; root-path to the database, images or other image representation
+			rootPath "Z:\\datasets\\still01\\multiPIE\\data\\" ; root-path to the database, images or other image representation
 			; below arguments are optional, to manipulate the image name. E.g. if we want to use isomaps
 			;prefix ""
 			;suffix ""
-			;replaceExtension ""	
+			;replaceExtension ""
 		}
 	}
 }

@@ -24,7 +24,7 @@ boost::property_tree::ptree FaceRecord::convertTo(FaceRecord faceRecord)
 	entry.put_value(faceRecord.identifier);
 
 	entry.put("subjectId", faceRecord.subjectId);
-	entry.put("dataPath", faceRecord.imagePath.string());
+	entry.put("dataPath", faceRecord.dataPath.string());
 	if (faceRecord.roll) {
 		entry.put("roll", faceRecord.roll.get());
 	}

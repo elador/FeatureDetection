@@ -39,7 +39,7 @@ std::vector<FaceRecord> readSigset(boost::filesystem::path filename)
 			FaceRecord faceRecord;
 			faceRecord.identifier = entry.second.get_value<string>(); // the unique identifier for this sigset entry
 			faceRecord.subjectId = entry.second.get<string>("subjectId");
-			faceRecord.imagePath = entry.second.get<path>("dataPath");
+			faceRecord.dataPath = entry.second.get<path>("dataPath");
 			faceRecord.roll = entry.second.get_optional<float>("roll");
 			faceRecord.pitch = entry.second.get_optional<float>("pitch");
 			faceRecord.yaw = entry.second.get_optional<float>("yaw");
