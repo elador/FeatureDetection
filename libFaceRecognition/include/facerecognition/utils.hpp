@@ -34,6 +34,42 @@ namespace facerecognition {
  */
 std::vector<FaceRecord> readSigset(boost::filesystem::path filename);
 
+/**
+* Desc.
+*
+* @param[in] in Todo
+* @return Todo.
+*/
+//std::vector<FaceRecord> transformSigset(boost::filesystem::path filename);
+
+class DataPathTransformation
+{
+public:
+	std::string name; // original | basename: use the original name as given in the record or just the basename
+	boost::filesystem::path rootPath;
+	std::string prefix;
+	std::string suffix;
+	std::string replaceExtension;
+
+	static DataPathTransformation read(boost::property_tree::ptree tree) {
+		DataPathTransformation transformation;
+		transformation.name = tree.get<std::string>("name");
+		transformation.rootPath = tree.get<boost::filesystem::path>("rootPath");
+		transformation.prefix = tree.get<std::string>("prefix", "");
+		transformation.suffix = tree.get<std::string>("suffix", "");
+		transformation.replaceExtension = tree.get<std::string>("replaceExtension", "");
+		return transformation;
+	};
+};
+
+/**
+* Desc.
+*
+* @param[in] in Todo
+* @return Todo.
+*/
+boost::filesystem::path transformDataPath(const boost::filesystem::path& originalDataPath, DataPathTransformation transformation);
+
 	} /* namespace utils */
 } /* namespace facerecognition */
 

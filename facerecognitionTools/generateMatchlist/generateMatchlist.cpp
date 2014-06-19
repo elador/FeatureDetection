@@ -64,7 +64,7 @@ using std::vector;
 using std::pair;
 
 struct MatchFilePattern { // holds an entry of a matchlist (matching.txt) pattern, i.e. how to change the data file/paths to generate a Match
-	string name;
+	string name; // original | basename: use the original name as given in the record or just the basename
 	path rootPath;
 	string prefix;
 	string suffix;

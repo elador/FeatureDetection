@@ -1,0 +1,19 @@
+probe
+{
+	name basename ; original | basename ; use the original name as given in the record
+	rootPath "C:/Users/Patrik/Documents/GitHub/experiments/probe_renderfrontal_FIR/" ; root-path to the database, images or other image representation
+	; below arguments are optional, to manipulate the image name. E.g. if we want to use isomaps
+	;prefix ""
+	suffix "_render_frontal"
+	replaceExtension ".fir"
+}
+
+gallery
+{
+	name basename ; original | basename ; use the original name as given in the record
+	rootPath "C:/Users/Patrik/Documents/GitHub/experiments/gallery_originalimgs_FIR/" ; root-path to the database, images or other image representation
+	; below arguments are optional, to manipulate the image name. E.g. if we want to use isomaps
+	;prefix ""
+	;suffix ""
+	replaceExtension ".fir"
+}

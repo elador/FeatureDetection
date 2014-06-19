@@ -59,5 +59,37 @@ std::vector<FaceRecord> readSigset(boost::filesystem::path filename)
 	return faceRecords;
 }
 
+path transformDataPath(const path& originalDataPath, DataPathTransformation transformation)
+{
+	path dataPath;
+	if (transformation.name == "original") {
+		dataPath = originalDataPath;
+	}
+	else if (transformation.name == "basename") {
+		dataPath = originalDataPath.filename();
+	}
+	string basename = dataPath.stem().string();
+	string originalExtension = dataPath.extension().string();
+	if (!transformation.prefix.empty()) {
+		basename = transformation.prefix + basename;
+	}
+	if (!transformation.suffix.empty()) {
+		basename = basename + transformation.suffix;
+	}
+	path filename(basename + originalExtension);
+	if (!transformation.replaceExtension.empty()) {
+		filename.replace_extension(transformation.replaceExtension);
+	}
+	path fullFilePath;
+	if (transformation.name == "original") {
+		auto lastSlash = dataPath.string().find_last_of("/\\");
+		fullFilePath = transformation.rootPath / dataPath.string().substr(0, lastSlash) / filename;
+	}
+	else if (transformation.name == "basename") {
+		fullFilePath = transformation.rootPath / filename;
+	}
+	return fullFilePath;
+}
+
 	} /* namespace utils */
 } /* namespace facerecognition */
