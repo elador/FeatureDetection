@@ -41,6 +41,9 @@
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/DidLandmarkFormatParser.hpp"
 
+#include "facerecognition/FaceRecord.hpp"
+#include "facerecognition/utils.hpp"
+
 #include "logging/LoggerFactory.hpp"
 
 #ifdef WIN32
@@ -120,8 +123,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-	//string databaseFilename = "C:\\Users\\Patrik\\Cloud\\PhD\\data\\frdb.sqlite";
-	string databaseFilename = "C:\\Users\\Patrik\\frdb.sqlite";
+	string databaseFilename = "C:\\Users\\Patrik\\Documents\\Github\\frdb.sqlite";
 
 	bool doCreate = false;
 	// create the database
@@ -146,9 +148,9 @@ int main(int argc, char *argv[])
 		if(!ret) {
 			cout << query.lastError().text().toStdString() << endl;
 		}
-		// rename filepath to canonicalName (and all FK-refs)
-		ret = query.exec("CREATE TABLE images ( \
-							 filepath CLOB NOT NULL, \
+		ret = query.exec("CREATE TABLE records ( \
+							 identifier TEXT(25) NOT NULL, \
+							 datapath CLOB NOT NULL, \
 							 subject TEXT(25) NOT NULL, \
 							 database TEXT(25) NOT NULL, \
 							 session TEXT(25), \
@@ -158,7 +160,7 @@ int main(int argc, char *argv[])
 							 lighting CLOB, \
 							 expression CLOB, \
 							 other CLOB, \
-							 PRIMARY KEY (filepath), \
+							 PRIMARY KEY (identifier), \
 							 FOREIGN KEY (database) REFERENCES databases(name) \
 						)");
 		if(!ret) {
@@ -171,8 +173,8 @@ int main(int argc, char *argv[])
 							score REAL, \
 							probeFailedToEnroll INTEGER, \
 							algorithm TEXT(25), \
-							FOREIGN KEY (probe) REFERENCES images(filepath), \
-							FOREIGN KEY (gallery) REFERENCES images(filepath), \
+							FOREIGN KEY (probe) REFERENCES records(identifier), \
+							FOREIGN KEY (gallery) REFERENCES records(identifier), \
 							CONSTRAINT uniqueScores UNIQUE (probe, gallery, algorithm) \
 						)");
 		if(!ret) {
@@ -202,8 +204,10 @@ int main(int argc, char *argv[])
 		if(!ret) {
 			cout << query.lastError().text().toStdString() << endl;
 		}
-		query.bindValue(":name", "multipie");
+		query.bindValue(":name", "MultiPIE");
 		query.bindValue(":info", "The MultiPIE image database.");
+		//query.bindValue(":name", "PaSC");
+		//query.bindValue(":info", "The Point and Shoot Face Recognition Challenge image and video database.");
 		ret = query.exec();
 		if(!ret) {
 			cout << query.lastError().text().toStdString() << endl;
@@ -228,74 +232,41 @@ int main(int argc, char *argv[])
 			cout << query.lastError().text().toStdString() << endl;
 		}
 
-		//shared_ptr<ImageSource> imageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath.lst");
-		shared_ptr<ImageSource> imageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_probe_fullpath.lst");
-		while (imageSource->next()) {
-			vector<size_t> slashes;
-			size_t pos = imageSource->getName().string().find("/", 0);
-			while(pos != string::npos)
-			{
-				slashes.push_back(pos);
-				pos = imageSource->getName().string().find("/", pos+1);
-			}
-			size_t secondLastSlashPos = slashes[slashes.size()-2];
-			size_t lastSlashPos = slashes[slashes.size()-1];
-			string imagePath = imageSource->getName().string().substr(secondLastSlashPos+1, string::npos);
-			string subject = imageSource->getName().stem().string().substr(0, 3);
-			string database = "multipie";
-			string session = "01"; // could be read from the filename?
-			string lighting = "07"; // could be read from the filename?
-			string expression = "neutral"; // could be read from the filename?
-			string other = "";
-			// extract the angles from the filename:
-			string imageFn = imageSource->getName().string().substr(lastSlashPos+1, string::npos);
-			
-			vector<size_t> underlines;
-			pos = imageFn.find("_", 0);
-			while(pos != string::npos)
-			{
-				underlines.push_back(pos);
-				pos = imageFn.find("_", pos+1);
-			}
-			string camera = imageFn.substr(underlines[underlines.size()-2]+1, 3);
-			float roll = 0.0f;
-			float pitch = 0.0f;
-			float yaw;
-			if (camera == "090")	{
-				yaw = -60.0f;
-			} else if (camera == "080") {
-				yaw = -45.0f;
-			} else if (camera == "130") { // subject looking right
-				yaw = -30.0f;
-			} else if (camera == "140") {
-				yaw = -15.0f;
-			} else if (camera == "051") { // frontal
-				yaw = 0.0f;
-			} else if (camera == "050") {
-				yaw = 15.0f;
-			} else if (camera == "041") { // subject looking left = positive = MPEG-standard
-				yaw = 30.0f;
-			} else if (camera == "190") {
-				yaw = 45.0f;
-			} else if (camera == "200") {
-				yaw = 60.0f;
-			}
-			
-			// insert the record into the database
-			ret = query.prepare("INSERT INTO images (filepath, subject, database, session, roll, pitch, yaw, lighting, expression, other) VALUES (:filepath, :subject, :database, :session, :roll, :pitch, :yaw, :lighting, :expression, :other)");
+		path sigsetToImport(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\probe_m30.sig.txt)");
+		auto sigset = facerecognition::utils::readSigset(sigsetToImport);
+		for (auto&& record : sigset) {
+			string database = "MultiPIE";
+			// insert the record into the database:
+			ret = query.prepare("INSERT INTO records (identifier, datapath, subject, database, session, roll, pitch, yaw, lighting, expression, other) VALUES (:identifier, :datapath, :subject, :database, :session, :roll, :pitch, :yaw, :lighting, :expression, :other)");
 			if(!ret) {
 				cout << query.lastError().text().toStdString() << endl;
 			}
-			query.bindValue(":filepath", QVariant(QString::fromStdString(imagePath)));
-			query.bindValue(":subject", QVariant(QString::fromStdString(subject)));
+			query.bindValue(":identifier", QVariant(QString::fromStdString(record.identifier)));
+			query.bindValue(":datapath", QVariant(QString::fromStdString(record.dataPath.string())));
+			query.bindValue(":subject", QVariant(QString::fromStdString(record.subjectId)));
 			query.bindValue(":database", QVariant(QString::fromStdString(database)));
-			query.bindValue(":session", QVariant(QString::fromStdString(session)));
-			query.bindValue(":roll", roll);
-			query.bindValue(":pitch", pitch);
-			query.bindValue(":yaw", yaw);
-			query.bindValue(":lighting", QVariant(QString::fromStdString(lighting)));
-			query.bindValue(":expression", QVariant(QString::fromStdString(expression)));
-			query.bindValue(":other", QVariant(QString::fromStdString(other)));
+			query.bindValue(":session", QVariant(QString::fromStdString(record.session)));
+			if (record.roll) {
+				query.bindValue(":roll", record.roll.get());
+			}
+			else {
+				query.bindValue(":roll", "");
+			}
+			if (record.pitch) {
+				query.bindValue(":pitch", record.pitch.get());
+			}
+			else {
+				query.bindValue(":pitch", "");
+			}
+			if (record.yaw) {
+				query.bindValue(":yaw", record.yaw.get());
+			}
+			else {
+				query.bindValue(":yaw", "");
+			}
+			query.bindValue(":lighting", QVariant(QString::fromStdString(record.lighting)));
+			query.bindValue(":expression", QVariant(QString::fromStdString(record.expression)));
+			query.bindValue(":other", QVariant(QString::fromStdString(record.other)));
 			ret = query.exec();
 			if(!ret) {
 				cout << query.lastError().text().toStdString() << endl;
@@ -306,8 +277,9 @@ int main(int argc, char *argv[])
 		QSqlDatabase::removeDatabase("QSQLITE");
 	}
 
-	bool doImportScores = true;
-	if (doImportScores)	{
+	// Import the old MultiPIE scores of the first baseline experiment:
+	bool doImportOldMpieScores = true;
+	if (doImportOldMpieScores)	{
 		// if type = ...
 
 		QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
@@ -337,7 +309,8 @@ int main(int argc, char *argv[])
 			}
 			size_t secondLastSlashPos = slashes[slashes.size()-2];
 			size_t lastSlashPos = slashes[slashes.size()-1];
-			string imagePath = imageSource->getName().string().substr(secondLastSlashPos+1, string::npos);
+			//string imagePath = imageSource->getName().string().substr(secondLastSlashPos+1, string::npos);
+			path imagePath = imageSource->getName();
 			string imageCanonicalBasePath = imageSource->getName().string().substr(secondLastSlashPos+1, 25);
 			string subject = imageSource->getName().stem().string().substr(0, 3);
 
@@ -366,14 +339,13 @@ int main(int argc, char *argv[])
 					if(!ret) {
 						cout << query.lastError().text().toStdString() << endl;
 					}
-					string galleryImageCanonicalName = imageCanonicalBasePath + galleryName.stem().string() + ".png";
 					if (galleryFteText == "FTE") {
 						galleryFteFlag = 1;
 					} else {
 						galleryFteFlag = 0;
 					}
-					query.bindValue(":probe", QVariant(QString::fromStdString(imagePath)));
-					query.bindValue(":gallery", QVariant(QString::fromStdString(galleryImageCanonicalName)));
+					query.bindValue(":probe", QVariant(QString::fromStdString(imagePath.stem().string())));
+					query.bindValue(":gallery", QVariant(QString::fromStdString(galleryName.stem().string())));
 					query.bindValue(":score", galleryScore);
 					query.bindValue(":probeFailedToEnroll", galleryFteFlag);
 					query.bindValue(":algorithm", QVariant(QString::fromStdString(algorithmName)));
@@ -390,97 +362,6 @@ int main(int argc, char *argv[])
 		db.close();
 		QSqlDatabase::removeDatabase("QSQLITE");
 	}
-
-
-	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(LogLevel::Trace));
-
-	path fvsdkBins = "C:\\Users\\Patrik\\Cloud\\PhD\\FVSDK_bins\\";
-	path firOutDir = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\FIRs\\";
-	path scoreOutDir = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\scores\\";
-	path galleryFirList = "C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath_firlist.lst";
-
 	
-	
-	// create the scores of each probe against the whole gallery
-	/*
-	while (probeImageSource->next()) {
-		path probeFirFilepath = path(firOutDir.string() + probeImageSource->getName().stem().string() + ".fir ");
-		if (boost::filesystem::exists(probeFirFilepath)) { // We were able to enroll a probe, so there is a FIR, go and match it against gallery
-			cmd = fvsdkBins.string() + "match.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-probe " + probeFirFilepath.string() + "-gallery " + galleryFirList.string() + " -out " + scoreOutDir.string() + probeImageSource->getName().stem().string() + ".txt";
-			int cmdRet = system(cmd.c_str());
-		} else { // We were not able to enroll the probe - create an empty .txt with content "fte".
-			string scoreOutPath = scoreOutDir.string() + probeImageSource->getName().stem().string() + ".txt";
-			ofstream myfile;
-			myfile.open(scoreOutPath);
-			myfile << "FTE" << endl;
-			myfile.close();
-		}
-	}
-	*/
-
-	// 
-
-	// Go through each probe image and calculate the statistics.
-	/*
-	int numProbes = 0;
-	int fte = 0;
-	int rank1Matches = 0;
-	int noRank1Match = 0;
-	while (probeImageSource->next()) {
-		string scoreOutPath = scoreOutDir.string() + probeImageSource->getName().stem().string() + ".txt";
-		ifstream scoreFile(scoreOutPath);
-		string line;
-		if (scoreFile.is_open()) {
-			getline(scoreFile, line);
-			++numProbes;
-			if (line == "FTE") {	// is it a probe that couldn't be enrolled?
-				++fte;
-				scoreFile.close();
-				continue;
-			}
-			// we were able to enroll the probe, go on:
-			//auto comp = [](const pair<string, float>& lhs, const pair<string, float>& rhs) -> bool { return lhs.second < rhs.second; };
-			//auto galleryScores = std::set<pair<string, float>, decltype(comp)>(comp);
-			typedef set< pair<string, float>, function<bool(pair<string, float>, pair<string, float>)> > ScoresSet;
-			ScoresSet galleryScores(
-				[] ( pair<string, float> lhs, pair<string, float> rhs ) { return lhs.second > rhs.second ; } ) ;
-
-			path galleryName;
-			float galleryScore;
-			istringstream lineStream(line);
-			lineStream >> galleryName;
-			lineStream >> galleryScore;
-			galleryScores.insert(make_pair(galleryName.stem().string(), galleryScore));
-			while (scoreFile.good())
-			{
-				getline(scoreFile, line);
-				istringstream lineStream(line);
-				lineStream >> galleryName;
-				lineStream >> galleryScore;
-				galleryScores.insert(make_pair(galleryName.stem().string(), galleryScore));
-			}
-			scoreFile.close();
-
-			// Go see if we got a match (rank-1):
-			cout << "Gallery rank-1 match: " << galleryScores.begin()->first << ", Probe: " << probeImageSource->getName().stem().string() << endl;
-			if (subjectsMatch(galleryScores.begin()->first, probeImageSource->getName().stem().string())) {
-				++rank1Matches;
-			} else {
-				++noRank1Match;
-			}
-		}
-		
-		
-	}
-
-	cout << numProbes << ", " << fte << ", " << rank1Matches << ", " << noRank1Match << endl;
-	*/
-
-	// map flip
-	// unordered map, sortiert einfuegen (letztes element merken)
-	// min/max_element
-	// std::set(=ordered) mit pair und custom comparator
-	// boost::bimap
-
 	return 0;
 }

@@ -41,20 +41,24 @@
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/DidLandmarkFormatParser.hpp"
 
+#include "facerecognition/FaceRecord.hpp"
+#include "facerecognition/utils.hpp"
+
 #include "logging/LoggerFactory.hpp"
 
+#include <frsdk/config.h>
+#include <frsdk/match.h>
+
 #ifdef WIN32
-#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
-#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
+	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
+	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
 #include "boost/program_options.hpp"
-#include "boost/iterator/indirect_iterator.hpp"
 #include "boost/property_tree/ptree.hpp"
 #include "boost/property_tree/info_parser.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/highgui/highgui.hpp"
 
 #include <QtSql>
 
@@ -62,17 +66,15 @@
 #include <fstream>
 #include <chrono>
 #include <unordered_map>
-
-//#include "statismo/StatisticalModel.h"
-//#include "Representers/VTK/vtkStandardMeshRepresenter.h"
+#include <iterator>
 
 namespace po = boost::program_options;
 using namespace std;
 using namespace imageio;
+using namespace facerecognition;
 using logging::Logger;
 using logging::LoggerFactory;
 using logging::LogLevel;
-using boost::make_indirect_iterator;
 using boost::property_tree::ptree;
 using boost::property_tree::info_parser::read_info;
 
@@ -118,75 +120,141 @@ int main(int argc, char *argv[])
     }
 
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(LogLevel::Trace));
+	Loggers->getLogger("facerecognition").addAppender(make_shared<logging::ConsoleAppender>(LogLevel::Trace));
 
 	path fvsdkBins = R"(C:\Users\Patrik\Documents\GitHub\FVSDK_source\Release\)";
-	path firOutDir = R"(C:\Users\Patrik\Documents\GitHub\experiments\gallery_originalimgs_FIR\)";
+	path firOutDir = R"(C:\Users\Patrik\Documents\GitHub\experiments\probe_renderfrontal_FIR\)";
 	//path scoreOutDir = R"(C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\scores\\)";
 	//path galleryFirList = R"(C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath_firlist.lst)";
 
-	shared_ptr<FileListImageSource> galleryImageSource = make_shared<FileListImageSource>(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\gallery.txt)");
-	//shared_ptr<ImageSource> probeImageSource = make_shared<FileListImageSource>("C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_probe_fullpath.lst");
+	//shared_ptr<FileListImageSource> galleryImageSource = make_shared<FileListImageSource>(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\gallery.txt)");
+	//shared_ptr<ImageSource> probeImageSource = make_shared<FileListImageSource>(R"(C:\Users\Patrik\Documents\GitHub\experiments\fittings_render_frontal_m15.txt)");
 
 	Mat img;
 	string cmd;
 	// create all FIR's of gallery
-	
+	/*
 	while (galleryImageSource->next()) {
 		//img = galleryImageSource->getImage();
 		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_9_5\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + galleryImageSource->getName().stem().string() + ".fir " + "-imgs " + galleryImageSource->getName().string();
 		int cmdRet = system(cmd.c_str());
 		cout << cmdRet << endl;
-	}
+	}*/
 
 	// create all FIR's of probes
 	/*
 	while (probeImageSource->next()) {
 		img = probeImageSource->getImage();
-		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + probeImageSource->getName().stem().string() + ".fir " + "-imgs " + probeImageSource->getName().string();
+		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_9_5\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + probeImageSource->getName().stem().string() + ".fir " + "-imgs " + probeImageSource->getName().string();
 		int cmdRet = system(cmd.c_str());
 		cout << cmdRet;
 	}
 	*/
 
-	// create the scores of each probe against the whole gallery
-	/*
-	while (probeImageSource->next()) {
-		path probeFirFilepath = path(firOutDir.string() + probeImageSource->getName().stem().string() + ".fir ");
-		if (boost::filesystem::exists(probeFirFilepath)) { // We were able to enroll a probe, so there is a FIR, go and match it against gallery
-			cmd = fvsdkBins.string() + "match.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-probe " + probeFirFilepath.string() + "-gallery " + galleryFirList.string() + " -out " + scoreOutDir.string() + probeImageSource->getName().stem().string() + ".txt";
-			int cmdRet = system(cmd.c_str());
-		} else { // We were not able to enroll the probe - create an empty .txt with content "fte".
-			string scoreOutPath = scoreOutDir.string() + probeImageSource->getName().stem().string() + ".txt";
-			ofstream myfile;
-			myfile.open(scoreOutPath);
-			myfile << "FTE" << endl;
-			myfile.close();
-		}
+	// Matching: Create all the scores of every probe against every gallery entry
+	string algorithmName = "FVSDK_8_9_5";
+
+	path transformConfigFile(R"(C:\Users\Patrik\Documents\GitHub\FeatureDetection\libFaceRecognition\share\config\transformRecordDataPath.txt)");
+	ptree transformConfig;
+	try {
+		boost::property_tree::read_info(transformConfigFile.string(), transformConfig);
 	}
-	*/
+	catch (boost::property_tree::info_parser_error& error) {
+		string errorMessage{ string("Error reading the transformation config file: ") + error.what() };
+		//appLogger.error(errorMessage);
+		throw error;
+	}
+	utils::DataPathTransformation transformProbe = utils::DataPathTransformation::read(transformConfig.get_child("probe"));
+	utils::DataPathTransformation transformGallery = utils::DataPathTransformation::read(transformConfig.get_child("gallery"));
 
-	// Go through each probe and change the "FTE"-files to contain all 0.0's with "FTE"-flag
-	/*
-	while (probeImageSource->next()) {
-		path probeFirFilepath = path(firOutDir.string() + probeImageSource->getName().stem().string() + ".fir ");
-		if (boost::filesystem::exists(probeFirFilepath)) { // We were able to enroll a probe, so there is a FIR, go and match it against gallery
-			//cmd = fvsdkBins.string() + "match.exe " + "-cfg C:\\FVSDK_8_7_0\\etc\\frsdk.cfg " + "-probe " + probeFirFilepath.string() + "-gallery " + galleryFirList.string() + " -out " + scoreOutDir.string() + probeImageSource->getName().stem().string() + ".txt";
-			//int cmdRet = system(cmd.c_str());
-		} else { // We were not able to enroll the probe - create an empty .txt with content "fte".
-			string scoreOutPath = scoreOutDir.string() + probeImageSource->getName().stem().string() + ".txt";
-			ofstream scoresFile;
-			scoresFile.open(scoreOutPath);
+	auto probe = utils::readSigset(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\probe_m15.sig.txt)");
+	auto gallery = utils::readSigset(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\gallery.sig.txt)");
 
-			while (galleryImageSource->next()) {
-				string galleryFilename = galleryImageSource->getName().stem().string();
-				scoresFile << galleryFilename+".fir" << " " << "0.0" << " " << "FTE" << endl; // Should not contain .fir but the canonical image name
+	// Open the database
+	path databaseFilename(R"(C:\Users\Patrik\Documents\Github\frdb.sqlite)");
+	QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+	db.setDatabaseName(QString::fromStdString(databaseFilename.string()));
+	if (!db.open())	{
+		cout << db.lastError().text().toStdString() << endl;
+	}
+	QSqlQuery query;
+	bool ret;
+	ret = query.exec("PRAGMA foreign_keys = ON");
+	if (!ret) {
+		cout << query.lastError().text().toStdString() << endl;
+	}
+
+	// Start the FVSDK-stuff
+	try {
+		// We first enroll the whole gallery:
+		path frsdkConfig(R"(C:\FVSDK_8_9_5\etc\frsdk.cfg)");
+		// initialize and resource allocation
+		FRsdk::Configuration cfg(frsdkConfig.string());
+		FRsdk::FIRBuilder firBuilder(cfg);
+		// initialize matching facility
+		FRsdk::FacialMatchingEngine me(cfg);
+		// load the fir population (gallery)
+		FRsdk::Population population(cfg);
+		for (auto&& g : gallery) {
+			path galleryFilename = g.dataPath;
+			galleryFilename = utils::transformDataPath(galleryFilename, transformGallery);
+			ifstream firIn(galleryFilename.string(), ios::in | ios::binary);
+			population.append(firBuilder.build(firIn), galleryFilename.string().c_str());
+		}
+
+		// do the matching:
+		for (auto&& p : probe) {
+			path probeFilename = p.dataPath;
+			probeFilename = utils::transformDataPath(probeFilename, transformProbe);
+			// We have our probe and gallery FIR paths, go match them:
+			// load the fir of the probe
+			if (boost::filesystem::exists(probeFilename)) { // The FIR exists, meaning we were able to enroll a probe, go and match it against gallery
+				ifstream firStream(probeFilename.string(), ios::in | ios::binary);
+				FRsdk::FIR fir = firBuilder.build(firStream);
+
+				// Compare the probe against the gallery and get a score for each gallery entry:
+				FRsdk::CountedPtr<FRsdk::Scores> scores = me.compare(fir, population);
+
+				for (size_t element = 0; element < scores->size(); ++element) {
+					//float score = scores[element];
+					gallery[element];
+
+
+				}
+
+				// print the results
+				unsigned int n = 0;
+				for (FRsdk::Scores::const_iterator siter = scores->begin();
+					siter != scores->end(); siter++) {
+					cout << "[ #" << n++ << " ] \t:" << float(*siter) << endl;
+				}
 			}
-			galleryImageSource->reset();
-			scoresFile.close();
-			
-		}
-	}
-	*/
+			else { // We were not able to enroll the probe.
 
+			}
+
+		}
+
+	}
+	catch (const FRsdk::FeatureDisabled& e) {
+		cout << "Feature not enabled: " << e.what() << endl;
+		db.close();
+		QSqlDatabase::removeDatabase("QSQLITE");
+		return EXIT_FAILURE;
+	}
+	catch (const FRsdk::LicenseSignatureMismatch& e) {
+		cout << "License violation: " << e.what() << endl;
+		db.close();
+		QSqlDatabase::removeDatabase("QSQLITE");
+		return EXIT_FAILURE;
+	}
+	catch (exception& e) {
+		cout << e.what() << endl;
+		db.close();
+		QSqlDatabase::removeDatabase("QSQLITE");
+		return EXIT_FAILURE;
+	}
+	db.close();
+	QSqlDatabase::removeDatabase("QSQLITE");
 	return 0;
 }

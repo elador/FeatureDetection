@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
 	Logger appLogger = Loggers->getLogger("generateMultipieSigset");
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
-	path outputSigset(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\probe_m30.sig.txt)");
+	path outputSigset(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\probe_pm60_45_30_15.sig.txt)");
 
 	path multipieRoot(R"(Z:\datasets\still01\multiPIE\data\)");
 	// MULTIPIE_ROOT_DIR/session0x/multiview/subjId/exprNum/camera/subj_session_expr_cam_imgNum.png
@@ -156,9 +156,9 @@ int main(int argc, char *argv[])
 	vector<string> sessions{ "01" };
 	vector<string> recordingIds{ "01" }; // Not unique. E.g. in session01, id02 is smile, while in session02, id02 is surprise... So: Only enter 1 session + multiple recording Ids, OR, multiple sessions and 1 recording Id.
 	
-	//vector<string> cameras{ "09_0", "20_0", "08_0", "19_0", "13_0", "04_1", "14_0", "05_0" }; // probes - +-60, 45, 30, 15 yaw angle
-	//vector<string> cameras{ "13_0" }; // -30 yaw
-	vector<string> cameras{ "05_1" }; // gallery - frontal
+	vector<string> cameras{ "09_0", "20_0", "08_0", "19_0", "13_0", "04_1", "14_0", "05_0" }; // probes - +-60, 45, 30, 15 yaw angle
+	//vector<string> cameras{ "14_0" }; // -15 yaw
+	//vector<string> cameras{ "05_1" }; // gallery - frontal
 	vector<string> lighting{ "07" }; // probes
 	//vector<string> lighting{ "07" }; // gallery
 
@@ -201,9 +201,9 @@ int main(int argc, char *argv[])
 						faceRecord.subjectId = subject;
 						faceRecord.dataPath = fullsession / type / subject / recording / camera / filename;
 						auto angles = multiPieCameraToAngle(cam);
-						faceRecord.roll = std::get<0>(angles);
+						faceRecord.yaw = std::get<0>(angles);
 						faceRecord.pitch = std::get<1>(angles);
-						faceRecord.yaw = std::get<2>(angles);
+						faceRecord.roll = std::get<2>(angles);
 						faceRecord.session = fullsession;
 						faceRecord.lighting = light;
 						faceRecord.expression = recording;

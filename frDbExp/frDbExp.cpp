@@ -138,8 +138,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-	//string databaseFilename = "C:\\Users\\Patrik\\Cloud\\PhD\\data\\frdb.sqlite";
-	string databaseFilename = "C:\\Users\\Patrik\\frdb.sqlite";
+	string databaseFilename = "C:\\Users\\Patrik\\Documents\\Github\\frdb.sqlite";
 
 	QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
 	db.setDatabaseName(QString::fromStdString(databaseFilename));
@@ -159,7 +158,7 @@ int main(int argc, char *argv[])
 
 	query.setForwardOnly(true);
 	//ret = query.exec("SELECT s.* FROM scores s INNER JOIN images ip ON s.probe = ip.filepath INNER JOIN images ig ON s.gallery = ig.filepath WHERE s.algorithm='Full_FVSDK_8_7_0' AND ip.roll=0.0 AND ip.pitch=0.0 AND (ip.yaw=15.0 OR ip.yaw=-15.0) AND ig.roll=0.0 AND ig.pitch=0.0 AND ig.yaw=0.0 AND ip.subject=ig.subject"); // (if I had more images, add WHERE db=multipie, lighting=..., etc.) // AND (ip.yaw=60.0 OR ip.yaw=45) // AND ip.subject=001
-	ret = query.exec("SELECT s.* FROM scores s INNER JOIN images ip ON s.probe = ip.filepath INNER JOIN images ig ON s.gallery = ig.filepath WHERE s.algorithm='Full_FVSDK_8_7_0' AND ip.roll=0.0 AND ip.pitch=0.0 AND (ip.yaw=15.0 OR ip.yaw=-15.0 OR ip.yaw=30.0 OR ip.yaw=-30.0 OR ip.yaw=45.0 OR ip.yaw=-45.0 OR ip.yaw=60.0 OR ip.yaw=-60.0) AND ig.roll=0.0 AND ig.pitch=0.0 AND ig.yaw=0.0 AND ip.subject=ig.subject"); // (if I had more images, add WHERE db=multipie, lighting=..., etc.) // AND (ip.yaw=60.0 OR ip.yaw=45) // AND ip.subject=001
+	ret = query.exec("SELECT s.* FROM scores s INNER JOIN records ip ON s.probe = ip.identifier INNER JOIN records ig ON s.gallery = ig.identifier WHERE s.algorithm='Full_FVSDK_8_7_0' AND ip.roll=0.0 AND ip.pitch=0.0 AND (ip.yaw=15.0 OR ip.yaw=-15.0 OR ip.yaw=30.0 OR ip.yaw=-30.0 OR ip.yaw=45.0 OR ip.yaw=-45.0 OR ip.yaw=60.0 OR ip.yaw=-60.0) AND ig.roll=0.0 AND ig.pitch=0.0 AND ig.yaw=0.0 AND ip.subject=ig.subject"); // (if I had more images, add WHERE db=multipie, lighting=..., etc.) // AND (ip.yaw=60.0 OR ip.yaw=45) // AND ip.subject=001
 	if (!ret) {
 		cout << query.lastError().text().toStdString() << endl;
 	}
@@ -172,7 +171,8 @@ int main(int argc, char *argv[])
 	}
 
 	//ret = query.exec("SELECT s.* FROM scores s INNER JOIN images ip ON s.probe = ip.filepath INNER JOIN images ig ON s.gallery = ig.filepath WHERE s.algorithm='Full_FVSDK_8_7_0' AND ip.roll=0.0 AND ip.pitch=0.0 AND (ip.yaw=15.0 OR ip.yaw=-15.0) AND ig.roll=0.0 AND ig.pitch=0.0 AND ig.yaw=0.0 AND ip.subject!=ig.subject"); // (if I had more images, add WHERE db=multipie, lighting=..., etc.) // AND (ip.yaw=60.0 OR ip.yaw=45) // AND ip.subject=001
-	ret = query.exec("SELECT s.* FROM scores s INNER JOIN images ip ON s.probe = ip.filepath INNER JOIN images ig ON s.gallery = ig.filepath WHERE s.algorithm='Full_FVSDK_8_7_0' AND ip.roll=0.0 AND ip.pitch=0.0 AND (ip.yaw=15.0 OR ip.yaw=-15.0 OR ip.yaw=30.0 OR ip.yaw=-30.0 OR ip.yaw=45.0 OR ip.yaw=-45.0 OR ip.yaw=60.0 OR ip.yaw=-60.0) AND ig.roll=0.0 AND ig.pitch=0.0 AND ig.yaw=0.0 AND ip.subject!=ig.subject"); // (if I had more images, add WHERE db=multipie, lighting=..., etc.) // AND (ip.yaw=60.0 OR ip.yaw=45) // AND ip.subject=001
+	ret = query.exec("SELECT s.* FROM scores s INNER JOIN records ip ON s.probe = ip.identifier INNER JOIN records ig ON s.gallery = ig.identifier WHERE s.algorithm='Full_FVSDK_8_7_0' AND ip.roll=0.0 AND ip.pitch=0.0 AND (ip.yaw=15.0 OR ip.yaw=-15.0 OR ip.yaw=30.0 OR ip.yaw=-30.0 OR ip.yaw=45.0 OR ip.yaw=-45.0 OR ip.yaw=60.0 OR ip.yaw=-60.0) AND ig.roll=0.0 AND ig.pitch=0.0 AND ig.yaw=0.0 AND ip.subject!=ig.subject"); // (if I had more images, add WHERE db=multipie, lighting=..., etc.) // AND (ip.yaw=60.0 OR ip.yaw=45) // AND ip.subject=001
+	// ip = image probe, ig = image gallery
 	if (!ret) {
 		cout << query.lastError().text().toStdString() << endl;
 	}
@@ -187,11 +187,12 @@ int main(int argc, char *argv[])
 	sort(begin(positiveScores), end(positiveScores), less<float>()); // 0 to 1
 	sort(begin(negativeScores), end(negativeScores), greater<float>()); // 1 to 0
 
+	writeAscii("C:/Users/Patrik/Documents/Github/experiments/MultiPIE/TEST_SCORES.txt", positiveScores, negativeScores, numFailureToEnroll, "Probes 15 and 30 yaw, with FTE's", "yaw=+-15,30");
 	//writeAscii("C:/Users/Patrik/Documents/MATLAB/probes_pm15_fte.txt", positiveScores, negativeScores, numFailureToEnroll, "Probes yaw = +-15, with FTE's", "yaw=+-15");
 	//writeAscii("C:/Users/Patrik/Documents/MATLAB/probes_all.txt", positiveScores, negativeScores, numFailureToEnroll, "Probes -60 to +60 yaw angles (excluding 0)", "yaw -60 to +60 (w/o 0)");
 
 	// Calculate the rank-1 identification rate
-	ret = query.exec("SELECT s.*, MAX(s.score) FROM scores s INNER JOIN images ip ON s.probe = ip.filepath INNER JOIN images ig ON s.gallery = ig.filepath WHERE s.algorithm='Full_FVSDK_8_7_0' AND ip.roll=0.0 AND ip.pitch=0.0 AND (ip.yaw=15.0 OR ip.yaw=-15.0 OR ip.yaw=30.0 OR ip.yaw=-30.0 OR ip.yaw=45.0 OR ip.yaw=-45.0 OR ip.yaw=60.0 OR ip.yaw=-60.0) AND ig.roll=0.0 AND ig.pitch=0.0 AND ig.yaw=0.0 GROUP BY s.probe");
+	ret = query.exec("SELECT s.*, MAX(s.score) FROM scores s INNER JOIN records ip ON s.probe = ip.identifier INNER JOIN records ig ON s.gallery = ig.identifier WHERE s.algorithm='Full_FVSDK_8_7_0' AND ip.roll=0.0 AND ip.pitch=0.0 AND (ip.yaw=15.0 OR ip.yaw=-15.0 OR ip.yaw=30.0 OR ip.yaw=-30.0 OR ip.yaw=45.0 OR ip.yaw=-45.0 OR ip.yaw=60.0 OR ip.yaw=-60.0) AND ig.roll=0.0 AND ig.pitch=0.0 AND ig.yaw=0.0 GROUP BY s.probe");
 	if (!ret) {
 		cout << query.lastError().text().toStdString() << endl;
 	}
