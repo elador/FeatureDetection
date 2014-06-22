@@ -47,5 +47,10 @@ cv::Rect calculateBoundingBox(Vertex v0, Vertex v1, Vertex v2, int viewportWidth
 	return cv::Rect(minX, minY, maxX - minX, maxY - minY);
 }
 
+double implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2)
+{
+	return ((double)v1[1] - (double)v2[1])*(double)x + ((double)v2[0] - (double)v1[0])*(double)y + (double)v1[0] * (double)v2[1] - (double)v2[0] * (double)v1[1];
+}
+
 	} /* namespace utils */
 } /* namespace render */

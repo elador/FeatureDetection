@@ -33,8 +33,9 @@ namespace render {
 			static cv::Mat drawTexCoords(Mesh);
 
 			static bool isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Point2f triV1, cv::Point2f triV2);
-			static cv::Mat extractTexture(render::Mesh mesh, cv::Mat mvpMatrix, int viewportWidth, int viewportHeight, cv::Mat image);
 		};
+
+		cv::Mat extractTexture(render::Mesh mesh, cv::Mat mvpMatrix, int viewportWidth, int viewportHeight, cv::Mat image, cv::Mat depthBuffer);
 
 	} /* namespace utils */
 

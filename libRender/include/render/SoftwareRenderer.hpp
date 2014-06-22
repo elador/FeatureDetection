@@ -71,11 +71,9 @@ private:
 
 	void rasterTriangle(TriangleToRasterize triangle);
 
-	double implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2);
-
 	std::vector<Vertex> clipPolygonToPlaneIn4D(const std::vector<Vertex>& vertices, const cv::Vec4f& planeNormal);
 
-	bool areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2);
+	bool areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2); // This should go to render::utils
 
 	cv::Vec3f tex2D(const cv::Vec2f& texCoord);
 
@@ -85,7 +83,7 @@ private:
 
 	cv::Vec3f tex2D_linear(const cv::Vec2f& imageTexCoord, unsigned char mipmapIndex);
 
-	float clamp(float x, float a, float b);
+	float clamp(float x, float a, float b); // Todo: Document! x, a, b?
 };
 
  } /* namespace render */

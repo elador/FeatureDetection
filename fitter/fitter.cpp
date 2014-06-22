@@ -379,7 +379,7 @@ int main(int argc, char *argv[])
 
 		// Extract the texture
 		// Todo: check for if hasTexture, we can't do it if the model doesn't have texture coordinates
-		Mat textureMap = render::utils::MeshUtils::extractTexture(mesh, fullAffineCam, img.cols, img.rows, img);
+		Mat textureMap = render::utils::extractTexture(mesh, fullAffineCam, img.cols, img.rows, img, framebuffer.second);
 
 		// Save the extracted texture map (isomap):
 		path isomapFilename = outputPath / labeledImageSource->getName().stem();
