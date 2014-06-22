@@ -7,6 +7,8 @@
 
 #include "render/SoftwareRenderer.hpp"
 
+#include "render/utils.hpp"
+
 using cv::Mat;
 using cv::Vec4b;
 using cv::Vec2f;
@@ -189,17 +191,14 @@ boost::optional<TriangleToRasterize> SoftwareRenderer::processProspectiveTri(Ver
 			return boost::none;
 	}
 
-	// find bounding box for the triangle
-	/*t.minX = max(min(t.v0.position[0], min(t.v1.position[0], t.v2.position[0])), 0.0f);
-	t.maxX = min(max(t.v0.position[0], max(t.v1.position[0], t.v2.position[0])), (float)(viewportWidth - 1));
-	t.minY = max(min(t.v0.position[1], min(t.v1.position[1], t.v2.position[1])), 0.0f);
-	t.maxY = min(max(t.v0.position[1], max(t.v1.position[1], t.v2.position[1])), (float)(viewportHeight - 1));*/
-	t.minX = max(min(floor(t.v0.position[0]), min(floor(t.v1.position[0]), floor(t.v2.position[0]))), 0.0f);
-	t.maxX = min(max(ceil(t.v0.position[0]), max(ceil(t.v1.position[0]), ceil(t.v2.position[0]))), (float)(viewportWidth - 1));
-	t.minY = max(min(floor(t.v0.position[1]), min(floor(t.v1.position[1]), floor(t.v2.position[1]))), 0.0f);
-	t.maxY = min(max(ceil(t.v0.position[1]), max(ceil(t.v1.position[1]), ceil(t.v2.position[1]))), (float)(viewportHeight - 1));
+	// Get the bounding box of the triangle:
+	cv::Rect boundingBox = render::utils::calculateBoundingBox(t.v0, t.v1, t.v2, viewportWidth, viewportHeight);
+	t.minX = boundingBox.x;
+	t.maxX = boundingBox.x + boundingBox.width;
+	t.minY = boundingBox.y;
+	t.maxY = boundingBox.y + boundingBox.height;
 
-	if (t.maxX <= t.minX || t.maxY <= t.minY)
+	if (t.maxX <= t.minX || t.maxY <= t.minY) 	// Note: Can the width/height of the bbox be negative? Maybe we only need to check for equality here?
 		return boost::none;
 
 	// Which of these is for texturing, mipmapping, what for perspective?

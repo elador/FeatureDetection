@@ -289,13 +289,14 @@ cv::Mat MeshUtils::extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, i
 		// - Share more code with the renderer?
 
 
+
 		cv::Point2f srcTri[3];
 		cv::Point2f dstTri[3];
 		cv::Vec4f vec(mesh.vertex[triangleIndices[0]].position[0], mesh.vertex[triangleIndices[0]].position[1], mesh.vertex[triangleIndices[0]].position[2], 1.0f);
 		cv::Vec4f res = Mat(mvpMatrix * Mat(vec));
 		res /= res[3];
 		cv::Vec2f screenSpace = utils::clipToScreenSpace(cv::Vec2f(res[0], res[1]), viewportWidth, viewportHeight);
-		srcTri[0] = screenSpace;// cv::Point2f(x_w, y_w);
+		srcTri[0] = screenSpace;
 
 		vec = cv::Vec4f(mesh.vertex[triangleIndices[1]].position[0], mesh.vertex[triangleIndices[1]].position[1], mesh.vertex[triangleIndices[1]].position[2], 1.0f);
 		res = Mat(mvpMatrix * Mat(vec));
