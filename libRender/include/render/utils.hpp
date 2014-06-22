@@ -51,23 +51,31 @@ cv::Vec2f clipToScreenSpace(cv::Vec2f clipCoordinates, int screenWidth, int scre
 cv::Vec2f screenToClipSpace(cv::Vec2f screenCoordinates, int screenWidth, int screenHeight);
 
 /**
-* Returns the bounding box of the triangle given by the
-* three vertices. Rounded with floor and ceil respectively
-* to integer values.
-* Also clips against zero and the width and height of the
-* viewport.
-*
-* Note: Not 100% happy about this, we should rather
-* return (minX, maxX, minY, maxY) instead of (x, y, w, h).
-*
-* @param[in] v0 The 0th vertex of a triangle
-* @param[in] v1 The 1st vertex of a triangle
-* @param[in] v2 The 2nd vertex of a triangle
-* @param[in] viewportWidth The TODO
-* @param[in] viewportHeight The TODO
-* @return The bounding box encompassing the triangle given.
-*/
+ * Returns the bounding box of the triangle given by the
+ * three vertices. Rounded with floor and ceil respectively
+ * to integer values.
+ * Also clips against zero and the width and height of the
+ * viewport.
+ *
+ * Note: Not 100% happy about this, we should rather
+ * return (minX, maxX, minY, maxY) instead of (x, y, w, h).
+ *
+ * @param[in] v0 The 0th vertex of a triangle
+ * @param[in] v1 The 1st vertex of a triangle
+ * @param[in] v2 The 2nd vertex of a triangle
+ * @param[in] viewportWidth The TODO
+ * @param[in] viewportHeight The TODO
+ * @return The bounding box encompassing the triangle given.
+ */
 cv::Rect calculateBoundingBox(Vertex v0, Vertex v1, Vertex v2, int viewportWidth, int viewportHeight);
+
+/**
+ * Todo.
+ *
+ * @param[in] all Todo
+ * @return Todo.
+ */
+double implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2);
 
 	} /* namespace utils */
 } /* namespace render */

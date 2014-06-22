@@ -238,13 +238,13 @@ void SoftwareRenderer::rasterTriangle(TriangleToRasterize triangle)
 			float y = (float)yi + 0.5f;
 
 			// these will be used for barycentric weights computation
-			t.one_over_v0ToLine12 = 1.0 / implicitLine(t.v0.position[0], t.v0.position[1], t.v1.position, t.v2.position);
-			t.one_over_v1ToLine20 = 1.0 / implicitLine(t.v1.position[0], t.v1.position[1], t.v2.position, t.v0.position);
-			t.one_over_v2ToLine01 = 1.0 / implicitLine(t.v2.position[0], t.v2.position[1], t.v0.position, t.v1.position);
+			t.one_over_v0ToLine12 = 1.0 / utils::implicitLine(t.v0.position[0], t.v0.position[1], t.v1.position, t.v2.position);
+			t.one_over_v1ToLine20 = 1.0 / utils::implicitLine(t.v1.position[0], t.v1.position[1], t.v2.position, t.v0.position);
+			t.one_over_v2ToLine01 = 1.0 / utils::implicitLine(t.v2.position[0], t.v2.position[1], t.v0.position, t.v1.position);
 			// affine barycentric weights
-			double alpha = implicitLine(x, y, t.v1.position, t.v2.position) * t.one_over_v0ToLine12;
-			double beta = implicitLine(x, y, t.v2.position, t.v0.position) * t.one_over_v1ToLine20;
-			double gamma = implicitLine(x, y, t.v0.position, t.v1.position) * t.one_over_v2ToLine01;
+			double alpha = utils::implicitLine(x, y, t.v1.position, t.v2.position) * t.one_over_v0ToLine12;
+			double beta = utils::implicitLine(x, y, t.v2.position, t.v0.position) * t.one_over_v1ToLine20;
+			double gamma = utils::implicitLine(x, y, t.v0.position, t.v1.position) * t.one_over_v2ToLine01;
 
 			// if pixel (x, y) is inside the triangle or on one of its edges
 			if (alpha >= 0 && beta >= 0 && gamma >= 0)
@@ -313,11 +313,6 @@ void SoftwareRenderer::rasterTriangle(TriangleToRasterize triangle)
 			}
 		}
 	}
-}
-
-double SoftwareRenderer::implicitLine(float x, float y, const Vec4f& v1, const Vec4f& v2)
-{
-	return ((double)v1[1] - (double)v2[1])*(double)x + ((double)v2[0] - (double)v1[0])*(double)y + (double)v1[0] * (double)v2[1] - (double)v2[0] * (double)v1[1];
 }
 
 std::vector<Vertex> SoftwareRenderer::clipPolygonToPlaneIn4D(const std::vector<Vertex>& vertices, const Vec4f& planeNormal)

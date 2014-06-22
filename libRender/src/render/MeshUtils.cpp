@@ -274,7 +274,7 @@ bool MeshUtils::isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Poin
 // note: framebuffer should have size of the image (ok not necessarily. What about mobile?) (well it should, to get optimal quality (and everywhere the same quality)?)
 // note: mvpMatrix: Atm working with a 4x4 (full) affine. But anything would work, just take care with the w-division.
 // Regarding the depth-buffer: We could also pass an instance of a Renderer here. Depending on how "stateful" the renderer is, this might make more sense.
-cv::Mat MeshUtils::extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, int viewportHeight, Mat image) {
+cv::Mat extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, int viewportHeight, Mat image, Mat depthBuffer) {
 	// optional param cv::Mat textureMap = cv::Mat(512, 512, CV_8UC3) ?
 	//cv::Mat textureMap(512, 512, inputImage.type());
 	cv::Mat textureMap(512, 512, CV_8UC3);
@@ -287,7 +287,44 @@ cv::Mat MeshUtils::extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, i
 		// the texture.
 		// Possible improvement: - If only part of the triangle is visible, split it
 		// - Share more code with the renderer?
+		Vertex v0 = mesh.vertex[triangleIndices[0]];
+		Vertex v1 = mesh.vertex[triangleIndices[1]];
+		Vertex v2 = mesh.vertex[triangleIndices[2]];
+		cv::Rect bbox = calculateBoundingBox(v0, v1, v2, viewportWidth, viewportHeight);
+		int minX = bbox.x;
+		int maxX = bbox.x + bbox.width;
+		int minY = bbox.y;
+		int maxY = bbox.y + bbox.height;
+		for (int yi = minY; yi <= maxY; yi++)
+		{
+			for (int xi = minX; xi <= maxX; xi++)
+			{
+				// we want centers of pixels to be used in computations. TODO: Do we?
+				float x = (float)xi + 0.5f;
+				float y = (float)yi + 0.5f;
+				// these will be used for barycentric weights computation
+				double one_over_v0ToLine12 = 1.0 / utils::implicitLine(v0.position[0], v0.position[1], v1.position, v2.position);
+				double one_over_v1ToLine20 = 1.0 / utils::implicitLine(v1.position[0], v1.position[1], v2.position, v0.position);
+				double one_over_v2ToLine01 = 1.0 / utils::implicitLine(v2.position[0], v2.position[1], v0.position, v1.position);
+				// affine barycentric weights
+				double alpha = utils::implicitLine(x, y, v1.position, v2.position) * one_over_v0ToLine12;
+				double beta = utils::implicitLine(x, y, v2.position, v0.position) * one_over_v1ToLine20;
+				double gamma = utils::implicitLine(x, y, v0.position, v1.position) * one_over_v2ToLine01;
+				// if pixel (x, y) is inside the triangle or on one of its edges
+				if (alpha >= 0 && beta >= 0 && gamma >= 0)
+				{
+					int pixelIndexRow = yi;
+					int pixelIndexCol = xi;
 
+					double z_affine = alpha*(double)v0.position[2] + beta*(double)v1.position[2] + gamma*(double)v2.position[2];
+					// The '<= 1.0' clips against the far-plane in NDC. We clip against the near-plane earlier.
+					if (z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol)/* && z_affine <= 1.0*/)
+					{
+						// visible!
+					}
+				}
+			}
+		}
 
 
 		cv::Point2f srcTri[3];
@@ -336,7 +373,7 @@ cv::Mat MeshUtils::extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, i
 		// only copy to final img if point is inside the triangle (or on the border)
 		for (int x = std::min(dstTri[0].x, std::min(dstTri[1].x, dstTri[2].x)); x < std::max(dstTri[0].x, std::max(dstTri[1].x, dstTri[2].x)); ++x) {
 			for (int y = std::min(dstTri[0].y, std::min(dstTri[1].y, dstTri[2].y)); y < std::max(dstTri[0].y, std::max(dstTri[1].y, dstTri[2].y)); ++y) {
-				if (isPointInTriangle(cv::Point2f(x, y), dstTri[0], dstTri[1], dstTri[2])) {
+				if (MeshUtils::isPointInTriangle(cv::Point2f(x, y), dstTri[0], dstTri[1], dstTri[2])) {
 					textureMap.at<cv::Vec3b>(y, x) = tmpDstBuffer.at<cv::Vec3b>(y, x);
 				}
 			}
