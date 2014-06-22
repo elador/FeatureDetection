@@ -13,7 +13,7 @@ cv::Vec2f clipToScreenSpace(cv::Vec2f clipCoordinates, int screenWidth, int scre
 {
 	// Window transform:
 	float x_ss = (clipCoordinates[0] + 1.0f) * (screenWidth / 2.0f);
-	float y_ss = screenHeight - (clipCoordinates[1] + 1.0f) * (screenHeight / 2.0f); // also flip y
+	float y_ss = screenHeight - (clipCoordinates[1] + 1.0f) * (screenHeight / 2.0f); // also flip y; // Qt: Origin top-left. OpenGL: bottom-left.
 	return cv::Vec2f(x_ss, y_ss);
 }
 
