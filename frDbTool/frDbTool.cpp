@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-	string databaseFilename = "C:\\Users\\Patrik\\Documents\\Github\\frdb.sqlite";
+	string databaseFilename = "C:\\Users\\Patrik\\Documents\\Github\\experiments\\frdb.sqlite";
 
 	bool doCreate = false;
 	// create the database
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
 			cout << query.lastError().text().toStdString() << endl;
 		}
 
-		path sigsetToImport(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\probe_m30.sig.txt)");
+		path sigsetToImport(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\lists\gallery_frontal.sig.txt)");
 		auto sigset = facerecognition::utils::readSigset(sigsetToImport);
 		for (auto&& record : sigset) {
 			string database = "MultiPIE";

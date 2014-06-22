@@ -6,6 +6,7 @@
  */
 
 #include "render/MeshUtils.hpp"
+#include "render/utils.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -272,6 +273,7 @@ bool MeshUtils::isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Poin
 // image: where to extract the texture from
 // note: framebuffer should have size of the image (ok not necessarily. What about mobile?) (well it should, to get optimal quality (and everywhere the same quality)?)
 // note: mvpMatrix: Atm working with a 4x4 (full) affine. But anything would work, just take care with the w-division.
+// Regarding the depth-buffer: We could also pass an instance of a Renderer here. Depending on how "stateful" the renderer is, this might make more sense.
 cv::Mat MeshUtils::extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, int viewportHeight, Mat image) {
 	// optional param cv::Mat textureMap = cv::Mat(512, 512, CV_8UC3) ?
 	//cv::Mat textureMap(512, 512, inputImage.type());
@@ -279,31 +281,33 @@ cv::Mat MeshUtils::extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, i
 
 	for (const auto& triangleIndices : mesh.tvi) {
 
+		// Find out if the current triangle is visible:
+		// We do a second rendering-pass here. We use the depth-buffer of the final image, and then, here,
+		// check if each pixel in a triangle is visible. If the whole triangle is visible, we use it to extract
+		// the texture.
+		// Possible improvement: - If only part of the triangle is visible, split it
+		// - Share more code with the renderer?
+
+
 		cv::Point2f srcTri[3];
 		cv::Point2f dstTri[3];
 		cv::Vec4f vec(mesh.vertex[triangleIndices[0]].position[0], mesh.vertex[triangleIndices[0]].position[1], mesh.vertex[triangleIndices[0]].position[2], 1.0f);
 		cv::Vec4f res = Mat(mvpMatrix * Mat(vec));
 		res /= res[3];
-		float x_w = (res[0] + 1)*(viewportWidth / 2.0f) + 0.0f; // OpenGL viewport transform (from NDC to viewport) (NDC=clipspace?)
-		float y_w = (res[1] + 1)*(viewportHeight / 2.0f) + 0.0f;
-		y_w = viewportHeight - y_w; // Qt: Origin top-left. OpenGL: bottom-left.
-		srcTri[0] = cv::Point2f(x_w, y_w);
+		cv::Vec2f screenSpace = utils::clipToScreenSpace(cv::Vec2f(res[0], res[1]), viewportWidth, viewportHeight);
+		srcTri[0] = screenSpace;// cv::Point2f(x_w, y_w);
 
 		vec = cv::Vec4f(mesh.vertex[triangleIndices[1]].position[0], mesh.vertex[triangleIndices[1]].position[1], mesh.vertex[triangleIndices[1]].position[2], 1.0f);
 		res = Mat(mvpMatrix * Mat(vec));
 		res /= res[3];
-		x_w = (res[0] + 1)*(viewportWidth / 2.0f) + 0.0f;
-		y_w = (res[1] + 1)*(viewportHeight / 2.0f) + 0.0f;
-		y_w = viewportHeight - y_w; // Qt: Origin top-left. OpenGL: bottom-left.
-		srcTri[1] = cv::Point2f(x_w, y_w);
+		screenSpace = utils::clipToScreenSpace(cv::Vec2f(res[0], res[1]), viewportWidth, viewportHeight);
+		srcTri[1] = screenSpace;
 
 		vec = cv::Vec4f(mesh.vertex[triangleIndices[2]].position[0], mesh.vertex[triangleIndices[2]].position[1], mesh.vertex[triangleIndices[2]].position[2], 1.0f);
 		res = Mat(mvpMatrix * Mat(vec));
 		res /= res[3];
-		x_w = (res[0] + 1)*(viewportWidth / 2.0f) + 0.0f;
-		y_w = (res[1] + 1)*(viewportHeight / 2.0f) + 0.0f;
-		y_w = viewportHeight - y_w; // Qt: Origin top-left. OpenGL: bottom-left.
-		srcTri[2] = cv::Point2f(x_w, y_w);
+		screenSpace = utils::clipToScreenSpace(cv::Vec2f(res[0], res[1]), viewportWidth, viewportHeight);
+		srcTri[2] = screenSpace;
 
 		// ROI in the source image:
 		// Todo: Check if the triangle is on screen. If it's outside, we crash here.
