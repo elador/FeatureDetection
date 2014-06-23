@@ -17,6 +17,7 @@
 
 using cv::Mat;
 using cv::Point2f;
+using cv::Vec2f;
 using cv::Scalar;
 
 namespace render {
@@ -31,58 +32,58 @@ Mesh MeshUtils::createCube()
 		cube.vertex[i].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
 
 	cube.vertex[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
-	cube.vertex[0].texcrd = cv::Vec2f(0.0f, 0.0f);
+	cube.vertex[0].texcrd = Vec2f(0.0f, 0.0f);
 	cube.vertex[1].position = cv::Vec4f(-0.5f, -0.5f, 0.5f, 1.0f);
-	cube.vertex[1].texcrd = cv::Vec2f(0.0f, 1.0f);
+	cube.vertex[1].texcrd = Vec2f(0.0f, 1.0f);
 	cube.vertex[2].position = cv::Vec4f(0.5f, -0.5f, 0.5f, 1.0f);
-	cube.vertex[2].texcrd = cv::Vec2f(1.0f, 1.0f);
+	cube.vertex[2].texcrd = Vec2f(1.0f, 1.0f);
 	cube.vertex[3].position = cv::Vec4f(0.5f, 0.5f, 0.5f, 1.0f);
-	cube.vertex[3].texcrd = cv::Vec2f(1.0f, 0.0f);
+	cube.vertex[3].texcrd = Vec2f(1.0f, 0.0f);
 
 	cube.vertex[4].position = cv::Vec4f(0.5f, 0.5f, 0.5f, 1.0f);
-	cube.vertex[4].texcrd = cv::Vec2f(0.0f, 0.0f);
+	cube.vertex[4].texcrd = Vec2f(0.0f, 0.0f);
 	cube.vertex[5].position = cv::Vec4f(0.5f, -0.5f, 0.5f, 1.0f);
-	cube.vertex[5].texcrd = cv::Vec2f(0.0f, 1.0f);
+	cube.vertex[5].texcrd = Vec2f(0.0f, 1.0f);
 	cube.vertex[6].position = cv::Vec4f(0.5f, -0.5f, -0.5f, 1.0f);
-	cube.vertex[6].texcrd = cv::Vec2f(1.0f, 1.0f);
+	cube.vertex[6].texcrd = Vec2f(1.0f, 1.0f);
 	cube.vertex[7].position = cv::Vec4f(0.5f, 0.5f, -0.5f, 1.0f);
-	cube.vertex[7].texcrd = cv::Vec2f(1.0f, 0.0f);
+	cube.vertex[7].texcrd = Vec2f(1.0f, 0.0f);
 
 	cube.vertex[8].position = cv::Vec4f(0.5f, 0.5f, -0.5f, 1.0f);
-	cube.vertex[8].texcrd = cv::Vec2f(0.0f, 0.0f);
+	cube.vertex[8].texcrd = Vec2f(0.0f, 0.0f);
 	cube.vertex[9].position = cv::Vec4f(0.5f, -0.5f, -0.5f, 1.0f);
-	cube.vertex[9].texcrd = cv::Vec2f(0.0f, 1.0f);
+	cube.vertex[9].texcrd = Vec2f(0.0f, 1.0f);
 	cube.vertex[10].position = cv::Vec4f(-0.5f, -0.5f, -0.5f, 1.0f);
-	cube.vertex[10].texcrd = cv::Vec2f(1.0f, 1.0f);
+	cube.vertex[10].texcrd = Vec2f(1.0f, 1.0f);
 	cube.vertex[11].position = cv::Vec4f(-0.5f, 0.5f, -0.5f, 1.0f);
-	cube.vertex[11].texcrd = cv::Vec2f(1.0f, 0.0f);
+	cube.vertex[11].texcrd = Vec2f(1.0f, 0.0f);
 
 	cube.vertex[12].position = cv::Vec4f(-0.5f, 0.5f, -0.5f, 1.0f);
-	cube.vertex[12].texcrd = cv::Vec2f(0.0f, 0.0f);
+	cube.vertex[12].texcrd = Vec2f(0.0f, 0.0f);
 	cube.vertex[13].position = cv::Vec4f(-0.5f, -0.5f, -0.5f, 1.0f);
-	cube.vertex[13].texcrd = cv::Vec2f(0.0f, 1.0f);
+	cube.vertex[13].texcrd = Vec2f(0.0f, 1.0f);
 	cube.vertex[14].position = cv::Vec4f(-0.5f, -0.5f, 0.5f, 1.0f);
-	cube.vertex[14].texcrd = cv::Vec2f(1.0f, 1.0f);
+	cube.vertex[14].texcrd = Vec2f(1.0f, 1.0f);
 	cube.vertex[15].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
-	cube.vertex[15].texcrd = cv::Vec2f(1.0f, 0.0f);
+	cube.vertex[15].texcrd = Vec2f(1.0f, 0.0f);
 
 	cube.vertex[16].position = cv::Vec4f(-0.5f, 0.5f, -0.5f, 1.0f);
-	cube.vertex[16].texcrd = cv::Vec2f(0.0f, 0.0f);
+	cube.vertex[16].texcrd = Vec2f(0.0f, 0.0f);
 	cube.vertex[17].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
-	cube.vertex[17].texcrd = cv::Vec2f(0.0f, 1.0f);
+	cube.vertex[17].texcrd = Vec2f(0.0f, 1.0f);
 	cube.vertex[18].position = cv::Vec4f(0.5f, 0.5f, 0.5f, 1.0f);
-	cube.vertex[18].texcrd = cv::Vec2f(1.0f, 1.0f);
+	cube.vertex[18].texcrd = Vec2f(1.0f, 1.0f);
 	cube.vertex[19].position = cv::Vec4f(0.5f, 0.5f, -0.5f, 1.0f);
-	cube.vertex[19].texcrd = cv::Vec2f(1.0f, 0.0f);
+	cube.vertex[19].texcrd = Vec2f(1.0f, 0.0f);
 
 	cube.vertex[20].position = cv::Vec4f(-0.5f, -0.5f, 0.5f, 1.0f);
-	cube.vertex[20].texcrd = cv::Vec2f(0.0f, 0.0f);
+	cube.vertex[20].texcrd = Vec2f(0.0f, 0.0f);
 	cube.vertex[21].position = cv::Vec4f(-0.5f, -0.5f, -0.5f, 1.0f);
-	cube.vertex[21].texcrd = cv::Vec2f(0.0f, 1.0f);
+	cube.vertex[21].texcrd = Vec2f(0.0f, 1.0f);
 	cube.vertex[22].position = cv::Vec4f(0.5f, -0.5f, -0.5f, 1.0f);
-	cube.vertex[22].texcrd = cv::Vec2f(1.0f, 1.0f);
+	cube.vertex[22].texcrd = Vec2f(1.0f, 1.0f);
 	cube.vertex[23].position = cv::Vec4f(0.5f, -0.5f, 0.5f, 1.0f);
-	cube.vertex[23].texcrd = cv::Vec2f(1.0f, 0.0f);
+	cube.vertex[23].texcrd = Vec2f(1.0f, 0.0f);
 
 	// the efficiency of this might be improvable...
 	std::array<int, 3> vi;
@@ -151,10 +152,10 @@ Mesh MeshUtils::createPlane()
 	plane.vertex[2].color = cv::Vec3f(0.0f, 0.0f, 1.0f);
 	plane.vertex[3].color = cv::Vec3f(1.0f, 1.0f, 1.0f);
 
-	plane.vertex[0].texcrd = cv::Vec2f(0.0f, 0.0f);
-	plane.vertex[1].texcrd = cv::Vec2f(0.0f, 4.0f);
-	plane.vertex[2].texcrd = cv::Vec2f(4.0f, 4.0f);
-	plane.vertex[3].texcrd = cv::Vec2f(4.0f, 0.0f);
+	plane.vertex[0].texcrd = Vec2f(0.0f, 0.0f);
+	plane.vertex[1].texcrd = Vec2f(0.0f, 4.0f);
+	plane.vertex[2].texcrd = Vec2f(4.0f, 4.0f);
+	plane.vertex[3].texcrd = Vec2f(4.0f, 0.0f);
 
 	std::array<int, 3> vi;
 	vi[0] = 0; vi[1] = 1; vi[2] = 2;
@@ -212,15 +213,15 @@ shared_ptr<Mesh> MeshUtils::createTriangle()
 
 	triangle->vertex[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
 	triangle->vertex[0].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
-	triangle->vertex[0].texcrd = cv::Vec2f(0.0f, 0.0f);
+	triangle->vertex[0].texcrd = Vec2f(0.0f, 0.0f);
 	
 	triangle->vertex[1].position = cv::Vec4f(-0.5f, -0.5f, 0.5f, 1.0f);
 	triangle->vertex[1].color = cv::Vec3f(0.0f, 1.0f, 0.0f);
-	triangle->vertex[1].texcrd = cv::Vec2f(0.0f, 1.0f);
+	triangle->vertex[1].texcrd = Vec2f(0.0f, 1.0f);
 	
 	triangle->vertex[2].position = cv::Vec4f(0.5f, -0.5f, 0.5f, 1.0f);
 	triangle->vertex[2].color = cv::Vec3f(0.0f, 0.0f, 1.0f);
-	triangle->vertex[2].texcrd = cv::Vec2f(1.0f, 1.0f);
+	triangle->vertex[2].texcrd = Vec2f(1.0f, 1.0f);
 	
 
 	// the efficiency of this might be improvable...
@@ -235,7 +236,7 @@ shared_ptr<Mesh> MeshUtils::createTriangle()
 	return triangle;
 }
 
-cv::Mat MeshUtils::drawTexCoords(Mesh mesh)
+Mat MeshUtils::drawTexCoords(Mesh mesh)
 {
 	Mat texImg(512, 512, CV_8UC4, cv::Scalar(0.0f, 0.0f, 0.0f, 255.0f));
 	for (const auto& triIdx : mesh.tvi) {
@@ -274,10 +275,11 @@ bool MeshUtils::isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Poin
 // note: framebuffer should have size of the image (ok not necessarily. What about mobile?) (well it should, to get optimal quality (and everywhere the same quality)?)
 // note: mvpMatrix: Atm working with a 4x4 (full) affine. But anything would work, just take care with the w-division.
 // Regarding the depth-buffer: We could also pass an instance of a Renderer here. Depending on how "stateful" the renderer is, this might make more sense.
-cv::Mat extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, int viewportHeight, Mat image, Mat depthBuffer) {
-	// optional param cv::Mat textureMap = cv::Mat(512, 512, CV_8UC3) ?
-	//cv::Mat textureMap(512, 512, inputImage.type());
-	cv::Mat textureMap(512, 512, CV_8UC3);
+Mat extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, int viewportHeight, Mat image, Mat depthBuffer) {
+	// optional param Mat textureMap = Mat(512, 512, CV_8UC3) ?
+	//Mat textureMap(512, 512, inputImage.type());
+	Mat textureMap = Mat::zeros(512, 512, CV_8UC3); // We don't want an alpha channel. We might want to handle grayscale input images though.
+	Mat visibilityMask = Mat::zeros(512, 512, CV_8UC3);
 
 	for (const auto& triangleIndices : mesh.tvi) {
 
@@ -287,14 +289,51 @@ cv::Mat extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, int viewport
 		// the texture.
 		// Possible improvement: - If only part of the triangle is visible, split it
 		// - Share more code with the renderer?
-		Vertex v0 = mesh.vertex[triangleIndices[0]];
-		Vertex v1 = mesh.vertex[triangleIndices[1]];
-		Vertex v2 = mesh.vertex[triangleIndices[2]];
+		Vertex v0_3d = mesh.vertex[triangleIndices[0]];
+		Vertex v1_3d = mesh.vertex[triangleIndices[1]];
+		Vertex v2_3d = mesh.vertex[triangleIndices[2]];
+
+		Vertex v0, v1, v2; // we don't copy the color and texcoords, we only do the visibility check here.
+		// This could be optimized in 2 ways though:
+		// - Use render(), or as in render(...), transfer the vertices once, not in a loop over all triangles (vertices are getting transformed multiple times)
+		// - We transform them later (below) a second time. Only do it once.
+		v0.position = Mat(mvpMatrix * Mat(v0_3d.position));
+		v1.position = Mat(mvpMatrix * Mat(v1_3d.position));
+		v2.position = Mat(mvpMatrix * Mat(v2_3d.position));
+
+		// Well, in in principle, we'd have to do the whole stuff as in render(), like
+		// clipping against the frustums etc.
+		// But as long as our model is fully on the screen, we're fine.
+
+		// divide by w
+		// if ortho, we can do the divide as well, it will just be a / 1.0f.
+		v0.position = v0.position / v0.position[3];
+		v1.position = v1.position / v1.position[3];
+		v2.position = v2.position / v2.position[3];
+
+		// Todo: This is all very similar to processProspectiveTri(...), except the other function does texturing stuff as well. Remove code duplication!
+		Vec2f v0_clip = clipToScreenSpace(Vec2f(v0.position[0], v0.position[1]), viewportWidth, viewportHeight);
+		Vec2f v1_clip = clipToScreenSpace(Vec2f(v1.position[0], v1.position[1]), viewportWidth, viewportHeight);
+		Vec2f v2_clip = clipToScreenSpace(Vec2f(v2.position[0], v2.position[1]), viewportWidth, viewportHeight);
+		v0.position[0] = v0_clip[0]; v0.position[1] = v0_clip[1];
+		v1.position[0] = v1_clip[0]; v1.position[1] = v1_clip[1];
+		v2.position[0] = v2_clip[0]; v2.position[1] = v2_clip[1];
+		
+		//if (doBackfaceCulling) {
+		//	if (!areVerticesCCWInScreenSpace(t.v0, t.v1, t.v2))
+		//		continue;
+		//}
+
 		cv::Rect bbox = calculateBoundingBox(v0, v1, v2, viewportWidth, viewportHeight);
 		int minX = bbox.x;
 		int maxX = bbox.x + bbox.width;
 		int minY = bbox.y;
 		int maxY = bbox.y + bbox.height;
+
+		//if (t.maxX <= t.minX || t.maxY <= t.minY) 	// Note: Can the width/height of the bbox be negative? Maybe we only need to check for equality here?
+		//	continue;
+
+		bool wholeTriangleIsVisible = true;
 		for (int yi = minY; yi <= maxY; yi++)
 		{
 			for (int xi = minX; xi <= maxX; xi++)
@@ -313,38 +352,45 @@ cv::Mat extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, int viewport
 				// if pixel (x, y) is inside the triangle or on one of its edges
 				if (alpha >= 0 && beta >= 0 && gamma >= 0)
 				{
-					int pixelIndexRow = yi;
-					int pixelIndexCol = xi;
-
 					double z_affine = alpha*(double)v0.position[2] + beta*(double)v1.position[2] + gamma*(double)v2.position[2];
 					// The '<= 1.0' clips against the far-plane in NDC. We clip against the near-plane earlier.
-					if (z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol)/* && z_affine <= 1.0*/)
-					{
+					if (z_affine < depthBuffer.at<double>(yi, xi)/* && z_affine <= 1.0*/) {
 						// visible!
+						wholeTriangleIsVisible = false;
+						break;
+					}
+					else {
+						
 					}
 				}
 			}
+			if (!wholeTriangleIsVisible) {
+				break;
+			}
 		}
 
+		if (!wholeTriangleIsVisible) {
+			continue;
+		}
 
 		cv::Point2f srcTri[3];
 		cv::Point2f dstTri[3];
 		cv::Vec4f vec(mesh.vertex[triangleIndices[0]].position[0], mesh.vertex[triangleIndices[0]].position[1], mesh.vertex[triangleIndices[0]].position[2], 1.0f);
 		cv::Vec4f res = Mat(mvpMatrix * Mat(vec));
 		res /= res[3];
-		cv::Vec2f screenSpace = utils::clipToScreenSpace(cv::Vec2f(res[0], res[1]), viewportWidth, viewportHeight);
+		Vec2f screenSpace = utils::clipToScreenSpace(Vec2f(res[0], res[1]), viewportWidth, viewportHeight);
 		srcTri[0] = screenSpace;
 
 		vec = cv::Vec4f(mesh.vertex[triangleIndices[1]].position[0], mesh.vertex[triangleIndices[1]].position[1], mesh.vertex[triangleIndices[1]].position[2], 1.0f);
 		res = Mat(mvpMatrix * Mat(vec));
 		res /= res[3];
-		screenSpace = utils::clipToScreenSpace(cv::Vec2f(res[0], res[1]), viewportWidth, viewportHeight);
+		screenSpace = utils::clipToScreenSpace(Vec2f(res[0], res[1]), viewportWidth, viewportHeight);
 		srcTri[1] = screenSpace;
 
 		vec = cv::Vec4f(mesh.vertex[triangleIndices[2]].position[0], mesh.vertex[triangleIndices[2]].position[1], mesh.vertex[triangleIndices[2]].position[2], 1.0f);
 		res = Mat(mvpMatrix * Mat(vec));
 		res /= res[3];
-		screenSpace = utils::clipToScreenSpace(cv::Vec2f(res[0], res[1]), viewportWidth, viewportHeight);
+		screenSpace = utils::clipToScreenSpace(Vec2f(res[0], res[1]), viewportWidth, viewportHeight);
 		srcTri[2] = screenSpace;
 
 		// ROI in the source image:
@@ -364,10 +410,10 @@ cv::Mat extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, int viewport
 		dstTri[2] = cv::Point2f(textureMap.cols*mesh.vertex[triangleIndices[2]].texcrd[0], textureMap.rows*mesh.vertex[triangleIndices[2]].texcrd[1] - 1.0f);
 
 		/// Get the Affine Transform
-		cv::Mat warp_mat = getAffineTransform(srcTri, dstTri);
+		Mat warp_mat = getAffineTransform(srcTri, dstTri);
 
 		/// Apply the Affine Transform just found to the src image
-		cv::Mat tmpDstBuffer = Mat::zeros(textureMap.rows, textureMap.cols, image.type()); // I think using the source-size here is not correct. The dst might be larger. We should warp the endpoints and set to max-w/h. No, I think it would be even better to directly warp to the final textureMap size. (so that the last step is only a 1:1 copy)
+		Mat tmpDstBuffer = Mat::zeros(textureMap.rows, textureMap.cols, image.type()); // I think using the source-size here is not correct. The dst might be larger. We should warp the endpoints and set to max-w/h. No, I think it would be even better to directly warp to the final textureMap size. (so that the last step is only a 1:1 copy)
 		warpAffine(inputImageRoi, tmpDstBuffer, warp_mat, tmpDstBuffer.size(), cv::INTER_CUBIC, cv::BORDER_TRANSPARENT); // last row/col is zeros, depends on interpolation method. Maybe because of rounding or interpolation? So it cuts a little. Maybe try to implement by myself?
 
 		// only copy to final img if point is inside the triangle (or on the border)

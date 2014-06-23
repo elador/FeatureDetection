@@ -51,9 +51,10 @@ cv::Vec2f clipToScreenSpace(cv::Vec2f clipCoordinates, int screenWidth, int scre
 cv::Vec2f screenToClipSpace(cv::Vec2f screenCoordinates, int screenWidth, int screenHeight);
 
 /**
- * Returns the bounding box of the triangle given by the
- * three vertices. Rounded with floor and ceil respectively
- * to integer values.
+ * Returns the 2D bounding box of the triangle given by the
+ * three vertices. Uses the x and y components of the vertices,
+ * assuming they are in screen space. 
+ * Rounded with floor and ceil respectively to integer values.
  * Also clips against zero and the width and height of the
  * viewport.
  *
