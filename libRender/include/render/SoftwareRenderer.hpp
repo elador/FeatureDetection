@@ -67,6 +67,8 @@ private:
 	std::shared_ptr<Texture> currentTexture;
 	float dudx, dudy, dvdx, dvdy; // partial derivatives of U/V coordinates with respect to X/Y pixel's screen coordinates
 
+	// Todo: Split this function into the general (core-part) and the texturing part.
+	// Then, utils::extractTexture can re-use the core-part.
 	boost::optional<TriangleToRasterize> processProspectiveTri(Vertex v0, Vertex v1, Vertex v2);
 
 	void rasterTriangle(TriangleToRasterize triangle);
