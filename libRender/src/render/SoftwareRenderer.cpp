@@ -187,7 +187,7 @@ boost::optional<TriangleToRasterize> SoftwareRenderer::processProspectiveTri(Ver
 	// y_w = (y * -vH/2) + (vH-1)/2;
 
 	if (doBackfaceCulling) {
-		if (!areVerticesCCWInScreenSpace(t.v0, t.v1, t.v2))
+		if (!utils::areVerticesCCWInScreenSpace(t.v0, t.v1, t.v2))
 			return boost::none;
 	}
 
@@ -357,16 +357,6 @@ std::vector<Vertex> SoftwareRenderer::clipPolygonToPlaneIn4D(const std::vector<V
 	}
 
 	return clippedVertices;
-}
-
-bool SoftwareRenderer::areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2)
-{
-	float dx01 = v1.position[0] - v0.position[0];
-	float dy01 = v1.position[1] - v0.position[1];
-	float dx02 = v2.position[0] - v0.position[0];
-	float dy02 = v2.position[1] - v0.position[1];
-
-	return (dx01*dy02 - dy01*dx02 < 0.0f); // Original: (dx01*dy02 - dy01*dx02 > 0.0f). But: OpenCV has origin top-left, y goes down
 }
 
 Vec3f SoftwareRenderer::tex2D(const Vec2f& texCoord)

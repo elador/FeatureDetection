@@ -52,5 +52,15 @@ double implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2)
 	return ((double)v1[1] - (double)v2[1])*(double)x + ((double)v2[0] - (double)v1[0])*(double)y + (double)v1[0] * (double)v2[1] - (double)v2[0] * (double)v1[1];
 }
 
+bool areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2)
+{
+	float dx01 = v1.position[0] - v0.position[0];
+	float dy01 = v1.position[1] - v0.position[1];
+	float dx02 = v2.position[0] - v0.position[0];
+	float dy02 = v2.position[1] - v0.position[1];
+
+	return (dx01*dy02 - dy01*dx02 < 0.0f); // Original: (dx01*dy02 - dy01*dx02 > 0.0f). But: OpenCV has origin top-left, y goes down
+}
+
 	} /* namespace utils */
 } /* namespace render */
