@@ -320,8 +320,8 @@ Mat extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, int viewportHeig
 		v2.position[0] = v2_clip[0]; v2.position[1] = v2_clip[1];
 		
 		//if (doBackfaceCulling) {
-		//	if (!areVerticesCCWInScreenSpace(t.v0, t.v1, t.v2))
-		//		continue;
+			if (!areVerticesCCWInScreenSpace(v0, v1, v2))
+				continue;
 		//}
 
 		cv::Rect bbox = calculateBoundingBox(v0, v1, v2, viewportWidth, viewportHeight);
@@ -355,7 +355,6 @@ Mat extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, int viewportHeig
 					double z_affine = alpha*(double)v0.position[2] + beta*(double)v1.position[2] + gamma*(double)v2.position[2];
 					// The '<= 1.0' clips against the far-plane in NDC. We clip against the near-plane earlier.
 					if (z_affine < depthBuffer.at<double>(yi, xi)/* && z_affine <= 1.0*/) {
-						// visible!
 						wholeTriangleIsVisible = false;
 						break;
 					}

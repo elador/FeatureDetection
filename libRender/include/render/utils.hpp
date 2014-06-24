@@ -78,6 +78,16 @@ cv::Rect calculateBoundingBox(Vertex v0, Vertex v1, Vertex v2, int viewportWidth
  */
 double implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2);
 
+/**
+ * Todo.
+ *
+ * Note: For screens with origin top-left, y goes down, like OpenCV
+ *
+ * @param[in] all Todo
+ * @return Todo.
+ */
+bool areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2);
+
 	} /* namespace utils */
 } /* namespace render */
 

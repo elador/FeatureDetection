@@ -75,8 +75,6 @@ private:
 
 	std::vector<Vertex> clipPolygonToPlaneIn4D(const std::vector<Vertex>& vertices, const cv::Vec4f& planeNormal);
 
-	bool areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2); // This should go to render::utils
-
 	cv::Vec3f tex2D(const cv::Vec2f& texCoord);
 
 	cv::Vec3f tex2D_linear_mipmap_linear(const cv::Vec2f& texCoord);
