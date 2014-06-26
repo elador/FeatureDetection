@@ -418,6 +418,9 @@ Vec3f PcaModel::getMeanAtPoint(string landmarkIdentifier) const
 	//int vertexId = landmarkVertexMap.at(landmarkIdentifier); // TODO hack. Do proper.
 	int vertexId = boost::lexical_cast<int>(landmarkIdentifier);
 	vertexId *= 3;
+	if (vertexId >= mean.rows) {
+		throw std::out_of_range("The given vertex id is larger than the dimension of the mean.");
+	}
 	return Vec3f(mean.at<float>(vertexId), mean.at<float>(vertexId+1), mean.at<float>(vertexId+2)); // we could use Vec3f(mean(Range(), Range())), maybe then we don't copy the data?
 }
 
