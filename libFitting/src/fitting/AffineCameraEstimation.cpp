@@ -12,6 +12,8 @@
 
 #include "opencv2/core/core_c.h" // for CV_REDUCE_AVG
 
+#include <exception>
+
 using logging::LoggerFactory;
 using morphablemodel::MorphableModel;
 using cv::Mat;
@@ -24,29 +26,41 @@ namespace fitting {
 Mat estimateAffineCamera(vector<imageio::ModelLandmark> imagePoints, MorphableModel morphableModel, vector<int> vertexIds/*=std::vector<int>()*/)
 {
 	// Note/TODO: If this function is called with invalid imagePoints, i.e. landmark id's that are not in the 3DMM, nothing throws. Something, somewhere, should happen.
-	if (imagePoints.size() < 4) {
+	// Todo: Currently, the optional vertexIds are not used
+
+	Mat matImagePoints; // will be numCorrespondences x 2, CV_32FC1
+	Mat matModelPoints; // will be numCorrespondences x 3, CV_32FC1
+	// Use the point only if it is available in the model:
+	for (const auto& landmark : imagePoints) {
+		Vec3f tmp;
+		try {
+			tmp = morphableModel.getShapeModel().getMeanAtPoint(landmark.getName());
+		}
+		catch (std::out_of_range& e) {
+			continue;
+		}
+		Mat imgPoint(1, 2, CV_32FC1);
+		imgPoint.at<float>(0, 0) = landmark.getX();
+		imgPoint.at<float>(0, 1) = landmark.getY();
+		matImagePoints.push_back(imgPoint);
+
+		Mat mdlPoint(1, 3, CV_32FC1);
+		mdlPoint.at<float>(0, 0) = tmp[0];
+		mdlPoint.at<float>(0, 1) = tmp[1];
+		mdlPoint.at<float>(0, 2) = tmp[2];
+		matModelPoints.push_back(mdlPoint);
+	}
+	const auto numCorrespondences = matImagePoints.rows;
+	if (numCorrespondences < 4) {
 		Loggers->getLogger("fitting").error("AffineCameraEstimation: Number of points given needs to be equal to or larger than 4.");
 		throw std::runtime_error("AffineCameraEstimation: Number of points given needs to be equal to or larger than 4.");
 	}
 
-	// Todo: Currently, the optional vertexIds are not used
-	Mat matImagePoints(imagePoints.size(), 2, CV_32FC1);
-	Mat matModelPoints(imagePoints.size(), 3, CV_32FC1);
-	int row = 0;
-	for (const auto& landmark : imagePoints) {
-		Vec3f tmp = morphableModel.getShapeModel().getMeanAtPoint(landmark.getName());
-		matImagePoints.at<float>(row, 0) = landmark.getPoint2D().x;
-		matImagePoints.at<float>(row, 1) = landmark.getPoint2D().y;
-		matModelPoints.at<float>(row, 0) = tmp[0];
-		matModelPoints.at<float>(row, 1) = tmp[1];
-		matModelPoints.at<float>(row, 2) = tmp[2];
-		++row;
-	}
 	//Mat tmpOrigImgPoints = matImagePoints.clone(); // Temp for testing: Save the original coordinates.
 	// translate the centroid of the image points to the origin:
 	Mat imagePointsMean; // use non-homogeneous coords for the next few steps? (less submatrices etc overhead)
 	cv::reduce(matImagePoints, imagePointsMean, 0, CV_REDUCE_AVG);
-	imagePointsMean = cv::repeat(imagePointsMean, imagePoints.size(), 1); // get T_13 and T_23 from imagePointsMean
+	imagePointsMean = cv::repeat(imagePointsMean, matImagePoints.rows, 1); // get T_13 and T_23 from imagePointsMean
 	matImagePoints = matImagePoints - imagePointsMean;
 	// scale the image points such that the RMS distance from the origin is sqrt(2):
 	// 1) calculate the average norm (root mean squared distance) of all vectors
@@ -72,7 +86,7 @@ Mat estimateAffineCamera(vector<imageio::ModelLandmark> imagePoints, MorphableMo
 	// translate the centroid of the model points to the origin:
 	Mat modelPointsMean; // use non-homogeneous coords for the next few steps? (less submatrices etc overhead)
 	cv::reduce(matModelPoints, modelPointsMean, 0, CV_REDUCE_AVG);
-	modelPointsMean = cv::repeat(modelPointsMean, imagePoints.size(), 1);
+	modelPointsMean = cv::repeat(modelPointsMean, matModelPoints.rows, 1);
 	matModelPoints = matModelPoints - modelPointsMean;
 	// scale the model points such that the RMS distance from the origin is sqrt(3):
 	// 1) calculate the average norm (root mean squared distance) of all vectors
@@ -99,10 +113,10 @@ Mat estimateAffineCamera(vector<imageio::ModelLandmark> imagePoints, MorphableMo
 	// We are solving the system $A_8 * p_8 = b$
 	// The solution is obtained by the pseudo-inverse of A_8:
 	// $p_8 = A_8^+ * b$
-	Mat A_8 = Mat::zeros(imagePoints.size()*2, 8, CV_32FC1);
+	Mat A_8 = Mat::zeros(numCorrespondences * 2, 8, CV_32FC1);
 	//Mat p_8(); // p_8 is 8 x 1. We are solving for it.
-	Mat b(imagePoints.size()*2, 1, CV_32FC1);
-	for (int i = 0; i < imagePoints.size(); ++i) {
+	Mat b(numCorrespondences * 2, 1, CV_32FC1);
+	for (int i = 0; i < numCorrespondences; ++i) {
 		A_8.at<float>(2*i, 0) = matModelPoints.at<float>(i, 0); // could maybe made faster by assigning the whole row/col-range if possible?
 		A_8.at<float>(2*i, 1) = matModelPoints.at<float>(i, 1);
 		A_8.at<float>(2*i, 2) = matModelPoints.at<float>(i, 2);

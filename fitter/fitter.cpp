@@ -356,7 +356,13 @@ int main(int argc, char *argv[])
 
 		// Render the mean-face landmarks projected using the estimated camera:
 		for (const auto& lm : landmarks) {
-			Vec3f modelPoint = morphableModel.getShapeModel().getMeanAtPoint(lm.getName());
+			Vec3f modelPoint;
+			try {
+				modelPoint = morphableModel.getShapeModel().getMeanAtPoint(lm.getName());
+			}
+			catch (std::out_of_range& e) {
+				continue;
+			}
 			cv::Vec2f screenPoint = fitting::projectAffine(modelPoint, affineCam, img.cols, img.rows);
 			cv::circle(affineCamLandmarksProjectionImage, Point2f(screenPoint), 4.0f, Scalar(0.0f, 255.0f, 0.0f));
 		}
