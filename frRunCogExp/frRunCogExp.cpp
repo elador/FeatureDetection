@@ -129,8 +129,8 @@ int main(int argc, char *argv[])
 	//path galleryFirList = R"(C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath_firlist.lst)";
 
 	// The exact images from the list are used. Output FIR is firOutDir plus the basename of the image.
-	shared_ptr<FileListImageSource> imageList = make_shared<FileListImageSource>(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\lists\probe_p60.txt)");
-	path firOutDir = R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\02_27062014_TexExtr_visCheck\FIRs\probe_p60\)";
+	shared_ptr<FileListImageSource> imageList = make_shared<FileListImageSource>(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\lists\probe_p15.txt)");
+	path firOutDir = R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\02_27062014_TexExtr_visCheck\FIRs\probe_p15\)";
 
 	Mat img;
 	string cmd;
@@ -144,13 +144,14 @@ int main(int argc, char *argv[])
 	}*/
 
 	// create all FIRs of probes, use imageList for the basename, but then use fittingsDir and append _isomap:
-	path fittingsDir = R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\02_27062014_TexExtr_visCheck\fittings\probe_p60\)";
+	/*
+	path fittingsDir = R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\02_27062014_TexExtr_visCheck\fittings\probe_p15\)";
 	while (imageList->next()) {
 		path isomapImageFile = fittingsDir.string() + imageList->getName().stem().string() + "_render_frontal.png";
 		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_9_5\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + imageList->getName().stem().string() + ".fir " + "-imgs " + isomapImageFile.string();
 		int cmdRet = system(cmd.c_str());
 		cout << cmdRet << endl;
-	}
+	}*/
 
 	// Matching: Create all the scores of every probe against every gallery entry
 	string algorithmName = "FVSDK_8_9_5";

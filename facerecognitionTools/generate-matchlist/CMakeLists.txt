@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME convertPascSigset)
+set(SUBPROJECT_NAME generate-matchlist)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -16,7 +16,7 @@ endif()
 
 #Source and header files:
 set(SOURCE
-	convertPascSigset.cpp
+	generate-matchlist.cpp
 )
 
 set(HEADERS
@@ -25,8 +25,8 @@ set(HEADERS
 add_executable(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
 
 include_directories(${Boost_INCLUDE_DIRS})
-include_directories(${Logging_SOURCE_DIR}/include)
 include_directories(${FaceRecognition_SOURCE_DIR}/include)
+include_directories(${Logging_SOURCE_DIR}/include)
 
 # Make the app depend on the libraries
 target_link_libraries(${SUBPROJECT_NAME} FaceRecognition Logging ${Boost_LIBRARIES})
