@@ -197,6 +197,15 @@ public:
 
 	float getEigenvalue(unsigned int index) const;
 
+	/**
+	* Returns true if the given landmark identifier
+	* exists in the model.
+	*
+	* @param[in] landmarkIdentifier A landmark identifier (e.g. "center.nose.tip"). At the moment, this is the vertex id.
+	* @return A boolean whether the given landmark identifier exists in the model.
+	*/
+	bool landmarkExists(std::string landmarkIdentifier) const;
+
 private:
 	std::mt19937 engine; ///< A Mersenne twister MT19937 engine
 	std::map<std::string, int> landmarkVertexMap; ///< Holds the translation from feature point name (e.g. "center.nose.tip") to the vertex number in the model

@@ -123,33 +123,34 @@ int main(int argc, char *argv[])
 	Loggers->getLogger("facerecognition").addAppender(make_shared<logging::ConsoleAppender>(LogLevel::Trace));
 
 	path fvsdkBins = R"(C:\Users\Patrik\Documents\GitHub\FVSDK_source\Release\)";
-	path firOutDir = R"(C:\Users\Patrik\Documents\GitHub\experiments\probe_renderfrontal_FIR\)";
+	
+	
 	//path scoreOutDir = R"(C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\scores\\)";
 	//path galleryFirList = R"(C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath_firlist.lst)";
 
-	//shared_ptr<FileListImageSource> galleryImageSource = make_shared<FileListImageSource>(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\gallery.txt)");
-	//shared_ptr<ImageSource> probeImageSource = make_shared<FileListImageSource>(R"(C:\Users\Patrik\Documents\GitHub\experiments\fittings_render_frontal_m15.txt)");
+	// The exact images from the list are used. Output FIR is firOutDir plus the basename of the image.
+	shared_ptr<FileListImageSource> imageList = make_shared<FileListImageSource>(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\lists\probe_p60.txt)");
+	path firOutDir = R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\02_27062014_TexExtr_visCheck\FIRs\probe_p60\)";
 
 	Mat img;
 	string cmd;
-	// create all FIR's of gallery
+	// create all FIRs of images
 	/*
-	while (galleryImageSource->next()) {
-		//img = galleryImageSource->getImage();
-		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_9_5\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + galleryImageSource->getName().stem().string() + ".fir " + "-imgs " + galleryImageSource->getName().string();
+	while (imageList->next()) {
+		//img = imageList->getImage();
+		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_9_5\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + imageList->getName().stem().string() + ".fir " + "-imgs " + imageList->getName().string();
 		int cmdRet = system(cmd.c_str());
 		cout << cmdRet << endl;
 	}*/
 
-	// create all FIR's of probes
-	/*
-	while (probeImageSource->next()) {
-		img = probeImageSource->getImage();
-		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_9_5\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + probeImageSource->getName().stem().string() + ".fir " + "-imgs " + probeImageSource->getName().string();
+	// create all FIRs of probes, use imageList for the basename, but then use fittingsDir and append _isomap:
+	path fittingsDir = R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\02_27062014_TexExtr_visCheck\fittings\probe_p60\)";
+	while (imageList->next()) {
+		path isomapImageFile = fittingsDir.string() + imageList->getName().stem().string() + "_render_frontal.png";
+		cmd = fvsdkBins.string() + "enroll.exe " + "-cfg C:\\FVSDK_8_9_5\\etc\\frsdk.cfg " + "-fir " + firOutDir.string() + imageList->getName().stem().string() + ".fir " + "-imgs " + isomapImageFile.string();
 		int cmdRet = system(cmd.c_str());
-		cout << cmdRet;
+		cout << cmdRet << endl;
 	}
-	*/
 
 	// Matching: Create all the scores of every probe against every gallery entry
 	string algorithmName = "FVSDK_8_9_5";
@@ -167,11 +168,11 @@ int main(int argc, char *argv[])
 	utils::DataPathTransformation transformProbe = utils::DataPathTransformation::read(transformConfig.get_child("probe"));
 	utils::DataPathTransformation transformGallery = utils::DataPathTransformation::read(transformConfig.get_child("gallery"));
 
-	auto probe = utils::readSigset(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\probe_m15.sig.txt)");
-	auto gallery = utils::readSigset(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\gallery.sig.txt)");
+	auto probe = utils::readSigset(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\lists\probe_p30.sig.txt)");
+	auto gallery = utils::readSigset(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\lists\gallery_frontal.sig.txt)");
 
 	// Open the database
-	path databaseFilename(R"(C:\Users\Patrik\Documents\Github\frdb.sqlite)");
+	path databaseFilename(R"(C:\Users\Patrik\Documents\Github\experiments\frdb_TEST.sqlite)");
 	QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
 	db.setDatabaseName(QString::fromStdString(databaseFilename.string()));
 	if (!db.open())	{

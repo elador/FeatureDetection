@@ -348,8 +348,10 @@ int main(int argc, char *argv[])
 		// Convert the landmarks to clip-space
 		vector<imageio::ModelLandmark> landmarksClipSpace;
 		for (const auto& lm : landmarks) {
-			cv::Vec2f clipCoords = render::utils::screenToClipSpace(lm.getPosition2D(), img.cols, img.rows);
-			landmarksClipSpace.push_back(imageio::ModelLandmark(lm.getName(), Vec3f(clipCoords[0], clipCoords[1], 0.0f), lm.isVisible()));
+			if (morphableModel.getShapeModel().landmarkExists(lm.getName())) {
+				cv::Vec2f clipCoords = render::utils::screenToClipSpace(lm.getPosition2D(), img.cols, img.rows);
+				landmarksClipSpace.push_back(imageio::ModelLandmark(lm.getName(), Vec3f(clipCoords[0], clipCoords[1], 0.0f), lm.isVisible()));
+			}
 		}
 
 		Mat affineCam = fitting::estimateAffineCamera(landmarksClipSpace, morphableModel);
