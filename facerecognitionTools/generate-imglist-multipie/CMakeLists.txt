@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME generateMultipieList)
+set(SUBPROJECT_NAME generate-imglist-multipie)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -16,7 +16,7 @@ endif()
 
 #Source and header files:
 set(SOURCE
-	generateMultipieList.cpp
+	generate-imglist-multipie.cpp
 )
 
 set(HEADERS

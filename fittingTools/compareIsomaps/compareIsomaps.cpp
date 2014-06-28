@@ -113,10 +113,10 @@ int main(int argc, char *argv[])
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
-	path testList(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\lists\probe_p60.txt)"); // only the basename gets used
+	path testList(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\lists\probe_p15.txt)"); // only the basename gets used
 	path groundtruthList(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\lists\gallery_frontal.txt)"); // only the basename gets used
 
-	path testIsomaps(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\02_27062014_TexExtr_visCheck\fittings\probe_p60\)");
+	path testIsomaps(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\02_27062014_TexExtr_visCheck\fittings\probe_p15\)");
 	path groundtruthIsomaps(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\02_27062014_TexExtr_visCheck\fittings\gallery_frontal\)");
 
 	std::ifstream testFile(testList.string());
