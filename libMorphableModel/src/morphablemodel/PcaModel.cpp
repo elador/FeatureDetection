@@ -513,6 +513,18 @@ float PcaModel::getEigenvalue(unsigned int index) const
 	return eigenvalues.at<float>(index);
 }
 
+bool PcaModel::landmarkExists(std::string landmarkIdentifier) const
+{
+	int vertexId = boost::lexical_cast<int>(landmarkIdentifier);
+	vertexId *= 3;
+	if (vertexId >= mean.rows) {
+		return false;
+	}
+	else {
+		return true;
+	}
+}
+
 cv::Mat normalizePcaBasis(cv::Mat unnormalizedBasis, cv::Mat eigenvalues)
 {
 	Mat normalizedPcaBasis(unnormalizedBasis.size(), unnormalizedBasis.type()); // empty matrix with the same dimensions

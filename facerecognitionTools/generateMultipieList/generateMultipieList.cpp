@@ -108,9 +108,10 @@ int main(int argc, char *argv[])
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
-	path outputImageList(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\probe_m0.txt)");
+	path outputImageList(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\lists\probe_p15.txt)");
 
-	path multipieRoot(R"(Z:\datasets\still01\multiPIE\data\)");
+	//path multipieRoot(R"(Z:\datasets\still01\multiPIE\data\)");
+	path multipieRoot(R"(K:\still01\multiPIE\data\)");
 	// MULTIPIE_ROOT_DIR/session0x/multiview/subjId/exprNum/camera/subj_session_expr_cam_imgNum.png
 	// Example: MULTIPIE_ROOT_DIR / 001 / 01 / 01_0 / 001_01_01_010_00.png
 	path session("session"); // add 01, 02, 03 or 04
@@ -121,7 +122,7 @@ int main(int argc, char *argv[])
 	vector<string> recordingIds{ "01" }; // Not unique. E.g. in session01, id02 is smile, while in session02, id02 is surprise... So: Only enter 1 session + multiple recording Ids, OR, multiple sessions and 1 recording Id.
 	
 	//vector<string> cameras{ "09_0", "20_0", "08_0", "19_0", "13_0", "04_1", "14_0", "05_0" }; // probes - +-60, 45, 30, 15 yaw angle
-	vector<string> cameras{ "05_1" }; // 
+	vector<string> cameras{ "05_0" }; // 
 	//vector<string> cameras{ "05_1" }; // gallery - frontal
 	vector<string> lighting{ "07" }; // probes
 	//vector<string> lighting{ "07" }; // gallery
