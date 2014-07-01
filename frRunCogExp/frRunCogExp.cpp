@@ -124,16 +124,15 @@ int main(int argc, char *argv[])
 
 	path fvsdkBins = R"(C:\Users\Patrik\Documents\GitHub\FVSDK_source\Release\)";
 	
-	
 	//path scoreOutDir = R"(C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\scores\\)";
 	//path galleryFirList = R"(C:\\Users\\Patrik\\Documents\\GitHub\\data\\mpie_pics_paper_FRexp\\mpie_frontal_gallery_fullpath_firlist.lst)";
 
 	// The exact images from the list are used. Output FIR is firOutDir plus the basename of the image.
-	shared_ptr<FileListImageSource> imageList = make_shared<FileListImageSource>(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\lists\probe_p15.txt)");
-	path firOutDir = R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\02_27062014_TexExtr_visCheck\FIRs\probe_p15\)";
+	//shared_ptr<FileListImageSource> imageList = make_shared<FileListImageSource>(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\lists\probe_p15.txt)");
+	//path firOutDir = R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\02_27062014_TexExtr_visCheck\FIRs\probe_p15\)";
 
-	Mat img;
-	string cmd;
+	//Mat img;
+	//string cmd;
 	// create all FIRs of images
 	/*
 	while (imageList->next()) {
@@ -154,7 +153,7 @@ int main(int argc, char *argv[])
 	}*/
 
 	// Matching: Create all the scores of every probe against every gallery entry
-	string algorithmName = "FVSDK_8_9_5";
+	string algorithmName = "Fitting_CamShp_FrontalRendering_FVSDK_8_9_5";
 
 	path transformConfigFile(R"(C:\Users\Patrik\Documents\GitHub\FeatureDetection\libFaceRecognition\share\config\transformRecordDataPath.txt)");
 	ptree transformConfig;
@@ -169,11 +168,11 @@ int main(int argc, char *argv[])
 	utils::DataPathTransformation transformProbe = utils::DataPathTransformation::read(transformConfig.get_child("probe"));
 	utils::DataPathTransformation transformGallery = utils::DataPathTransformation::read(transformConfig.get_child("gallery"));
 
-	auto probe = utils::readSigset(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\lists\probe_p30.sig.txt)");
+	auto probe = utils::readSigset(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\lists\probe_p60.sig.txt)");
 	auto gallery = utils::readSigset(R"(C:\Users\Patrik\Documents\GitHub\experiments\MultiPIE\lists\gallery_frontal.sig.txt)");
 
 	// Open the database
-	path databaseFilename(R"(C:\Users\Patrik\Documents\Github\experiments\frdb_TEST.sqlite)");
+	path databaseFilename(R"(C:\Users\Patrik\Documents\Github\experiments\frdb.sqlite)");
 	QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
 	db.setDatabaseName(QString::fromStdString(databaseFilename.string()));
 	if (!db.open())	{
@@ -206,6 +205,7 @@ int main(int argc, char *argv[])
 
 		// do the matching:
 		for (auto&& p : probe) {
+			cout << "Matching " << p.identifier << endl;
 			path probeFilename = p.dataPath;
 			probeFilename = utils::transformDataPath(probeFilename, transformProbe);
 			// We have our probe and gallery FIR paths, go match them:
@@ -216,23 +216,41 @@ int main(int argc, char *argv[])
 
 				// Compare the probe against the gallery and get a score for each gallery entry:
 				FRsdk::CountedPtr<FRsdk::Scores> scores = me.compare(fir, population);
-
-				for (size_t element = 0; element < scores->size(); ++element) {
-					//float score = scores[element];
-					gallery[element];
-
-
-				}
-
-				// print the results
-				unsigned int n = 0;
-				for (FRsdk::Scores::const_iterator siter = scores->begin();
-					siter != scores->end(); siter++) {
-					cout << "[ #" << n++ << " ] \t:" << float(*siter) << endl;
+				int idx = 0;
+				for (FRsdk::Scores::const_iterator siter = scores->begin(); siter != scores->end(); siter++) {
+					auto score = static_cast<float>(*siter);
+					ret = query.prepare("INSERT INTO scores (probe, gallery, score, probeFailedToEnroll, algorithm) VALUES (:probe, :gallery, :score, :probeFailedToEnroll, :algorithm)");
+					if (!ret) {
+						cout << query.lastError().text().toStdString() << endl;
+					}
+					query.bindValue(":probe", QVariant(QString::fromStdString(p.identifier)));
+					query.bindValue(":gallery", QVariant(QString::fromStdString(gallery[idx].identifier)));
+					query.bindValue(":score", score);
+					query.bindValue(":probeFailedToEnroll", 0);
+					query.bindValue(":algorithm", QVariant(QString::fromStdString(algorithmName)));
+					ret = query.exec();
+					if (!ret) {
+						cout << query.lastError().text().toStdString() << endl;
+					}
+					++idx;
 				}
 			}
-			else { // We were not able to enroll the probe.
-
+			else { // We were not able to enroll the probe
+				for (auto&& g : gallery) {
+					ret = query.prepare("INSERT INTO scores (probe, gallery, score, probeFailedToEnroll, algorithm) VALUES (:probe, :gallery, :score, :probeFailedToEnroll, :algorithm)");
+					if (!ret) {
+						cout << query.lastError().text().toStdString() << endl;
+					}
+					query.bindValue(":probe", QVariant(QString::fromStdString(p.identifier)));
+					query.bindValue(":gallery", QVariant(QString::fromStdString(g.identifier)));
+					query.bindValue(":score", 0.0f);
+					query.bindValue(":probeFailedToEnroll", 1);
+					query.bindValue(":algorithm", QVariant(QString::fromStdString(algorithmName)));
+					ret = query.exec();
+					if (!ret) {
+						cout << query.lastError().text().toStdString() << endl;
+					}
+				}
 			}
 
 		}
