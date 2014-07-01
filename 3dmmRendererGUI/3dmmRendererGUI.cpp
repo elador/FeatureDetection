@@ -18,7 +18,7 @@
 #include "render/SoftwareRenderer.hpp"
 #include "render/Camera.hpp"
 
-#include "shapemodels/MorphableModel.hpp"
+#include "morphablemodel/MorphableModel.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -43,7 +43,7 @@
 namespace po = boost::program_options;
 using logging::Logger;
 using logging::LoggerFactory;
-using logging::loglevel;
+using logging::LogLevel;
 using namespace std;
 using namespace cv;
 using namespace render;
@@ -62,7 +62,7 @@ static string controlWindowName = "Controls";
 static std::array<float, 55> pcVals;
 static std::array<int, 55> pcValsInt;
 
-static shapemodels::MorphableModel mm;
+static morphablemodel::MorphableModel mm;
 static shared_ptr<Mesh> meshToDraw;
 
 static string windowName = "RenderOutput";
@@ -152,22 +152,15 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	
-	Loggers->getLogger("shapemodels").addAppender(std::make_shared<logging::ConsoleAppender>(loglevel::TRACE));
-	Logger appLogger = Loggers->getLogger("shapemodels");
-	appLogger.addAppender(std::make_shared<logging::ConsoleAppender>(loglevel::TRACE));
+	Loggers->getLogger("morphablemodel").addAppender(std::make_shared<logging::ConsoleAppender>(LogLevel::Trace));
+	Logger appLogger = Loggers->getLogger("3dmmRendererGUI");
+	appLogger.addAppender(std::make_shared<logging::ConsoleAppender>(LogLevel::Trace));
 
-	//render::MorphableModel mmHeadL4 = render::utils::MeshUtils::readFromScm("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm");
 	render::Mesh cube = render::utils::MeshUtils::createCube();
 	render::Mesh pyramid = render::utils::MeshUtils::createPyramid();
 	render::Mesh plane = render::utils::MeshUtils::createPlane();
 	shared_ptr<render::Mesh> tri = render::utils::MeshUtils::createTriangle();
 	
-	//mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Cloud\\PhD\\MorphModel\\ShpVtxModelBin.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
-	//mm = shapemodels::MorphableModel::loadScmModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\SurreyLowResGuosheng\\NON3448\\ShpVtxModelBin_NON3448.scm", "C:\\Users\\Patrik\\Documents\\GitHub\\featurePoints_SurreyScm.txt");
-	//mm = shapemodels::MorphableModel::loadOldBaselH5Model("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\model2012p.h5", "featurePoints_head_newfmt.txt");
-	//mm = shapemodels::MorphableModel::loadStatismoModel("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\2012.2\\head\\model2012_l7_head.h5");
-	//mm = shapemodels::MorphableModel::load("C:\\Users\\Patrik\\Documents\\GitHub\\bsl_model_first\\bfm_statismo\\bfm2009_face05.h5");
-
 	ptree pt;
 	try {
 		boost::property_tree::info_parser::read_info(configFilename.string(), pt);
@@ -177,9 +170,9 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	shapemodels::MorphableModel mm;
+	morphablemodel::MorphableModel mm;
 	try {
-		mm = shapemodels::MorphableModel::load(pt.get_child("morphableModel"));
+		mm = morphablemodel::MorphableModel::load(pt.get_child("morphableModel"));
 	}
 	catch (const boost::property_tree::ptree_error& error) {
 		appLogger.error(error.what());
@@ -200,10 +193,6 @@ int main(int argc, char *argv[])
 	Camera camera(Vec3f(0.0f, 0.0f, 0.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 
 	SoftwareRenderer r(screenWidth, screenHeight, camera);
-	r.perspectiveDivision = render::SoftwareRenderer::PerspectiveDivision::W;
-	r.doClippingInNDC = true;
-	r.directToScreenTransform = false;
-	r.doWindowTransform = true;
 
 	namedWindow(windowName, WINDOW_AUTOSIZE);
 	setMouseCallback(windowName, winOnMouse);
