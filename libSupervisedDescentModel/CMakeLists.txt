@@ -30,12 +30,15 @@ set(HEADERS
 	include/superviseddescentmodel/LandmarkBasedSupervisedDescentTraining.hpp
 	include/superviseddescentmodel/DescriptorExtractor.hpp
 	include/superviseddescentmodel/hog.h
+	include/superviseddescentmodel/OpenCVSiftFilter.hpp
+	include/superviseddescentmodel/VlHogFilter.hpp
 )
 set(SOURCE
 	src/superviseddescentmodel/SdmLandmarkModel.cpp
 	src/superviseddescentmodel/LandmarkBasedSupervisedDescentTraining.cpp
-	src/superviseddescentmodel/DescriptorExtractor.cpp
 	src/superviseddescentmodel/hog.c
+	src/superviseddescentmodel/OpenCVSiftFilter.cpp
+	src/superviseddescentmodel/VlHogFilter.cpp
 )
 
 include_directories("include")
@@ -46,7 +49,8 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${Logging_SOURCE_DIR}/include)
 include_directories(${ImageIO_SOURCE_DIR}/include)
+include_directories(${ImageProcessing_SOURCE_DIR}/include)
 
 # make library
 add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
-target_link_libraries(${SUBPROJECT_NAME} ImageIO Logging ${OpenCV_LIBS} ${Boost_LIBRARIES})
+target_link_libraries(${SUBPROJECT_NAME} ImageProcessing ImageIO Logging ${OpenCV_LIBS} ${Boost_LIBRARIES})
