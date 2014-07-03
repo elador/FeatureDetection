@@ -88,6 +88,6 @@ add_subdirectory(frDbExp)		# App for doing experiments with the face recognition
 #add_subdirectory(sdmTracking)			# Experimental app that does tracking using an SDM model.
 #add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
 #add_subdirectory(softwareRendererTestApp) # Contains a QOpenGL and SW-renderer and was used to compare both, including shape-fitting.
-add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
+#add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
 #add_subdirectory(ffpDetectAppExp)		# Old experimental playground for FFD with the 3DMM/POSIT. It's deprecated (uses old code from libShapeModels). Used to generate the results for the FDDB benchmark.
 #add_subdirectory(patchConverter)	# Converts patches (in .txt format) to other feature spaces (e.g. gray to WHI)

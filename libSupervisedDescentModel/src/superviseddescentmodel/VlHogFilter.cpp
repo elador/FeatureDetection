@@ -1,98 +1,19 @@
 /*
- * DescriptorExtractor.hpp
+ * VlHogFilter.cpp
  *
- *  Created on: 21.03.2014
+ *  Created on: 03.07.2014
  *      Author: Patrik Huber
  */
-#pragma once
 
-#ifndef DESCRIPTOREXTRACTOR_HPP_
-#define DESCRIPTOREXTRACTOR_HPP_
-
-#include "opencv2/core/core.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/nonfree/nonfree.hpp"
-
-#ifdef WIN32
-	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
-	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
-#endif
-#include "boost/lexical_cast.hpp"
-
-#include <string>
-#include <iostream>
-
-extern "C" {
-	#include "superviseddescentmodel/hog.h"
-}
+#include "superviseddescentmodel/VlHogFilter.hpp"
 
 using cv::Mat;
-using std::vector;
 
 namespace superviseddescentmodel {
 
-/**
- * Base-class for extracting descriptors at given points
- * in an image.
- * Todo: Check how this integrates with our FeatureExtractors
- * in libImageProcessing.
- */
-class DescriptorExtractor
+cv::Mat VlHogFilter::applyTo(const cv::Mat& image, cv::Mat& filtered) const
 {
-public:
-	virtual ~DescriptorExtractor() {}
-
-	// returns a Matrix, as many rows as points, 1 descriptor = 1 row
-	virtual cv::Mat getDescriptors(const cv::Mat image, std::vector<cv::Point2f> locations) = 0;
-
-	// returns a string with its parameters (to be written to a model-file)
-	virtual std::string getParameterString() const = 0;
-};
-
-class SiftDescriptorExtractor : public DescriptorExtractor
-{
-public:
-	// c'tor with param diameter & orientation? (0.0f = right?)
-	// and store them as private vars.
-	// However, it might be better to store the parameters separately, to be able to share a FeatureDescriptorExtractor over multiple Sdm cascade levels
-
-	cv::Mat getDescriptors(const cv::Mat image, std::vector<cv::Point2f> locations) {
-		Mat grayImage;
-		if (image.channels() == 3) {
-			cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
-		} else {
-			grayImage = image;
-		}
-		cv::SIFT sift; // init only once, could reuse
-		vector<cv::KeyPoint> keypoints;
-		for (const auto& loc : locations) {
-			keypoints.emplace_back(cv::KeyPoint(loc, 32.0f, 0.0f)); // Angle is set to 0. If it's -1, SIFT will be calculated for 361degrees. But Paper (email) says upwards.
-		}
-		Mat siftDescriptors;
-		sift(grayImage, Mat(), keypoints, siftDescriptors, true); // TODO: What happens if the keypoint (or part of its patch) is outside the image?
-		//cv::drawKeypoints(img, keypoints, img, Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-		return siftDescriptors;
-	};
-
-	std::string getParameterString() const {
-		return std::string();
-	};
-};
-
-class VlHogDescriptorExtractor : public DescriptorExtractor
-{
-public:
-	// Store the params as private vars? However, it might be better to store the parameters separately, to be able to share a FeatureDescriptorExtractor over multiple Sdm cascade levels
-
-	enum class VlHogType {
-		DalalTriggs,
-		Uoctti
-	};
-
-	VlHogDescriptorExtractor(VlHogType vlhogType, int numCells, int cellSize, int numBins) : hogType(vlhogType), numCells(numCells), cellSize(cellSize), numBins(numBins) {
-
-	};
-
+	/*
 	cv::Mat getDescriptors(const cv::Mat image, std::vector<cv::Point2f> locations) {
 		Mat grayImage;
 		if (image.channels() == 3) {
@@ -113,9 +34,9 @@ public:
 		default:
 			break;
 		}
-		
-		int patchWidthHalf = numCells * (cellSize/2); // patchWidthHalf: Zhenhua's 'numNeighbours'. cellSize: has nothing to do with HOG. It's rather the number of HOG cells we want.
-		
+
+		int patchWidthHalf = numCells * (cellSize / 2); // patchWidthHalf: Zhenhua's 'numNeighbours'. cellSize: has nothing to do with HOG. It's rather the number of HOG cells we want.
+
 		//int hogDim1 = (numNeighbours * 2) / hogCellSize; // i.e. how many times does the hogCellSize fit into our patch
 		//int hogDim2 = hogDim1; // as our patch is quadratic, those two are the same
 		//int hogDim3 = 16; // VlHogVariantUoctti: Creates 4+3*numOrientations dimensions. DT: 4*numOri dimensions.
@@ -127,9 +48,9 @@ public:
 			// get the (x, y) location and w/h of the current patch
 			int x = cvRound(locations[i].x);
 			int y = cvRound(locations[i].y);
-			
+
 			Mat roiImg;
-			if (x - patchWidthHalf < 0 || y - patchWidthHalf < 0 || x + patchWidthHalf >= image.cols || y + patchWidthHalf >= image.rows) {	
+			if (x - patchWidthHalf < 0 || y - patchWidthHalf < 0 || x + patchWidthHalf >= image.cols || y + patchWidthHalf >= image.rows) {
 				// The feature extraction location is too far near a border. We extend the image (add a black canvas)
 				// and then extract from this larger image.
 				int borderLeft = (x - patchWidthHalf) < 0 ? std::abs(x - patchWidthHalf) : 0; // Our x and y are center.
@@ -183,18 +104,9 @@ public:
 		// hogDescriptors needs to have dimensions numLandmarks x hogFeaturesDimension, where hogFeaturesDimension is e.g. 3*3*16=144
 		return hogDescriptors;
 	};
-
-	std::string getParameterString() const {
-		return std::string("numCells " + boost::lexical_cast<std::string>(numCells)+" cellSize " + boost::lexical_cast<std::string>(cellSize)+" numBins " + boost::lexical_cast<std::string>(numBins));
-	};
-
-private:
-	VlHogType hogType;
-	int numCells;
-	int cellSize;
-	int numBins;
-};
-
+	*/
+	filtered = Mat();
+	return filtered;
+}
 
 } /* namespace superviseddescentmodel */
-#endif /* DESCRIPTOREXTRACTOR_HPP_ */

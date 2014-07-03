@@ -164,33 +164,22 @@ shared_ptr<FeatureExtractor> createExtractor(ptree& config, float sizeScale, vec
 }
 
 shared_ptr<FeatureExtractor> createGrayscaleExtractor(ptree& config, float sizeScale) {
-	return createExtractor(config.get_child("base"), sizeScale, vector<shared_ptr<ImageFilter>>()); // VS2013: Change back to {}
+	return createExtractor(config.get_child("base"), sizeScale, vector<shared_ptr<ImageFilter>>()); // {} crashes the VS2013 compiler
 }
 
 shared_ptr<FeatureExtractor> createHistEqExtractor(ptree& config, float sizeScale) {
-	// VS2012 fix:
-	vector<shared_ptr<ImageFilter>> filters;
-	filters.emplace_back(make_shared<HistogramEqualizationFilter>());
-	return createExtractor(config.get_child("base"), sizeScale, filters);
-/*	return createExtractor(config.get_child("base"), sizeScale, {
+	return createExtractor(config.get_child("base"), sizeScale, {
 			make_shared<HistogramEqualizationFilter>()
-	}); */
+	});
 }
 
 shared_ptr<FeatureExtractor> createWhiExtractor(ptree& config, float sizeScale) {
-	// VS2012 fix:
-	vector<shared_ptr<ImageFilter>> filters;
-	filters.emplace_back(make_shared<WhiteningFilter>());
-	filters.emplace_back(make_shared<HistogramEqualizationFilter>());
-	filters.emplace_back(make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0));
-	filters.emplace_back(make_shared<UnitNormFilter>(cv::NORM_L2));
-	return createExtractor(config.get_child("base"), sizeScale, filters);
-/*	return createExtractor(config.get_child("base"), sizeScale, {
+	return createExtractor(config.get_child("base"), sizeScale, {
 			make_shared<WhiteningFilter>(),
 			make_shared<HistogramEqualizationFilter>(),
 			make_shared<ConversionFilter>(CV_32F, 1.0 / 127.5, -1.0),
 			make_shared<UnitNormFilter>(cv::NORM_L2)
-	});*/
+	});
 }
 
 shared_ptr<FeatureExtractor> createLbpExtractor(ptree& config, float sizeScale) {
