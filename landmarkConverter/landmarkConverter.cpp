@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 	else if (boost::iequals(verboseLevelConsole, "DEBUG")) logLevel = LogLevel::Debug;
 	else if (boost::iequals(verboseLevelConsole, "TRACE")) logLevel = LogLevel::Trace;
 	else {
-		cout << "Error: Invalid loglevel." << endl;
+		cout << "Error: Invalid log level." << endl;
 		return EXIT_SUCCESS;
 	}
 	

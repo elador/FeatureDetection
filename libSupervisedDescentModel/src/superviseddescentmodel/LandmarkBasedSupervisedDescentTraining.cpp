@@ -399,6 +399,7 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 
 		// 5. Add one row to the features (already done), add regLambda
 		start = std::chrono::system_clock::now();
+		Mat result = linearRegression(featureMatrix, deltaShape, RegularizationType::Automatic);
 		Mat AtA = featureMatrix.t() * featureMatrix;
 		float lambda;
 		if (regularisation.regulariseWithEigenvalueThreshold) {
@@ -561,6 +562,11 @@ float LandmarkBasedSupervisedDescentTraining::calculateScaleVariance(cv::Mat gro
 	//cv::rectangle(img, cv::Rect(minWidth, minHeight, maxWidth - minWidth, maxHeight - minHeight), Scalar(255.0f, 0.0f, 0.0f));
 
 	return (gtMax - gtMin) / (x0Max - x0Min);
+}
+
+cv::Mat linearRegression(cv::Mat A, cv::Mat b, RegularizationType regularizationType /*= RegularizationType::Automatic*/, float lambda /*= 0.5f*/, bool regularizeAffineComponent /*= false*/)
+{
+	return cv::Mat();
 }
 
 }

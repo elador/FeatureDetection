@@ -65,6 +65,7 @@ add_subdirectory(VideoPlayerApp)		# App for playing videos, showing landmarks an
 add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
 add_subdirectory(sdmLandmarkDetection)	# Run the SDM landmark detection on one or several images.
 add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
+add_subdirectory(sdm-tools)				# Various tool apps for training and running the SDM landmark detection
 
 # 3DMM fitting:
 add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
