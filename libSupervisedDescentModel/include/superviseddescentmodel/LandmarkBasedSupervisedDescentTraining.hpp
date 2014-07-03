@@ -151,5 +151,28 @@ private:
 
 };
 
-} /* namespace shapemodels */
+/**
+ * Todo: Description.
+ */
+enum class RegularizationType
+{
+	Manual, ///< use lambda
+	Automatic, ///< use norm... optional lambda used as factor
+	EigenvalueThreshold ///< see description libEigen
+};
+
+/**
+ * Todo.
+ *
+ * @param[in] A The todo.
+ * @param[in] b The todo.
+ * @param[in] regularizationType Todo.
+ * @param[in] lambda For RegularizationType::Automatic: An optional factor to multiply the automatically calculated value with.
+ *                   For RegularizationType::Manual: The absolute value of the regularization term.
+ * @param[in] regularizeAffineComponent Flag that indicates whether to regularize the affine component as well (the last column(?) of AtA (?)). Default: true
+ * @return x.
+ */
+cv::Mat linearRegression(cv::Mat A, cv::Mat b, RegularizationType regularizationType = RegularizationType::Automatic, float lambda = 0.5f, bool regularizeAffineComponent = true);
+
+} /* namespace superviseddescentmodel */
 #endif /* LANDMARKBASEDSUPERVISEDDESCENTTRAINING_HPP_ */
