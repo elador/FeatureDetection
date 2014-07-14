@@ -8,6 +8,7 @@
 #include "imageio/LandmarkCollection.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using std::string;
 using std::vector;
 using std::make_pair;
@@ -63,6 +64,25 @@ const shared_ptr<Landmark> LandmarkCollection::getLandmark() const
 const vector<shared_ptr<Landmark>>& LandmarkCollection::getLandmarks() const
 {
 	return landmarks;
+}
+
+cv::Rect getBoundingBox(LandmarkCollection landmarks)
+{
+	// Split the x and y coordinates
+	Mat xCoordinates(1, landmarks.getLandmarks().size(), CV_32FC1);
+	Mat yCoordinates(1, landmarks.getLandmarks().size(), CV_32FC1);
+	int idx = 0;
+	for (const auto& l : landmarks.getLandmarks()) {
+		xCoordinates.at<float>(idx) = l->getX();
+		yCoordinates.at<float>(idx) = l->getY();
+		++idx;
+	}
+	// Find the bounding box
+	double minWidth, maxWidth, minHeight, maxHeight;
+	cv::minMaxIdx(xCoordinates, &minWidth, &maxWidth);
+	cv::minMaxIdx(yCoordinates, &minHeight, &maxHeight);
+	// Return the bounding box around the points
+	return cv::Rect(minWidth, minHeight, maxWidth - minWidth, maxHeight - minHeight);
 }
 
 } /* namespace imageio */

@@ -71,26 +71,6 @@ using logging::Logger;
 using logging::LoggerFactory;
 using logging::LogLevel;
 
-cv::Rect faceboxFromLandmarks(LandmarkCollection landmarks)
-{
-	// Split the x and y coordinates
-	Mat xCoordinates(1, landmarks.getLandmarks().size(), CV_32FC1);
-	Mat yCoordinates(1, landmarks.getLandmarks().size(), CV_32FC1);
-	int idx = 0;
-	for (const auto& l : landmarks.getLandmarks()) {
-		xCoordinates.at<float>(idx) = l->getX();
-		yCoordinates.at<float>(idx) = l->getY();
-		++idx;
-	}
-	// Find the bounding box
-	double minWidth, maxWidth, minHeight, maxHeight;
-	cv::minMaxIdx(xCoordinates, &minWidth, &maxWidth);
-	cv::minMaxIdx(yCoordinates, &minHeight, &maxHeight);
-	//cv::Point2f groundtruthCenter(cv::mean(xCoordinates)[0], cv::mean(yCoordinates)[0]); // we could subtract some offset here from 'y' (w.r.t. the IED) because the center of mass of the landmarks is below the face-box center of V&J. But this is only necessary if we compare this Rect to a V&J facebox.
-	// Actually, we just return the bounding box around the points
-	return cv::Rect(minWidth, minHeight, maxWidth - minWidth, maxHeight - minHeight);
-}
-
 template<class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 {
@@ -273,9 +253,8 @@ int main(int argc, char *argv[])
 		// Ideally, we'd use the detected V&J face box here and skip any face with w or h < 20.
 		// If the actual detection and evaluation were in one program, this would also allow us to select the correct box for landmark detection, if V&J finds several. We would then select the one where the box-centers are closest.
 		// But as we don't have it (without further modifications), we use the face box approximated from the landmarks.
-
-		cv::Rect groundtruthFacebox = faceboxFromLandmarks(groundtruth);
-		cv::Rect detectedFacebox = faceboxFromLandmarks(detected);
+		cv::Rect groundtruthFacebox = getBoundingBox(groundtruth);
+		cv::Rect detectedFacebox = getBoundingBox(detected);
 		cv::Vec2f groundtruthCenter(groundtruthFacebox.x + groundtruthFacebox.width / 2.0f, groundtruthFacebox.y + groundtruthFacebox.height / 2.0f);
 		cv::Vec2f detectedCenter(detectedFacebox.x + detectedFacebox.width / 2.0f, detectedFacebox.y + detectedFacebox.height / 2.0f);
 

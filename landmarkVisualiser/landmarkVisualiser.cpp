@@ -58,6 +58,7 @@
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/IbugLandmarkFormatParser.hpp"
 #include "imageio/MuctLandmarkFormatParser.hpp"
+#include "imageio/DidLandmarkFormatParser.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -239,7 +240,12 @@ int main(int argc, char *argv[])
         } else if (boost::iequals(landmarkType, "muct76-opencv")) {
             landmarkFormatParser = make_shared<MuctLandmarkFormatParser>();
             landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(shared_ptr<ImageSource>(), string(), GatherMethod::SEPARATE_FILES, groundtruthDirs), landmarkFormatParser);
-        } else {
+		}
+		else if (boost::iequals(landmarkType, "did")) {
+			landmarkFormatParser = make_shared<DidLandmarkFormatParser>();
+			landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, groundtruthDirs), landmarkFormatParser);
+		}
+		else {
 			cout << "Error: Invalid ground truth type." << endl;
 			return EXIT_FAILURE;
 		}
@@ -266,6 +272,7 @@ int main(int argc, char *argv[])
 
 		for (const auto& lm : lmsv) {
 			lm->draw(img);
+			//cv::circle(img, cv::Point(cvRound(lm->getX()), cvRound(lm->getY())), 3, cv::Scalar(0, 0, 255), 2);
 			//cv::rectangle(landmarksImage, cv::Point(cvRound(lm->getX() - 2.0f), cvRound(lm->getY() - 2.0f)), cv::Point(cvRound(lm->getX() + 2.0f), cvRound(lm->getY() + 2.0f)), cv::Scalar(255, 0, 0));
 		}
 
