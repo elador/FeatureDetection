@@ -37,8 +37,6 @@ public:
 	 */
 	explicit RectLandmarkSink(const boost::filesystem::path& outputPath);
 
-	~RectLandmarkSink();
-
 	/**
 	 * Creates a file and writes the landmarks to it.
 	 *
@@ -49,7 +47,7 @@ public:
 
 private:
 
-	const boost::filesystem::path outputPath; ///< The folder to which the landmark files should be saved.
+	const boost::filesystem::path outputDirectory; ///< The folder to which the landmark files should be saved.
 
 };
 

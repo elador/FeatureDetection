@@ -90,5 +90,14 @@ private:
 	std::map<std::string, size_t> landmarksMap;	      ///< A map from the landmarks names to the indices in the vector.
 };
 
+/**
+ * Calculate the rectangular bounding box of the landmarks in the given
+ * collection.
+ *
+ * @param[in] landmarks A collection of landmarks.
+ * @return The bounding box encompassing the landmarks.
+ */
+cv::Rect getBoundingBox(LandmarkCollection landmarks);
+
 } /* namespace imageio */
 #endif /* LANDMARKCOLLECTION_HPP_ */

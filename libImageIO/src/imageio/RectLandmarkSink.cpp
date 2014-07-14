@@ -21,18 +21,15 @@ using std::shared_ptr;
 
 namespace imageio {
 
-RectLandmarkSink::RectLandmarkSink(const boost::filesystem::path& outputPath) :
-		outputPath(outputPath) {
+RectLandmarkSink::RectLandmarkSink(const boost::filesystem::path& outputDirectory) : outputDirectory(outputDirectory)
+{
 }
 
-
-RectLandmarkSink::~RectLandmarkSink() {}
-
-
-void RectLandmarkSink::write(const LandmarkCollection& collection, const path imageFilename) {
-	ofstream output(outputPath.string() + imageFilename.stem().string() + ".txt", std::ios_base::out);
+void RectLandmarkSink::write(const LandmarkCollection& collection, const path imageFilename)
+{
+	ofstream output((outputDirectory / imageFilename.stem()).string() + ".txt", std::ios_base::out);
 	if (!output.is_open()) {
-		throw std::runtime_error("DefaultOrderedLandmarkSink TODO: Couldn't open the landmark-file for writing: " + outputPath.string() + imageFilename.stem().string() + ".txt");
+		throw std::runtime_error("DefaultOrderedLandmarkSink TODO: Couldn't open the landmark-file for writing: " + outputDirectory.string() + imageFilename.stem().string() + ".txt");
 	}
 	output.precision(4);
 
