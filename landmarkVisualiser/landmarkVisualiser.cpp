@@ -59,6 +59,7 @@
 #include "imageio/IbugLandmarkFormatParser.hpp"
 #include "imageio/MuctLandmarkFormatParser.hpp"
 #include "imageio/DidLandmarkFormatParser.hpp"
+#include "imageio/SimpleRectLandmarkFormatParser.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -117,7 +118,7 @@ int main(int argc, char *argv[])
 			("landmarks,l", po::value<path>(&landmarksDir), 
 				"load landmark files from the given folder")
 			("landmark-type,t", po::value<string>(&landmarkType), 
-				"specify the type of landmarks to load: ibug")
+				"specify the type of landmarks to load: ibug, did, muct76-opencv, rect")
 			("forward-delay,d", po::value<int>(&forwardDelay)->default_value(0)->implicit_value(1000),
 				"Automatically show the next image after the given time in ms. If the option is omitted or zero, the application will wait for a keypress before showing the next image.")
 		;
@@ -127,13 +128,13 @@ int main(int argc, char *argv[])
 
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
-		po::notify(vm);
-
 		if (vm.count("help")) {
 			cout << "Usage: landmarkVisualiser [options]\n";
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
+		po::notify(vm);
+
 		if (vm.count("landmarks")) {
 			useLandmarkFiles = true;
 			if (!vm.count("landmark-type")) {
@@ -142,9 +143,11 @@ int main(int argc, char *argv[])
 			}
 		}
 
-	} catch(std::exception& e) {
-		cout << e.what() << endl;
-		return EXIT_FAILURE;
+	}
+	catch (po::error& e) {
+		cout << "Error while parsing command-line arguments: " << e.what() << endl;
+		cout << "Use --help to display a list of options." << endl;
+		return EXIT_SUCCESS;
 	}
 
 	LogLevel logLevel;
@@ -245,6 +248,10 @@ int main(int argc, char *argv[])
 			landmarkFormatParser = make_shared<DidLandmarkFormatParser>();
 			landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".did", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, groundtruthDirs), landmarkFormatParser);
 		}
+		else if (boost::iequals(landmarkType, "rect")) {
+			landmarkFormatParser = make_shared<SimpleRectLandmarkFormatParser>();
+			landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".txt", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, groundtruthDirs), landmarkFormatParser);
+		}
 		else {
 			cout << "Error: Invalid ground truth type." << endl;
 			return EXIT_FAILURE;
@@ -281,7 +288,7 @@ int main(int argc, char *argv[])
 		
 		end = std::chrono::system_clock::now();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-		appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.\n");
+		appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds) + "ms.");
 
 	}
 
