@@ -124,7 +124,7 @@ public:
 
 	bool isClose(const Landmark& landmark, const float similarity) const;
 
-	void draw(cv::Mat& image, const cv::Scalar& color = cv::Scalar(0, 0, 0), float width = 1) const;
+	void draw(cv::Mat& image, const cv::Scalar& color = cv::Scalar(0.0, 0.0, 255.0), float width = 1.0f) const;
 
 private:
 

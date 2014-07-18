@@ -155,7 +155,7 @@ public:
 	 *
 	 * @param[in] image The image into which this landmark is drawn.
 	 */
-	virtual void draw(cv::Mat& image, const cv::Scalar& color = cv::Scalar(0, 0, 0), float width = 1) const = 0;
+	virtual void draw(cv::Mat& image, const cv::Scalar& color = cv::Scalar(0.0, 0.0, 255.0), float width = 1.0f) const = 0;
 
 private:
 

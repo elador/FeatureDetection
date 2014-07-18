@@ -102,6 +102,7 @@ int main(int argc, char *argv[])
 	vector<path> inputPaths;
 	path groundtruthPath, faceDetectorFilename, outputDirectory;
 	string groundtruthType;
+	bool doOutputImages;
 
 	bool useFileList = false;
 	bool useImgs = false;
@@ -124,6 +125,8 @@ int main(int argc, char *argv[])
 				"Path to an XML CascadeClassifier from OpenCV.")
 			("output,o", po::value<path>(&outputDirectory)->default_value("."),
 				"output folder to write the detected face boxes to")
+			("output-images,p", po::value<bool>(&doOutputImages)->default_value(false),
+				"0 or 1, write the detected face and the ground-truth landmarks alongside the face box output")
 		;
 
 		po::variables_map vm;
@@ -291,14 +294,19 @@ int main(int argc, char *argv[])
 
 		cv::Scalar distance = cv::norm(groundtruthCenter, detectedCenter, cv::NORM_L2);
 
+		// Write out the output image for every input image, also the ones we reject. Except of no face is found.
+		if (doOutputImages) {
+			cv::imwrite((outputDirectory / imageSource->getName().filename()).string(), landmarksImage);
+		}
+
 		if (detectedFacebox.width < 25 || detectedFacebox.height < 25) { // Todo: Those params could go into the config.
 			continue;
 		}
 
-		if (distance[0] > (groundtruthFacebox.width + groundtruthFacebox.height) / 2.0f || detectedFacebox.width * 1.5f < groundtruthFacebox.width) {
-			// the chosen facebox is smaller than the max-width of the ground-truth landmarks (slightly adjusted because the V&J fb seems rather small)
+		if (distance[0] > (groundtruthFacebox.width + groundtruthFacebox.height) / 4.0f || detectedFacebox.width * 1.5f < groundtruthFacebox.width) {
+			// the center of the chosen facebox is further away than half the avg(width+height) of the gt (i.e. the detected center-point is outside the bbox enclosing the gt-lms)
 			// or
-			// the center of the chosen facebox is further away than the avg(width+height) of the gt (i.e. the point is outside the bbox enclosing the gt-lms)
+			// the chosen facebox is smaller than the max-width of the ground-truth landmarks (slightly adjusted because the V&J fb seems rather small (really?))
 			// ==> skip the image
 			continue;
 		}
