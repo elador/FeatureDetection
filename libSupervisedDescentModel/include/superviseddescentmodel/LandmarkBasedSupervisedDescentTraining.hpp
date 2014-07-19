@@ -174,5 +174,13 @@ enum class RegularizationType
  */
 cv::Mat linearRegression(cv::Mat A, cv::Mat b, RegularizationType regularizationType = RegularizationType::Automatic, float lambda = 0.5f, bool regularizeAffineComponent = true);
 
+/**
+* Todo.
+*
+* @param[in] matrix The todo.
+* @return todo.
+*/
+float calculateEigenvalueThreshold(cv::Mat matrix);
+
 } /* namespace superviseddescentmodel */
 #endif /* LANDMARKBASEDSUPERVISEDDESCENTTRAINING_HPP_ */
