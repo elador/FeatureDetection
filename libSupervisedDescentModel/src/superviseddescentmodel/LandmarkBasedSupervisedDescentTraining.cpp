@@ -391,106 +391,20 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 			}
 			++currentImage;
 		}
+		// 5. Add one row to the features
 		Mat biasColumn = Mat::ones(initialShape.rows, 1, CV_32FC1);
 		cv::hconcat(featureMatrix, biasColumn, featureMatrix); // Other options: 1) Generate one bigger Mat and use copyTo (memory would be continuous then) or 2) implement a FeatureDescriptorExtractor::getDimension()
 		end = std::chrono::system_clock::now();
 		elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 		logger.debug("Total time for extracting the feature descriptors: " + lexical_cast<string>(elapsed_mseconds)+"ms.");
 
-		// 5. Add one row to the features (already done), add regLambda
+		// Perform the linear regression, with the specified regularization
 		start = std::chrono::system_clock::now();
-		Mat result = linearRegression(featureMatrix, deltaShape, RegularizationType::Automatic);
-		Mat AtA = featureMatrix.t() * featureMatrix;
-		float lambda;
-		if (regularisation.regulariseWithEigenvalueThreshold) {
-			std::chrono::time_point<std::chrono::system_clock> eigenTimeStart = std::chrono::system_clock::now();
-			if (!AtA.isContinuous()) {
-				std::string msg("Matrix is not continuous. This should not happen as we allocate it directly.");
-				logger.error(msg);
-				throw std::runtime_error(msg);
-			}
-			// Calculate the eigenvalues of AtA. This is only for output purposes and not needed. Would make sense to remove this as it might be time-consuming.
-			Eigen::Map<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> AtA_Eigen(AtA.ptr<float>(), AtA.rows, AtA.cols);
-			Eigen::SelfAdjointEigenSolver<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> es(AtA_Eigen);
-			logger.trace("Smallest eigenvalue of AtA: " + lexical_cast<string>(es.eigenvalues()[0]));
-
-			Eigen::FullPivLU<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> luOfAtA(AtA_Eigen);
-			logger.trace("Rank of AtA: " + lexical_cast<string>(luOfAtA.rank()));
-			if (luOfAtA.isInvertible()) {
-				logger.trace("AtA is invertible.");
-			}
-			else {
-				logger.trace("AtA is not invertible.");
-			}
-			// Automatically set lambda: 
-			// $ abs(luOfAtA.maxPivot()) * luOfAtA.threshold() $ is the threshold that Eigen uses to calculate the rank of the matrix. 
-			// I.e.: Every eigenvalue above abs(lu.maxPivot()) * lu.threshold() is considered non-zero (i.e. to contribute to the rank of the matrix). See their documentation for more details.
-			// We multiply it by 2 to make sure the matrix is invertible afterwards. (But: See Todo(1) below for a potential bug.)
-			lambda = 2 * abs(luOfAtA.maxPivot()) * luOfAtA.threshold();
-
-			std::chrono::time_point<std::chrono::system_clock> eigenTimeEnd = std::chrono::system_clock::now();
-			elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(eigenTimeEnd - eigenTimeStart).count();
-			logger.debug("Automatic calculation of lambda for AtA took " + lexical_cast<string>(elapsed_mseconds)+"ms.");
-		}
-		else
-		{
-			lambda = regularisation.factor * cv::norm(AtA) / (numImages*(numSamplesPerImage + 1)); // We divide by the number of images.
-			// However, division by (AtA.rows * AtA.cols) might make more sense? Because this would be an approximation for the
-			// RMS (eigenvalue? see sheet of paper, ev's of diag-matrix etc.), and thus our (conservative?) guess for a lambda that makes AtA invertible.
-		}
-		logger.debug("Setting lambda to: " + lexical_cast<string>(lambda));
-
-		Mat regulariser = Mat::eye(AtA.rows, AtA.rows, CV_32FC1) * lambda;
-		if (!regularisation.regulariseAffineComponent) {
-			regulariser.at<float>(regulariser.rows - 1, regulariser.cols - 1) = 0.0f; // no lambda for the bias
-		}
-		// solve for x!
-		Mat AtAReg = AtA + regulariser;
-		if (!AtAReg.isContinuous()) {
-			std::string msg("Matrix is not continuous. This should not happen as we allocate it directly.");
-			logger.error(msg);
-			throw std::runtime_error(msg);
-		}
-		Eigen::Map<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> AtAReg_Eigen(AtAReg.ptr<float>(), AtAReg.rows, AtAReg.cols);
-		std::chrono::time_point<std::chrono::system_clock> inverseTimeStart = std::chrono::system_clock::now();
-		// Calculate the full-pivoting LU decomposition of the regularized AtA. Note: We could also try FullPivHouseholderQR if our system is non-minimal (i.e. there are more constraints than unknowns).
-		Eigen::FullPivLU<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> luOfAtAReg(AtAReg_Eigen);
-		// we could also print the smallest eigenvalue here, but that would take time to calculate (SelfAdjointEigenSolver, see above)
-		float rankOfAtAReg = luOfAtAReg.rank();
-		logger.trace("Rank of the regularized AtA: " + lexical_cast<string>(rankOfAtAReg));
-		if (luOfAtAReg.isInvertible()) {
-			logger.debug("The regularized AtA is invertible.");
-		}
-		else {
-			// Eigen will most likely return garbage here (according to their docu anyway). We have a few options:
-			// - Increase lambda
-			// - Calculate the pseudo-inverse. See: http://eigen.tuxfamily.org/index.php?title=FAQ#Is_there_a_method_to_compute_the_.28Moore-Penrose.29_pseudo_inverse_.3F
-			string msg("The regularized AtA is not invertible (its rank is " + lexical_cast<string>(rankOfAtAReg)+", full rank would be " + lexical_cast<string>(AtAReg_Eigen.rows()) + "). Increase lambda (or use the pseudo-inverse, which is not implemented yet).");
-			logger.error(msg);
-			#ifndef _DEBUG
-				//throw std::runtime_error(msg); // Don't throw while debugging. Makes debugging with small amounts of data possible.
-			#endif
-		}
-		Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> AtARegInv_EigenFullLU = luOfAtAReg.inverse();
-		//Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> AtARegInv_Eigen = AtAReg_Eigen.inverse(); // This would be the cheap variant (PartialPivotLU), but we can't check if the matrix is invertible.
-		Mat AtARegInvFullLU(AtARegInv_EigenFullLU.rows(), AtARegInv_EigenFullLU.cols(), CV_32FC1, AtARegInv_EigenFullLU.data()); // create an OpenCV Mat header for the Eigen data
-		std::chrono::time_point<std::chrono::system_clock> inverseTimeEnd = std::chrono::system_clock::now();
-		elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(inverseTimeEnd - inverseTimeStart).count();
-		logger.debug("Inverting the regularized AtA took " + lexical_cast<string>(elapsed_mseconds) + "ms.");
-		//Mat AtARegInvOCV = AtAReg.inv(); // slow OpenCV inv() for comparison
-
-		// Todo(1): Moving AtA by lambda should move the eigenvalues by lambda, however, it does not. It did however on an early test (with rand maybe?).
-		//Eigen::SelfAdjointEigenSolver<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> es(AtAReg_Eigen);
-		//std::cout << es.eigenvalues() << std::endl;
-
-		Mat AtARegInvAt = AtARegInvFullLU * featureMatrix.t(); // Todo: We could use luOfAtAReg.solve(b, x) instead of .inverse() and these lines.
-		Mat AtARegInvAtb = AtARegInvAt * deltaShape; // = x
+		Mat R = linearRegression(featureMatrix, deltaShape, RegularizationType::Automatic);
+		regressorData.push_back(R);
 		end = std::chrono::system_clock::now();
 		elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 		logger.debug("Total time for solving the least-squares problem: " + lexical_cast<string>(elapsed_mseconds)+"ms.");
-
-		Mat R = AtARegInvAtb;
-		regressorData.push_back(R);
 
 		// output (optional):
 		for (auto currentImage = 0; currentImage < trainingImages.size(); ++currentImage) {
@@ -566,7 +480,113 @@ float LandmarkBasedSupervisedDescentTraining::calculateScaleVariance(cv::Mat gro
 
 cv::Mat linearRegression(cv::Mat A, cv::Mat b, RegularizationType regularizationType /*= RegularizationType::Automatic*/, float lambda /*= 0.5f*/, bool regularizeAffineComponent /*= false*/)
 {
-	return cv::Mat();
+	Logger logger = Loggers->getLogger("superviseddescentmodel");
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	int elapsed_mseconds;
+
+	Mat AtA = A.t() * A;
+
+	switch (regularizationType)
+	{
+	case superviseddescentmodel::RegularizationType::Manual:
+		// We just take lambda as it was given, no calculation necessary.
+		break;
+	case superviseddescentmodel::RegularizationType::Automatic:
+		// The given lambda is the factor we have to multiply the automatic value with
+		lambda = lambda * cv::norm(AtA) / A.rows; // We divide by the number of images
+		// However, division by (AtA.rows * AtA.cols) might make more sense? Because this would be an approximation for the
+		// RMS (eigenvalue? see sheet of paper, ev's of diag-matrix etc.), and thus our (conservative?) guess for a lambda that makes AtA invertible.
+		break;
+	case superviseddescentmodel::RegularizationType::EigenvalueThreshold:
+	{
+		std::chrono::time_point<std::chrono::system_clock> eigenTimeStart = std::chrono::system_clock::now();
+		lambda = calculateEigenvalueThreshold(AtA);
+		std::chrono::time_point<std::chrono::system_clock> eigenTimeEnd = std::chrono::system_clock::now();
+		elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(eigenTimeEnd - eigenTimeStart).count();
+		logger.debug("Automatic calculation of lambda for AtA took " + lexical_cast<string>(elapsed_mseconds)+"ms.");
+	}
+		break;
+	default:
+		break;
+	}
+	logger.debug("Setting lambda to: " + lexical_cast<string>(lambda));
+
+	Mat regulariser = Mat::eye(AtA.rows, AtA.rows, CV_32FC1) * lambda;
+	if (!regularizeAffineComponent) {
+		regulariser.at<float>(regulariser.rows - 1, regulariser.cols - 1) = 0.0f; // no lambda for the bias
+	}
+	// solve for x!
+	Mat AtAReg = AtA + regulariser;
+	if (!AtAReg.isContinuous()) {
+		std::string msg("Matrix is not continuous. This should not happen as we allocate it directly.");
+		logger.error(msg);
+		throw std::runtime_error(msg);
+	}
+	Eigen::Map<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> AtAReg_Eigen(AtAReg.ptr<float>(), AtAReg.rows, AtAReg.cols);
+	std::chrono::time_point<std::chrono::system_clock> inverseTimeStart = std::chrono::system_clock::now();
+	// Calculate the full-pivoting LU decomposition of the regularized AtA. Note: We could also try FullPivHouseholderQR if our system is non-minimal (i.e. there are more constraints than unknowns).
+	Eigen::FullPivLU<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> luOfAtAReg(AtAReg_Eigen);
+	// we could also print the smallest eigenvalue here, but that would take time to calculate (SelfAdjointEigenSolver, see above)
+	float rankOfAtAReg = luOfAtAReg.rank();
+	logger.trace("Rank of the regularized AtA: " + lexical_cast<string>(rankOfAtAReg));
+	if (luOfAtAReg.isInvertible()) {
+		logger.debug("The regularized AtA is invertible.");
+	}
+	else {
+		// Eigen will most likely return garbage here (according to their docu anyway). We have a few options:
+		// - Increase lambda
+		// - Calculate the pseudo-inverse. See: http://eigen.tuxfamily.org/index.php?title=FAQ#Is_there_a_method_to_compute_the_.28Moore-Penrose.29_pseudo_inverse_.3F
+		string msg("The regularized AtA is not invertible (its rank is " + lexical_cast<string>(rankOfAtAReg)+", full rank would be " + lexical_cast<string>(AtAReg_Eigen.rows()) + "). Increase lambda (or use the pseudo-inverse, which is not implemented yet).");
+		logger.error(msg);
+#ifndef _DEBUG
+		//throw std::runtime_error(msg); // Don't throw while debugging. Makes debugging with small amounts of data possible.
+#endif
+	}
+	Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> AtARegInv_EigenFullLU = luOfAtAReg.inverse();
+	//Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> AtARegInv_Eigen = AtAReg_Eigen.inverse(); // This would be the cheap variant (PartialPivotLU), but we can't check if the matrix is invertible.
+	Mat AtARegInvFullLU(AtARegInv_EigenFullLU.rows(), AtARegInv_EigenFullLU.cols(), CV_32FC1, AtARegInv_EigenFullLU.data()); // create an OpenCV Mat header for the Eigen data
+	std::chrono::time_point<std::chrono::system_clock> inverseTimeEnd = std::chrono::system_clock::now();
+	elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(inverseTimeEnd - inverseTimeStart).count();
+	logger.debug("Inverting the regularized AtA took " + lexical_cast<string>(elapsed_mseconds) + "ms.");
+	//Mat AtARegInvOCV = AtAReg.inv(); // slow OpenCV inv() for comparison
+
+	// Todo(1): Moving AtA by lambda should move the eigenvalues by lambda, however, it does not. It did however on an early test (with rand maybe?).
+	//Eigen::SelfAdjointEigenSolver<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> es(AtAReg_Eigen);
+	//std::cout << es.eigenvalues() << std::endl;
+
+	Mat AtARegInvAt = AtARegInvFullLU * A.t(); // Todo: We could use luOfAtAReg.solve(b, x) instead of .inverse() and these lines.
+	Mat AtARegInvAtb = AtARegInvAt * b; // = x
+	return AtARegInvAtb;
+}
+
+float calculateEigenvalueThreshold(cv::Mat matrix)
+{
+	Logger logger = Loggers->getLogger("superviseddescentmodel");
+
+	if (!matrix.isContinuous()) {
+		std::string msg("Matrix is not continuous. This should not happen as we allocate it directly.");
+		logger.error(msg);
+		throw std::runtime_error(msg);
+	}
+	// Calculate the eigenvalues of AtA. This is only for output purposes and not needed. Would make sense to remove this as it might be time-consuming.
+	Eigen::Map<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> AtA_Eigen(matrix.ptr<float>(), matrix.rows, matrix.cols);
+	Eigen::SelfAdjointEigenSolver<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> es(AtA_Eigen);
+	logger.trace("Smallest eigenvalue of AtA: " + lexical_cast<string>(es.eigenvalues()[0]));
+
+	Eigen::FullPivLU<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> luOfAtA(AtA_Eigen);
+	logger.trace("Rank of AtA: " + lexical_cast<string>(luOfAtA.rank()));
+	if (luOfAtA.isInvertible()) {
+		logger.trace("AtA is invertible.");
+	}
+	else {
+		logger.trace("AtA is not invertible.");
+	}
+	// Automatically set lambda: 
+	// $ abs(luOfAtA.maxPivot()) * luOfAtA.threshold() $ is the threshold that Eigen uses to calculate the rank of the matrix. 
+	// I.e.: Every eigenvalue above abs(lu.maxPivot()) * lu.threshold() is considered non-zero (i.e. to contribute to the rank of the matrix). See their documentation for more details.
+	// We multiply it by 2 to make sure the matrix is invertible afterwards. (But: See Todo(1) below for a potential bug.)
+	float threshold = 2 * abs(luOfAtA.maxPivot()) * luOfAtA.threshold();
+	return threshold;
 }
 
 }
