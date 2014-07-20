@@ -32,7 +32,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${Logging_SOURCE_DIR}/include)
 include_directories(${ImageIO_SOURCE_DIR}/include)
-include_directories(${SupervisedDescentModel_SOURCE_DIR}/include)
+include_directories(${SupervisedDescent_SOURCE_DIR}/include)
 
 # Make the app depend on the libraries
-target_link_libraries(${SUBPROJECT_NAME} SupervisedDescentModel ImageIO ${KINECT_LIBNAME} Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(${SUBPROJECT_NAME} SupervisedDescent ImageIO ${KINECT_LIBNAME} Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})

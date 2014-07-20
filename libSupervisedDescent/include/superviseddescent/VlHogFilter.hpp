@@ -14,10 +14,10 @@
 #include <string>
 
 extern "C" {
-	#include "superviseddescentmodel/hog.h"
+	#include "superviseddescent/hog.h"
 }
 
-namespace superviseddescentmodel { // We'll move it to imageprocessing once finished
+namespace superviseddescent { // We'll move it to imageprocessing once finished
 
 /**
  * Filter that ...
@@ -58,5 +58,5 @@ std::string getParameterString(VlHogFilter filter) {
 	return std::string("numCells " + std::to_string(filter.numCells) + " cellSize " + std::to_string(filter.cellSize) + " numBins " + std::to_string(filter.numBins));
 };
 
-} /* namespace superviseddescentmodel */
+} /* namespace superviseddescent */
 #endif /* VLHOGFILTER_HPP_ */

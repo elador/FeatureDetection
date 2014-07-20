@@ -5,7 +5,7 @@
  *      Author: Patrik Huber
  */
 
-#include "superviseddescentmodel/OpenCVSiftFilter.hpp"
+#include "superviseddescent/OpenCVSiftFilter.hpp"
 
 #include "opencv2/imgproc/imgproc.hpp"
 
@@ -13,7 +13,7 @@
 
 using cv::Mat;
 
-namespace superviseddescentmodel {
+namespace superviseddescent {
 
 Mat OpenCVSiftFilter::applyTo(const Mat& image, Mat& filtered) const
 {
@@ -40,4 +40,4 @@ Mat OpenCVSiftFilter::applyTo(const Mat& image, Mat& filtered) const
 	return filtered;
 }
 
-} /* namespace superviseddescentmodel */
+} /* namespace superviseddescent */

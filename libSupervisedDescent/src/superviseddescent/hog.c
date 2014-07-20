@@ -11,7 +11,7 @@
  the terms of the BSD license (see the COPYING file).
 */
 
-#include "superviseddescentmodel/hog.h"
+#include "superviseddescent/hog.h"
 //#include "mathop.h"
 #include <string.h>
 #include <assert.h>

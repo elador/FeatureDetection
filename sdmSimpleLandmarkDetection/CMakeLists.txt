@@ -31,8 +31,8 @@ add_executable(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${Logging_SOURCE_DIR}/include)
-include_directories(${ImageIO_SOURCE_DIR}/include) # because SupervisedDescentModel requires it at the moment
-include_directories(${SupervisedDescentModel_SOURCE_DIR}/include)
+include_directories(${ImageIO_SOURCE_DIR}/include) # because SupervisedDescent requires it at the moment
+include_directories(${SupervisedDescent_SOURCE_DIR}/include)
 
 # Make the app depend on the libraries
-target_link_libraries(${SUBPROJECT_NAME} ImageIO SupervisedDescentModel Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(${SUBPROJECT_NAME} ImageIO SupervisedDescent Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})

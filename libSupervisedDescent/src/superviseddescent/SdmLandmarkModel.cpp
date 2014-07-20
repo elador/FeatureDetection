@@ -5,7 +5,7 @@
  *      Author: Patrik Huber
  */
 
-#include "superviseddescentmodel/SdmLandmarkModel.hpp"
+#include "superviseddescent/SdmLandmarkModel.hpp"
 
 #include "imageio/ModelLandmark.hpp"
 #include "logging/LoggerFactory.hpp"
@@ -24,7 +24,7 @@ using boost::lexical_cast;
 using std::shared_ptr;
 using std::make_shared;
 
-namespace superviseddescentmodel {
+namespace superviseddescent {
 
 SdmLandmarkModel::SdmLandmarkModel()
 {
@@ -129,7 +129,7 @@ void SdmLandmarkModel::save(boost::filesystem::path filename, std::string commen
 
 SdmLandmarkModel SdmLandmarkModel::load(boost::filesystem::path filename)
 {
-	Logger logger = Loggers->getLogger("superviseddescentmodel");
+	Logger logger = Loggers->getLogger("superviseddescent");
 	SdmLandmarkModel model;
 	std::ifstream file(filename.string());
 	if (!file.is_open()) {

@@ -23,13 +23,13 @@
 #include <iostream>
 
 extern "C" {
-	#include "superviseddescentmodel/hog.h"
+	#include "superviseddescent/hog.h"
 }
 
 using cv::Mat;
 using std::vector;
 
-namespace superviseddescentmodel {
+namespace superviseddescent {
 
 /**
  * Base-class for extracting descriptors at given points
@@ -196,5 +196,5 @@ private:
 };
 
 
-} /* namespace superviseddescentmodel */
+} /* namespace superviseddescent */
 #endif /* DESCRIPTOREXTRACTOR_HPP_ */
