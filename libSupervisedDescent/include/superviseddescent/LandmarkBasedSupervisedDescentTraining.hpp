@@ -69,18 +69,12 @@ public:
 		UNIT_SUM_SQUARED_NORMS // orig paper
 	};
 
-	// deals with both row and col vecs. Assumes first half x, second y.
-	void saveShapeInstanceToMLtxt(cv::Mat shapeInstance, std::string filename);
-
-	// Helper until we figured out a definite design:
-	cv::Mat calculateMeanFull(cv::Mat landmarks, AlignGroundtruth alignGroundtruth, MeanNormalization meanNormalization, std::vector<cv::Rect> faceboxes = std::vector<cv::Rect>());
-	
 	cv::Mat calculateMean(cv::Mat landmarks, AlignGroundtruth alignGroundtruth, MeanNormalization meanNormalization, std::vector<cv::Rect> faceboxes=std::vector<cv::Rect>());
 
 	// trainingImages: debug only
 	// trainingFaceboxes: for normalizing the variances by the face-box
 	// groundtruthLandmarks, initialShapeEstimateX0: calc variances
-	ModelVariance calculateModelVariance(std::vector<cv::Mat> trainingImages, std::vector<cv::Rect> trainingFaceboxes, cv::Mat groundtruthLandmarks, cv::Mat initialShapeEstimateX0);
+	ModelVariance calculateModelVariance(std::vector<cv::Rect> trainingFaceboxes, cv::Mat groundtruthLandmarks, cv::Mat initialShapeEstimateX0);
 
 	// Rescale the model-mean, and the mean variances as well: (only necessary if our mean is not normalized to V&J face-box directly in first steps)
 	std::pair<cv::Mat, ModelVariance> rescaleModel(cv::Mat modelMean, ModelVariance modelVariance);
@@ -158,6 +152,9 @@ private:
  * Below: Free functions / classes belonging to the regression. TODO Move to another file probably. (linearalgebra.hpp? regression.hpp?)
  *
  */
+
+// deals with both row and col vecs. Assumes first half x, second y.
+void saveShapeInstanceToMLtxt(cv::Mat shapeInstance, std::string filename);
 
 /**
  * Todo: Description.

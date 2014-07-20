@@ -31,29 +31,6 @@ using std::shared_ptr;
 
 namespace superviseddescent {
 
-void LandmarkBasedSupervisedDescentTraining::saveShapeInstanceToMLtxt(Mat shapeInstance, string filename)
-{
-	int numLandmarks;
-	if (shapeInstance.rows > 1) {
-		numLandmarks = shapeInstance.rows / 2;
-	}
-	else {
-		numLandmarks = shapeInstance.cols / 2;
-	}
-	std::ofstream myfile;
-	myfile.open(filename);
-	myfile << "x = [";
-	for (int i = 0; i < numLandmarks; ++i) {
-		myfile << shapeInstance.at<float>(i) << ", ";
-	}
-	myfile << "];" << std::endl << "y = [";
-	for (int i = 0; i < numLandmarks; ++i) {
-		myfile << shapeInstance.at<float>(i + numLandmarks) << ", ";
-	}
-	myfile << "];" << std::endl;
-	myfile.close();
-}
-
 Mat LandmarkBasedSupervisedDescentTraining::transformLandmarksNormalized(Mat landmarks, Rect box)
 {
 	// Todo: Quick doc
@@ -122,17 +99,12 @@ cv::Mat LandmarkBasedSupervisedDescentTraining::calculateMean(cv::Mat landmarks,
 	// Calculate the mean-shape of all training images:
 	// 1) Prepare the ground-truth landmarks:
 	//    Note: We could do some Procrustes and align all shapes to some calculated mean-shape. But actually just the mean calculated like this is a good approximation.
-	// NOT NECESSARY ANYMORE?
-	Mat landmarksMatrix(landmarks.rows, landmarks.cols, CV_32FC1);
 	switch (alignGroundtruth)
 	{
 	case AlignGroundtruth::NONE: // from vector<Mat> to one Mat. Just copy, no transformation.
-		for (auto currentImage = 0; currentImage < landmarks.rows; ++currentImage) {
-			Mat groundtruthLms = landmarks.row(currentImage);
-			groundtruthLms.copyTo(landmarksMatrix.row(currentImage));
-		}
 		break;
 	case AlignGroundtruth::NORMALIZED_FACEBOX:
+		// Note: Untested at the moment
 		if (faceboxes.size() != landmarks.rows) {
 			string msg("'AlignGroundtruth' is set to NORMALIZED_FACEBOX but faceboxes.size() != landmarks.size(). Please provide a face-box for each set of landmarks.");
 			logger.error(msg);
@@ -140,7 +112,7 @@ cv::Mat LandmarkBasedSupervisedDescentTraining::calculateMean(cv::Mat landmarks,
 		}
 		for (auto currentImage = 0; currentImage < landmarks.rows; ++currentImage) {
 			Mat transformed = transformLandmarksNormalized(landmarks.row(currentImage), faceboxes[currentImage]);
-			transformed.copyTo(landmarksMatrix.row(currentImage));
+			transformed.copyTo(landmarks.row(currentImage));
 		}
 		break;
 	default:
@@ -152,7 +124,7 @@ cv::Mat LandmarkBasedSupervisedDescentTraining::calculateMean(cv::Mat landmarks,
 
 	// 2) Take the mean of every row:
 	Mat modelMean;
-	cv::reduce(landmarksMatrix, modelMean, 0, CV_REDUCE_AVG); // reduce to 1 row
+	cv::reduce(landmarks, modelMean, 0, CV_REDUCE_AVG); // reduce to 1 row
 
 	// 3) Optional: Normalize the calculated mean by something (e.g. make it have a sum of squared norms of 1, as in the original SDM paper)
 	switch (meanNormalization)
@@ -169,20 +141,54 @@ cv::Mat LandmarkBasedSupervisedDescentTraining::calculateMean(cv::Mat landmarks,
 		break;
 	}
 	//saveShapeInstanceToMLtxt(modelMean, "mean.txt");
+
+	// NEW STUFF: Align the mean, calc variance, realign it
+	// goto calculateScaledMean(...) ?
+
+	// Do the initial alignment: (different methods? depending if mean normalized or not?)
+	// landmarks.rows = numTrainingImages, landmarks.cols = 2*numModelLandmarks
+	Mat initialShape = Mat::zeros((numSamplesPerImage + 1) * landmarks.rows, landmarks.cols, CV_32FC1); // 10 samples + the original data = 11
+	// aligns mean + fb to be x0. Note: fills in a matrix that's bigger (i.e. numSamplesPerImage as big)
+	for (auto currentImage = 0; currentImage < landmarks.rows; ++currentImage) {
+		cv::Rect detectedFace = faceboxes[currentImage]; // Caution: Depending on flags selected earlier, we might not have detected faces yet!
+		Mat initialShapeEstimateX0 = alignMean(modelMean, detectedFace);
+		initialShapeEstimateX0.copyTo(initialShape.row(currentImage * (numSamplesPerImage + 1)));
+		// output
+	/*	Mat img = trainingImages[currentImage];
+		for (int i = 0; i < numModelLandmarks; ++i) {
+			cv::circle(img, cv::Point2f(initialShapeEstimateX0.at<float>(0, i), initialShapeEstimateX0.at<float>(0, i + numModelLandmarks)), 3, Scalar(255.0f, 0.0f, 0.0f));
+		}
+		cv::rectangle(img, detectedFace, Scalar(0.0f, 0.0f, 255.0f));*/
+	}
+
+
+	// Calculate the mean and variances of the translational and scaling differences between the initial and true landmark locations. (used for generating the samples)
+	// This also includes the scaling/translation necessary to go from the unit-sqnorm normalized mean to one in a reasonably sized one w.r.t. the face-box.
+	// This means we have to divide the stddev we draw by 2. The translation is ok though.
+	// Todo: We should directly learn a reasonably normalized mean during the training!
+
+	// flag NormalizeMeanAfterDeviationCalculation ?
+
+	ModelVariance modelVariance = calculateModelVariance(faceboxes, landmarks, initialShape);
+
+	// Rescale the model-mean, and the mean variances as well: (only necessary if our mean is not normalized to V&J face-box directly in first steps)
+	// TODO add a flag?
+	std::tie(modelMean, modelVariance) = rescaleModel(modelMean, modelVariance);
+	
 	return modelMean;
 }
 
-LandmarkBasedSupervisedDescentTraining::ModelVariance LandmarkBasedSupervisedDescentTraining::calculateModelVariance(vector<Mat> trainingImages, vector<cv::Rect> trainingFaceboxes, Mat groundtruthLandmarks, Mat initialShapeEstimateX0)
+LandmarkBasedSupervisedDescentTraining::ModelVariance LandmarkBasedSupervisedDescentTraining::calculateModelVariance(vector<cv::Rect> trainingFaceboxes, Mat groundtruthLandmarks, Mat initialShapeEstimateX0)
 {
-	Mat delta_tx(trainingImages.size(), 1, CV_32FC1);
-	Mat delta_ty(trainingImages.size(), 1, CV_32FC1);
-	Mat delta_sx(trainingImages.size(), 1, CV_32FC1);
-	Mat delta_sy(trainingImages.size(), 1, CV_32FC1);
+	int numTrainingData = groundtruthLandmarks.rows;
+	Mat delta_tx(numTrainingData, 1, CV_32FC1);
+	Mat delta_ty(numTrainingData, 1, CV_32FC1);
+	Mat delta_sx(numTrainingData, 1, CV_32FC1);
+	Mat delta_sy(numTrainingData, 1, CV_32FC1);
 	int numModelLandmarks = groundtruthLandmarks.cols / 2;
 	int numDataPerTrainingImage = initialShapeEstimateX0.rows / groundtruthLandmarks.rows;
 	int currentImage = 0;
-	for (auto currentImage = 0; currentImage < trainingImages.size(); ++currentImage) {
-		Mat img = trainingImages[currentImage];
+	for (auto currentImage = 0; currentImage < numTrainingData; ++currentImage) {
 		cv::Rect detectedFace = trainingFaceboxes[currentImage]; // Caution: Depending on flags selected earlier, we might not have detected faces yet!
 
 		// calculate the centroid and the min-max bounding-box (for the width/height) of the ground-truth and the initial estimate x0:
@@ -316,7 +322,7 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 	}
 
 	// Calculate the mean:
-	Mat modelMean = calculateMeanFull(groundtruthLandmarks, alignGroundtruth, meanNormalization, trainingFaceboxes);
+	Mat modelMean = calculateMean(groundtruthLandmarks, alignGroundtruth, meanNormalization, trainingFaceboxes);
 	//saveShapeInstanceToMLtxt(modelMean, "mean.txt");
 
 	// 3. For every training image:
@@ -325,7 +331,7 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 	Mat initialShape = Mat::zeros((numSamplesPerImage + 1) * trainingImages.size(), 2 * numModelLandmarks, CV_32FC1); // 10 samples + the original data = 11
 	
 	// New: So here we would now align only the original images (no samples), then calculate the variance, and based on that, do the sampling?
-	modelVariance = calculateModelVariance(trainingImages, trainingFaceboxes, groundtruthLandmarks, initialShape);
+	modelVariance = calculateModelVariance(trainingFaceboxes, groundtruthLandmarks, initialShape);
 	
 	// aligns mean + fb to be x0. Note: fills in a matrix that's bigger (i.e. numSamplesPerImage as big)
 	initialShape = putInDataAndGenerateSamples(trainingImages, trainingFaceboxes, modelMean, initialShape, modelVariance, numSamplesPerImage);
@@ -458,39 +464,27 @@ float LandmarkBasedSupervisedDescentTraining::calculateScaleVariance(cv::Mat gro
 	return (gtMax - gtMin) / (x0Max - x0Min);
 }
 
-cv::Mat LandmarkBasedSupervisedDescentTraining::calculateMeanFull(cv::Mat landmarks, AlignGroundtruth alignGroundtruth, MeanNormalization meanNormalization, std::vector<cv::Rect> faceboxes /*= std::vector<cv::Rect>()*/)
+void saveShapeInstanceToMLtxt(Mat shapeInstance, string filename)
 {
-	Mat modelMean = calculateMean(landmarks, alignGroundtruth, meanNormalization, faceboxes);
-	/*
-	// Do the initial alignment: (different methods? depending if mean normalized or not?)
-	Mat initialShape = Mat::zeros((numSamplesPerImage + 1) * trainingImages.size(), 2 * numModelLandmarks, CV_32FC1); // 10 samples + the original data = 11
-	// aligns mean + fb to be x0. Note: fills in a matrix that's bigger (i.e. numSamplesPerImage as big)
-	for (auto currentImage = 0; currentImage < trainingImages.size(); ++currentImage) {
-		cv::Rect detectedFace = faceboxes[currentImage]; // Caution: Depending on flags selected earlier, we might not have detected faces yet!
-		Mat initialShapeEstimateX0 = alignMean(modelMean, detectedFace);
-		initialShapeEstimateX0.copyTo(initialShape.row(currentImage * (numSamplesPerImage + 1)));
-		// output
-		Mat img = trainingImages[currentImage];
-		for (int i = 0; i < numModelLandmarks; ++i) {
-			cv::circle(img, cv::Point2f(initialShapeEstimateX0.at<float>(0, i), initialShapeEstimateX0.at<float>(0, i + numModelLandmarks)), 3, Scalar(255.0f, 0.0f, 0.0f));
-		}
-		cv::rectangle(img, detectedFace, Scalar(0.0f, 0.0f, 255.0f));
+	int numLandmarks;
+	if (shapeInstance.rows > 1) {
+		numLandmarks = shapeInstance.rows / 2;
 	}
-
-
-	// Calculate the mean and variances of the translational and scaling differences between the initial and true landmark locations. (used for generating the samples)
-	// This also includes the scaling/translation necessary to go from the unit-sqnorm normalized mean to one in a reasonably sized one w.r.t. the face-box.
-	// This means we have to divide the stddev we draw by 2. The translation is ok though.
-	// Todo: We should directly learn a reasonably normalized mean during the training!
-
-	// flag NormalizeMeanAfterDeviationCalculation ?
-
-	ModelVariance modelVariance = calculateModelVariance(trainingImages, faceboxes, groundtruthLandmarks, initialShape);
-
-	// Rescale the model-mean, and the mean variances as well: (only necessary if our mean is not normalized to V&J face-box directly in first steps)
-	// TODO add a flag?
-	std::tie(modelMean, modelVariance) = rescaleModel(modelMean, modelVariance); */
-	return modelMean;
+	else {
+		numLandmarks = shapeInstance.cols / 2;
+	}
+	std::ofstream myfile;
+	myfile.open(filename);
+	myfile << "x = [";
+	for (int i = 0; i < numLandmarks; ++i) {
+		myfile << shapeInstance.at<float>(i) << ", ";
+	}
+	myfile << "];" << std::endl << "y = [";
+	for (int i = 0; i < numLandmarks; ++i) {
+		myfile << shapeInstance.at<float>(i + numLandmarks) << ", ";
+	}
+	myfile << "];" << std::endl;
+	myfile.close();
 }
 
 cv::Mat linearRegression(cv::Mat A, cv::Mat b, RegularizationType regularizationType /*= RegularizationType::Automatic*/, float lambda /*= 0.5f*/, bool regularizeAffineComponent /*= false*/)
