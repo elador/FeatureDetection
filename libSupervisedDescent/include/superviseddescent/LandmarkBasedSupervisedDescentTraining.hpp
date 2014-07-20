@@ -10,12 +10,12 @@
 #ifndef LANDMARKBASEDSUPERVISEDDESCENTTRAINING_HPP_
 #define LANDMARKBASEDSUPERVISEDDESCENTTRAINING_HPP_
 
-#include "superviseddescentmodel/SdmLandmarkModel.hpp"
-#include "superviseddescentmodel/DescriptorExtractor.hpp"
+#include "superviseddescent/SdmLandmarkModel.hpp"
+#include "superviseddescent/DescriptorExtractor.hpp"
 
 #include "opencv2/core/core.hpp"
 
-namespace superviseddescentmodel {
+namespace superviseddescent {
 
 /**
  * A class to train a landmark model based on the supervised descent 
@@ -72,7 +72,10 @@ public:
 	// deals with both row and col vecs. Assumes first half x, second y.
 	void saveShapeInstanceToMLtxt(cv::Mat shapeInstance, std::string filename);
 
-	cv::Mat calculateMean(std::vector<cv::Mat> landmarks, AlignGroundtruth alignGroundtruth, MeanNormalization meanNormalization, std::vector<cv::Rect> faceboxes=std::vector<cv::Rect>());
+	// Helper until we figured out a definite design:
+	cv::Mat calculateMeanFull(cv::Mat landmarks, AlignGroundtruth alignGroundtruth, MeanNormalization meanNormalization, std::vector<cv::Rect> faceboxes = std::vector<cv::Rect>());
+	
+	cv::Mat calculateMean(cv::Mat landmarks, AlignGroundtruth alignGroundtruth, MeanNormalization meanNormalization, std::vector<cv::Rect> faceboxes=std::vector<cv::Rect>());
 
 	// trainingImages: debug only
 	// trainingFaceboxes: for normalizing the variances by the face-box
@@ -152,6 +155,11 @@ private:
 };
 
 /**
+ * Below: Free functions / classes belonging to the regression. TODO Move to another file probably. (linearalgebra.hpp? regression.hpp?)
+ *
+ */
+
+/**
  * Todo: Description.
  */
 enum class RegularizationType
@@ -182,5 +190,5 @@ cv::Mat linearRegression(cv::Mat A, cv::Mat b, RegularizationType regularization
 */
 float calculateEigenvalueThreshold(cv::Mat matrix);
 
-} /* namespace superviseddescentmodel */
+} /* namespace superviseddescent */
 #endif /* LANDMARKBASEDSUPERVISEDDESCENTTRAINING_HPP_ */

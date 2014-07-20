@@ -28,7 +28,7 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/lexical_cast.hpp"
 
-#include "superviseddescentmodel/SdmLandmarkModel.hpp"
+#include "superviseddescent/SdmLandmarkModel.hpp"
 
 #include "imageio/ImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
@@ -40,7 +40,7 @@
 #include "logging/LoggerFactory.hpp"
 
 using namespace imageio;
-using namespace superviseddescentmodel;
+using namespace superviseddescent;
 namespace po = boost::program_options;
 using std::cout;
 using std::endl;
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	
-	Loggers->getLogger("superviseddescentmodel").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("superviseddescent").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("sdmLandmarkDetection").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("sdmLandmarkDetection");
 

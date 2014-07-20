@@ -5,11 +5,11 @@
  *      Author: Patrik Huber
  */
 
-#include "superviseddescentmodel/VlHogFilter.hpp"
+#include "superviseddescent/VlHogFilter.hpp"
 
 using cv::Mat;
 
-namespace superviseddescentmodel {
+namespace superviseddescent {
 
 cv::Mat VlHogFilter::applyTo(const cv::Mat& image, cv::Mat& filtered) const
 {
@@ -109,4 +109,4 @@ cv::Mat VlHogFilter::applyTo(const cv::Mat& image, cv::Mat& filtered) const
 	return filtered;
 }
 
-} /* namespace superviseddescentmodel */
+} /* namespace superviseddescent */

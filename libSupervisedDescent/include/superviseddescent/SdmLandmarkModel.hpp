@@ -10,7 +10,7 @@
 #ifndef SDMLANDMARKMODEL_HPP_
 #define SDMLANDMARKMODEL_HPP_
 
-#include "superviseddescentmodel/DescriptorExtractor.hpp"
+#include "superviseddescent/DescriptorExtractor.hpp"
 #include "imageio/LandmarkCollection.hpp"
 
 #include "opencv2/core/core.hpp"
@@ -25,7 +25,7 @@
 #include "boost/lexical_cast.hpp"
 
 extern "C" {
-	#include "superviseddescentmodel/hog.h"
+	#include "superviseddescent/hog.h"
 }
 
 using cv::Mat;
@@ -34,7 +34,7 @@ using std::vector;
 using std::string;
 using boost::lexical_cast;
 
-namespace superviseddescentmodel {
+namespace superviseddescent {
 
 /**
  * A class representing a landmark model trained

@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME SupervisedDescentModel)
+set(SUBPROJECT_NAME SupervisedDescent)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -26,19 +26,19 @@ message(STATUS "Eigen3 version: ${EIGEN3_VERSION}")
 
 # source and header files
 set(HEADERS
-	include/superviseddescentmodel/SdmLandmarkModel.hpp
-	include/superviseddescentmodel/LandmarkBasedSupervisedDescentTraining.hpp
-	include/superviseddescentmodel/DescriptorExtractor.hpp
-	include/superviseddescentmodel/hog.h
-	include/superviseddescentmodel/OpenCVSiftFilter.hpp
-	include/superviseddescentmodel/VlHogFilter.hpp
+	include/superviseddescent/SdmLandmarkModel.hpp
+	include/superviseddescent/LandmarkBasedSupervisedDescentTraining.hpp
+	include/superviseddescent/DescriptorExtractor.hpp
+	include/superviseddescent/hog.h
+	include/superviseddescent/OpenCVSiftFilter.hpp
+	include/superviseddescent/VlHogFilter.hpp
 )
 set(SOURCE
-	src/superviseddescentmodel/SdmLandmarkModel.cpp
-	src/superviseddescentmodel/LandmarkBasedSupervisedDescentTraining.cpp
-	src/superviseddescentmodel/hog.c
-	src/superviseddescentmodel/OpenCVSiftFilter.cpp
-	src/superviseddescentmodel/VlHogFilter.cpp
+	src/superviseddescent/SdmLandmarkModel.cpp
+	src/superviseddescent/LandmarkBasedSupervisedDescentTraining.cpp
+	src/superviseddescent/hog.c
+	src/superviseddescent/OpenCVSiftFilter.cpp
+	src/superviseddescent/VlHogFilter.cpp
 )
 
 include_directories("include")

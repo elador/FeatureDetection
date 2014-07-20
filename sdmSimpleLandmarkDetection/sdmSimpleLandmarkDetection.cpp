@@ -20,11 +20,11 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/filesystem/operations.hpp"
 
-#include "superviseddescentmodel/SdmLandmarkModel.hpp"
+#include "superviseddescent/SdmLandmarkModel.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
-using namespace superviseddescentmodel;
+using namespace superviseddescent;
 namespace po = boost::program_options;
 using std::cout;
 using std::endl;
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	
-	Loggers->getLogger("superviseddescentmodel").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("superviseddescent").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("sdmSimpleLandmarkDetection").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("sdmSimpleLandmarkDetection");
 

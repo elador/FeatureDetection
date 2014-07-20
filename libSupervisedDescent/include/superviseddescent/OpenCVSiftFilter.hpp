@@ -13,7 +13,7 @@
 
 #include "opencv2/nonfree/nonfree.hpp"
 
-namespace superviseddescentmodel { // We'll move it to imageprocessing once finished
+namespace superviseddescent { // We'll move it to imageprocessing once finished
 
 /**
  * Filter that uses cv::SIFT to extract SIFT features of the given image
@@ -36,5 +36,5 @@ private:
 	cv::SIFT sift; ///< OpenCV object that manages the feature extraction
 };
 
-} /* namespace superviseddescentmodel */
+} /* namespace superviseddescent */
 #endif /* OPENCVSIFTFILTER_HPP_ */
