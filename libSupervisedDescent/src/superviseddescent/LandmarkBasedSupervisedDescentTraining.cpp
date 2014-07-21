@@ -45,25 +45,6 @@ Mat LandmarkBasedSupervisedDescentTraining::transformLandmarksNormalized(Mat lan
 	return transformed;
 }
 
-cv::Mat LandmarkBasedSupervisedDescentTraining::alignMean(cv::Mat mean, cv::Rect faceBox, float scalingX/*=1.0f*/, float scalingY/*=1.0f*/, float translationX/*=0.0f*/, float translationY/*=0.0f*/)
-{
-	// Initial estimate x_0: Center the mean face at the [-0.5, 0.5] x [-0.5, 0.5] square (assuming the face-box is that square)
-	// More precise: Take the mean as it is (assume it is in a space [-0.5, 0.5] x [-0.5, 0.5]), and just place it in the face-box as
-	// if the box is [-0.5, 0.5] x [-0.5, 0.5]. (i.e. the mean coordinates get upscaled)
-	Mat alignedMean = mean.clone();
-	Mat alignedMeanX = alignedMean.colRange(0, alignedMean.cols / 2);
-	Mat alignedMeanY = alignedMean.colRange(alignedMean.cols / 2, alignedMean.cols);
-	alignedMeanX = (alignedMeanX*scalingX + 0.5f + translationX) * faceBox.width + faceBox.x;
-	alignedMeanY = (alignedMeanY*scalingY + 0.5f + translationY) * faceBox.height + faceBox.y;
-	return alignedMean;
-
-	/* with variances: (old code, untested)
-	initialShapeEstimate2X0_x = (initialShapeEstimate2X0_x * delta_sx + 0.5f) * detectedFace.width + detectedFace.x + delta_tx;
-	initialShapeEstimate2X0_y = (initialShapeEstimate2X0_y * delta_sy + 0.5f) * detectedFace.height + detectedFace.y + delta_ty;
-	*/
-}
-
-
 cv::Mat LandmarkBasedSupervisedDescentTraining::meanNormalizationUnitSumSquaredNorms(cv::Mat modelMean)
 {
 	int numLandmarks = modelMean.cols / 2;
@@ -211,45 +192,6 @@ Mat LandmarkBasedSupervisedDescentTraining::rescaleModel(Mat modelMean, const Al
 	return modelMean;
 }
 
-Mat LandmarkBasedSupervisedDescentTraining::putInDataAndGenerateSamples(vector<Mat> trainingImages, vector<cv::Rect> trainingFaceboxes, Mat modelMean, Mat initialShape, AlignmentStatistics alignmentStatistics, int numSamplesPerImage)
-{
-	// This can go into an algorithm/policy class, or a function maybe first.
-	std::mt19937 engine; ///< A Mersenne twister MT19937 engine
-	engine.seed();
-	std::normal_distribution<float> rndN_t_x(alignmentStatistics.tx.mu, alignmentStatistics.tx.sigma);
-	std::normal_distribution<float> rndN_t_y(alignmentStatistics.ty.mu, alignmentStatistics.ty.sigma);
-	
-	GaussParameter scaleVariance;
-	scaleVariance.mu = (alignmentStatistics.sx.mu + alignmentStatistics.sy.mu) / 2.0;
-	scaleVariance.sigma = (alignmentStatistics.sx.sigma + alignmentStatistics.sy.sigma) / 2.0;
-	std::normal_distribution<float> rndN_scale(scaleVariance.mu, scaleVariance.sigma);
-
-	for (auto currentImage = 0; currentImage < trainingImages.size(); ++currentImage) {
-		Mat img = trainingImages[currentImage];
-		cv::Rect detectedFace = trainingFaceboxes[currentImage]; // Caution: Depending on flags selected earlier, we might not have detected faces yet!
-		// Align the model to the current face-box. (rigid, only centering of the mean). x_0
-		Mat initialShapeEstimateX0 = alignMean(modelMean, detectedFace);
-		initialShapeEstimateX0.copyTo(initialShape.row(currentImage * (numSamplesPerImage + 1)));
-		drawLandmarks(img, initialShapeEstimateX0);
-		cv::rectangle(img, detectedFace, Scalar(0.0f, 0.0f, 255.0f));
-		// c) Generate Monte Carlo samples? With what variance? x_0^i (maybe make this step 3.)
-		// sample around initialShapeThis, store in initialShape
-		//		Save the samples, all in a matrix
-		//		Todo 1) don't use pixel variance, but a scale-independent one (normalize by IED?)
-		//			 2) calculate the variance from data (gt facebox?)
-		for (int sample = 0; sample < numSamplesPerImage; ++sample) {
-			double rndScale = rndN_scale(engine);
-			Mat sampleShape = alignMean(modelMean, detectedFace, rndScale, rndScale, rndN_t_x(engine), rndN_t_y(engine));
-			sampleShape.copyTo(initialShape.row(currentImage*(numSamplesPerImage + 1) + (sample + 1)));
-
-			// Check if the sample goes outside the feature-extractable region?
-			// TODO: The scaling needs to be done in the normalized facebox region?? Try to write it down?
-			// Better do the translation in the norm-FB as well to be independent of face-size? yes we do that now. Check the Detection-code though!
-		}
-	}
-
-	return initialShape;
-}
 
 // Change trainingGroundtruthLandmarks from vector<Mat> to 1 big Mat (i.e. convert before calling this function)
 // Split training algorithm & preparing / IO / loading
@@ -310,23 +252,43 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 	// 3. For every training image:
 	// Store the initial shape estimate (x_0) of the image (using the rescaled mean), plus generate 10 samples and store them as well
 	// Do the initial alignment: (different methods? depending if mean normalized or not?)
-	Mat initialShape = Mat::zeros((numSamplesPerImage + 1) * trainingImages.size(), 2 * numModelLandmarks, CV_32FC1); // 10 samples + the original data = 11
+	Mat initialShapes; // = Mat::zeros((numSamplesPerImage + 1) * trainingImages.size(), 2 * numModelLandmarks, CV_32FC1); // 10 samples + the original data = 11
 	// aligns mean + fb to be x0. Note: fills in a matrix that's bigger (i.e. numSamplesPerImage as big)
-	initialShape = putInDataAndGenerateSamples(trainingImages, trainingFaceboxes, modelMean, initialShape, alignmentStatistics, numSamplesPerImage);
+	for (auto currentImage = 0; currentImage < trainingImages.size(); ++currentImage) {
+		cv::Rect detectedFace = trainingFaceboxes[currentImage]; // Caution: Depending on flags selected earlier, we might not have detected faces yet!
+		// Align the model to the current face-box. (rigid, only centering of the mean). x_0
+		Mat initialShapeEstimateX0 = alignMean(modelMean, detectedFace);
+		initialShapes.push_back(initialShapeEstimateX0);
+		Mat img = trainingImages[currentImage];
+		drawLandmarks(img, initialShapeEstimateX0);
+		cv::rectangle(img, detectedFace, Scalar(0.0f, 0.0f, 255.0f));
+		// c) Generate Monte Carlo samples? With what variance? x_0^i (maybe make this step 3.)
+		// sample around initialShapeThis, store in initialShapes
+		//		Save the samples, all in a matrix
+		//		Todo 1) don't use pixel variance, but a scale-independent one (normalize by IED?)
+		//			 2) calculate the variance from data (gt facebox?)
+		for (int sample = 0; sample < numSamplesPerImage; ++sample) {
+			Mat shapeSample = getPerturbedShape(modelMean, alignmentStatistics, detectedFace);
+			initialShapes.push_back(shapeSample);
+			drawLandmarks(img, shapeSample);
+			// Check if the sample goes outside the feature-extractable region?
+			// TODO: The scaling needs to be done in the normalized facebox region?? Try to write it down?
+			// Better do the translation in the norm-FB as well to be independent of face-size? yes we do that now. Check the Detection-code though!
+		}
+	}
 
-	// 4. For every sample plus the original image: (loop through the matrix)
-	//			a) groundtruthShape, initialShape
+	// 4. For every shape (sample plus the original image): (loop through the matrix)
+	//			a) groundtruthShape, initialShapes
 	//				deltaShape = ground - initial
 	// Duplicate each row in groundtruthLandmarks for every sample, store in groundtruthShapes
-	Mat groundtruthShapes = Mat::zeros((numSamplesPerImage + 1) * trainingImages.size(), 2 * numModelLandmarks, CV_32FC1); // 10 samples + the original data = 11
-	groundtruthShapes = duplicateGroundtruthShapes(groundtruthLandmarks, numSamplesPerImage);
+	Mat groundtruthShapes = duplicateGroundtruthShapes(groundtruthLandmarks, numSamplesPerImage); // will be (numSamplesPerImage+1)*numTrainingImages x 2*numModelLandmarks
 
 	// We START here with the real algorithm, everything before was data preparation and calculation of the mean
 
 	std::vector<cv::Mat> regressorData; // output
 
 	// Prepare the data for the first cascade step learning. Starting from the mean initialization x0, deltaShape = gt - x0
-	Mat deltaShape = groundtruthShapes - initialShape;
+	Mat deltaShape = groundtruthShapes - initialShapes;
 	// Calculate and print our starting error:
 	double avgErrx0 = cv::norm(deltaShape, cv::NORM_L1) / (deltaShape.rows * deltaShape.cols); // TODO: Doesn't say much, need to normalize by IED! But maybe not at training time, should work with all landmarks
 	logger.debug("Training: Average pixel error starting from the mean initialization: " + lexical_cast<string>(avgErrx0));
@@ -334,9 +296,9 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 	// 6. Learn a regressor for every cascade step
 	for (int currentCascadeStep = 0; currentCascadeStep < numCascadeSteps; ++currentCascadeStep) {
 		logger.debug("Training regressor " + lexical_cast<string>(currentCascadeStep));
-		// b) Extract the features at all landmark locations initialShape (Paper: SIFT, 32x32 (?))
+		// b) Extract the features at all landmark locations initialShapes (Paper: SIFT, 32x32 (?))
 		//int featureDimension = 128;
-		Mat featureMatrix;// = Mat::ones(initialShape.rows, (featureDimension * numModelLandmarks) + 1, CV_32FC1); // Our 'A'. The last column stays all 1's; it's for learning the offset/bias
+		Mat featureMatrix;// = Mat::ones(initialShapes.rows, (featureDimension * numModelLandmarks) + 1, CV_32FC1); // Our 'A'. The last column stays all 1's; it's for learning the offset/bias
 		start = std::chrono::system_clock::now();
 		int currentImage = 0;
 		for (const auto& image : trainingImages) {
@@ -344,8 +306,8 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 			for (int sample = 0; sample < numSamplesPerImage + 1; ++sample) {
 				vector<cv::Point2f> keypoints;
 				for (int lm = 0; lm < numModelLandmarks; ++lm) {
-					float px = initialShape.at<float>(currentImage*(numSamplesPerImage + 1) + sample, lm);
-					float py = initialShape.at<float>(currentImage*(numSamplesPerImage + 1) + sample, lm + numModelLandmarks);
+					float px = initialShapes.at<float>(currentImage*(numSamplesPerImage + 1) + sample, lm);
+					float py = initialShapes.at<float>(currentImage*(numSamplesPerImage + 1) + sample, lm + numModelLandmarks);
 					keypoints.emplace_back(cv::Point2f(px, py));
 				}
 				Mat featureDescriptors = descriptorExtractors[currentCascadeStep]->getDescriptors(img, keypoints);
@@ -356,7 +318,7 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 			++currentImage;
 		}
 		// 5. Add one row to the features
-		Mat biasColumn = Mat::ones(initialShape.rows, 1, CV_32FC1);
+		Mat biasColumn = Mat::ones(initialShapes.rows, 1, CV_32FC1);
 		cv::hconcat(featureMatrix, biasColumn, featureMatrix); // Other options: 1) Generate one bigger Mat and use copyTo (memory would be continuous then) or 2) implement a FeatureDescriptorExtractor::getDimension()
 		end = std::chrono::system_clock::now();
 		elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -382,11 +344,11 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 				}
 				// x_step: x at the position where we learn the features
 				for (int i = 0; i < numModelLandmarks; ++i) {
-					cv::circle(output, cv::Point2f(initialShape.at<float>(currentRowInAllData, i), initialShape.at<float>(currentRowInAllData, i + numModelLandmarks)), 2, Scalar(210.0f, 255.0f, 0.0f));
+					cv::circle(output, cv::Point2f(initialShapes.at<float>(currentRowInAllData, i), initialShapes.at<float>(currentRowInAllData, i + numModelLandmarks)), 2, Scalar(210.0f, 255.0f, 0.0f));
 				}
 				// could output x_new: The one after applying the learned R.
 				Mat shapeStep = featureMatrix.row(currentRowInAllData) * R;
-				Mat x_new = initialShape.row(currentRowInAllData) + shapeStep;
+				Mat x_new = initialShapes.row(currentRowInAllData) + shapeStep;
 				for (int i = 0; i < numModelLandmarks; ++i) {
 					cv::circle(output, cv::Point2f(x_new.at<float>(i), x_new.at<float>(i + numModelLandmarks)), 2, Scalar(255.0f, 185.0f, 0.0f));
 				}
@@ -395,8 +357,8 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 
 		// Prepare the data for the next step (and to output the error):
 		Mat shapeStep = featureMatrix * R;
-		initialShape = initialShape + shapeStep;
-		deltaShape = groundtruthShapes - initialShape;
+		initialShapes = initialShapes + shapeStep;
+		deltaShape = groundtruthShapes - initialShapes;
 		// the error:
 		double avgErr = cv::norm(deltaShape, cv::NORM_L1) / (deltaShape.rows * deltaShape.cols); // TODO: Doesn't say much, need to normalize by IED! But maybe not at training time, should work with all landmarks
 		logger.debug("Average pixel error after applying all learned regressors: " + lexical_cast<string>(avgErr));
@@ -417,7 +379,21 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 	return model;
 }
 
-float LandmarkBasedSupervisedDescentTraining::calculateMeanTranslation(cv::Mat groundtruth, cv::Mat estimate)
+// todo remove stuff and add perturbMean(...). But what about the scaling then, if the sample isn't centered around 0 anymore and we then align it?
+cv::Mat alignMean(cv::Mat mean, cv::Rect faceBox, float scalingX/*=1.0f*/, float scalingY/*=1.0f*/, float translationX/*=0.0f*/, float translationY/*=0.0f*/)
+{
+	// Initial estimate x_0: Center the mean face at the [-0.5, 0.5] x [-0.5, 0.5] square (assuming the face-box is that square)
+	// More precise: Take the mean as it is (assume it is in a space [-0.5, 0.5] x [-0.5, 0.5]), and just place it in the face-box as
+	// if the box is [-0.5, 0.5] x [-0.5, 0.5]. (i.e. the mean coordinates get upscaled)
+	Mat alignedMean = mean.clone();
+	Mat alignedMeanX = alignedMean.colRange(0, alignedMean.cols / 2);
+	Mat alignedMeanY = alignedMean.colRange(alignedMean.cols / 2, alignedMean.cols);
+	alignedMeanX = (alignedMeanX*scalingX + 0.5f + translationX) * faceBox.width + faceBox.x;
+	alignedMeanY = (alignedMeanY*scalingY + 0.5f + translationY) * faceBox.height + faceBox.y;
+	return alignedMean;
+}
+
+float calculateMeanTranslation(cv::Mat groundtruth, cv::Mat estimate)
 {
 	// calculate the centroid of the ground-truth and the estimate
 	Scalar gtMean = cv::mean(groundtruth);
@@ -426,7 +402,7 @@ float LandmarkBasedSupervisedDescentTraining::calculateMeanTranslation(cv::Mat g
 	return (estMean[0] - gtMean[0]);
 }
 
-float LandmarkBasedSupervisedDescentTraining::calculateScaleRatio(cv::Mat groundtruth, cv::Mat estimate)
+float calculateScaleRatio(cv::Mat groundtruth, cv::Mat estimate)
 {
 	// calculate the scaling difference between the ground truth and the estimate
 	double gtMin, gtMax;
@@ -577,6 +553,28 @@ void drawLandmarks(cv::Mat image, cv::Mat landmarks)
 	for (int i = 0; i < numLandmarks; ++i) {
 		cv::circle(image, cv::Point2f(landmarks.at<float>(i), landmarks.at<float>(i + numLandmarks)), 2, Scalar(255.0f, 0.0f, 0.0f));
 	}
+}
+
+// returns the already aligned shape (in image-coords). Probably adjust that and split, see comments in alignMean()
+Mat getPerturbedShape(Mat modelMean, LandmarkBasedSupervisedDescentTraining::AlignmentStatistics alignmentStatistics, cv::Rect detectedFace)
+{
+	// We should only initialize this stuff once, at the moment we do it for every sample
+	// This can go into an algorithm/policy class, or a function maybe first.
+	std::mt19937 engine; ///< A Mersenne twister MT19937 engine
+	std::random_device rd; // for the seed
+	engine.seed(rd()); // atm we generate the same shape all the time. initialise random if done inside this function. but should go to a class anyway
+	std::normal_distribution<float> rndN_t_x(alignmentStatistics.tx.mu, alignmentStatistics.tx.sigma);
+	std::normal_distribution<float> rndN_t_y(alignmentStatistics.ty.mu, alignmentStatistics.ty.sigma);
+
+	LandmarkBasedSupervisedDescentTraining::GaussParameter scaleVariance;
+	scaleVariance.mu = (alignmentStatistics.sx.mu + alignmentStatistics.sy.mu) / 2.0;
+	scaleVariance.sigma = (alignmentStatistics.sx.sigma + alignmentStatistics.sy.sigma) / 2.0;
+	std::normal_distribution<float> rndN_scale(scaleVariance.mu, scaleVariance.sigma);
+
+	double rndScale = rndN_scale(engine);
+	Mat sampleShape = alignMean(modelMean, detectedFace, rndScale, rndScale, rndN_t_x(engine), rndN_t_y(engine));
+
+	return sampleShape;
 }
 
 }
