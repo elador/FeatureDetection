@@ -38,8 +38,8 @@ public:
 	//LandmarkBasedSupervisedDescentTraining() {};
 
 	struct GaussParameter {
-		double mu = 0.0;
-		double sigma = 1.0; // Note: sigma = stddev. sigma^2 = variance.
+		float mu = 0.0;
+		float sigma = 1.0; // Note: sigma = stddev. sigma^2 = variance.
 							// Notation is $\mathcal{N}(mu, sigma^2)$ (mean, variance).
 							// std::normal_distribution takes (mu, sigma) as arguments.
 	};
@@ -79,8 +79,6 @@ public:
 	// Rescale the model-mean by neutralizing it with the current statistics (i.e. dividing by the scale, subtracting transl.) (only necessary if our mean is not normalized to V&J face-box directly in first steps)
 	// modifies the input mean!
 	cv::Mat rescaleModel(cv::Mat modelMean, const AlignmentStatistics& alignmentStatistics);
-
-	cv::Mat putInDataAndGenerateSamples(std::vector<cv::Mat> trainingImages, std::vector<cv::Rect> trainingFaceboxes, cv::Mat modelMean, cv::Mat initialShape, AlignmentStatistics modelVariance, int numSamplesPerImage);
 
 	// TODO: Move to MatHelpers::duplicateRows(...)
 	Mat duplicateGroundtruthShapes(Mat groundtruthLandmarks, int numSamplesPerImage) {
@@ -133,23 +131,6 @@ private:
 
 	// assumes modelMean is row-vec, first half x, second y.
 	cv::Mat meanNormalizationUnitSumSquaredNorms(cv::Mat modelMean);
-
-	// public?
-	// Initial estimate x_0: Center the mean face at the [-0.5, 0.5] x [-0.5, 0.5] square (assuming the face-box is that square)
-	// More precise: Take the mean as it is (assume it is in a space [-0.5, 0.5] x [-0.5, 0.5]), and just place it in the face-box as
-	// if the box is [-0.5, 0.5] x [-0.5, 0.5]. (i.e. the mean coordinates get upscaled)
-	// - makes a copy of mean, not inplace
-	// - optional: scaling/trans that gets added to the mean (before scaling up to the facebox)
-	// Todo/Note: Is this the same as in SdmModel::alignRigid?
-	cv::Mat alignMean(cv::Mat mean, cv::Rect faceBox, float scalingX=1.0f, float scalingY=1.0f, float translationX=0.0f, float translationY=0.0f);
-
-	// mean translation to go from gt to esti
-	float calculateMeanTranslation(cv::Mat groundtruth, cv::Mat estimate);
-
-	// calc scale ratio of the estimate w.r.t. the GT
-	// i.e. if the estimate is estimated larger than the GT, it will return > 1.0f
-	float calculateScaleRatio(cv::Mat groundtruth, cv::Mat estimate);
-
 };
 
 /**
@@ -157,11 +138,30 @@ private:
  *
  */
 
+// public?
+// Initial estimate x_0: Center the mean face at the [-0.5, 0.5] x [-0.5, 0.5] square (assuming the face-box is that square)
+// More precise: Take the mean as it is (assume it is in a space [-0.5, 0.5] x [-0.5, 0.5]), and just place it in the face-box as
+// if the box is [-0.5, 0.5] x [-0.5, 0.5]. (i.e. the mean coordinates get upscaled)
+// - makes a copy of mean, not inplace
+// - optional: scaling/trans that gets added to the mean (before scaling up to the facebox)
+// Todo/Note: Is this the same as in SdmModel::alignRigid?
+cv::Mat alignMean(cv::Mat mean, cv::Rect faceBox, float scalingX = 1.0f, float scalingY = 1.0f, float translationX = 0.0f, float translationY = 0.0f);
+
+// mean translation to go from gt to esti
+float calculateMeanTranslation(cv::Mat groundtruth, cv::Mat estimate);
+
+// calc scale ratio of the estimate w.r.t. the GT
+// i.e. if the estimate is estimated larger than the GT, it will return > 1.0f
+float calculateScaleRatio(cv::Mat groundtruth, cv::Mat estimate);
+
 // deals with both row and col vecs. Assumes first half x, second y.
 void saveShapeInstanceToMatlab(cv::Mat shapeInstance, std::string filename);
 
 // todo doc.
 void drawLandmarks(cv::Mat image, cv::Mat landmarks);
+
+// todo doc.
+cv::Mat getPerturbedShape(cv::Mat modelMean, LandmarkBasedSupervisedDescentTraining::AlignmentStatistics alignmentStatistics, cv::Rect detectedFace);
 
 /**
  * Todo: Description.
