@@ -45,7 +45,7 @@ public:
 	};
 
 	// Todo: Note sure what exactly this measures. Think about it.
-	struct ModelVariance {
+	struct AlignmentStatistics {
 		GaussParameter tx; // translation in x-direction
 		GaussParameter ty; // ...
 		GaussParameter sx;
@@ -74,12 +74,13 @@ public:
 	// trainingImages: debug only
 	// trainingFaceboxes: for normalizing the variances by the face-box
 	// groundtruthLandmarks, initialShapeEstimateX0: calc variances
-	ModelVariance calculateModelVariance(std::vector<cv::Rect> trainingFaceboxes, cv::Mat groundtruthLandmarks, cv::Mat initialShapeEstimateX0);
+	AlignmentStatistics calculateAlignmentStatistics(std::vector<cv::Rect> trainingFaceboxes, cv::Mat groundtruthLandmarks, cv::Mat initialShapeEstimateX0);
 
-	// Rescale the model-mean, and the mean variances as well: (only necessary if our mean is not normalized to V&J face-box directly in first steps)
-	std::pair<cv::Mat, ModelVariance> rescaleModel(cv::Mat modelMean, ModelVariance modelVariance);
+	// Rescale the model-mean by neutralizing it with the current statistics (i.e. dividing by the scale, subtracting transl.) (only necessary if our mean is not normalized to V&J face-box directly in first steps)
+	// modifies the input mean!
+	cv::Mat rescaleModel(cv::Mat modelMean, const AlignmentStatistics& alignmentStatistics);
 
-	cv::Mat putInDataAndGenerateSamples(std::vector<cv::Mat> trainingImages, std::vector<cv::Rect> trainingFaceboxes, cv::Mat modelMean, cv::Mat initialShape, ModelVariance modelVariance, int numSamplesPerImage);
+	cv::Mat putInDataAndGenerateSamples(std::vector<cv::Mat> trainingImages, std::vector<cv::Rect> trainingFaceboxes, cv::Mat modelMean, cv::Mat initialShape, AlignmentStatistics modelVariance, int numSamplesPerImage);
 
 	// TODO: Move to MatHelpers::duplicateRows(...)
 	Mat duplicateGroundtruthShapes(Mat groundtruthLandmarks, int numSamplesPerImage) {
@@ -142,9 +143,12 @@ private:
 	// Todo/Note: Is this the same as in SdmModel::alignRigid?
 	cv::Mat alignMean(cv::Mat mean, cv::Rect faceBox, float scalingX=1.0f, float scalingY=1.0f, float translationX=0.0f, float translationY=0.0f);
 
-	float calculateTranslationVariance(cv::Mat groundtruth, cv::Mat estimate, float normalization);
+	// mean translation to go from gt to esti
+	float calculateMeanTranslation(cv::Mat groundtruth, cv::Mat estimate);
 
-	float calculateScaleVariance(cv::Mat groundtruth, cv::Mat estimate);
+	// calc scale ratio of the estimate w.r.t. the GT
+	// i.e. if the estimate is estimated larger than the GT, it will return > 1.0f
+	float calculateScaleRatio(cv::Mat groundtruth, cv::Mat estimate);
 
 };
 
@@ -154,7 +158,10 @@ private:
  */
 
 // deals with both row and col vecs. Assumes first half x, second y.
-void saveShapeInstanceToMLtxt(cv::Mat shapeInstance, std::string filename);
+void saveShapeInstanceToMatlab(cv::Mat shapeInstance, std::string filename);
+
+// todo doc.
+void drawLandmarks(cv::Mat image, cv::Mat landmarks);
 
 /**
  * Todo: Description.
