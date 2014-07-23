@@ -549,7 +549,7 @@ float calculateEigenvalueThreshold(cv::Mat matrix)
 
 void drawLandmarks(cv::Mat image, cv::Mat landmarks)
 {
-	auto numLandmarks = landmarks.cols / 2;
+	auto numLandmarks = std::max(landmarks.cols, landmarks.rows) / 2;
 	for (int i = 0; i < numLandmarks; ++i) {
 		cv::circle(image, cv::Point2f(landmarks.at<float>(i), landmarks.at<float>(i + numLandmarks)), 2, Scalar(255.0f, 0.0f, 0.0f));
 	}

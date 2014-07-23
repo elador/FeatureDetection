@@ -55,7 +55,7 @@ public:
 	*/
 	SdmLandmarkModel(cv::Mat meanLandmarks, std::vector<std::string> landmarkIdentifier, std::vector<cv::Mat> regressorData, std::vector<std::shared_ptr<DescriptorExtractor>> descriptorExtractors, std::vector<std::string> descriptorTypes);
 
-	struct HogParameter
+	struct HogParameter // Todo remove?
 	{
 		int cellSize;
 		int numBins;
@@ -65,6 +65,7 @@ public:
 
 	int getNumCascadeSteps() const;
 
+	// Todo remove?
 	HogParameter getHogParameters(int cascadeLevel) {
 		return hogParameters[cascadeLevel];
 	}
@@ -204,14 +205,47 @@ public:
 			for (int i = 0; i < model.getNumLandmarks(); ++i) { // in case of HOG, need integers?
 				points.emplace_back(cv::Point2f(modelShape.at<float>(i), modelShape.at<float>(i + model.getNumLandmarks())));
 			}
-			Mat currentFeatures = model.getDescriptorExtractor(cascadeStep)->getDescriptors(image, points);
+			Mat currentFeatures;
+			float dynamicFaceSizeDistance = 0.0f;
+			if (true) { // adaptive
+				// dynamic face-size:
+				cv::Vec2f point1(modelShape.at<float>(8), modelShape.at<float>(8 + model.getNumLandmarks())); // reye_ic
+				cv::Vec2f point2(modelShape.at<float>(9), modelShape.at<float>(9 + model.getNumLandmarks())); // leye_ic
+				cv::Vec2f anchor1 = (point1 + point2) / 2.0f;
+				cv::Vec2f point3(modelShape.at<float>(11), modelShape.at<float>(11 + model.getNumLandmarks())); // rmouth_oc
+				cv::Vec2f point4(modelShape.at<float>(12), modelShape.at<float>(12 + model.getNumLandmarks())); // lmouth_oc
+				cv::Vec2f anchor2 = (point3 + point4) / 2.0f;
+				// dynamic window-size:
+				// From the paper: patch size $ S_p(d) $ of the d-th regressor is $ S_p(d) = S_f / ( K * (1 + e^(d-D)) ) $
+				// D = numCascades (e.g. D=5, d goes from 1 to 5 (Matlab convention))
+				// K = fixed value for shrinking
+				// S_f = the size of the face estimated from the previous updated shape s^(d-1).
+				// For S_f, can use the IED, EMD, or max(IED, EMD). We use the EMD.
+				dynamicFaceSizeDistance = cv::norm(anchor1 - anchor2);
+				float windowSize = dynamicFaceSizeDistance / 2.0f; // shrink value
+				float windowSizeHalf = windowSize / 2;
+				windowSizeHalf = std::round(windowSizeHalf * (1 / (1 + exp((cascadeStep + 1) - model.getNumCascadeSteps())))); // this is (step - numStages), numStages is 5 and step goes from 1 to 5. Because our step goes from 0 to 4, we add 1.
+				int NUM_CELL = 3; // think about if this should go in the descriptorExtractor or not. Is it Hog specific?
+				int windowSizeHalfi = static_cast<int>(windowSizeHalf) + NUM_CELL - (static_cast<int>(windowSizeHalf) % NUM_CELL); // make sure it's divisible by 3. However, this is not needed and not a good way
+				
+				currentFeatures = model.getDescriptorExtractor(cascadeStep)->getDescriptors(image, points, windowSizeHalfi);
+			}
+			else { // non-adaptive, the descriptorExtractor has all necessary params
+				currentFeatures = model.getDescriptorExtractor(cascadeStep)->getDescriptors(image, points);
+			}
 			currentFeatures = currentFeatures.reshape(0, currentFeatures.cols * model.getNumLandmarks()).t();
 
 			//delta_shape = AAM.RF(1).Regressor(hogScale).A(1:end - 1, : )' * feature_current + AAM.RF(1).Regressor(hogScale).A(end,:)';
 			Mat regressorData = model.getRegressorData(cascadeStep);
 			//Mat deltaShape = regressorData.rowRange(0, regressorData.rows - 1).t() * currentFeatures + regressorData.row(regressorData.rows - 1).t();
 			Mat deltaShape = currentFeatures * regressorData.rowRange(0, regressorData.rows - 1) + regressorData.row(regressorData.rows - 1);
-			modelShape = modelShape + deltaShape.t();
+			if (true) { // adaptive
+				modelShape = modelShape + deltaShape.t() * dynamicFaceSizeDistance;
+			}
+			else {
+				modelShape = modelShape + deltaShape.t();
+			}
+			
 			/*
 			for (int i = 0; i < m.getNumLandmarks(); ++i) {
 			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + m.getNumLandmarks(), 0)), 6 - hogScale, Scalar(51.0f*(float)hogScale, 51.0f*(float)hogScale, 0.0f));

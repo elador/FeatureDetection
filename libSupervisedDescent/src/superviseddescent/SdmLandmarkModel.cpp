@@ -195,15 +195,20 @@ SdmLandmarkModel SdmLandmarkModel::load(boost::filesystem::path filename)
 			model.descriptorExtractors.push_back(vlhogDt);
 		}
 		else if (descriptorType == "vlhog-uoctti") {
+			shared_ptr<DescriptorExtractor> vlhogUoctti;
 			boost::split(stringContainer, line, boost::is_any_of(" "));
-			stringContainer.erase(stringContainer.begin()); // TODO: CHECK THAT!
-			if (stringContainer.size() != 6) {
-				throw std::logic_error("descriptorParameters must contain numCells, cellSize and numBins.");
+			if (stringContainer.size() == 2) { // use adaptive parameters, depending on the regressor-level and facebox size
+				vlhogUoctti = std::make_shared<VlHogDescriptorExtractor>(VlHogDescriptorExtractor::VlHogType::Uoctti);
 			}
-			int numCells = boost::lexical_cast<int>(stringContainer[1]);
-			int cellSize = boost::lexical_cast<int>(stringContainer[3]);
-			int numBins = boost::lexical_cast<int>(stringContainer[5]);
-			shared_ptr<DescriptorExtractor> vlhogUoctti = std::make_shared<VlHogDescriptorExtractor>(VlHogDescriptorExtractor::VlHogType::Uoctti, numCells, cellSize, numBins);
+			else if (stringContainer.size() == 7) { // use the given parameters
+				int numCells = boost::lexical_cast<int>(stringContainer[2]);
+				int cellSize = boost::lexical_cast<int>(stringContainer[4]);
+				int numBins = boost::lexical_cast<int>(stringContainer[6]);
+				vlhogUoctti = std::make_shared<VlHogDescriptorExtractor>(VlHogDescriptorExtractor::VlHogType::Uoctti, numCells, cellSize, numBins);
+			}
+			else {
+				throw std::logic_error("descriptorParameters must either be empty (=face-size adaptive parameters) or contain numCells, cellSize and numBins.");
+			}
 			model.descriptorExtractors.push_back(vlhogUoctti);
 		}
 		else {

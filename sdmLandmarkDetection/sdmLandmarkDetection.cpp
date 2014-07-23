@@ -29,6 +29,7 @@
 #include "boost/lexical_cast.hpp"
 
 #include "superviseddescent/SdmLandmarkModel.hpp"
+#include "superviseddescent/LandmarkBasedSupervisedDescentTraining.hpp" // Todo: move the free functions there somewhere else and then remove this include
 
 #include "imageio/ImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
@@ -236,7 +237,9 @@ int main(int argc, char *argv[])
 		// fit the model
 		Mat modelShape = lmModel.getMeanShape();
 		modelShape = modelFitter.alignRigid(modelShape, faces[0]);
+		//superviseddescent::drawLandmarks(landmarksImage, modelShape);
 		modelShape = modelFitter.optimize(modelShape, imgGray);
+		//superviseddescent::drawLandmarks(landmarksImage, modelShape);
 
 		// draw the final result
 		for (int i = 0; i < lmModel.getNumLandmarks(); ++i) {

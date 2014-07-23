@@ -1,12 +1,12 @@
 function [] = SDMMatToTxt()
 
-filename = 'AAM_New.mat';
+filename = 'output_CR.mat';
 load(filename);
 
-out = 'SDM_Model_HOG_Zhenhua_11012014.txt';
+out = 'SDM_Model_HOG_Zhenhua_22072014.txt';
 fout = fopen(out, 'w');
 
-description = '# SDM Model with HOG features, trained by Zhenhua and given to Patrik on 11.01.2014. It still has a bit of problems when the face-box initialization is not accurate.';
+description = '# SDM Model with F-HOG features, trained by Patrik, 22.7.2014';
 fprintf(fout, '%s\n', description);
 
 numLandmarks = size(AAM.Mean_Landmark, 1) / 2; % 44

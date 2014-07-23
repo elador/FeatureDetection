@@ -43,7 +43,8 @@ public:
 	virtual ~DescriptorExtractor() {}
 
 	// returns a Matrix, as many rows as points, 1 descriptor = 1 row
-	virtual cv::Mat getDescriptors(const cv::Mat image, std::vector<cv::Point2f> locations) = 0;
+	// the default argument is quite ugly in an inheritance hierarchy
+	virtual cv::Mat getDescriptors(const cv::Mat image, std::vector<cv::Point2f> locations, int windowSizeHalf=0) = 0;
 
 	// returns a string with its parameters (to be written to a model-file)
 	virtual std::string getParameterString() const = 0;
@@ -56,7 +57,7 @@ public:
 	// and store them as private vars.
 	// However, it might be better to store the parameters separately, to be able to share a FeatureDescriptorExtractor over multiple Sdm cascade levels
 
-	cv::Mat getDescriptors(const cv::Mat image, std::vector<cv::Point2f> locations) {
+	cv::Mat getDescriptors(const cv::Mat image, std::vector<cv::Point2f> locations, int windowSizeHalf) {
 		Mat grayImage;
 		if (image.channels() == 3) {
 			cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
@@ -89,11 +90,20 @@ public:
 		Uoctti
 	};
 
-	VlHogDescriptorExtractor(VlHogType vlhogType, int numCells, int cellSize, int numBins) : hogType(vlhogType), numCells(numCells), cellSize(cellSize), numBins(numBins) {
+	// means we use the adaptive parameters depending on the regressor-level and facebox size
+	VlHogDescriptorExtractor(VlHogType vlhogType) : hogType(vlhogType)
+	{
 
 	};
+	
+	// use the parameters given
+	VlHogDescriptorExtractor(VlHogType vlhogType, int numCells, int cellSize, int numBins) : hogType(vlhogType), numCells(numCells), cellSize(cellSize), numBins(numBins)
+	{
+	};
 
-	cv::Mat getDescriptors(const cv::Mat image, std::vector<cv::Point2f> locations) {
+	// Maybe split the class in an AdaptiveVlHog and a VlHogDesc...?
+	// Or better solution with less code duplication?
+	cv::Mat getDescriptors(const cv::Mat image, std::vector<cv::Point2f> locations, int windowSizeHalf) {
 		Mat grayImage;
 		if (image.channels() == 3) {
 			cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
@@ -114,7 +124,27 @@ public:
 			break;
 		}
 		
-		int patchWidthHalf = numCells * (cellSize/2); // patchWidthHalf: Zhenhua's 'numNeighbours'. cellSize: has nothing to do with HOG. It's rather the number of HOG cells we want.
+		int patchWidthHalf;
+		bool adaptivePatchSize = false;
+		if (windowSizeHalf > 0) { // A windowSize was given, meaning we use adaptive. Note: Solve this more properly!
+			adaptivePatchSize = true;
+		}
+		if (adaptivePatchSize) {
+			// adaptive:
+			//int NUM_CELL = 3; // number of cells in the local patch for local feature extraction, i.e.a 3x3 grid
+			patchWidthHalf = windowSizeHalf;
+			cellSize = 10; // One cell is 10x10
+			numCells = 3; // Always 3 for adaptive, 3 * 10 = 30, i.e. always a 30x30 patch
+			numBins = 9; // always 4? Or 9 = default of vl_hog ML?
+			// Q: When patch < 30, don't resize. If < 30, make sure it's even?
+			// Q: 3 cells might not be so good when the patch is small, e.g. does a 2x2 cell make sense?
+		}
+		else {
+			// traditional:
+			patchWidthHalf = numCells * (cellSize / 2); // patchWidthHalf: Zhenhua's 'numNeighbours'. cellSize: has nothing to do with HOG. It's rather the number of HOG cells we want.
+		}
+
+		
 		
 		//int hogDim1 = (numNeighbours * 2) / hogCellSize; // i.e. how many times does the hogCellSize fit into our patch
 		//int hogDim2 = hogDim1; // as our patch is quadratic, those two are the same
@@ -148,6 +178,10 @@ public:
 				roiImg = image(roi).clone(); // clone because we need a continuous memory block
 			}
 			roiImg.convertTo(roiImg, CV_32FC1); // because vl_hog_put_image expects a float* (values 0.f-255.f)
+			if (adaptivePatchSize) {
+				cv::resize(roiImg, roiImg, cv::Size(30, 30)); // actually we shouldn't resize when the image is smaller than 30, but Zhenhua does it
+				// in his Matlab code. If we don't resize, we probably have to adjust the HOG parameters.
+			}
 			// vl_hog_new: numOrientations=hogParameter.numBins, transposed (=col-major):false)
 			VlHog* hog = vl_hog_new(vlHogVariant, numBins, false); // VlHogVariantUoctti seems to be default in Matlab.
 			vl_hog_put_image(hog, (float*)roiImg.data, roiImg.cols, roiImg.rows, 1, cellSize); // (the '1' is numChannels)
