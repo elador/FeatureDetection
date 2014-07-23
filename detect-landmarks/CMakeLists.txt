@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME sdmLandmarkDetection)
+set(SUBPROJECT_NAME detect-landmarks)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -20,7 +20,7 @@ endif()
 
 # Source and header files:
 set(SOURCE
-	sdmLandmarkDetection.cpp
+	detect-landmarks.cpp
 )
 
 set(HEADERS

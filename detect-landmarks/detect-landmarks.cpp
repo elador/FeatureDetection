@@ -1,11 +1,11 @@
 /*
- * sdmLandmarkDetection.cpp
+ * detect-landmarks.cpp
  *
  *  Created on: 20.03.2014
  *      Author: Patrik Huber
  *
  *  Example command-line arguments to run:
- *    sdmLandmarkDetection -v -i C:\\Users\\Patrik\\Documents\\Github\\data\\iBug_lfpw\\testset\\ -m "C:\Users\Patrik\Documents\GitHub\sdm_lfpw_tr100_20lm_10s_5c_vlhogUoctti_3_12_4_NEW.txt" -f "C:\opencv\opencv_2.4.8\sources\data\haarcascades\haarcascade_frontalface_alt2.xml" -o C:\\Users\\Patrik\\Documents\\GitHub\\sdmLmsOut\\
+ *    detect-landmarks -v -i C:\\Users\\Patrik\\Documents\\Github\\data\\iBug_lfpw\\testset\\ -m "C:\Users\Patrik\Documents\GitHub\sdm_lfpw_tr100_20lm_10s_5c_vlhogUoctti_3_12_4_NEW.txt" -f "C:\opencv\opencv_2.4.8\sources\data\haarcascades\haarcascade_frontalface_alt2.xml" -o C:\\Users\\Patrik\\Documents\\GitHub\\sdmLmsOut\\
  */
 
 #include <chrono>
