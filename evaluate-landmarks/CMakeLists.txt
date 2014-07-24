@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME landmarkEvaluation)
+set(SUBPROJECT_NAME evaluate-landmarks)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -20,7 +20,7 @@ endif()
 
 # Source and header files:
 set(SOURCE
-	landmarkEvaluation.cpp
+	evaluate-landmarks.cpp
 )
 
 set(HEADERS

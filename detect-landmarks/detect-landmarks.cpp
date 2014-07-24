@@ -37,6 +37,8 @@
 #include "imageio/DirectoryImageSource.hpp"
 #include "imageio/CameraImageSource.hpp"
 #include "imageio/SimpleModelLandmarkSink.hpp"
+#include "imageio/LandmarkSource.hpp"
+//#include "imageio/"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -71,6 +73,7 @@ int main(int argc, char *argv[])
 	bool useFileList = false;
 	bool useImgs = false;
 	bool useDirectory = false;
+	bool useFaceDetector = false;
 	vector<path> inputPaths;
 	path inputFilelist;
 	path inputDirectory;
@@ -78,6 +81,7 @@ int main(int argc, char *argv[])
 	shared_ptr<ImageSource> imageSource;
 	path sdmModelFile;
 	path faceDetectorFilename;
+	path faceBoxesDirectory;
 	path outputDirectory;
 
 	try {
@@ -87,12 +91,14 @@ int main(int argc, char *argv[])
 				"Produce help message")
 			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
 				  "Specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
-			("input,i", po::value<vector<path>>(&inputPaths)/*->required()*/, 
+			("input,i", po::value<vector<path>>(&inputPaths)->required(),
 				"Input from one or more files, a directory, or a  .lst/.txt-file containing a list of images")
 			("model,m", po::value<path>(&sdmModelFile)->required(),
-				"A SDM model file to load.")
-			("face-detector,f", po::value<path>(&faceDetectorFilename)->required(),
-				"Path to an XML CascadeClassifier from OpenCV.")
+				"An SDM model file to load.")
+			("face-detector,f", po::value<path>(&faceDetectorFilename),
+				"Path to an XML CascadeClassifier from OpenCV. Specify either -f or -l.")
+			("face-boxes,b", po::value<path>(&faceBoxesDirectory),
+				"Path to pre-detected face-box landmarks. Specify either -f or -l.")
 			("output,o", po::value<path>(&outputDirectory)->required(),
 				"Output directory for the result images and landmarks.")
 		;
@@ -103,11 +109,16 @@ int main(int argc, char *argv[])
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
 		if (vm.count("help")) {
-			cout << "Usage: sdmLandmarkDetection [options]\n";
+			cout << "Usage: detect-landmarks [options]" << endl;
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
 		po::notify(vm);
+		if (vm.count("face-detector") + vm.count("face-boxes") != 1) {
+			cout << "Error while parsing command-line arguments: specify either a face-detector (-f) or face-boxes (-l) as input" << endl;
+			cout << desc;
+			return EXIT_SUCCESS;
+		}
 
 	}
 	catch (po::error& e) {
@@ -129,10 +140,14 @@ int main(int argc, char *argv[])
 	}
 	
 	Loggers->getLogger("superviseddescent").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Loggers->getLogger("sdmLandmarkDetection").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Logger appLogger = Loggers->getLogger("sdmLandmarkDetection");
+	Loggers->getLogger("detect-landmarks").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Logger appLogger = Loggers->getLogger("detect-landmarks");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
+
+	if (faceBoxesDirectory.empty()) {
+		useFaceDetector = true;
+	} // else, useFaceDetector stays at false
 
 	if (inputPaths.size() > 1) {
 		// We assume the user has given several, valid images
@@ -205,11 +220,18 @@ int main(int argc, char *argv[])
 	SdmLandmarkModel lmModel = SdmLandmarkModel::load(sdmModelFile);
 	SdmLandmarkModelFitting modelFitter(lmModel);
 
+	// Load either the face detector or the input face boxes:
 	cv::CascadeClassifier faceCascade;
-	if (!faceCascade.load(faceDetectorFilename.string()))
-	{
-		appLogger.error("Error loading the face detection model.");
-		return EXIT_FAILURE;
+	shared_ptr<LandmarkSource> faceboxSource;
+	if (useFaceDetector) {
+		if (!faceCascade.load(faceDetectorFilename.string()))
+		{
+			appLogger.error("Error loading the face detection model.");
+			return EXIT_FAILURE;
+		}
+	}
+	else {
+
 	}
 	
 	while (imageSource->next()) {
