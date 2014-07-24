@@ -75,6 +75,7 @@
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/IbugLandmarkFormatParser.hpp"
 #include "imageio/DidLandmarkFormatParser.hpp"
+#include "imageio/MuctLandmarkFormatParser.hpp"
 #include "imageio/LandmarkMapper.hpp"
 
 #include "logging/LoggerFactory.hpp"
@@ -225,7 +226,7 @@ int main(int argc, char *argv[])
 		imageSource = fileListImgSrc;
 	}
 	if (useImage == true) {
-		appLogger.info("Using input image: ");
+		appLogger.info("Using input image: " + inputFilename.string());
 		shared_ptr<ImageSource> fileImgSrc;
 		try {
 			fileImgSrc = make_shared<FileImageSource>(inputFilename.string());
@@ -256,11 +257,18 @@ int main(int argc, char *argv[])
 	if(boost::iequals(landmarkType, "ibug")) {
 		landmarkFormatParser = make_shared<IbugLandmarkFormatParser>();
 		landmarksFileExtension = ".pts";
-	} else if (boost::iequals(landmarkType, "did")) {
+	}
+	else if (boost::iequals(landmarkType, "did")) {
 		landmarkFormatParser = make_shared<DidLandmarkFormatParser>();
 		//landmarksFileExtension = ".did";
 		landmarksFileExtension = ".pos";
-	} else {
+	}
+	else if (boost::iequals(landmarkType, "muct76-opencv")) {
+		landmarkFormatParser = make_shared<MuctLandmarkFormatParser>();
+		//landmarksFileExtension = ".did";
+		landmarksFileExtension = ".csv";
+	}
+	else {
 		cout << "Error: Invalid ground truth type." << endl;
 		return EXIT_FAILURE;
 	}
@@ -340,12 +348,13 @@ int main(int argc, char *argv[])
 			lm->draw(landmarksImage);
 			landmarks.emplace_back(imageio::ModelLandmark(lm->getName(), lm->getPosition2D()));
 			cv::rectangle(landmarksImage, cv::Point(cvRound(lm->getX() - 2.0f), cvRound(lm->getY() - 2.0f)), cv::Point(cvRound(lm->getX() + 2.0f), cvRound(lm->getY() + 2.0f)), cv::Scalar(255, 0, 0));
+			//cv::putText(landmarksImage, lm->getName(), cv::Point(lm->getX(), lm->getY()), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, cv::Scalar(0.0, 0.0, 255.0));
 		}
 
 		// Start affine camera estimation (Aldrian paper)
 		Mat affineCamLandmarksProjectionImage = landmarksImage.clone(); // the affine LMs are currently not used (don't know how to render without z-vals)
 
-		// Convert the landmarks to clip-space
+		// Convert the landmarks to clip-space, and only convert the ones that exist in the model
 		vector<imageio::ModelLandmark> landmarksClipSpace;
 		for (const auto& lm : landmarks) {
 			if (morphableModel.getShapeModel().landmarkExists(lm.getName())) {
@@ -357,6 +366,7 @@ int main(int argc, char *argv[])
 		Mat affineCam = fitting::estimateAffineCamera(landmarksClipSpace, morphableModel);
 
 		// Render the mean-face landmarks projected using the estimated camera:
+		// Todo/Note: Here we render all landmarks. Shouldn't we only render the ones that exist in the model? (see above, landmarksClipSpace)
 		for (const auto& lm : landmarks) {
 			Vec3f modelPoint;
 			try {
