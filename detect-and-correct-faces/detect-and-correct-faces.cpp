@@ -62,6 +62,7 @@
 #include "imageio/EmptyLandmarkSource.hpp"
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/IbugLandmarkFormatParser.hpp"
+#include "imageio/PascStillEyesLandmarkFormatParser.hpp"
 #include "imageio/RectLandmark.hpp"
 #include "imageio/RectLandmarkSink.hpp"
 
@@ -120,7 +121,7 @@ int main(int argc, char *argv[])
 			("groundtruth,g", po::value<path>(&groundtruthPath)->required(),
 				"groundtruth landmarks to validate found faces")
 			("groundtruth-type,t", po::value<string>(&groundtruthType)->required(),
-				"specify the type of landmarks to load: ibug")
+				"specify the type of landmarks to load: ibug, PaSC-still-PittPatt-eyes")
 			("face-detector,f", po::value<path>(&faceDetectorFilename)->required(),
 				"Path to an XML CascadeClassifier from OpenCV.")
 			("output,o", po::value<path>(&outputDirectory)->default_value("."),
@@ -223,13 +224,17 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	// Prepare the input landmarks:
+	// Prepare the ground truth landmarks:
 	shared_ptr<NamedLandmarkSource> groundtruthSource;
 	vector<path> groundtruthDirs{ groundtruthPath };
 	shared_ptr<LandmarkFormatParser> landmarkFormatParser;
 	if (boost::iequals(groundtruthType, "ibug")) {
 		landmarkFormatParser = make_shared<IbugLandmarkFormatParser>();
 		groundtruthSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(nullptr, ".pts", GatherMethod::SEPARATE_FOLDERS, groundtruthDirs), landmarkFormatParser);
+	}
+	else if (boost::iequals(groundtruthType, "PaSC-still-PittPatt-eyes")) {
+		landmarkFormatParser = make_shared<PascStillEyesLandmarkFormatParser>();
+		groundtruthSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(nullptr, ".csv", GatherMethod::SEPARATE_FILES, groundtruthDirs), landmarkFormatParser);
 	}
 	else {
 		appLogger.error("Error: Invalid ground-truth landmarks type.");
