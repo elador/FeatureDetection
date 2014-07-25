@@ -217,7 +217,6 @@ int main(int argc, char *argv[])
 
 	appLogger.info("Starting to process...");
 	int totalImages = 0;
-	int usedImages = 0;
 
 	// Loop over the input landmarks
 	while (inputSource->next())	{
@@ -232,9 +231,8 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		++totalImages;
-
-		// map both landmarks to a common format
+		// map both landmarks to a common format:
+		// not necessary at the moment, both have ibug IDs
 
 		// Calculate the inter-eye distance of the groundtruth face. Which landmarks to take for that is specified in the config, it
 		// might be one or two, and we calculate the average if them (per eye). For example, it might be the outer eye-corners.
@@ -262,18 +260,6 @@ int main(int argc, char *argv[])
 
 		cv::Scalar distance = cv::norm(groundtruthCenter, detectedCenter, cv::NORM_L2);
 
-		if (detectedFacebox.width < 25 || detectedFacebox.height < 25) { // Todo: Those params could go into the config.
-			continue;
-		}
-
-		if (distance[0] > (groundtruthFacebox.width + groundtruthFacebox.height) / 2.0f || detectedFacebox.width * 1.5f < groundtruthFacebox.width) {
-			// the chosen facebox is smaller than the max-width of the ground-truth landmarks (slightly adjusted because the V&J fb seems rather small)
-			// or
-			// the center of the chosen facebox is further away than the avg(width+height) of the gt (i.e. the point is outside the bbox enclosing the gt-lms)
-			// ==> skip the image
-			continue;
-		}
-
 		// Compare groundtruth and detected landmarks
 		if (!outputFilename.empty()) {
 			// write out the filename
@@ -295,7 +281,7 @@ int main(int argc, char *argv[])
 			}
 			differences.push_back(difference);
 		} // for each landmark
-		++usedImages;
+		++totalImages;
 	} // for each image
 	
 	// close the file if we had opened it before
@@ -304,8 +290,7 @@ int main(int argc, char *argv[])
 	}
 
 	appLogger.info("Finished processing all input landmarks.");
-
-	appLogger.info("Images used to calculate the error: " + std::to_string(usedImages) + " out of " + std::to_string(totalImages) + ", " + std::to_string(static_cast<float>(usedImages) / static_cast<float>(totalImages) * 100.0f) + "%.");
+	appLogger.info("Total number of images: " + std::to_string(totalImages));
 
 	float averageError = std::accumulate(begin(differences), end(differences), 0.0f) / static_cast<float>(differences.size());
 	appLogger.info("Average error (normalized by inter-eye distance) over all landmarks and all images: " + std::to_string(averageError));
