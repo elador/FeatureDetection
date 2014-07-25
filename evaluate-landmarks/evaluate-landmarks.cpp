@@ -1,5 +1,5 @@
 /*
-* landmarkEvaluation.cpp
+* evaluate-landmarks.cpp
 *
 *  Created on: 03.02.2014
 *      Author: Patrik Huber
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
 		if (vm.count("help")) {
-			cout << "Usage: landmarkEvaluation [options]\n";
+			cout << "Usage: evaluate-landmarks [options]\n";
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
@@ -138,8 +138,8 @@ int main(int argc, char *argv[])
 	}
 
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Loggers->getLogger("landmarkEvaluation").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Logger appLogger = Loggers->getLogger("landmarkEvaluation");
+	Loggers->getLogger("evaluate-landmarks").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Logger appLogger = Loggers->getLogger("evaluate-landmarks");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 	appLogger.debug("Using config: " + configFilename.string());
@@ -233,6 +233,8 @@ int main(int argc, char *argv[])
 		}
 
 		++totalImages;
+
+		// map both landmarks to a common format
 
 		// Calculate the inter-eye distance of the groundtruth face. Which landmarks to take for that is specified in the config, it
 		// might be one or two, and we calculate the average if them (per eye). For example, it might be the outer eye-corners.

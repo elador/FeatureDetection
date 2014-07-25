@@ -38,7 +38,9 @@
 #include "imageio/CameraImageSource.hpp"
 #include "imageio/SimpleModelLandmarkSink.hpp"
 #include "imageio/LandmarkSource.hpp"
-//#include "imageio/"
+#include "imageio/DefaultNamedLandmarkSource.hpp"
+#include "imageio/SimpleRectLandmarkFormatParser.hpp"
+#include "imageio/LandmarkFileGatherer.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -222,7 +224,7 @@ int main(int argc, char *argv[])
 
 	// Load either the face detector or the input face boxes:
 	cv::CascadeClassifier faceCascade;
-	shared_ptr<LandmarkSource> faceboxSource;
+	shared_ptr<NamedLandmarkSource> faceboxSource;
 	if (useFaceDetector) {
 		if (!faceCascade.load(faceDetectorFilename.string()))
 		{
@@ -231,7 +233,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	else {
-
+		faceboxSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".txt", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, vector<path>{ faceBoxesDirectory }), make_shared<SimpleRectLandmarkFormatParser>());
 	}
 	
 	while (imageSource->next()) {
@@ -239,21 +241,32 @@ int main(int argc, char *argv[])
 		appLogger.info("Starting to process " + imageSource->getName().string());
 		img = imageSource->getImage();
 		Mat landmarksImage = img.clone();
-
 		Mat imgGray;
 		cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);
 		vector<cv::Rect> faces;
-		float score, notFace = 0.5;
-		
-		// face detection
-		//faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
-		faceCascade.detectMultiScale(img, faces);
-		if (faces.empty()) {
-			// no face found, output the unmodified image. don't create a file for the (non-existing) landmarks.
-			imwrite((outputDirectory / imageSource->getName().filename()).string(), landmarksImage);
-			continue;
+
+		if (useFaceDetector) {
+			float score, notFace = 0.5;
+			// face detection
+			//faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
+			faceCascade.detectMultiScale(img, faces);
+			if (faces.empty()) {
+				// no face found, output the unmodified image. don't create a file for the (non-existing) landmarks.
+				imwrite((outputDirectory / imageSource->getName().filename()).string(), landmarksImage);
+				continue;
+			}
 		}
-		// draw the best face candidate
+		else {
+			imageio::LandmarkCollection facebox = faceboxSource->get(imageSource->getName());
+			if (facebox.isEmpty()) {
+				// no face found, output the unmodified image. don't create a file for the (non-existing) landmarks.
+				imwrite((outputDirectory / imageSource->getName().filename()).string(), landmarksImage);
+				continue;
+			}
+			faces.push_back(facebox.getLandmark()->getRect());
+		}
+		
+		// draw the best face candidate (or the face from the face box landmarks)
 		cv::rectangle(landmarksImage, faces[0], cv::Scalar(0.0f, 0.0f, 255.0f));
 
 		// fit the model
@@ -264,9 +277,8 @@ int main(int argc, char *argv[])
 		//superviseddescent::drawLandmarks(landmarksImage, modelShape);
 
 		// draw the final result
-		for (int i = 0; i < lmModel.getNumLandmarks(); ++i) {
-			cv::circle(landmarksImage, Point2f(modelShape.at<float>(i, 0), modelShape.at<float>(i + lmModel.getNumLandmarks(), 0)), 3, Scalar(0.0f, 255.0f, 0.0f));
-		}
+		superviseddescent::drawLandmarks(landmarksImage, modelShape, Scalar(0.0f, 255.0f, 0.0f));
+
 		// save the image
 		path outputFilename = outputDirectory / imageSource->getName().filename();
 		imwrite(outputFilename.string(), landmarksImage);
