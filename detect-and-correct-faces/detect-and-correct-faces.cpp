@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 			("output,o", po::value<path>(&outputDirectory)->default_value("."),
 				"output folder to write the detected face boxes to")
 			("output-images,p", po::value<bool>(&doOutputImages)->default_value(false),
-				"0 or 1, write the detected face and the ground-truth landmarks alongside the face box output")
+				"true or false, write the detected face and the ground-truth landmarks alongside the face box output")
 		;
 
 		po::variables_map vm;
@@ -159,8 +159,6 @@ int main(int argc, char *argv[])
 	Loggers->getLogger("detect-and-correct-faces").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("detect-and-correct-faces");
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
-
-	// separate 'facebox-from-landmarks' app?
 
 	// Prepare the input image(s):
 	if (inputPaths.size() > 1) {
