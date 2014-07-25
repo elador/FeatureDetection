@@ -61,11 +61,11 @@ add_subdirectory(VideoPlayerApp)		# App for playing videos, showing landmarks an
 # Face-detection apps:
 #add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe). (Note: Check if it still works)
 
-# SDM landmark detection apps:
-add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
+# Face- and landmark detection apps:
+add_subdirectory(detect-and-correct-faces) # Detect faces and validate them using given ground-truth.
 add_subdirectory(detect-landmarks)		# Run the SDM landmark detection on one or several images, the input is either images (V&J will be run) or images & faceboxes.
 add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
-add_subdirectory(sdm-tools)				# Various tool apps for training and running the SDM landmark detection
+add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
 
 # 3DMM fitting:
 add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
