@@ -158,7 +158,7 @@ float calculateScaleRatio(cv::Mat groundtruth, cv::Mat estimate);
 void saveShapeInstanceToMatlab(cv::Mat shapeInstance, std::string filename);
 
 // todo doc.
-void drawLandmarks(cv::Mat image, cv::Mat landmarks);
+void drawLandmarks(cv::Mat image, cv::Mat landmarks, cv::Scalar color = cv::Scalar(0.0, 255.0, 0.0));
 
 // todo doc.
 cv::Mat getPerturbedShape(cv::Mat modelMean, LandmarkBasedSupervisedDescentTraining::AlignmentStatistics alignmentStatistics, cv::Rect detectedFace);
