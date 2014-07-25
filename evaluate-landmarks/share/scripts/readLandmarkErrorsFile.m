@@ -1,4 +1,4 @@
-function [diff filenames] = landmarkEvaluation(filename)
+function [diff, filenames] = readLandmarkErrorsFile(filename)
 
 fid = fopen(filename);
 
