@@ -263,7 +263,7 @@ public:
 				points.emplace_back(cv::Point2f(modelShape.at<float>(i), modelShape.at<float>(i + model.getNumLandmarks())));
 			}
 			Mat currentFeatures;
-			float dynamicFaceSizeDistance = 0.0f;
+			double dynamicFaceSizeDistance = 0.0;
 			if (true) { // adaptive
 				// dynamic face-size:
 				cv::Vec2f point1(modelShape.at<float>(8), modelShape.at<float>(8 + model.getNumLandmarks())); // reye_ic
@@ -279,8 +279,8 @@ public:
 				// S_f = the size of the face estimated from the previous updated shape s^(d-1).
 				// For S_f, can use the IED, EMD, or max(IED, EMD). We use the EMD.
 				dynamicFaceSizeDistance = cv::norm(anchor1 - anchor2);
-				float windowSize = dynamicFaceSizeDistance / 2.0f; // shrink value
-				float windowSizeHalf = windowSize / 2;
+				double windowSize = dynamicFaceSizeDistance / 2.0; // shrink value
+				double windowSizeHalf = windowSize / 2.0;
 				windowSizeHalf = std::round(windowSizeHalf * (1 / (1 + exp((cascadeStep + 1) - model.getNumCascadeSteps())))); // this is (step - numStages), numStages is 5 and step goes from 1 to 5. Because our step goes from 0 to 4, we add 1.
 				int NUM_CELL = 3; // think about if this should go in the descriptorExtractor or not. Is it Hog specific?
 				int windowSizeHalfi = static_cast<int>(windowSizeHalf) + NUM_CELL - (static_cast<int>(windowSizeHalf) % NUM_CELL); // make sure it's divisible by 3. However, this is not needed and not a good way

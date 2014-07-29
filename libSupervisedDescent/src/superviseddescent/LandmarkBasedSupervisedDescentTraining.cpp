@@ -16,6 +16,7 @@
 #endif
 #include "boost/filesystem/path.hpp"
 
+#include <cstddef>
 #include <fstream>
 #include <random>
 #include <chrono>
@@ -27,6 +28,7 @@ using cv::Rect;
 using cv::Scalar;
 using std::string;
 using std::shared_ptr;
+using std::size_t;
 
 namespace superviseddescent {
 
@@ -207,8 +209,8 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 
 	// Note: In tracking, i can't calculate the mu/sigma normalized wrt the FD face-box anymore. but pixel doesnt make sense either. So use the ied or min/max of the model. (ied bad idea, might not have eyes)
 
-	int numImages = trainingImages.size();
-	int numModelLandmarks = modelLandmarks.size();
+	size_t numImages = trainingImages.size();
+	size_t numModelLandmarks = modelLandmarks.size();
 
 	Mat groundtruthLandmarks(numImages, 2 * numModelLandmarks, CV_32FC1);
 	// Just copy from vector<Mat> to one big Mat:
@@ -393,7 +395,7 @@ cv::Mat linearRegression(cv::Mat A, cv::Mat b, RegularizationType regularization
 		break;
 	case superviseddescent::RegularizationType::Automatic:
 		// The given lambda is the factor we have to multiply the automatic value with
-		lambda = lambda * cv::norm(AtA) / A.rows; // We divide by the number of images
+		lambda = lambda * static_cast<float>(cv::norm(AtA)) / static_cast<float>(A.rows); // We divide by the number of images.
 		// However, division by (AtA.rows * AtA.cols) might make more sense? Because this would be an approximation for the
 		// RMS (eigenvalue? see sheet of paper, ev's of diag-matrix etc.), and thus our (conservative?) guess for a lambda that makes AtA invertible.
 		break;
@@ -427,7 +429,7 @@ cv::Mat linearRegression(cv::Mat A, cv::Mat b, RegularizationType regularization
 	// Calculate the full-pivoting LU decomposition of the regularized AtA. Note: We could also try FullPivHouseholderQR if our system is non-minimal (i.e. there are more constraints than unknowns).
 	Eigen::FullPivLU<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> luOfAtAReg(AtAReg_Eigen);
 	// we could also print the smallest eigenvalue here, but that would take time to calculate (SelfAdjointEigenSolver, see above)
-	float rankOfAtAReg = luOfAtAReg.rank();
+	float rankOfAtAReg = luOfAtAReg.rank(); // Todo: Use auto?
 	logger.trace("Rank of the regularized AtA: " + lexical_cast<string>(rankOfAtAReg));
 	if (luOfAtAReg.isInvertible()) {
 		logger.debug("The regularized AtA is invertible.");
@@ -501,8 +503,8 @@ Mat getPerturbedShape(Mat modelMean, LandmarkBasedSupervisedDescentTraining::Ali
 	std::normal_distribution<float> rndN_t_y(alignmentStatistics.ty.mu, alignmentStatistics.ty.sigma);
 
 	LandmarkBasedSupervisedDescentTraining::GaussParameter scaleVariance;
-	scaleVariance.mu = (alignmentStatistics.sx.mu + alignmentStatistics.sy.mu) / 2.0;
-	scaleVariance.sigma = (alignmentStatistics.sx.sigma + alignmentStatistics.sy.sigma) / 2.0;
+	scaleVariance.mu = (alignmentStatistics.sx.mu + alignmentStatistics.sy.mu) / 2.0f;
+	scaleVariance.sigma = (alignmentStatistics.sx.sigma + alignmentStatistics.sy.sigma) / 2.0f;
 	std::normal_distribution<float> rndN_scale(scaleVariance.mu, scaleVariance.sigma);
 
 	double rndScale = rndN_scale(engine);
