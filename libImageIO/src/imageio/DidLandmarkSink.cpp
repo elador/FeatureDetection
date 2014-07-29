@@ -27,7 +27,11 @@ void DidLandmarkSink::add(const LandmarkCollection& collection, path filename)
 
 	const auto& landmarks = collection.getLandmarks();
 	for (const auto& lm : landmarks) {
-		outputFile << std::round(lm->getX()) << " " << std::round(lm->getY()) << " " << lm->getName() << std::endl;
+		if (lm->isVisible()) {
+			// The .did files cannot handle visibility, a landmark is always used.
+			// Thus, we only write the landmark if it is visible.
+			outputFile << std::round(lm->getX()) << " " << std::round(lm->getY()) << " " << lm->getName() << std::endl;
+		}
 	}
 
 	outputFile.close();

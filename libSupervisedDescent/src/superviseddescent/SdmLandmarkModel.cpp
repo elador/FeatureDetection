@@ -34,7 +34,7 @@ SdmLandmarkModel::SdmLandmarkModel()
 SdmLandmarkModel::SdmLandmarkModel(cv::Mat meanLandmarks, std::vector<std::string> landmarkIdentifier, std::vector<cv::Mat> regressorData, std::vector<std::shared_ptr<DescriptorExtractor>> descriptorExtractors, std::vector<std::string> descriptorTypes)
 {
 	this->meanLandmarks = meanLandmarks;
-	this->landmarkIdentifier = landmarkIdentifier;
+	this->landmarkIdentifiers = landmarkIdentifier;
 	this->regressorData = regressorData;
 	this->descriptorExtractors = descriptorExtractors;
 	this->descriptorTypes = descriptorTypes;
@@ -81,11 +81,11 @@ std::vector<cv::Point2f> SdmLandmarkModel::getMeanAsPoints() const
 
 cv::Point2f SdmLandmarkModel::getLandmarkAsPoint(std::string landmarkIdentifier, cv::Mat modelInstance/*=cv::Mat()*/) const
 {
-	const auto it = std::find(begin(this->landmarkIdentifier), end(this->landmarkIdentifier), landmarkIdentifier);
-	if (it == end(this->landmarkIdentifier)) {
+	const auto it = std::find(begin(this->landmarkIdentifiers), end(this->landmarkIdentifiers), landmarkIdentifier);
+	if (it == end(this->landmarkIdentifiers)) {
 		// Todo: We didn't find the landmark, throw, log or something
 	} else {
-		const auto index = std::distance(begin(this->landmarkIdentifier), it);
+		const auto index = std::distance(begin(this->landmarkIdentifiers), it);
 		if (modelInstance.empty()) {
 			return cv::Point2f(meanLandmarks.at<float>(index), meanLandmarks.at<float>(index + getNumLandmarks()));
 		} else {
@@ -100,7 +100,7 @@ void SdmLandmarkModel::save(boost::filesystem::path filename, std::string commen
 	std::ofstream file(filename.string());
 	file << "# " << comment << std::endl;
 	file << "numLandmarks " << getNumLandmarks() << std::endl;
-	for (const auto& id : landmarkIdentifier) {
+	for (const auto& id : landmarkIdentifiers) {
 		file << id << std::endl;
 	}
 	// write the mean
@@ -148,7 +148,7 @@ SdmLandmarkModel SdmLandmarkModel::load(boost::filesystem::path filename)
 	for (int i = 0; i < numLandmarks; ++i) {
 		std::getline(file, line);
 		boost::trim_right_if(line, boost::is_any_of("\r"));
-		model.landmarkIdentifier.push_back(line);
+		model.landmarkIdentifiers.push_back(line);
 	}
 	// read the mean landmarks:
 	model.meanLandmarks = Mat(1, 2 * numLandmarks, CV_32FC1);
@@ -237,8 +237,8 @@ imageio::LandmarkCollection SdmLandmarkModel::getAsLandmarks(cv::Mat modelInstan
 	imageio::LandmarkCollection landmarks;
 	if (modelInstance.empty()) {
 		// a model instance was not provided, return the mean landmarks
-		for (size_t i = 0; i < landmarkIdentifier.size(); ++i) {
-			landmarks.insert(make_shared<imageio::ModelLandmark>(landmarkIdentifier[i], meanLandmarks.at<float>(i), meanLandmarks.at<float>(i + getNumLandmarks())));
+		for (size_t i = 0; i < landmarkIdentifiers.size(); ++i) {
+			landmarks.insert(make_shared<imageio::ModelLandmark>(landmarkIdentifiers[i], meanLandmarks.at<float>(i), meanLandmarks.at<float>(i + getNumLandmarks())));
 		}
 	}
 	else {
@@ -246,8 +246,8 @@ imageio::LandmarkCollection SdmLandmarkModel::getAsLandmarks(cv::Mat modelInstan
 		if (modelInstance.rows != getNumLandmarks() * 2) {
 			throw std::runtime_error("SdmLandmarkModel: The model instance given has a different number of landmarks than the called model. Please make sure that the instance you give is generated from the model you are calling.");
 		}
-		for (size_t i = 0; i < landmarkIdentifier.size(); ++i) {
-			landmarks.insert(make_shared<imageio::ModelLandmark>(landmarkIdentifier[i], modelInstance.at<float>(i), modelInstance.at<float>(i + getNumLandmarks())));
+		for (size_t i = 0; i < landmarkIdentifiers.size(); ++i) {
+			landmarks.insert(make_shared<imageio::ModelLandmark>(landmarkIdentifiers[i], modelInstance.at<float>(i), modelInstance.at<float>(i + getNumLandmarks())));
 		}
 	}
 

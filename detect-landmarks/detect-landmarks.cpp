@@ -42,6 +42,7 @@
 #include "imageio/SimpleRectLandmarkFormatParser.hpp"
 #include "imageio/PascStillEyesLandmarkFormatParser.hpp"
 #include "imageio/LandmarkFileGatherer.hpp"
+#include "imageio/ModelLandmark.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -287,7 +288,18 @@ int main(int argc, char *argv[])
 			}
 			else {
 				// aligning to landmarks:
-				alignmentLandmarks = faceboxSource->get(imageSource->getName());
+				LandmarkCollection tmpLms_pascName = faceboxSource->get(imageSource->getName());
+				// ugly hack to change the lm-id from "le_x" (PittPatt) to our model-format
+				for (auto&& lm : tmpLms_pascName.getLandmarks()) {
+					if (lm->getName() == "le") {
+						alignmentLandmarks.insert(make_shared<imageio::ModelLandmark>("40", lm->getX(), lm->getY()));
+					}
+					else if (lm->getName() == "re") {
+						alignmentLandmarks.insert(make_shared<imageio::ModelLandmark>("43", lm->getX(), lm->getY()));
+					}
+					
+				}
+				
 			}
 		}
 		

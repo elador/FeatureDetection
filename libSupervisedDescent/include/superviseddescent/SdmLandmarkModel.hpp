@@ -115,7 +115,7 @@ public:
 
 private:
 	cv::Mat meanLandmarks; // 1 x numLandmarks*2. First all the x-coordinates, then all the y-coordinates.
-	std::vector<std::string> landmarkIdentifier; //
+	std::vector<std::string> landmarkIdentifiers; //
 	std::vector<cv::Mat> regressorData; // Holds the training data, one cv::Mat for each cascade level. Every Mat is (numFeatureDim+1) x numLandmarks*2 (for x & y)
 
 	std::vector<HogParameter> hogParameters;
@@ -198,6 +198,9 @@ public:
 	// directly modifies modelShape
 	// could move to parent-class
 	// assumes mean -0.5, 0.5 and just places inside FB
+	// TODO: Actually this function uses model.mean as well as a modelShape input, this is
+	// a big ambiguous. Move this function out of this class? But we need access to getLandmarkAsPoint?
+	// Also think about the alignRigid function above.
 	cv::Mat alignRigid(cv::Mat modelShape, imageio::LandmarkCollection landmarks) const {
 		// we assume we get passed a col-vec. For convenience, we keep it.
 		if (modelShape.cols != 1) {
@@ -206,13 +209,7 @@ public:
 		}
 		Mat xCoords = modelShape.rowRange(0, modelShape.rows / 2);
 		Mat yCoords = modelShape.rowRange(modelShape.rows / 2, modelShape.rows);
-		// b) Align the model to the current face-box. (rigid, only centering of the mean). x_0
-		// Initial estimate x_0: Center the mean face at the [-0.5, 0.5] x [-0.5, 0.5] square (assuming the face-box is that square)
-		// More precise: Take the mean as it is (assume it is in a space [-0.5, 0.5] x [-0.5, 0.5]), and just place it in the face-box as
-		// if the box is [-0.5, 0.5] x [-0.5, 0.5]. (i.e. the mean coordinates get upscaled)
-		//xCoords = (xCoords + 0.5f) * faceBox.width + faceBox.x;
-		//yCoords = (yCoords + 0.5f) * faceBox.height + faceBox.y;
-
+		
 		Mat modelLandmarksX, modelLandmarksY, alignmentLandmarksX, alignmentLandmarksY;
 		for (auto&& lm : landmarks.getLandmarks()) {
 			cv::Point2f p = model.getLandmarkAsPoint(lm->getName());
@@ -221,10 +218,32 @@ public:
 			alignmentLandmarksX.push_back(lm->getX());
 			alignmentLandmarksY.push_back(lm->getY());
 		}
-		float tx = superviseddescent::calculateMeanTranslation(modelLandmarksX, alignmentLandmarksX);
-		float ty = superviseddescent::calculateMeanTranslation(modelLandmarksY, alignmentLandmarksY);
-		float sx = superviseddescent::calculateScaleRatio(modelLandmarksX, alignmentLandmarksX);
-		float sy = superviseddescent::calculateScaleRatio(modelLandmarksY, alignmentLandmarksY);
+
+		// Note: Calculate the scaling first, then scale, then calculate the translation.
+		// Because the translation will change once we scale the model (the centroid of our
+		// two points is not at the centroid of the whole model (which is the point from where we scale). (ZF)
+		float sx = calculateScaleRatio(modelLandmarksX, alignmentLandmarksX);
+		float sy = calculateScaleRatio(modelLandmarksY, alignmentLandmarksY);
+		float s;
+		// Note: If the y-difference is very small (instead of zero), the sx or sy number could be
+		// very large. This could cause side-effects?
+		if (std::isinf(sx)) {
+			s = sy;
+		}
+		else if (std::isinf(sy)) {
+			s = sx;
+		}
+		else {
+			s = (sx + sy) / 2.0f;
+		}
+
+		modelLandmarksX *= s;
+		modelLandmarksY *= s;
+		float tx = calculateMeanTranslation(modelLandmarksX, alignmentLandmarksX);
+		float ty = calculateMeanTranslation(modelLandmarksY, alignmentLandmarksY);
+
+		xCoords = (xCoords * s + tx);
+		yCoords = (yCoords * s + ty);
 
 		return modelShape;
 	};

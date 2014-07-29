@@ -47,9 +47,9 @@ const map<path, LandmarkCollection> PascStillEyesLandmarkFormatParser::read(path
 		float le_y = lexical_cast<float>(tokens[2]);
 		float re_x = lexical_cast<float>(tokens[3]);
 		float re_y = lexical_cast<float>(tokens[4]);
-		shared_ptr<Landmark> le = make_shared<ModelLandmark>(lexical_cast<string>("le_x"), le_x, le_y);
+		shared_ptr<Landmark> le = make_shared<ModelLandmark>("le", le_x, le_y);
 		eyes.insert(le);
-		shared_ptr<Landmark> re = make_shared<ModelLandmark>(lexical_cast<string>("re_x"), re_x, re_y);
+		shared_ptr<Landmark> re = make_shared<ModelLandmark>("re", re_x, re_y);
 		eyes.insert(re);
 		
 		allLandmarks.insert(make_pair(imageName, eyes));
