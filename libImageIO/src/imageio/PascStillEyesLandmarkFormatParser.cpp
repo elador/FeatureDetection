@@ -41,19 +41,18 @@ const map<path, LandmarkCollection> PascStillEyesLandmarkFormatParser::read(path
 		boost::trim_right_if(line, boost::is_any_of("\r")); // Windows line-endings are \r\n, Linux only \n. Thus, when a file has been created on windows and is read on linux, we need to remove the trailing \r.
 		boost::split(tokens, line, boost::is_any_of(","));
 		path imageName = tokens[0];
-		LandmarkCollection landmarks;
-		for (int landmarkId = 0; landmarkId < 76; ++landmarkId) {
-			float x = lexical_cast<float>(tokens[landmarkId * 2 + 2]);
-			float y = lexical_cast<float>(tokens[landmarkId * 2 + 2 + 1]);
-			bool available = true; // "Unavailable points" are points that are obscured by other facial features. (i.e. self-occlusion. Occlusions by hair or glasses are marked as visible)
-			if (tokens[landmarkId * 2 + 2] == "0" && tokens[landmarkId * 2 + 2 + 1] == "0") {
-				available = false;
-			}
-			shared_ptr<Landmark> lm = make_shared<ModelLandmark>(lexical_cast<string>(landmarkId), Vec3f(x, y, 0.0f), available);
-			landmarks.insert(lm);
-		}
+		LandmarkCollection eyes;
 		
-		allLandmarks.insert(make_pair(imageName, landmarks));
+		float le_x = lexical_cast<float>(tokens[1]);
+		float le_y = lexical_cast<float>(tokens[2]);
+		float re_x = lexical_cast<float>(tokens[3]);
+		float re_y = lexical_cast<float>(tokens[4]);
+		shared_ptr<Landmark> le = make_shared<ModelLandmark>(lexical_cast<string>("le_x"), le_x, le_y);
+		eyes.insert(le);
+		shared_ptr<Landmark> re = make_shared<ModelLandmark>(lexical_cast<string>("re_x"), re_x, re_y);
+		eyes.insert(re);
+		
+		allLandmarks.insert(make_pair(imageName, eyes));
 	}
 
 	return allLandmarks;

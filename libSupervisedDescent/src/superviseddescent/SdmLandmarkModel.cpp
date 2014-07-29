@@ -83,7 +83,7 @@ cv::Point2f SdmLandmarkModel::getLandmarkAsPoint(std::string landmarkIdentifier,
 {
 	const auto it = std::find(begin(this->landmarkIdentifier), end(this->landmarkIdentifier), landmarkIdentifier);
 	if (it == end(this->landmarkIdentifier)) {
-
+		// Todo: We didn't find the landmark, throw, log or something
 	} else {
 		const auto index = std::distance(begin(this->landmarkIdentifier), it);
 		if (modelInstance.empty()) {

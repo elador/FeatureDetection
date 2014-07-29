@@ -32,6 +32,7 @@ set(HEADERS
 	include/superviseddescent/hog.h
 	include/superviseddescent/OpenCVSiftFilter.hpp
 	include/superviseddescent/VlHogFilter.hpp
+	include/superviseddescent/utils.hpp
 )
 set(SOURCE
 	src/superviseddescent/SdmLandmarkModel.cpp
@@ -39,6 +40,7 @@ set(SOURCE
 	src/superviseddescent/hog.c
 	src/superviseddescent/OpenCVSiftFilter.cpp
 	src/superviseddescent/VlHogFilter.cpp
+	src/superviseddescent/utils.cpp
 )
 
 include_directories("include")

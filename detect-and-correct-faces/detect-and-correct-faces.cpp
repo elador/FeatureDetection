@@ -117,13 +117,13 @@ int main(int argc, char *argv[])
 			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
 				"specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
 			("input,i", po::value<vector<path>>(&inputPaths)->required(),
-				"input from one or more files, a directory, or a  .lst/.txt-file containing a list of images")
+				"input from one or more files, a directory, or a .lst/.txt-file containing a list of images")
 			("groundtruth,g", po::value<path>(&groundtruthPath)->required(),
 				"groundtruth landmarks to validate found faces")
 			("groundtruth-type,t", po::value<string>(&groundtruthType)->required(),
 				"specify the type of landmarks to load: ibug, PaSC-still-PittPatt-eyes")
 			("face-detector,f", po::value<path>(&faceDetectorFilename)->required(),
-				"Path to an XML CascadeClassifier from OpenCV.")
+				"path to an XML CascadeClassifier from OpenCV")
 			("output,o", po::value<path>(&outputDirectory)->default_value("."),
 				"output folder to write the detected face boxes to")
 			("output-images,p", po::value<bool>(&doOutputImages)->default_value(false),
@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
 		groundtruthSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(nullptr, ".csv", GatherMethod::SEPARATE_FILES, groundtruthDirs), landmarkFormatParser);
 	}
 	else {
-		appLogger.error("Error: Invalid ground-truth landmarks type.");
+		appLogger.error("Invalid ground-truth landmarks type.");
 		return EXIT_FAILURE;
 	}
 

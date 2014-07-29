@@ -42,8 +42,9 @@ public:
 
 	bool next();
 
-	// looks up using the given path (potentially full path) first, if not found, uses the basename
-	// throws std::out_of_range exception if full path + basename both not found
+	// looks up using the given path (potentially full path) first, if not found, uses the 
+	// filename, and then the basename
+	// throws std::out_of_range exception if full path + filename + basename both not found
 	LandmarkCollection get(const boost::filesystem::path& imagePath); // This doesn't change the iterator at the moment, it's completely independent of it.
 
 	LandmarkCollection getLandmarks() const;

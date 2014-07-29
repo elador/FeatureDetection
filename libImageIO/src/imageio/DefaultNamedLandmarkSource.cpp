@@ -57,13 +57,18 @@ LandmarkCollection DefaultNamedLandmarkSource::get(const path& imagePath) {
 	Logger logger = Loggers->getLogger("imageio");
 
 	LandmarkCollection landmarks;
-	try {
+	try { // Todo: We should probably change this unreadable try-catch code to find()
 		landmarks = landmarkCollections.at(imagePath);
 	} catch (std::out_of_range& e) {
 		try {
-			landmarks = landmarkCollections.at(imagePath.stem());
+			landmarks = landmarkCollections.at(imagePath.filename());
 		} catch (std::out_of_range& e) {
-			logger.warn("Landmarks for the given image could not be found, returning an empty LandmarkCollection. Is this expected?");
+			try {
+				landmarks = landmarkCollections.at(imagePath.stem());
+			}
+			catch (std::out_of_range& e) {
+				logger.warn("Landmarks for the given image could not be found, returning an empty LandmarkCollection. Is this expected?");
+			}
 		}
 		// we succeeded using the basename
 	}

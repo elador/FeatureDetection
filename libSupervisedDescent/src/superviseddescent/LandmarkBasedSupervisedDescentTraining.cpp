@@ -8,18 +8,17 @@
 #include "superviseddescent/LandmarkBasedSupervisedDescentTraining.hpp"
 #include "logging/LoggerFactory.hpp"
 
-#include <fstream>
-#include <random>
-#include <chrono>
-
 #include "opencv2/imgproc/imgproc.hpp"
 #include "Eigen/Dense"
-
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
 #include "boost/filesystem/path.hpp"
+
+#include <fstream>
+#include <random>
+#include <chrono>
 
 using logging::Logger;
 using logging::LoggerFactory;
@@ -379,63 +378,6 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 	return model;
 }
 
-// todo remove stuff and add perturbMean(...). But what about the scaling then, if the sample isn't centered around 0 anymore and we then align it?
-cv::Mat alignMean(cv::Mat mean, cv::Rect faceBox, float scalingX/*=1.0f*/, float scalingY/*=1.0f*/, float translationX/*=0.0f*/, float translationY/*=0.0f*/)
-{
-	// Initial estimate x_0: Center the mean face at the [-0.5, 0.5] x [-0.5, 0.5] square (assuming the face-box is that square)
-	// More precise: Take the mean as it is (assume it is in a space [-0.5, 0.5] x [-0.5, 0.5]), and just place it in the face-box as
-	// if the box is [-0.5, 0.5] x [-0.5, 0.5]. (i.e. the mean coordinates get upscaled)
-	Mat alignedMean = mean.clone();
-	Mat alignedMeanX = alignedMean.colRange(0, alignedMean.cols / 2);
-	Mat alignedMeanY = alignedMean.colRange(alignedMean.cols / 2, alignedMean.cols);
-	alignedMeanX = (alignedMeanX*scalingX + 0.5f + translationX) * faceBox.width + faceBox.x;
-	alignedMeanY = (alignedMeanY*scalingY + 0.5f + translationY) * faceBox.height + faceBox.y;
-	return alignedMean;
-}
-
-float calculateMeanTranslation(cv::Mat groundtruth, cv::Mat estimate)
-{
-	// calculate the centroid of the ground-truth and the estimate
-	Scalar gtMean = cv::mean(groundtruth);
-	Scalar estMean = cv::mean(estimate);
-	// Return the difference between the centroids:
-	return (estMean[0] - gtMean[0]);
-}
-
-float calculateScaleRatio(cv::Mat groundtruth, cv::Mat estimate)
-{
-	// calculate the scaling difference between the ground truth and the estimate
-	double gtMin, gtMax;
-	cv::minMaxIdx(groundtruth, &gtMin, &gtMax);
-	double x0Min, x0Max;
-	cv::minMaxIdx(estimate, &x0Min, &x0Max);
-
-	return (x0Max - x0Min) / (gtMax - gtMin);
-}
-
-void saveShapeInstanceToMatlab(Mat shapeInstance, string filename)
-{
-	int numLandmarks;
-	if (shapeInstance.rows > 1) {
-		numLandmarks = shapeInstance.rows / 2;
-	}
-	else {
-		numLandmarks = shapeInstance.cols / 2;
-	}
-	std::ofstream myfile;
-	myfile.open(filename);
-	myfile << "x = [";
-	for (int i = 0; i < numLandmarks; ++i) {
-		myfile << shapeInstance.at<float>(i) << ", ";
-	}
-	myfile << "];" << std::endl << "y = [";
-	for (int i = 0; i < numLandmarks; ++i) {
-		myfile << shapeInstance.at<float>(i + numLandmarks) << ", ";
-	}
-	myfile << "];" << std::endl;
-	myfile.close();
-}
-
 cv::Mat linearRegression(cv::Mat A, cv::Mat b, RegularizationType regularizationType /*= RegularizationType::Automatic*/, float lambda /*= 0.5f*/, bool regularizeAffineComponent /*= false*/)
 {
 	Logger logger = Loggers->getLogger("superviseddescent");
@@ -545,14 +487,6 @@ float calculateEigenvalueThreshold(cv::Mat matrix)
 	// We multiply it by 2 to make sure the matrix is invertible afterwards. (But: See Todo(1) below for a potential bug.)
 	float threshold = 2 * abs(luOfAtA.maxPivot()) * luOfAtA.threshold();
 	return threshold;
-}
-
-void drawLandmarks(cv::Mat image, cv::Mat landmarks, cv::Scalar color /*= cv::Scalar(0.0, 255.0, 0.0)*/)
-{
-	auto numLandmarks = std::max(landmarks.cols, landmarks.rows) / 2;
-	for (int i = 0; i < numLandmarks; ++i) {
-		cv::circle(image, cv::Point2f(landmarks.at<float>(i), landmarks.at<float>(i + numLandmarks)), 2, color);
-	}
 }
 
 // returns the already aligned shape (in image-coords). Probably adjust that and split, see comments in alignMean()

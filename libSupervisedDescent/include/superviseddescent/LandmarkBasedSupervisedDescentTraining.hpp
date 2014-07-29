@@ -133,32 +133,7 @@ private:
 	cv::Mat meanNormalizationUnitSumSquaredNorms(cv::Mat modelMean);
 };
 
-/**
- * Below: Free functions / classes belonging to the regression. TODO Move to another file probably. (linearalgebra.hpp? regression.hpp?)
- *
- */
-
-// public?
-// Initial estimate x_0: Center the mean face at the [-0.5, 0.5] x [-0.5, 0.5] square (assuming the face-box is that square)
-// More precise: Take the mean as it is (assume it is in a space [-0.5, 0.5] x [-0.5, 0.5]), and just place it in the face-box as
-// if the box is [-0.5, 0.5] x [-0.5, 0.5]. (i.e. the mean coordinates get upscaled)
-// - makes a copy of mean, not inplace
-// - optional: scaling/trans that gets added to the mean (before scaling up to the facebox)
-// Todo/Note: Is this the same as in SdmModel::alignRigid?
-cv::Mat alignMean(cv::Mat mean, cv::Rect faceBox, float scalingX = 1.0f, float scalingY = 1.0f, float translationX = 0.0f, float translationY = 0.0f);
-
-// mean translation to go from gt to esti
-float calculateMeanTranslation(cv::Mat groundtruth, cv::Mat estimate);
-
-// calc scale ratio of the estimate w.r.t. the GT
-// i.e. if the estimate is estimated larger than the GT, it will return > 1.0f
-float calculateScaleRatio(cv::Mat groundtruth, cv::Mat estimate);
-
-// deals with both row and col vecs. Assumes first half x, second y.
-void saveShapeInstanceToMatlab(cv::Mat shapeInstance, std::string filename);
-
-// todo doc.
-void drawLandmarks(cv::Mat image, cv::Mat landmarks, cv::Scalar color = cv::Scalar(0.0, 255.0, 0.0));
+// Todo: Move the functions below to utils as well?
 
 // todo doc.
 cv::Mat getPerturbedShape(cv::Mat modelMean, LandmarkBasedSupervisedDescentTraining::AlignmentStatistics alignmentStatistics, cv::Rect detectedFace);

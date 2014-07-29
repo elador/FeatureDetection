@@ -11,6 +11,7 @@
 #define SDMLANDMARKMODEL_HPP_
 
 #include "superviseddescent/DescriptorExtractor.hpp"
+#include "superviseddescent/utils.hpp"
 #include "imageio/LandmarkCollection.hpp"
 
 #include "opencv2/core/core.hpp"
@@ -141,6 +142,7 @@ Test: To calculate the face-box (Zhenhua): Take all 68 LMs; Take the min/max x a
 for the face-box. (so the face-box is quite small)
 */
 
+// I think most (all?) of these functions could be free functions, we don't need a class? Do we have a state?
 class SdmLandmarkModelFitting
 {
 public:
@@ -188,6 +190,42 @@ public:
 		xCoords += faceBox.x + faceBox.width / 2.0f - meanXd;
 		yCoords += faceBox.y + faceBox.height / 1.8f - meanYd; // we use another value for y because we don't want to center the model right in the middle of the face-box
 		*/
+		return modelShape;
+	};
+
+	// out: aligned modelShape
+	// in: Rect, ocv with tl x, tl y, w, h (?) and calcs center
+	// directly modifies modelShape
+	// could move to parent-class
+	// assumes mean -0.5, 0.5 and just places inside FB
+	cv::Mat alignRigid(cv::Mat modelShape, imageio::LandmarkCollection landmarks) const {
+		// we assume we get passed a col-vec. For convenience, we keep it.
+		if (modelShape.cols != 1) {
+			throw std::runtime_error("The supplied model shape does not have one column (i.e. it doesn't seem to be a column-vector).");
+			// We could also check if it's a row-vector and if yes, transpose.
+		}
+		Mat xCoords = modelShape.rowRange(0, modelShape.rows / 2);
+		Mat yCoords = modelShape.rowRange(modelShape.rows / 2, modelShape.rows);
+		// b) Align the model to the current face-box. (rigid, only centering of the mean). x_0
+		// Initial estimate x_0: Center the mean face at the [-0.5, 0.5] x [-0.5, 0.5] square (assuming the face-box is that square)
+		// More precise: Take the mean as it is (assume it is in a space [-0.5, 0.5] x [-0.5, 0.5]), and just place it in the face-box as
+		// if the box is [-0.5, 0.5] x [-0.5, 0.5]. (i.e. the mean coordinates get upscaled)
+		//xCoords = (xCoords + 0.5f) * faceBox.width + faceBox.x;
+		//yCoords = (yCoords + 0.5f) * faceBox.height + faceBox.y;
+
+		Mat modelLandmarksX, modelLandmarksY, alignmentLandmarksX, alignmentLandmarksY;
+		for (auto&& lm : landmarks.getLandmarks()) {
+			cv::Point2f p = model.getLandmarkAsPoint(lm->getName());
+			modelLandmarksX.push_back(p.x);
+			modelLandmarksY.push_back(p.y);
+			alignmentLandmarksX.push_back(lm->getX());
+			alignmentLandmarksY.push_back(lm->getY());
+		}
+		float tx = superviseddescent::calculateMeanTranslation(modelLandmarksX, alignmentLandmarksX);
+		float ty = superviseddescent::calculateMeanTranslation(modelLandmarksY, alignmentLandmarksY);
+		float sx = superviseddescent::calculateScaleRatio(modelLandmarksX, alignmentLandmarksX);
+		float sy = superviseddescent::calculateScaleRatio(modelLandmarksY, alignmentLandmarksY);
+
 		return modelShape;
 	};
 

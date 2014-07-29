@@ -40,6 +40,7 @@
 #include "imageio/LandmarkSource.hpp"
 #include "imageio/DefaultNamedLandmarkSource.hpp"
 #include "imageio/SimpleRectLandmarkFormatParser.hpp"
+#include "imageio/PascStillEyesLandmarkFormatParser.hpp"
 #include "imageio/LandmarkFileGatherer.hpp"
 
 #include "logging/LoggerFactory.hpp"
@@ -85,22 +86,25 @@ int main(int argc, char *argv[])
 	path faceDetectorFilename;
 	path faceBoxesDirectory;
 	path outputDirectory;
+	string landmarkType;
 
 	try {
 		po::options_description desc("Allowed options");
 		desc.add_options()
 			("help,h",
-				"Produce help message")
+				"produce help message")
 			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
-				  "Specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
+				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
 			("input,i", po::value<vector<path>>(&inputPaths)->required(),
-				"Input from one or more files, a directory, or a  .lst/.txt-file containing a list of images")
+				"input from one or more files, a directory, or a .lst/.txt-file containing a list of images")
 			("model,m", po::value<path>(&sdmModelFile)->required(),
-				"An SDM model file to load.")
+				"an SDM model file to load")
 			("face-detector,f", po::value<path>(&faceDetectorFilename),
-				"Path to an XML CascadeClassifier from OpenCV. Specify either -f or -l.")
-			("face-boxes,b", po::value<path>(&faceBoxesDirectory),
-				"Path to pre-detected face-box landmarks. Specify either -f or -l.")
+				"path to an XML CascadeClassifier from OpenCV. Either -f or -g is required")
+			("face-initialization,g", po::value<path>(&faceBoxesDirectory),
+				"path to face-boxes or landmarks to initialize the model. Either -f or -g is required.")
+			("landmark-type,t", po::value<string>(&landmarkType),
+				"specify the type of landmarks to load: rect-face-box, PaSC-still-PittPatt-eyes")
 			("output,o", po::value<path>(&outputDirectory)->required(),
 				"Output directory for the result images and landmarks.")
 		;
@@ -116,8 +120,8 @@ int main(int argc, char *argv[])
 			return EXIT_SUCCESS;
 		}
 		po::notify(vm);
-		if (vm.count("face-detector") + vm.count("face-boxes") != 1) {
-			cout << "Error while parsing command-line arguments: specify either a face-detector (-f) or face-boxes (-l) as input" << endl;
+		if (vm.count("face-detector") + vm.count("face-initialization") != 1) {
+			cout << "Error while parsing command-line arguments: specify either a face-detector (-f) or face-initialization (-g) as input" << endl;
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
@@ -225,15 +229,29 @@ int main(int argc, char *argv[])
 	// Load either the face detector or the input face boxes:
 	cv::CascadeClassifier faceCascade;
 	shared_ptr<NamedLandmarkSource> faceboxSource;
+	bool alignToFacebox; ///< true means align to a face box, false means align to landmarks (e.g. eyes)
 	if (useFaceDetector) {
 		if (!faceCascade.load(faceDetectorFilename.string()))
 		{
 			appLogger.error("Error loading the face detection model.");
 			return EXIT_FAILURE;
 		}
+		alignToFacebox = true;
 	}
 	else {
-		faceboxSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".txt", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, vector<path>{ faceBoxesDirectory }), make_shared<SimpleRectLandmarkFormatParser>());
+		if (boost::iequals(landmarkType, "rect-face-box")) {
+			faceboxSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".txt", GatherMethod::ONE_FILE_PER_IMAGE_DIFFERENT_DIRS, vector<path>{ faceBoxesDirectory }), make_shared<SimpleRectLandmarkFormatParser>());
+			alignToFacebox = true;
+		}
+		else if (boost::iequals(landmarkType, "PaSC-still-PittPatt-eyes")) {
+			faceboxSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(nullptr, ".txt", GatherMethod::SEPARATE_FILES, vector<path>{ faceBoxesDirectory }), make_shared<PascStillEyesLandmarkFormatParser>());
+			alignToFacebox = false;
+		}
+		else {
+			appLogger.error("Invalid landmark type given.");
+			return EXIT_FAILURE;
+		}
+		
 	}
 	
 	while (imageSource->next()) {
@@ -243,7 +261,8 @@ int main(int argc, char *argv[])
 		Mat landmarksImage = img.clone();
 		Mat imgGray;
 		cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);
-		vector<cv::Rect> faces;
+		vector<cv::Rect> faces; // used if aligning to a face box
+		LandmarkCollection alignmentLandmarks; // used if aligning to landmarks
 
 		if (useFaceDetector) {
 			float score, notFace = 0.5;
@@ -257,22 +276,41 @@ int main(int argc, char *argv[])
 			}
 		}
 		else {
-			imageio::LandmarkCollection facebox = faceboxSource->get(imageSource->getName());
-			if (facebox.isEmpty()) {
-				// no face found, output the unmodified image. don't create a file for the (non-existing) landmarks.
-				imwrite((outputDirectory / imageSource->getName().filename()).string(), landmarksImage);
-				continue;
+			if (alignToFacebox) {
+				imageio::LandmarkCollection facebox = faceboxSource->get(imageSource->getName());
+				if (facebox.isEmpty()) {
+					// no face found, output the unmodified image. don't create a file for the (non-existing) landmarks.
+					imwrite((outputDirectory / imageSource->getName().filename()).string(), landmarksImage);
+					continue;
+				}
+				faces.push_back(facebox.getLandmark()->getRect());
 			}
-			faces.push_back(facebox.getLandmark()->getRect());
+			else {
+				// aligning to landmarks:
+				alignmentLandmarks = faceboxSource->get(imageSource->getName());
+			}
 		}
 		
-		// draw the best face candidate (or the face from the face box landmarks)
-		cv::rectangle(landmarksImage, faces[0], cv::Scalar(0.0f, 0.0f, 255.0f));
+		if (alignToFacebox) {
+			// draw the best face candidate (or the face from the face box landmarks)
+			cv::rectangle(landmarksImage, faces[0], cv::Scalar(0.0f, 0.0f, 255.0f));
+		}
+		else {
+			// draw landmarks...
+			for (auto&& lm : alignmentLandmarks.getLandmarks()) {
+				lm->draw(landmarksImage);
+			}
+		}
 
 		// fit the model
 		Mat modelShape = lmModel.getMeanShape();
-		modelShape = modelFitter.alignRigid(modelShape, faces[0]);
-		//superviseddescent::drawLandmarks(landmarksImage, modelShape);
+		if (alignToFacebox) {
+			modelShape = modelFitter.alignRigid(modelShape, faces[0]);
+		}
+		else {
+			modelShape = modelFitter.alignRigid(modelShape, alignmentLandmarks);
+		}
+		superviseddescent::drawLandmarks(landmarksImage, modelShape);
 		modelShape = modelFitter.optimize(modelShape, imgGray);
 		//superviseddescent::drawLandmarks(landmarksImage, modelShape);
 
