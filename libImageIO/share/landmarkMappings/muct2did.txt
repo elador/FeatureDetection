@@ -2,6 +2,7 @@
 ; Partial mapping
 ; Created by: Patrik Huber, 19.04.2014
 ; Edited by: Philipp Kopp , 22.04.2014
+; Edited by: Philipp Kopp , 25.07.2014
 
 landmarkMappings ; A mapping from input landmarks (Muct, lhs) to output landmarks (DID, rhs)
 {
@@ -11,11 +12,7 @@ landmarkMappings ; A mapping from input landmarks (Muct, lhs) to output landmark
 	54   812 ; left mouth corner (13)
 	67   114 ; nose-tip (3)
 	29   181 ; right eye inner-corner (5)
-	28  1125 ; right eye middle top (6)
-	30  1180 ; right eye middle bottom (7)
 	34   614 ; left eye inner-corner (8)
-	33  2368 ; left eye middle top (9)
-	35  2425 ; left eye middle bottom (10)
 	51   329 ; upper lip middle top (14)
 	64   423 ; upper lip middle bottom (15)
 	61   442 ; lower lip middle top (16)
@@ -26,3 +23,9 @@ landmarkMappings ; A mapping from input landmarks (Muct, lhs) to output landmark
 	18   590 ; left eyebrow inner corner (23)
 	41   270 ; nose lip junction (28)
 }
+
+	;28  1125 ; right eye middle top (6) Table wrong!! Wrong vertices!
+	;30  1180 ; right eye middle bottom (7)
+	;33  2368 ; left eye middle top (9)
+	;35  2425 ; left eye middle bottom (10)
+
