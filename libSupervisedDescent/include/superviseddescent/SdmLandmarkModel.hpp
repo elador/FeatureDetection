@@ -212,7 +212,25 @@ public:
 		
 		Mat modelLandmarksX, modelLandmarksY, alignmentLandmarksX, alignmentLandmarksY;
 		for (auto&& lm : landmarks.getLandmarks()) {
-			cv::Point2f p = model.getLandmarkAsPoint(lm->getName());
+			cv::Point2f p;
+			// What follows is some ugly hackery because the eye-center points from PaSC are not defined in the
+			// model. Find a more generic solution for this! As it is really a special case, maybe add a flag parameter to this function?
+			// We create a landmark-point in the model at the eye centers that doesn't exist, and use this one to align the model
+			if (lm->getName() == "le") {
+				cv::Point2f reye_oc = model.getLandmarkAsPoint("37"); // Note: The points might not exist in the model
+				cv::Point2f reye_ic = model.getLandmarkAsPoint("40");
+				cv::Point2f reye_center = cv::Vec2f(reye_oc + reye_ic) / 2.0f;
+				p = reye_center;
+			}
+			else if (lm->getName() == "re") {
+				cv::Point2f leye_oc = model.getLandmarkAsPoint("46");
+				cv::Point2f leye_ic = model.getLandmarkAsPoint("43");
+				cv::Point2f leye_center = cv::Vec2f(leye_oc + leye_ic) / 2.0f;
+				p = leye_center;
+			}
+			else {
+				p = model.getLandmarkAsPoint(lm->getName());
+			}
 			modelLandmarksX.push_back(p.x);
 			modelLandmarksY.push_back(p.y);
 			alignmentLandmarksX.push_back(lm->getX());

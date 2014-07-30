@@ -289,17 +289,16 @@ int main(int argc, char *argv[])
 			else {
 				// aligning to landmarks:
 				LandmarkCollection tmpLms_pascName = faceboxSource->get(imageSource->getName());
-				// ugly hack to change the lm-id from "le_x" (PittPatt) to our model-format
-				for (auto&& lm : tmpLms_pascName.getLandmarks()) {
+				alignmentLandmarks = tmpLms_pascName;
+				// ugly hack to change the lm-id from 'le'/'re' (PittPatt) to our model-format
+				/*for (auto&& lm : tmpLms_pascName.getLandmarks()) {
 					if (lm->getName() == "le") {
 						alignmentLandmarks.insert(make_shared<imageio::ModelLandmark>("40", lm->getX(), lm->getY()));
 					}
 					else if (lm->getName() == "re") {
 						alignmentLandmarks.insert(make_shared<imageio::ModelLandmark>("43", lm->getX(), lm->getY()));
 					}
-					
-				}
-				
+				}*/
 			}
 		}
 		
@@ -322,9 +321,8 @@ int main(int argc, char *argv[])
 		else {
 			modelShape = modelFitter.alignRigid(modelShape, alignmentLandmarks);
 		}
-		superviseddescent::drawLandmarks(landmarksImage, modelShape);
+		superviseddescent::drawLandmarks(landmarksImage, modelShape, Scalar(0.0f, 0.0f, 255.0f));
 		modelShape = modelFitter.optimize(modelShape, imgGray);
-		//superviseddescent::drawLandmarks(landmarksImage, modelShape);
 
 		// draw the final result
 		superviseddescent::drawLandmarks(landmarksImage, modelShape, Scalar(0.0f, 255.0f, 0.0f));
