@@ -39,6 +39,7 @@
 #include "boost/filesystem.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <memory>
 #include <vector>

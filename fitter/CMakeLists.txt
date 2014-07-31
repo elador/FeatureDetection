@@ -9,7 +9,7 @@ message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 # find dependencies:
 find_package(OpenCV 2.4.3 REQUIRED core imgproc)
 
-find_package(Boost 1.48.0 COMPONENTS program_options system filesystem REQUIRED)
+find_package(Boost 1.50.0 COMPONENTS program_options system filesystem REQUIRED)
 if(Boost_FOUND)
   message(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
 else(Boost_FOUND)
