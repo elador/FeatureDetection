@@ -245,10 +245,10 @@ public:
 		float s;
 		// Note: If the y-difference is very small (instead of zero), the sx or sy number could be
 		// very large. This could cause side-effects?
-		if (std::isinf(sx)) {
+		if (!std::isnormal(sx)) { // 'isnormal': Determines if the given floating point number arg is normal, i.e. is neither zero, subnormal, infinite, nor NaN.
 			s = sy;
 		}
-		else if (std::isinf(sy)) {
+		else if (!std::isnormal(sy)) {
 			s = sx;
 		}
 		else {

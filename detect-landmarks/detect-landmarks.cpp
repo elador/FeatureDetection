@@ -291,6 +291,7 @@ int main(int argc, char *argv[])
 				LandmarkCollection tmpLms_pascName = faceboxSource->get(imageSource->getName());
 				alignmentLandmarks = tmpLms_pascName;
 				// ugly hack to change the lm-id from 'le'/'re' (PittPatt) to our model-format
+				// We do this inside the align-function at the moment
 				/*for (auto&& lm : tmpLms_pascName.getLandmarks()) {
 					if (lm->getName() == "le") {
 						alignmentLandmarks.insert(make_shared<imageio::ModelLandmark>("40", lm->getX(), lm->getY()));
