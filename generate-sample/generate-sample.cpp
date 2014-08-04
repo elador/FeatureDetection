@@ -74,6 +74,9 @@ int main(int argc, char *argv[])
 
 	string verboseLevelConsole;
 	path morphableModelConfigFilename;
+	float yawAngle, pitchAngle, rollAngle;
+	float shapeSdev, colorSdev;
+	// w, h, l (list of which LMs to write out)
 	
 	try {
 		po::options_description desc("Allowed options");
@@ -82,8 +85,18 @@ int main(int argc, char *argv[])
 				"produce help message")
 			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO", "show messages with INFO loglevel or below."),
 				"specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
-			("config,c", po::value<path>(&morphableModelConfigFilename)->required(),
+			("model,m", po::value<path>(&morphableModelConfigFilename)->required(),
 				"path to a config file that specifies which Morphable Model to load")
+			("yaw,y", po::value<float>(&yawAngle)->default_value(0.0f),
+				"yaw... order? in degree.")
+			("pitch,p", po::value<float>(&pitchAngle)->default_value(0.0f),
+				"p")
+			("roll,r", po::value<float>(&rollAngle)->default_value(0.0f),
+				"r")
+			("shape-sdev,s", po::value<float>(&shapeSdev)->default_value(0.0f),
+				"s")
+			("color-sdev,c", po::value<float>(&colorSdev)->default_value(0.0f),
+				"t")
 		;
 
 		po::variables_map vm;

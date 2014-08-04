@@ -111,36 +111,51 @@ int main(int argc, char *argv[])
 	//_CrtSetBreakAlloc(3759128);
 	#endif
 
-	//std::string filename; // Create vector to hold the filenames
+	string verboseLevelConsole;
 	path configFilename;
 	
 	try {
 		po::options_description desc("Allowed options");
 		desc.add_options()
-			("help,h", "produce help message")
+			("help,h",
+				"produce help message")
+			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO", "show messages with INFO loglevel or below."),
+				"specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
 			("config,c", po::value<path>(&configFilename)->required(),
-			"Path to a config file that specifies which Morphable Model to load.")
+				"Path to a config file that specifies which Morphable Model to load.")
 		;
 
 		po::variables_map vm;
-		po::store(po::command_line_parser(argc, argv).
-				  options(desc).run(), vm);
-		po::notify(vm);
-	
+		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
 		if (vm.count("help")) {
-			cout << "[renderTestApp] Usage: options_description [options]\n";
+			cout << "Usage: generate-warping-data [options]" << endl;
 			cout << desc;
-			return 0;
+			return EXIT_SUCCESS;
 		}
-
+		po::notify(vm);
 	}
-	catch(std::exception& e) {
-		cout << e.what() << "\n";
-		return 1;
+	catch (po::error& e) {
+		cout << "Error while parsing command-line arguments: " << e.what() << endl;
+		cout << "Use --help to display a list of options." << endl;
+		return EXIT_SUCCESS;
 	}
 
-	Logger appLogger = Loggers->getLogger("morphablemodel");
-	appLogger.addAppender(std::make_shared<logging::ConsoleAppender>(LogLevel::Trace));
+	LogLevel logLevel;
+	if (boost::iequals(verboseLevelConsole, "PANIC")) logLevel = LogLevel::Panic;
+	else if (boost::iequals(verboseLevelConsole, "ERROR")) logLevel = LogLevel::Error;
+	else if (boost::iequals(verboseLevelConsole, "WARN")) logLevel = LogLevel::Warn;
+	else if (boost::iequals(verboseLevelConsole, "INFO")) logLevel = LogLevel::Info;
+	else if (boost::iequals(verboseLevelConsole, "DEBUG")) logLevel = LogLevel::Debug;
+	else if (boost::iequals(verboseLevelConsole, "TRACE")) logLevel = LogLevel::Trace;
+	else {
+		cout << "Error: Invalid log level." << endl;
+		return EXIT_SUCCESS;
+	}
+
+	Loggers->getLogger("generate-warping-data").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Logger appLogger = Loggers->getLogger("generate-warping-data");
+	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
+
 
 	ptree pt;
 	try {
