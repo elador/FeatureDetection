@@ -1,5 +1,5 @@
 /*
- * landmarkVisualiser.cpp
+ * visualise-landmarks.cpp
  *
  *  Created on: 24.01.2014
  *      Author: Patrik Huber
@@ -35,7 +35,6 @@
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
-#include "opencv2/calib3d/calib3d.hpp"
 
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
@@ -129,7 +128,7 @@ int main(int argc, char *argv[])
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
 		if (vm.count("help")) {
-			cout << "Usage: landmarkVisualiser [options]\n";
+			cout << "Usage: visualise-landmarks [options]" << endl;
 			cout << desc;
 			return EXIT_SUCCESS;
 		}

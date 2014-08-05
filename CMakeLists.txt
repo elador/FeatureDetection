@@ -74,7 +74,7 @@ add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Rend
 add_subdirectory(fittingTools) # Tools for fitting and model-rendering (e.g. compare isomaps)
 
 # Tools:
-add_subdirectory(landmarkVisualiser)	# Simple app to read landmarks and images and display them
+add_subdirectory(visualise-landmarks)	# Simple app to read landmarks and images and display them
 add_subdirectory(convert-landmarks)		# Simple app to convert landmarks from one format into another
 add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks and perform an evaluation.
 
