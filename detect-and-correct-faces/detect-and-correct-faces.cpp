@@ -276,7 +276,8 @@ int main(int argc, char *argv[])
 		//faceCascade.detectMultiScale(img, faces, 1.2, 2, 0, cv::Size(50, 50));
 		faceCascade.detectMultiScale(img, faces);
 		if (faces.empty()) {
-			// no face found, output nothing
+			// no face found, output the empty landmarks image.
+			cv::imwrite((outputDirectory / imageSource->getName().filename()).string(), landmarksImage);
 			continue;
 		}
 		// draw the best face candidate
@@ -302,7 +303,7 @@ int main(int argc, char *argv[])
 
 		cv::Scalar distance = cv::norm(groundtruthCenter, detectedCenter, cv::NORM_L2);
 
-		// Write out the output image for every input image, also the ones we reject. Except of no face is found.
+		// Write out the output image for every input image, also the ones we reject.
 		if (doOutputImages) {
 			cv::imwrite((outputDirectory / imageSource->getName().filename()).string(), landmarksImage);
 		}

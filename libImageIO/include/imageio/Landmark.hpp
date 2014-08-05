@@ -162,6 +162,7 @@ private:
 	LandmarkType type; ///< The type of the landmark.
 	std::string name;       ///< The name and identifier of the landmark.
 	bool visible;      ///< Flag that indicates whether the landmark is visible.
+	// Note/Todo visible: What are the semantics of this? If a point is not visible, the position could be either still valid or invalid.
 };
 
 } /* namespace imageio */

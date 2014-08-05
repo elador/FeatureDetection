@@ -45,9 +45,12 @@ const map<path, LandmarkCollection> MuctLandmarkFormatParser::read(path landmark
 		for (int landmarkId = 0; landmarkId < 76; ++landmarkId) {
 			float x = lexical_cast<float>(tokens[landmarkId * 2 + 2]);
 			float y = lexical_cast<float>(tokens[landmarkId * 2 + 2 + 1]);
-			bool available = true; // "Unavailable points" are points that are obscured by other facial features (i.e. self-occlusion). Occlusions by hair or glasses are marked as visible.
+			bool available = true; // "Unavailable points" are points that are obscured by self-occlusion. Occlusions by hair or glasses are marked as visible.
 			if (tokens[landmarkId * 2 + 2] == "0" && tokens[landmarkId * 2 + 2 + 1] == "0") {
 				available = false;
+			}
+			if (!available) {
+				continue; // For now, if the landmark is not visible, we don't read it, because the position is (0, 0) anyway and we can't make use of it. See the comment on "isVisible" in the Landmark class.
 			}
 			shared_ptr<Landmark> lm = make_shared<ModelLandmark>(lexical_cast<string>(landmarkId), Vec3f(x, y, 0.0f), available);
 			landmarks.insert(lm);
