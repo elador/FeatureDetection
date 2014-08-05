@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME landmarkConverter)
+set(SUBPROJECT_NAME convert-landmarks)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -18,7 +18,7 @@ endif()
 
 # Source and header files:
 set(SOURCE
-	landmarkConverter.cpp
+	convert-landmarks.cpp
 )
 
 set(HEADERS
