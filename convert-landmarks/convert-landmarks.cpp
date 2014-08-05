@@ -48,7 +48,7 @@
 #include "imageio/DefaultNamedLandmarkSource.hpp"
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/RectLandmark.hpp"
-#include "imageio/IbugLandmarkFormatParser.hpp"
+#include "imageio/SimpleModelLandmarkFormatParser.hpp"
 #include "imageio/MuctLandmarkFormatParser.hpp"
 #include "imageio/DidLandmarkSink.hpp"
 
@@ -102,11 +102,11 @@ int main(int argc, char *argv[])
 			("input,i", po::value<path>(&inputLandmarks)->required(), 
 				"input landmarks file or folder")
 			("input-type,s", po::value<string>(&inputLandmarkType)->required(), 
-				"type of input landmarks")
+				"type of input landmarks: simple, muct76-opencv")
 			("output,o", po::value<path>(&outputLandmarks)->required(), 
 				"output folder")
 			("output-type,t", po::value<string>(&outputLandmarkType)->required(),
-				"type of output landmarks")
+				"type of output landmarks: did")
 			("mapping,m", po::value<path>(&landmarkMappingsFile)->required(),
 				"a file with mappings from the input- to the output-format")
 		;
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
 		if (vm.count("help")) {
-			cout << "Usage: convert-landmarks [options]\n";
+			cout << "Usage: convert-landmarks [options]" << endl;
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
@@ -148,9 +148,13 @@ int main(int argc, char *argv[])
 	shared_ptr<NamedLandmarkSource> landmarkSource;
 	vector<path> groundtruthDirs; groundtruthDirs.push_back(inputLandmarks); // Todo: Make cmdline use a vector<path>
 	shared_ptr<LandmarkFormatParser> landmarkFormatParser;
-	if (boost::iequals(inputLandmarkType, "muct76-opencv")) {
+	if (boost::iequals(inputLandmarkType, "simple")) {
+		landmarkFormatParser = make_shared<SimpleModelLandmarkFormatParser>();
+		landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(nullptr, string(), GatherMethod::SEPARATE_FILES, groundtruthDirs), landmarkFormatParser);
+	}
+	else if (boost::iequals(inputLandmarkType, "muct76-opencv")) {
 		landmarkFormatParser = make_shared<MuctLandmarkFormatParser>();
-		landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(shared_ptr<ImageSource>(), string(), GatherMethod::SEPARATE_FILES, groundtruthDirs), landmarkFormatParser);
+		landmarkSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(nullptr, string(), GatherMethod::SEPARATE_FILES, groundtruthDirs), landmarkFormatParser);
 	}
 	//else if (boost::iequals(inputLandmarkType, "ibug")) {
 	//	landmarkFormatParser = make_shared<IbugLandmarkFormatParser>();
