@@ -61,6 +61,7 @@ set(HEADERS
 	include/imageio/RectLandmark.hpp
 	include/imageio/RectLandmarkSink.hpp
 	include/imageio/RepeatingFileImageSource.hpp
+	include/imageio/SdxLandmarkFormatParser.hpp
 	include/imageio/SingleLandmarkSink.hpp
 	include/imageio/SingleLandmarkSource.hpp
 	include/imageio/SimpleModelLandmarkFormatParser.hpp
@@ -97,6 +98,7 @@ set(SOURCE
 	src/imageio/RectLandmark.cpp
 	src/imageio/RectLandmarkSink.cpp
 	src/imageio/RepeatingFileImageSource.cpp
+	src/imageio/SdxLandmarkFormatParser.cpp
 	src/imageio/SingleLandmarkSink.cpp
 	src/imageio/SingleLandmarkSource.cpp
 	src/imageio/SimpleModelLandmarkFormatParser.cpp
