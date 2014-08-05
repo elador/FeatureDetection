@@ -62,6 +62,7 @@
 #include "imageio/EmptyLandmarkSource.hpp"
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/IbugLandmarkFormatParser.hpp"
+#include "imageio/MuctLandmarkFormatParser.hpp"
 #include "imageio/PascStillEyesLandmarkFormatParser.hpp"
 #include "imageio/RectLandmark.hpp"
 #include "imageio/RectLandmarkSink.hpp"
@@ -121,7 +122,7 @@ int main(int argc, char *argv[])
 			("groundtruth,g", po::value<path>(&groundtruthPath)->required(),
 				"groundtruth landmarks to validate found faces")
 			("groundtruth-type,t", po::value<string>(&groundtruthType)->required(),
-				"specify the type of landmarks to load: ibug, PaSC-still-PittPatt-eyes")
+				"specify the type of landmarks to load: ibug, muct76-opencv")
 			("face-detector,f", po::value<path>(&faceDetectorFilename)->required(),
 				"path to an XML CascadeClassifier from OpenCV")
 			("output,o", po::value<path>(&outputDirectory)->default_value("."),
@@ -232,9 +233,13 @@ int main(int argc, char *argv[])
 		landmarkFormatParser = make_shared<IbugLandmarkFormatParser>();
 		groundtruthSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(nullptr, ".pts", GatherMethod::SEPARATE_FOLDERS, groundtruthDirs), landmarkFormatParser);
 	}
-	else if (boost::iequals(groundtruthType, "PaSC-still-PittPatt-eyes")) {
+	/*else if (boost::iequals(groundtruthType, "PaSC-still-PittPatt-eyes")) { // Todo/Note: Not sure this is working?
 		landmarkFormatParser = make_shared<PascStillEyesLandmarkFormatParser>();
 		groundtruthSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(nullptr, ".csv", GatherMethod::SEPARATE_FILES, groundtruthDirs), landmarkFormatParser);
+	}*/
+	else if (boost::iequals(groundtruthType, "muct76-opencv")) {
+		landmarkFormatParser = make_shared<MuctLandmarkFormatParser>();
+		groundtruthSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(nullptr, string(), GatherMethod::SEPARATE_FILES, groundtruthDirs), landmarkFormatParser);
 	}
 	else {
 		appLogger.error("Invalid ground-truth landmarks type.");
@@ -307,9 +312,9 @@ int main(int argc, char *argv[])
 		}
 
 		if (distance[0] > (groundtruthFacebox.width + groundtruthFacebox.height) / 4.0f || detectedFacebox.width * 1.5f < groundtruthFacebox.width) {
-			// the center of the chosen facebox is further away than half the avg(width+height) of the gt (i.e. the detected center-point is outside the bbox enclosing the gt-lms)
+			// the center of the detected facebox is further away than half the avg(width+height) of the gt (i.e. the detected center-point is outside the bbox enclosing the gt-lms)
 			// or
-			// the chosen facebox is smaller than the max-width of the ground-truth landmarks (slightly adjusted because the V&J fb seems rather small (really?))
+			// the detected facebox is smaller than the max-width of the ground-truth landmarks (slightly adjusted because the V&J fb seems rather small (really?))
 			// ==> skip the image
 			continue;
 		}
