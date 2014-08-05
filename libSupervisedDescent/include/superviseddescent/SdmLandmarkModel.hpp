@@ -201,6 +201,7 @@ public:
 	// TODO: Actually this function uses model.mean as well as a modelShape input, this is
 	// a big ambiguous. Move this function out of this class? But we need access to getLandmarkAsPoint?
 	// Also think about the alignRigid function above.
+	// @throws ...exception When we can't align (e.g. the given landmarks are 2 eyes that are on top of each other, so sx and sy are not calculable).
 	cv::Mat alignRigid(cv::Mat modelShape, imageio::LandmarkCollection landmarks) const {
 		// we assume we get passed a col-vec. For convenience, we keep it.
 		if (modelShape.cols != 1) {
@@ -245,7 +246,14 @@ public:
 		float s;
 		// Note: If the y-difference is very small (instead of zero), the sx or sy number could be
 		// very large. This could cause side-effects?
-		if (!std::isnormal(sx)) { // 'isnormal': Determines if the given floating point number arg is normal, i.e. is neither zero, subnormal, infinite, nor NaN.
+		// 'isnormal': Determines if the given floating point number arg is normal, i.e. is neither zero, subnormal, infinite, nor NaN.
+		if (!std::isnormal(sx) && !std::isnormal(sy)) {
+			// sx and sy are both not calculable, i.e. we can't align (e.g. the given landmarks are 2 eyes that are on top of each other).
+			// This happens in very rare cases (1 image so far on PaSC)
+			throw std::runtime_error("x- and y-scale both not calculable, cannot align the model."); // we should use a derived exception here
+		}
+		// Now at least one of sx and sy is normal:
+		if (!std::isnormal(sx)) { 
 			s = sy;
 		}
 		else if (!std::isnormal(sy)) {

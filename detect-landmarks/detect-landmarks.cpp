@@ -11,6 +11,7 @@
 #include <chrono>
 #include <memory>
 #include <iostream>
+#include <stdexcept>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -320,7 +321,15 @@ int main(int argc, char *argv[])
 			modelShape = modelFitter.alignRigid(modelShape, faces[0]);
 		}
 		else {
-			modelShape = modelFitter.alignRigid(modelShape, alignmentLandmarks);
+			try {
+				modelShape = modelFitter.alignRigid(modelShape, alignmentLandmarks);
+			}
+			catch (std::runtime_error& e) {
+				// can't align, rarely happens
+				appLogger.warn(e.what());
+				continue;
+			}
+			
 		}
 		superviseddescent::drawLandmarks(landmarksImage, modelShape, Scalar(0.0f, 0.0f, 255.0f));
 		modelShape = modelFitter.optimize(modelShape, imgGray);
