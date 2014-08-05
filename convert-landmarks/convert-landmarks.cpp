@@ -1,5 +1,5 @@
 /*
- * landmarkConverter.cpp
+ * convert-landmarks.cpp
  *
  *  Created on: 04.04.2014
  *      Author: Patrik Huber
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
 		if (vm.count("help")) {
-			cout << "Usage: landmarkConverter [options]\n";
+			cout << "Usage: convert-landmarks [options]\n";
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
@@ -139,8 +139,8 @@ int main(int argc, char *argv[])
 	}
 	
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Loggers->getLogger("landmarkConverter").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Logger appLogger = Loggers->getLogger("landmarkConverter");
+	Loggers->getLogger("convert-landmarks").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Logger appLogger = Loggers->getLogger("convert-landmarks");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
