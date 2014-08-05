@@ -28,8 +28,6 @@ using std::make_shared;
 
 namespace imageio {
 
-DidLandmarkFormatParser::~DidLandmarkFormatParser() {}
-
 const map<path, LandmarkCollection> DidLandmarkFormatParser::read(path landmarkFilePath)
 {
 	map<path, LandmarkCollection> lmcoll;

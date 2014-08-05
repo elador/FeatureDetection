@@ -24,13 +24,11 @@
 namespace imageio {
 
 /**
- * Takes the path to a .did file as input and returns a map with one entry containing
- * a LandmarkCollection (TODO in tlms format) with all the landmarks found.
+ * Takes the path to a .did file as input and returns a map with one entry
+ * containing a LandmarkCollection  with all the landmarks found.
  */
 class DidLandmarkFormatParser : public LandmarkFormatParser {
 public:
-
-	virtual ~DidLandmarkFormatParser();
 
 	/**
 	 * Reads the landmark data for one single image and returns all its landmarks (TODO in tlms format).
