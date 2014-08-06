@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME 3dmmRendererGUI)
+set(SUBPROJECT_NAME model-renderer-gui)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -18,7 +18,7 @@ endif()
 
 # Source and header files:
 set(SOURCE
-	3dmmRendererGUI.cpp
+	model-renderer-gui.cpp
 )
 
 set(HEADERS
