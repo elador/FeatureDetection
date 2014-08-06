@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 	vector<path> inputFilenames;
 	shared_ptr<ImageSource> imageSource;
 	path landmarksDir; // TODO: Make more dynamic wrt landmark format. a) What about the loading-flags (1_Per_Folder etc) we have? b) Expose those flags to cmdline? c) Make a LmSourceLoader and he knows about a LM_TYPE (each corresponds to a Parser/Loader class?)
-	bool saveImage = false;
+	bool saveImages = false;
 	path outputDirectory;
 	string landmarkType;
 	int forwardDelay;
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 			}
 		}
 		if (vm.count("output")) {
-			saveImage = true;
+			saveImages = true;
 		}
 
 	}
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
 			//cv::rectangle(landmarksImage, cv::Point(cvRound(lm->getX() - 2.0f), cvRound(lm->getY() - 2.0f)), cv::Point(cvRound(lm->getX() + 2.0f), cvRound(lm->getY() + 2.0f)), cv::Scalar(255, 0, 0));
 		}
 
-		if (saveImage) {
+		if (saveImages) {
 			path outputFilename = outputDirectory / imageSource->getName().filename();
 			cv::imwrite(outputFilename.string(), img);
 		}
