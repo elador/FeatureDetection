@@ -432,7 +432,7 @@ Vec3f PcaModel::getMeanAtPoint(unsigned int vertexIndex) const
 
 Mat PcaModel::drawSample(float sigma/*=1.0f*/)
 {
-	std::normal_distribution<float> distribution(0.0f, sigma); // TODO: c'tor takes the stddev. Update all the documentation!!!
+	std::normal_distribution<float> distribution(0.0f, sigma); // this constructor takes the stddev
 
 	vector<float> alphas(getNumberOfPrincipalComponents());
 

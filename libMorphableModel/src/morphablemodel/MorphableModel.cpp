@@ -102,8 +102,9 @@ render::Mesh MorphableModel::getMean() const
 	unsigned int numVertices = shapeModel.getDataDimension() / 3;
 	unsigned int numVerticesColor = colorModel.getDataDimension() / 3;
 	if (numVertices != numVerticesColor) {
-		// TODO throw more meaningful error, maybe log
-		throw std::runtime_error("numVertices should be equal to numVerticesColor.");
+		string msg("MorphableModel: The number of vertices of the shape and color models are not the same: " + lexical_cast<string>(numVertices)+" != " + lexical_cast<string>(numVerticesColor));
+		Loggers->getLogger("morphablemodel").debug(msg);
+		throw std::runtime_error(msg);
 	}
 
 	// Construct the mesh vertices
@@ -117,7 +118,6 @@ render::Mesh MorphableModel::getMean() const
 		for (unsigned int i = 0; i < numVertices; ++i) {
 			mean.vertex[i].texcrd = textureCoordinates[i];
 		}
-		
 	}
 	
 	mean.hasTexture = false; // hasTexture is not the same as hasTextureCoordinates...
@@ -125,21 +125,21 @@ render::Mesh MorphableModel::getMean() const
 	return mean;
 }
 
-render::Mesh MorphableModel::drawSample(float sigma /*= 1.0f*/)
+render::Mesh MorphableModel::drawSample(float shapeSigma /*= 1.0f*/, float colorSigma /*= 1.0f*/)
 {
 	render::Mesh mean;
 
 	mean.tvi = shapeModel.getTriangleList();
 	mean.tci = colorModel.getTriangleList();
 
-	Mat shapeMean = shapeModel.drawSample(sigma);
-	Mat colorMean = colorModel.drawSample(sigma);
+	Mat shapeMean = shapeModel.drawSample(shapeSigma);
+	Mat colorMean = colorModel.drawSample(colorSigma);
 
 	unsigned int numVertices = shapeModel.getDataDimension() / 3;
 	unsigned int numVerticesColor = colorModel.getDataDimension() / 3;
 	if (numVertices != numVerticesColor) {
 		string msg("MorphableModel: The number of vertices of the shape and color models are not the same: " + lexical_cast<string>(numVertices) + " != " + lexical_cast<string>(numVerticesColor));
-		Loggers->getLogger("shapemodels").debug(msg);
+		Loggers->getLogger("morphablemodel").debug(msg);
 		throw std::runtime_error(msg);
 	}
 
@@ -149,6 +149,8 @@ render::Mesh MorphableModel::drawSample(float sigma /*= 1.0f*/)
 		mean.vertex[i].position = Vec4f(shapeMean.at<float>(i*3 + 0), shapeMean.at<float>(i*3 + 1), shapeMean.at<float>(i*3 + 2), 1.0f);
 		mean.vertex[i].color = Vec3f(colorMean.at<float>(i*3 + 0), colorMean.at<float>(i*3 + 1), colorMean.at<float>(i*3 + 2));        // order in hdf5: RGB. Order in OCV: BGR. But order in vertex.color: RGB
 	}
+
+	// Todo: if (hasTextureCoordinates) ...? (see getMean())
 
 	mean.hasTexture = false;
 

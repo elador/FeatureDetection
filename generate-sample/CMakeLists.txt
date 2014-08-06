@@ -26,11 +26,10 @@ set(HEADERS
 
 include_directories(${Render_SOURCE_DIR}/include)
 include_directories(${MorphableModel_SOURCE_DIR}/include)
-include_directories(${ImageIO_SOURCE_DIR}/include)
 include_directories(${Logging_SOURCE_DIR}/include)
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 
 #Make the library
 add_executable(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
-target_link_libraries(${SUBPROJECT_NAME} Render MorphableModel ImageIO Logging ${OpenCV_LIBS} ${Boost_LIBRARIES})
+target_link_libraries(${SUBPROJECT_NAME} Render MorphableModel Logging ${OpenCV_LIBS} ${Boost_LIBRARIES})
