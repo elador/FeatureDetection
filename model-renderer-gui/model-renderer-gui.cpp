@@ -17,9 +17,7 @@
 #include "render/MatrixUtils.hpp"
 #include "render/SoftwareRenderer.hpp"
 #include "render/Camera.hpp"
-
 #include "morphablemodel/MorphableModel.hpp"
-
 #include "logging/LoggerFactory.hpp"
 
 #include "opencv2/core/core.hpp"
@@ -44,15 +42,22 @@ namespace po = boost::program_options;
 using logging::Logger;
 using logging::LoggerFactory;
 using logging::LogLevel;
-using namespace std;
-using namespace cv;
 using namespace render;
+using cv::Mat;
+using cv::Scalar;
+using cv::Point;
+using cv::Vec4f;
 using boost::lexical_cast;
 using boost::property_tree::ptree;
 using boost::filesystem::path;
+using std::cout;
+using std::endl;
+using std::vector;
+using std::string;
+using std::make_shared;
 
 template<class T>
-ostream& operator<<(ostream& os, const vector<T>& v)
+std::ostream& operator<<(std::ostream& os, const vector<T>& v)
 {
 	copy(v.begin(), v.end(), ostream_iterator<T>(cout, " ")); 
 	return os;
@@ -80,11 +85,11 @@ static bool freeCamera = true;
 
 static void winOnMouse(int event, int x, int y, int, void* userdata)
 {
-	if (event == EVENT_MOUSEMOVE && moving == false) {
+	if (event == cv::EVENT_MOUSEMOVE && moving == false) {
 		lastX = x;
 		lastY = y;
 	}
-	if (event == EVENT_MOUSEMOVE && moving == true) {
+	if (event == cv::EVENT_MOUSEMOVE && moving == true) {
 		if (x != lastX || y != lastY) {
 			horizontalAngle += (x-lastX)*movingFactor;
 			verticalAngle += (y-lastY)*movingFactor;
@@ -92,12 +97,12 @@ static void winOnMouse(int event, int x, int y, int, void* userdata)
 			lastY = y;
 		}
 	}
-	if (event == EVENT_LBUTTONDOWN) {
+	if (event == cv::EVENT_LBUTTONDOWN) {
 		moving = true;
 		lastX = x;
 		lastY = y;
 	}
-	if (event == EVENT_LBUTTONUP) {
+	if (event == cv::EVENT_LBUTTONUP) {
 		moving = false;
 	}
 
@@ -141,7 +146,7 @@ int main(int argc, char *argv[])
 		po::notify(vm);
 	
 		if (vm.count("help")) {
-			cout << "[renderTestApp] Usage: options_description [options]\n";
+			cout << "Usage: model-renderer-gui [options]" << endl;
 			cout << desc;
 			return 0;
 		}
@@ -153,7 +158,7 @@ int main(int argc, char *argv[])
 	}
 	
 	Loggers->getLogger("morphablemodel").addAppender(std::make_shared<logging::ConsoleAppender>(LogLevel::Trace));
-	Logger appLogger = Loggers->getLogger("3dmmRendererGUI");
+	Logger appLogger = Loggers->getLogger("model-renderer-gui");
 	appLogger.addAppender(std::make_shared<logging::ConsoleAppender>(LogLevel::Trace));
 
 	render::Mesh cube = render::utils::MeshUtils::createCube();
@@ -194,21 +199,21 @@ int main(int argc, char *argv[])
 
 	SoftwareRenderer r(screenWidth, screenHeight);
 
-	namedWindow(windowName, WINDOW_AUTOSIZE);
-	setMouseCallback(windowName, winOnMouse);
+	namedWindow(windowName, cv::WINDOW_AUTOSIZE);
+	cv::setMouseCallback(windowName, winOnMouse);
 
-	namedWindow(controlWindowName, WINDOW_NORMAL);
+	namedWindow(controlWindowName, cv::WINDOW_NORMAL);
 	for (auto& val : pcValsInt)	{
 		val = 50;
 	}
 	for (unsigned int i = 0; i < pcVals.size(); ++i) {
-		createTrackbar("PC" + lexical_cast<string>(i) + ": " + lexical_cast<string>(pcVals[i]), controlWindowName, &pcValsInt[i], 100, controlWinOnMouse);
+		cv::createTrackbar("PC" + lexical_cast<string>(i)+": " + lexical_cast<string>(pcVals[i]), controlWindowName, &pcValsInt[i], 100, controlWinOnMouse);
 	}
 	
 
 	bool running = true;
 	while (running) {
-		int key = waitKey(30);
+		int key = cv::waitKey(30);
 		if (key==-1) {
 			// no key pressed
 		}
@@ -327,11 +332,11 @@ int main(int argc, char *argv[])
 		Mat zBuffer = r.getDepthBuffer();
 		Mat screen = r.getImage();
 		render::Mesh::writeObj(*meshToDraw.get(), "C:\\Users\\Patrik\\Documents\\GitHub\\test_mean.obj");
-		putText(screen, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
-		putText(screen, "horA: " + lexical_cast<string>(horizontalAngle) + ", verA: " + lexical_cast<string>(verticalAngle), Point(10, 38), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
-		putText(screen, "moving: " + lexical_cast<string>(moving), Point(10, 56), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
-		putText(screen, "zNear: " + lexical_cast<string>(r.camera.frustum.n) + ", zFar: " + lexical_cast<string>(r.camera.frustum.f) + ", p: " + lexical_cast<string>(perspective), Point(10, 74), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
-		putText(screen, "eye: " + lexical_cast<string>(r.camera.eye[0]) + ", " + lexical_cast<string>(r.camera.eye[1]) + ", " + lexical_cast<string>(r.camera.eye[2]), Point(10, 92), FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screen, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screen, "horA: " + lexical_cast<string>(horizontalAngle) + ", verA: " + lexical_cast<string>(verticalAngle), Point(10, 38), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screen, "moving: " + lexical_cast<string>(moving), Point(10, 56), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screen, "zNear: " + lexical_cast<string>(r.camera.frustum.n) + ", zFar: " + lexical_cast<string>(r.camera.frustum.f) + ", p: " + lexical_cast<string>(perspective), Point(10, 74), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screen, "eye: " + lexical_cast<string>(r.camera.eye[0]) + ", " + lexical_cast<string>(r.camera.eye[1]) + ", " + lexical_cast<string>(r.camera.eye[2]), Point(10, 92), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		imshow(windowName, screen);
 
 	}
