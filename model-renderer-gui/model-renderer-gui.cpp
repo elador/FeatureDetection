@@ -68,7 +68,8 @@ static std::array<float, 55> pcVals;
 static std::array<int, 55> pcValsInt;
 
 static morphablemodel::MorphableModel mm;
-static shared_ptr<Mesh> meshToDraw;
+//static shared_ptr<Mesh> meshToDraw;
+Mesh meshToDraw;
 
 static string windowName = "RenderOutput";
 static float horizontalAngle = 0.0f;
@@ -119,8 +120,9 @@ static void controlWinOnMouse(int test, void* userdata)
 		coefficients.at<float>(row, 0) = pcVals[row];
 	}
 
-	meshToDraw.reset();
-	meshToDraw = make_shared<Mesh>(mm.drawSample(coefficients, vector<float>()));
+	//meshToDraw.reset();
+	//meshToDraw = make_shared<Mesh>(mm.drawSample(coefficients, vector<float>()));
+	meshToDraw = mm.drawSample(coefficients, vector<float>());
 }
 
 int main(int argc, char *argv[])
@@ -204,7 +206,8 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	meshToDraw = std::make_shared<Mesh>(mm.getMean());
+	//meshToDraw = std::make_shared<Mesh>(mm.getMean());
+	meshToDraw = mm.getMean();
 
 	int screenWidth = 640;
 	int screenHeight = 480;
@@ -214,7 +217,7 @@ int main(int argc, char *argv[])
 	Mat projection = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
 
 	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
-	Camera camera(Vec3f(0.0f, 0.0f, 0.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
+	NewCamera camera(Vec3f(0.0f, 0.0f, 0.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), NewFrustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 
 	SoftwareRenderer r(screenWidth, screenHeight);
 
@@ -240,48 +243,48 @@ int main(int argc, char *argv[])
 			running = false;
 		}
 		if (key == 'w') {
-			r.camera.eye += 0.05f * -camera.getForwardVector();
+			camera.eye += 0.05f * -camera.getForwardVector();
 		}
 		if (key == 'a') {
-			r.camera.eye -= 0.05f * camera.getRightVector();
+			camera.eye -= 0.05f * camera.getRightVector();
 		}
 		if (key == 's') {
-			r.camera.eye -= 0.05f * -camera.getForwardVector();
+			camera.eye -= 0.05f * -camera.getForwardVector();
 		}
 		if (key == 'd') {
-			r.camera.eye += 0.05f * camera.getRightVector();
+			camera.eye += 0.05f * camera.getRightVector();
 		}
 		if (key == 'r') {
-			r.camera.eye += 0.05f * camera.getUpVector();
+			camera.eye += 0.05f * camera.getUpVector();
 		}
 		if (key == 'f') {
-			r.camera.eye -= 0.05f * camera.getUpVector();
+			camera.eye -= 0.05f * camera.getUpVector();
 		}
 
 		if (key == 'z') {
-			r.camera.gaze += 0.05f * camera.getUpVector();
+			camera.gaze += 0.05f * camera.getUpVector();
 		}
 		if (key == 'h') {
-			r.camera.gaze -= 0.05f * camera.getUpVector();
+			camera.gaze -= 0.05f * camera.getUpVector();
 		}
 		if (key == 'g') {
-			r.camera.gaze -= 0.05f * camera.getRightVector();
+			camera.gaze -= 0.05f * camera.getRightVector();
 		}
 		if (key == 'j') {
-			r.camera.gaze += 0.05f * camera.getRightVector();
+			camera.gaze += 0.05f * camera.getRightVector();
 		}
 
 		if (key == 'i') {
-			r.camera.frustum.n += 0.1f;
+			camera.frustum.n += 0.1f;
 		}
 		if (key == 'k') {
-			r.camera.frustum.n -= 0.1f;
+			camera.frustum.n -= 0.1f;
 		}
 		if (key == 'o') {
-			r.camera.frustum.f += 1.0f;
+			camera.frustum.f += 1.0f;
 		}
 		if (key == 'l') {
-			r.camera.frustum.f -= 1.0f;
+			camera.frustum.f -= 1.0f;
 		}
 		if (key == 'p') {
 			perspective = !perspective;
@@ -290,32 +293,35 @@ int main(int argc, char *argv[])
 			freeCamera = !freeCamera;
 		}
 		if (key == 'n') {
-			meshToDraw.reset();
-			meshToDraw = make_shared<Mesh>(mm.drawSample(0.7f));
+			//meshToDraw.reset();
+			//meshToDraw = make_shared<Mesh>(mm.drawSample(0.7f));
+			meshToDraw = mm.drawSample(0.7f);
 		}
 		
-		r.resetBuffers();
+		//r.resetBuffers();
 
-		r.camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
-		r.camera.verticalAngle = verticalAngle*(CV_PI/180.0f);
+		camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
+		camera.verticalAngle = verticalAngle*(CV_PI/180.0f);
 		if(freeCamera) {
-			r.camera.updateFree(r.camera.eye);
+			camera.updateFree(camera.eye);
 		} else {
-			r.camera.updateFixed(r.camera.eye, r.camera.gaze);
+			camera.updateFixed(camera.eye, camera.gaze);
 		}
 
-		r.updateViewTransform();
-		r.updateProjectionTransform(perspective);
+		//r.updateViewTransform();
+		//r.updateProjectionTransform(perspective);
+		// => moved to render()
 
 		Vec4f origin(0.0f, 0.0f, 0.0f, 1.0f);
 		Vec4f xAxis(1.0f, 0.0f, 0.0f, 1.0f);
 		Vec4f yAxis(0.0f, 1.0f, 0.0f, 1.0f);
 		Vec4f zAxis(0.0f, 0.0f, 1.0f, 1.0f);
 		Vec4f mzAxis(0.0f, 0.0f, -1.0f, 1.0f);
-		r.renderLine(origin, xAxis, Scalar(0.0f, 0.0f, 255.0f));
+	/*	r.renderLine(origin, xAxis, Scalar(0.0f, 0.0f, 255.0f));
 		r.renderLine(origin, yAxis, Scalar(0.0f, 255.0f, 0.0f));
 		r.renderLine(origin, zAxis, Scalar(255.0f, 0.0f, 0.0f));
 		r.renderLine(origin, mzAxis, Scalar(0.0f, 255.0f, 255.0f));
+	*/
 		/*
 		for (const auto& tIdx : cube.tvi) {
 			Vertex v0 = cube.vertex[tIdx[0]];
@@ -341,21 +347,25 @@ int main(int argc, char *argv[])
 		Mat modelTrans = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -1.5f);
 		Mat rot = Mat::eye(4, 4, CV_32FC1);
 		Mat modelMatrix = modelTrans * rot * modelScaling;
-		r.setModelTransform(modelMatrix);
-		r.draw(meshToDraw, nullptr);
+		//r.setModelTransform(modelMatrix);
+		//r.draw(meshToDraw, nullptr);
 		
-		r.setModelTransform(Mat::eye(4, 4, CV_32FC1));
+		//r.setModelTransform(Mat::eye(4, 4, CV_32FC1));
+		
 		// End test
 		
 		//r.renderLine(Vec4f(1.5f, 0.0f, 0.5f, 1.0f), Vec4f(-1.5f, 0.0f, 0.5f, 1.0f), Scalar(0.0f, 0.0f, 255.0f));
-		Mat zBuffer = r.getDepthBuffer();
-		Mat screen = r.getImage();
-		render::Mesh::writeObj(*meshToDraw.get(), "C:\\Users\\Patrik\\Documents\\GitHub\\test_mean.obj");
+		//Mat zBuffer = r.getDepthBuffer();
+		//Mat screen = r.getImage();
+		Mat zBuffer, screen;
+		r.render(meshToDraw, modelMatrix);
+
+		render::Mesh::writeObj(meshToDraw, "C:\\Users\\Patrik\\Documents\\GitHub\\test_asdf.obj");
 		putText(screen, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		putText(screen, "horA: " + lexical_cast<string>(horizontalAngle) + ", verA: " + lexical_cast<string>(verticalAngle), Point(10, 38), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		putText(screen, "moving: " + lexical_cast<string>(moving), Point(10, 56), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
-		putText(screen, "zNear: " + lexical_cast<string>(r.camera.frustum.n) + ", zFar: " + lexical_cast<string>(r.camera.frustum.f) + ", p: " + lexical_cast<string>(perspective), Point(10, 74), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
-		putText(screen, "eye: " + lexical_cast<string>(r.camera.eye[0]) + ", " + lexical_cast<string>(r.camera.eye[1]) + ", " + lexical_cast<string>(r.camera.eye[2]), Point(10, 92), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screen, "zNear: " + lexical_cast<string>(camera.frustum.n) + ", zFar: " + lexical_cast<string>(camera.frustum.f) + ", p: " + lexical_cast<string>(perspective), Point(10, 74), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screen, "eye: " + lexical_cast<string>(camera.eye[0]) + ", " + lexical_cast<string>(camera.eye[1]) + ", " + lexical_cast<string>(camera.eye[2]), Point(10, 92), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		imshow(windowName, screen);
 
 	}

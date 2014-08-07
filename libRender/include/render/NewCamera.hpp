@@ -21,12 +21,13 @@ public:
 	NewFrustum();
 	NewFrustum(float l, float r, float b, float t, float n, float f);
 
-	float l;
-	float r;
-	float b;
-	float t;
-	float n;
-	float f;
+//private:
+	float l = -1.0f;
+	float r = 1.0f;
+	float b = -1.0f;
+	float t = 1.0f;
+	float n = 0.1f;
+	float f = 100.0f;
 };
 
 /**

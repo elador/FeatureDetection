@@ -15,22 +15,10 @@ namespace render {
 	
 NewFrustum::NewFrustum()
 {
-	l = -1.0f;
-	r = 1.0f;
-	b = -1.0f;
-	t = 1.0f;
-	n = 0.1f;
-	f = 100.0f;
 }
 
-NewFrustum::NewFrustum(float l, float r, float b, float t, float n, float f)
+NewFrustum::NewFrustum(float l, float r, float b, float t, float n, float f) : l(l), r(r), b(b), t(t), n(n), f(f)
 {
-	this->l = l;
-	this->r = r;
-	this->b = b;
-	this->t = t;
-	this->n = n;
-	this->f = f;
 }
 
 NewCamera::NewCamera()
