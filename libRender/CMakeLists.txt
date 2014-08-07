@@ -34,6 +34,7 @@ set(SOURCE
 	src/render/Vertex.cpp
 	src/render/Triangle.cpp
 	src/render/Camera.cpp
+	src/render/NewCamera.cpp
 	src/render/Texture.cpp
 	src/render/Mesh.cpp
 	src/render/MatrixUtils.cpp
@@ -47,6 +48,7 @@ set(HEADERS
 	include/render/Vertex.hpp
 	include/render/Triangle.hpp
 	include/render/Camera.hpp
+	include/render/NewCamera.hpp
 	include/render/Texture.hpp
 	include/render/Mesh.hpp
 	include/render/MatrixUtils.hpp

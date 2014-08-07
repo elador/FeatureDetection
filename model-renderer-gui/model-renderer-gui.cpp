@@ -16,7 +16,7 @@
 #include "render/MeshUtils.hpp"
 #include "render/MatrixUtils.hpp"
 #include "render/SoftwareRenderer.hpp"
-#include "render/Camera.hpp"
+#include "render/NewCamera.hpp"
 #include "morphablemodel/MorphableModel.hpp"
 #include "logging/LoggerFactory.hpp"
 
@@ -130,36 +130,52 @@ int main(int argc, char *argv[])
 	//_CrtSetBreakAlloc(3759128);
 	#endif
 
-	path configFilename;
+	string verboseLevelConsole;
+	path morphableModelConfigFilename;
 	
 	try {
 		po::options_description desc("Allowed options");
 		desc.add_options()
-			("help,h", "produce help message")
-			("config,c", po::value<path>(&configFilename)->required(),
-			"path to a config (.cfg) file")
+			("help,h",
+				"produce help message")
+			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO", "show messages with INFO loglevel or below."),
+				"specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
+			("model,m", po::value<path>(&morphableModelConfigFilename)->required(),
+				"path to a config file that specifies which Morphable Model to load")
 		;
 
 		po::variables_map vm;
-		po::store(po::command_line_parser(argc, argv).
-				  options(desc).run(), vm);
-		po::notify(vm);
-	
+		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
 		if (vm.count("help")) {
 			cout << "Usage: model-renderer-gui [options]" << endl;
 			cout << desc;
-			return 0;
+			return EXIT_SUCCESS;
 		}
+		po::notify(vm);
 
 	}
-	catch (std::exception& e) {
-		cout << e.what() << endl;
-		return 1;
+	catch (po::error& e) {
+		cout << "Error while parsing command-line arguments: " << e.what() << endl;
+		cout << "Use --help to display a list of options." << endl;
+		return EXIT_SUCCESS;
+	}
+
+	LogLevel logLevel;
+	if (boost::iequals(verboseLevelConsole, "PANIC")) logLevel = LogLevel::Panic;
+	else if (boost::iequals(verboseLevelConsole, "ERROR")) logLevel = LogLevel::Error;
+	else if (boost::iequals(verboseLevelConsole, "WARN")) logLevel = LogLevel::Warn;
+	else if (boost::iequals(verboseLevelConsole, "INFO")) logLevel = LogLevel::Info;
+	else if (boost::iequals(verboseLevelConsole, "DEBUG")) logLevel = LogLevel::Debug;
+	else if (boost::iequals(verboseLevelConsole, "TRACE")) logLevel = LogLevel::Trace;
+	else {
+		cout << "Error: Invalid log level." << endl;
+		return EXIT_SUCCESS;
 	}
 	
-	Loggers->getLogger("morphablemodel").addAppender(std::make_shared<logging::ConsoleAppender>(LogLevel::Trace));
+	Loggers->getLogger("morphablemodel").addAppender(std::make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("model-renderer-gui").addAppender(std::make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("model-renderer-gui");
-	appLogger.addAppender(std::make_shared<logging::ConsoleAppender>(LogLevel::Trace));
+	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
 	render::Mesh cube = render::utils::MeshUtils::createCube();
 	render::Mesh pyramid = render::utils::MeshUtils::createPyramid();
@@ -168,7 +184,7 @@ int main(int argc, char *argv[])
 	
 	ptree pt;
 	try {
-		boost::property_tree::info_parser::read_info(configFilename.string(), pt);
+		boost::property_tree::info_parser::read_info(morphableModelConfigFilename.string(), pt);
 	}
 	catch (const boost::property_tree::ptree_error& error) {
 		appLogger.error(error.what());
@@ -192,7 +208,10 @@ int main(int argc, char *argv[])
 
 	int screenWidth = 640;
 	int screenHeight = 480;
-	const float aspect = (float)screenWidth/(float)screenHeight;
+	const float aspect = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
+
+	Mat moveCameraBack = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
+	Mat projection = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
 
 	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 	Camera camera(Vec3f(0.0f, 0.0f, 0.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
