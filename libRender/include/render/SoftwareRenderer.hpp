@@ -50,6 +50,9 @@ public:
 	// maybe change and pass depthBuffer as an optional arg (&?), because usually we never need it outside the renderer. Or maybe even a getDepthBuffer().
 	std::pair<cv::Mat, cv::Mat> render(Mesh mesh, cv::Mat mvp);
 
+	// clears the color- and depth buffer
+	void clearBuffers();
+
 	cv::Vec3f projectVertex(cv::Vec4f vertex, cv::Mat mvp);
 	
 	void enableTexturing(bool doTexturing) {

@@ -61,6 +61,7 @@ void FittingWindow::render()
 	//matrix.scale(1.0f/75.0f);
 	//matrix.scale(0.003f);
 	render::Mesh mesh = render::utils::MeshUtils::createCube();
+	r->clearBuffers();
 	r->render(mesh, matrix);
 	//r->render(morphableModel.getMean());
 

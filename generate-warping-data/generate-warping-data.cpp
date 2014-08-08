@@ -284,6 +284,7 @@ int main(int argc, char *argv[])
 		Mat rotRollZ = Mat::eye(4, 4, CV_32FC1);
 		Mat modelMatrix = projection * rotYawY * moveCameraBack * rotPitchX * rotRollZ * modelScaling;
 		Vec3f res = r.projectVertex(newSampleMesh.vertex[randomVertex].position, modelMatrix);
+		r.clearBuffers();
 		auto framebuffers = r.render(newSampleMesh, modelMatrix);
 		string name = "randomVertexFrontal";
 		pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
@@ -305,6 +306,7 @@ int main(int argc, char *argv[])
 		rotYawY = render::utils::MatrixUtils::createRotationMatrixY(yaw * (CV_PI/180.0f));
 		rotRollZ = render::utils::MatrixUtils::createRotationMatrixZ(roll * (CV_PI/180.0f));
 		modelMatrix = projection * moveCameraBack * rotYawY * rotPitchX * rotRollZ * modelScaling;
+		r.clearBuffers();
 		auto framebuffersPose = r.render(newSampleMesh, modelMatrix);
 
 		res = r.projectVertex(newSampleMesh.vertex[randomVertex].position, modelMatrix);

@@ -45,10 +45,6 @@ pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, QMatrix4x4 mvp)
 
 pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, Mat mvp)
 {
-	colorBuffer = Mat::zeros(viewportHeight, viewportWidth, CV_8UC4);
-	depthBuffer = Mat::ones(viewportHeight, viewportWidth, CV_64FC1) * 1000000;
-	//depthBuffer = Mat::ones(viewportHeight, viewportWidth, CV_64FC1) * -0.88;
-
 	vector<TriangleToRasterize> trisToRaster;
 
 	// Vertex shader:
@@ -85,10 +81,10 @@ pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, Mat mvp)
 				visibilityBits[k] |= 4;
 			if (yOverW > 1)
 				visibilityBits[k] |= 8;
-			//if (zOverW < -1) // these 4 lines somehow only clip against the back-plane of the frustum?
-				//visibilityBits[k] |= 16;
-			//if (zOverW > 1)
-				//visibilityBits[k] |= 32;
+			if (zOverW < -1) // the next 4 lines somehow only clip against the back-plane of the frustum?
+				visibilityBits[k] |= 16;
+			if (zOverW > 1)
+				visibilityBits[k] |= 32;
 		} // if all bits are 0, then it's inside the frustum
 		// all vertices are not visible - reject the triangle.
 		if ((visibilityBits[0] & visibilityBits[1] & visibilityBits[2]) > 0)
@@ -254,7 +250,7 @@ void SoftwareRenderer::rasterTriangle(TriangleToRasterize triangle)
 
 				double z_affine = alpha*(double)t.v0.position[2] + beta*(double)t.v1.position[2] + gamma*(double)t.v2.position[2];
 				// The '<= 1.0' clips against the far-plane in NDC. We clip against the near-plane earlier.
-				if (z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol)/* && z_affine <= 1.0*/)
+				if (z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol) && z_affine <= 1.0)
 				{
 					// perspective-correct barycentric weights
 					double d = alpha*t.one_over_z0 + beta*t.one_over_z1 + gamma*t.one_over_z2;
@@ -490,6 +486,13 @@ Vec3f SoftwareRenderer::projectVertex(Vec4f vertex, Mat mvp)
 	*/
 
 	return Vec3f(clipSpaceV[0], clipSpaceV[1], clipSpaceV[2]);
+}
+
+void SoftwareRenderer::clearBuffers()
+{
+	colorBuffer = Mat::zeros(viewportHeight, viewportWidth, CV_8UC4);
+	depthBuffer = Mat::ones(viewportHeight, viewportWidth, CV_64FC1) * 1000000; // Todo: should there be a minus here? Check the old code
+	//depthBuffer = Mat::ones(viewportHeight, viewportWidth, CV_64FC1) * -0.88;
 }
 
 } /* namespace render */

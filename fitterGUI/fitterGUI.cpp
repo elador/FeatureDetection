@@ -330,6 +330,7 @@ int main(int argc, char *argv[])
 	fullAffineCam.at<float>(2, 3) = fullAffineCam.at<float>(2, 2); // Todo: Find out and document why this is necessary!
 	fullAffineCam.at<float>(2, 2) = 1.0f;
 	swr.doBackfaceCulling = true;
+	swr.clearBuffers();
 	auto fb = swr.render(mesh, fullAffineCam); // hmm, do we have the z-test disabled?
 	//Mesh::writeObj(mesh, "C:/Users/Patrik/Documents/GitHub/out/m_1.0.obj");
 

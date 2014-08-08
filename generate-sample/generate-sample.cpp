@@ -201,6 +201,7 @@ int main(int argc, char *argv[])
 	Mat modelMatrix = projection * moveCameraBack * rotYawY * rotPitchX * rotRollZ * modelScaling;
 	
 	Mat framebuffer, depthbuffer;
+	r.clearBuffers(); // technically not necessary as long as we render only 1 sample
 	std::tie(framebuffer, depthbuffer) = r.render(sampleMesh, modelMatrix);
 
 	render::Mesh::writeObj(sampleMesh, "output.obj");

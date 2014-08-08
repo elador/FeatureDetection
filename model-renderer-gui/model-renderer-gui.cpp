@@ -67,7 +67,7 @@ static string controlWindowName = "Controls";
 static std::array<float, 55> pcVals;
 static std::array<int, 55> pcValsInt;
 
-static morphablemodel::MorphableModel mm;
+//static morphablemodel::MorphableModel mm;
 //static shared_ptr<Mesh> meshToDraw;
 Mesh meshToDraw;
 
@@ -115,14 +115,15 @@ static void controlWinOnMouse(int test, void* userdata)
 	for (int i = 0; i < pcValsInt.size(); ++i) {
 		pcVals[i] = 0.1f * static_cast<float>(pcValsInt[i]) - 5.0f;
 	}
+	/*
 	Mat coefficients = Mat::zeros(mm.getShapeModel().getNumberOfPrincipalComponents(), 1, CV_32FC1);
 	for (int row=0; row < pcVals.size(); ++row) {
 		coefficients.at<float>(row, 0) = pcVals[row];
 	}
-
+	*/
 	//meshToDraw.reset();
 	//meshToDraw = make_shared<Mesh>(mm.drawSample(coefficients, vector<float>()));
-	meshToDraw = mm.drawSample(coefficients, vector<float>());
+	//meshToDraw = mm.drawSample(coefficients, vector<float>());
 }
 
 int main(int argc, char *argv[])
@@ -179,11 +180,11 @@ int main(int argc, char *argv[])
 	Logger appLogger = Loggers->getLogger("model-renderer-gui");
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
-	render::Mesh cube = render::utils::MeshUtils::createCube();
-	render::Mesh pyramid = render::utils::MeshUtils::createPyramid();
-	render::Mesh plane = render::utils::MeshUtils::createPlane();
-	shared_ptr<render::Mesh> tri = render::utils::MeshUtils::createTriangle();
-	
+	render::Mesh mesh = render::utils::MeshUtils::createCube();
+	//render::Mesh pyramid = render::utils::MeshUtils::createPyramid();
+	//render::Mesh plane = render::utils::MeshUtils::createPlane();
+	//shared_ptr<render::Mesh> tri = render::utils::MeshUtils::createTriangle();
+	/*
 	ptree pt;
 	try {
 		boost::property_tree::info_parser::read_info(morphableModelConfigFilename.string(), pt);
@@ -205,9 +206,9 @@ int main(int argc, char *argv[])
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
 	}
-
-	//meshToDraw = std::make_shared<Mesh>(mm.getMean());
-	meshToDraw = mm.getMean();
+	*/
+	//meshToDraw = mm.getMean();
+	meshToDraw = mesh;
 
 	int screenWidth = 640;
 	int screenHeight = 480;
@@ -295,7 +296,7 @@ int main(int argc, char *argv[])
 		if (key == 'n') {
 			//meshToDraw.reset();
 			//meshToDraw = make_shared<Mesh>(mm.drawSample(0.7f));
-			meshToDraw = mm.drawSample(0.7f);
+			//meshToDraw = mm.drawSample(0.7f);
 		}
 		
 		//r.resetBuffers();
@@ -342,8 +343,8 @@ int main(int argc, char *argv[])
 		*/
 		//r.draw(tri, tri->texture);
 		
-		Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
-		//Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(7.0f, 7.0f, 7.0f);
+		//Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
+		Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f, 1.0f, 1.0f);
 		Mat modelTrans = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -1.5f);
 		Mat rot = Mat::eye(4, 4, CV_32FC1);
 		Mat modelMatrix = modelTrans * rot * modelScaling;
@@ -358,7 +359,8 @@ int main(int argc, char *argv[])
 		//Mat zBuffer = r.getDepthBuffer();
 		//Mat screen = r.getImage();
 		Mat zBuffer, screen;
-		r.render(meshToDraw, modelMatrix);
+		r.clearBuffers();
+		std::tie(screen, zBuffer) = r.render(meshToDraw, projection * modelMatrix);
 
 		render::Mesh::writeObj(meshToDraw, "C:\\Users\\Patrik\\Documents\\GitHub\\test_asdf.obj");
 		putText(screen, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
