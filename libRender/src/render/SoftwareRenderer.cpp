@@ -444,50 +444,6 @@ float SoftwareRenderer::clamp(float x, float a, float b)
 	return max(min(x, b), a);
 }
 
-Vec3f SoftwareRenderer::projectVertex(Vec4f vertex, Mat mvp)
-{
-	Mat clipSpace = mvp * Mat(vertex);
-	Vec4f clipSpaceV(clipSpace);
-	// divide by w
-	clipSpaceV = clipSpaceV / clipSpaceV[3];
-
-	// project from 4D to 2D window position with depth value in z coordinate
-	// Viewport transform:
-	clipSpaceV[0] = (clipSpaceV[0] + 1) * (viewportWidth / 2.0f);
-	clipSpaceV[1] = (clipSpaceV[1] + 1) * (viewportHeight / 2.0f);
-	clipSpaceV[1] = viewportHeight - clipSpaceV[1];
-
-	// Find the correct z-value for the exact pixel the vertex is landing in.
-	// We need this to get the same depth value for the vertex than the one in the z-buffer.
-	// No, this doesn't work, we're only projecting a vertex, not a triangle => no barycentric coords
-/*	int xi = cvRound(clipSpaceV[0]);
-	int yi = cvRound(clipSpaceV[1]);
-	float x = (float)xi + 0.5f;
-	float y = (float)yi + 0.5f;
-
-	// these will be used for barycentric weights computation
-	t.one_over_v0ToLine12 = 1.0 / implicitLine(t.v0.position[0], t.v0.position[1], t.v1.position, t.v2.position);
-	t.one_over_v1ToLine20 = 1.0 / implicitLine(t.v1.position[0], t.v1.position[1], t.v2.position, t.v0.position);
-	t.one_over_v2ToLine01 = 1.0 / implicitLine(t.v2.position[0], t.v2.position[1], t.v0.position, t.v1.position);
-	// affine barycentric weights
-	double alpha = implicitLine(x, y, t.v1.position, t.v2.position) * t.one_over_v0ToLine12;
-	double beta = implicitLine(x, y, t.v2.position, t.v0.position) * t.one_over_v1ToLine20;
-	double gamma = implicitLine(x, y, t.v0.position, t.v1.position) * t.one_over_v2ToLine01;
-
-	// if pixel (x, y) is inside the triangle or on one of its edges
-	if (alpha >= 0 && beta >= 0 && gamma >= 0)
-	{
-		int pixelIndexRow = yi;
-		int pixelIndexCol = xi;
-
-		double z_affine = alpha*(double)t.v0.position[2] + beta*(double)t.v1.position[2] + gamma*(double)t.v2.position[2];
-		// The '<= 1.0' clips against the far-plane in NDC. We clip against the near-plane earlier.
-		if (z_affine < depthBuffer.at<double>(pixelIndexRow, pixelIndexCol) && z_affine <= 1.0)
-	*/
-
-	return Vec3f(clipSpaceV[0], clipSpaceV[1], clipSpaceV[2]);
-}
-
 void SoftwareRenderer::clearBuffers()
 {
 	colorBuffer = Mat::zeros(viewportHeight, viewportWidth, CV_8UC4);

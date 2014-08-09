@@ -10,6 +10,10 @@
 
 #include <utility>
 
+using cv::Vec2f;
+using cv::Vec3f;
+using cv::Vec4f;
+using cv::Mat;
 using std::min;
 using std::max;
 
@@ -31,6 +35,23 @@ cv::Vec2f screenToClipSpace(cv::Vec2f screenCoordinates, int screenWidth, int sc
 	y_cs *= -1.0f;
 	return cv::Vec2f(x_cs, y_cs);
 }
+
+cv::Vec3f projectVertex(cv::Vec4f vertex, cv::Mat modelViewProjection, int screenWidth, int screenHeight)
+{
+	Mat clipSpace = modelViewProjection * Mat(vertex);
+	Vec4f clipSpaceV(clipSpace);
+	// divide by w:
+	clipSpaceV = clipSpaceV / clipSpaceV[3];
+
+	// project from 4D to 2D window position with depth value in z coordinate
+	// Viewport transform:
+	clipSpaceV[0] = (clipSpaceV[0] + 1) * (screenWidth / 2.0f);
+	clipSpaceV[1] = (clipSpaceV[1] + 1) * (screenHeight / 2.0f);
+	clipSpaceV[1] = screenHeight - clipSpaceV[1];
+
+	return Vec3f(clipSpaceV[0], clipSpaceV[1], clipSpaceV[2]);
+}
+
 
 cv::Rect calculateBoundingBox(Vertex v0, Vertex v1, Vertex v2, int viewportWidth, int viewportHeight)
 {

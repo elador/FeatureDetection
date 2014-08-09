@@ -93,10 +93,8 @@ static int lastY = 0;
 static float movingFactor = 0.5f;
 static bool moving = false;
 
-//static float zNear = 0.1f;
-static float zNear = -0.1f;
-//static float zFar = 100.0f;
-static float zFar = -100.0f;
+static float zNear = 0.1f;
+static float zFar = 100.0f;
 static bool perspective = false;
 static bool freeCamera = true;
 
@@ -232,6 +230,7 @@ int main(int argc, char *argv[])
 
 	Mat moveCameraBack = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
 	Mat projection = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
+	//Mat projection = render::utils::MatrixUtils::createPerspectiveProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
 
 	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 	NewCamera camera(Vec3f(0.0f, 0.0f, 0.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), NewFrustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
@@ -239,14 +238,7 @@ int main(int argc, char *argv[])
 	SoftwareRenderer r(screenWidth, screenHeight);
 
 	using namespace render::utils;
-	QMatrix4x4 qm;
-	//qm.ortho(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f);
-	qm.frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f);
-	qDebug() << qm;
-
 	//Mat cm = MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, -0.1f, -100.0f);
-	Mat cm = MatrixUtils::createPerspectiveProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f);
-	cout << cm;
 	
 	namedWindow(windowName, cv::WINDOW_AUTOSIZE);
 	cv::setMouseCallback(windowName, winOnMouse);
@@ -338,6 +330,13 @@ int main(int argc, char *argv[])
 		//r.updateViewTransform();
 		//r.updateProjectionTransform(perspective);
 		// => moved to render()
+		if (perspective) {
+			projection = render::utils::MatrixUtils::createPerspectiveProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, camera.frustum.n, camera.frustum.f);
+		}
+		else {
+			projection = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, camera.frustum.n, camera.frustum.f);
+		}
+		
 
 		Vec4f origin(0.0f, 0.0f, 0.0f, 1.0f);
 		Vec4f xAxis(1.0f, 0.0f, 0.0f, 1.0f);
@@ -373,7 +372,7 @@ int main(int argc, char *argv[])
 		Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f, 1.0f, 1.0f);
 		Mat modelTrans = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
 		//Mat rot = Mat::eye(4, 4, CV_32FC1);
-		Mat rot = render::utils::MatrixUtils::createRotationMatrixX(20.0f);
+		Mat rot = render::utils::MatrixUtils::createRotationMatrixX(20.0f) * render::utils::MatrixUtils::createRotationMatrixY(20.0f);
 		Mat modelMatrix = modelTrans * rot * modelScaling;
 		//r.setModelTransform(modelMatrix);
 		//r.draw(meshToDraw, nullptr);

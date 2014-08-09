@@ -82,8 +82,6 @@ public:
 	// clears the color- and depth buffer
 	void clearBuffers();
 
-	cv::Vec3f projectVertex(cv::Vec4f vertex, cv::Mat mvp);
-	
 	void enableTexturing(bool doTexturing) {
 		this->doTexturing = doTexturing;
 	};
