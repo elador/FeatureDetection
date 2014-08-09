@@ -48,20 +48,24 @@
 #include <random>
 #include <functional>
 
+using namespace imageio;
+using namespace render;
 namespace po = boost::program_options;
 using logging::Logger;
 using logging::LoggerFactory;
 using logging::LogLevel;
-using namespace std;
-using namespace cv;
-using namespace imageio;
-using namespace render;
+using cv::Mat;
 using boost::lexical_cast;
 using boost::property_tree::ptree;
 using boost::filesystem::path;
+using std::string;
+using std::vector;
+using std::cout;
+using std::endl;
+using std::make_shared;
 
 template<class T>
-ostream& operator<<(ostream& os, const vector<T>& v)
+std::ostream& operator<<(std::ostream& os, const vector<T>& v)
 {
 	copy(v.begin(), v.end(), ostream_iterator<T>(cout, " ")); 
 	return os;
@@ -82,11 +86,11 @@ static bool freeCamera = true;
 
 static void winOnMouse(int event, int x, int y, int, void* userdata)
 {
-	if (event == EVENT_MOUSEMOVE && moving == false) {
+	if (event == cv::EVENT_MOUSEMOVE && moving == false) {
 		lastX = x;
 		lastY = y;
 	}
-	if (event == EVENT_MOUSEMOVE && moving == true) {
+	if (event == cv::EVENT_MOUSEMOVE && moving == true) {
 		if (x != lastX || y != lastY) {
 			horizontalAngle += (x-lastX)*movingFactor;
 			verticalAngle += (y-lastY)*movingFactor;
@@ -94,12 +98,12 @@ static void winOnMouse(int event, int x, int y, int, void* userdata)
 			lastY = y;
 		}
 	}
-	if (event == EVENT_LBUTTONDOWN) {
+	if (event == cv::EVENT_LBUTTONDOWN) {
 		moving = true;
 		lastX = x;
 		lastY = y;
 	}
-	if (event == EVENT_LBUTTONUP) {
+	if (event == cv::EVENT_LBUTTONUP) {
 		moving = false;
 	}
 
@@ -229,7 +233,7 @@ int main(int argc, char *argv[])
 	vertexIds.push_back(6389); // left-alare - (a bit similar to right.nose.wing.tip but don't use it)
 	vertexIds.push_back(10001); // right-alare - (a bit similar to left.nose.wing.tip but don't use it)
 	*/
-	ofstream outputFile;
+	std::ofstream outputFile;
 	//outputFile.open("C:/Users/Patrik/Documents/Github/syndata/data_3dmm_landmarks_random_sd0.5_batch4_600000k.txt");
 	outputFile.open("./data_3dmm_landmarks_random_sd0.7_batch6_1000k.txt");
 	outputFile << "frontal_rndvtx_x " << "frontal_rndvtx_y " << "frontal_lel_x " << "frontal_lel_y " << "frontal_ler_x " << "frontal_ler_y " << "frontal_rel_x " << "frontal_rel_y " << "frontal_rer_x " << "frontal_rer_y " << "frontal_ml_x " << "frontal_ml_y " << "frontal_mr_x " << "frontal_mr_y " << "frontal_bn_x " << "frontal_bn_y " << "frontal_nt_x " << "frontal_nt_y " << "frontal_ns_x " << "frontal_ns_y " << "frontal_la_x " << "frontal_la_y " << "frontal_ra_x " << "frontal_ra_y " << "pose_rndvtx_x " << "pose_rndvtx_y " << "pose_lel_x " << "pose_lel_y " << "pose_ler_x " << "pose_ler_y " << "pose_rel_x " << "pose_rel_y " << "pose_rer_x " << "pose_rer_y " << "pose_ml_x " << "pose_ml_y " << "pose_mr_x " << "pose_mr_y " << "pose_bn_x " << "pose_bn_y " << "pose_nt_x " << "pose_nt_y " << "pose_ns_x " << "pose_ns_y " << "pose_la_x " << "pose_la_y " << "pose_ra_x " << "pose_ra_y " << "yaw " << "pitch " << "roll " << "rndvtx_id" << std::endl;
@@ -312,7 +316,7 @@ int main(int argc, char *argv[])
 
 		res = render::utils::projectVertex(newSampleMesh.vertex[randomVertex].position, modelMatrix, screenWidth, screenHeight);
 		double zBufferValue = framebuffersPose.second.at<double>(static_cast<int>(cvRound(res[1])), static_cast<int>(cvRound(res[0])));
-		Point2i centerPixel(floor(res[0]), floor(res[1]));
+		cv::Point2i centerPixel(floor(res[0]), floor(res[1]));
 		int minzx = std::max(0, centerPixel.x - 1);
 		int maxzx = std::min(centerPixel.x + 1, framebuffersPose.second.cols - 1);
 		int minzy = std::max(0, centerPixel.y - 1);
