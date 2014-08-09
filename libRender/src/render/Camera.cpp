@@ -1,7 +1,7 @@
 /*
  * Camera.cpp
  *
- *  Created on: 05.12.2012
+ *  Created on: 08.08.2014
  *      Author: Patrik Huber
  */
 
@@ -15,57 +15,30 @@ namespace render {
 	
 Frustum::Frustum()
 {
-	l = -1.0f;
-	r = 1.0f;
-	b = -1.0f;
-	t = 1.0f;
-	n = 0.1f;
-	f = 100.0f;
 }
 
-Frustum::Frustum(float l, float r, float b, float t, float n, float f)
+Frustum::Frustum(float l, float r, float b, float t, float n, float f) : l(l), r(r), b(b), t(t), n(n), f(f)
 {
-	this->l = l;
-	this->r = r;
-	this->b = b;
-	this->t = t;
-	this->n = n;
-	this->f = f;
 }
 
 Camera::Camera()
 {
-	horizontalAngle = 0.0f;
-	verticalAngle = 0.0f;
 	updateFixed(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f));
 }
 
-Camera::Camera(Frustum frustum)
+Camera::Camera(Frustum frustum) : frustum(frustum)
 {
-	this->frustum = frustum;
-	horizontalAngle = 0.0f;
-	verticalAngle = 0.0f;
 	updateFixed(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f));
 }
 
-Camera::Camera(Vec3f eyePosition, float horizontalAngle, float verticalAngle, Frustum frustum)
+Camera::Camera(Vec3f eyePosition, float horizontalAngle, float verticalAngle, Frustum frustum) : frustum(frustum)
 {
-	this->frustum = frustum;
-	this->horizontalAngle = horizontalAngle;
-	this->verticalAngle = verticalAngle;
-	updateFree(eyePosition);
+	updateFree(eyePosition, horizontalAngle, verticalAngle);
 }
 
-Camera::Camera(Vec3f eyePosition, Vec3f gazeDirection, Frustum frustum)
+Camera::Camera(Vec3f eyePosition, Vec3f gazeDirection, Frustum frustum) : frustum(frustum)
 {
-	this->frustum = frustum;
-	horizontalAngle = 0.0f;
-	verticalAngle = 0.0f;
 	updateFixed(eyePosition, gazeDirection);
-}
-
-Camera::~Camera()
-{
 }
 
 void Camera::updateFixed(const Vec3f& eye, const Vec3f& gaze, const Vec3f& up)
@@ -83,7 +56,7 @@ void Camera::updateFixed(const Vec3f& eye, const Vec3f& gaze, const Vec3f& up)
 	this->upVector = forwardVector.cross(rightVector);
 }
 
-void Camera::updateFree(const Vec3f& eye, const Vec3f& up)
+void Camera::updateFree(const Vec3f& eye, float horizontalAngle, float verticalAngle, const Vec3f& up /*= Vec3f(0.0f, 1.0f, 0.0f)*/)
 {
 	Mat transformMatrix = render::utils::MatrixUtils::createRotationMatrixY(horizontalAngle) * render::utils::MatrixUtils::createRotationMatrixX(verticalAngle);
 	Mat tmpRes = transformMatrix * Mat(Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
@@ -105,7 +78,7 @@ void Camera::updateFree(const Vec3f& eye, const Vec3f& up)
 
 void Camera::updateFocused(const Vec3f& lookAt, const Vec3f& up)
 {
-	throw("Sorry, not yet implemented!");
+	throw std::runtime_error("Sorry, not yet implemented!");
 	/*
 	Mat transformMatrix = render::utils::MatrixUtils::createRotationMatrixY(horizontalAngle) * render::utils::MatrixUtils::createRotationMatrixX(verticalAngle);
 

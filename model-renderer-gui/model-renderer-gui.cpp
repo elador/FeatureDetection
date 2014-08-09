@@ -16,7 +16,7 @@
 #include "render/MeshUtils.hpp"
 #include "render/MatrixUtils.hpp"
 #include "render/SoftwareRenderer.hpp"
-#include "render/NewCamera.hpp"
+#include "render/Camera.hpp"
 #include "render/utils.hpp"
 #include "morphablemodel/MorphableModel.hpp"
 #include "logging/LoggerFactory.hpp"
@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
 	//Mat projection = render::utils::MatrixUtils::createPerspectiveProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
 
 	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
-	NewCamera camera(Vec3f(0.0f, 0.0f, 0.0f), degreesToRadians(horizontalAngle), degreesToRadians(verticalAngle), NewFrustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
+	Camera camera(Vec3f(0.0f, 0.0f, 0.0f), degreesToRadians(horizontalAngle), degreesToRadians(verticalAngle), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 
 	SoftwareRenderer r(screenWidth, screenHeight);
 
@@ -332,10 +332,10 @@ int main(int argc, char *argv[])
 		// => moved to render()
 		
 		if (perspective) {
-			camera.projectionType = NewCamera::ProjectionType::Perspective;
+			camera.projectionType = Camera::ProjectionType::Perspective;
 		}
 		else {
-			camera.projectionType = NewCamera::ProjectionType::Orthogonal;
+			camera.projectionType = Camera::ProjectionType::Orthogonal;
 		}
 		//projection = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, camera.frustum.n, camera.frustum.f);
 		projection = camera.getProjectionMatrix();
