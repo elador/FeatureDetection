@@ -17,6 +17,7 @@
 #include "render/MatrixUtils.hpp"
 #include "render/SoftwareRenderer.hpp"
 #include "render/NewCamera.hpp"
+#include "render/utils.hpp"
 #include "morphablemodel/MorphableModel.hpp"
 #include "logging/LoggerFactory.hpp"
 
@@ -262,35 +263,35 @@ int main(int argc, char *argv[])
 			running = false;
 		}
 		if (key == 'w') {
-			camera.eye += 0.05f * -camera.getForwardVector();
+			camera.moveForward(0.05f);
 		}
 		if (key == 'a') {
-			camera.eye -= 0.05f * camera.getRightVector();
+			camera.moveRight(-0.05f);
 		}
 		if (key == 's') {
-			camera.eye -= 0.05f * -camera.getForwardVector();
+			camera.moveForward(-0.05f);
 		}
 		if (key == 'd') {
-			camera.eye += 0.05f * camera.getRightVector();
+			camera.moveRight(0.05f);
 		}
 		if (key == 'r') {
-			camera.eye += 0.05f * camera.getUpVector();
+			camera.moveUp(0.05f);
 		}
 		if (key == 'f') {
-			camera.eye -= 0.05f * camera.getUpVector();
+			camera.moveUp(-0.05f);
 		}
 
 		if (key == 'z') {
-			camera.gaze += 0.05f * camera.getUpVector();
+			camera.rotateUp(0.05f);
 		}
 		if (key == 'h') {
-			camera.gaze -= 0.05f * camera.getUpVector();
+			camera.rotateUp(-0.05f);
 		}
 		if (key == 'g') {
-			camera.gaze -= 0.05f * camera.getRightVector();
+			camera.rotateRight(-0.05f);
 		}
 		if (key == 'j') {
-			camera.gaze += 0.05f * camera.getRightVector();
+			camera.rotateRight(0.05f);
 		}
 
 		if (key == 'i') {
@@ -338,16 +339,7 @@ int main(int argc, char *argv[])
 		}
 		
 
-		Vec4f origin(0.0f, 0.0f, 0.0f, 1.0f);
-		Vec4f xAxis(1.0f, 0.0f, 0.0f, 1.0f);
-		Vec4f yAxis(0.0f, 1.0f, 0.0f, 1.0f);
-		Vec4f zAxis(0.0f, 0.0f, 1.0f, 1.0f);
-		Vec4f mzAxis(0.0f, 0.0f, -1.0f, 1.0f);
-	/*	r.renderLine(origin, xAxis, Scalar(0.0f, 0.0f, 255.0f));
-		r.renderLine(origin, yAxis, Scalar(0.0f, 255.0f, 0.0f));
-		r.renderLine(origin, zAxis, Scalar(255.0f, 0.0f, 0.0f));
-		r.renderLine(origin, mzAxis, Scalar(0.0f, 255.0f, 255.0f));
-	*/
+
 		/*
 		for (const auto& tIdx : cube.tvi) {
 			Vertex v0 = cube.vertex[tIdx[0]];
@@ -372,7 +364,7 @@ int main(int argc, char *argv[])
 		Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f, 1.0f, 1.0f);
 		Mat modelTrans = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
 		//Mat rot = Mat::eye(4, 4, CV_32FC1);
-		Mat rot = render::utils::MatrixUtils::createRotationMatrixX(20.0f) * render::utils::MatrixUtils::createRotationMatrixY(20.0f);
+		Mat rot = render::utils::MatrixUtils::createRotationMatrixX(degreesToRadians(20.0f)) * render::utils::MatrixUtils::createRotationMatrixY(degreesToRadians(20.0f));
 		Mat modelMatrix = modelTrans * rot * modelScaling;
 		//r.setModelTransform(modelMatrix);
 		//r.draw(meshToDraw, nullptr);
@@ -387,6 +379,23 @@ int main(int argc, char *argv[])
 		Mat zBuffer, screen;
 		r.clearBuffers();
 		std::tie(screen, zBuffer) = r.render(meshToDraw, projection * modelMatrix);
+
+		// Draw the 3 axes over the screen
+		// Note: We should use render(), so that the depth buffer gets used?
+		Vec4f origin(0.0f, 0.0f, 0.0f, 1.0f);
+		Vec4f xAxis(1.0f, 0.0f, 0.0f, 1.0f);
+		Vec4f yAxis(0.0f, 1.0f, 0.0f, 1.0f);
+		Vec4f zAxis(0.0f, 0.0f, 1.0f, 1.0f);
+		Vec4f mzAxis(0.0f, 0.0f, -1.0f, 1.0f);
+		Vec3f originScreen = render::utils::projectVertex(origin, projection * modelMatrix, screenWidth, screenHeight);
+		Vec3f xAxisScreen = render::utils::projectVertex(xAxis, projection * modelMatrix, screenWidth, screenHeight);
+		Vec3f yAxisScreen = render::utils::projectVertex(yAxis, projection * modelMatrix, screenWidth, screenHeight);
+		Vec3f zAxisScreen = render::utils::projectVertex(zAxis, projection * modelMatrix, screenWidth, screenHeight);
+		Vec3f mzAxisScreen = render::utils::projectVertex(mzAxis, projection * modelMatrix, screenWidth, screenHeight);
+		cv::line(screen, cv::Point(originScreen[0], originScreen[1]), cv::Point(xAxisScreen[0], xAxisScreen[1]), Scalar(0.0f, 0.0f, 255.0f, 255.0f));
+		cv::line(screen, cv::Point(originScreen[0], originScreen[1]), cv::Point(yAxisScreen[0], yAxisScreen[1]), Scalar(0.0f, 255.0f, 0.0f, 255.0f));
+		cv::line(screen, cv::Point(originScreen[0], originScreen[1]), cv::Point(zAxisScreen[0], zAxisScreen[1]), Scalar(255.0f, 0.0f, 0.0f, 255.0f));
+		cv::line(screen, cv::Point(originScreen[0], originScreen[1]), cv::Point(mzAxisScreen[0], mzAxisScreen[1]), Scalar(0.0f, 255.0f, 255.0f, 255.0f));
 
 		render::Mesh::writeObj(meshToDraw, "C:\\Users\\Patrik\\Documents\\GitHub\\test_asdf.obj");
 		putText(screen, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));

@@ -447,8 +447,7 @@ float SoftwareRenderer::clamp(float x, float a, float b)
 void SoftwareRenderer::clearBuffers()
 {
 	colorBuffer = Mat::zeros(viewportHeight, viewportWidth, CV_8UC4);
-	depthBuffer = Mat::ones(viewportHeight, viewportWidth, CV_64FC1) * 1000000; // Todo: should there be a minus here? Check the old code
-	//depthBuffer = Mat::ones(viewportHeight, viewportWidth, CV_64FC1) * -0.88;
+	depthBuffer = Mat::ones(viewportHeight, viewportWidth, CV_64FC1) * 1000000; // That's very very far back
 }
 
 } /* namespace render */
