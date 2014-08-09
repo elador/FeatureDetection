@@ -20,6 +20,7 @@
 #include "render/MatrixUtils.hpp"
 #include "render/SoftwareRenderer.hpp"
 #include "render/Camera.hpp"
+#include "render/utils.hpp"
 
 #include "morphablemodel/MorphableModel.hpp"
 
@@ -283,7 +284,7 @@ int main(int argc, char *argv[])
 		Mat rotYawY = Mat::eye(4, 4, CV_32FC1);
 		Mat rotRollZ = Mat::eye(4, 4, CV_32FC1);
 		Mat modelMatrix = projection * rotYawY * moveCameraBack * rotPitchX * rotRollZ * modelScaling;
-		Vec3f res = r.projectVertex(newSampleMesh.vertex[randomVertex].position, modelMatrix);
+		Vec3f res = render::utils::projectVertex(newSampleMesh.vertex[randomVertex].position, modelMatrix, screenWidth, screenHeight);
 		r.clearBuffers();
 		auto framebuffers = r.render(newSampleMesh, modelMatrix);
 		string name = "randomVertexFrontal";
@@ -293,7 +294,7 @@ int main(int argc, char *argv[])
 		// 2) Render all LMs in frontal pose
 		for (const auto& vid : vertexIds) {
 			modelMatrix = projection * moveCameraBack * rotYawY * rotPitchX * rotRollZ * modelScaling; // same as before in 1)
-			res = r.projectVertex(newSampleMesh.vertex[vid].position, modelMatrix);
+			res = render::utils::projectVertex(newSampleMesh.vertex[vid].position, modelMatrix, screenWidth, screenHeight);
 			//r.renderLM(newSampleMesh.vertex[vid].position, Scalar(255.0f, 0.0f, 0.0f));
 			name = DidLandmarkFormatParser::didToTlmsName(vid);
 			pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
@@ -309,7 +310,7 @@ int main(int argc, char *argv[])
 		r.clearBuffers();
 		auto framebuffersPose = r.render(newSampleMesh, modelMatrix);
 
-		res = r.projectVertex(newSampleMesh.vertex[randomVertex].position, modelMatrix);
+		res = render::utils::projectVertex(newSampleMesh.vertex[randomVertex].position, modelMatrix, screenWidth, screenHeight);
 		double zBufferValue = framebuffersPose.second.at<double>(static_cast<int>(cvRound(res[1])), static_cast<int>(cvRound(res[0])));
 		Point2i centerPixel(floor(res[0]), floor(res[1]));
 		int minzx = std::max(0, centerPixel.x - 1);
@@ -340,7 +341,7 @@ int main(int argc, char *argv[])
 		// 4) Render all LMs in pose angle
 		for (const auto& vid : vertexIds) {
 			modelMatrix = projection * moveCameraBack * rotYawY * rotPitchX * rotRollZ * modelScaling; // same as before in 3)
-			res = r.projectVertex(newSampleMesh.vertex[vid].position, modelMatrix);
+			res = render::utils::projectVertex(newSampleMesh.vertex[vid].position, modelMatrix, screenWidth, screenHeight);
 			name = DidLandmarkFormatParser::didToTlmsName(vid);
 			pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
 			cv::circle(framebuffersPose.first, cv::Point(res[0], res[1]), 3, cv::Scalar(128, 0, 255));

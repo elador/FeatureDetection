@@ -25,7 +25,7 @@ cv::Vec2f clipToScreenSpace(cv::Vec2f clipCoordinates, int screenWidth, int scre
 	// Window transform:
 	float x_ss = (clipCoordinates[0] + 1.0f) * (screenWidth / 2.0f);
 	float y_ss = screenHeight - (clipCoordinates[1] + 1.0f) * (screenHeight / 2.0f); // also flip y; // Qt: Origin top-left. OpenGL: bottom-left.
-	return cv::Vec2f(x_ss, y_ss);
+	return Vec2f(x_ss, y_ss);
 }
 
 cv::Vec2f screenToClipSpace(cv::Vec2f screenCoordinates, int screenWidth, int screenHeight)
@@ -33,7 +33,7 @@ cv::Vec2f screenToClipSpace(cv::Vec2f screenCoordinates, int screenWidth, int sc
 	float x_cs = screenCoordinates[0] / (screenWidth / 2.0f) - 1.0f;
 	float y_cs = screenCoordinates[1] / (screenHeight / 2.0f) - 1.0f;
 	y_cs *= -1.0f;
-	return cv::Vec2f(x_cs, y_cs);
+	return Vec2f(x_cs, y_cs);
 }
 
 cv::Vec3f projectVertex(cv::Vec4f vertex, cv::Mat modelViewProjection, int screenWidth, int screenHeight)
@@ -45,11 +45,9 @@ cv::Vec3f projectVertex(cv::Vec4f vertex, cv::Mat modelViewProjection, int scree
 
 	// project from 4D to 2D window position with depth value in z coordinate
 	// Viewport transform:
-	clipSpaceV[0] = (clipSpaceV[0] + 1) * (screenWidth / 2.0f);
-	clipSpaceV[1] = (clipSpaceV[1] + 1) * (screenHeight / 2.0f);
-	clipSpaceV[1] = screenHeight - clipSpaceV[1];
+	Vec2f screenSpace = clipToScreenSpace(Vec2f(clipSpaceV[0], clipSpaceV[1]), screenWidth, screenHeight);
 
-	return Vec3f(clipSpaceV[0], clipSpaceV[1], clipSpaceV[2]);
+	return Vec3f(screenSpace[0], screenSpace[1], clipSpaceV[2]);
 }
 
 
