@@ -23,32 +23,21 @@ NewFrustum::NewFrustum(float l, float r, float b, float t, float n, float f) : l
 
 NewCamera::NewCamera()
 {
-	horizontalAngle = 0.0f;
-	verticalAngle = 0.0f;
 	updateFixed(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f));
 }
 
-NewCamera::NewCamera(NewFrustum frustum)
+NewCamera::NewCamera(NewFrustum frustum) : frustum(frustum)
 {
-	this->frustum = frustum;
-	horizontalAngle = 0.0f;
-	verticalAngle = 0.0f;
 	updateFixed(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f));
 }
 
-NewCamera::NewCamera(Vec3f eyePosition, float horizontalAngle, float verticalAngle, NewFrustum frustum)
+NewCamera::NewCamera(Vec3f eyePosition, float horizontalAngle, float verticalAngle, NewFrustum frustum) : frustum(frustum)
 {
-	this->frustum = frustum;
-	this->horizontalAngle = horizontalAngle;
-	this->verticalAngle = verticalAngle;
-	updateFree(eyePosition);
+	updateFree(eyePosition, horizontalAngle, verticalAngle);
 }
 
-NewCamera::NewCamera(Vec3f eyePosition, Vec3f gazeDirection, NewFrustum frustum)
+NewCamera::NewCamera(Vec3f eyePosition, Vec3f gazeDirection, NewFrustum frustum) : frustum(frustum)
 {
-	this->frustum = frustum;
-	horizontalAngle = 0.0f;
-	verticalAngle = 0.0f;
 	updateFixed(eyePosition, gazeDirection);
 }
 
@@ -67,7 +56,7 @@ void NewCamera::updateFixed(const Vec3f& eye, const Vec3f& gaze, const Vec3f& up
 	this->upVector = forwardVector.cross(rightVector);
 }
 
-void NewCamera::updateFree(const Vec3f& eye, const Vec3f& up)
+void NewCamera::updateFree(const Vec3f& eye, float horizontalAngle, float verticalAngle, const Vec3f& up /*= Vec3f(0.0f, 1.0f, 0.0f)*/)
 {
 	Mat transformMatrix = render::utils::MatrixUtils::createRotationMatrixY(horizontalAngle) * render::utils::MatrixUtils::createRotationMatrixX(verticalAngle);
 	Mat tmpRes = transformMatrix * Mat(Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
@@ -89,7 +78,7 @@ void NewCamera::updateFree(const Vec3f& eye, const Vec3f& up)
 
 void NewCamera::updateFocused(const Vec3f& lookAt, const Vec3f& up)
 {
-	throw("Sorry, not yet implemented!");
+	throw std::runtime_error("Sorry, not yet implemented!");
 	/*
 	Mat transformMatrix = render::utils::MatrixUtils::createRotationMatrixY(horizontalAngle) * render::utils::MatrixUtils::createRotationMatrixX(verticalAngle);
 

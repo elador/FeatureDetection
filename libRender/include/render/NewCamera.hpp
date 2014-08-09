@@ -22,7 +22,6 @@ public:
 	NewFrustum();
 	NewFrustum(float l, float r, float b, float t, float n, float f);
 
-//private:
 	float l = -1.0f;
 	float r = 1.0f;
 	float b = -1.0f;
@@ -42,15 +41,13 @@ public:
 		Orthogonal,
 		Perspective
 	};
-	ProjectionType projectionType;
-	cv::Vec3f position; ///< The pos in world coords. See below, the same as 'eye'. Is 'eye' also in world-coords?
-	///< The eye coordinates (i.e. the position) of the camera, specified by the user. The 'e' point in [Shirley2009, page 146].
+	ProjectionType projectionType = ProjectionType::Orthogonal;
 
 	//cv::Mat getMatrix(); ///< intrinsic? extrinsic? really distinguish? How's it called in games? getRenderMatrix? getViewProjectionMatrix? but OpenGL separates into ModelView and Projection, should we separate differently? (actually that's the old fixed-func pipeline?)
 	// actually separating the projection from the rest is good (?) because some calculations we need to do in eye (=camera?) space/coordinates, e.g. normals (?). getViewToEye((Space)Transform)()? (and getProjection())
 	// in OGL, vertex shader: Do model-to-ndc (or screen), output is vec3f?. And per-vertex shading etc, calculations in eye-coords, normals etc is done there. (Todo: look at an example)
 
-	cv::Mat getViewMatrix() { // transform instead of matrix?
+	cv::Mat getViewMatrix() { // name it transform instead of matrix?
 		cv::Mat translate = utils::MatrixUtils::createTranslationMatrix(-eye[0], -eye[1], -eye[2]);
 
 		cv::Mat rotate = (cv::Mat_<float>(4, 4) <<
@@ -62,7 +59,7 @@ public:
 		return viewTransform;
 	};
 
-	cv::Mat getProjectionMatrix() { // transform instead of matrix?
+	cv::Mat getProjectionMatrix() { // name it transform instead of matrix?
 		switch (projectionType)
 		{
 		case ProjectionType::Orthogonal:
@@ -70,7 +67,7 @@ public:
 		case ProjectionType::Perspective:
 			return utils::MatrixUtils::createPerspectiveProjectionMatrix(frustum.l, frustum.r, frustum.b, frustum.t, frustum.n, frustum.f);
 		default: // Todo: default necessary? break? what happens? return a Mat()?
-			break;
+			throw std::runtime_error("projectionType is neither Orthogonal nor Perspective. This should never happen.");
 		}
 	};
 
@@ -94,20 +91,26 @@ public:
 		gaze += amount * rightVector;
 	};
 
+	NewFrustum& getFrustum() {
+		return frustum;
+	};
+
 	// Todo: move those all back to private, but they should have getters and setters? no?
 	Vec3f eye;	///< The eye coordinates (i.e. the position) of the camera, specified by the user. The 'e' point in [Shirley2009, page 146].
 	Vec3f gaze;	///< The gaze direction vector, i.e. the direction in which the camera is looking, can be specified by the user. 'g' in [Shirley2009].
 	Vec3f up;	///< The upwards direction of the camera, can be specified by the user, usually (0, 1, 0). 't' in [Shirley2009].
 
-	NewFrustum frustum;	// TODO make private
+	
 
 private:
+	NewFrustum frustum;	// TODO make private
+
 	// the camera basis vectors. They are private because they are calculated from the user input (eye-pos e, gaze-dir g, view-up t)
 	Vec3f rightVector;		///< The 'u' coordinate axis of the uvw-basis of the camera. See [Shirley2009, page 146] for more details.
 	Vec3f upVector;			///< The 'v' coordinate axis.
 	Vec3f forwardVector;	///< The 'w' coordinate axis, the opposite to the gaze direction.
 
-	
+	//float horizontalAngle, verticalAngle; // not sure we should store them as members. just allow access via update...()?
 public:
 	/**
 	 * Constructs a new Camera at the origin looking into -z direction. The Camera
@@ -148,7 +151,7 @@ public:
 	 */
 	NewCamera(Vec3f eyePosition, Vec3f gazeDirection, NewFrustum frustum);
 
-	float horizontalAngle, verticalAngle;
+	
 	//float distanceFromEyeToAt;
 
 	const Vec3f& getEye() const { return eye; }
@@ -164,7 +167,7 @@ public:
 	
 	// given the two angles, find the forward, right and up vec. Then, set the eye and gaze in this direction.
 	// given hor/verAngle (and eye), calculate the new FwdVec. Then, new right and up. Then also set at-Vec.
-	void updateFree(const Vec3f& eye, const Vec3f& up = Vec3f(0.0f, 1.0f, 0.0f));
+	void updateFree(const Vec3f& eye, float horizontalAngle, float verticalAngle, const Vec3f& up = Vec3f(0.0f, 1.0f, 0.0f));
 	
 	// give a vector with absolute coords where to look at. (given angles + this point, calculate the cam pos.)
 	// NOT YET IMPLEMENTED

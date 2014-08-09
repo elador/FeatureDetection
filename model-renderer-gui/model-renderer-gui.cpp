@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
 	//Mat projection = render::utils::MatrixUtils::createPerspectiveProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
 
 	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
-	NewCamera camera(Vec3f(0.0f, 0.0f, 0.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), NewFrustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
+	NewCamera camera(Vec3f(0.0f, 0.0f, 0.0f), degreesToRadians(horizontalAngle), degreesToRadians(verticalAngle), NewFrustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 
 	SoftwareRenderer r(screenWidth, screenHeight);
 
@@ -295,16 +295,16 @@ int main(int argc, char *argv[])
 		}
 
 		if (key == 'i') {
-			camera.frustum.n += 0.1f;
+			camera.getFrustum().n += 0.1f;
 		}
 		if (key == 'k') {
-			camera.frustum.n -= 0.1f;
+			camera.getFrustum().n -= 0.1f;
 		}
 		if (key == 'o') {
-			camera.frustum.f += 1.0f;
+			camera.getFrustum().f += 1.0f;
 		}
 		if (key == 'l') {
-			camera.frustum.f -= 1.0f;
+			camera.getFrustum().f -= 1.0f;
 		}
 		if (key == 'p') {
 			perspective = !perspective;
@@ -320,10 +320,9 @@ int main(int argc, char *argv[])
 		
 		//r.resetBuffers();
 
-		camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
-		camera.verticalAngle = verticalAngle*(CV_PI/180.0f);
 		if(freeCamera) {
-			camera.updateFree(camera.eye);
+			// remove eye as arg, rename to ... setGazeDirection()? and add a setPosition()?
+			camera.updateFree(camera.eye, degreesToRadians(horizontalAngle), degreesToRadians(verticalAngle));
 		} else {
 			camera.updateFixed(camera.eye, camera.gaze);
 		}
@@ -331,13 +330,15 @@ int main(int argc, char *argv[])
 		//r.updateViewTransform();
 		//r.updateProjectionTransform(perspective);
 		// => moved to render()
+		
 		if (perspective) {
-			projection = render::utils::MatrixUtils::createPerspectiveProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, camera.frustum.n, camera.frustum.f);
+			camera.projectionType = NewCamera::ProjectionType::Perspective;
 		}
 		else {
-			projection = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, camera.frustum.n, camera.frustum.f);
+			camera.projectionType = NewCamera::ProjectionType::Orthogonal;
 		}
-		
+		//projection = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, camera.frustum.n, camera.frustum.f);
+		projection = camera.getProjectionMatrix();
 
 
 		/*
@@ -376,9 +377,12 @@ int main(int argc, char *argv[])
 		//r.renderLine(Vec4f(1.5f, 0.0f, 0.5f, 1.0f), Vec4f(-1.5f, 0.0f, 0.5f, 1.0f), Scalar(0.0f, 0.0f, 255.0f));
 		//Mat zBuffer = r.getDepthBuffer();
 		//Mat screen = r.getImage();
+
+		Mat cameraTransform = camera.getViewMatrix();
+
 		Mat zBuffer, screen;
 		r.clearBuffers();
-		std::tie(screen, zBuffer) = r.render(meshToDraw, projection * modelMatrix);
+		std::tie(screen, zBuffer) = r.render(meshToDraw, projection * cameraTransform * modelMatrix);
 
 		// Draw the 3 axes over the screen
 		// Note: We should use render(), so that the depth buffer gets used?
@@ -401,7 +405,7 @@ int main(int argc, char *argv[])
 		putText(screen, "(" + lexical_cast<string>(lastX) + ", " + lexical_cast<string>(lastY) + ")", Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		putText(screen, "horA: " + lexical_cast<string>(horizontalAngle) + ", verA: " + lexical_cast<string>(verticalAngle), Point(10, 38), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		putText(screen, "moving: " + lexical_cast<string>(moving), Point(10, 56), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
-		putText(screen, "zNear: " + lexical_cast<string>(camera.frustum.n) + ", zFar: " + lexical_cast<string>(camera.frustum.f) + ", p: " + lexical_cast<string>(perspective), Point(10, 74), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
+		putText(screen, "zNear: " + lexical_cast<string>(camera.getFrustum().n) + ", zFar: " + lexical_cast<string>(camera.getFrustum().f) + ", p: " + lexical_cast<string>(perspective), Point(10, 74), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		putText(screen, "eye: " + lexical_cast<string>(camera.eye[0]) + ", " + lexical_cast<string>(camera.eye[1]) + ", " + lexical_cast<string>(camera.eye[2]), Point(10, 92), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, Scalar(0, 0, 255));
 		imshow(windowName, screen);
 
