@@ -28,8 +28,18 @@ Mesh MeshUtils::createCube()
 	Mesh cube;
 	cube.vertex.resize(24);
 
-	for (int i = 0; i < 24; i++)
+	for (int i = 0; i < 4; i++)
 		cube.vertex[i].color = cv::Vec3f(1.0f, 0.0f, 0.0f);
+	for (int i = 4; i < 8; i++)
+		cube.vertex[i].color = cv::Vec3f(0.0f, 1.0f, 0.0f);
+	for (int i = 8; i < 12; i++)
+		cube.vertex[i].color = cv::Vec3f(0.0f, 0.0f, 1.0f);
+	for (int i = 12; i < 16; i++)
+		cube.vertex[i].color = cv::Vec3f(1.0f, 1.0f, 0.0f);
+	for (int i = 16; i < 20; i++)
+		cube.vertex[i].color = cv::Vec3f(0.0f, 1.0f, 1.0f);
+	for (int i = 24; i < 24; i++)
+		cube.vertex[i].color = cv::Vec3f(1.0f, 0.0f, 1.0f);
 
 	cube.vertex[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
 	cube.vertex[0].texcrd = Vec2f(0.0f, 0.0f);

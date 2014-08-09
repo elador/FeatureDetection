@@ -36,6 +36,18 @@ public:
 class NewCamera
 {
 public:
+	enum class ProjectionType
+	{
+		Affine,
+		Perspective
+	};
+	cv::Vec3f position; ///< The pos in world coords. See below, the same as 'eye'. Is 'eye' also in world-coords?
+	///< The eye coordinates (i.e. the position) of the camera, specified by the user. The 'e' point in [Shirley2009, page 146].
+
+	cv::Mat getMatrix(); ///< intrinsic? extrinsic? really distinguish? How's it called in games? getRenderMatrix? getViewProjectionMatrix? but OpenGL separates into ModelView and Projection, should we separate differently? (actually that's the old fixed-func pipeline?)
+	// actually separating the projection from the rest is good (?) because some calculations we need to do in eye (=camera?) space/coordinates, e.g. normals (?). getViewToEye((Space)Transform)()? (and getProjection())
+	// in OGL, vertex shader: Do model-to-ndc (or screen), output is vec3f?. And per-vertex shading etc, calculations in eye-coords, normals etc is done there. (Todo: look at an example)
+
 	/**
 	 * Constructs a new Camera at the origin looking into -z direction. The Camera
 	 * has a default viewing frustum of l=-1, r=1, b=-1, t=1, n=0.1 and f=100.

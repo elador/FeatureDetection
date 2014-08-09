@@ -1,9 +1,9 @@
 // For memory leak debugging: http://msdn.microsoft.com/en-us/library/x98tx3cf(v=VS.100).aspx
-#define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
+//#define _CRTDBG_MAP_ALLOC
+//#include <stdlib.h>
 
 #ifdef WIN32
-	#include <crtdbg.h>
+	//#include <crtdbg.h>
 #endif
 
 /*#ifdef _DEBUG
@@ -35,6 +35,10 @@
 #include "boost/algorithm/string.hpp"
 #include "boost/filesystem/path.hpp"
 
+#include "QMatrix4x4"
+#include "QDebug"
+#include "QtMath"
+
 #include <iostream>
 #include <fstream>
 
@@ -55,6 +59,16 @@ using std::endl;
 using std::vector;
 using std::string;
 using std::make_shared;
+
+float radiansToDegrees(float radians) // change to constexpr in VS2014
+{
+	return radians * static_cast<float>(180 / CV_PI);
+}
+
+float degreesToRadians(float degrees) // change to constexpr in VS2014
+{
+	return degrees * static_cast<float>(CV_PI / 180);
+}
 
 template<class T>
 std::ostream& operator<<(std::ostream& os, const vector<T>& v)
@@ -79,7 +93,9 @@ static int lastY = 0;
 static float movingFactor = 0.5f;
 static bool moving = false;
 
+//static float zNear = 0.1f;
 static float zNear = -0.1f;
+//static float zFar = 100.0f;
 static float zFar = -100.0f;
 static bool perspective = false;
 static bool freeCamera = true;
@@ -222,6 +238,16 @@ int main(int argc, char *argv[])
 
 	SoftwareRenderer r(screenWidth, screenHeight);
 
+	using namespace render::utils;
+	QMatrix4x4 qm;
+	//qm.ortho(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f);
+	qm.frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f);
+	qDebug() << qm;
+
+	//Mat cm = MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, -0.1f, -100.0f);
+	Mat cm = MatrixUtils::createPerspectiveProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 0.1f, 100.0f);
+	cout << cm;
+	
 	namedWindow(windowName, cv::WINDOW_AUTOSIZE);
 	cv::setMouseCallback(windowName, winOnMouse);
 
@@ -345,8 +371,9 @@ int main(int argc, char *argv[])
 		
 		//Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
 		Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f, 1.0f, 1.0f);
-		Mat modelTrans = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -1.5f);
-		Mat rot = Mat::eye(4, 4, CV_32FC1);
+		Mat modelTrans = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
+		//Mat rot = Mat::eye(4, 4, CV_32FC1);
+		Mat rot = render::utils::MatrixUtils::createRotationMatrixX(20.0f);
 		Mat modelMatrix = modelTrans * rot * modelScaling;
 		//r.setModelTransform(modelMatrix);
 		//r.draw(meshToDraw, nullptr);

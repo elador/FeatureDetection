@@ -27,6 +27,35 @@ namespace render {
  * So z = 0.5 is in front of 0.0.
  * Z-Buffer: 
  * 
+ * ...ortho etc:
+ * 
+ * Shirley: Specify n and f with negative values. which makes sense b/c the points
+ * are along the -z axis.
+ * Consequences: notably: orthogonal(2, 3): Shirley has denominator (n-f). 
+ * In what space are the points in Shirley after this?
+ * OGL: We're in the orthographic viewing volume looking down -z.
+ * However, n and f are specified positive.
+
+ * B/c the 3D points in front of the cam obviously still have negative z values, the
+ * z-value is negated. So: n = 0.1, f = 100; With the given OpenGL ortho matrix,
+ * it means a point on the near-plane which will have z = -0.1 will land up
+ * on z_clip (which equals z_ndc with ortho because w=1) = -1, and a point on
+ * the far plane z = -100 will have z_ndc = +1.
+ *
+ * That's also why in the perspective case, w_clip is set to -z_eye because
+ * to project a point the formula is $x_p = (-n * x_e)/z_e$ (because our near is
+ * specified with positive values, but the near-plane is _really_ at -n); but now we
+ * just move the minus-sign to the denominator, $x_p = (n * x_e)/-z_e$, so in the projection matrix we can use
+ * the (positive) n and f values and afterwards we divide by w = -z_e.
+ * 
+ * http://www.songho.ca/opengl/gl_projectionmatrix.html
+ *
+ * Random notes:
+ * clip-space: after applying the projection matrix.
+ * ndc: after division by w
+ * NDC cube: the range of x-coordinate from [l, r] to [-1, 1], the y-coordinate from [b, t] to [-1, 1] and the z-coordinate from [n, f] to [-1, 1].
+ *
+ * Note/Todo: I read that in screen space, OpenGL transform the z-values again to be between 0 and 1?
  *
  * Similar to OGL, this renderer has a state.
  * Before each render() call, clearBuffers should be called if desired.
