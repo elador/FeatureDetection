@@ -38,9 +38,10 @@ Mesh MeshUtils::createCube()
 		cube.vertex[i].color = cv::Vec3f(1.0f, 1.0f, 0.0f);
 	for (int i = 16; i < 20; i++)
 		cube.vertex[i].color = cv::Vec3f(0.0f, 1.0f, 1.0f);
-	for (int i = 24; i < 24; i++)
+	for (int i = 20; i < 24; i++)
 		cube.vertex[i].color = cv::Vec3f(1.0f, 0.0f, 1.0f);
 
+	// the front side - red
 	cube.vertex[0].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
 	cube.vertex[0].texcrd = Vec2f(0.0f, 0.0f);
 	cube.vertex[1].position = cv::Vec4f(-0.5f, -0.5f, 0.5f, 1.0f);
@@ -50,6 +51,7 @@ Mesh MeshUtils::createCube()
 	cube.vertex[3].position = cv::Vec4f(0.5f, 0.5f, 0.5f, 1.0f);
 	cube.vertex[3].texcrd = Vec2f(1.0f, 0.0f);
 
+	// right side - green
 	cube.vertex[4].position = cv::Vec4f(0.5f, 0.5f, 0.5f, 1.0f);
 	cube.vertex[4].texcrd = Vec2f(0.0f, 0.0f);
 	cube.vertex[5].position = cv::Vec4f(0.5f, -0.5f, 0.5f, 1.0f);
@@ -59,6 +61,7 @@ Mesh MeshUtils::createCube()
 	cube.vertex[7].position = cv::Vec4f(0.5f, 0.5f, -0.5f, 1.0f);
 	cube.vertex[7].texcrd = Vec2f(1.0f, 0.0f);
 
+	// back side - blue
 	cube.vertex[8].position = cv::Vec4f(0.5f, 0.5f, -0.5f, 1.0f);
 	cube.vertex[8].texcrd = Vec2f(0.0f, 0.0f);
 	cube.vertex[9].position = cv::Vec4f(0.5f, -0.5f, -0.5f, 1.0f);
@@ -68,6 +71,7 @@ Mesh MeshUtils::createCube()
 	cube.vertex[11].position = cv::Vec4f(-0.5f, 0.5f, -0.5f, 1.0f);
 	cube.vertex[11].texcrd = Vec2f(1.0f, 0.0f);
 
+	// left side - yellow
 	cube.vertex[12].position = cv::Vec4f(-0.5f, 0.5f, -0.5f, 1.0f);
 	cube.vertex[12].texcrd = Vec2f(0.0f, 0.0f);
 	cube.vertex[13].position = cv::Vec4f(-0.5f, -0.5f, -0.5f, 1.0f);
@@ -77,6 +81,7 @@ Mesh MeshUtils::createCube()
 	cube.vertex[15].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
 	cube.vertex[15].texcrd = Vec2f(1.0f, 0.0f);
 
+	// top - light blue
 	cube.vertex[16].position = cv::Vec4f(-0.5f, 0.5f, -0.5f, 1.0f);
 	cube.vertex[16].texcrd = Vec2f(0.0f, 0.0f);
 	cube.vertex[17].position = cv::Vec4f(-0.5f, 0.5f, 0.5f, 1.0f);
@@ -86,6 +91,7 @@ Mesh MeshUtils::createCube()
 	cube.vertex[19].position = cv::Vec4f(0.5f, 0.5f, -0.5f, 1.0f);
 	cube.vertex[19].texcrd = Vec2f(1.0f, 0.0f);
 
+	// bottom - violet
 	cube.vertex[20].position = cv::Vec4f(-0.5f, -0.5f, 0.5f, 1.0f);
 	cube.vertex[20].texcrd = Vec2f(0.0f, 0.0f);
 	cube.vertex[21].position = cv::Vec4f(-0.5f, -0.5f, -0.5f, 1.0f);

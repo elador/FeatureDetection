@@ -231,7 +231,6 @@ int main(int argc, char *argv[])
 
 	Mat moveCameraBack = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
 	Mat projection = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
-	//Mat projection = render::utils::MatrixUtils::createPerspectiveProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
 
 	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 	Camera camera(Vec3f(0.0f, 0.0f, 0.0f), degreesToRadians(horizontalAngle), degreesToRadians(verticalAngle), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
@@ -239,7 +238,6 @@ int main(int argc, char *argv[])
 	SoftwareRenderer r(screenWidth, screenHeight);
 
 	using namespace render::utils;
-	//Mat cm = MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, -0.1f, -100.0f);
 	
 	namedWindow(windowName, cv::WINDOW_AUTOSIZE);
 	cv::setMouseCallback(windowName, winOnMouse);
@@ -252,7 +250,6 @@ int main(int argc, char *argv[])
 		cv::createTrackbar("PC" + lexical_cast<string>(i)+": " + lexical_cast<string>(pcVals[i]), controlWindowName, &pcValsInt[i], 100, controlWinOnMouse);
 	}
 	
-
 	bool running = true;
 	while (running) {
 		int key = cv::waitKey(30);
@@ -318,8 +315,6 @@ int main(int argc, char *argv[])
 			//meshToDraw = mm.drawSample(0.7f);
 		}
 		
-		//r.resetBuffers();
-
 		if(freeCamera) {
 			// remove eye as arg, rename to ... setGazeDirection()? and add a setPosition()?
 			camera.updateFree(camera.eye, degreesToRadians(horizontalAngle), degreesToRadians(verticalAngle));
@@ -327,59 +322,22 @@ int main(int argc, char *argv[])
 			camera.updateFixed(camera.eye, camera.gaze);
 		}
 
-		//r.updateViewTransform();
-		//r.updateProjectionTransform(perspective);
-		// => moved to render()
-		
 		if (perspective) {
 			camera.projectionType = Camera::ProjectionType::Perspective;
 		}
 		else {
 			camera.projectionType = Camera::ProjectionType::Orthogonal;
 		}
-		//projection = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, camera.frustum.n, camera.frustum.f);
 		projection = camera.getProjectionMatrix();
-
-
-		/*
-		for (const auto& tIdx : cube.tvi) {
-			Vertex v0 = cube.vertex[tIdx[0]];
-			Vertex v1 = cube.vertex[tIdx[1]];
-			Vertex v2 = cube.vertex[tIdx[2]];
-			r.renderLine(v0.position, v1.position, Scalar(0.0f, 0.0f, 255.0f));
-			r.renderLine(v1.position, v2.position, Scalar(0.0f, 0.0f, 255.0f));
-			r.renderLine(v2.position, v0.position, Scalar(0.0f, 0.0f, 255.0f));
-		}
-
-		// Test-vertex for rasterizing:
-		Vertex v0 = cube.vertex[0];
-		Vertex v1 = cube.vertex[1];
-		Vertex v2 = cube.vertex[2];
-		r.renderLine(v0.position, v1.position, Scalar(255.0f, 0.0f, 0.0f));
-		r.renderLine(v1.position, v2.position, Scalar(255.0f, 0.0f, 0.0f));
-		r.renderLine(v2.position, v0.position, Scalar(255.0f, 0.0f, 0.0f));
-		*/
-		//r.draw(tri, tri->texture);
-		
-		//Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
-		Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f, 1.0f, 1.0f);
-		Mat modelTrans = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
-		//Mat rot = Mat::eye(4, 4, CV_32FC1);
-		Mat rot = render::utils::MatrixUtils::createRotationMatrixX(degreesToRadians(20.0f)) * render::utils::MatrixUtils::createRotationMatrixY(degreesToRadians(20.0f));
-		Mat modelMatrix = modelTrans * rot * modelScaling;
-		//r.setModelTransform(modelMatrix);
-		//r.draw(meshToDraw, nullptr);
-		
-		//r.setModelTransform(Mat::eye(4, 4, CV_32FC1));
-		
-		// End test
-		
-		//r.renderLine(Vec4f(1.5f, 0.0f, 0.5f, 1.0f), Vec4f(-1.5f, 0.0f, 0.5f, 1.0f), Scalar(0.0f, 0.0f, 255.0f));
-		//Mat zBuffer = r.getDepthBuffer();
-		//Mat screen = r.getImage();
-
 		Mat cameraTransform = camera.getViewMatrix();
 
+		//Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
+		//Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f, 1.0f, 1.0f);
+		//Mat modelTrans = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
+		//Mat rot = Mat::eye(4, 4, CV_32FC1);
+		Mat rot = render::utils::MatrixUtils::createRotationMatrixY(degreesToRadians(30.0f)) * render::utils::MatrixUtils::createRotationMatrixX(degreesToRadians(5.0f));
+		Mat modelMatrix =  rot;
+	
 		Mat zBuffer, screen;
 		r.clearBuffers();
 		std::tie(screen, zBuffer) = r.render(meshToDraw, projection * cameraTransform * modelMatrix);
@@ -391,11 +349,11 @@ int main(int argc, char *argv[])
 		Vec4f yAxis(0.0f, 1.0f, 0.0f, 1.0f);
 		Vec4f zAxis(0.0f, 0.0f, 1.0f, 1.0f);
 		Vec4f mzAxis(0.0f, 0.0f, -1.0f, 1.0f);
-		Vec3f originScreen = render::utils::projectVertex(origin, projection * modelMatrix, screenWidth, screenHeight);
-		Vec3f xAxisScreen = render::utils::projectVertex(xAxis, projection * modelMatrix, screenWidth, screenHeight);
-		Vec3f yAxisScreen = render::utils::projectVertex(yAxis, projection * modelMatrix, screenWidth, screenHeight);
-		Vec3f zAxisScreen = render::utils::projectVertex(zAxis, projection * modelMatrix, screenWidth, screenHeight);
-		Vec3f mzAxisScreen = render::utils::projectVertex(mzAxis, projection * modelMatrix, screenWidth, screenHeight);
+		Vec3f originScreen = render::utils::projectVertex(origin, projection * cameraTransform * modelMatrix, screenWidth, screenHeight);
+		Vec3f xAxisScreen = render::utils::projectVertex(xAxis, projection * cameraTransform * modelMatrix, screenWidth, screenHeight);
+		Vec3f yAxisScreen = render::utils::projectVertex(yAxis, projection * cameraTransform * modelMatrix, screenWidth, screenHeight);
+		Vec3f zAxisScreen = render::utils::projectVertex(zAxis, projection * cameraTransform * modelMatrix, screenWidth, screenHeight);
+		Vec3f mzAxisScreen = render::utils::projectVertex(mzAxis, projection * cameraTransform * modelMatrix, screenWidth, screenHeight);
 		cv::line(screen, cv::Point(originScreen[0], originScreen[1]), cv::Point(xAxisScreen[0], xAxisScreen[1]), Scalar(0.0f, 0.0f, 255.0f, 255.0f));
 		cv::line(screen, cv::Point(originScreen[0], originScreen[1]), cv::Point(yAxisScreen[0], yAxisScreen[1]), Scalar(0.0f, 255.0f, 0.0f, 255.0f));
 		cv::line(screen, cv::Point(originScreen[0], originScreen[1]), cv::Point(zAxisScreen[0], zAxisScreen[1]), Scalar(255.0f, 0.0f, 0.0f, 255.0f));
@@ -414,3 +372,23 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+/*
+// Some old, maybe useful renderer test-code:
+for (const auto& tIdx : cube.tvi) {
+Vertex v0 = cube.vertex[tIdx[0]];
+Vertex v1 = cube.vertex[tIdx[1]];
+Vertex v2 = cube.vertex[tIdx[2]];
+r.renderLine(v0.position, v1.position, Scalar(0.0f, 0.0f, 255.0f));
+r.renderLine(v1.position, v2.position, Scalar(0.0f, 0.0f, 255.0f));
+r.renderLine(v2.position, v0.position, Scalar(0.0f, 0.0f, 255.0f));
+}
+
+// Test-vertex for rasterizing:
+Vertex v0 = cube.vertex[0];
+Vertex v1 = cube.vertex[1];
+Vertex v2 = cube.vertex[2];
+r.renderLine(v0.position, v1.position, Scalar(255.0f, 0.0f, 0.0f));
+r.renderLine(v1.position, v2.position, Scalar(255.0f, 0.0f, 0.0f));
+r.renderLine(v2.position, v0.position, Scalar(255.0f, 0.0f, 0.0f));
+*/
+//r.draw(tri, tri->texture);
