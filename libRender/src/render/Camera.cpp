@@ -60,7 +60,7 @@ void Camera::updateFixed(const Vec3f& eye, const Vec3f& gaze, const Vec3f& up /*
 void Camera::updateFree(const Vec3f& eye, float horizontalAngle, float verticalAngle, const Vec3f& up /*= Vec3f(0.0f, 1.0f, 0.0f)*/)
 {
 	// Set new basis axes, i.e. first a new forwardVector and rightVector, rotated by the given horizontal and vertical angles:
-	Mat transformMatrix = render::utils::MatrixUtils::createRotationMatrixY(horizontalAngle) * render::utils::MatrixUtils::createRotationMatrixX(verticalAngle);
+	Mat transformMatrix = matrixutils::createRotationMatrixY(horizontalAngle) * matrixutils::createRotationMatrixX(verticalAngle);
 	Mat rotatedForwardVector = transformMatrix * Mat(Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
 	forwardVector[0] = rotatedForwardVector.at<float>(0, 0);	// This rotates the standard forward-vector (0, 0, 1) with the rotation
 	forwardVector[1] = rotatedForwardVector.at<float>(1, 0);	// matrix and sets the new forward-vector accordingly

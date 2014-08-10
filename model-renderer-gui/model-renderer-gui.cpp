@@ -14,7 +14,7 @@
 #endif  // _DEBUG
    */
 #include "render/MeshUtils.hpp"
-#include "render/MatrixUtils.hpp"
+#include "render/matrixutils.hpp"
 #include "render/SoftwareRenderer.hpp"
 #include "render/Camera.hpp"
 #include "render/utils.hpp"
@@ -229,8 +229,8 @@ int main(int argc, char *argv[])
 	int screenHeight = 480;
 	const float aspect = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
 
-	Mat moveCameraBack = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
-	Mat projection = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
+	Mat moveCameraBack = render::matrixutils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
+	Mat projection = render::matrixutils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
 
 	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 	Camera camera(Vec3f(0.0f, 0.0f, 0.0f), degreesToRadians(horizontalAngle), degreesToRadians(verticalAngle), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
@@ -335,7 +335,7 @@ int main(int argc, char *argv[])
 		//Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f, 1.0f, 1.0f);
 		//Mat modelTrans = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
 		//Mat rot = Mat::eye(4, 4, CV_32FC1);
-		Mat rot = render::utils::MatrixUtils::createRotationMatrixY(degreesToRadians(30.0f)) * render::utils::MatrixUtils::createRotationMatrixX(degreesToRadians(5.0f));
+		Mat rot = render::matrixutils::createRotationMatrixY(degreesToRadians(30.0f)) * render::matrixutils::createRotationMatrixX(degreesToRadians(5.0f));
 		Mat modelMatrix = rot;
 	
 		Mat zBuffer, screen;

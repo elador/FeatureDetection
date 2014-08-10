@@ -82,7 +82,7 @@ public:
 	Camera(Vec3f eyePosition, Vec3f gazeDirection, Frustum frustum);
 
 	cv::Mat getViewMatrix() { // getViewTransform() or getWorldToView(), getWorldToEye(), getWorldToEyeSpaceTransform(), ...
-		cv::Mat translate = utils::MatrixUtils::createTranslationMatrix(-eye[0], -eye[1], -eye[2]);
+		cv::Mat translate = matrixutils::createTranslationMatrix(-eye[0], -eye[1], -eye[2]);
 
 		cv::Mat rotate = (cv::Mat_<float>(4, 4) <<
 			rightVector[0], rightVector[1], rightVector[2], 0.0f,
@@ -97,9 +97,9 @@ public:
 		switch (projectionType)
 		{
 		case ProjectionType::Orthogonal:
-			return utils::MatrixUtils::createOrthogonalProjectionMatrix(frustum.l, frustum.r, frustum.b, frustum.t, frustum.n, frustum.f);
+			return matrixutils::createOrthogonalProjectionMatrix(frustum.l, frustum.r, frustum.b, frustum.t, frustum.n, frustum.f);
 		case ProjectionType::Perspective:
-			return utils::MatrixUtils::createPerspectiveProjectionMatrix(frustum.l, frustum.r, frustum.b, frustum.t, frustum.n, frustum.f);
+			return matrixutils::createPerspectiveProjectionMatrix(frustum.l, frustum.r, frustum.b, frustum.t, frustum.n, frustum.f);
 		default: // Todo: default necessary? break? what happens? return a Mat()?
 			throw std::runtime_error("projectionType is neither Orthogonal nor Perspective. This should never happen.");
 		}

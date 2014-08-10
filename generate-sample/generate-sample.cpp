@@ -17,7 +17,7 @@
 */
 
 #include "render/MeshUtils.hpp"
-#include "render/MatrixUtils.hpp"
+#include "render/matrixutils.hpp"
 #include "render/SoftwareRenderer.hpp"
 #include "morphablemodel/MorphableModel.hpp"
 #include "logging/LoggerFactory.hpp"
@@ -163,10 +163,10 @@ int main(int argc, char *argv[])
 	int screenHeight = 480;
 	const float aspect = static_cast<float>(screenWidth)/static_cast<float>(screenHeight);
 
-	Mat moveCameraBack = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
+	Mat moveCameraBack = render::matrixutils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
 	float zNear = 0.01f; // maybe check again what makes sense in our case and with our matrices. I think atm we comply with Shirley? But maybe we should rather comply with OpenGL?
 	float zFar = 100.0f;
-	Mat projection = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
+	Mat projection = render::matrixutils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
 	SoftwareRenderer r(screenWidth, screenHeight);
 
 	std::mt19937 engine; // Mersenne twister MT19937
@@ -194,10 +194,10 @@ int main(int argc, char *argv[])
 	
 	render::Mesh sampleMesh = morphableModel.drawSample(alphas, betas); // if one of the two vectors is empty, it uses getMean()
 
-	Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f / 140.0f, 1.0f / 140.0f, 1.0f / 140.0f);
-	Mat rotPitchX = render::utils::MatrixUtils::createRotationMatrixX(pitchAngle * static_cast<float>(CV_PI / 180.0));
-	Mat rotYawY = render::utils::MatrixUtils::createRotationMatrixY(yawAngle * static_cast<float>(CV_PI / 180.0));
-	Mat rotRollZ = render::utils::MatrixUtils::createRotationMatrixZ(rollAngle * static_cast<float>(CV_PI / 180.0));
+	Mat modelScaling = render::matrixutils::createScalingMatrix(1.0f / 140.0f, 1.0f / 140.0f, 1.0f / 140.0f);
+	Mat rotPitchX = render::matrixutils::createRotationMatrixX(pitchAngle * static_cast<float>(CV_PI / 180.0));
+	Mat rotYawY = render::matrixutils::createRotationMatrixY(yawAngle * static_cast<float>(CV_PI / 180.0));
+	Mat rotRollZ = render::matrixutils::createRotationMatrixZ(rollAngle * static_cast<float>(CV_PI / 180.0));
 	Mat modelMatrix = projection * moveCameraBack * rotYawY * rotPitchX * rotRollZ * modelScaling;
 	
 	Mat framebuffer, depthbuffer;

@@ -1,17 +1,17 @@
 /*
- * MatrixUtils.cpp
+ * matrixutils.cpp
  *
  *  Created on: 12.12.2012
  *      Author: Patrik Huber
  */
 
-#include "render/MatrixUtils.hpp"
+#include "render/matrixutils.hpp"
 #include "boost/math/constants/constants.hpp"
 
 namespace render {
-	namespace utils {
+	namespace matrixutils {
 
-cv::Mat MatrixUtils::createRotationMatrixX(float angle) // angle is in radians!
+cv::Mat createRotationMatrixX(float angle) // angle is in radians!
 {
 	cv::Mat rotX = (cv::Mat_<float>(4,4) << 
 		1.0f,				0.0f,				0.0f,				0.0f,
@@ -21,7 +21,7 @@ cv::Mat MatrixUtils::createRotationMatrixX(float angle) // angle is in radians!
 	return rotX;
 }
 
-cv::Mat MatrixUtils::createRotationMatrixY(float angle) // angle is in radians!
+cv::Mat createRotationMatrixY(float angle) // angle is in radians!
 {
 	cv::Mat rotY = (cv::Mat_<float>(4,4) << 
 		std::cos(angle),	0.0f,				std::sin(angle),	0.0f,
@@ -31,7 +31,7 @@ cv::Mat MatrixUtils::createRotationMatrixY(float angle) // angle is in radians!
 	return rotY;
 }
 
-cv::Mat MatrixUtils::createRotationMatrixZ(float angle) // angle is in radians!
+cv::Mat createRotationMatrixZ(float angle) // angle is in radians!
 {
 	cv::Mat rotZ = (cv::Mat_<float>(4,4) << 
 		std::cos(angle),	-std::sin(angle),	0.0f,				0.0f,
@@ -41,7 +41,7 @@ cv::Mat MatrixUtils::createRotationMatrixZ(float angle) // angle is in radians!
 	return rotZ;
 }
 
-cv::Mat MatrixUtils::createScalingMatrix(float sx, float sy, float sz)
+cv::Mat createScalingMatrix(float sx, float sy, float sz)
 {
 	cv::Mat scaling = (cv::Mat_<float>(4,4) << 
 		sx,					0.0f,				0.0f,				0.0f,
@@ -51,7 +51,7 @@ cv::Mat MatrixUtils::createScalingMatrix(float sx, float sy, float sz)
 	return scaling;
 }
 
-cv::Mat MatrixUtils::createTranslationMatrix(float tx, float ty, float tz)
+cv::Mat createTranslationMatrix(float tx, float ty, float tz)
 {
 	cv::Mat translation = (cv::Mat_<float>(4,4) << 
 		1.0f,				0.0f,				0.0f,				tx,
@@ -75,7 +75,7 @@ For more details, see doc of SoftwareRenderer class.
 Still be careful, we can't pass the underlying data directly to OpenGL because OGL expects the data
 to be in col-major memory layout, while OCV lays it out in row-major memory.
 */
-cv::Mat MatrixUtils::createOrthogonalProjectionMatrix(float l, float r, float b, float t, float n, float f)
+cv::Mat createOrthogonalProjectionMatrix(float l, float r, float b, float t, float n, float f)
 {
 	// OpenGL & Qt convention
 	cv::Mat orthogonal = (cv::Mat_<float>(4, 4) <<
@@ -86,7 +86,7 @@ cv::Mat MatrixUtils::createOrthogonalProjectionMatrix(float l, float r, float b,
 	return orthogonal;
 }
 
-cv::Mat MatrixUtils::createPerspectiveProjectionMatrix(float l, float r, float b, float t, float n, float f)
+cv::Mat createPerspectiveProjectionMatrix(float l, float r, float b, float t, float n, float f)
 {
 	// OpenGL & Qt convention
 	cv::Mat perspective = (cv::Mat_<float>(4, 4) <<
@@ -98,7 +98,7 @@ cv::Mat MatrixUtils::createPerspectiveProjectionMatrix(float l, float r, float b
 }
 
 // angle in degrees
-cv::Mat MatrixUtils::createPerspectiveProjectionMatrix(float verticalAngle, float aspectRatio, float n, float f)
+cv::Mat createPerspectiveProjectionMatrix(float verticalAngle, float aspectRatio, float n, float f)
 {
 	// OpenGL & Qt convention
 	float radians = (verticalAngle / 2.0f) * boost::math::constants::pi<float>() / 180.0f;
@@ -129,5 +129,5 @@ unsigned int getMaxPossibleMipmapsNum(unsigned int width, unsigned int height)	/
 	return mipmapsNum;
 }
 
-	} /* namespace utils */
+	} /* namespace matrixutils */
 } /* namespace render */

@@ -17,7 +17,7 @@
 */
 
 #include "render/MeshUtils.hpp"
-#include "render/MatrixUtils.hpp"
+#include "render/matrixutils.hpp"
 #include "render/SoftwareRenderer.hpp"
 #include "render/Camera.hpp"
 #include "render/utils.hpp"
@@ -199,8 +199,8 @@ int main(int argc, char *argv[])
 
 	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
 	//Camera camera(Vec3f(0.0f, 0.0f, 3.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
-	Mat moveCameraBack = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
-	Mat projection = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
+	Mat moveCameraBack = render::matrixutils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
+	Mat projection = render::matrixutils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
 	SoftwareRenderer r(screenWidth, screenHeight);
 
 	//namedWindow(windowName, WINDOW_AUTOSIZE);
@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
 		//Mat testImg = r.getImage().clone();
 
 		// 1) Render the randomVertex frontal
-		Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
+		Mat modelScaling = render::matrixutils::createScalingMatrix(1.0f / 140.0f, 1.0f / 140.0f, 1.0f / 140.0f);
 		Mat rotPitchX = Mat::eye(4, 4, CV_32FC1);
 		Mat rotYawY = Mat::eye(4, 4, CV_32FC1);
 		Mat rotRollZ = Mat::eye(4, 4, CV_32FC1);
@@ -307,9 +307,9 @@ int main(int argc, char *argv[])
 		imwrite("out/" + lexical_cast<string>(cnt) + "_front.png", framebuffers.first);
 
 		// 3) Render the randomVertex in pose angle
-		rotPitchX = render::utils::MatrixUtils::createRotationMatrixX(pitch * (CV_PI/180.0f));
-		rotYawY = render::utils::MatrixUtils::createRotationMatrixY(yaw * (CV_PI/180.0f));
-		rotRollZ = render::utils::MatrixUtils::createRotationMatrixZ(roll * (CV_PI/180.0f));
+		rotPitchX = render::matrixutils::createRotationMatrixX(pitch * (CV_PI / 180.0f));
+		rotYawY = render::matrixutils::createRotationMatrixY(yaw * (CV_PI / 180.0f));
+		rotRollZ = render::matrixutils::createRotationMatrixZ(roll * (CV_PI / 180.0f));
 		modelMatrix = projection * moveCameraBack * rotYawY * rotPitchX * rotRollZ * modelScaling;
 		r.clearBuffers();
 		auto framebuffersPose = r.render(newSampleMesh, modelMatrix);

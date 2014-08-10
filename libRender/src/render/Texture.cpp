@@ -30,7 +30,7 @@ void Texture::createFromFile(const std::string& fileName, unsigned int mipmapsNu
 		exit(EXIT_FAILURE);
 	}
 
-	this->mipmapsNum = (mipmapsNum == 0 ? render::utils::getMaxPossibleMipmapsNum(image.cols, image.rows) : mipmapsNum);
+	this->mipmapsNum = (mipmapsNum == 0 ? matrixutils::getMaxPossibleMipmapsNum(image.cols, image.rows) : mipmapsNum);
 	/*if (mipmapsNum == 0)
 	{
 		uchar mmn = render::utils::MatrixUtils::getMaxPossibleMipmapsNum(image.cols, image.rows);
