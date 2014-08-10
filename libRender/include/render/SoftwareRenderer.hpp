@@ -68,7 +68,7 @@ namespace render {
  * -> camera (view/eye) transform
  * View / eye / camera space ("truncated pyramid frustum". In case of ortho, it's already rectangular.)
  * -> perspective/ortho projection
- * Clip coords (x_c, y_c, z_c, w_c); the z-axis is flipped now. z [z=-n, z=-f] is mapped to [-1, +1] in case of ortho, but not yet in case of persp (it's also flipped though), but the not-[-1,1]-range is fine as we test against w_c.
+ * Clip coords (x_c, y_c, z_c, w_c); the z-axis is flipped now. z [z=-n, z=-f] is mapped to [-1, +1] in case of ortho, but not yet in case of persp (it's also flipped though), but the not-[-1,1]-range is fine as we test against w_c. I.e. the larger the z-value, the further back we are.
  * Do frustum culling (clipping) here. Test the clip-coords with w_c, and discard if a tri is completely outside.
  * Of the partially visible tris, clip them against the near-plane and construct the visible part of the triangle.
  * We only do this for the near-plane here. Clipping to the near plane must be done here because after w-division triangles crossing it would get distorted.

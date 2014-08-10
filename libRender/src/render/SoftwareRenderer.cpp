@@ -441,7 +441,7 @@ float SoftwareRenderer::clamp(float x, float a, float b)
 void SoftwareRenderer::clearBuffers()
 {
 	colorBuffer = Mat::zeros(viewportHeight, viewportWidth, CV_8UC4);
-	depthBuffer = Mat::ones(viewportHeight, viewportWidth, CV_64FC1) * 1000000; // That's very very far back
+	depthBuffer = Mat::ones(viewportHeight, viewportWidth, CV_64FC1) * 1.1; // We only rasterise if z <= 1.0 anyway (far-plane clipping), so a higher initialisation value is not necessary.
 }
 
 } /* namespace render */

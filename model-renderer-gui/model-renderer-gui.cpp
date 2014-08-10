@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
 	//render::Mesh pyramid = render::utils::MeshUtils::createPyramid();
 	//render::Mesh plane = render::utils::MeshUtils::createPlane();
 	//shared_ptr<render::Mesh> tri = render::utils::MeshUtils::createTriangle();
-	/*
+	
 	ptree pt;
 	try {
 		boost::property_tree::info_parser::read_info(morphableModelConfigFilename.string(), pt);
@@ -221,15 +221,15 @@ int main(int argc, char *argv[])
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
 	}
-	*/
-	//meshToDraw = mm.getMean();
-	meshToDraw = mesh;
+	
+	meshToDraw = mm.getMean();
+	//meshToDraw = mesh;
 
 	int screenWidth = 640;
 	int screenHeight = 480;
 	const float aspect = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
 
-	Mat moveCameraBack = render::matrixutils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
+	//Mat moveCameraBack = render::matrixutils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
 	Mat projection = render::matrixutils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
 
 	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
@@ -331,31 +331,32 @@ int main(int argc, char *argv[])
 		projection = camera.getProjectionMatrix();
 		Mat cameraTransform = camera.getViewMatrix();
 
-		//Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
+		Mat modelScaling = matrixutils::createScalingMatrix(1.0f / 140.0f, 1.0f / 140.0f, 1.0f / 140.0f);
 		//Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f, 1.0f, 1.0f);
 		//Mat modelTrans = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
 		//Mat rot = Mat::eye(4, 4, CV_32FC1);
-		Mat rot = render::matrixutils::createRotationMatrixY(degreesToRadians(30.0f)) * render::matrixutils::createRotationMatrixX(degreesToRadians(5.0f));
-		Mat modelMatrix = rot;
+		Mat rot = render::matrixutils::createRotationMatrixY(degreesToRadians(30.0f)) * render::matrixutils::createRotationMatrixX(degreesToRadians(0.0f));
+		Mat modelMatrix = rot * modelScaling;
 	
 		Mat zBuffer, screen;
 		r.clearBuffers();
-		//r.doBackfaceCulling = true;
+		r.doBackfaceCulling = true;
 		std::tie(screen, zBuffer) = r.render(meshToDraw, cameraTransform * modelMatrix, projection);
 
 		// Draw the 3 axes over the screen
 		// Note: We should use render(), so that the depth buffer gets used?
 		// Also, the div. by z is missing in case of persp. proj.?
+		Mat axesModelMatrix = Mat::eye(4, 4, CV_32FC1);
 		Vec4f origin(0.0f, 0.0f, 0.0f, 1.0f);
 		Vec4f xAxis(1.0f, 0.0f, 0.0f, 1.0f);
 		Vec4f yAxis(0.0f, 1.0f, 0.0f, 1.0f);
 		Vec4f zAxis(0.0f, 0.0f, 1.0f, 1.0f);
 		Vec4f mzAxis(0.0f, 0.0f, -1.0f, 1.0f);
-		Vec3f originScreen = render::utils::projectVertex(origin, projection * cameraTransform * modelMatrix, screenWidth, screenHeight);
-		Vec3f xAxisScreen = render::utils::projectVertex(xAxis, projection * cameraTransform * modelMatrix, screenWidth, screenHeight);
-		Vec3f yAxisScreen = render::utils::projectVertex(yAxis, projection * cameraTransform * modelMatrix, screenWidth, screenHeight);
-		Vec3f zAxisScreen = render::utils::projectVertex(zAxis, projection * cameraTransform * modelMatrix, screenWidth, screenHeight);
-		Vec3f mzAxisScreen = render::utils::projectVertex(mzAxis, projection * cameraTransform * modelMatrix, screenWidth, screenHeight);
+		Vec3f originScreen = render::utils::projectVertex(origin, projection * cameraTransform * axesModelMatrix, screenWidth, screenHeight);
+		Vec3f xAxisScreen = render::utils::projectVertex(xAxis, projection * cameraTransform * axesModelMatrix, screenWidth, screenHeight);
+		Vec3f yAxisScreen = render::utils::projectVertex(yAxis, projection * cameraTransform * axesModelMatrix, screenWidth, screenHeight);
+		Vec3f zAxisScreen = render::utils::projectVertex(zAxis, projection * cameraTransform * axesModelMatrix, screenWidth, screenHeight);
+		Vec3f mzAxisScreen = render::utils::projectVertex(mzAxis, projection * cameraTransform * axesModelMatrix, screenWidth, screenHeight);
 		cv::line(screen, cv::Point(originScreen[0], originScreen[1]), cv::Point(xAxisScreen[0], xAxisScreen[1]), Scalar(0.0f, 0.0f, 255.0f, 255.0f));
 		cv::line(screen, cv::Point(originScreen[0], originScreen[1]), cv::Point(yAxisScreen[0], yAxisScreen[1]), Scalar(0.0f, 255.0f, 0.0f, 255.0f));
 		cv::line(screen, cv::Point(originScreen[0], originScreen[1]), cv::Point(zAxisScreen[0], zAxisScreen[1]), Scalar(255.0f, 0.0f, 0.0f, 255.0f));

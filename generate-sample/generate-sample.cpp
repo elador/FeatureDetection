@@ -19,6 +19,7 @@
 #include "render/MeshUtils.hpp"
 #include "render/matrixutils.hpp"
 #include "render/SoftwareRenderer.hpp"
+#include "render/Camera.hpp"
 #include "morphablemodel/MorphableModel.hpp"
 #include "logging/LoggerFactory.hpp"
 
@@ -157,17 +158,14 @@ int main(int argc, char *argv[])
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
 	}
-	//render::Mesh cube = render::utils::MeshUtils::createCube();
 
 	int screenWidth = 640;
 	int screenHeight = 480;
-	const float aspect = static_cast<float>(screenWidth)/static_cast<float>(screenHeight);
-
-	Mat moveCameraBack = render::matrixutils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
-	float zNear = 0.01f; // maybe check again what makes sense in our case and with our matrices. I think atm we comply with Shirley? But maybe we should rather comply with OpenGL?
-	float zFar = 100.0f;
-	Mat projection = render::matrixutils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
-	SoftwareRenderer r(screenWidth, screenHeight);
+	const float aspect = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
+	// Create a new camera at (0, 0, 100) looking down the -z axis:
+	Camera camera(Vec3f(0.0f, 0.0f, 100.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-150.0f*aspect, 150.0f*aspect, -150.0f, 150.0f, 1.0f, 500.0f));
+	SoftwareRenderer renderer(screenWidth, screenHeight);
+	renderer.doBackfaceCulling = true;
 
 	std::mt19937 engine; // Mersenne twister MT19937
 	//std::random_device rd;
@@ -194,15 +192,15 @@ int main(int argc, char *argv[])
 	
 	render::Mesh sampleMesh = morphableModel.drawSample(alphas, betas); // if one of the two vectors is empty, it uses getMean()
 
-	Mat modelScaling = render::matrixutils::createScalingMatrix(1.0f / 140.0f, 1.0f / 140.0f, 1.0f / 140.0f);
+	//Mat modelScaling = render::matrixutils::createScalingMatrix(1.0f / 140.0f, 1.0f / 140.0f, 1.0f / 140.0f);
 	Mat rotPitchX = render::matrixutils::createRotationMatrixX(pitchAngle * static_cast<float>(CV_PI / 180.0));
 	Mat rotYawY = render::matrixutils::createRotationMatrixY(yawAngle * static_cast<float>(CV_PI / 180.0));
 	Mat rotRollZ = render::matrixutils::createRotationMatrixZ(rollAngle * static_cast<float>(CV_PI / 180.0));
-	Mat modelMatrix = projection * moveCameraBack * rotYawY * rotPitchX * rotRollZ * modelScaling;
-	
+	Mat modelMatrix = rotYawY * rotPitchX * rotRollZ/* * modelScaling*/;
+
 	Mat framebuffer, depthbuffer;
-	r.clearBuffers(); // technically not necessary as long as we render only 1 sample
-	std::tie(framebuffer, depthbuffer) = r.render(sampleMesh, modelMatrix);
+	renderer.clearBuffers();
+	std::tie(framebuffer, depthbuffer) = renderer.render(sampleMesh, camera.getViewMatrix() * modelMatrix, camera.getProjectionMatrix());
 
 	render::Mesh::writeObj(sampleMesh, "output.obj");
 	cv::imwrite("output.png", framebuffer);
