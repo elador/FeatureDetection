@@ -112,14 +112,8 @@ pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, Mat modelViewMatrix, Mat proj
 		vertices.push_back(clipSpaceVertices[triIndices[0]]);
 		vertices.push_back(clipSpaceVertices[triIndices[1]]);
 		vertices.push_back(clipSpaceVertices[triIndices[2]]);
-		// split the tri etc... then pass to to the rasterizer.
-		vertices = clipPolygonToPlaneIn4D(vertices, Vec4f(0.0f, 0.0f, -1.0f, -1.0f));	// "Normal" of the 4D near-plane. I tested it and it works like this but I'm a little bit unsure because Songho says the normal of the near-plane is (0,0,-1,1) (maybe I have to switch around the < 0 checks in the function?)
-		/* Note from mail: (note: stuff might flip because we change z/P-matrix?)
-		vertices = clipPolygonToPlaneIn4D(vertices, Vec4f(0.0f, 0.0f, -1.0f, -1.0f));
-		PH: That vector should be the normal of the NEAR-plane of the frustum, right? Because we only have to check if the triangle intersects the near plane. (?) and the rest we should be able to just clamp.
-		=> That's right. It's funny here it's actually a 4D hyperplane and it works! Math is beautiful :).
-		=> Clipping to the near plane must be done because after w-division tris crossing it would get distorted. Clipping against other planes can be done but I think it's faster to simply check pixel's boundaries during rasterization stage.
-		*/
+		// split the triangle if it intersects the near plane:
+		vertices = clipPolygonToPlaneIn4D(vertices, Vec4f(0.0f, 0.0f, -1.0f, -1.0f));	// "Normal" (or "4D hyperplane") of the near-plane. I tested it and it works like this but I'm a little bit unsure because Songho says the normal of the near-plane is (0,0,-1,1) (maybe I have to switch around the < 0 checks in the function?)
 
 		// triangulation of the polygon formed of vertices array
 		if (vertices.size() >= 3)
@@ -164,24 +158,15 @@ boost::optional<TriangleToRasterize> SoftwareRenderer::processProspectiveTri(Ver
 
 	// project from 4D to 2D window position with depth value in z coordinate
 	// Viewport transform:
-	//float x_w = (res.x() + 1)*(viewportWidth / 2.0f) + 0.0f; // OpenGL viewport transform (from NDC to viewport) (NDC=clipspace?)
-	//float y_w = (res.y() + 1)*(viewportHeight / 2.0f) + 0.0f;
-	//y_w = viewportHeight - y_w; // Qt: Origin top-left. OpenGL: bottom-left. OCV: top-left.
-	t.v0.position[0] = (t.v0.position[0] + 1) * (viewportWidth / 2.0f); // TODO: We could use our clipToScreen...etc functions?
-	t.v0.position[1] = (t.v0.position[1] + 1) * (viewportHeight / 2.0f);
-	t.v0.position[1] = viewportHeight - t.v0.position[1];
-	t.v1.position[0] = (t.v1.position[0] + 1) * (viewportWidth / 2.0f);
-	t.v1.position[1] = (t.v1.position[1] + 1) * (viewportHeight / 2.0f);
-	t.v1.position[1] = viewportHeight - t.v1.position[1];
-	t.v2.position[0] = (t.v2.position[0] + 1) * (viewportWidth / 2.0f);
-	t.v2.position[1] = (t.v2.position[1] + 1) * (viewportHeight / 2.0f);
-	t.v2.position[1] = viewportHeight - t.v2.position[1];
-	// My last SW-renderer was:
-	// x_w = (x *  vW/2) + vW/2; // equivalent to above
-	// y_w = (y * -vH/2) + vH/2; // equiv? Todo!
-	// CG book says: (check!)
-	// x_w = (x *  vW/2) + (vW-1)/2;
-	// y_w = (y * -vH/2) + (vH-1)/2;
+	Vec2f v0_screen = utils::clipToScreenSpace(Vec2f(t.v0.position[0], t.v0.position[1]), viewportWidth, viewportHeight);
+	t.v0.position[0] = v0_screen[0];
+	t.v0.position[1] = v0_screen[1];
+	Vec2f v1_screen = utils::clipToScreenSpace(Vec2f(t.v1.position[0], t.v1.position[1]), viewportWidth, viewportHeight);
+	t.v1.position[0] = v1_screen[0];
+	t.v1.position[1] = v1_screen[1];
+	Vec2f v2_screen = utils::clipToScreenSpace(Vec2f(t.v2.position[0], t.v2.position[1]), viewportWidth, viewportHeight);
+	t.v2.position[0] = v2_screen[0];
+	t.v2.position[1] = v2_screen[1];
 
 	if (doBackfaceCulling) {
 		if (!utils::areVerticesCCWInScreenSpace(t.v0, t.v1, t.v2))

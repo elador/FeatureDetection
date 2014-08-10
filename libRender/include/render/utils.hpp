@@ -29,6 +29,11 @@ namespace render {
  * Note that the y-coordinate is flipped because the image origin
  * is top-left while in clip space top is +1 and bottom is -1.
  * No z-division is performed.
+ * Note: It should rather be called from NDC to screen space?
+ *
+ * Exactly conforming to the OpenGL viewport transform, except that
+ * we flip y at the end.
+ * Qt: Origin top-left. OpenGL: bottom-left. OCV: top-left.
  *
  * @param[in] clipCoordinates Todo
  * @param[in] screenWidth Todo
