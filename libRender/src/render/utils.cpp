@@ -48,7 +48,7 @@ cv::Vec3f projectVertex(cv::Vec4f vertex, cv::Mat modelViewProjection, int scree
 	Mat clipSpace = modelViewProjection * Mat(vertex);
 	Vec4f clipSpaceV(clipSpace);
 	// divide by w:
-	clipSpaceV = clipSpaceV / clipSpaceV[3];
+	clipSpaceV = clipSpaceV / clipSpaceV[3]; // we're in NDC now
 
 	// project from 4D to 2D window position with depth value in z coordinate
 	// Viewport transform:

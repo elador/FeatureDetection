@@ -189,19 +189,14 @@ int main(int argc, char *argv[])
 		appLogger.error(error.what());
 		return EXIT_FAILURE;
 	}
-	//render::Mesh cube = render::utils::MeshUtils::createCube();
-	//render::Mesh pyramid = render::utils::MeshUtils::createPyramid();
-	//render::Mesh plane = render::utils::MeshUtils::createPlane();
 
 	int screenWidth = 640;
 	int screenHeight = 480;
 	const float aspect = (float)screenWidth/(float)screenHeight;
-
-	//Camera camera(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
-	//Camera camera(Vec3f(0.0f, 0.0f, 3.0f), horizontalAngle*(CV_PI/180.0f), verticalAngle*(CV_PI/180.0f), Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar));
-	Mat moveCameraBack = render::matrixutils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
-	Mat projection = render::matrixutils::createOrthogonalProjectionMatrix(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, zNear, zFar);
-	SoftwareRenderer r(screenWidth, screenHeight);
+	// Create a new camera at (0, 0, 100) looking down the -z axis:
+	Camera camera(Vec3f(0.0f, 0.0f, 100.0f), Vec3f(0.0f, 0.0f, -1.0f), Frustum(-150.0f*aspect, 150.0f*aspect, -150.0f, 150.0f, 1.0f, 500.0f));
+	SoftwareRenderer renderer(screenWidth, screenHeight);
+	renderer.doBackfaceCulling = true;
 
 	//namedWindow(windowName, WINDOW_AUTOSIZE);
 	//setMouseCallback(windowName, winOnMouse);
@@ -233,9 +228,9 @@ int main(int argc, char *argv[])
 	vertexIds.push_back(6389); // left-alare - (a bit similar to right.nose.wing.tip but don't use it)
 	vertexIds.push_back(10001); // right-alare - (a bit similar to left.nose.wing.tip but don't use it)
 	*/
+
 	std::ofstream outputFile;
-	//outputFile.open("C:/Users/Patrik/Documents/Github/syndata/data_3dmm_landmarks_random_sd0.5_batch4_600000k.txt");
-	outputFile.open("./data_3dmm_landmarks_random_sd0.7_batch6_1000k.txt");
+	outputFile.open("./data_3dmm_landmarks_random_sd0.7_batch6_1000k.txt"); // data_3dmm_landmarks_random_sd0.5_batch4_600000k.txt
 	outputFile << "frontal_rndvtx_x " << "frontal_rndvtx_y " << "frontal_lel_x " << "frontal_lel_y " << "frontal_ler_x " << "frontal_ler_y " << "frontal_rel_x " << "frontal_rel_y " << "frontal_rer_x " << "frontal_rer_y " << "frontal_ml_x " << "frontal_ml_y " << "frontal_mr_x " << "frontal_mr_y " << "frontal_bn_x " << "frontal_bn_y " << "frontal_nt_x " << "frontal_nt_y " << "frontal_ns_x " << "frontal_ns_y " << "frontal_la_x " << "frontal_la_y " << "frontal_ra_x " << "frontal_ra_y " << "pose_rndvtx_x " << "pose_rndvtx_y " << "pose_lel_x " << "pose_lel_y " << "pose_ler_x " << "pose_ler_y " << "pose_rel_x " << "pose_rel_y " << "pose_rer_x " << "pose_rer_y " << "pose_ml_x " << "pose_ml_y " << "pose_mr_x " << "pose_mr_y " << "pose_bn_x " << "pose_bn_y " << "pose_nt_x " << "pose_nt_y " << "pose_ns_x " << "pose_ns_y " << "pose_la_x " << "pose_la_y " << "pose_ra_x " << "pose_ra_y " << "yaw " << "pitch " << "roll " << "rndvtx_id" << std::endl;
 	
 	int numVertices = morphableModel.getShapeModel().getDataDimension() / 3;
@@ -254,25 +249,15 @@ int main(int argc, char *argv[])
 	std::uniform_int_distribution<int> distrRandRoll(0, 0);
 	auto randIntRoll = std::bind(distrRandRoll, engine);
 	
-	/*
-	r.resetBuffers();
-	r.camera.horizontalAngle = horizontalAngle*(CV_PI/180.0f);
-	r.camera.verticalAngle = verticalAngle*(CV_PI/180.0f);
-	r.camera.updateFixed(r.camera.eye, r.camera.gaze);
-	r.updateViewTransform();
-	r.updateProjectionTransform(perspective);
-	*/
-
 	int generatedSamples = 0;
 	int samplesToGenerate = 600000; //600000;
 	int cnt = 0;
 	while (generatedSamples < samplesToGenerate) {
 		++cnt;
-		//r.resetBuffers();
 		std::cout << generatedSamples << std::endl;
 
 		render::Mesh newSampleMesh = morphableModel.drawSample(0.7f); // Note: it would suffice to only draw a shape model, but then we can't render it
-		render::Mesh::writeObj(newSampleMesh, "C:\\Users\\Patrik\\Documents\\GitHub\\test3.obj");
+		render::Mesh::writeObj(newSampleMesh, "sample.obj");
 		
 		int randomVertex = randIntVtx();
 		int yaw = randIntYaw();
@@ -280,41 +265,41 @@ int main(int argc, char *argv[])
 		int roll = randIntRoll();
 
 		vector<shared_ptr<Landmark>> pointsToWrite;
-		//Mat testImg = r.getImage().clone();
+
+		Mat rotPitchX;
+		Mat rotYawY;
+		Mat rotRollZ;
 
 		// 1) Render the randomVertex frontal
-		Mat modelScaling = render::matrixutils::createScalingMatrix(1.0f / 140.0f, 1.0f / 140.0f, 1.0f / 140.0f);
-		Mat rotPitchX = Mat::eye(4, 4, CV_32FC1);
-		Mat rotYawY = Mat::eye(4, 4, CV_32FC1);
-		Mat rotRollZ = Mat::eye(4, 4, CV_32FC1);
-		Mat modelMatrix = projection * rotYawY * moveCameraBack * rotPitchX * rotRollZ * modelScaling;
+		Mat modelMatrix = Mat::eye(4, 4, CV_32FC1);
+		Mat colorbuffer, depthbuffer;
 		Vec3f res = render::utils::projectVertex(newSampleMesh.vertex[randomVertex].position, modelMatrix, screenWidth, screenHeight);
-		r.clearBuffers();
-		auto framebuffers = r.render(newSampleMesh, modelMatrix);
+		renderer.clearBuffers();
+		std::tie(colorbuffer, depthbuffer) = renderer.render(newSampleMesh, camera.getViewMatrix() * modelMatrix, camera.getProjectionMatrix());
 		string name = "randomVertexFrontal";
 		pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
-		cv::circle(framebuffers.first, cv::Point(res[0], res[1]), 3, cv::Scalar(0, 0, 255));
+		cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(0, 0, 255));
 
 		// 2) Render all LMs in frontal pose
 		for (const auto& vid : vertexIds) {
-			modelMatrix = projection * moveCameraBack * rotYawY * rotPitchX * rotRollZ * modelScaling; // same as before in 1)
-			res = render::utils::projectVertex(newSampleMesh.vertex[vid].position, modelMatrix, screenWidth, screenHeight);
+			modelMatrix = Mat::eye(4, 4, CV_32FC1); // same as before in 1)
+			res = render::utils::projectVertex(newSampleMesh.vertex[vid].position, camera.getProjectionMatrix() * camera.getViewMatrix() * modelMatrix, screenWidth, screenHeight);
 			//r.renderLM(newSampleMesh.vertex[vid].position, Scalar(255.0f, 0.0f, 0.0f));
 			name = DidLandmarkFormatParser::didToTlmsName(vid);
 			pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
-			cv::circle(framebuffers.first, cv::Point(res[0], res[1]), 3, cv::Scalar(255, 0, 128));
+			cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(255, 0, 128));
 		}
-		imwrite("out/" + lexical_cast<string>(cnt) + "_front.png", framebuffers.first);
+		imwrite("out/" + lexical_cast<string>(cnt)+"_front.png", colorbuffer);
 
 		// 3) Render the randomVertex in pose angle
 		rotPitchX = render::matrixutils::createRotationMatrixX(pitch * (CV_PI / 180.0f));
 		rotYawY = render::matrixutils::createRotationMatrixY(yaw * (CV_PI / 180.0f));
 		rotRollZ = render::matrixutils::createRotationMatrixZ(roll * (CV_PI / 180.0f));
-		modelMatrix = projection * moveCameraBack * rotYawY * rotPitchX * rotRollZ * modelScaling;
-		r.clearBuffers();
-		auto framebuffersPose = r.render(newSampleMesh, modelMatrix);
+		modelMatrix = rotYawY * rotPitchX * rotRollZ;
+		renderer.clearBuffers();
+		auto framebuffersPose = renderer.render(newSampleMesh, camera.getViewMatrix() * modelMatrix, camera.getProjectionMatrix());
 
-		res = render::utils::projectVertex(newSampleMesh.vertex[randomVertex].position, modelMatrix, screenWidth, screenHeight);
+		res = render::utils::projectVertex(newSampleMesh.vertex[randomVertex].position, camera.getProjectionMatrix() * camera.getViewMatrix() * modelMatrix, screenWidth, screenHeight);
 		double zBufferValue = framebuffersPose.second.at<double>(static_cast<int>(cvRound(res[1])), static_cast<int>(cvRound(res[0])));
 		cv::Point2i centerPixel(floor(res[0]), floor(res[1]));
 		int minzx = std::max(0, centerPixel.x - 1);
@@ -344,8 +329,8 @@ int main(int argc, char *argv[])
 
 		// 4) Render all LMs in pose angle
 		for (const auto& vid : vertexIds) {
-			modelMatrix = projection * moveCameraBack * rotYawY * rotPitchX * rotRollZ * modelScaling; // same as before in 3)
-			res = render::utils::projectVertex(newSampleMesh.vertex[vid].position, modelMatrix, screenWidth, screenHeight);
+			modelMatrix = rotYawY * rotPitchX * rotRollZ; // same as before in 3)
+			res = render::utils::projectVertex(newSampleMesh.vertex[vid].position, camera.getProjectionMatrix() * camera.getViewMatrix() * modelMatrix, screenWidth, screenHeight);
 			name = DidLandmarkFormatParser::didToTlmsName(vid);
 			pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
 			cv::circle(framebuffersPose.first, cv::Point(res[0], res[1]), 3, cv::Scalar(128, 0, 255));
