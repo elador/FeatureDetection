@@ -75,20 +75,21 @@ pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, Mat modelViewMatrix, Mat proj
 		for (unsigned char k = 0; k < 3; k++)
 		{
 			visibilityBits[k] = 0;
-			float xOverW = clipSpaceVertices[triIndices[k]].position[0] / clipSpaceVertices[triIndices[k]].position[3];
-			float yOverW = clipSpaceVertices[triIndices[k]].position[1] / clipSpaceVertices[triIndices[k]].position[3];
-			float zOverW = clipSpaceVertices[triIndices[k]].position[2] / clipSpaceVertices[triIndices[k]].position[3];
-			if (xOverW < -1)			// true if outside of view frustum
+			float x_cc = clipSpaceVertices[triIndices[k]].position[0];
+			float y_cc = clipSpaceVertices[triIndices[k]].position[1];
+			float z_cc = clipSpaceVertices[triIndices[k]].position[2];
+			float w_cc = clipSpaceVertices[triIndices[k]].position[3];
+			if (x_cc < -w_cc)			// true if outside of view frustum. False if on or inside the plane.
 				visibilityBits[k] |= 1;	// set bit if outside of frustum
-			if (xOverW > 1)
+			if (x_cc > w_cc)
 				visibilityBits[k] |= 2;
-			if (yOverW < -1)
+			if (y_cc < -w_cc)
 				visibilityBits[k] |= 4;
-			if (yOverW > 1)
+			if (y_cc > w_cc)
 				visibilityBits[k] |= 8;
-			if (zOverW < -1) // the next 4 lines somehow only clip against the back-plane of the frustum?
+			if (z_cc < -w_cc) // near plane frustum clipping
 				visibilityBits[k] |= 16;
-			if (zOverW > 1)
+			if (z_cc > w_cc) // far plane frustum clipping
 				visibilityBits[k] |= 32;
 		} // if all bits are 0, then it's inside the frustum
 		// all vertices are not visible - reject the triangle.
