@@ -334,13 +334,13 @@ int main(int argc, char *argv[])
 		//Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f/140.0f, 1.0f/140.0f, 1.0f/140.0f);
 		//Mat modelScaling = render::utils::MatrixUtils::createScalingMatrix(1.0f, 1.0f, 1.0f);
 		//Mat modelTrans = render::utils::MatrixUtils::createTranslationMatrix(0.0f, 0.0f, -3.0f);
-		Mat rot = Mat::eye(4, 4, CV_32FC1);
-		//Mat rot = render::utils::MatrixUtils::createRotationMatrixY(degreesToRadians(30.0f)) * render::utils::MatrixUtils::createRotationMatrixX(degreesToRadians(5.0f));
+		//Mat rot = Mat::eye(4, 4, CV_32FC1);
+		Mat rot = render::utils::MatrixUtils::createRotationMatrixY(degreesToRadians(30.0f)) * render::utils::MatrixUtils::createRotationMatrixX(degreesToRadians(5.0f));
 		Mat modelMatrix = rot;
 	
 		Mat zBuffer, screen;
 		r.clearBuffers();
-		r.doBackfaceCulling = true;
+		//r.doBackfaceCulling = true;
 		std::tie(screen, zBuffer) = r.render(meshToDraw, cameraTransform * modelMatrix, projection);
 
 		// Draw the 3 axes over the screen

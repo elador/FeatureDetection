@@ -71,6 +71,7 @@ pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, Mat modelViewMatrix, Mat proj
 		// Actually we're in clip-coords and it's not the same as NDC. We're only in NDC after the division by w.
 		// We should do the clipping in clip-coords though. See http://www.songho.ca/opengl/gl_projectionmatrix.html for more details.
 		// However, when comparing against w_c below, we might run into the trouble of the sign again in the affine case.
+		// 'w' is always positive, as it is -z_camspace, and all z_camspace are negative. 
 		unsigned char visibilityBits[3];
 		for (unsigned char k = 0; k < 3; k++)
 		{
@@ -112,13 +113,7 @@ pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, Mat modelViewMatrix, Mat proj
 		vertices.push_back(clipSpaceVertices[triIndices[1]]);
 		vertices.push_back(clipSpaceVertices[triIndices[2]]);
 		// split the tri etc... then pass to to the rasterizer.
-		//vertices = clipPolygonToPlaneIn4D(vertices, Vec4f(0.0f, 0.0f, -1.0f, -1.0f));	// This is the near-plane, right? Because we only have to check against that. For tlbr planes of the frustum, we can just draw, and then clamp it because it's outside the screen
-		vertices = clipPolygonToPlaneIn4D(vertices, Vec4f(0.0f, 0.0f, 1.0f, -1.0f));	// This is the near-plane, right? Because we only have to check against that. For tlbr planes of the frustum, we can just draw, and then clamp it because it's outside the screen
-		//	vertices = clipPolygonToPlaneIn4D(vertices, vec4(0.0f, 0.0f, 1.0f, -1.0f));
-		//	vertices = clipPolygonToPlaneIn4D(vertices, vec4(-1.0f, 0.0f, 0.0f, -1.0f));
-		//	vertices = clipPolygonToPlaneIn4D(vertices, vec4(1.0f, 0.0f, 0.0f, -1.0f));
-		//	vertices = clipPolygonToPlaneIn4D(vertices, vec4(0.0f, -1.0f, 0.0f, -1.0f));
-		//	vertices = clipPolygonToPlaneIn4D(vertices, vec4(0.0f, 1.0f, 0.0f, -1.0f));
+		vertices = clipPolygonToPlaneIn4D(vertices, Vec4f(0.0f, 0.0f, -1.0f, -1.0f));	// "Normal" of the 4D near-plane. I tested it and it works like this but I'm a little bit unsure because Songho says the normal of the near-plane is (0,0,-1,1) (maybe I have to switch around the < 0 checks in the function?)
 		/* Note from mail: (note: stuff might flip because we change z/P-matrix?)
 		vertices = clipPolygonToPlaneIn4D(vertices, Vec4f(0.0f, 0.0f, -1.0f, -1.0f));
 		PH: That vector should be the normal of the NEAR-plane of the frustum, right? Because we only have to check if the triangle intersects the near plane. (?) and the rest we should be able to just clamp.
@@ -327,35 +322,37 @@ std::vector<Vertex> SoftwareRenderer::clipPolygonToPlaneIn4D(const std::vector<V
 
 	for (unsigned int i = 0; i < vertices.size(); i++)
 	{
-		int a = i;
-		int b = (i + 1) % vertices.size();
+		int a = i; // the current vertex
+		int b = (i + 1) % vertices.size(); // the following vertex (wraps around 0)
 
-		float fa = vertices[a].position.dot(planeNormal);
-		float fb = vertices[b].position.dot(planeNormal);
+		float fa = vertices[a].position.dot(planeNormal); // Note: Shouldn't they be unit length?
+		float fb = vertices[b].position.dot(planeNormal); // < 0 means on visible side, > 0 means on invisible side?
 
-		if ((fa < 0 && fb > 0) || (fa > 0 && fb < 0))
+		if ((fa < 0 && fb > 0) || (fa > 0 && fb < 0)) // one vertex is on the visible side of the plane, one on the invisible? so we need to split?
 		{
 			Vec4f direction = vertices[b].position - vertices[a].position;
-			float t = -(planeNormal.dot(vertices[a].position)) / (planeNormal.dot(direction));
+			float t = -(planeNormal.dot(vertices[a].position)) / (planeNormal.dot(direction)); // the parametric value on the line, where the line to draw intersects the plane?
 
+			// generate a new vertex at the line-plane intersection point
 			Vec4f position = vertices[a].position + t*direction;
 			Vec3f color = vertices[a].color + t*(vertices[b].color - vertices[a].color);
 			Vec2f texCoord = vertices[a].texcrd + t*(vertices[b].texcrd - vertices[a].texcrd);	// We could omit that if we don't render with texture.
 
-			if (fa < 0)
+			if (fa < 0) // we keep the original vertex plus the new one
 			{
 				clippedVertices.push_back(vertices[a]);
 				clippedVertices.push_back(Vertex(position, color, texCoord));
 			}
-			else if (fb < 0)
+			else if (fb < 0) // we use only the new vertex
 			{
 				clippedVertices.push_back(Vertex(position, color, texCoord));
 			}
 		}
-		else if (fa < 0 && fb < 0)
+		else if (fa < 0 && fb < 0) // both are visible (on the "good" side of the plane), no splitting required, use the current vertex
 		{
 			clippedVertices.push_back(vertices[a]);
 		}
+		// else, both vertices are not visible, nothing to add and draw
 	}
 
 	return clippedVertices;
