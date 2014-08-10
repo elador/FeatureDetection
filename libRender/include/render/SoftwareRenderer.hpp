@@ -71,7 +71,7 @@ namespace render {
  * Clip coords (x_c, y_c, z_c, w_c); z is [-1, 1] in case of ortho, but not yet in case of persp. But this is fine as we test against w_c. We still look down the negative-z axis, i.e. more negative z-values = further away.
  * Do frustum culling (clipping) here. Test the clip-coords with w_c, and discard if a tri is completely outside.
  * Of the partially visible tris, clip them against the near-plane and construct the visible part of the triangle.
- * We only do this for the near-plane because if we didn't do it for the near-plane, it would screw up the math later.
+ * We only do this for the near-plane here. Clipping to the near plane must be done here because after w-division triangles crossing it would get distorted.
  * "Then, OpenGL will reconstruct the edges of the polygon where clipping occurs."
  * -> Then divide by the w component of the clip coordinates
  * NDC. (now only 3D vectors: [x_ndc, y_ndc, z_ndc]). nearest points have z=-1, points on far plane have z=+1.
