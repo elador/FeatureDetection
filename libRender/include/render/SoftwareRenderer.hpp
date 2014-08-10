@@ -59,6 +59,27 @@ namespace render {
  *
  * Similar to OGL, this renderer has a state.
  * Before each render() call, clearBuffers should be called if desired.
+ *
+ *
+ * Here's the whole pipeline:
+ * Model space
+ * -> model transforms
+ * World space
+ * -> camera (view/eye) transform
+ * View / eye / camera space ("truncated pyramid frustum". In case of ortho, it's already rectangular.)
+ * -> perspective/ortho projection
+ * Clip coords (x_c, y_c, z_c, w_c); z is [-1, 1] in case of ortho, but not yet in case of persp. But this is fine as we test against w_c?
+ * do frustum culling (clipping) here. Test the clip-coords with w_c, and discard.
+ * "Then, OpenGL will reconstruct the edges of the polygon where clipping occurs."
+ * -> Then divide by the w component of the clip coordinates
+ * NDC. (now only 3D vectors: [x_ndc, y_ndc, z_ndc])
+ * -> window transform. (also, OGL does some more to the z-buffer?)
+ * Screen / window space
+ *
+ * Add: When do we do clipping & stuff?
+ * "both clipping (frustum culling) and NDC transformations are integrated into GL_PROJECTION matrix"
+ *
+ * Note: In both the ortho and persp case, points at z=-n end up at -1, z=-f at +1. In case of persp proj., this happens only after the divide by w.
  */
 class SoftwareRenderer
 {
@@ -70,14 +91,15 @@ public:
 	bool doTexturing = false; ///< Desc.
 
 #ifdef WITH_RENDER_QOPENGL
-	std::pair<cv::Mat, cv::Mat> render(Mesh mesh, QMatrix4x4 mvp);
+	std::pair<cv::Mat, cv::Mat> render(Mesh mesh, QMatrix4x4 modelViewMatrix, QMatrix4x4 projectionMatrix);
 #endif
 	// Note: returns a reference (Mat) to the framebuffer, not
 	// a clone! I.e. if you don't want your image to get
 	// overwritten by a second call to render(...), you have to
 	// clone.
 	// maybe change and pass depthBuffer as an optional arg (&?), because usually we never need it outside the renderer. Or maybe even a getDepthBuffer().
-	std::pair<cv::Mat, cv::Mat> render(Mesh mesh, cv::Mat mvp);
+	// modelViewMatrix goes to eye-space (camera space), projection does ortho or perspective proj.
+	std::pair<cv::Mat, cv::Mat> render(Mesh mesh, cv::Mat modelViewMatrix, cv::Mat projectionMatrix);
 
 	// clears the color- and depth buffer
 	void clearBuffers();

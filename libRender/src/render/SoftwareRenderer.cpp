@@ -29,21 +29,26 @@ SoftwareRenderer::SoftwareRenderer(unsigned int viewportWidth, unsigned int view
 }
 
 #ifdef WITH_RENDER_QOPENGL
-pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, QMatrix4x4 mvp)
+pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, QMatrix4x4 modelViewMatrix, QMatrix4x4 projectionMatrix)
 {
 	// We assign the values one-by-one since if we used
 	// mvp.data() or something, we'd have to transpose
 	// because Qt stores the matrix col-major in memory.
-	Mat ocv_mvp = (cv::Mat_<float>(4, 4) <<
-		mvp(0, 0), mvp(0, 1), mvp(0, 2), mvp(0, 3),
-		mvp(1, 0), mvp(1, 1), mvp(1, 2), mvp(1, 3),
-		mvp(2, 0), mvp(2, 1), mvp(2, 2), mvp(2, 3),
-		mvp(3, 0), mvp(3, 1), mvp(3, 2), mvp(3, 3));
-	return render(mesh, ocv_mvp);
+	Mat ocvModelViewMatrix = (cv::Mat_<float>(4, 4) <<
+		modelViewMatrix(0, 0), modelViewMatrix(0, 1), modelViewMatrix(0, 2), modelViewMatrix(0, 3),
+		modelViewMatrix(1, 0), modelViewMatrix(1, 1), modelViewMatrix(1, 2), modelViewMatrix(1, 3),
+		modelViewMatrix(2, 0), modelViewMatrix(2, 1), modelViewMatrix(2, 2), modelViewMatrix(2, 3),
+		modelViewMatrix(3, 0), modelViewMatrix(3, 1), modelViewMatrix(3, 2), modelViewMatrix(3, 3));
+	Mat ocvProjectionMatrix = (cv::Mat_<float>(4, 4) <<
+		projectionMatrix(0, 0), projectionMatrix(0, 1), projectionMatrix(0, 2), projectionMatrix(0, 3),
+		projectionMatrix(1, 0), projectionMatrix(1, 1), projectionMatrix(1, 2), projectionMatrix(1, 3),
+		projectionMatrix(2, 0), projectionMatrix(2, 1), projectionMatrix(2, 2), projectionMatrix(2, 3),
+		projectionMatrix(3, 0), projectionMatrix(3, 1), projectionMatrix(3, 2), projectionMatrix(3, 3));
+	return render(mesh, ocvModelViewMatrix, ocvProjectionMatrix);
 }
 #endif
 
-pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, Mat mvp)
+pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, Mat modelViewMatrix, Mat projectionMatrix)
 {
 	vector<TriangleToRasterize> trisToRaster;
 
@@ -51,8 +56,8 @@ pair<Mat, Mat> SoftwareRenderer::render(Mesh mesh, Mat mvp)
 	//processedVertex = shade(Vertex); // processedVertex : pos, col, tex, texweight
 	vector<Vertex> clipSpaceVertices;
 	for (const auto& v : mesh.vertex) {
-		Mat mpnew = mvp * Mat(v.position);
-		clipSpaceVertices.push_back(Vertex(mpnew, v.color, v.texcrd));
+		Mat clipSpaceCoords = projectionMatrix * modelViewMatrix * Mat(v.position);
+		clipSpaceVertices.push_back(Vertex(clipSpaceCoords, v.color, v.texcrd));
 	}
 
 	// We're in clip-space now

@@ -41,7 +41,7 @@ Camera::Camera(Vec3f eyePosition, Vec3f gazeDirection, Frustum frustum) : frustu
 	updateFixed(eyePosition, gazeDirection);
 }
 
-void Camera::updateFixed(const Vec3f& eye, const Vec3f& gaze, const Vec3f& up)
+void Camera::updateFixed(const Vec3f& eye, const Vec3f& gaze, const Vec3f& up /*= Vec3f(0.0f, 1.0f, 0.0f)*/)
 {
 	this->eye = eye;
 	this->gaze = gaze;
@@ -56,21 +56,24 @@ void Camera::updateFixed(const Vec3f& eye, const Vec3f& gaze, const Vec3f& up)
 	this->upVector = forwardVector.cross(rightVector);
 }
 
+// Hmm, I think kind of in both of these functions it can happen that some vectors are not orthogonal? That up vector is a bit strange?
 void Camera::updateFree(const Vec3f& eye, float horizontalAngle, float verticalAngle, const Vec3f& up /*= Vec3f(0.0f, 1.0f, 0.0f)*/)
 {
+	// Set new basis axes, i.e. first a new forwardVector and rightVector, rotated by the given horizontal and vertical angles:
 	Mat transformMatrix = render::utils::MatrixUtils::createRotationMatrixY(horizontalAngle) * render::utils::MatrixUtils::createRotationMatrixX(verticalAngle);
-	Mat tmpRes = transformMatrix * Mat(Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
-	forwardVector[0] = tmpRes.at<float>(0, 0);	// This rotates the standard forward-vector (0, 0, 1) with the rotation
-	forwardVector[1] = tmpRes.at<float>(1, 0);	// matrix and sets the new forward-vector accordingly
-	forwardVector[2] = tmpRes.at<float>(2, 0);
+	Mat rotatedForwardVector = transformMatrix * Mat(Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
+	forwardVector[0] = rotatedForwardVector.at<float>(0, 0);	// This rotates the standard forward-vector (0, 0, 1) with the rotation
+	forwardVector[1] = rotatedForwardVector.at<float>(1, 0);	// matrix and sets the new forward-vector accordingly
+	forwardVector[2] = rotatedForwardVector.at<float>(2, 0);
 
-	Mat tmpRes2 = transformMatrix * Mat(Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
-	rightVector[0] = tmpRes2.at<float>(0, 0);
-	rightVector[1] = tmpRes2.at<float>(1, 0);
-	rightVector[2] = tmpRes2.at<float>(2, 0);
+	Mat rotatedRightVector = transformMatrix * Mat(Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
+	rightVector[0] = rotatedRightVector.at<float>(0, 0);	// Same for the right-vector (1, 0, 0)
+	rightVector[1] = rotatedRightVector.at<float>(1, 0);
+	rightVector[2] = rotatedRightVector.at<float>(2, 0);
 
-	this->upVector = forwardVector.cross(rightVector);
+	upVector = forwardVector.cross(rightVector);
 
+	// New basis is set. Now let's do ....?
 	this->eye = eye;
 	this->gaze = -forwardVector;
 	this->up = up;

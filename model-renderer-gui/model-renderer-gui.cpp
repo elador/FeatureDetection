@@ -340,10 +340,12 @@ int main(int argc, char *argv[])
 	
 		Mat zBuffer, screen;
 		r.clearBuffers();
-		std::tie(screen, zBuffer) = r.render(meshToDraw, projection * cameraTransform * modelMatrix);
+		r.doBackfaceCulling = true;
+		std::tie(screen, zBuffer) = r.render(meshToDraw, cameraTransform * modelMatrix, projection);
 
 		// Draw the 3 axes over the screen
 		// Note: We should use render(), so that the depth buffer gets used?
+		// Also, the div. by z is missing in case of persp. proj.?
 		Vec4f origin(0.0f, 0.0f, 0.0f, 1.0f);
 		Vec4f xAxis(1.0f, 0.0f, 0.0f, 1.0f);
 		Vec4f yAxis(0.0f, 1.0f, 0.0f, 1.0f);
