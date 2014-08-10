@@ -158,6 +158,10 @@ boost::optional<TriangleToRasterize> SoftwareRenderer::processProspectiveTri(Ver
 
 	// project from 4D to 2D window position with depth value in z coordinate
 	// Viewport transform:
+	/* (a possible optimisation might be to use matrix multiplication for this as well
+	   and do it for all triangles at once? See 'windowTransform' in:
+	   https://github.com/elador/FeatureDetection/blob/964f0b2107ce73ef2f06dc829e5084be421de5a5/libRender/src/render/RenderDevice.cpp)
+	*/
 	Vec2f v0_screen = utils::clipToScreenSpace(Vec2f(t.v0.position[0], t.v0.position[1]), viewportWidth, viewportHeight);
 	t.v0.position[0] = v0_screen[0];
 	t.v0.position[1] = v0_screen[1];
@@ -304,6 +308,8 @@ std::vector<Vertex> SoftwareRenderer::clipPolygonToPlaneIn4D(const std::vector<V
 	// We can have 2 cases:
 	//	* 1 vertex visible: we make 1 new triangle out of the visible vertex plus the 2 intersection points with the near-plane
 	//  * 2 vertices visible: we have a quad, so we have to make 2 new triangles out of it.
+
+	// See here for more info? http://math.stackexchange.com/questions/400268/equation-for-a-line-through-a-plane-in-homogeneous-coordinates
 
 	for (unsigned int i = 0; i < vertices.size(); i++)
 	{
