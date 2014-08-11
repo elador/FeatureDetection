@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
 			pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
 			cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(255, 0, 128, 255));
 		}
-		imwrite("out/" + lexical_cast<string>(cnt)+"_front.png", colorbuffer);
+		imwrite("out/" + lexical_cast<string>(cnt) + "_front.png", colorbuffer);
 
 		// 3) Render the randomVertex in pose angle
 		rotPitchX = render::matrixutils::createRotationMatrixX(pitch * (CV_PI / 180.0f));
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
 			// But caution, this hack depends on the resolution of the z-buffer?
 			// not visible
 			cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(255, 0, 128, 255));
-			imwrite("out/" + lexical_cast<string>(cnt)+"_pose_invis.png", colorbuffer);
+			imwrite("out/" + lexical_cast<string>(cnt) + "_pose_invis.png", colorbuffer);
 			continue;
 		}
 		cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(255, 0, 128, 255));
@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
 			pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
 			cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(128, 0, 255, 255));
 		}
-		imwrite("out/" + lexical_cast<string>(cnt)+"_pose_vis.png", colorbuffer);
+		imwrite("out/" + lexical_cast<string>(cnt) + "_pose_vis.png", colorbuffer);
 					
 		// 4) Write one row to the file
 		for (const auto& lm : pointsToWrite) {

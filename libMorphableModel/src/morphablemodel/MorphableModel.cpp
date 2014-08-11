@@ -36,7 +36,10 @@ morphablemodel::MorphableModel MorphableModel::load(const boost::property_tree::
 	MorphableModel morphableModel;
 	path filename = configTree.get<path>("filename");
 	if (filename.extension().string() == ".scm") {
-		path vertexMappingFile = configTree.get<path>("vertexMapping");
+		path vertexMappingFile; // = configTree.get<path>("vertexMapping");
+		// We ignore the mapping for now. Todo: A proper solution that would make sense:
+		// With each SCM, store a file "landmark id" (the low number from the diagram) to vertexId.
+		// The MorphableModel should then have separate access function overloads for landmarkId(string) and vertexId(int).
 		path isomapFile = configTree.get<path>("isomap", "");
 		morphableModel = MorphableModel::loadScmModel(filename.string(), vertexMappingFile, isomapFile);
 	}

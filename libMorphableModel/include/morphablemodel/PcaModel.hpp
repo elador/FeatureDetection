@@ -67,7 +67,7 @@ public:
 	 *
 	 * - The pcaBasis matrix stored in the file and loaded is the orthogonal PCA basis, i.e. it is not normalized by the eigenvalues.
 	 *
-	 * @param[in] modelFile A binary .scm-file containing the model.
+	 * @param[in] modelFilename A binary .scm-file containing the model.
 	 * @param[in] landmarkVertexMappingFile A file containing a mapping from landmarks to vertex ids.
 	 * @param[in] modelType The type of PCA model to load (SHAPE or COLOR).
 	 * @return A shape- or color model from the given file.
