@@ -56,6 +56,8 @@ void ModelLandmark::draw(Mat& image, const Scalar& color, float width) const
 		array<bool, 9> symbol = LandmarkSymbols::get(getName());
 		Scalar color = LandmarkSymbols::getColor(getName());
 		unsigned int pos = 0;
+		// Note: I think it would be more appropriate to use floor(). If a landmark has coordinates
+		// (120.6, 100.0), which pixel should be colored as center, the one at 120 or 121?
 		for (int currRow = cvRound(position[1])-1; currRow<=cvRound(position[1])+1; ++currRow) {
 			for (int currCol = cvRound(position[0])-1; currCol<=cvRound(position[0])+1; ++currCol) {
 				if (symbol[pos]==true) {

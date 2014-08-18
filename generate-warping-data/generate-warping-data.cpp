@@ -307,21 +307,21 @@ int main(int argc, char *argv[])
 			modelMatrix = rotYawY * rotPitchX * rotRollZ; // same as before in 3)
 			res = render::utils::projectVertex(newSampleMesh.vertex[vid].position, camera.getProjectionMatrix() * camera.getViewMatrix() * modelMatrix, screenWidth, screenHeight);
 			pointsToWrite.push_back(make_shared<ModelLandmark>(std::to_string(vid), res));
-			cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(128, 0, 255, 255));
+			//cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(128, 0, 255, 255));
 		}
 		//imwrite("out/" + lexical_cast<string>(cnt) + "_pose_vis.png", colorbuffer);
 					
 		// 4) Write one row to either the visible or invisible vertices file:
 		if (isVisible) {
 			for (const auto& lm : pointsToWrite) {
-				lm->draw(colorbuffer);
+				//lm->draw(colorbuffer);
 				outputFileVisible << lm->getX() << " " << lm->getY() << " ";
 			}
 			outputFileVisible << yaw << " " << pitch << " " << roll << " " << randomVertex << std::endl;
 		}
 		else {
 			for (const auto& lm : pointsToWrite) {
-				lm->draw(colorbuffer);
+				//lm->draw(colorbuffer);
 				outputFileInvisible << lm->getX() << " " << lm->getY() << " ";
 			}
 			outputFileInvisible << yaw << " " << pitch << " " << roll << " " << randomVertex << std::endl;
