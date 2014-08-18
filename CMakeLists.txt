@@ -75,6 +75,7 @@ add_subdirectory(fittingTools) # Tools for fitting and model-rendering (e.g. com
 
 add_subdirectory(generate-sample)		# Generate samples (coefficients, renderings and landmarks) of the 3DMM
 add_subdirectory(generate-warping-data)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
+add_subdirectory(generate-warping-data-playground)
 add_subdirectory(model-renderer-gui)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
 
 # Tools:

@@ -343,6 +343,10 @@ int main(int argc, char *argv[])
 		r.doBackfaceCulling = true;
 		std::tie(screen, zBuffer) = r.render(meshToDraw, cameraTransform * modelMatrix, projection);
 
+		cv::Vec3f rndVtxModelCrds = mm.getShapeModel().getMeanAtPoint(25864);
+		cv::Vec3f rndVtxScreenCrds = render::utils::projectVertex(cv::Vec4f(rndVtxModelCrds[0], rndVtxModelCrds[1], rndVtxModelCrds[2], 1.0f), camera.getProjectionMatrix() * camera.getViewMatrix() * modelMatrix, screenWidth, screenHeight);
+		cv::circle(screen, cv::Point(rndVtxScreenCrds[0], rndVtxScreenCrds[1]), 3, cv::Scalar(255.0f, 0.0f, 0.0f, 255.0f));
+
 		// Draw the 3 axes over the screen
 		// Note: We should use render(), so that the depth buffer gets used?
 		// Also, the div. by z is missing in case of persp. proj.?

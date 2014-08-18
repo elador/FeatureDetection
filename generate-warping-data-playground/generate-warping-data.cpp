@@ -154,18 +154,18 @@ int main(int argc, char *argv[])
 	SoftwareRenderer renderer(screenWidth, screenHeight);
 	renderer.doBackfaceCulling = true;
 
-	vector<int> vertexIds;
+	vector<int> vertexIds; // Todo: Work with the tlms names everywhere instead of the vertex indices
 	/* Surrey full model: */
-	vertexIds.push_back(11389); // 177: left-eye-left - right.eye.corner_outer
-	vertexIds.push_back(25864/*10930*/); // 181: left-eye-right - right.eye.corner_inner
-	vertexIds.push_back(25868); // 614: right-eye-left - left.eye.corner_inner. But we take one a little bit more up
-	vertexIds.push_back(11395); // 610: right-eye-right - left.eye.corner_outer
+//	vertexIds.push_back(11389); // 177: left-eye-left - right.eye.corner_outer
+//	vertexIds.push_back(25864/*10930*/); // 181: left-eye-right - right.eye.corner_inner
+//	vertexIds.push_back(25868); // 614: right-eye-left - left.eye.corner_inner. But we take one a little bit more up
+//	vertexIds.push_back(11395); // 610: right-eye-right - left.eye.corner_outer
 	vertexIds.push_back(398); // mouth-left - right.lips.corner
 	vertexIds.push_back(812); // mouth-right - left.lips.corner
-	vertexIds.push_back(11140); // bridge of the nose - // should use the new one from the reference, MnFMdl.obj
+//	vertexIds.push_back(11140); // bridge of the nose - // should use the new one from the reference, MnFMdl.obj
 	vertexIds.push_back(114); // nose-tip - center.nose.tip
 	vertexIds.push_back(270); // nasal septum - 
-	vertexIds.push_back(3284); // left-alare - right nose ...
+//	vertexIds.push_back(3284); // left-alare - right nose ...
 	vertexIds.push_back(572); // right-alare - left nose ...
 	
 	// BFM statismo:
@@ -182,18 +182,10 @@ int main(int argc, char *argv[])
 	vertexIds.push_back(10001); // right-alare - (a bit similar to left.nose.wing.tip but don't use it)
 	*/
 
-	// Create the two output files, write the header-line to it:
-	std::stringstream headerLine;
-	headerLine << "frontal_rndvtx_x " << "frontal_rndvtx_y " << "frontal_lel_x " << "frontal_lel_y " << "frontal_ler_x " << "frontal_ler_y " << "frontal_rel_x " << "frontal_rel_y " << "frontal_rer_x " << "frontal_rer_y " << "frontal_ml_x " << "frontal_ml_y " << "frontal_mr_x " << "frontal_mr_y " << "frontal_bn_x " << "frontal_bn_y " << "frontal_nt_x " << "frontal_nt_y " << "frontal_ns_x " << "frontal_ns_y " << "frontal_la_x " << "frontal_la_y " << "frontal_ra_x " << "frontal_ra_y " << "pose_rndvtx_x " << "pose_rndvtx_y " << "pose_lel_x " << "pose_lel_y " << "pose_ler_x " << "pose_ler_y " << "pose_rel_x " << "pose_rel_y " << "pose_rer_x " << "pose_rer_y " << "pose_ml_x " << "pose_ml_y " << "pose_mr_x " << "pose_mr_y " << "pose_bn_x " << "pose_bn_y " << "pose_nt_x " << "pose_nt_y " << "pose_ns_x " << "pose_ns_y " << "pose_la_x " << "pose_la_y " << "pose_ra_x " << "pose_ra_y " << "yaw " << "pitch " << "roll " << "rndvtx_id" << std::endl;
-
-	std::ofstream outputFileVisible;
-	outputFileVisible.open("./data_3dmm_landmarks_random_sd0.5_batch7_1000k_test.txt");
-	outputFileVisible << headerLine.str();
+	std::ofstream outputFile;
+	outputFile.open("./data_3dmm_landmarks_random_sd0.7_batch7_1000k_test.txt"); // data_3dmm_landmarks_random_sd0.5_batch4_600000k.txt
+	outputFile << "frontal_rndvtx_x " << "frontal_rndvtx_y " << "frontal_lel_x " << "frontal_lel_y " << "frontal_ler_x " << "frontal_ler_y " << "frontal_rel_x " << "frontal_rel_y " << "frontal_rer_x " << "frontal_rer_y " << "frontal_ml_x " << "frontal_ml_y " << "frontal_mr_x " << "frontal_mr_y " << "frontal_bn_x " << "frontal_bn_y " << "frontal_nt_x " << "frontal_nt_y " << "frontal_ns_x " << "frontal_ns_y " << "frontal_la_x " << "frontal_la_y " << "frontal_ra_x " << "frontal_ra_y " << "pose_rndvtx_x " << "pose_rndvtx_y " << "pose_lel_x " << "pose_lel_y " << "pose_ler_x " << "pose_ler_y " << "pose_rel_x " << "pose_rel_y " << "pose_rer_x " << "pose_rer_y " << "pose_ml_x " << "pose_ml_y " << "pose_mr_x " << "pose_mr_y " << "pose_bn_x " << "pose_bn_y " << "pose_nt_x " << "pose_nt_y " << "pose_ns_x " << "pose_ns_y " << "pose_la_x " << "pose_la_y " << "pose_ra_x " << "pose_ra_y " << "yaw " << "pitch " << "roll " << "rndvtx_id" << std::endl;
 	
-	std::ofstream outputFileInvisible;
-	outputFileInvisible.open("./data_3dmm_landmarks_random_sd0.5_batch7_1000k_test_invisible.txt");
-	outputFileInvisible << headerLine.str();
-
 	int numVertices = morphableModel.getShapeModel().getDataDimension() / 3;
 	std::uniform_int_distribution<int> distribution(0, numVertices-1);
 	std::mt19937 engine; // Mersenne twister MT19937
@@ -202,27 +194,28 @@ int main(int argc, char *argv[])
 	engine.seed();
 	auto randIntVtx = std::bind(distribution, engine);
 
-	std::uniform_real_distribution<> distrRandYaw(-55, 55);
-	auto randRealYaw = std::bind(distrRandYaw, engine);
-	std::uniform_real_distribution<> distrRandPitch(-40, 40);
-	auto randRealPitch = std::bind(distrRandPitch, engine);
-	std::uniform_real_distribution<> distrRandRoll(0, 0); // old: -20, 20
-	auto randRealRoll = std::bind(distrRandRoll, engine);
+	std::uniform_int_distribution<int> distrRandYaw(-55, 55);
+	auto randIntYaw = std::bind(distrRandYaw, engine);
+	std::uniform_int_distribution<int> distrRandPitch(-40, 40);
+	auto randIntPitch = std::bind(distrRandPitch, engine);
+	//std::uniform_int_distribution<int> distrRandRoll(-20, 20);
+	std::uniform_int_distribution<int> distrRandRoll(0, 0);
+	auto randIntRoll = std::bind(distrRandRoll, engine);
 	
 	int generatedSamples = 0;
-	int samplesToGenerate = 1000000;
+	int samplesToGenerate = 600000; //600000;
 	int cnt = 0;
 	while (generatedSamples < samplesToGenerate) {
 		++cnt;
 		std::cout << generatedSamples << std::endl;
 
-		render::Mesh newSampleMesh = morphableModel.drawSample(0.5f); // Note: it would suffice to only draw a shape model, but then we can't render it
-		//render::Mesh::writeObj(newSampleMesh, "sample.obj");
+		render::Mesh newSampleMesh = morphableModel.drawSample(0.7f); // Note: it would suffice to only draw a shape model, but then we can't render it
+		render::Mesh::writeObj(newSampleMesh, "sample.obj");
 		
 		int randomVertex = randIntVtx();
-		auto yaw = randRealYaw();
-		auto pitch = randRealPitch();
-		auto roll = randRealRoll();
+		int yaw = randIntYaw();
+		int pitch = randIntPitch();
+		int roll = randIntRoll();
 
 		vector<shared_ptr<Landmark>> pointsToWrite;
 
@@ -236,42 +229,36 @@ int main(int argc, char *argv[])
 		Vec3f res = render::utils::projectVertex(newSampleMesh.vertex[randomVertex].position, camera.getProjectionMatrix() * camera.getViewMatrix() * modelMatrix, screenWidth, screenHeight);
 		renderer.clearBuffers();
 		std::tie(colorbuffer, depthbuffer) = renderer.render(newSampleMesh, camera.getViewMatrix() * modelMatrix, camera.getProjectionMatrix());
-		string name = "rndVtxFrontal_" + std::to_string(randomVertex);
+		string name = "randomVertexFrontal";
 		pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
 		cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(0, 0, 255, 255));
-
-		// If the random vertex is invisible in the frontal pose, we discard the sample immediately:
-		double zBufferValue = depthbuffer.at<double>(static_cast<int>(floor(res[1])), static_cast<int>(floor(res[0])));
-		bool isVisibleInFrontal = false;
-		if (res[2] - 0.0020 <= zBufferValue) { // it's "in front or on" the zBuffer value, i.e. visible
-			isVisibleInFrontal = true;
-		}
-		if (!isVisibleInFrontal) {
-			continue; // draw a new sample
-		}
 
 		// 2) Render all LMs in frontal pose
 		for (const auto& vid : vertexIds) {
 			modelMatrix = Mat::eye(4, 4, CV_32FC1); // same as before in 1)
 			res = render::utils::projectVertex(newSampleMesh.vertex[vid].position, camera.getProjectionMatrix() * camera.getViewMatrix() * modelMatrix, screenWidth, screenHeight);
 			//r.renderLM(newSampleMesh.vertex[vid].position, Scalar(255.0f, 0.0f, 0.0f));
-			pointsToWrite.push_back(make_shared<ModelLandmark>(std::to_string(vid), res));
-			//cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(255, 0, 128, 255));
+			name = DidLandmarkFormatParser::didToTlmsName(vid);
+			pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
+			cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(255, 0, 128, 255));
 		}
-		//imwrite("out/" + lexical_cast<string>(cnt) + "_front.png", colorbuffer);
+		imwrite("out/" + lexical_cast<string>(cnt) + "_front.png", colorbuffer);
 
 		// 3) Render the randomVertex in pose angle
-		rotPitchX = render::matrixutils::createRotationMatrixX(static_cast<float>(pitch * (CV_PI / 180.0)));
-		rotYawY = render::matrixutils::createRotationMatrixY(static_cast<float>(yaw * (CV_PI / 180.0)));
-		rotRollZ = render::matrixutils::createRotationMatrixZ(static_cast<float>(roll * (CV_PI / 180.0)));
+		rotPitchX = render::matrixutils::createRotationMatrixX(pitch * (CV_PI / 180.0f));
+		rotYawY = render::matrixutils::createRotationMatrixY(yaw * (CV_PI / 180.0f));
+		rotRollZ = render::matrixutils::createRotationMatrixZ(roll * (CV_PI / 180.0f));
 		modelMatrix = rotYawY * rotPitchX * rotRollZ;
 		renderer.clearBuffers();
 		std::tie(colorbuffer, depthbuffer) = renderer.render(newSampleMesh, camera.getViewMatrix() * modelMatrix, camera.getProjectionMatrix());
 
 		res = render::utils::projectVertex(newSampleMesh.vertex[randomVertex].position, camera.getProjectionMatrix() * camera.getViewMatrix() * modelMatrix, screenWidth, screenHeight);
-		zBufferValue = depthbuffer.at<double>(static_cast<int>(floor(res[1])), static_cast<int>(floor(res[0])));
-		cv::Point2i centerPixel(std::floor(res[0]), std::floor(res[1]));
-		//cv::circle(colorbuffer, centerPixel, 3, cv::Scalar(255.0f, 0.0f, 0.0f, 255.0f));
+		double zBufferValue = depthbuffer.at<double>(static_cast<int>(floor(res[1])), static_cast<int>(floor(res[0])));
+		cv::Point2i centerPixel(floor(res[0]), floor(res[1]));
+		cv::circle(colorbuffer, centerPixel, 3, cv::Scalar(255.0f, 0.0f, 0.0f, 255.0f));
+
+		//cv::Vec3f rndVtxModelCrds = morphableModel.getShapeModel().getMeanAtPoint(1916);
+		//cv::Vec3f rndVtxScreenCrds = render::utils::projectVertex(cv::Vec4f(rndVtxModelCrds[0], rndVtxModelCrds[1], rndVtxModelCrds[2], 1.0f), camera.getProjectionMatrix() * camera.getViewMatrix() * modelMatrix, screenWidth, screenHeight);
 
 		// Method 1 (simple):
 		// Says a lot of time the vertex is invisible, when it is in fact visible.
@@ -280,6 +267,12 @@ int main(int argc, char *argv[])
 		bool isVisible = false;
 		if (res[2] - 0.0020 <= zBufferValue) { // it's "in front or on" the zBuffer value, i.e. visible
 			isVisible = true;
+		}
+		float resWithThresh = res[2] - 0.0020;
+
+		bool isVisibleWithoutThresh = false;
+		if (res[2] <= zBufferValue) { // it's "in front or on" the zBuffer value, i.e. visible
+			isVisibleWithoutThresh = true;
 		}
 
 		/*
@@ -298,40 +291,39 @@ int main(int argc, char *argv[])
 			}
 		}
 		*/
-
-		name = "rndVtxPose_" + std::to_string(randomVertex);
+		if (isVisible == false) {
+		//if (res[2] > zBufferValue + 0.00004) { // we apply a threshold because our projectVertex is somehow a little bit off, probably because rasterTriangle() works a bit different? (offset, rounding, ...).
+			// But caution, this hack depends on the resolution of the z-buffer?
+			// not visible
+			cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(255, 0, 128, 255));
+			imwrite("out/" + lexical_cast<string>(cnt) + "_pose_invis.png", colorbuffer);
+			continue;
+		}
+		cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(255, 0, 128, 255));
+		name = "randomVertexPose";
 		pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
 
 		// 4) Render all LMs in pose angle
 		for (const auto& vid : vertexIds) {
 			modelMatrix = rotYawY * rotPitchX * rotRollZ; // same as before in 3)
 			res = render::utils::projectVertex(newSampleMesh.vertex[vid].position, camera.getProjectionMatrix() * camera.getViewMatrix() * modelMatrix, screenWidth, screenHeight);
-			pointsToWrite.push_back(make_shared<ModelLandmark>(std::to_string(vid), res));
+			name = DidLandmarkFormatParser::didToTlmsName(vid);
+			pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
 			cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(128, 0, 255, 255));
 		}
-		//imwrite("out/" + lexical_cast<string>(cnt) + "_pose_vis.png", colorbuffer);
+		imwrite("out/" + lexical_cast<string>(cnt) + "_pose_vis.png", colorbuffer);
 					
-		// 4) Write one row to either the visible or invisible vertices file:
-		if (isVisible) {
-			for (const auto& lm : pointsToWrite) {
-				lm->draw(colorbuffer);
-				outputFileVisible << lm->getX() << " " << lm->getY() << " ";
-			}
-			outputFileVisible << yaw << " " << pitch << " " << roll << " " << randomVertex << std::endl;
-		}
-		else {
-			for (const auto& lm : pointsToWrite) {
-				lm->draw(colorbuffer);
-				outputFileInvisible << lm->getX() << " " << lm->getY() << " ";
-			}
-			outputFileInvisible << yaw << " " << pitch << " " << roll << " " << randomVertex << std::endl;
+		// 4) Write one row to the file
+		for (const auto& lm : pointsToWrite) {
+			//lm->draw(screen);
+			outputFile << lm->getX() << " " << lm->getY() << " ";
 		}
 
+		outputFile << yaw << " " << pitch << " " << roll << " " << randomVertex << std::endl;
 		++generatedSamples;
 	}
 
-	outputFileVisible.close();
-	outputFileInvisible.close();
+	outputFile.close();
 
 	return 0;
 }
