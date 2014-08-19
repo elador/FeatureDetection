@@ -60,7 +60,7 @@ using std::make_shared;
 template<class T>
 std::ostream& operator<<(std::ostream& os, const vector<T>& v)
 {
-	copy(v.begin(), v.end(), ostream_iterator<T>(cout, " ")); 
+    copy(v.begin(), v.end(), std::ostream_iterator<T>(cout, " "));
 	return os;
 }
 

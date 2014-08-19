@@ -6,7 +6,6 @@
  */
 
 #include "render/Camera.hpp"
-#include "render/MatrixUtils.hpp"
 
 using cv::Mat;
 using cv::Vec4f;

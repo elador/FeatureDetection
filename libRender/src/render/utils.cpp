@@ -8,7 +8,8 @@
 
 #include "render/Vertex.hpp"
 
-#include <utility>
+#include <algorithm> // min/max
+//#include <cmath> // for ceil/floor, should be needed!
 
 using cv::Vec2f;
 using cv::Vec3f;
@@ -16,6 +17,8 @@ using cv::Vec4f;
 using cv::Mat;
 using std::min;
 using std::max;
+using std::floor;
+using std::ceil;
 
 namespace render {
 	namespace utils {

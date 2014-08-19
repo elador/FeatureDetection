@@ -6,7 +6,7 @@
  */
 
 #include "render/Texture.hpp"
-#include "render/MatrixUtils.hpp"
+#include "render/matrixutils.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"

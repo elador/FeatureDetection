@@ -10,7 +10,7 @@
 #define SOFTWARERENDERER_HPP_
 
 #include "render/Mesh.hpp"
-#include "render/MatrixUtils.hpp"
+#include "render/matrixutils.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "boost/optional/optional.hpp"

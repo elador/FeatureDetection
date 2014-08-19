@@ -9,7 +9,7 @@
 #ifndef CAMERA_HPP_
 #define CAMERA_HPP_
 
-#include "render/MatrixUtils.hpp"
+#include "render/matrixutils.hpp"
 #include "opencv2/core/core.hpp"
 
 using cv::Vec3f;
