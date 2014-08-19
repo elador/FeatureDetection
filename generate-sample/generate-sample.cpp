@@ -132,6 +132,8 @@ int main(int argc, char *argv[])
 		return EXIT_SUCCESS;
 	}
 
+    Loggers->getLogger("render").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+    Loggers->getLogger("morphablemodel").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("generate-sample").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("generate-sample");
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));

@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
 
 	string verboseLevelConsole;
 	path configFilename;
+    path outputDirectory;
 	
 	try {
 		po::options_description desc("Allowed options");
@@ -87,6 +88,8 @@ int main(int argc, char *argv[])
 				"specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
 			("model,m", po::value<path>(&configFilename)->required(),
 				"path to a config file that specifies which Morphable Model to load")
+            ("output,o", po::value<path>(&outputDirectory)->default_value("."),
+                "directory to write the output files to")
 		;
 
 		po::variables_map vm;
@@ -182,16 +185,23 @@ int main(int argc, char *argv[])
 	vertexIds.push_back(10001); // right-alare - (a bit similar to left.nose.wing.tip but don't use it)
 	*/
 
+    // Create the output directory if it doesn't exist yet
+    if (!boost::filesystem::exists(outputDirectory)) {
+        boost::filesystem::create_directory(outputDirectory);
+    }
+
 	// Create the two output files, write the header-line to it:
 	std::stringstream headerLine;
 	headerLine << "frontal_rndvtx_x " << "frontal_rndvtx_y " << "frontal_lel_x " << "frontal_lel_y " << "frontal_ler_x " << "frontal_ler_y " << "frontal_rel_x " << "frontal_rel_y " << "frontal_rer_x " << "frontal_rer_y " << "frontal_ml_x " << "frontal_ml_y " << "frontal_mr_x " << "frontal_mr_y " << "frontal_bn_x " << "frontal_bn_y " << "frontal_nt_x " << "frontal_nt_y " << "frontal_ns_x " << "frontal_ns_y " << "frontal_la_x " << "frontal_la_y " << "frontal_ra_x " << "frontal_ra_y " << "pose_rndvtx_x " << "pose_rndvtx_y " << "pose_lel_x " << "pose_lel_y " << "pose_ler_x " << "pose_ler_y " << "pose_rel_x " << "pose_rel_y " << "pose_rer_x " << "pose_rer_y " << "pose_ml_x " << "pose_ml_y " << "pose_mr_x " << "pose_mr_y " << "pose_bn_x " << "pose_bn_y " << "pose_nt_x " << "pose_nt_y " << "pose_ns_x " << "pose_ns_y " << "pose_la_x " << "pose_la_y " << "pose_ra_x " << "pose_ra_y " << "yaw " << "pitch " << "roll " << "rndvtx_id" << std::endl;
 
 	std::ofstream outputFileVisible;
-	outputFileVisible.open("./data_3dmm_landmarks_random_sd0.5_batch7_1000k_test.txt");
+    path filenameVisible = outputDirectory / "data_3dmm_landmarks_random_sd0.5_batch7_1000k_visible.txt";
+    outputFileVisible.open(filenameVisible.string());
 	outputFileVisible << headerLine.str();
 	
 	std::ofstream outputFileInvisible;
-	outputFileInvisible.open("./data_3dmm_landmarks_random_sd0.5_batch7_1000k_test_invisible.txt");
+    path filenameInvisible = outputDirectory / "data_3dmm_landmarks_random_sd0.5_batch7_1000k_invisible.txt";
+    outputFileInvisible.open(filenameInvisible.string());
 	outputFileInvisible << headerLine.str();
 
 	int numVertices = morphableModel.getShapeModel().getDataDimension() / 3;
@@ -238,7 +248,7 @@ int main(int argc, char *argv[])
 		std::tie(colorbuffer, depthbuffer) = renderer.render(newSampleMesh, camera.getViewMatrix() * modelMatrix, camera.getProjectionMatrix());
 		string name = "rndVtxFrontal_" + std::to_string(randomVertex);
 		pointsToWrite.push_back(make_shared<ModelLandmark>(name, res));
-		cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(0, 0, 255, 255));
+        //cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(0, 0, 255, 255));
 
 		// If the random vertex is invisible in the frontal pose, we discard the sample immediately:
 		double zBufferValue = depthbuffer.at<double>(static_cast<int>(floor(res[1])), static_cast<int>(floor(res[0])));
@@ -270,8 +280,8 @@ int main(int argc, char *argv[])
 
 		res = render::utils::projectVertex(newSampleMesh.vertex[randomVertex].position, camera.getProjectionMatrix() * camera.getViewMatrix() * modelMatrix, screenWidth, screenHeight);
 		zBufferValue = depthbuffer.at<double>(static_cast<int>(floor(res[1])), static_cast<int>(floor(res[0])));
-		cv::Point2i centerPixel(std::floor(res[0]), std::floor(res[1]));
-		//cv::circle(colorbuffer, centerPixel, 3, cv::Scalar(255.0f, 0.0f, 0.0f, 255.0f));
+        //cv::Point2i centerPixel(std::floor(res[0]), std::floor(res[1]));
+        //cv::circle(colorbuffer, centerPixel, 3, cv::Scalar(255.0f, 0.0f, 0.0f, 255.0f));
 
 		// Method 1 (simple):
 		// Says a lot of time the vertex is invisible, when it is in fact visible.
@@ -307,26 +317,26 @@ int main(int argc, char *argv[])
 			modelMatrix = rotYawY * rotPitchX * rotRollZ; // same as before in 3)
 			res = render::utils::projectVertex(newSampleMesh.vertex[vid].position, camera.getProjectionMatrix() * camera.getViewMatrix() * modelMatrix, screenWidth, screenHeight);
 			pointsToWrite.push_back(make_shared<ModelLandmark>(std::to_string(vid), res));
-			//cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(128, 0, 255, 255));
+            //cv::circle(colorbuffer, cv::Point(res[0], res[1]), 3, cv::Scalar(128, 0, 255, 255));
 		}
-		//imwrite("out/" + lexical_cast<string>(cnt) + "_pose_vis.png", colorbuffer);
+        //imwrite("out/" + lexical_cast<string>(cnt) + "_pose_vis.png", colorbuffer);
 					
 		// 4) Write one row to either the visible or invisible vertices file:
 		if (isVisible) {
 			for (const auto& lm : pointsToWrite) {
-				//lm->draw(colorbuffer);
+                //lm->draw(colorbuffer);
 				outputFileVisible << lm->getX() << " " << lm->getY() << " ";
 			}
 			outputFileVisible << yaw << " " << pitch << " " << roll << " " << randomVertex << std::endl;
 		}
 		else {
 			for (const auto& lm : pointsToWrite) {
-				//lm->draw(colorbuffer);
+                //lm->draw(colorbuffer);
 				outputFileInvisible << lm->getX() << " " << lm->getY() << " ";
 			}
 			outputFileInvisible << yaw << " " << pitch << " " << roll << " " << randomVertex << std::endl;
 		}
-
+        //imwrite("out/" + lexical_cast<string>(cnt) + "_img.png", colorbuffer);
 		++generatedSamples;
 	}
 

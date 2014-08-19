@@ -142,7 +142,7 @@ render::Mesh MorphableModel::drawSample(float shapeSigma /*= 1.0f*/, float color
 	unsigned int numVerticesColor = colorModel.getDataDimension() / 3;
 	if (numVertices != numVerticesColor) {
 		string msg("MorphableModel: The number of vertices of the shape and color models are not the same: " + lexical_cast<string>(numVertices) + " != " + lexical_cast<string>(numVerticesColor));
-		Loggers->getLogger("morphablemodel").debug(msg);
+        Loggers->getLogger("morphablemodel").error(msg);
 		throw std::runtime_error(msg);
 	}
 
@@ -185,7 +185,7 @@ render::Mesh MorphableModel::drawSample(vector<float> shapeCoefficients, vector<
 	unsigned int numVerticesColor = colorModel.getDataDimension() / 3;
 	if (numVertices != numVerticesColor) {
 		string msg("MorphableModel: The number of vertices of the shape and color models are not the same: " + lexical_cast<string>(numVertices) + " != " + lexical_cast<string>(numVerticesColor));
-		Loggers->getLogger("morphablemodel").debug(msg);
+        Loggers->getLogger("morphablemodel").error(msg);
 		throw std::runtime_error(msg);
 	}
 
@@ -212,7 +212,9 @@ vector<Vec2f> MorphableModel::loadIsomap(path isomapFile)
 	string line;
 	std::ifstream myfile(isomapFile.string());
 	if (!myfile.is_open()) {
-		//TODO log "Isomap file could not be opened. Did you specify a correct filename?" isomapFile
+        string logMessage("The Isomap file could not be opened. Did you specify a correct filename? " + isomapFile.string());
+        Loggers->getLogger("morphablemodel").error(logMessage);
+        throw std::runtime_error(logMessage);
 	} else {
 		while (getline(myfile, line))
 		{
