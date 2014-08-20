@@ -47,16 +47,16 @@ add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not wo
 add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes
 add_subdirectory(libFitting)			# Camera (Pose) estimation and shape-fitting
 add_subdirectory(libSupervisedDescent)	# A non-parametric model for landmark detection. Uses the supervised descent method.
-add_subdirectory(libFaceRecognition)	# Utility library for face recognition experiments, to work with databases, face-record, etc.
+#add_subdirectory(libFaceRecognition)	# Utility library for face recognition experiments, to work with databases, face-record, etc.
 
 # Tracking apps:
-add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.
-add_subdirectory(trackingBenchmarkApp)	# Benchmark app for adaptive condensation tracking.
-add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
-add_subdirectory(adaptiveTrackingApp)	# Adaptive tracking app.
-add_subdirectory(partiallyAdaptiveTrackingApp)	# Old adaptive tracking app.
-add_subdirectory(headTrackingApp)		# Adaptive head tracking app.
-add_subdirectory(VideoPlayerApp)		# App for playing videos, showing landmarks and storing videos.
+#add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.
+#add_subdirectory(trackingBenchmarkApp)	# Benchmark app for adaptive condensation tracking.
+#add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
+#add_subdirectory(adaptiveTrackingApp)	# Adaptive tracking app.
+#add_subdirectory(partiallyAdaptiveTrackingApp)	# Old adaptive tracking app.
+#add_subdirectory(headTrackingApp)		# Adaptive head tracking app.
+#add_subdirectory(VideoPlayerApp)		# App for playing videos, showing landmarks and storing videos.
 
 # Face-detection apps:
 #add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe). (Note: Check if it still works)
@@ -79,10 +79,10 @@ add_subdirectory(convert-landmarks)		# Simple app to convert landmarks from one 
 add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks and perform an evaluation.
 
 # Face-recognition:
-add_subdirectory(facerecognitionTools) # Tools (e.g. create probe/gallery image-lists)
-add_subdirectory(frRunCogExp)		# App for doing face recognition tests with a gallery and probe images
-add_subdirectory(frDbTool)		# App for managing (creating and populating) the sqlite-database used for face-recognition experiments
-add_subdirectory(frDbExp)		# App for doing experiments with the face recognition scores in the database
+#add_subdirectory(facerecognitionTools) # Tools (e.g. create probe/gallery image-lists)
+#add_subdirectory(frRunCogExp)		# App for doing face recognition tests with a gallery and probe images
+#add_subdirectory(frDbTool)		# App for managing (creating and populating) the sqlite-database used for face-recognition experiments
+#add_subdirectory(frDbExp)		# App for doing experiments with the face recognition scores in the database
 
 # ============================================================================
 # Experimental, non-working or deprecated:
