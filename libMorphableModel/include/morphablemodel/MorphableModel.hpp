@@ -54,13 +54,21 @@ public:
 	/**
 	 * Todo.
 	 *
-	 * @param[in] h5file Todo.
-	 * @param[in] landmarkVertexMappingFile Todo.
+	 * @param[in] scmFile Binary .scm model file.
+	 * @param[in] landmarkVertexMappingFile Not used anymore/at the moment.
+	 * @param[in] isomapFile Optional.
 	 * @return TODO.
 	 */
-	static MorphableModel loadScmModel(boost::filesystem::path h5file, boost::filesystem::path landmarkVertexMappingFile, boost::filesystem::path isomapFile);
+	static MorphableModel loadScmModel(boost::filesystem::path scmFile, boost::filesystem::path landmarkVertexMappingFile, boost::filesystem::path isomapFile);
 
 	static MorphableModel loadStatismoModel(boost::filesystem::path h5file);
+
+	/**
+	 * Saves the given model as a statismo HDF5 .h5 model.
+	 *
+	 */
+	// non-static? free function? what about private member access? (what about the load functions?) I remember googling it...
+	static void saveAsStatismo(boost::filesystem::path outputFile, MorphableModel model);
 
 	static std::vector<cv::Vec2f> loadIsomap(boost::filesystem::path isomapFile);
 	

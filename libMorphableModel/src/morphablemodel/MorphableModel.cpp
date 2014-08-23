@@ -50,11 +50,11 @@ morphablemodel::MorphableModel MorphableModel::load(const boost::property_tree::
 	return morphableModel;
 }
 
-MorphableModel MorphableModel::loadScmModel(path h5file, path landmarkVertexMappingFile, path isomapFile)
+MorphableModel MorphableModel::loadScmModel(path scmFile, path landmarkVertexMappingFile, path isomapFile)
 {
 	MorphableModel model;
-	model.shapeModel = PcaModel::loadScmModel(h5file, landmarkVertexMappingFile, PcaModel::ModelType::SHAPE);
-	model.colorModel = PcaModel::loadScmModel(h5file, landmarkVertexMappingFile, PcaModel::ModelType::COLOR);
+	model.shapeModel = PcaModel::loadScmModel(scmFile, landmarkVertexMappingFile, PcaModel::ModelType::SHAPE);
+	model.colorModel = PcaModel::loadScmModel(scmFile, landmarkVertexMappingFile, PcaModel::ModelType::COLOR);
 
 	if (!isomapFile.empty()) {
 		vector<Vec2f> texCoords = MorphableModel::loadIsomap(isomapFile);
@@ -231,6 +231,15 @@ vector<Vec2f> MorphableModel::loadIsomap(path isomapFile)
 	}
 
 	return texCoords;
+}
+
+void MorphableModel::saveAsStatismo(path outputFile, MorphableModel model)
+{
+	// save shape mdl
+	PcaModel::saveAsStatismo(outputFile, model.getShapeModel(), PcaModel::ModelType::SHAPE);
+	// save albedo mdl
+	// additional MorphableModel stuff?
+	return;
 }
 
 /*void MorphableModel::setHasTextureCoordinates(bool hasTextureCoordinates)

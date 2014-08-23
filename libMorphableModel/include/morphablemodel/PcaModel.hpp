@@ -93,6 +93,8 @@ public:
 	 */
 	static PcaModel loadStatismoModel(boost::filesystem::path h5file, ModelType modelType);
 
+	static void saveAsStatismo(boost::filesystem::path outputFile, PcaModel model, PcaModel::ModelType modelType);
+
 	/**
 	 * Returns the number of principal components in the model.
 	 *

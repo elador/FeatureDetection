@@ -57,9 +57,9 @@ PcaModel PcaModel::loadStatismoModel(path h5file, PcaModel::ModelType modelType)
 		h5Model = H5::H5File(h5file.string(), H5F_ACC_RDONLY);
 	}
 	catch (H5::Exception& e) {
-		string errorMessage = "Could not open HDF5 file: " + string(e.getCDetailMsg());
+		string errorMessage = "Could not open HDF5 file: " + string(e.getCDetailMsg()); // Todo: use getDetailMsg if it compiles under win and lx
 		logger.error(errorMessage);
-		throw errorMessage;
+		throw std::runtime_error(errorMessage);
 	}
 
 	// Load either the shape or texture mean
@@ -523,6 +523,119 @@ bool PcaModel::landmarkExists(std::string landmarkIdentifier) const
 	else {
 		return true;
 	}
+}
+
+void PcaModel::saveAsStatismo(boost::filesystem::path outputFile, PcaModel model, ModelType modelType)
+{
+	logging::Logger logger = Loggers->getLogger("morphablemodel");
+#ifndef WITH_MORPHABLEMODEL_HDF5
+	string logMessage("PcaModel: Cannot save as a statismo model. Please re-run CMake with WITH_MORPHABLEMODEL_HDF5 set to ON.");
+	logger.error(logMessage);
+	throw std::runtime_error(logMessage);
+#else
+	string h5GroupType;
+	if (modelType == ModelType::SHAPE) {
+		h5GroupType = "shape";
+	}
+	else if (modelType == ModelType::COLOR) {
+		h5GroupType = "color";
+	}
+
+	H5::H5File h5Model;
+
+	try {
+		h5Model = H5::H5File(outputFile.string(), H5F_ACC_TRUNC);
+	}
+	catch (H5::Exception& e) {
+		string errorMessage = "Could not create or open HDF5 file: " + e.getDetailMsg();
+		logger.error(errorMessage);
+		throw std::runtime_error(errorMessage);
+	}
+	
+	// Load either the shape or texture mean
+	string h5Group = "/" + h5GroupType + "/model";
+	H5::Group modelReconstructive = h5Model.createGroup(h5Group);
+
+	// Save the following:
+	// /shape/model :
+	// mean, pcaVariance (evals), pcaBasis (normalised). Close group
+	// /shape/representer :
+	// ./reference-mesh/triangle-list, ./reference-mesh/vertex-coordinates
+	// /metadata/landmarks
+
+	// Read the mean
+	H5::DataSet dsMean = modelReconstructive.openDataSet("./mean");
+	hsize_t dims[2];
+	dsMean.getSpace().getSimpleExtentDims(dims, NULL);	// dsMean.getSpace() leaks memory... maybe a hdf5 bug, maybe vlenReclaim(...) could be a fix. No idea.
+	//H5::DataSpace dsp = dsMean.getSpace();
+	//dsp.close();
+	Loggers->getLogger("morphablemodel").debug("Dimensions of the model mean: " + lexical_cast<string>(dims[0]));
+	model.mean = Mat(1, dims[0], CV_32FC1); // Use a row-vector, because of faster memory access and I'm not sure the memory block is allocated contiguously if we have multiple rows.
+	dsMean.read(model.mean.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
+	model.mean = model.mean.t(); // Transpose it to a col-vector
+	dsMean.close();
+
+	// Read the eigenvalues
+	dsMean = modelReconstructive.openDataSet("./pcaVariance");
+	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
+	Loggers->getLogger("morphablemodel").debug("Dimensions of the pcaVariance: " + lexical_cast<string>(dims[0]));
+	model.eigenvalues = Mat(1, dims[0], CV_32FC1);
+	dsMean.read(model.eigenvalues.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
+	model.eigenvalues = model.eigenvalues.t();
+	dsMean.close();
+
+	// Read the PCA basis matrix. It is stored normalized.
+	dsMean = modelReconstructive.openDataSet("./pcaBasis");
+	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
+	Loggers->getLogger("morphablemodel").debug("Dimensions of the PCA basis matrix: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
+	model.normalizedPcaBasis = Mat(dims[0], dims[1], CV_32FC1);
+	dsMean.read(model.normalizedPcaBasis.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
+	dsMean.close();
+
+	modelReconstructive.close(); // close the model-group
+
+	// Read the triangle-list
+	string representerGroupName = "/" + h5GroupType + "/representer";
+	H5::Group representerGroup = h5Model.openGroup(representerGroupName);
+	dsMean = representerGroup.openDataSet("./reference-mesh/triangle-list");
+	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
+	Loggers->getLogger("morphablemodel").debug("Dimensions of the triangle-list: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
+	Mat triangles(dims[0], dims[1], CV_32SC1);
+	dsMean.read(triangles.ptr<int>(0), H5::PredType::NATIVE_INT32);
+	dsMean.close();
+	representerGroup.close();
+	model.triangleList.resize(triangles.rows);
+	for (unsigned int i = 0; i < model.triangleList.size(); ++i) {
+		model.triangleList[i][0] = triangles.at<int>(i, 0);
+		model.triangleList[i][1] = triangles.at<int>(i, 1);
+		model.triangleList[i][2] = triangles.at<int>(i, 2);
+	}
+
+	// Load the landmarks mappings:
+	// load the reference-mesh
+	representerGroup = h5Model.openGroup(representerGroupName);
+	dsMean = representerGroup.openDataSet("./reference-mesh/vertex-coordinates");
+	dsMean.getSpace().getSimpleExtentDims(dims, NULL);
+	Loggers->getLogger("morphablemodel").debug("Dimensions of the reference-mesh vertex-coordinates matrix: " + lexical_cast<string>(dims[0]) + ", " + lexical_cast<string>(dims[1]));
+	Mat referenceMesh(dims[0], dims[1], CV_32FC1);
+	dsMean.read(referenceMesh.ptr<float>(0), H5::PredType::NATIVE_FLOAT);
+	dsMean.close();
+	representerGroup.close();
+
+	// load the landmarks info (mapping name <-> reference (x, y, z)-coords)
+	H5::Group landmarksGroup = h5Model.openGroup("/metadata/landmarks");
+	dsMean = landmarksGroup.openDataSet("./text");
+
+	H5std_string outputString;
+	Loggers->getLogger("morphablemodel").debug("Reading landmark information from the model.");
+	dsMean.read(outputString, dsMean.getStrType());
+	dsMean.close();
+	landmarksGroup.close();
+
+	h5Model.close();
+
+	return;
+#endif
 }
 
 cv::Mat normalizePcaBasis(cv::Mat unnormalizedBasis, cv::Mat eigenvalues)

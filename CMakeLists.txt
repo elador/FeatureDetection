@@ -72,6 +72,7 @@ add_subdirectory(fitter)			# Experimental command-line fitting app using the sof
 add_subdirectory(fittingRenderer)	# App to render fitting results
 add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
 add_subdirectory(fittingTools) # Tools for fitting and model-rendering (e.g. compare isomaps)
+add_subdirectory(convert-scm-to-hdf5) # Convert a .scm model to a .h5 model
 
 # Tools:
 add_subdirectory(visualise-landmarks)	# Simple app to read landmarks and images and display them
