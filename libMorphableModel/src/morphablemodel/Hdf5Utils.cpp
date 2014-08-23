@@ -9,9 +9,9 @@
 #include "morphablemodel/Hdf5Utils.hpp"
 
 namespace morphablemodel {
-	namespace utils {
+	namespace hdf5utils {
 
-H5::H5File Hdf5Utils::openFile(const std::string filename) {
+H5::H5File openFile(const std::string filename) {
 	H5::H5File file;
 
 	try {
@@ -24,7 +24,7 @@ H5::H5File Hdf5Utils::openFile(const std::string filename) {
 	return file;
 }
 
-H5::Group Hdf5Utils::openPath(H5::H5File& file, const std::string& path) {
+H5::Group openPath(H5::H5File& file, const std::string& path) {
 	H5::Group group;
 
 	// take the first part of the path
@@ -54,7 +54,7 @@ H5::Group Hdf5Utils::openPath(H5::H5File& file, const std::string& path) {
 	return g;
 }
 
-cv::Mat Hdf5Utils::readMatrixFloat(const H5::CommonFG& fg, std::string name) {
+cv::Mat readMatrixFloat(const H5::CommonFG& fg, std::string name) {
 	
 	H5::DataSet ds = fg.openDataSet( name );
 	hsize_t dims[2];
@@ -65,7 +65,7 @@ cv::Mat Hdf5Utils::readMatrixFloat(const H5::CommonFG& fg, std::string name) {
 
 	return matrix;
 }
-void Hdf5Utils::readMatrixInt(const H5::CommonFG& fg, std::string name, cv::Mat& matrix) {
+void readMatrixInt(const H5::CommonFG& fg, std::string name, cv::Mat& matrix) {
 	H5::DataSet ds = fg.openDataSet( name ); // ./triangle-list
 	hsize_t dims[2];
 	ds.getSpace().getSimpleExtentDims(dims, NULL);
@@ -77,7 +77,7 @@ void Hdf5Utils::readMatrixInt(const H5::CommonFG& fg, std::string name, cv::Mat&
 
 }
 
-void Hdf5Utils::readVector(const H5::CommonFG& fg, std::string name, std::vector<float>& vector) {
+void readVector(const H5::CommonFG& fg, std::string name, std::vector<float>& vector) {
 	H5::DataSet ds = fg.openDataSet( name );
 	hsize_t dims[1];
 	ds.getSpace().getSimpleExtentDims(dims, NULL);
@@ -85,14 +85,14 @@ void Hdf5Utils::readVector(const H5::CommonFG& fg, std::string name, std::vector
 	ds.read(vector.data(), H5::PredType::NATIVE_FLOAT);
 }
 
-std::string Hdf5Utils::readString(const H5::CommonFG& fg, std::string name) {
+std::string readString(const H5::CommonFG& fg, std::string name) {
 	std::string outputString;
 	H5::DataSet ds = fg.openDataSet(name);
 	ds.read(outputString, ds.getStrType());
 	return outputString;
 }
 
-bool Hdf5Utils::existsObjectWithName(const H5::CommonFG& fg, const std::string& name) {
+bool existsObjectWithName(const H5::CommonFG& fg, const std::string& name) {
 	for (hsize_t i = 0; i < fg.getNumObjs(); ++i) {
 		std::string objname= 	fg.getObjnameByIdx(i);
 		if (objname == name) {
@@ -102,7 +102,7 @@ bool Hdf5Utils::existsObjectWithName(const H5::CommonFG& fg, const std::string& 
 	return false;
 }
 
-render::Mesh Hdf5Utils::readFromHdf5(std::string filename)
+render::Mesh readReference(std::string filename)
 {
 	render::Mesh mesh;
 
@@ -128,7 +128,7 @@ render::Mesh Hdf5Utils::readFromHdf5(std::string filename)
 	fg = fg.openGroup("representer/reference-mesh");
 
 	// Vertex coordinates
-	cv::Mat matVertex = Hdf5Utils::readMatrixFloat(fg, "./vertex-coordinates");
+	cv::Mat matVertex = readMatrixFloat(fg, "./vertex-coordinates");
 	if (matVertex.cols != 3)
 		throw std::runtime_error("Reference reading failed, vertex-coordinates have too many dimensions");
 	mesh.vertex.resize(matVertex.rows);
@@ -157,7 +157,7 @@ render::Mesh Hdf5Utils::readFromHdf5(std::string filename)
 	}
 
 	// color coordinates
-	cv::Mat matColor = Hdf5Utils::readMatrixFloat(fg, "./vertex-colors");
+	cv::Mat matColor = readMatrixFloat(fg, "./vertex-colors");
 	if (matColor.cols != 3)
 		throw std::runtime_error("Reference reading failed, vertex-colors have too many dimensions");
 	//pReference->color.resize( matColor.rows );
@@ -203,7 +203,7 @@ render::Mesh Hdf5Utils::readFromHdf5(std::string filename)
 }
 
 
-	} /* namespace utils */
+	} /* namespace hdf5utils */
 } /* namespace morphablemodel */
 
 #endif /* WITH_MORPHABLEMODEL_HDF5 */

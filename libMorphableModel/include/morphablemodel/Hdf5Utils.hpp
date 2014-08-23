@@ -19,28 +19,22 @@
 
 #include <vector>
 
-// Todo: Class with static methods? Or just functions? I don't know which method is better.
-
 namespace morphablemodel {
-	namespace utils {
+	namespace hdf5utils { // TODO: Update the filename to lowercase
 
-		class Hdf5Utils
-		{
-		public:
-			static H5::H5File openFile(const std::string filename);
-			static H5::Group openPath(H5::H5File& file, const std::string& path);
+H5::H5File openFile(const std::string filename);
+H5::Group openPath(H5::H5File& file, const std::string& path);
 
-			static cv::Mat readMatrixFloat(const H5::CommonFG& fg, std::string name);
-			static void readMatrixInt(const H5::CommonFG& fg, std::string name, cv::Mat& matrix);
-			static void readVector(const H5::CommonFG& fg, std::string name, std::vector<float>& vector);
-			static std::string readString(const H5::CommonFG& fg, std::string name);
+cv::Mat readMatrixFloat(const H5::CommonFG& fg, std::string name);
+void readMatrixInt(const H5::CommonFG& fg, std::string name, cv::Mat& matrix);
+void readVector(const H5::CommonFG& fg, std::string name, std::vector<float>& vector);
+std::string readString(const H5::CommonFG& fg, std::string name);
 
-			static bool existsObjectWithName(const H5::CommonFG& fg, const std::string& name);
+bool existsObjectWithName(const H5::CommonFG& fg, const std::string& name);
 
-			static render::Mesh readFromHdf5(std::string filename);
-		};
+render::Mesh readReference(std::string filename);
 
-	} /* namespace utils */
+	} /* namespace hdf5utils */
 } /* namespace morphablemodel */
 
 #endif /* WITH_MORPHABLEMODEL_HDF5 */
