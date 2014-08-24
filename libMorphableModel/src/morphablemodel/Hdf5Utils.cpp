@@ -8,23 +8,24 @@
 
 #include "morphablemodel/Hdf5Utils.hpp"
 
+using std::string;
+
 namespace morphablemodel {
 	namespace hdf5utils {
 
-H5::H5File openFile(const std::string filename) {
+H5::H5File openFile(const string& filename) {
 	H5::H5File file;
-
 	try {
 		file = H5::H5File(filename, H5F_ACC_RDONLY);
 	}
 	catch (H5::Exception& e) {
-		std::string msg( std::string( "Could not open HDF5 file \n" ) + e.getCDetailMsg() );
-		throw msg;
+		string msg("Could not open HDF5 file: " + e.getDetailMsg());
+		throw std::runtime_error(msg);
 	}
 	return file;
 }
 
-H5::Group openPath(H5::H5File& file, const std::string& path) {
+H5::Group openPath(H5::H5File& file, const string& path) {
 	H5::Group group;
 
 	// take the first part of the path
@@ -32,20 +33,20 @@ H5::Group openPath(H5::H5File& file, const std::string& path) {
 	size_t nextpos = path.find_first_of("/", curpos);
 	H5::Group g = file.openGroup("/");
 
-	std::string name = path.substr(curpos, nextpos-1);
+	string name = path.substr(curpos, nextpos-1);
 
-	while (curpos != std::string::npos && name != "") {
+	while (curpos != string::npos && name != "") {
 
 		if (existsObjectWithName(g, name)) {
 			g = g.openGroup(name);
 		} else {
-			std::string msg = std::string("the path ") +path +" does not exist";
-			throw msg.c_str();
+			string msg("The path " + path + " does not exist.");
+			throw std::runtime_error(msg);
 		}
 
-		curpos = nextpos+1;
+		curpos = nextpos + 1;
 		nextpos = path.find_first_of("/", curpos);
-		if ( nextpos != std::string::npos )
+		if (nextpos != string::npos)
 			name = path.substr(curpos, nextpos-curpos);
 		else
 			name = path.substr(curpos);
@@ -54,9 +55,9 @@ H5::Group openPath(H5::H5File& file, const std::string& path) {
 	return g;
 }
 
-cv::Mat readMatrixFloat(const H5::CommonFG& fg, std::string name) {
+cv::Mat readMatrixFloat(const H5::CommonFG& fg, string name) {
 	
-	H5::DataSet ds = fg.openDataSet( name );
+	H5::DataSet ds = fg.openDataSet(name);
 	hsize_t dims[2];
 	ds.getSpace().getSimpleExtentDims(dims, NULL);
 	cv::Mat matrix((int)dims[0], (int)dims[1], CV_32FC1); // r, c?
@@ -65,19 +66,19 @@ cv::Mat readMatrixFloat(const H5::CommonFG& fg, std::string name) {
 
 	return matrix;
 }
-void readMatrixInt(const H5::CommonFG& fg, std::string name, cv::Mat& matrix) {
-	H5::DataSet ds = fg.openDataSet( name ); // ./triangle-list
+void readMatrixInt(const H5::CommonFG& fg, string name, cv::Mat& matrix) {
+	H5::DataSet ds = fg.openDataSet(name); // ./triangle-list
 	hsize_t dims[2];
 	ds.getSpace().getSimpleExtentDims(dims, NULL);
 
 	matrix.resize(dims[0], dims[1]);
 	ds.read(matrix.data, H5::PredType::NATIVE_INT32);
-	if ( matrix.cols != 3 )
-		throw std::runtime_error("Reference reading failed, triangle-list has not 3 indices per entry");
+	if (matrix.cols != 3)
+		throw std::runtime_error("Reference reading failed, triangle-list doesn't have 3 indices per entry.");
 
 }
 
-void readVector(const H5::CommonFG& fg, std::string name, std::vector<float>& vector) {
+void readVector(const H5::CommonFG& fg, string name, std::vector<float>& vector) {
 	H5::DataSet ds = fg.openDataSet( name );
 	hsize_t dims[1];
 	ds.getSpace().getSimpleExtentDims(dims, NULL);
@@ -85,16 +86,16 @@ void readVector(const H5::CommonFG& fg, std::string name, std::vector<float>& ve
 	ds.read(vector.data(), H5::PredType::NATIVE_FLOAT);
 }
 
-std::string readString(const H5::CommonFG& fg, std::string name) {
-	std::string outputString;
+string readString(const H5::CommonFG& fg, string name) {
+	string outputString;
 	H5::DataSet ds = fg.openDataSet(name);
 	ds.read(outputString, ds.getStrType());
 	return outputString;
 }
 
-bool existsObjectWithName(const H5::CommonFG& fg, const std::string& name) {
+bool existsObjectWithName(const H5::CommonFG& fg, const string& name) {
 	for (hsize_t i = 0; i < fg.getNumObjs(); ++i) {
-		std::string objname= 	fg.getObjnameByIdx(i);
+		string objname = fg.getObjnameByIdx(i);
 		if (objname == name) {
 			return true;
 		}
@@ -102,7 +103,7 @@ bool existsObjectWithName(const H5::CommonFG& fg, const std::string& name) {
 	return false;
 }
 
-render::Mesh readReference(std::string filename)
+render::Mesh readReference(string filename)
 {
 	render::Mesh mesh;
 
@@ -114,8 +115,8 @@ render::Mesh readReference(std::string filename)
 	}
 	catch (H5::Exception& e)
 	{
-		std::string msg(std::string("could not open HDF5 file \n") + e.getCDetailMsg());
-		throw msg.c_str();
+		string msg("Could not open HDF5 file: " + e.getDetailMsg());
+		throw std::runtime_error(msg);
 	}
 
 	// make a MM and load both the shape and color models (maybe in another function). For now, we only load the mesh & color info.

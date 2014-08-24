@@ -22,7 +22,10 @@
 namespace morphablemodel {
 	namespace hdf5utils { // TODO: Update the filename to lowercase
 
-H5::H5File openFile(const std::string filename);
+// Note: Hmm, all those methods below aren't used anywhere in our code. Check the code and update the code to use them?
+
+// readonly
+H5::H5File openFile(const std::string& filename);
 H5::Group openPath(H5::H5File& file, const std::string& path);
 
 cv::Mat readMatrixFloat(const H5::CommonFG& fg, std::string name);
@@ -33,6 +36,10 @@ std::string readString(const H5::CommonFG& fg, std::string name);
 bool existsObjectWithName(const H5::CommonFG& fg, const std::string& name);
 
 render::Mesh readReference(std::string filename);
+
+// Below: New:
+
+
 
 	} /* namespace hdf5utils */
 } /* namespace morphablemodel */
