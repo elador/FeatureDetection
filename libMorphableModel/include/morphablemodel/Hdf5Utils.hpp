@@ -33,13 +33,37 @@ void readMatrixInt(const H5::CommonFG& fg, std::string name, cv::Mat& matrix);
 void readVector(const H5::CommonFG& fg, std::string name, std::vector<float>& vector);
 std::string readString(const H5::CommonFG& fg, std::string name);
 
-bool existsObjectWithName(const H5::CommonFG& fg, const std::string& name);
+bool existsObjectWithName(const H5::CommonFG& fg, const std::string& name); // ok
 
 render::Mesh readReference(std::string filename);
 
 // Below: New:
+// Note: Do all those methods leave the DataSet "open", i.e. do we have to call close() on them
+// outside the functions? That wouldn't be so nice?
+// create a new entry for an int in the fg, with the given name, and write the value to it.
+// return the created dataset.
+H5::DataSet writeInt(const H5::CommonFG& fg, const std::string& name, int value);
 
+// create a new entry for a float in the fg, with the given name, and write the value to it.
+// return the created dataset.
+H5::DataSet writeFloat(const H5::CommonFG& fg, const std::string& name, float value);
 
+// at least 1 row and col (no empty matrices), 32FC1, continuous
+H5::DataSet writeMatrixUInt(const H5::CommonFG& fg, const std::string& name, const cv::Mat& matrix);
+H5::DataSet writeMatrixFloat(const H5::CommonFG& fg, const std::string& name, const cv::Mat& matrix);
+H5::DataSet writeMatrixDouble(const H5::CommonFG& fg, const std::string& name, const cv::Mat& matrix);
+
+// cv::Mat: input: Col-vector!
+H5::DataSet writeVectorInt(const H5::CommonFG& fg, const std::string& name, const cv::Mat& vector);
+H5::DataSet writeVectorFloat(const H5::CommonFG& fg, const std::string& name, const cv::Mat& vector);
+H5::DataSet writeVectorDouble(const H5::CommonFG& fg, const std::string& name, const cv::Mat& vector);
+
+H5::DataSet writeArrayInt(const H5::CommonFG& fg, const std::string& name, const std::vector<int>& array);
+
+H5::DataSet writeString(const H5::CommonFG& fg, const std::string& name, const std::string& s);
+
+void writeStringAttribute(const H5::H5Object& fg, const std::string& name, const std::string& s);
+void writeIntAttribute(const H5::H5Object& fg, const std::string& name, int value);
 
 	} /* namespace hdf5utils */
 } /* namespace morphablemodel */

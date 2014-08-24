@@ -561,6 +561,7 @@ void PcaModel::saveAsStatismo(boost::filesystem::path outputFile, PcaModel model
 	// mean, pcaVariance (evals), pcaBasis (normalised). Close group
 	// /shape/representer :
 	// ./reference-mesh/triangle-list, ./reference-mesh/vertex-coordinates
+	//H5::Group fgRef = fg.createGroup("reference-mesh");
 	// /metadata/landmarks
 
 	// Read the mean
