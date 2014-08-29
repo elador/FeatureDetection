@@ -93,6 +93,8 @@ public:
 	 */
 	static PcaModel loadStatismoModel(boost::filesystem::path h5file, ModelType modelType);
 
+	// Note: If a model of the same kind already exists in the file, hdf5 will throw (e.g. when trying to
+	// create a group that already exists).
 	static void saveAsStatismo(boost::filesystem::path outputFile, PcaModel model, PcaModel::ModelType modelType);
 
 	/**

@@ -8,6 +8,8 @@
 
 #include "morphablemodel/Hdf5Utils.hpp"
 
+#include <fstream>
+
 using std::string;
 using cv::Mat;
 
@@ -25,6 +27,23 @@ H5::H5File openFile(const string& filename) {
 	}
 	return file;
 }
+
+H5::H5File openOrCreate(const std::string& filename)
+{
+	std::ifstream ifile(filename);
+	H5::H5File file;
+
+	if (!ifile) {
+		// create it
+		file = H5::H5File(filename.c_str(), H5F_ACC_EXCL);
+	}
+	else {
+		// open it
+		file = H5::H5File(filename.c_str(), H5F_ACC_RDWR);
+	}
+	return file;
+}
+
 
 H5::Group openPath(H5::H5File& file, const string& path) {
 	H5::Group group;
@@ -220,15 +239,15 @@ H5::DataSet writeFloat(const H5::CommonFG& fg, const string& name, float value)
 	return ds;
 }
 
-H5::DataSet writeMatrixUInt(const H5::CommonFG& fg, const string& name, const Mat& matrix)
+H5::DataSet writeMatrixInt(const H5::CommonFG& fg, const string& name, const Mat& matrix)
 {
 	// HDF5 does not like empty matrices (Todo: Check that).
 	if (matrix.rows == 0 || matrix.cols == 0) {
-		string errorMsg("Empty matrix provided to writeMatrixFloat.");
+		string errorMsg("Empty matrix provided to writeMatrixInt.");
 		throw std::runtime_error(errorMsg);
 	}
-	if (matrix.type() != CV_8UC1) {
-		string errorMsg("Given matrix is not of type 1-channel float.");
+	if (matrix.type() != CV_32SC1) {
+		string errorMsg("Given matrix is not of type 1-channel signed integer.");
 		throw std::runtime_error(errorMsg);
 	}
 	if (!matrix.isContinuous()) {
@@ -237,8 +256,8 @@ H5::DataSet writeMatrixUInt(const H5::CommonFG& fg, const string& name, const Ma
 	}
 
 	hsize_t dims[2] = { matrix.rows, matrix.cols };
-	H5::DataSet ds = fg.createDataSet(name, H5::PredType::NATIVE_UINT, H5::DataSpace(2, dims));
-	ds.write(matrix.data, H5::PredType::NATIVE_UINT);
+	H5::DataSet ds = fg.createDataSet(name, H5::PredType::NATIVE_INT32, H5::DataSpace(2, dims));
+	ds.write(matrix.data, H5::PredType::NATIVE_INT32);
 	return ds;
 }
 
@@ -268,11 +287,11 @@ H5::DataSet writeMatrixDouble(const H5::CommonFG& fg, const string& name, const 
 {
 	// HDF5 does not like empty matrices (Todo: Check that).
 	if (matrix.rows == 0 || matrix.cols == 0) {
-		string errorMsg("Empty matrix provided to writeMatrixFloat.");
+		string errorMsg("Empty matrix provided to writeMatrixDouble.");
 		throw std::runtime_error(errorMsg);
 	}
-	if (matrix.type() != CV_32FC1) {
-		string errorMsg("Given matrix is not of type 1-channel float.");
+	if (matrix.type() != CV_64FC1) {
+		string errorMsg("Given matrix is not of type 1-channel double.");
 		throw std::runtime_error(errorMsg);
 	}
 	if (!matrix.isContinuous()) {
@@ -294,8 +313,8 @@ H5::DataSet writeVectorInt(const H5::CommonFG& fg, const string& name, const Mat
 		string errorMsg("Given vector doesn't have 1 column. (Did you supply a column-vector?)");
 		throw std::runtime_error(errorMsg);
 	}
-	if (vector.type() != CV_8SC1) {
-		string errorMsg("Given vector is not of type 1-channel int.");
+	if (vector.type() != CV_32SC1) {
+		string errorMsg("Given vector is not of type 1-channel signed int.");
 		throw std::runtime_error(errorMsg);
 	}
 	if (!vector.isContinuous()) {
@@ -303,8 +322,8 @@ H5::DataSet writeVectorInt(const H5::CommonFG& fg, const string& name, const Mat
 		throw std::runtime_error(errorMsg);
 	}
 	hsize_t dims[1] = { vector.rows };
-	H5::DataSet ds = fg.createDataSet(name, H5::PredType::NATIVE_INT, H5::DataSpace(1, dims));
-	ds.write(vector.data, H5::PredType::NATIVE_INT);
+	H5::DataSet ds = fg.createDataSet(name, H5::PredType::NATIVE_INT32, H5::DataSpace(1, dims));
+	ds.write(vector.data, H5::PredType::NATIVE_INT32);
 	return ds;
 }
 

@@ -38,8 +38,13 @@ bool existsObjectWithName(const H5::CommonFG& fg, const std::string& name); // o
 render::Mesh readReference(std::string filename);
 
 // Below: New:
+H5::H5File openOrCreate(const std::string& filename);
+
 // Note: Do all those methods leave the DataSet "open", i.e. do we have to call close() on them
 // outside the functions? That wouldn't be so nice?
+// The d'tor closes the DataSet. Meaning, if I capture the return value, I _have to_ (!) call
+// close() on it. If I don't capture it, the d'tor takes care of it.
+// Todo: Change them all to return void.
 // create a new entry for an int in the fg, with the given name, and write the value to it.
 // return the created dataset.
 H5::DataSet writeInt(const H5::CommonFG& fg, const std::string& name, int value);
@@ -49,7 +54,7 @@ H5::DataSet writeInt(const H5::CommonFG& fg, const std::string& name, int value)
 H5::DataSet writeFloat(const H5::CommonFG& fg, const std::string& name, float value);
 
 // at least 1 row and col (no empty matrices), 32FC1, continuous
-H5::DataSet writeMatrixUInt(const H5::CommonFG& fg, const std::string& name, const cv::Mat& matrix);
+H5::DataSet writeMatrixInt(const H5::CommonFG& fg, const std::string& name, const cv::Mat& matrix);
 H5::DataSet writeMatrixFloat(const H5::CommonFG& fg, const std::string& name, const cv::Mat& matrix);
 H5::DataSet writeMatrixDouble(const H5::CommonFG& fg, const std::string& name, const cv::Mat& matrix);
 
@@ -58,6 +63,7 @@ H5::DataSet writeVectorInt(const H5::CommonFG& fg, const std::string& name, cons
 H5::DataSet writeVectorFloat(const H5::CommonFG& fg, const std::string& name, const cv::Mat& vector);
 H5::DataSet writeVectorDouble(const H5::CommonFG& fg, const std::string& name, const cv::Mat& vector);
 
+// I think the 'int' type depends on the platform. So we should use a 32-bit int type from cstd... instead.
 H5::DataSet writeArrayInt(const H5::CommonFG& fg, const std::string& name, const std::vector<int>& array);
 
 H5::DataSet writeString(const H5::CommonFG& fg, const std::string& name, const std::string& s);

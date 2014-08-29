@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 
 	morphableModel = morphablemodel::MorphableModel::loadScmModel(inputFilename, path(), path());
 	
-	// Save it!
+	morphablemodel::MorphableModel::saveAsStatismo(outputFilename, morphableModel);
 
 	return 0;
 }

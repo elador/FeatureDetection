@@ -238,6 +238,7 @@ void MorphableModel::saveAsStatismo(path outputFile, MorphableModel model)
 	// save shape mdl
 	PcaModel::saveAsStatismo(outputFile, model.getShapeModel(), PcaModel::ModelType::SHAPE);
 	// save albedo mdl
+	PcaModel::saveAsStatismo(outputFile, model.getColorModel(), PcaModel::ModelType::COLOR);
 	// additional MorphableModel stuff?
 	return;
 }
