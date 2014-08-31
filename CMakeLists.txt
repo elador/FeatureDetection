@@ -77,6 +77,7 @@ add_subdirectory(fittingTools) # Tools for fitting and model-rendering (e.g. com
 add_subdirectory(visualise-landmarks)	# Simple app to read landmarks and images and display them
 add_subdirectory(convert-landmarks)		# Simple app to convert landmarks from one format into another
 add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks and perform an evaluation.
+add_subdirectory(extract-frames)		# Extracts frames from a video, given a specific criteria (e.g. random or IED)
 
 # Face-recognition:
 add_subdirectory(facerecognitionTools) # Tools (e.g. create probe/gallery image-lists)
