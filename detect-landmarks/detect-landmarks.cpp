@@ -42,6 +42,7 @@
 #include "imageio/DefaultNamedLandmarkSource.hpp"
 #include "imageio/SimpleRectLandmarkFormatParser.hpp"
 #include "imageio/PascStillEyesLandmarkFormatParser.hpp"
+#include "imageio/SimpleModelLandmarkFormatParser.hpp"
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/ModelLandmark.hpp"
 
@@ -106,7 +107,7 @@ int main(int argc, char *argv[])
 			("face-initialization,g", po::value<path>(&faceBoxesDirectory),
 				"path to face-boxes or landmarks to initialize the model. Either -f or -g is required.")
 			("landmark-type,t", po::value<string>(&landmarkType),
-				"specify the type of landmarks to load: rect-face-box, PaSC-still-PittPatt-eyes")
+				"specify the type of landmarks to load: rect-face-box, PaSC-still-PittPatt-eyes, SimpleModelLandmark")
 			("output,o", po::value<path>(&outputDirectory)->required(),
 				"Output directory for the result images and landmarks.")
 		;
@@ -247,6 +248,10 @@ int main(int argc, char *argv[])
 		}
 		else if (boost::iequals(landmarkType, "PaSC-still-PittPatt-eyes")) {
 			faceboxSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(nullptr, ".txt", GatherMethod::SEPARATE_FILES, vector<path>{ faceBoxesDirectory }), make_shared<PascStillEyesLandmarkFormatParser>());
+			alignToFacebox = false;
+		}
+		else if (boost::iequals(landmarkType, "SimpleModelLandmark")) {
+			faceboxSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".txt", GatherMethod::ONE_FILE_PER_IMAGE_SAME_DIR, vector<path>{ }), make_shared<SimpleModelLandmarkFormatParser>());
 			alignToFacebox = false;
 		}
 		else {
