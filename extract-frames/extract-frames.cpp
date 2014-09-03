@@ -36,6 +36,7 @@
 #include <iostream>
 #include <string>
 #include <random>
+#include <iomanip>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -49,6 +50,11 @@
 #include "boost/algorithm/string.hpp"
 #include "boost/filesystem.hpp"
 
+#include "imageio/LandmarkFileGatherer.hpp"
+#include "imageio/DefaultNamedLandmarkSource.hpp"
+#include "imageio/PascVideoEyesLandmarkFormatParser.hpp"
+#include "imageio/SimpleModelLandmarkSink.hpp"
+
 #include "logging/LoggerFactory.hpp"
 
 namespace po = boost::program_options;
@@ -61,6 +67,8 @@ using std::string;
 using std::cout;
 using std::endl;
 using std::make_shared;
+using std::shared_ptr;
+using std::vector;
 
 template<class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
@@ -92,7 +100,7 @@ int main(int argc, char *argv[])
 			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
 				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
 			("input,i", po::value<path>(&inputFilename)->required(),
-				"input filename")
+				"input video")
 			//("landmarks,l", po::value<path>(&inputLandmarks)->required(),
 			//	"input landmarks")
 			//("landmark-type,t", po::value<string>(&landmarkType)->required(),
@@ -100,7 +108,7 @@ int main(int argc, char *argv[])
 			//("landmark-mappings,m", po::value<path>(&landmarkMappings),
 			//	"an optional mapping-file that maps from the input landmarks to landmark identifiers in the model's format")
 			("method,m", po::value<string>(&extractionMethod)->required(),
-				"how to extract the frame(s): first, middle, random")
+				"how to extract the frame(s): first, middle, random, maxFaceWidth")
 			("output,o", po::value<path>(&outputPath)->default_value("."),
 				"path to an output folder")
 		;
@@ -139,22 +147,41 @@ int main(int argc, char *argv[])
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
+	// Read the PaSC video landmarks:
+	shared_ptr<imageio::NamedLandmarkSource> landmarkSource;
+	vector<path> groundtruthDirs{ path(R"(C:\Users\Patrik\Documents\GitHub\data\PaSC\pasc_video_pittpatt_detections_debug.csv)") };
+	shared_ptr<imageio::LandmarkFormatParser> landmarkFormatParser;
+	string groundtruthType = "PaSC-still-PittPatt-eyes";
+	if (boost::iequals(groundtruthType, "PaSC-still-PittPatt-eyes")) { // Todo/Note: Not sure this is working?
+		landmarkFormatParser = make_shared<imageio::PascVideoEyesLandmarkFormatParser>();
+		landmarkSource = make_shared<imageio::DefaultNamedLandmarkSource>(imageio::LandmarkFileGatherer::gather(nullptr, ".csv", imageio::GatherMethod::SEPARATE_FILES, groundtruthDirs), landmarkFormatParser);
+	}
+	else {
+		appLogger.error("Invalid ground-truth landmarks type.");
+		return EXIT_FAILURE;
+	}
+
+	// Output landmarks for the extracted frame:
+	imageio::SimpleModelLandmarkSink landmarkSink;
+
 	// Create the output directory if it doesn't exist yet
 	if (!boost::filesystem::exists(outputPath)) {
 		boost::filesystem::create_directory(outputPath);
 	}
-	
+
 	cv::VideoCapture cap(inputFilename.string());
-	if (!cap.isOpened())  // check if we succeeded
+	if (!cap.isOpened())
 		return EXIT_FAILURE;
 
+	appLogger.info("Extracting frame using method: " + extractionMethod);
+
+	int frameToExtract;
 	if (extractionMethod == "first" || extractionMethod == "middle" || extractionMethod == "random") {
 		int frameCount = static_cast<int>(cap.get(CV_CAP_PROP_FRAME_COUNT));
 		if (frameCount == 0) {
 			// error, property not supported.
 			return EXIT_FAILURE;
 		}
-		int frameToExtract;
 		if (extractionMethod == "first") {
 			frameToExtract = 0;
 		}
@@ -166,17 +193,50 @@ int main(int argc, char *argv[])
 			std::mt19937 engine{};
 			frameToExtract = rndInt(engine);
 		}
-
-		Mat img;
-		cap.set(CV_CAP_PROP_POS_FRAMES, frameToExtract);
-		cap >> img;
-		path fn = outputPath / inputFilename.filename();
-		fn.replace_extension(std::to_string(frameToExtract) + ".png");
-		cv::imwrite(fn.string(), img);
 	}
 	
+	if (extractionMethod == "maxFaceWidth") {
+		Mat img;
+		int currentFrame = 0;
+		vector<double> interEyeDistances;
+		while (cap.read(img)) {
+			currentFrame++; // frame numbering in the CSV starts with 1
+			std::ostringstream ss;
+			ss << std::setw(3) << std::setfill('0') << currentFrame;
+			string frameName = inputFilename.stem().string() + "/" + inputFilename.stem().string() + "-" + ss.str() + ".jpg";
+			imageio::LandmarkCollection landmarks = landmarkSource->get(frameName);
+			if (landmarks.isEmpty()) {
+				interEyeDistances.emplace_back(0.0);
+			}
+			else {
+				auto le = landmarks.getLandmark("le");
+				auto re = landmarks.getLandmark("re");
+				interEyeDistances.emplace_back(cv::norm(le->getPosition2D(), re->getPosition2D(), cv::NORM_L2));
+			}
+		}
+		auto result = std::max_element(begin(interEyeDistances), end(interEyeDistances));
+		frameToExtract = std::distance(begin(interEyeDistances), result);
+	}
 
+	// Get and write the frame image:
+	Mat img;
+	cap.set(CV_CAP_PROP_POS_FRAMES, frameToExtract); // starts at 0
+	cap >> img;
+	path fn = outputPath / inputFilename.filename();
+	frameToExtract++; // PaSC starts naming them from 1
+	fn.replace_extension(std::to_string(frameToExtract) + ".png");
+	cv::imwrite(fn.string(), img);
 
+	// Get and write the frames landmarks:
+	std::ostringstream ss;
+	ss << std::setw(3) << std::setfill('0') << frameToExtract;
+	string frameName = inputFilename.stem().string() + "/" + inputFilename.stem().string() + "-" + ss.str() + ".jpg";
+	imageio::LandmarkCollection landmarks;
+	// we only want the eyes, not the face (not a ModelLandmark):
+	landmarks.insert(landmarkSource->get(frameName).getLandmark("le"));
+	landmarks.insert(landmarkSource->get(frameName).getLandmark("re"));
+	fn.replace_extension(".txt");
+	landmarkSink.add(landmarks, fn);
 
 	appLogger.info("Finished extracting frame(s).");
 

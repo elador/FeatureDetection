@@ -58,6 +58,7 @@ set(HEADERS
 	include/imageio/OrderedLabeledImageSource.hpp
 	include/imageio/OrderedLandmarkSink.hpp
 	include/imageio/PascStillEyesLandmarkFormatParser.hpp
+	include/imageio/PascVideoEyesLandmarkFormatParser.hpp
 	include/imageio/RectLandmark.hpp
 	include/imageio/RectLandmarkSink.hpp
 	include/imageio/RepeatingFileImageSource.hpp
@@ -95,6 +96,7 @@ set(SOURCE
 	src/imageio/NamedLabeledImageSource.cpp
 	src/imageio/OrderedLabeledImageSource.cpp
 	src/imageio/PascStillEyesLandmarkFormatParser.cpp
+	src/imageio/PascVideoEyesLandmarkFormatParser.cpp
 	src/imageio/RectLandmark.cpp
 	src/imageio/RectLandmarkSink.cpp
 	src/imageio/RepeatingFileImageSource.cpp
