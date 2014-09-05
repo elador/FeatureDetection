@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm); // style(po::command_line_style::unix_style | po::command_line_style::allow_long_disguise)
 		if (vm.count("help")) {
-			cout << "Usage: extract-frames [options]\n";
+			cout << "Usage: extract-frames [options]" << endl;
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
@@ -149,10 +149,10 @@ int main(int argc, char *argv[])
 
 	// Read the PaSC video landmarks:
 	shared_ptr<imageio::NamedLandmarkSource> landmarkSource;
-	vector<path> groundtruthDirs{ path(R"(C:\Users\Patrik\Documents\GitHub\data\PaSC\pasc_video_pittpatt_detections_debug.csv)") };
+	vector<path> groundtruthDirs{ path(R"(C:\Users\Patrik\Documents\GitHub\data\PaSC\pasc_video_pittpatt_detections_debug2.csv)") };
 	shared_ptr<imageio::LandmarkFormatParser> landmarkFormatParser;
-	string groundtruthType = "PaSC-still-PittPatt-eyes";
-	if (boost::iequals(groundtruthType, "PaSC-still-PittPatt-eyes")) { // Todo/Note: Not sure this is working?
+	string groundtruthType = "PaSC-video-PittPatt-detections";
+	if (boost::iequals(groundtruthType, "PaSC-video-PittPatt-detections")) { // Todo/Note: Not sure this is working?
 		landmarkFormatParser = make_shared<imageio::PascVideoEyesLandmarkFormatParser>();
 		landmarkSource = make_shared<imageio::DefaultNamedLandmarkSource>(imageio::LandmarkFileGatherer::gather(nullptr, ".csv", imageio::GatherMethod::SEPARATE_FILES, groundtruthDirs), landmarkFormatParser);
 	}
@@ -215,6 +215,12 @@ int main(int argc, char *argv[])
 			}
 		}
 		auto result = std::max_element(begin(interEyeDistances), end(interEyeDistances));
+		if (*result == 0.0) {
+			// The only maximum we could find is 0.0. It means we don't have any landmarks at all for this video.
+			appLogger.info("No landmarks found for this video - doing nothing.");
+			return EXIT_SUCCESS;
+
+		}
 		frameToExtract = std::distance(begin(interEyeDistances), result);
 	}
 
