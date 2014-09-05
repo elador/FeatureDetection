@@ -168,7 +168,7 @@ public:
 				int borderBottom = (y + patchWidthHalf) >= image.rows ? std::abs(image.rows - (y + patchWidthHalf)) : 0;
 				Mat extendedImage = image.clone();
 				cv::copyMakeBorder(extendedImage, extendedImage, borderTop, borderBottom, borderLeft, borderRight, cv::BORDER_CONSTANT, cv::Scalar(0));
-				cv::Rect roi((x - patchWidthHalf) + borderLeft, (y - patchWidthHalf) + borderRight, patchWidthHalf * 2, patchWidthHalf * 2); // Rect: x y w h. x and y are top-left corner.
+				cv::Rect roi((x - patchWidthHalf) + borderLeft, (y - patchWidthHalf) + borderTop, patchWidthHalf * 2, patchWidthHalf * 2); // Rect: x y w h. x and y are top-left corner.
 				roiImg = extendedImage(roi).clone(); // clone because we need a continuous memory block
 			}
 			else {
