@@ -205,19 +205,26 @@ int main(int argc, char *argv[])
 	outputFileInvisible << headerLine.str();
 
 	int numVertices = morphableModel.getShapeModel().getDataDimension() / 3;
-	std::uniform_int_distribution<int> distribution(0, numVertices-1);
-	std::mt19937 engine; // Mersenne twister MT19937
-	//std::random_device rd;
-	//engine.seed(rd());
-	engine.seed();
-	auto randIntVtx = std::bind(distribution, engine);
+	std::uniform_int_distribution<> distribution(0, numVertices - 1);
+	std::mt19937 engineVtx; // Mersenne twister MT19937
+	const auto vtxSeed = std::random_device()();
+	engineVtx.seed(vtxSeed);
+	auto randIntVtx = std::bind(distribution, engineVtx);
 
+	const auto yawSeed = std::random_device()();
+	std::mt19937 engineYaw; engineYaw.seed(yawSeed);
 	std::uniform_real_distribution<> distrRandYaw(-55, 55);
-	auto randRealYaw = std::bind(distrRandYaw, engine);
+	auto randRealYaw = std::bind(distrRandYaw, engineYaw);
+
+	const auto pitchSeed = std::random_device()();
+	std::mt19937 enginePitch; enginePitch.seed(pitchSeed);
 	std::uniform_real_distribution<> distrRandPitch(-40, 40);
-	auto randRealPitch = std::bind(distrRandPitch, engine);
-	std::uniform_real_distribution<> distrRandRoll(0, 0); // old: -20, 20
-	auto randRealRoll = std::bind(distrRandRoll, engine);
+	auto randRealPitch = std::bind(distrRandPitch, enginePitch);
+
+	const auto rollSeed = std::random_device()();
+	std::mt19937 engineRoll; engineRoll.seed(rollSeed);
+	std::uniform_real_distribution<> distrRandRoll(-0, 0); // old: -20, 20
+	auto randRealRoll = std::bind(distrRandRoll, engineRoll);
 	
 	int generatedSamples = 0;
 	int samplesToGenerate = 1000000;
