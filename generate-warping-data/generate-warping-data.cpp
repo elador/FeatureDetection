@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
 
 	string verboseLevelConsole;
 	path configFilename;
+	int visibleSamplesToGenerate;
     path outputDirectory;
 	
 	try {
@@ -88,6 +89,8 @@ int main(int argc, char *argv[])
 				"specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
 			("model,m", po::value<path>(&configFilename)->required(),
 				"path to a config file that specifies which Morphable Model to load")
+			("numsamples,n", po::value<int>(&visibleSamplesToGenerate)->default_value(1000),
+				"number of visible samples to generate")
             ("output,o", po::value<path>(&outputDirectory)->default_value("."),
                 "directory to write the output files to")
 		;
@@ -227,9 +230,8 @@ int main(int argc, char *argv[])
 	auto randRealRoll = std::bind(distrRandRoll, engineRoll);
 	
 	int generatedSamples = 0;
-	int samplesToGenerate = 1000000;
 	int cnt = 0;
-	while (generatedSamples < samplesToGenerate) {
+	while (generatedSamples < visibleSamplesToGenerate) {
 		++cnt;
 		std::cout << generatedSamples << std::endl;
 
@@ -344,7 +346,9 @@ int main(int argc, char *argv[])
 			outputFileInvisible << yaw << " " << pitch << " " << roll << " " << randomVertex << std::endl;
 		}
         //imwrite("out/" + lexical_cast<string>(cnt) + "_img.png", colorbuffer);
-		++generatedSamples;
+		if (isVisible) {
+			++generatedSamples;
+		}
 	}
 
 	outputFileVisible.close();
