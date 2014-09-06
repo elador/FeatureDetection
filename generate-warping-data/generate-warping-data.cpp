@@ -1,3 +1,5 @@
+// -f data_3dmm_landmarks_random_sd0.5_batch7_1000k
+
 // For memory leak debugging: http://msdn.microsoft.com/en-us/library/x98tx3cf(v=VS.100).aspx
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
@@ -79,6 +81,7 @@ int main(int argc, char *argv[])
 	path configFilename;
 	int visibleSamplesToGenerate;
     path outputDirectory;
+	path outputFilename;
 	
 	try {
 		po::options_description desc("Allowed options");
@@ -89,10 +92,12 @@ int main(int argc, char *argv[])
 				"specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
 			("model,m", po::value<path>(&configFilename)->required(),
 				"path to a config file that specifies which Morphable Model to load")
-			("numsamples,n", po::value<int>(&visibleSamplesToGenerate)->default_value(1000),
+			("num-samples,n", po::value<int>(&visibleSamplesToGenerate)->default_value(1000),
 				"number of visible samples to generate")
             ("output,o", po::value<path>(&outputDirectory)->default_value("."),
                 "directory to write the output files to")
+			("output-filename,f", po::value<path>(&outputFilename)->default_value("samples"),
+				"basename of the output files that will be written")
 		;
 
 		po::variables_map vm;
@@ -198,12 +203,14 @@ int main(int argc, char *argv[])
 	headerLine << "frontal_rndvtx_x " << "frontal_rndvtx_y " << "frontal_lel_x " << "frontal_lel_y " << "frontal_ler_x " << "frontal_ler_y " << "frontal_rel_x " << "frontal_rel_y " << "frontal_rer_x " << "frontal_rer_y " << "frontal_ml_x " << "frontal_ml_y " << "frontal_mr_x " << "frontal_mr_y " << "frontal_bn_x " << "frontal_bn_y " << "frontal_nt_x " << "frontal_nt_y " << "frontal_ns_x " << "frontal_ns_y " << "frontal_la_x " << "frontal_la_y " << "frontal_ra_x " << "frontal_ra_y " << "pose_rndvtx_x " << "pose_rndvtx_y " << "pose_lel_x " << "pose_lel_y " << "pose_ler_x " << "pose_ler_y " << "pose_rel_x " << "pose_rel_y " << "pose_rer_x " << "pose_rer_y " << "pose_ml_x " << "pose_ml_y " << "pose_mr_x " << "pose_mr_y " << "pose_bn_x " << "pose_bn_y " << "pose_nt_x " << "pose_nt_y " << "pose_ns_x " << "pose_ns_y " << "pose_la_x " << "pose_la_y " << "pose_ra_x " << "pose_ra_y " << "yaw " << "pitch " << "roll " << "rndvtx_id" << std::endl;
 
 	std::ofstream outputFileVisible;
-    path filenameVisible = outputDirectory / "data_3dmm_landmarks_random_sd0.5_batch7_1000k_visible.txt";
+	path filenameVisible = outputDirectory / outputFilename;
+	filenameVisible += "_visible.txt";
     outputFileVisible.open(filenameVisible.string());
 	outputFileVisible << headerLine.str();
 	
 	std::ofstream outputFileInvisible;
-    path filenameInvisible = outputDirectory / "data_3dmm_landmarks_random_sd0.5_batch7_1000k_invisible.txt";
+	path filenameInvisible = outputDirectory / outputFilename;
+	filenameInvisible += "_invisible.txt";
     outputFileInvisible.open(filenameInvisible.string());
 	outputFileInvisible << headerLine.str();
 
