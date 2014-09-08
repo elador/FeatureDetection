@@ -30,7 +30,8 @@ namespace morphablemodel {
 
 PcaModel::PcaModel()
 {
-	engine.seed();
+	const auto seed = std::random_device()();
+	engine.seed(seed);
 }
 
 PcaModel PcaModel::loadStatismoModel(path h5file, PcaModel::ModelType modelType)
