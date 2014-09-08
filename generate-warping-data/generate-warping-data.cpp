@@ -204,13 +204,13 @@ int main(int argc, char *argv[])
 
 	std::ofstream outputFileVisible;
 	path filenameVisible = outputDirectory / outputFilename;
-	filenameVisible += "_visible.txt";
+	filenameVisible += path("_visible.txt");
     outputFileVisible.open(filenameVisible.string());
 	outputFileVisible << headerLine.str();
 	
 	std::ofstream outputFileInvisible;
 	path filenameInvisible = outputDirectory / outputFilename;
-	filenameInvisible += "_invisible.txt";
+	filenameInvisible += path("_invisible.txt");
     outputFileInvisible.open(filenameInvisible.string());
 	outputFileInvisible << headerLine.str();
 
