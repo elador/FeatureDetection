@@ -80,6 +80,7 @@ add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks 
 add_subdirectory(extract-frames)		# Extracts frames from a video, given a specific criteria (e.g. random or IED)
 
 # Face-recognition:
+add_subdirectory(pasc-video-matching)	# Runs the whole pipeline on the PaSC video-video experiment
 add_subdirectory(facerecognitionTools) # Tools (e.g. create probe/gallery image-lists)
 add_subdirectory(frRunCogExp)		# App for doing face recognition tests with a gallery and probe images
 add_subdirectory(frDbTool)		# App for managing (creating and populating) the sqlite-database used for face-recognition experiments
