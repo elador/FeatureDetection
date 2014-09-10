@@ -35,10 +35,10 @@ public:
 	boost::optional<float> roll;
 	boost::optional<float> pitch;
 	boost::optional<float> yaw;
-	std::string session{""};
-	std::string lighting{""};
-	std::string expression{""};
-	std::string other{""};
+	std::string session;
+	std::string lighting;
+	std::string expression;
+	std::string other;
 
 	/**
 	* Desc.

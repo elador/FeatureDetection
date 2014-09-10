@@ -5,7 +5,7 @@
  *      Author: Patrik Huber
  *
  * Example:
- * pasc-video-matching -c ../../FeatureDetection/pasc-video-matching/share/configs/default.cfg -s ../../data/pasc/sigset.xml -d ../../data/pasc/videos -m ../../FeatureDetection/libImageIO/share/landmarkMappings/ibug2did.txt -o ../../out/fitter/
+ * pasc-video-matching -c ../../FeatureDetection/pasc-video-matching/share/configs/default.cfg -s ../../data/PaSC/sigset.xml -d ../../data/PaSC/video
  *   
  */
 
@@ -36,6 +36,8 @@
 #include "render/SoftwareRenderer.hpp"
 #include "render/MeshUtils.hpp"
 #include "render/utils.hpp"
+
+#include "facerecognition/utils.hpp"
 
 #include "imageio/ImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
@@ -133,6 +135,21 @@ int main(int argc, char *argv[])
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 	appLogger.debug("Using config: " + configFilename.string());
+
+	// Read the sigset
+	// For every video (not pair, because a video can be used more than once), spawn a thread (thread pool? max?)
+	//	Preprocess the video, e.g. extract frames (optional)
+	// We're now left with one or more frames or the whole video
+	// For every video:
+	//	LMDet/Fitting now: Input: This. Output: One pose-normalised frontal image.
+	//	// Maybe combine both to 1 loop. After all they might be coupled?
+	// For every pair:
+	//	Launch a thread, as above
+	//	Match the two pose-normalised images (Note: Allow the possibility to only pose-normalise one image)
+	//	Output: Score.
+	// Write all scores to the MySQL DB or a BEE matrix
+
+	auto sigset = facerecognition::utils::readSigset(sigsetFilename);
 
 	
 	// Read the config file
