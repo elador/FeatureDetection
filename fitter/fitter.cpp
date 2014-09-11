@@ -76,6 +76,7 @@
 #include "imageio/IbugLandmarkFormatParser.hpp"
 #include "imageio/DidLandmarkFormatParser.hpp"
 #include "imageio/MuctLandmarkFormatParser.hpp"
+#include "imageio/SimpleModelLandmarkFormatParser.hpp"
 #include "imageio/LandmarkMapper.hpp"
 
 #include "logging/LoggerFactory.hpp"
@@ -265,8 +266,11 @@ int main(int argc, char *argv[])
 	}
 	else if (boost::iequals(landmarkType, "muct76-opencv")) {
 		landmarkFormatParser = make_shared<MuctLandmarkFormatParser>();
-		//landmarksFileExtension = ".did";
 		landmarksFileExtension = ".csv";
+	}
+	else if (boost::iequals(landmarkType, "SimpleModelLandmark")) {
+		landmarkFormatParser = make_shared<SimpleModelLandmarkFormatParser>();
+		landmarksFileExtension = ".txt";
 	}
 	else {
 		cout << "Error: Invalid ground truth type." << endl;

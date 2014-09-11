@@ -27,7 +27,7 @@ namespace facerecognition {
 	namespace utils {
 
 /**
- * Desc.
+ * Reads in a record list from a boost ptree file... Todo
  *
  * @param[in] in Todo
  * @return Todo.

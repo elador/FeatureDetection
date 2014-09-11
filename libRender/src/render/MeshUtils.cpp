@@ -398,6 +398,22 @@ Mat extractTexture(Mesh mesh, Mat mvpMatrix, int viewportWidth, int viewportHeig
 		float src_tri_max_x = std::max(srcTri[0].x, std::max(srcTri[1].x, srcTri[2].x));
 		float src_tri_min_y = std::min(srcTri[0].y, std::min(srcTri[1].y, srcTri[2].y));
 		float src_tri_max_y = std::max(srcTri[0].y, std::max(srcTri[1].y, srcTri[2].y));
+		// Fix out of range crash when a triangle is (partially?) outside the image borders:
+		//Mat roiImg; // Not finished yet!
+		if (src_tri_min_x < 0 || src_tri_min_y < 0 || src_tri_max_x >= image.cols || src_tri_max_y >= image.rows) {
+			continue;
+		/*	// The feature extraction location is too far near a border. We extend the image (add a black canvas)
+			// and then extract from this larger image.
+			int borderLeft = (x - patchWidthHalf) < 0 ? std::abs(x - patchWidthHalf) : 0; // Our x and y are center.
+			int borderTop = (y - patchWidthHalf) < 0 ? std::abs(y - patchWidthHalf) : 0;
+			int borderRight = (x + patchWidthHalf) >= image.cols ? std::abs(image.cols - (x + patchWidthHalf)) : 0;
+			int borderBottom = (y + patchWidthHalf) >= image.rows ? std::abs(image.rows - (y + patchWidthHalf)) : 0;
+			Mat extendedImage = image.clone();
+			cv::copyMakeBorder(extendedImage, extendedImage, borderTop, borderBottom, borderLeft, borderRight, cv::BORDER_CONSTANT, cv::Scalar(0));
+			cv::Rect roi((x - patchWidthHalf) + borderLeft, (y - patchWidthHalf) + borderTop, patchWidthHalf * 2, patchWidthHalf * 2); // Rect: x y w h. x and y are top-left corner.
+			roiImg = extendedImage(roi).clone(); // clone because we need a continuous memory block
+		*/
+		}
 
 		Mat inputImageRoi = image.rowRange(cvFloor(src_tri_min_y), cvCeil(src_tri_max_y)).colRange(cvFloor(src_tri_min_x), cvCeil(src_tri_max_x)); // We round down and up. ROI is possibly larger. But wrong pixels get thrown away later when we check if the point is inside the triangle? Correct?
 		srcTri[0] -= Point2f(src_tri_min_x, src_tri_min_y);
