@@ -78,6 +78,7 @@ add_subdirectory(visualise-landmarks)	# Simple app to read landmarks and images 
 add_subdirectory(convert-landmarks)		# Simple app to convert landmarks from one format into another
 add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks and perform an evaluation.
 add_subdirectory(extract-frames)		# Extracts frames from a video, given a specific criteria (e.g. random or IED)
+add_subdirectory(train-frame-extract-nnet)	# Training of learning-based best-frame-extraction
 
 # Face-recognition:
 add_subdirectory(pasc-video-matching)	# Runs the whole pipeline on the PaSC video-video experiment
