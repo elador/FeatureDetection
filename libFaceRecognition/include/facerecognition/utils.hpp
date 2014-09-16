@@ -27,6 +27,16 @@ namespace facerecognition {
 	namespace utils {
 
 /**
+ * Reads in a sigset from the PaSC database.
+ * It is probably the usual format used by NIST/BEE.
+ *
+ * @param[in] in Filename to a PaSC .xml sigset
+ * @return A vector of all the entries in the sigset..
+ * (Todo proper doxygen) Throws a std::runtime_error when the xml can't be read by the parser.
+ */
+std::vector<FaceRecord> readPascSigset(boost::filesystem::path filename);
+
+/**
  * Reads in a record list from a boost ptree file... Todo
  *
  * @param[in] in Todo
