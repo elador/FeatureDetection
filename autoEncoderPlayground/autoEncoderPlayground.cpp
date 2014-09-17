@@ -421,8 +421,30 @@ int main(int argc, char *argv[])
 	
 	// Randomly initialise the parameters:
 	theta = initializeParameters(hiddenSize, visibleSize);
-
 	// we need a LBFGS, CG, SGD or LM optimiser now...
-	
+	// Just use a simple, stupid gradient descent for now: (tiny-cnn use "only" a simple SGD too)
+	for (int i = 0; i < 300; ++i) {
+		std::tie(cost, grad) = sparseAutoencoderCost(theta, visibleSize, hiddenSize, lambda, sparsityParam, beta, data);
+		theta -= 0.003f * grad; // tiny-cnn use 0.003 ("learning rate")
+	}
+
+	Mat W1img = theta.rowRange(0, 25 * 64).reshape(0, 25);
+	W1img = W1img.t();
+	W1img = W1img - cv::mean(W1img)[0];
+	int L = W1img.rows; // 64
+	int M = W1img.cols; // 25
+	int size = std::sqrt(L);
+	int n = std::sqrt(M); // breaks for dimensions that don't have a integer squareroot. see display_network.m code
+	int m = n;
+	// we got 5 * 5 = 25 weights to visualise
+	// each weight is a 8 x 8 patch
+	int k = 0;
+	for (int i = 0; i < m; ++i) {
+		for (int j = 0; j < n; ++j) {
+			// every col of A is an image
+			Mat currImg = W1img.col(k).clone().reshape(0, 8);
+			++k;
+		}
+	}
 	return 0;
 }
