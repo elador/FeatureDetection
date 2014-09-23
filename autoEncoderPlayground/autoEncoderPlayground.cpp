@@ -247,10 +247,14 @@ cv::Mat computeNumericalGradient(F J, cv::Mat theta)
 std::pair<float, cv::Mat> sparseAutoencoderCost(cv::Mat theta, int visibleSize, int hiddenSize, float lambda, float sparsityParam, float beta, cv::Mat data)
 {
 	// unroll the parameter-vector:
-	Mat W1 = theta.rowRange(0, 25 * 64).reshape(0, 25);
-	Mat W2 = theta.rowRange(25 * 64, 25 * 64 * 2).reshape(0, 64);
-	Mat b1 = theta.rowRange(25 * 64 * 2, 25 * 64 * 2 + 25);
-	Mat b2 = theta.rowRange(25 * 64 * 2 + 25, 25 * 64 * 2 + 25 + 64);
+	int vs = visibleSize;
+	int hs = hiddenSize;
+	// We have to do the reshape of W1 and W2 the other way round than in Matlab, e.g. use the other dimension and then transpose.
+	// Because Matlab reshapes by filling the columns. First column gets filled, then second, ... OpenCV fills up the rows of the new matrix first.
+	Mat W1 = theta.rowRange(0, hs * vs).reshape(0, vs).t();
+	Mat W2 = theta.rowRange(hs * vs, hs * vs * 2).reshape(0, hs).t();
+	Mat b1 = theta.rowRange(hs * vs * 2, hs * vs * 2 + hs);
+	Mat b2 = theta.rowRange(hs * vs * 2 + hs, hs * vs * 2 + hs + vs);
 
 	float Jcost = 0.0f;
 	float Jweight = 0.0f;
@@ -375,15 +379,15 @@ int main(int argc, char *argv[])
 	}
 	
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Loggers->getLogger("autoEncoderPlayground").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Logger appLogger = Loggers->getLogger("autoEncoderPlayground");
+	Loggers->getLogger("SAE").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Logger appLogger = Loggers->getLogger("SAE");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 	
 	path imagesroot(R"(C:\Users\Patrik\Documents\GitHub\FeatureDetection\autoEncoderPlayground\share\data\)");
 
-	int visibleSize = 8 * 8;   // number of input units
-	int hiddenSize = 25;     // number of hidden units
+	int visibleSize = 8*8; // 2 * 2;   // number of input units
+	int hiddenSize = 25; // 2;     // number of hidden units
 	float sparsityParam = 0.01f;   // desired average activation of the hidden units. rho
 	float lambda = 0.0001f;     // weight decay parameter
 	float beta = 3.0f;            // weight of sparsity penalty term
@@ -396,6 +400,18 @@ int main(int argc, char *argv[])
 
 	// randomly sample patches from the images, i.e. prepare the input to the AE training
 	vector<Mat> features = generatePatches(images, 8, 10000); // input. 8x8 patches, 10000.
+	
+	// Testing:
+/*	Mat asdf = features[0];
+	features.clear();
+	Mat test(4, 1, CV_32FC1);
+	test.at<float>(0, 0) = 0.3487f; // -0.1;
+	test.at<float>(1, 0) = 0.6715f; // 0.3;
+	test.at<float>(2, 0) = 0.5101f; // 0.1;
+	test.at<float>(3, 0) = 0.4697f; // 0.05;
+	features.push_back(test);*/
+	// End testing
+
 	features = normalizeData(features); // well, some strange normalization to [0.1, 0.9], mean/sdev normalization etc... tiny-cnn seems to do the 0.1, 0.9 thing too? (even 0.8?)
 
 	Mat theta; ///< These are all our weights (including bias-terms) concatenated to a column-vector. 
@@ -412,6 +428,10 @@ int main(int argc, char *argv[])
 
 	float cost;
 	Mat grad;
+	// Test:
+	//Mat theta_t = (cv::Mat_<float>(22, 1) << -0.8847, -0.5834, 0.0299, 0.6047, -0.0473, 0.0309, -0.6009, 0.4323, -0.5413, 0.3190, -0.4729, 0.6570, 0.6836, 0.0218, -0.7288, -0.3234, 0, 0, 0, 0, 0, 0);
+	 
+
 	std::tie(cost, grad) = sparseAutoencoderCost(theta, visibleSize, hiddenSize, lambda, sparsityParam, beta, data);
 	// Todo: Test this with a smaller model. I.e. 10 training examples, 3 hidden units.
 	//auto test = std::bind(sparseAutoencoderCost, std::placeholders::_1, visibleSize, hiddenSize, lambda, sparsityParam, beta, data);
@@ -423,28 +443,46 @@ int main(int argc, char *argv[])
 	theta = initializeParameters(hiddenSize, visibleSize);
 	// we need a LBFGS, CG, SGD or LM optimiser now...
 	// Just use a simple, stupid gradient descent for now: (tiny-cnn use "only" a simple SGD too)
-	for (int i = 0; i < 300; ++i) {
+	for (int i = 0; i < 5000; ++i) {
 		std::tie(cost, grad) = sparseAutoencoderCost(theta, visibleSize, hiddenSize, lambda, sparsityParam, beta, data);
-		theta -= 0.003f * grad; // tiny-cnn use 0.003 ("learning rate")
+		theta -= 0.05f * grad; // tiny-cnn use 0.003 ("learning rate")
+		appLogger.info("Iter: " + std::to_string(i) + "; Cost: " + std::to_string(cost) + "; ||g||^2: " + std::to_string(cv::norm(grad, cv::NORM_L2)));
 	}
 
-	Mat W1img = theta.rowRange(0, 25 * 64).reshape(0, 25);
+	// same as in cost-func, reshape "the other way", col-wise
+	Mat W1img = theta.rowRange(0, hiddenSize * visibleSize).reshape(0, visibleSize).t();
 	W1img = W1img.t();
+	auto a = cv::mean(W1img)[0];
 	W1img = W1img - cv::mean(W1img)[0];
 	int L = W1img.rows; // 64
 	int M = W1img.cols; // 25
 	int size = std::sqrt(L);
-	int n = std::sqrt(M); // breaks for dimensions that don't have a integer squareroot. see display_network.m code
+	int n = std::sqrt(M); // breaks for dimensions that don't have a integer square root. see display_network.m code
 	int m = n;
 	// we got 5 * 5 = 25 weights to visualise
 	// each weight is a 8 x 8 patch
+
+	Mat array = -Mat::ones(1 + m * (size + 1), 1 + n * (size + 1), CV_32FC1);
+
 	int k = 0;
 	for (int i = 0; i < m; ++i) {
 		for (int j = 0; j < n; ++j) {
 			// every col of A is an image
-			Mat currImg = W1img.col(k).clone().reshape(0, 8);
+			Mat tmp = cv::abs(W1img.col(k));
+			double minVal, maxVal;
+			cv::minMaxLoc(tmp, &minVal, &maxVal);
+			float clim = maxVal;
+			//Mat currImg = W1img.col(k).clone().reshape(0, 8);
+			Mat arrayRangeThisImg = array.colRange(1 + i*(size + 1), 1 + i*(size + 1) + size).rowRange(1 + j*(size + 1), 1 + j*(size + 1) + size);
+			Mat asdf = W1img.col(k).clone().reshape(1, size).t(); // We also need to transpose here I think, take the data row-wise
+			asdf = asdf / clim;
+			asdf.copyTo(arrayRangeThisImg);
 			++k;
 		}
 	}
+	cv::namedWindow("SAE");
+	cv::resize(array, array, cv::Size(250, 250));
+	cv::imshow("SAE", array);
+	cv::waitKey(0);
 	return 0;
 }
