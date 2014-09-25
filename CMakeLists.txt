@@ -46,7 +46,7 @@ add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
 add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes
 add_subdirectory(libFitting)			# Camera (Pose) estimation and shape-fitting
-add_subdirectory(libSupervisedDescentModel) # A non-parametric model for landmark detection. Uses the supervised descent method.
+#add_subdirectory(libSupervisedDescentModel) # A non-parametric model for landmark detection. Uses the supervised descent method.
 
 # Tracking apps:
 add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.
@@ -61,9 +61,9 @@ add_subdirectory(VideoPlayerApp)		# App for playing videos, showing landmarks an
 #add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe). (Note: Check if it still works)
 
 # SDM landmark detection apps:
-add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
-add_subdirectory(sdmLandmarkDetection)	# Run the SDM landmark detection on one or several images.
-add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
+#add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
+#add_subdirectory(sdmLandmarkDetection)	# Run the SDM landmark detection on one or several images.
+#add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
 
 # 3DMM fitting:
 add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.

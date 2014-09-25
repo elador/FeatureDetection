@@ -27,9 +27,12 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 # Source and header files:
 set(SOURCE
 	autoEncoderPlayground.cpp
+	lbfgs.cpp
 )
 
 set(HEADERS
+	lbfgs.h
+	arithmetic_sse_double.h
 )
 
 add_executable(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
@@ -37,7 +40,6 @@ add_executable(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${Logging_SOURCE_DIR}/include)
-include_directories(${ImageIO_SOURCE_DIR}/include)
 
 # Make the app depend on the libraries
-target_link_libraries(${SUBPROJECT_NAME} ImageIO Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(${SUBPROJECT_NAME} Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})

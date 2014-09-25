@@ -7,7 +7,7 @@ set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies:
-find_package( OpenCV 2.4.3 REQUIRED core imgproc highgui objdetect features2d nonfree )
+find_package(OpenCV 2.4.3 REQUIRED core imgproc highgui objdetect)
 message(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
@@ -28,11 +28,11 @@ set(HEADERS
 
 add_executable(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
 
-include_directories( ${Boost_INCLUDE_DIRS})
-include_directories( ${OpenCV_INCLUDE_DIRS})
-include_directories( ${Logging_SOURCE_DIR}/include)
-include_directories( ${ImageIO_SOURCE_DIR}/include)
-include_directories( ${ImageProcessing_SOURCE_DIR}/include)
+include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(${Logging_SOURCE_DIR}/include)
+include_directories(${ImageIO_SOURCE_DIR}/include)
+include_directories(${ImageProcessing_SOURCE_DIR}/include)
 
 # Make the app depend on the libraries
 target_link_libraries(${SUBPROJECT_NAME} Detection ImageIO ImageProcessing Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})

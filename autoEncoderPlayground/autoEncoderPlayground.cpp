@@ -42,6 +42,8 @@
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/objdetect/objdetect.hpp"
 
+#include "opencv2/core/optim.hpp" // OpenCV 3.0.0 alpha
+
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
@@ -55,14 +57,10 @@
 
 #include "Eigen/Dense"
 
-#include "imageio/ImageSource.hpp"
-#include "imageio/FileImageSource.hpp"
-#include "imageio/FileListImageSource.hpp"
-#include "imageio/DirectoryImageSource.hpp"
+#include "lbfgs.h"
 
 #include "logging/LoggerFactory.hpp"
 
-using namespace imageio;
 namespace po = boost::program_options;
 using logging::Logger;
 using logging::LoggerFactory;
@@ -78,6 +76,100 @@ using std::endl;
 using std::make_shared;
 using std::string;
 using std::vector;
+
+std::pair<float, cv::Mat> sparseAutoencoderCost(cv::Mat theta, int visibleSize, int hiddenSize, float lambda, float sparsityParam, float beta, cv::Mat data);
+
+static int progress(
+	void *instance,
+	const lbfgsfloatval_t *theta,
+	const lbfgsfloatval_t *grad,
+	const lbfgsfloatval_t cost,
+	const lbfgsfloatval_t normTheta,
+	const lbfgsfloatval_t normGrad,
+	const lbfgsfloatval_t step,
+	int nparam,
+	int niter,
+	int ls
+	)
+{
+	cout << "Iteration: " << niter << "		cost: " << cost
+		<< "	step: " << step << endl;
+	return 0;
+}
+
+struct instance
+{
+	int visibleSize;
+	int hiddenSize;
+	double lambda;
+	double sparsityParam;
+	double beta;
+	Mat data;
+};
+
+lbfgsfloatval_t sparseAECost(void* netParam, const lbfgsfloatval_t *ptheta, lbfgsfloatval_t *grad, const int n, const lbfgsfloatval_t step) {
+	instance* pStruct = (instance*)(netParam);
+	int hiddenSize = pStruct->hiddenSize;
+	int visibleSize = pStruct->visibleSize;
+	double lambda = pStruct->lambda;
+	double beta = pStruct->beta;
+	double sparsityParam = pStruct->sparsityParam;
+	Mat data = pStruct->data;
+	Mat theta(25 * 64 * 2 + 64 + 25, 1, CV_64FC1, (void*)ptheta);
+
+	float cost;
+	Mat gradret;
+	std::tie(cost, gradret) = sparseAutoencoderCost(theta, visibleSize, hiddenSize, lambda, sparsityParam, beta, data);
+
+	Mat tmp = gradret.clone();
+	if (!tmp.isContinuous()) {
+		throw("ERR!");
+	}
+	//grad = tmp.ptr<double>(0);
+	memcpy(grad, tmp.ptr<double>(0), n * sizeof(double));
+	return cost;
+};
+
+class AECost : public cv::MinProblemSolver::Function {
+public:
+
+	AECost(int visibleSize, int hiddenSize, float lambda, float sparsityParam, float beta, cv::Mat data) : visibleSize(visibleSize), hiddenSize(hiddenSize), lambda(lambda), sparsityParam(sparsityParam), beta(beta) {
+		this->data = data;
+	};
+
+	double calc(const double* x) const {
+		//return x[0] * x[0] + x[1] * x[1]; 
+		Mat theta(25 * 64 * 2 + 64 + 25, 1, CV_64FC1, (void*)x);
+		float cost;
+		Mat grad;
+		std::tie(cost, grad) = sparseAutoencoderCost(theta, visibleSize, hiddenSize, lambda, sparsityParam, beta, data);
+		cout << "calc iter; cost: " << cost << endl;
+		return cost;
+	};
+
+	// for Conjugate Gradient
+	void getGradient(const double* x, double* grad) {
+		Mat theta(25 * 64 * 2 + 64 + 25, 1, CV_64FC1, (void*)x);
+		float cost;
+		Mat gradret;
+		std::tie(cost, gradret) = sparseAutoencoderCost(theta, visibleSize, hiddenSize, lambda, sparsityParam, beta, data);
+		cout << "grad iter; cost: " << cost << endl;
+		Mat tmp = gradret.clone();
+		if (!tmp.isContinuous()) {
+			throw("ERR!");
+		}
+		//grad = tmp.ptr<double>(0);
+		memcpy(grad, tmp.ptr<double>(0), theta.rows * sizeof(double));
+	};
+
+	int visibleSize;
+	int hiddenSize;
+	float lambda;
+	float sparsityParam;
+	float beta;
+	cv::Mat data;
+};
+
 
 #include <random>
 using cv::Rect;
@@ -196,7 +288,7 @@ T sigmoid(T val) {
 template<>
 cv::Mat sigmoid<cv::Mat>(cv::Mat val)
 {
-	if (val.type() != CV_32FC1) {
+	if (val.type() != CV_64FC1) { // normally 32, but for cv Simplex, 64... tmp...
 		throw std::runtime_error("Not CV_32FC1.");
 	}
 	Mat result(val.rows, val.cols, val.type());
@@ -204,7 +296,7 @@ cv::Mat sigmoid<cv::Mat>(cv::Mat val)
 		for (decltype(val.cols) c = 0; c < val.cols; ++c) {
 			// Not sure how we can make the .at<float> call more generic
 			// because the type is encoded in CV_32FC1.
-			result.at<float>(r, c) = sigmoid(val.at<float>(r, c));
+			result.at<double>(r, c) = sigmoid(val.at<double>(r, c));
 		}
 	}
 	return result;
@@ -279,7 +371,7 @@ std::pair<float, cv::Mat> sparseAutoencoderCost(cv::Mat theta, int visibleSize, 
 
 	// average activation of each hidden unit(averaged over the training set).Page 14
 	Mat a2RowSum;
-	cv::reduce(a2, a2RowSum, 1, CV_REDUCE_SUM);
+	cv::reduce(a2, a2RowSum, 1, cv::REDUCE_SUM);
 	Mat rho = (1.0f / numExamples) * a2RowSum;
 	// we want rho to be close to sparsityParam, and we'll punish deviations (using the KL div.)
 	// Jsparse = sum(sparsityParam.*log(sparsityParam. / rho) + (1 - sparsityParam).*log((1 - sparsityParam). / (1 - rho))); // sum over all neurons(except bias) of L2
@@ -314,13 +406,13 @@ std::pair<float, cv::Mat> sparseAutoencoderCost(cv::Mat theta, int visibleSize, 
 
 	// b1grad
 	Mat d2RowSum;
-	cv::reduce(d2, d2RowSum, 1, CV_REDUCE_SUM);
+	cv::reduce(d2, d2RowSum, 1, cv::REDUCE_SUM);
 	Mat b1grad = d2RowSum; // sum over each training example, see page 9 bottom 2c.
 	b1grad = (1.0f / numExamples) * b1grad;
 
 	// b2grad
 	Mat d3RowSum;
-	cv::reduce(d3, d3RowSum, 1, CV_REDUCE_SUM);
+	cv::reduce(d3, d3RowSum, 1, cv::REDUCE_SUM);
 	Mat b2grad = d3RowSum;
 	b2grad = (1.0f / numExamples) * b2grad;
 
@@ -395,7 +487,7 @@ int main(int argc, char *argv[])
 	vector<Mat> images;
 	for (auto&& i = 1; i <= 10; ++i) {
 		string imagepath = imagesroot.string() + string("image_") + std::to_string(i) + string(".png");
-		images.emplace_back(cv::imread(imagepath, CV_LOAD_IMAGE_GRAYSCALE));
+		images.emplace_back(cv::imread(imagepath, cv::IMREAD_GRAYSCALE));
 	}
 
 	// randomly sample patches from the images, i.e. prepare the input to the AE training
@@ -432,7 +524,7 @@ int main(int argc, char *argv[])
 	//Mat theta_t = (cv::Mat_<float>(22, 1) << -0.8847, -0.5834, 0.0299, 0.6047, -0.0473, 0.0309, -0.6009, 0.4323, -0.5413, 0.3190, -0.4729, 0.6570, 0.6836, 0.0218, -0.7288, -0.3234, 0, 0, 0, 0, 0, 0);
 	 
 
-	std::tie(cost, grad) = sparseAutoencoderCost(theta, visibleSize, hiddenSize, lambda, sparsityParam, beta, data);
+//	std::tie(cost, grad) = sparseAutoencoderCost(theta, visibleSize, hiddenSize, lambda, sparsityParam, beta, data);
 	// Todo: Test this with a smaller model. I.e. 10 training examples, 3 hidden units.
 	//auto test = std::bind(sparseAutoencoderCost, std::placeholders::_1, visibleSize, hiddenSize, lambda, sparsityParam, beta, data);
 	//computeNumericalGradient(test, theta);
@@ -440,14 +532,56 @@ int main(int argc, char *argv[])
 	// But our bprop gradients should be ~identical to the numerical gradients. Maybe they're off because of float vs double?
 	
 	// Randomly initialise the parameters:
-	theta = initializeParameters(hiddenSize, visibleSize);
+//	theta = initializeParameters(hiddenSize, visibleSize);
 	// we need a LBFGS, CG, SGD or LM optimiser now...
 	// Just use a simple, stupid gradient descent for now: (tiny-cnn use "only" a simple SGD too)
-	for (int i = 0; i < 5000; ++i) {
+/*	for (int i = 0; i < 5000; ++i) {
 		std::tie(cost, grad) = sparseAutoencoderCost(theta, visibleSize, hiddenSize, lambda, sparsityParam, beta, data);
-		theta -= 0.05f * grad; // tiny-cnn use 0.003 ("learning rate")
+		theta -= 0.35f * grad; // tiny-cnn use 0.003 ("learning rate")
 		appLogger.info("Iter: " + std::to_string(i) + "; Cost: " + std::to_string(cost) + "; ||g||^2: " + std::to_string(cv::norm(grad, cv::NORM_L2)));
+	}*/
+
+	instance netParam;
+	netParam.visibleSize = 8 * 8;
+	netParam.hiddenSize = 25;
+	netParam.sparsityParam = 0.01;
+	netParam.lambda = 0.0001;
+	netParam.beta = 3.0;
+	Mat data64; data.convertTo(data64, CV_64FC1);
+	netParam.data = data64;
+	//Initialize the parameters for lbfgs
+	lbfgsfloatval_t cost_l;
+	lbfgsfloatval_t* theta_l = lbfgs_malloc(theta.rows);
+	lbfgs_parameter_t optParam;
+	if (theta_l == NULL) {
+		cout << "ERROR: Failed to allocate a memory block for parameters." << endl;
+		return 1;
 	}
+	theta = initializeParameters(hiddenSize, visibleSize);
+	theta.convertTo(theta, CV_64FC1);
+	memcpy(theta_l, theta.ptr<double>(0), theta.rows * sizeof(double)); //theta_l = theta.ptr<double>(0); doesn't work because lbfgs_malloc allocates MORE than 'n' memory!!!
+	lbfgs_parameter_init(&optParam);
+	optParam.max_iterations = 400;
+
+	int ret = lbfgs(theta.rows, theta_l, &cost_l, sparseAECost, progress, (void*)(&netParam), &optParam);
+
+	// cv::DownhillSolver and cv::ConjGradSolver, both didn't work
+	/*Mat data64;*/ data.convertTo(data64, CV_64FC1);
+	cv::Ptr<cv::MinProblemSolver::Function> ptr_F(new AECost(visibleSize, hiddenSize, lambda, sparsityParam, beta, data64));
+/*	Mat simplexInitialStep(theta.rows, 1, CV_64FC1);
+	
+	float r = sqrt(6.0f) / static_cast<float>(sqrt(hiddenSize + visibleSize + 1));   // we'll choose weights uniformly from the interval [-r, r]
+	std::random_device rd; ///< Used for seeding the PRNG (mt19937)
+	std::mt19937 engine(rd()); ///< A Mersenne twister mt19937 engine
+	std::uniform_real_distribution<double> randomNumber(-r, r);
+	for (int r = 0; r < simplexInitialStep.rows; ++r) {
+		simplexInitialStep.at<double>(r) = randomNumber(engine);
+	}
+*/
+	//cv::Ptr<cv::DownhillSolver> solver = cv::DownhillSolver::create(ptr_F, simplexInitialStep);
+	cv::Ptr<cv::ConjGradSolver> solver = cv::ConjGradSolver::create(ptr_F);
+	theta.convertTo(theta, CV_64FC1);
+	auto res = solver->minimize(theta);
 
 	// same as in cost-func, reshape "the other way", col-wise
 	Mat W1img = theta.rowRange(0, hiddenSize * visibleSize).reshape(0, visibleSize).t();
