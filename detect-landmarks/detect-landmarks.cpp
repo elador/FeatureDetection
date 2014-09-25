@@ -42,6 +42,7 @@
 #include "imageio/DefaultNamedLandmarkSource.hpp"
 #include "imageio/SimpleRectLandmarkFormatParser.hpp"
 #include "imageio/PascStillEyesLandmarkFormatParser.hpp"
+#include "imageio/PascVideoEyesLandmarkFormatParser.hpp"
 #include "imageio/SimpleModelLandmarkFormatParser.hpp"
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/ModelLandmark.hpp"
@@ -107,7 +108,7 @@ int main(int argc, char *argv[])
 			("face-initialization,g", po::value<path>(&faceBoxesDirectory),
 				"path to face-boxes or landmarks to initialize the model. Either -f or -g is required.")
 			("landmark-type,t", po::value<string>(&landmarkType),
-				"specify the type of landmarks to load: rect-face-box, PaSC-still-PittPatt-eyes, SimpleModelLandmark")
+				"specify the type of landmarks to load: rect-face-box, PaSC-still-PittPatt-eyes, PaSC-video-PittPatt-detections, SimpleModelLandmark")
 			("output,o", po::value<path>(&outputDirectory)->required(),
 				"Output directory for the result images and landmarks.")
 		;
@@ -250,6 +251,10 @@ int main(int argc, char *argv[])
 			faceboxSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(nullptr, ".txt", GatherMethod::SEPARATE_FILES, vector<path>{ faceBoxesDirectory }), make_shared<PascStillEyesLandmarkFormatParser>());
 			alignToFacebox = false;
 		}
+		else if (boost::iequals(landmarkType, "PaSC-video-PittPatt-detections")) { // Todo/Note: Not sure this is working?
+			faceboxSource = make_shared<imageio::DefaultNamedLandmarkSource>(imageio::LandmarkFileGatherer::gather(nullptr, ".csv", imageio::GatherMethod::SEPARATE_FILES, vector<path>{ faceBoxesDirectory }), make_shared<imageio::PascVideoEyesLandmarkFormatParser>());
+			alignToFacebox = false;
+		}
 		else if (boost::iequals(landmarkType, "SimpleModelLandmark")) {
 			faceboxSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".txt", GatherMethod::ONE_FILE_PER_IMAGE_SAME_DIR, vector<path>{ }), make_shared<SimpleModelLandmarkFormatParser>());
 			alignToFacebox = false;
@@ -294,7 +299,19 @@ int main(int argc, char *argv[])
 			}
 			else {
 				// aligning to landmarks:
-				LandmarkCollection tmpLms_pascName = faceboxSource->get(imageSource->getName());
+				path imageName;
+				if (boost::iequals(landmarkType, "PaSC-video-PittPatt-detections")) {
+					string frameNumber = imageSource->getName().stem().extension().string();
+					frameNumber.replace(0, 1, "-"); // replace the first letter, which is a '.', with a '-'
+					imageName = imageSource->getName().stem().stem() / imageSource->getName().stem().stem();
+					imageName += frameNumber;
+					imageName.replace_extension(".jpg");
+					// "name/name-012.jpg"
+				}
+				else {
+					imageName = imageSource->getName();
+				}
+				LandmarkCollection tmpLms_pascName = faceboxSource->get(imageName);
 				alignmentLandmarks = tmpLms_pascName;
 				// ugly hack to change the lm-id from 'le'/'re' (PittPatt) to our model-format
 				// We do this inside the align-function at the moment
