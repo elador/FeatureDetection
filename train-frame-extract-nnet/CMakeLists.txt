@@ -16,6 +16,11 @@ else(Boost_FOUND)
   message(FATAL_ERROR "Boost not found")
 endif()
 
+set(TinyCNN_INCLUDE_DIR "C:\\Users\\Patrik\\Documents\\GitHub\\FeatureDetection\\3rdparty\\tiny-cnn\\include")
+add_definitions(-DCNN_USE_AVX)
+add_definitions(-DCNN_USE_SSE)
+
+
 # Source and header files:
 set(SOURCE
 	train-frame-extract-nnet.cpp
@@ -26,6 +31,7 @@ set(HEADERS
 
 add_executable(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
 
+include_directories(${TinyCNN_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${Logging_SOURCE_DIR}/include)

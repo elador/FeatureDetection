@@ -30,19 +30,12 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/lexical_cast.hpp"
 
-#include "imageio/ImageSource.hpp"
-#include "imageio/FileImageSource.hpp"
-#include "imageio/FileListImageSource.hpp"
-#include "imageio/DirectoryImageSource.hpp"
-#include "imageio/NamedLabeledImageSource.hpp"
-#include "imageio/DefaultNamedLandmarkSource.hpp"
-#include "imageio/EmptyLandmarkSource.hpp"
-#include "imageio/LandmarkFileGatherer.hpp"
-#include "imageio/IbugLandmarkFormatParser.hpp"
-#include "imageio/DidLandmarkFormatParser.hpp"
-#include "imageio/MuctLandmarkFormatParser.hpp"
-#include "imageio/SimpleModelLandmarkFormatParser.hpp"
+#include "tiny_cnn.h"
+
 #include "imageio/LandmarkMapper.hpp"
+#include "imageio/LandmarkFileGatherer.hpp"
+#include "imageio/DefaultNamedLandmarkSource.hpp"
+#include "imageio/PascVideoEyesLandmarkFormatParser.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -61,6 +54,25 @@ using boost::lexical_cast;
 using std::cout;
 using std::endl;
 using std::make_shared;
+using std::shared_ptr;
+using std::vector;
+using std::string;
+
+vector<Mat> getFrames(path videoFilename)
+{
+	vector<Mat> frames;
+
+	cv::VideoCapture cap(videoFilename.string());
+	if (!cap.isOpened())
+		throw("Couldn't open video file.");
+
+	Mat img;
+	while (cap.read(img)) {
+		frames.emplace_back(img);
+	}
+
+	return frames;
+}
 
 int main(int argc, char *argv[])
 {
@@ -73,7 +85,7 @@ int main(int argc, char *argv[])
 	bool useFileList = false;
 	bool useImage = false;
 	bool useDirectory = false;
-	path inputFilename;
+	path inputDirectory;
 	path configFilename;
 	path inputLandmarks;
 	string landmarkType;
@@ -87,10 +99,8 @@ int main(int argc, char *argv[])
 				"produce help message")
 			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
 				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
-			("config,c", po::value<path>(&configFilename)->required(), 
-				"path to a config (.cfg) file")
-			("input,i", po::value<path>(&inputFilename)->required(),
-				"input filename")
+			("input,i", po::value<path>(&inputDirectory)->required(),
+				"input folder with training videos")
 			("landmarks,l", po::value<path>(&inputLandmarks)->required(),
 				"input landmarks")
 			("landmark-type,t", po::value<string>(&landmarkType)->required(),
@@ -104,7 +114,7 @@ int main(int argc, char *argv[])
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm); // style(po::command_line_style::unix_style | po::command_line_style::allow_long_disguise)
 		if (vm.count("help")) {
-			cout << "Usage: fitter [options]\n";
+			cout << "Usage: train-frame-extract-nnet [options]\n";
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
@@ -130,14 +140,61 @@ int main(int argc, char *argv[])
 	}
 	
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Loggers->getLogger("morphablemodel").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Loggers->getLogger("render").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Loggers->getLogger("fitting").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("train-frame-extract-nnet").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("train-frame-extract-nnet");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
-	appLogger.debug("Using config: " + configFilename.string());
+
+	// Read the PaSC video landmarks:
+	shared_ptr<imageio::NamedLandmarkSource> landmarkSource;
+	vector<path> groundtruthDirs{ inputLandmarks };
+	if (boost::iequals(landmarkType, "PaSC-video-PittPatt-detections")) {
+		landmarkSource = make_shared<imageio::DefaultNamedLandmarkSource>(imageio::LandmarkFileGatherer::gather(nullptr, ".csv", imageio::GatherMethod::SEPARATE_FILES, groundtruthDirs), make_shared<imageio::PascVideoEyesLandmarkFormatParser>());
+	}
+	else {
+		appLogger.error("Invalid landmarks type.");
+		return EXIT_FAILURE;
+	}
+
+	// Create the output directory if it doesn't exist yet:
+	if (!boost::filesystem::exists(outputPath)) {
+		boost::filesystem::create_directory(outputPath);
+	}
+	
+	// Read all videos:
+	vector<path> trainingVideos;
+	copy(boost::filesystem::directory_iterator(inputDirectory), boost::filesystem::directory_iterator(), back_inserter(trainingVideos));
+	std::random_device rd;
+	auto videosSeed = rd();
+	auto framesSeed = rd();
+	std::mt19937 rndGenVideos(videosSeed);
+	std::mt19937 rndGenFrames(framesSeed);
+	std::uniform_int_distribution<> rndVidDistr(0, trainingVideos.size() - 1);
+	auto randomVideo = std::bind(rndVidDistr, rndGenVideos);
+	
+	// Select random subset of videos:
+	int numVideosToTrain = 2;
+	int numFramesPerVideo = 2;
+	for (int i = 0; i < numVideosToTrain; ++i) {
+		auto videoFilename = trainingVideos[randomVideo()];
+		auto frames = getFrames(videoFilename);
+		// Select random subset of frames:
+		std::uniform_int_distribution<> rndFrameDistr(0, frames.size() - 1);
+		for (int j = 0; j < numFramesPerVideo; ++j) {
+			int frameNum = rndFrameDistr(rndGenFrames);
+			auto frame = frames[frameNum];
+			// Get the landmarks for this frame:
+			frameNum = frameNum + 1; // frame numbering in the CSV starts with 1
+			std::ostringstream ss;
+			ss << std::setw(3) << std::setfill('0') << frameNum;
+			string frameName = videoFilename.stem().string() + "/" + videoFilename.stem().string() + "-" + ss.str() + ".jpg";
+			imageio::LandmarkCollection landmarks = landmarkSource->get(frameName);
+		}
+	}
+
+	// Use facebox (or eyes) to run the engine
+	// resulting score = label, facebox = input, resize it
+	// Train NN
 
 	return EXIT_SUCCESS;
 }
