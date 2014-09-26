@@ -189,10 +189,18 @@ int main(int argc, char *argv[])
 			ss << std::setw(3) << std::setfill('0') << frameNum;
 			string frameName = videoFilename.stem().string() + "/" + videoFilename.stem().string() + "-" + ss.str() + ".jpg";
 			imageio::LandmarkCollection landmarks = landmarkSource->get(frameName);
+			// Use facebox (later: or eyes) to run the engine
+			auto result1 = std::find(std::begin(landmarks.getLandmarks()), std::end(landmarks.getLandmarks()), [](const shared_ptr<Landmark>& l) { return l->getName() == "face"; });
+			if (result1 != std::end(landmarks.getLandmarks())) {
+				
+			}
+			else {
+				continue;
+			}
 		}
 	}
 
-	// Use facebox (or eyes) to run the engine
+	
 	// resulting score = label, facebox = input, resize it
 	// Train NN
 

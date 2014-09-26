@@ -51,15 +51,20 @@ const map<path, LandmarkCollection> PascVideoEyesLandmarkFormatParser::read(path
 		shared_ptr<Landmark> face = make_shared<RectLandmark>("face", f_cx, f_cy, f_w, f_h);
 		landmarks.insert(face);
 
-		float le_x = lexical_cast<float>(tokens[6]);
-		float le_y = lexical_cast<float>(tokens[7]);
-		float re_x = lexical_cast<float>(tokens[8]);
-		float re_y = lexical_cast<float>(tokens[9]);
-		shared_ptr<Landmark> le = make_shared<ModelLandmark>("le", le_x, le_y);
-		landmarks.insert(le);
-		shared_ptr<Landmark> re = make_shared<ModelLandmark>("re", re_x, re_y);
-		landmarks.insert(re);
-		
+		// Eye-coordinates can be missing in training-videos csv
+		if (tokens[6] != "" || tokens[7] != "") {
+			float le_x = lexical_cast<float>(tokens[6]);
+			float le_y = lexical_cast<float>(tokens[7]);
+			shared_ptr<Landmark> le = make_shared<ModelLandmark>("le", le_x, le_y);
+			landmarks.insert(le);
+		}
+		if (tokens[8] != "" || tokens[9] != "") {
+			float re_x = lexical_cast<float>(tokens[8]);
+			float re_y = lexical_cast<float>(tokens[9]);
+			shared_ptr<Landmark> re = make_shared<ModelLandmark>("re", re_x, re_y);
+			landmarks.insert(re);
+		}
+
 		allLandmarks.insert(make_pair(imageName, landmarks));
 	}
 
