@@ -16,8 +16,6 @@
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
-#include "opencv2/calib3d/calib3d.hpp"
-#include "opencv2/objdetect/objdetect.hpp"
 
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
@@ -36,6 +34,7 @@
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/DefaultNamedLandmarkSource.hpp"
 #include "imageio/PascVideoEyesLandmarkFormatParser.hpp"
+#include "facerecognition/pasc.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -65,82 +64,6 @@ using std::string;
 #include "boost/serialization/optional.hpp"
 #include "boost/serialization/vector.hpp"
 #include <iostream>
-class PascVideoDetection
-{
-public:
-	static PascVideoDetection readFromCsv(std::string line);
-private:
-	friend class boost::serialization::access;
-	// When the class Archive corresponds to an output archive, the
-	// & operator is defined similar to <<.  Likewise, when the class Archive
-	// is a type of input archive the & operator is defined similar to >>.
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version)
-	{
-		ar & frame_id;
-		ar & fcen_x;
-		ar & fcen_y;
-		ar & fwidth;
-		ar & fheight;
-		ar & fpose_y;
-		ar & re_x;
-		ar & re_y;
-		ar & le_x;
-		ar & le_y;
-	}
-public:
-	// The class members have the same name as in the header line in the csv file
-	std::string frame_id;
-	int fcen_x;
-	int fcen_y;
-	int fwidth;
-	int fheight;
-	float fpose_y; // yaw
-	boost::optional<int> re_x; // eye coordinates may or may not be present
-	boost::optional<int> re_y; // re = which eye? document here.
-	boost::optional<int> le_x;
-	boost::optional<int> le_y;
-};
-
-std::vector<PascVideoDetection> readPascVideoDetections(boost::filesystem::path csvFile)
-{
-	std::vector<PascVideoDetection> detections;
-
-	std::ifstream file(csvFile.string());
-	string line;
-	std::getline(file, line); // The header line, we skip it
-
-	while (std::getline(file, line))
-	{
-		PascVideoDetection detection;
-
-		vector<string> tokens;
-		boost::trim_right_if(line, boost::is_any_of("\r")); // Windows line-endings are \r\n, Linux only \n. Thus, when a file has been created on windows and is read on linux, we need to remove the trailing \r.
-		boost::split(tokens, line, boost::is_any_of(","));
-		
-		detection.frame_id = tokens[0];
-		detection.fcen_x = lexical_cast<float>(tokens[1]);
-		detection.fcen_y = lexical_cast<float>(tokens[2]);
-		detection.fwidth = lexical_cast<float>(tokens[3]);
-		detection.fheight = lexical_cast<float>(tokens[4]);
-		detection.fpose_y = lexical_cast<float>(tokens[5]);
-		if (tokens[6] != "") {
-			detection.le_x = lexical_cast<float>(tokens[6]);
-		}
-		if (tokens[7] != "") {
-			detection.le_y = lexical_cast<float>(tokens[7]);
-		}
-		if (tokens[8] != "") {
-			detection.re_x = lexical_cast<float>(tokens[8]);
-		}
-		if (tokens[9] != "") {
-			detection.re_y = lexical_cast<float>(tokens[9]);
-		}
-		detections.emplace_back(detection);
-	}
-
-	return detections;
-}
 
 vector<Mat> getFrames(path videoFilename)
 {
@@ -229,12 +152,19 @@ int main(int argc, char *argv[])
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
-	vector<PascVideoDetection> pascVideoDetections;
-	{
+	vector<facerecognition::PascVideoDetection> pascVideoDetections;
+/*	{
 		std::ifstream ifs(R"(C:\Users\Patrik\Documents\GitHub\data\PaSC\pasc_training_video_pittpatt_detection.txt)"); // ("pasc.bin", std::ios::binary | std::ios::in)
 		boost::archive::text_iarchive ia(ifs); // binary_iarchive
 		ia >> pascVideoDetections;
 	} // archive and stream closed when destructors are called
+	*/
+	{
+		std::ifstream ifs(R"(C:\Users\Patrik\Documents\GitHub\build\convert-pasc-metadata\pasc_video_pittpatt_detections_pm.bin)", std::ios::binary); // ("pasc.bin",  | std::ios::in)
+		boost::archive::binary_iarchive ia(ifs); // binary_iarchive
+		ia >> BOOST_SERIALIZATION_NVP(pascVideoDetections);
+	} // archive and stream closed when destructors are called
+
 
 	// Read the PaSC video landmarks:
 	shared_ptr<imageio::NamedLandmarkSource> landmarkSource;

@@ -81,6 +81,7 @@ add_subdirectory(extract-frames)		# Extracts frames from a video, given a specif
 add_subdirectory(train-frame-extract-nnet)	# Training of learning-based best-frame-extraction
 
 # Face-recognition:
+add_subdirectory(convert-pasc-metadata)	# Convert the PaSC metadata csv to boost::serialization objects
 add_subdirectory(pasc-video-matching)	# Runs the whole pipeline on the PaSC video-video experiment
 add_subdirectory(facerecognitionTools) # Tools (e.g. create probe/gallery image-lists)
 add_subdirectory(frRunCogExp)		# App for doing face recognition tests with a gallery and probe images

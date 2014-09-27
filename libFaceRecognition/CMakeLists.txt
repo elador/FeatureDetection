@@ -7,7 +7,7 @@ set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies
-find_package(Boost 1.48.0 COMPONENTS system filesystem REQUIRED)
+find_package(Boost 1.48.0 COMPONENTS system filesystem serialization REQUIRED)
 if(Boost_FOUND)
   message(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
 else(Boost_FOUND)
@@ -17,13 +17,16 @@ endif()
 #find_package(OpenCV 2.4.3 REQUIRED core)
 
 # source and header files
-set(HEADERS
-	include/facerecognition/FaceRecord.hpp
-	include/facerecognition/utils.hpp
-)
 set(SOURCE
 	src/facerecognition/FaceRecord.cpp
+	src/facerecognition/pasc.cpp
 	src/facerecognition/utils.cpp
+)
+
+set(HEADERS
+	include/facerecognition/FaceRecord.hpp
+	include/facerecognition/pasc.hpp
+	include/facerecognition/utils.hpp
 )
 
 include_directories("include")
