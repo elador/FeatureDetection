@@ -22,32 +22,22 @@
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
 #include "boost/program_options.hpp"
-#include "boost/property_tree/ptree.hpp"
-#include "boost/property_tree/info_parser.hpp"
 #include "boost/algorithm/string.hpp"
-#include "boost/filesystem/path.hpp"
+#include "boost/filesystem.hpp"
 #include "boost/lexical_cast.hpp"
+#include "boost/archive/text_iarchive.hpp"
 
 #include "tiny_cnn.h"
 
-#include "imageio/LandmarkMapper.hpp"
-#include "imageio/LandmarkFileGatherer.hpp"
-#include "imageio/DefaultNamedLandmarkSource.hpp"
-#include "imageio/PascVideoEyesLandmarkFormatParser.hpp"
 #include "facerecognition/pasc.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
-using namespace imageio;
 namespace po = boost::program_options;
 using logging::Logger;
 using logging::LoggerFactory;
 using logging::LogLevel;
 using cv::Mat;
-using cv::Point2f;
-using cv::Vec3f;
-using cv::Scalar;
-using boost::property_tree::ptree;
 using boost::filesystem::path;
 using boost::lexical_cast;
 using std::cout;
@@ -56,14 +46,6 @@ using std::make_shared;
 using std::shared_ptr;
 using std::vector;
 using std::string;
-
-#include "boost/archive/text_oarchive.hpp"
-#include "boost/archive/text_iarchive.hpp"
-#include "boost/archive/binary_oarchive.hpp"
-#include "boost/archive/binary_iarchive.hpp"
-#include "boost/serialization/optional.hpp"
-#include "boost/serialization/vector.hpp"
-#include <iostream>
 
 vector<Mat> getFrames(path videoFilename)
 {
@@ -89,14 +71,8 @@ int main(int argc, char *argv[])
 	#endif
 	
 	string verboseLevelConsole;
-	bool useFileList = false;
-	bool useImage = false;
-	bool useDirectory = false;
 	path inputDirectory;
-	path configFilename;
 	path inputLandmarks;
-	string landmarkType;
-	path landmarkMappings;
 	path outputPath;
 
 	try {
@@ -110,10 +86,6 @@ int main(int argc, char *argv[])
 				"input folder with training videos")
 			("landmarks,l", po::value<path>(&inputLandmarks)->required(),
 				"input landmarks")
-			("landmark-type,t", po::value<string>(&landmarkType)->required(),
-				"specify the type of landmarks: ibug")
-			("landmark-mappings,m", po::value<path>(&landmarkMappings),
-				"an optional mapping-file that maps from the input landmarks to landmark identifiers in the model's format")
 			("output,o", po::value<path>(&outputPath)->default_value("."),
 				"path to an output folder")
 		;
@@ -153,29 +125,11 @@ int main(int argc, char *argv[])
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
 	vector<facerecognition::PascVideoDetection> pascVideoDetections;
-/*	{
-		std::ifstream ifs(R"(C:\Users\Patrik\Documents\GitHub\data\PaSC\pasc_training_video_pittpatt_detection.txt)"); // ("pasc.bin", std::ios::binary | std::ios::in)
+	{
+		std::ifstream ifs(inputLandmarks.string()); // ("pasc.bin", std::ios::binary | std::ios::in)
 		boost::archive::text_iarchive ia(ifs); // binary_iarchive
 		ia >> pascVideoDetections;
 	} // archive and stream closed when destructors are called
-	*/
-	{
-		std::ifstream ifs(R"(C:\Users\Patrik\Documents\GitHub\build\convert-pasc-metadata\pasc_video_pittpatt_detections_pm.bin)", std::ios::binary); // ("pasc.bin",  | std::ios::in)
-		boost::archive::binary_iarchive ia(ifs); // binary_iarchive
-		ia >> BOOST_SERIALIZATION_NVP(pascVideoDetections);
-	} // archive and stream closed when destructors are called
-
-
-	// Read the PaSC video landmarks:
-	shared_ptr<imageio::NamedLandmarkSource> landmarkSource;
-	vector<path> groundtruthDirs{ inputLandmarks };
-	if (boost::iequals(landmarkType, "PaSC-video-PittPatt-detections")) {
-		landmarkSource = make_shared<imageio::DefaultNamedLandmarkSource>(imageio::LandmarkFileGatherer::gather(nullptr, ".csv", imageio::GatherMethod::SEPARATE_FILES, groundtruthDirs), make_shared<imageio::PascVideoEyesLandmarkFormatParser>());
-	}
-	else {
-		appLogger.error("Invalid landmarks type.");
-		return EXIT_FAILURE;
-	}
 
 	// Create the output directory if it doesn't exist yet:
 	if (!boost::filesystem::exists(outputPath)) {
@@ -183,8 +137,17 @@ int main(int argc, char *argv[])
 	}
 	
 	// Read all videos:
+	if (!boost::filesystem::exists(inputDirectory)) {
+		cout << "hmm..";
+	}
 	vector<path> trainingVideos;
-	copy(boost::filesystem::directory_iterator(inputDirectory), boost::filesystem::directory_iterator(), back_inserter(trainingVideos));
+	try {
+		copy(boost::filesystem::directory_iterator(inputDirectory), boost::filesystem::directory_iterator(), back_inserter(trainingVideos));
+	}
+	catch (boost::filesystem::filesystem_error& e) {
+		// Log: Something went wrong while loading the videos. Details:
+		cout << e.what();
+	}
 	std::random_device rd;
 	auto videosSeed = rd();
 	auto framesSeed = rd();
@@ -193,6 +156,12 @@ int main(int argc, char *argv[])
 	std::uniform_int_distribution<> rndVidDistr(0, trainingVideos.size() - 1);
 	auto randomVideo = std::bind(rndVidDistr, rndGenVideos);
 	
+	// The training data:
+	vector<Mat> trainingFrames;
+	vector<float> labels; // the score difference to the value we would optimally like
+						  // I.e. if it's a positive pair, the label is the difference to 1.0
+						  // In case of a negative pair, the label is the difference to 0.0
+
 	// Select random subset of videos:
 	int numVideosToTrain = 2;
 	int numFramesPerVideo = 2;
@@ -209,21 +178,45 @@ int main(int argc, char *argv[])
 			std::ostringstream ss;
 			ss << std::setw(3) << std::setfill('0') << frameNum;
 			string frameName = videoFilename.stem().string() + "/" + videoFilename.stem().string() + "-" + ss.str() + ".jpg";
-			//imageio::LandmarkCollection landmarks = landmarkSource->get(frameName);
+			
+			auto landmarks = std::find_if(begin(pascVideoDetections), end(pascVideoDetections), [frameName](const facerecognition::PascVideoDetection& d) { return (d.frame_id == frameName); });
 			// Use facebox (later: or eyes) to run the engine
-			/*auto result1 = std::find(std::begin(landmarks.getLandmarks()), std::end(landmarks.getLandmarks()), [](const shared_ptr<Landmark>& l) { return (l->getName() == "face"); });
-			if (result1 != std::end(landmarks.getLandmarks())) {
-				
+			if (landmarks == std::end(pascVideoDetections)) {
+				continue; // instead, do a while-loop and count the number of frames with landmarks (so we don't skip videos if we draw bad values)
 			}
-			else {
-				continue;
-			}*/
+
+			// Run the engine:
+			// in: frame, eye/face coords, plus one positive image from the still-sigset with its eye/face coords
+			// out: score
+			// Later: Include several positive scores, and also negative pairs
+			// I.e. enroll the whole gallery once, then match the query frame and get all scores?
+
+			// From this pair:
+			// resulting score difference to class label = label, facebox = input, resize it
+			trainingFrames.emplace_back(frame);
+			labels.emplace_back(1.0f);
 		}
 	}
 
+	// Engine:
+	// libFaceRecognition: CMake-Option for dependency on FaceVACS
+	// Class Engine;
+	// FaceVacsExecutableRunner : Engine; C'tor: Path to directory with binaries or individual binaries?
+	// FaceVacs : Engine; C'tor - nothing? FV-Config?
+
+	// Or: All the FaceVacs stuff in libFaceVacsWrapper. Direct-calls and exe-runner. With CMake-Option.
 	
-	// resulting score = label, facebox = input, resize it
-	// Train NN
+	
+	// Train NN:
+	// trainingFrames, labels
+
+
+	// Save it:
+
+	// Test it:
+	// - Error on train-set?
+	// - Split the train set in train/test
+	// - Error on 'real' PaSC part? (i.e. the validation set)
 
 	return EXIT_SUCCESS;
 }

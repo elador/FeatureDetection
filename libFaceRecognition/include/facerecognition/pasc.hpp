@@ -16,6 +16,9 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/optional.hpp"
 #include "boost/serialization/serialization.hpp"
+#include "boost/serialization/vector.hpp"
+#include "boost/serialization/optional.hpp"
+#include "boost/serialization/string.hpp"
 
 #include <vector>
 
