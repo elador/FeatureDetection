@@ -321,6 +321,10 @@ int main(int argc, char *argv[])
 				}
 				LandmarkCollection tmpLms_pascName = faceboxSource->get(imageName);
 				alignmentLandmarks = tmpLms_pascName;
+				if (alignmentLandmarks.getLandmarks().size() == 0) {
+					appLogger.info("No landmark information found for this image. Skipping it.");
+					continue;
+				}
 				// ugly hack to change the lm-id from 'le'/'re' (PittPatt) to our model-format
 				// We do this inside the align-function at the moment
 				/*for (auto&& lm : tmpLms_pascName.getLandmarks()) {
