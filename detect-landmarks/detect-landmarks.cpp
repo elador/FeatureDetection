@@ -11,6 +11,7 @@
 #include <chrono>
 #include <memory>
 #include <iostream>
+#include <iomanip>
 #include <stdexcept>
 
 #include "opencv2/core/core.hpp"
@@ -300,9 +301,16 @@ int main(int argc, char *argv[])
 			else {
 				// aligning to landmarks:
 				path imageName;
-				if (boost::iequals(landmarkType, "PaSC-video-PittPatt-detections")) {
+				if (boost::iequals(landmarkType, "PaSC-video-PittPatt-detections")) {	
 					string frameNumber = imageSource->getName().stem().extension().string();
-					frameNumber.replace(0, 1, "-"); // replace the first letter, which is a '.', with a '-'
+					frameNumber.erase(0, 1);
+					// Pad with zeros, if user entered an image like frame.3.png instead of frame.003.png
+					// If it's already 003, nothing will happen.
+					std::stringstream ss;
+					ss << std::setfill('0') << std::setw(3) << frameNumber;
+					frameNumber = ss.str();
+					frameNumber = "-" + frameNumber;
+					// Big Todo: Abstract this whole stuff into some PaSC-LM or PaSC-LM-Source class, it shouldn't be in the app here?
 					imageName = imageSource->getName().stem().stem() / imageSource->getName().stem().stem();
 					imageName += frameNumber;
 					imageName.replace_extension(".jpg");
