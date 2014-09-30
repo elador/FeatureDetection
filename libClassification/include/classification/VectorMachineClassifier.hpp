@@ -13,7 +13,6 @@
 #include "classification/BinaryClassifier.hpp"
 #include "classification/Kernel.hpp"
 #include <memory>
-#include <string>
 
 namespace classification {
 

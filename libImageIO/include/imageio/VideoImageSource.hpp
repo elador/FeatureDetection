@@ -34,16 +34,11 @@ public:
 
 	const cv::Mat getImage() const;
 
-	boost::filesystem::path getName() const;
-
-	std::vector<boost::filesystem::path> getNames() const;
-
 private:
 
-	std::string video;         ///< The name of the video file.
+	std::string video; ///< The name of the video file.
 	cv::VideoCapture capture; ///< The video capture.
-	cv::Mat frame;            ///< The current frame.
-	unsigned long frameCounter; ///< The current frame number since the capture was started.
+	cv::Mat frame; ///< The current frame.
 };
 
 } /* namespace imageio */

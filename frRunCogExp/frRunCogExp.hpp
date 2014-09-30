@@ -1,4 +1,0 @@
-#ifndef FACERECOGTESTAPP_HPP_
-#define FACERECOGTESTAPP_HPP_
-
-#endif

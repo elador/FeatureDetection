@@ -16,14 +16,7 @@ using std::ostringstream;
 
 namespace logging {
 
-LoggerFactory::LoggerFactory()
-{
-}
-
-
-LoggerFactory::~LoggerFactory()
-{
-}
+LoggerFactory::LoggerFactory() {}
 
 LoggerFactory* LoggerFactory::Instance()
 {

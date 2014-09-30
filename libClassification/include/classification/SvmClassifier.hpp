@@ -11,7 +11,6 @@
 
 #include "classification/VectorMachineClassifier.hpp"
 #include "opencv2/core/core.hpp"
-#include <string>
 #include <vector>
 
 namespace classification {
@@ -66,22 +65,6 @@ public:
 	 * @param[in] bias The bias.
 	 */
 	void setSvmParameters(std::vector<cv::Mat> supportVectors, std::vector<float> coefficients, double bias);
-
-	/**
-	 * Creates a new SVM classifier from the parameters given in some Matlab file.
-	 *
-	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
-	 * @return The newly created SVM classifier.
-	 */
-	static std::shared_ptr<SvmClassifier> loadFromMatlab(const std::string& classifierFilename);
-
-	/**
-	 * Creates a new SVM classifier from the parameters given in some text file.
-	 *
-	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
-	 * @return The newly created SVM classifier.
-	 */
-	static std::shared_ptr<SvmClassifier> loadFromText(const std::string& classifierFilename);
 
 	/**
 	 * @return The support vectors.

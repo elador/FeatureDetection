@@ -12,7 +12,6 @@
 #include "classification/LinearKernel.hpp"
 #include "classification/PolynomialKernel.hpp"
 #include "classification/RbfKernel.hpp"
-#include "classification/HistogramIntersectionKernel.hpp"
 #include "svm.h"
 
 namespace libsvm {
@@ -43,10 +42,6 @@ public:
 	void visit(const classification::RbfKernel& kernel) {
 		param->kernel_type = RBF;
 		param->gamma = kernel.getGamma();
-	}
-
-	void visit(const classification::HistogramIntersectionKernel& kernel) {
-		param->kernel_type = HIK;
 	}
 
 private:

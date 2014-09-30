@@ -8,20 +8,15 @@
 #ifndef CELLBASEDPYRAMIDFEATUREEXTRACTOR_HPP_
 #define CELLBASEDPYRAMIDFEATUREEXTRACTOR_HPP_
 
-#include "imageprocessing/DirectPyramidFeatureExtractor.hpp"
+#include "imageprocessing/PyramidFeatureExtractor.hpp"
 
 namespace imageprocessing {
-
-class ImagePyramid;
-class ImagePyramidLayer;
-class ImageFilter;
-class ChainedFilter;
 
 /**
  * Pyramid feature extractor whose patches consist of square cells that contain several pixels. Each cell
  * is described by a descriptor.
  */
-class CellBasedPyramidFeatureExtractor : public DirectPyramidFeatureExtractor {
+class CellBasedPyramidFeatureExtractor : public PyramidFeatureExtractor {
 public:
 
 	/**
@@ -47,11 +42,6 @@ public:
 	 */
 	CellBasedPyramidFeatureExtractor(std::shared_ptr<ImagePyramid> pyramid, int cellSize, int cols, int rows);
 
-	std::vector<std::shared_ptr<Patch>> extract(int stepX, int stepY, cv::Rect roi = cv::Rect(),
-			int firstLayer = -1, int lastLayer = -1, int stepLayer = 1) const;
-
-	std::vector<std::pair<int, double>> getLayerScales() const;
-
 protected:
 
 	int getScaled(const ImagePyramidLayer& layer, int value) const;
@@ -62,8 +52,8 @@ protected:
 
 private:
 
-	size_t cellSize;        ///< The size (width and height) of the cells in pixels.
-	size_t realPatchWidth;  ///< The width of the extracted patch data in pixels.
+	size_t cellSize; ///< The size (width and height) of the cells in pixels.
+	size_t realPatchWidth; ///< The width of the extracted patch data in pixels.
 };
 
 } /* namespace imageprocessing */

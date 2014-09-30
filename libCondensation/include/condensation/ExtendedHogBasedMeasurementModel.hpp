@@ -8,7 +8,7 @@
 #ifndef EXTENDEDHOGBASEDMEASUREMENTMODEL_HPP_
 #define EXTENDEDHOGBASEDMEASUREMENTMODEL_HPP_
 
-#include "condensation/AdaptiveMeasurementModel.hpp"
+#include "condensation/MeasurementModel.hpp"
 #include "condensation/StateValidator.hpp"
 #include "opencv2/core/core.hpp"
 #include "boost/random/mersenne_twister.hpp"
@@ -17,7 +17,6 @@
 #include "boost/random/variate_generator.hpp"
 #include <utility>
 #include <forward_list>
-#include <unordered_map> // only necessary for output of learned positive patches
 
 namespace imageprocessing {
 class ConvolutionFilter;
@@ -25,7 +24,6 @@ class ImagePyramid;
 class FeatureExtractor;
 class DirectPyramidFeatureExtractor;
 class GrayscaleFilter;
-class ExtendedHogFilter;
 class CompleteExtendedHogFilter;
 class ExtendedHogFeatureExtractor;
 }
@@ -42,7 +40,7 @@ namespace condensation {
 /**
  * Measurement model that is based on extended HOG features and a linear SVM.
  */
-class ExtendedHogBasedMeasurementModel : public AdaptiveMeasurementModel, public StateValidator {
+class ExtendedHogBasedMeasurementModel : public MeasurementModel, public StateValidator {
 public:
 
 	/**
@@ -86,13 +84,6 @@ public:
 	bool adapt(std::shared_ptr<imageprocessing::VersionedImage> image, const std::vector<std::shared_ptr<Sample>>& samples);
 
 	void reset();
-
-	/**
-	 * Returns the positive examples that were actually used for training.
-	 *
-	 * @return Map that associates frame indices with a bounding box that was used for training.
-	 */
-	const std::unordered_map<size_t, cv::Rect>& getLearned() const;
 
 	/**
 	 * Changes the parameters for the extraction of the extended HOG features.
@@ -266,10 +257,6 @@ private:
 	cv::Mat initialFeatures; ///< Initial positive training example.
 	std::vector<cv::Mat> trajectoryFeatures; ///< Positive training examples from the current trajectory (only used for un-corrected trajectory learning).
 	std::forward_list<std::shared_ptr<imageprocessing::FeatureExtractor>> pastFeatureExtractors; ///< Feature extractors of past frames (used for corrected trajectory learning).
-
-	std::vector<std::pair<int, cv::Rect>> trajectoryToLearn; // only necessary for output of learned positive patches
-	mutable size_t frameIndex; // only necessary for output of learned positive patches
-	mutable std::unordered_map<size_t, cv::Rect> learned; // only necessary for output of learned positive patches
 };
 
 } /* namespace condensation */

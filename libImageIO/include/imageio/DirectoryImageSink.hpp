@@ -26,8 +26,6 @@ public:
 	 */
 	explicit DirectoryImageSink(std::string directory, std::string ending = "png");
 
-	~DirectoryImageSink();
-
 	void add(const cv::Mat& image);
 
 private:

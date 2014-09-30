@@ -17,8 +17,6 @@ namespace imageio {
 VideoImageSink::VideoImageSink(const string filename, double fps, int fourcc) :
 		filename(filename), fps(fps), fourcc(fourcc), writer() {}
 
-VideoImageSink::~VideoImageSink() {}
-
 void VideoImageSink::add(const Mat& image) {
 	if (!writer.isOpened()) {
 		if (!writer.open(filename, fourcc, fps, Size(image.cols, image.rows)))

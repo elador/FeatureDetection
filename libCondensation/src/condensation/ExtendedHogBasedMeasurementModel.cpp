@@ -12,10 +12,7 @@
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/ImagePyramidLayer.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
-#include "imageprocessing/GradientFilter.hpp"
-#include "imageprocessing/GradientBinningFilter.hpp"
 #include "imageprocessing/ExtendedHogFilter.hpp"
-#include "imageprocessing/CompleteExtendedHogFilter.hpp"
 #include "imageprocessing/ConvolutionFilter.hpp"
 #include "imageprocessing/CellBasedPyramidFeatureExtractor.hpp"
 #include "imageprocessing/ExtendedHogFeatureExtractor.hpp"
@@ -23,19 +20,15 @@
 #include "classification/ProbabilisticSvmClassifier.hpp"
 #include "classification/SvmClassifier.hpp"
 #include "classification/LinearKernel.hpp"
-#include "classification/BinaryClassifier.hpp"
-#include "classification/ProbabilisticClassifier.hpp"
 #include <stdexcept>
+#include <unordered_map>
 
 using imageprocessing::Patch;
 using imageprocessing::VersionedImage;
 using imageprocessing::ImagePyramid;
 using imageprocessing::ImagePyramidLayer;
 using imageprocessing::GrayscaleFilter;
-using imageprocessing::GradientFilter;
-using imageprocessing::GradientBinningFilter;
 using imageprocessing::ExtendedHogFilter;
-using imageprocessing::CompleteExtendedHogFilter;
 using imageprocessing::ConvolutionFilter;
 using imageprocessing::FeatureExtractor;
 using imageprocessing::CellBasedPyramidFeatureExtractor;
@@ -69,8 +62,7 @@ ExtendedHogBasedMeasurementModel::ExtendedHogBasedMeasurementModel(shared_ptr<Tr
 		cellRowCount(), cellColumnCount(), minWidth(), maxWidth(),
 		initialized(false), usable(false), targetLost(false),
 		generator(), uniformIntDistribution(), normalDistribution(),
-		initialFeatures(), trajectoryFeatures(), pastFeatureExtractors(),
-		trajectoryToLearn(), frameIndex(0), learned() {
+		initialFeatures(), trajectoryFeatures(), pastFeatureExtractors() {
 	if (!dynamic_cast<LinearKernel*>(this->classifier->getSvm()->getKernel().get()))
 		throw invalid_argument("ExtendedHogBasedMeasurementKernel: the SVM must use a LinearKernel");
 }
@@ -88,8 +80,7 @@ ExtendedHogBasedMeasurementModel::ExtendedHogBasedMeasurementModel(
 				cellRowCount(), cellColumnCount(), minWidth(), maxWidth(),
 				initialized(false), usable(false), targetLost(false),
 				generator(), uniformIntDistribution(), normalDistribution(),
-				initialFeatures(), trajectoryFeatures(), pastFeatureExtractors(),
-				trajectoryToLearn(), frameIndex(0), learned() {
+				initialFeatures(), trajectoryFeatures(), pastFeatureExtractors() {
 	if (!dynamic_cast<LinearKernel*>(this->classifier->getSvm()->getKernel().get()))
 		throw invalid_argument("ExtendedHogBasedMeasurementKernel: the SVM must use a LinearKernel");
 }
@@ -148,7 +139,6 @@ void ExtendedHogBasedMeasurementModel::evaluate(shared_ptr<VersionedImage> image
 			if (bestScore < initialFeaturesScore && classifier->getSvm()->classify(peakScore) && peakScore > scoreThreshold) {
 				// re-initialize tracker at location of score peak
 				trajectoryFeatures.clear();
-				trajectoryToLearn.clear();
 				pastFeatureExtractors.clear();
 				int clusterId = Sample::getNextClusterId();
 				for (shared_ptr<Sample>& sample : samples) {
@@ -240,11 +230,11 @@ bool ExtendedHogBasedMeasurementModel::initialize(shared_ptr<VersionedImage> ima
 			maxWidth = image->getData().cols;
 		}
 
-		shared_ptr<CompleteExtendedHogFilter> hogFilter;
+		shared_ptr<ExtendedHogFilter> hogFilter;
 		if (signedAndUnsigned)
-			hogFilter = make_shared<CompleteExtendedHogFilter>(cellSize, 18, true, true, interpolateBins, interpolateCells, 0.2);
+			hogFilter = make_shared<ExtendedHogFilter>(cellSize, 18, true, true, interpolateBins, interpolateCells, 0.2);
 		else
-			hogFilter = make_shared<CompleteExtendedHogFilter>(cellSize, 9, false, true, interpolateBins, interpolateCells, 0.48);
+			hogFilter = make_shared<ExtendedHogFilter>(cellSize, 9, false, true, interpolateBins, interpolateCells, 0.48);
 
 		if (basePyramid) {
 			positiveFeatureExtractor = make_shared<ExtendedHogFeatureExtractor>(basePyramid, hogFilter, cellColumnCount, cellRowCount);
@@ -266,54 +256,6 @@ bool ExtendedHogBasedMeasurementModel::initialize(shared_ptr<VersionedImage> ima
 		} else {
 			featureExtractor = positiveFeatureExtractor;
 		}
-
-		// TODO alternative with other hog filter for non-sliding-window - why worse (especially on ball video)?
-//		if (useSlidingWindow) {
-//			shared_ptr<CompleteExtendedHogFilter> hogFilter;
-//			if (signedAndUnsigned)
-//				hogFilter = make_shared<CompleteExtendedHogFilter>(cellSize, 18, true, true, interpolateBins, interpolateCells, 0.2);
-//			else
-//				hogFilter = make_shared<CompleteExtendedHogFilter>(cellSize, 9, false, true, interpolateBins, interpolateCells, 0.48);
-//			if (basePyramid) {
-//				positiveFeatureExtractor = make_shared<ExtendedHogFeatureExtractor>(basePyramid, hogFilter, cellColumnCount, cellRowCount);
-//				int patchWidth = positiveFeatureExtractor->getPatchWidth();
-//				minWidth = std::max(minWidth, static_cast<size_t>(round(patchWidth / basePyramid->getMaxScaleFactor())));
-//				maxWidth = std::min(maxWidth, static_cast<size_t>(round(patchWidth / basePyramid->getMinScaleFactor())));
-//			} else { // no base pyramid given
-//				positiveFeatureExtractor = make_shared<ExtendedHogFeatureExtractor>(
-//						hogFilter, cellColumnCount, cellRowCount, minWidth, maxWidth, octaveLayerCount);
-//			}
-//			shared_ptr<ImagePyramid> featurePyramid = make_shared<ImagePyramid>(positiveFeatureExtractor->getPyramid());
-//			featurePyramid->addLayerFilter(hogFilter);
-//			heatPyramid = make_shared<ImagePyramid>(featurePyramid);
-//			heatPyramid->addLayerFilter(convolutionFilter);
-//			featureExtractor = make_shared<CellBasedPyramidFeatureExtractor>(featurePyramid, cellSize, cellColumnCount, cellRowCount);
-//			heatExtractor = make_shared<CellBasedPyramidFeatureExtractor>(heatPyramid, cellSize, cellColumnCount, cellRowCount);
-//		} else {
-//			shared_ptr<GradientFilter> gradientFilter = make_shared<GradientFilter>(1, 0);
-//			shared_ptr<GradientBinningFilter> binningFilter;
-//			shared_ptr<ExtendedHogFilter> hogFilter;
-//			if (signedAndUnsigned) {
-//				binningFilter = make_shared<GradientBinningFilter>(18, true, interpolateBins);
-//				hogFilter = make_shared<ExtendedHogFilter>(18, cellSize, interpolateCells, true, 0.2);
-//			} else {
-//				binningFilter = make_shared<GradientBinningFilter>(9, false, interpolateBins);
-//				hogFilter = make_shared<ExtendedHogFilter>(9, cellSize, interpolateCells, false, 0.48);
-//			}
-//			if (basePyramid) {
-//				shared_ptr<ImagePyramid> featurePyramid = make_shared<ImagePyramid>(basePyramid);
-//				featurePyramid->addLayerFilter(gradientFilter);
-//				featurePyramid->addLayerFilter(binningFilter);
-//				positiveFeatureExtractor = make_shared<ExtendedHogFeatureExtractor>(featurePyramid, hogFilter, cellColumnCount, cellRowCount);
-//				int patchWidth = positiveFeatureExtractor->getPatchWidth();
-//				minWidth = std::max(minWidth, static_cast<size_t>(round(patchWidth / basePyramid->getMaxScaleFactor())));
-//				maxWidth = std::min(maxWidth, static_cast<size_t>(round(patchWidth / basePyramid->getMinScaleFactor())));
-//			} else {
-//				positiveFeatureExtractor = make_shared<ExtendedHogFeatureExtractor>(
-//						gradientFilter, binningFilter, hogFilter, cellColumnCount, cellRowCount, minWidth, maxWidth, octaveLayerCount);
-//			}
-//			featureExtractor = positiveFeatureExtractor;
-//		}
 
 		initialized = true;
 	}
@@ -378,8 +320,6 @@ bool ExtendedHogBasedMeasurementModel::initialize(shared_ptr<VersionedImage> ima
 		}
 	}
 	targetLost = false;
-	learned.emplace(frameIndex, targetBounds);
-	frameIndex++;
 	return usable;
 }
 
@@ -389,7 +329,6 @@ bool ExtendedHogBasedMeasurementModel::adapt(shared_ptr<VersionedImage> image, c
 
 	targetLost = false;
 	vector<Mat> positiveTrainingExamples = createPositiveTrainingExamples(samples, target);
-	frameIndex++; // only necessary for output of learned positive patches
 	if (positiveTrainingExamples.empty())
 		return false;
 	vector<Mat> negativeTrainingExamples = createNegativeTrainingExamples(image->getData(), target);
@@ -414,20 +353,16 @@ bool ExtendedHogBasedMeasurementModel::adapt(shared_ptr<VersionedImage> image, c
 	}
 	pastFeatureExtractors.clear();
 	targetLost = true;
-	frameIndex++; // only necessary for output of learned positive patches
 	return false;
 }
 
 void ExtendedHogBasedMeasurementModel::reset() {
 	trainable->reset();
-	learned.clear(); // only necessary for output of learned positive patches
-	frameIndex = 0; // only necessary for output of learned positive patches
 	initialized = false;
 	usable = false;
 	targetLost = false;
 	initialFeatures = Mat();
 	trajectoryFeatures.clear();
-	trajectoryToLearn.clear();
 	pastFeatureExtractors.clear();
 }
 
@@ -502,7 +437,6 @@ vector<Mat> ExtendedHogBasedMeasurementModel::createPositiveTrainingExamples(con
 		if (score <= adaptationThreshold)
 			return vector<Mat>();
 
-		learned.emplace(frameIndex, target.getBounds()); // only necessary for output of learned positive patches
 		vector<Mat> positiveTrainingExamples;
 		positiveTrainingExamples.push_back(patch->getData());
 		return positiveTrainingExamples;
@@ -514,10 +448,8 @@ vector<Mat> ExtendedHogBasedMeasurementModel::createPositiveTrainingExamples(con
 			return vector<Mat>();
 
 		double score = classifier->getSvm()->computeHyperplaneDistance(patch->getData());
-		if (score > exclusionThreshold) {
+		if (score > exclusionThreshold)
 			trajectoryFeatures.push_back(patch->getData());
-			trajectoryToLearn.emplace_back(frameIndex, target.getBounds()); // only necessary for output of learned positive patches
-		}
 
 		if (score <= adaptationThreshold)
 			return vector<Mat>();
@@ -526,8 +458,6 @@ vector<Mat> ExtendedHogBasedMeasurementModel::createPositiveTrainingExamples(con
 		positiveTrainingExamples.reserve(trajectoryFeatures.size());
 		for (const Mat& features : trajectoryFeatures)
 			positiveTrainingExamples.push_back(features);
-		for (const pair<int, Rect>& elem : trajectoryToLearn) // only necessary for output of learned positive patches
-			learned.insert(elem);
 		trajectoryFeatures.clear();
 		return positiveTrainingExamples;
 	}
@@ -562,10 +492,8 @@ vector<Mat> ExtendedHogBasedMeasurementModel::createPositiveTrainingExamples(con
 		}
 
 		vector<Mat> positiveTrainingExamples;
-		learned.emplace(frameIndex, mean->getBounds()); // only necessary for output of learned positive patches
 		positiveTrainingExamples.push_back(patch->getData());
 		vector<shared_ptr<Sample>> ancestors = cluster;
-		size_t index = frameIndex - 1; // only necessary for output of learned positive patches
 		for (const shared_ptr<FeatureExtractor>& extractor : pastFeatureExtractors) {
 			std::transform(ancestors.begin(), ancestors.end(), ancestors.begin(), [](const shared_ptr<Sample>& sample) {
 				if (sample)
@@ -579,11 +507,8 @@ vector<Mat> ExtendedHogBasedMeasurementModel::createPositiveTrainingExamples(con
 			if (!patch)
 				continue;
 			double score = classifier->getSvm()->computeHyperplaneDistance(patch->getData());
-			if (score > exclusionThreshold) {
+			if (score > exclusionThreshold)
 				positiveTrainingExamples.push_back(patch->getData());
-				learned.emplace(index, mean->getBounds()); // only necessary for output of learned positive patches
-			}
-			--index; // only necessary for output of learned positive patches
 		}
 		pastFeatureExtractors.clear();
 		return positiveTrainingExamples;
@@ -695,10 +620,6 @@ double ExtendedHogBasedMeasurementModel::computeOverlap(Rect a, Rect b) const {
 	double intersectionArea = (a & b).area();
 	double unionArea = a.area() + b.area() - intersectionArea;
 	return intersectionArea / unionArea;
-}
-
-const unordered_map<size_t, Rect>& ExtendedHogBasedMeasurementModel::getLearned() const {
-	return learned;
 }
 
 void ExtendedHogBasedMeasurementModel::setHogParams(size_t cellSize, size_t cellCount,

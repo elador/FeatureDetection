@@ -10,7 +10,6 @@
 #define PROBABILISTICSVMCLASSIFIER_HPP_
 
 #include "classification/ProbabilisticClassifier.hpp"
-#include "boost/property_tree/ptree.hpp"
 #include <memory>
 
 namespace classification {
@@ -65,39 +64,6 @@ public:
 	 * @param[in] logisticB Parameter b of the logistic function for pseudo-probabilistic output p(x) = 1 / (1 + exp(a + b * x)).
 	 */
 	void setLogisticParameters(double logisticA, double logisticB);
-
-	/**
-	 * Creates a new probabilistic WVM classifier from the parameters given in some Matlab file. Loads the logistic function's
-	 * parameters from the matlab file, then passes the loading to the underlying WVM which loads the vectors and thresholds
-	 * from the matlab file. TODO update doc
-	 *
-	 * @param[in] classifierFilename The name of the file containing the WVM parameters.
-	 * @param[in] thresholdsFilename The name of the file containing the thresholds of the filter levels and the logistic function's parameters.
-	 * @return The newly created probabilistic WVM classifier.
-	 */
-	static std::pair<double, double> loadSigmoidParamsFromMatlab(const std::string& thresholdsFilename);
-
-	/**
-	 * Creates a new probabilistic SVM classifier from the parameters given in some Matlab file. Loads the logistic function's
-	 * parameters from the matlab file, then passes the loading to the underlying SVM which loads the vectors and thresholds
-	 * from the matlab file.
-	 *
-	 * @param[in] classifierFilename The name of the file containing the SVM parameters.
-	 * @param[in] logisticFilename The name of the file containing the logistic function's parameters.
-	 * @return The newly created probabilistic SVM classifier. TODO: This could be renamed just to "load(...)". But NOTE: The classifier will then be loaded with
-	 * default settings, and any deviation from that (e.g. adjusting the thresholds) must be done manually.
-	 */
-	static std::shared_ptr<ProbabilisticSvmClassifier> loadFromMatlab(const std::string& classifierFilename, const std::string& logisticFilename);
-
-	/**
-	 * Creates a new probabilistic SVM classifier from the parameters given in the ptree sub-tree. Loads the logistic function's
-	 * parameters, then passes the loading to the underlying SVM which loads the vectors and thresholds
-	 * from the matlab file.
-	 *
-	 * @param[in] subtree The subtree containing the config information for this classifier.
-	 * @return The newly created probabilistic WVM classifier.
-	 */
-	static std::shared_ptr<ProbabilisticSvmClassifier> load(const boost::property_tree::ptree& subtree);
 
 	/**
 	 * @return The actual SVM.

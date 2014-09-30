@@ -9,18 +9,8 @@
 #define DIRECTORYIMAGESOURCE_HPP_
 
 #include "imageio/ImageSource.hpp"
-#ifdef WIN32
-	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
-	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
-#endif
-#include "boost/filesystem.hpp"
 #include "opencv2/core/core.hpp"
 #include <vector>
-
-using boost::filesystem::path;
-using cv::Mat;
-using std::vector;
-using std::string;
 
 namespace imageio {
 
@@ -35,23 +25,17 @@ public:
 	 *
 	 * @param[in] directory The directory containing image files.
 	 */
-	explicit DirectoryImageSource(const string& directory);
-
-	~DirectoryImageSource();
+	explicit DirectoryImageSource(const std::string& directory);
 
 	void reset();
 
 	bool next();
 
-	const Mat getImage() const;
-
-	path getName() const;
-
-	vector<path> getNames() const;
+	const cv::Mat getImage() const;
 
 private:
-	vector<path> files; ///< The files of the given directory, ordered by name.
-	int index;			///< The index of the next file.
+	std::vector<std::string> files; ///< The image files of the given directory, ordered by name.
+	int index; ///< The index of the next file.
 
 };
 

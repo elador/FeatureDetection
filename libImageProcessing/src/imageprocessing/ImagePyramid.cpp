@@ -51,21 +51,6 @@ ImagePyramid::ImagePyramid(size_t octaveLayerCount, double minScaleFactor, doubl
 	incrementalScaleFactor = pow(0.5, 1. / octaveLayerCount);
 }
 
-ImagePyramid::ImagePyramid(double incrementalScaleFactor, double minScaleFactor, double maxScaleFactor) :
-		octaveLayerCount(0), incrementalScaleFactor(0),
-		minScaleFactor(minScaleFactor), maxScaleFactor(maxScaleFactor),
-		firstLayer(0), layers(), sourceImage(), sourcePyramid(), version(-1),
-		imageFilter(make_shared<ChainedFilter>()), layerFilter(make_shared<ChainedFilter>()) {
-	if (incrementalScaleFactor <= 0 || incrementalScaleFactor >= 1)
-		throw createException<invalid_argument>(__FILE__, __LINE__, "the incremental scale factor must be greater than zero and smaller than one");
-	if (minScaleFactor <= 0)
-		throw createException<invalid_argument>(__FILE__, __LINE__, "the minimum scale factor must be greater than zero");
-	if (maxScaleFactor > 1)
-		throw createException<invalid_argument>(__FILE__, __LINE__, "the maximum scale factor must not exceed one");
-	octaveLayerCount = static_cast<size_t>(std::round(log(0.5) / log(incrementalScaleFactor)));
-	this->incrementalScaleFactor = pow(0.5, 1. / octaveLayerCount);
-}
-
 ImagePyramid::ImagePyramid(double minScaleFactor, double maxScaleFactor) :
 		octaveLayerCount(0), incrementalScaleFactor(0),
 		minScaleFactor(minScaleFactor), maxScaleFactor(maxScaleFactor),

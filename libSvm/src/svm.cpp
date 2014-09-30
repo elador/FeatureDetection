@@ -248,29 +248,6 @@ private:
 	{
 		return x[i][(int)(x[j][0].value)].value;
 	}
-	double kernel_hik(int i, int j) const
-	{
-		double minSum = 0;
-		const svm_node *px = x[i];
-		const svm_node *py = x[j];
-		while(px->index != -1 && py->index != -1)
-		{
-			if(px->index == py->index)
-			{
-				minSum += min<double>(px->value, py->value);
-				++px;
-				++py;
-			}
-			else
-			{
-				if(px->index > py->index)
-					++py;
-				else
-					++px;
-			}
-		}
-		return minSum;
-	}
 };
 
 Kernel::Kernel(int l, svm_node * const * x_, const svm_parameter& param)
@@ -293,9 +270,6 @@ Kernel::Kernel(int l, svm_node * const * x_, const svm_parameter& param)
 			break;
 		case PRECOMPUTED:
 			kernel_function = &Kernel::kernel_precomputed;
-			break;
-		case HIK:
-			kernel_function = &Kernel::kernel_hik;
 			break;
 	}
 
@@ -393,27 +367,6 @@ double Kernel::k_function(const svm_node *x, const svm_node *y,
 			return tanh(param.gamma*dot(x,y)+param.coef0);
 		case PRECOMPUTED:  //x: test (validation), y: SV
 			return x[(int)(y->value)].value;
-		case HIK:
-		{
-			double minSum = 0;
-			while(x->index != -1 && y->index != -1)
-			{
-				if(x->index == y->index)
-				{
-					minSum += min<double>(x->value, y->value);
-					++x;
-					++y;
-				}
-				else
-				{
-					if(x->index > y->index)
-						++y;
-					else
-						++x;
-				}
-			}
-			return minSum;
-		}
 		default:
 			return 0;  // Unreachable 
 	}
@@ -2682,7 +2635,7 @@ static const char *svm_type_table[] =
 
 static const char *kernel_type_table[]=
 {
-	"linear","polynomial","rbf","sigmoid","precomputed","HIK",NULL
+	"linear","polynomial","rbf","sigmoid","precomputed",NULL
 };
 
 int svm_save_model(const char *model_file_name, const svm_model *model)
@@ -3086,8 +3039,7 @@ const char *svm_check_parameter(const svm_problem *prob, const svm_parameter *pa
 	   kernel_type != POLY &&
 	   kernel_type != RBF &&
 	   kernel_type != SIGMOID &&
-	   kernel_type != PRECOMPUTED &&
-	   kernel_type != HIK)
+	   kernel_type != PRECOMPUTED)
 		return "unknown kernel type";
 
 	if(param->gamma < 0)

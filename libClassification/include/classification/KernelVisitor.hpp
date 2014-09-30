@@ -13,7 +13,6 @@ namespace classification {
 class LinearKernel;
 class PolynomialKernel;
 class RbfKernel;
-class HistogramIntersectionKernel;
 
 /**
  * Kernel visitor.
@@ -43,13 +42,6 @@ public:
 	 * @param[in] kernel The kernel.
 	 */
 	virtual void visit(const RbfKernel& kernel) = 0;
-
-	/**
-	 * Visits a histogram intersection kernel.
-	 *
-	 * @param[in] kernel The kernel.
-	 */
-	virtual void visit(const HistogramIntersectionKernel& kernel) = 0;
 };
 
 } /* namespace classification */

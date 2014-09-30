@@ -7,19 +7,6 @@
 # Linux: Boost can usually be installed via a package manager (e.g. apt-get install boost-all-dev) and this variable can be left uncommented.
 #set(BOOST_ROOT     "/home/user/boost/install"    CACHE STRING "Boost search location" FORCE)
 
-# Matlab:
-# -------
-# Windows & Linux: This should be set to the directory of the Matlab Compiler runtime (can be downloaded at http://www.mathworks.com/products/compiler/mcr/) or to Matlab, if installed.
-#set(MATLAB_ROOT     "C:/Program Files/MATLAB/R2012b/"    CACHE STRING "Matlab search location" FORCE) # Note: This path should be given without "/extern"
-#set(MATLAB_ROOT     "/home/user/MATLAB_Compiler_Runtime/v82/"    CACHE STRING "Matlab search location" FORCE) # Linux
-
-# Eigen3:
-# -------
-# Windows: Set to the path of the unzipped Eigen3 file.
-#set(EIGEN3_INCLUDE_DIR "C:\\eigen\\eigen-ffa86ffb5570\\" CACHE STRING "Directory of the Eigen3 headers" FORCE)
-# Linux: Can be left empty when installed system-wide. (Note/Todo: Doesnt work with Eigen 3.0.5 from Ubuntu 12.04). Otherwise, set the path manually.
-#set(EIGEN3_INCLUDE_DIR "/home/user/eigen-ffa86ffb5570/" CACHE STRING "Directory of the Eigen3 headers" FORCE)
-
 
 # Mechanism via ConfigLIB.cmake in 3rd party library directory
 # ==============================
@@ -30,28 +17,3 @@
 # Linux: Usually can be left blank but it can be used if OpenCV is not found.
 #set(OpenCV_DIR   "/home/user/opencv/install/share/OpenCV"   CACHE STRING "OpenCV config dir, where OpenCVConfig.cmake can be found" FORCE)
 
-# HDF5:
-# -------
-# Windows: Use our provided zip-file 'HDF5-1.8.12-win64_vc12_selfbuilt_DebugAndRelease.rar' that contains binaries for VS2013.
-#set(HDF5_DIR "C:\\Users\\Username\\HDF5-1.8.12-win64\\cmake\\hdf5" CACHE STRING "Directory of hdf5-config.cmake or just the root of the hdf5 installation" FORCE)
-# Linux: Can be usually left uncommented when HDF5 is installed system-wide.
-#set(HDF5_DIR "" CACHE STRING "Directory of hdf5-config.cmake or just the root of the hdf5 installation" FORCE)
-
-# QT:
-# -------
-# Windows: Use Qt 5.3 beta which includes binaries for VS2013. Set these variables to the directories where the CMake config files can be found.
-#set(Qt5Core_DIR "C:\\Qt\\5.3\\msvc2013_64\\lib\\cmake\\Qt5Core" CACHE STRING "Path to Qt5CoreConfig.cmake" FORCE)
-#set(Qt5Gui_DIR "C:\\Qt\\5.3\\msvc2013_64\\lib\\cmake\\Qt5Gui" CACHE STRING "Path to Qt5GuiConfig.cmake" FORCE)
-# Linux: It is recommended to use the "Qt Online Installer" (64-bit) from http://qt-project.org/downloads. Set below-mentioned paths accordingly.
-#set(Qt5Core_DIR "/home/user/Qt/5.2.1/gcc_64/lib/cmake/Qt5Core" CACHE STRING "Path to Qt5CoreConfig.cmake" FORCE)
-#set(Qt5Gui_DIR "/home/user/Qt/5.2.1/gcc_64/lib/cmake/Qt5Gui" CACHE STRING "Path to Qt5GuiConfig.cmake" FORCE)
-
-# Configuration options
-# ==============================
-
-set(WITH_MSKINECT_SDK OFF CACHE BOOL "Enables the use of a Kinect as a webcam (using the MS Kinect SDK for Windows)" FORCE)
-set(WITH_MATLAB_CLASSIFIER OFF CACHE BOOL "Enables support for loading Matlab classifiers (e.g. WVMs) in libClassification and certain apps" FORCE)
-set(WITH_LIBLINEAR_CLASSIFIER OFF CACHE BOOL "Enables support for loading libLinear classifiers in certain apps (needs BLAS)" FORCE)
-set(WITH_RENDER_QOPENGL OFF CACHE BOOL "Enables support for a QOpenGL-based renderer in addition to the software renderer and a few interop functions (requires Qt5)" FORCE)
-set(WITH_MORPHABLEMODEL_HDF5 OFF CACHE BOOL "Enables support for loading statismo h5 Morphable Models (requires HDF5)" FORCE)
-set(WITH_FITTING_LIBEIGEN ON CACHE BOOL "Uses libEigen for linear algebra operations in the fitting instead of OpenCV." FORCE)

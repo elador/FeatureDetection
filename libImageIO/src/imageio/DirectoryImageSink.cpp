@@ -40,8 +40,6 @@ DirectoryImageSink::DirectoryImageSink(string directory, string ending) :
 		std::cerr << "'" << directory << "' is no directory" << std::endl;
 }
 
-DirectoryImageSink::~DirectoryImageSink() {}
-
 void DirectoryImageSink::add(const Mat& image) {
 	ostringstream filename;
 	filename << directory << setfill('0') << setw(5) << index++ << setw(0) << '.' << ending;

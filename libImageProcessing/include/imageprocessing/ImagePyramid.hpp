@@ -38,15 +38,6 @@ public:
 	ImagePyramid(size_t octaveLayerCount, double minScaleFactor, double maxScaleFactor = 1);
 
 	/**
-	 * Constructs a new empty image pyramid using the incremental scale factor for determining the number of layers per octave.
-	 *
-	 * @param[in] incrementalScaleFactor The incremental scale factor between two layers of the pyramid.
-	 * @param[in] minScaleFactor The minimum scale factor (the scale factor of the smallest scaled (last) image is bigger or equal).
-	 * @param[in] maxScaleFactor The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
-	 */
-	ImagePyramid(double incrementalScaleFactor, double minScaleFactor, double maxScaleFactor = 1);
-
-	/**
 	 * Constructs a new empty image pyramid that will use another pyramid as its source.
 	 */
 	explicit ImagePyramid(double minScaleFactor = 0, double maxScaleFactor = 1);

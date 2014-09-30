@@ -9,12 +9,8 @@
 #include "imageprocessing/VersionedImage.hpp"
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/ImagePyramidLayer.hpp"
-#include "imageprocessing/ImageFilter.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
-#include "imageprocessing/GradientFilter.hpp"
-#include "imageprocessing/GradientBinningFilter.hpp"
 #include "imageprocessing/ExtendedHogFilter.hpp"
-#include "imageprocessing/CompleteExtendedHogFilter.hpp"
 #include "imageprocessing/Patch.hpp"
 #include <stdexcept>
 
@@ -41,39 +37,14 @@ shared_ptr<ImagePyramid> ExtendedHogFeatureExtractor::createPyramid(int width, i
 }
 
 ExtendedHogFeatureExtractor::ExtendedHogFeatureExtractor(shared_ptr<ImagePyramid> pyramid,
-		shared_ptr<CompleteExtendedHogFilter> ehogFilter, int cols, int rows) :
+		shared_ptr<ExtendedHogFilter> ehogFilter, int cols, int rows) :
 				pyramid(pyramid), ehogFilter(ehogFilter), patchWidth((cols + 2) * ehogFilter->getCellSize()), patchHeight((rows + 2) * ehogFilter->getCellSize()),
 				cellSize(ehogFilter->getCellSize()), widthFactor(static_cast<double>(cols + 2) / cols), heightFactor(static_cast<double>(rows + 2) / rows) {
 	if (cols <= 0 || rows <= 0)
 		throw invalid_argument("ExtendedHogFeatureExtractor: the amount of columns and rows must be greater than zero");
 }
 
-ExtendedHogFeatureExtractor::ExtendedHogFeatureExtractor(shared_ptr<ImagePyramid> pyramid,
-		shared_ptr<ExtendedHogFilter> ehogFilter, int cols, int rows) :
-				pyramid(pyramid), ehogFilter(ehogFilter), patchWidth((cols + 2) * ehogFilter->getCellWidth()), patchHeight((rows + 2) * ehogFilter->getCellWidth()),
-				cellSize(ehogFilter->getCellWidth()), widthFactor(static_cast<double>(cols + 2) / cols), heightFactor(static_cast<double>(rows + 2) / rows) {
-	if (cols <= 0 || rows <= 0)
-		throw invalid_argument("ExtendedHogFeatureExtractor: the amount of columns and rows must be greater than zero");
-	if (ehogFilter->getCellWidth() != ehogFilter->getCellHeight())
-		throw invalid_argument("ExtendedHogFeatureExtractor: the cell width and height have to be the same");
-}
-
-ExtendedHogFeatureExtractor::ExtendedHogFeatureExtractor(shared_ptr<GradientFilter> gradientFilter,
-		shared_ptr<GradientBinningFilter> binningFilter, shared_ptr<ExtendedHogFilter> ehogFilter,
-		int cols, int rows, int minWidth, int maxWidth, int octaveLayerCount) :
-				pyramid(createPyramid((cols + 2) * ehogFilter->getCellWidth(), (cols + 2) * minWidth / cols, (cols + 2) * maxWidth / cols, octaveLayerCount)),
-				ehogFilter(ehogFilter), patchWidth((cols + 2) * ehogFilter->getCellWidth()), patchHeight((rows + 2) * ehogFilter->getCellWidth()),
-				cellSize(ehogFilter->getCellWidth()), widthFactor(static_cast<double>(cols + 2) / cols), heightFactor(static_cast<double>(rows + 2) / rows) {
-	if (cols <= 0 || rows <= 0)
-		throw invalid_argument("ExtendedHogFeatureExtractor: the amount of columns and rows must be greater than zero");
-	if (ehogFilter->getCellWidth() != ehogFilter->getCellHeight())
-		throw invalid_argument("ExtendedHogFeatureExtractor: the cell width and height have to be the same");
-	pyramid->addImageFilter(make_shared<GrayscaleFilter>());
-	pyramid->addLayerFilter(gradientFilter);
-	pyramid->addLayerFilter(binningFilter);
-}
-
-ExtendedHogFeatureExtractor::ExtendedHogFeatureExtractor(shared_ptr<CompleteExtendedHogFilter> ehogFilter,
+ExtendedHogFeatureExtractor::ExtendedHogFeatureExtractor(shared_ptr<ExtendedHogFilter> ehogFilter,
 		int cols, int rows, int minWidth, int maxWidth, int octaveLayerCount) :
 				pyramid(createPyramid((cols + 2) * ehogFilter->getCellSize(), (cols + 2) * minWidth / cols, (cols + 2) * maxWidth / cols, octaveLayerCount)),
 				ehogFilter(ehogFilter), patchWidth((cols + 2) * ehogFilter->getCellSize()), patchHeight((rows + 2) * ehogFilter->getCellSize()),
@@ -115,14 +86,7 @@ shared_ptr<Patch> ExtendedHogFeatureExtractor::extract(int x, int y, int width, 
 	} else { // patch is partially outside the image
 		vector<int> rowIndices = createIndexLut(image.rows, bounds.y, bounds.height);
 		vector<int> colIndices = createIndexLut(image.cols, bounds.x, bounds.width);
-		if (image.type() == CV_8UC1)
-			patchData = createPatchData<uchar>(image, rowIndices, colIndices);
-		else if (image.type() == CV_8UC2)
-			patchData = createPatchData<cv::Vec2b>(image, rowIndices, colIndices);
-		else if (image.type() == CV_8UC4)
-			patchData = createPatchData<cv::Vec4b>(image, rowIndices, colIndices);
-		else
-			throw runtime_error("ExtendedHogFeatureExtractor: the type of the pyramid layer images has to be CV_8UC1, CV_8UC2 or CV_8UC4");
+		patchData = createPatchData(image, rowIndices, colIndices);
 	}
 	Mat tmp = ehogFilter->applyTo(patchData);
 	Mat data = Mat(tmp, Rect(1, 1, tmp.cols - 2, tmp.rows - 2)).clone();
@@ -144,6 +108,19 @@ vector<int> ExtendedHogFeatureExtractor::createIndexLut(int imageSize, int patch
 		indices[patchIndex] = imageIndex;
 	}
 	return indices;
+}
+
+Mat ExtendedHogFeatureExtractor::createPatchData(const Mat& image, vector<int>& rowIndices, vector<int>& colIndices) const {
+	if (image.type() != CV_8UC1)
+		throw runtime_error("ExtendedHogFeatureExtractor: the type of the pyramid layer images has to be CV_8UC1");
+	Mat patch(rowIndices.size(), colIndices.size(), image.type());
+	for (size_t patchY = 0; patchY < rowIndices.size(); ++patchY) {
+		uchar* patchRow = patch.ptr<uchar>(patchY);
+		const uchar* imageRow = image.ptr<uchar>(rowIndices[patchY]);
+		for (size_t patchX = 0; patchX < colIndices.size(); ++patchX)
+			patchRow[patchX] = imageRow[colIndices[patchX]];
+	}
+	return patch;
 }
 
 shared_ptr<ImagePyramid> ExtendedHogFeatureExtractor::getPyramid() {

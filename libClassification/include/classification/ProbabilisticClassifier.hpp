@@ -11,8 +11,6 @@
 #define PROBABILISTICCLASSIFIER_HPP_
 
 #include "classification/BinaryClassifier.hpp"
-#include "opencv2/core/core.hpp"
-#include <utility>
 
 namespace classification {
 

@@ -7,43 +7,36 @@
 
 #include "imageio/DirectoryImageSource.hpp"
 #include "opencv2/highgui/highgui.hpp"
+#ifdef WIN32
+	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
+	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
+#endif
+#include "boost/filesystem.hpp"
 #include <stdexcept>
 
+using cv::Mat;
 using cv::imread;
+using boost::filesystem::path;
 using boost::filesystem::exists;
 using boost::filesystem::is_directory;
 using boost::filesystem::directory_iterator;
-using std::copy;
-using std::sort;
+using std::string;
+using std::vector;
 using std::runtime_error;
 
 namespace imageio {
 
-DirectoryImageSource::DirectoryImageSource(const string& directory) : ImageSource(directory), files(), index(-1) {
+DirectoryImageSource::DirectoryImageSource(const string& directory) : files(), index(-1) {
 	path dirpath(directory);
 	if (!exists(dirpath))
 		throw runtime_error("DirectoryImageSource: Directory '" + directory + "' does not exist.");
 	if (!is_directory(dirpath))
 		throw runtime_error("DirectoryImageSource: '" + directory + "' is not a directory.");
-	copy(directory_iterator(dirpath), directory_iterator(), back_inserter(files));
-	/* TODO: Only copy valid images that opencv can handle. Those are:
-		Built-in: bmp, portable image formats (pbm, pgm, ppm), Sun raster (sr, ras).
-		With plugins, present by default: JPEG (jpeg, jpg, jpe), JPEG 2000 (jp2 (=Jasper)), 
-										  TIFF files (tiff, tif), png.
-		If specified: OpenEXR.
-		Parameter for list of valid file extensions?
-		Parameter for predicate (used by remove_if)?
-		Parameter for single file extension?
-		Unify the different image sources that work with file lists (DirectoryImageSource,
-		FileImageSource, FileListImageSource, RepeatingFileImageSourcec), so the filtering
-		does not have to be repeated in each of them. But not all of them need the filtering
-		anyway (for example if a file list is given explicitly).
 
-		First prototype version of file filtering by extension:
-	*/
+	vector<path> allFiles;
+	std::copy(directory_iterator(dirpath), directory_iterator(), back_inserter(allFiles));
 	vector<string> imageExtensions = { "bmp", "dib", "pbm", "pgm", "ppm", "sr", "ras", "jpeg", "jpg", "jpe", "jp2", "png", "tiff", "tif" };
-
-	auto newFilesEnd = std::remove_if(files.begin(), files.end(), [&](const path& file) {
+	auto newFilesEnd = std::remove_if(allFiles.begin(), allFiles.end(), [&](const path& file) {
 		string extension = file.extension().string();
 		if (extension.size() > 0)
 			extension = extension.substr(1);
@@ -52,41 +45,27 @@ DirectoryImageSource::DirectoryImageSource(const string& directory) : ImageSourc
 			return imageExtension == extension;
 		});
 	});
-	files.erase(newFilesEnd, files.end());
-
-	sort(files.begin(), files.end());
+	allFiles.erase(newFilesEnd, allFiles.end());
+	std::sort(allFiles.begin(), allFiles.end());
+	files.resize(allFiles.size());
+	std::transform(allFiles.begin(), allFiles.end(), files.begin(), [](const path& file) {
+		return file.string();
+	});
 }
 
-DirectoryImageSource::~DirectoryImageSource() {}
-
-void DirectoryImageSource::reset()
-{
+void DirectoryImageSource::reset() {
 	index = -1;
 }
 
-bool DirectoryImageSource::next()
-{
+bool DirectoryImageSource::next() {
 	index++;
 	return index < static_cast<int>(files.size());
 }
 
-const Mat DirectoryImageSource::getImage() const
-{
+const Mat DirectoryImageSource::getImage() const {
 	if (index < 0 || index >= static_cast<int>(files.size()))
 		return Mat();
-	return imread(files[index].string(), CV_LOAD_IMAGE_COLOR);
-}
-
-path DirectoryImageSource::getName() const
-{
-	if (index < 0 || index >= static_cast<int>(files.size()))
-		return path();
-	return files[index];
-}
-
-vector<path> DirectoryImageSource::getNames() const
-{
-	return files;
+	return imread(files[index], CV_LOAD_IMAGE_COLOR);
 }
 
 } /* namespace imageio */

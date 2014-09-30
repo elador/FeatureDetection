@@ -15,8 +15,6 @@ namespace logging {
 
 /**
  * The log-levels used.
- *
- * TODO is this ok here? Is there a better place? If we place it in the LoggerFactory or Logger, we have circular dependencies?
  */
 enum class LogLevel {
 	Panic,	// Use to log extreme situations where the entire application execution could be affected due to some cause.
@@ -40,25 +38,18 @@ static std::string logLevelToString(LogLevel logLevel)
 	{
 	case LogLevel::Panic:
 		return std::string("PANIC");
-		break;
 	case LogLevel::Error:
 		return std::string("ERROR");
-		break;
 	case LogLevel::Warn:
 		return std::string("WARN");
-		break;
 	case LogLevel::Info:
 		return std::string("INFO");
-		break;
 	case LogLevel::Debug:
 		return std::string("DEBUG");
-		break;
 	case LogLevel::Trace:
 		return std::string("TRACE");
-		break;
 	default:
 		return std::string("UNDEFINEDLOGLEVEL");
-		break;
 	}
 }
 

@@ -28,8 +28,6 @@ public:
 	 */
 	explicit VideoImageSink(const std::string filename, double fps, int fourcc = CV_FOURCC('M', 'J', 'P', 'G'));
 
-	~VideoImageSink();
-
 	void add(const cv::Mat& image);
 
 private:

@@ -1,101 +1,119 @@
 /*
  * ExtendedHogFilter.hpp
  *
- *  Created on: 01.08.2013
+ *  Created on: 06.01.2014
  *      Author: poschmann
  */
 
 #ifndef EXTENDEDHOGFILTER_HPP_
 #define EXTENDEDHOGFILTER_HPP_
 
-#include "imageprocessing/HistogramFilter.hpp"
+#include "imageprocessing/ImageFilter.hpp"
 #include <vector>
+#include <array>
 
 namespace imageprocessing {
 
 /**
- * Filter that builds extended HOG feature vectors. The extended HOG features were described in [1]. But instead of
- * computing the HOG descriptors for the inner cells only, we compute the descriptors for the border cells, too. The
- * necessary gradient energies, that would have computed from cells outside of the image, are taken from the nearest
- * cells within the image - so the gradient energies of the border cells are repeated for the imaginary cells right
- * outside the image.
+ * Image filter that takes a grayscale image and computes extended HOG descriptors for cells of a certain size. The
+ * output image will have one descriptor per row/column pair and have as many channels as there are values inside
+ * the descriptors.
  *
- * The input is an image with depth CV_8U containing bin information (bin indices and optionally weights). It must have
- * one, two or four channels. In case of one channel, it just contains the bin index. The second channel adds a weight
- * that will be divided by 255 to be between zero and one. The third channel is another bin index and the fourth channel
- * is the corresponding weight. The output will be an image containing the HOG cell descriptors. Its depth is CV_32F and
- * the amount of channels depends on the amount of values of each cell descriptor. If both signed and unsigned gradients
- * should be integrated into the descriptor, the binCount describes the amount of signed gradient bins. In that case,
- * the descriptor will have a size of binCount + binCount / 2 + 4, otherwise it is binCount + 4.
+ * The extended HOG features were described in [1]. But instead of computing the HOG descriptors for the inner cells
+ * only, we compute the descriptors for the border cells, too. The necessary gradient energies, that would have
+ * computed from cells outside of the image, are taken from the nearest cells within the image - so the gradient
+ * energies of the border cells are repeated for the imaginary cells right outside the image.
+ *
+ * The input image has to be of type CV_8UC1, the output image will be of type CV_32FC(#), where # depends on the
+ * number of orientation bins and on whether signed and unsigned gradients should be combined. If both signed and
+ * unsigned gradients should be integrated into the descriptor, the binCount describes the amount of signed gradient
+ * bins. In that case, the descriptor will have a size of binCount + binCount / 2 + 4, otherwise it is
+ * binCount + 4.
  *
  * [1] Felzenszwalb et al., Object Detection with Discriminatively Trained Part-Based Models, PAMI, 2010.
  */
-class ExtendedHogFilter : public HistogramFilter {
+class ExtendedHogFilter : public ImageFilter {
 public:
 
 	/**
-	 * Constructs a new extended HOG filter with square cells and blocks.
+	 * Constructs a new complete extended HOG filter.
 	 *
+	 * @param[in] cellSize The width and height of the cells.
 	 * @param[in] binCount The amount of bins inside the histogram.
-	 * @param[in] cellSize The preferred width and height of the cells in pixels (actual size might deviate).
-	 * @param[in] interpolate Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
-	 * @param[in] signedAndUnsigned Flag that indicates whether signed and unsigned gradients should be used.
+	 * @param[in] signedGradients Flag that indicates whether signed gradients (360°) should be computed.
+	 * @param[in] unsignedGradients Flag that indicates whether unsigned gradients (180°) should be computed.
+	 * @param[in] interpolateBins Flag that indicates whether a gradient should contribute to two neighboring bins in a weighted manner.
+	 * @param[in] interpolateCells Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
 	 * @param[in] alpha Truncation threshold of the orientation bin values (applied after normalization).
 	 */
-	ExtendedHogFilter(int binCount, int cellSize, bool interpolate, bool signedAndUnsigned, float alpha = 0.2);
-
-	/**
-	 * Constructs a new extended HOG filter.
-	 *
-	 * @param[in] binCount The amount of bins inside the histogram.
-	 * @param[in] cellWidth The preferred width of the cells in pixels (actual width might deviate).
-	 * @param[in] cellHeight The preferred height of the cells in pixels (actual height might deviate).
-	 * @param[in] interpolate Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
-	 * @param[in] signedAndUnsigned Flag that indicates whether signed and unsigned gradients should be used.
-	 * @param[in] alpha Truncation threshold of the orientation bin values (applied after normalization).
-	 */
-	ExtendedHogFilter(int binCount, int cellWidth, int cellHeight, bool interpolate, bool signedAndUnsigned, float alpha = 0.2);
+	explicit ExtendedHogFilter(size_t cellSize = 8, size_t binCount = 18, bool signedGradients = true, bool unsignedGradients = true,
+			bool interpolateBins = false, bool interpolateCells = true, float alpha = 0.2f);
 
 	using ImageFilter::applyTo;
 
 	cv::Mat applyTo(const cv::Mat& image, cv::Mat& filtered) const;
 
 	/**
-	 * @return The width of the cells.
+	 * @return The width and height of the cells.
 	 */
-	int getCellWidth() {
-		return cellWidth;
-	}
-
-	/**
-	 * @return The height of the cells.
-	 */
-	int getCellHeight() {
-		return cellHeight;
+	size_t getCellSize() {
+		return cellSize;
 	}
 
 private:
 
 	/**
-	 * Creates cell descriptors based on a grid of cell histograms.
-	 *
-	 * @param[in] histograms Row vector containing the histogram values of the cells in row-major order.
-	 * @param[out] descriptors Row vector containing the descriptors of the cells in row-major order.
-	 * @param[in] bins Bin count of the histograms.
-	 * @param[in] signedAndUnsigned Flag that indicates whether signed and unsigned gradients should be used.
-	 * @param[in] cellRows Row count of the cell grid.
-	 * @param[in] cellCols Column count of the cell grid.
-	 * @param[in] alpha Truncation threshold of the orientation bin values (applied after normalization).
+	 * Information about values being added to histogram bins.
 	 */
-	void createDescriptors(const cv::Mat& histograms, cv::Mat& descriptors,
-			int bins, bool signedAndUnsigned, int cellRows, int cellCols, float alpha) const;
+	struct BinInformation {
+		int index1; ///< Index of the first bin.
+		int index2; ///< Index of the second bin.
+		float weight1; ///< Weight of the first bin.
+		float weight2; ///< Weight of the second bin.
+	};
 
-	int binCount;   ///< The amount of bins inside the histogram.
-	int cellWidth;  ///< The preferred width of the cells in pixels (actual width might deviate).
-	int cellHeight; ///< The preferred height of the cells in pixels (actual height might deviate).
-	bool interpolate;       ///< Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
-	bool signedAndUnsigned; ///< Flag that indicates whether signed and unsigned gradients should be used.
+	/**
+	 * Creates the look-up-table if its size does not match the requested size.
+	 *
+	 * @param[in,out] lut The look-up table.
+	 * @param[in] size The necessary amount of entries (row/column count).
+	 * @param[in] count The number of cells.
+	 */
+	void createLut(std::vector<BinInformation>& lut, size_t size, size_t count) const;
+
+	/**
+	 * Creates the initial histograms by computing the gradients over the image.
+	 *
+	 * @param[in,out] histograms The (empty) histogram/descriptor of each cell.
+	 * @param[in] image The image.
+	 * @param[in] cellRowCount The cell row count that fits into the image.
+	 * @param[in] cellColumnCount The cell column count that fits into the image.
+	 */
+	void buildInitialHistograms(cv::Mat& histograms, const cv::Mat& image, size_t cellRowCount, size_t cellColumnCount) const;
+
+	/**
+	 * Builds the descriptor of each cell using its histogram data.
+	 *
+	 * @param[in,out] descriptors The descriptors (initially containing the histogram data) of each cell.
+	 * @param[in] cellRowCount The cell row count that fits into the image.
+	 * @param[in] cellColumnCount The cell column count that fits into the image.
+	 * @param[in] descriptorSize The value count of the descriptors.
+	 */
+	void buildDescriptors(cv::Mat& descriptors, size_t cellRowCount, size_t cellColumnCount, size_t descriptorSize) const;
+
+	size_t cellSize; ///< The width and height of the cells.
+	size_t binCount; ///< The amount of bins inside the histogram.
+	bool signedGradients;   ///< Flag that indicates whether signed gradients (360°) should be computed.
+	bool unsignedGradients; ///< Flag that indicates whether unsigned gradients (180°) should be computed.
+	bool interpolateBins;   ///< Flag that indicates whether a gradient should contribute to two neighboring bins in a weighted manner.
+	bool interpolateCells;  ///< Flag that indicates whether each pixel should contribute to the four cells around it using bilinear interpolation.
 	float alpha; ///< Truncation threshold of the orientation bin values (applied after normalization).
+
+	std::array<BinInformation, 512 * 512> binLut;  ///< Look-up table for bin information given a gradient code.
+	mutable std::vector<BinInformation> rowLut;    ///< Look-up table for the linear interpolation of the row indices.
+	mutable std::vector<BinInformation> columnLut; ///< Look-up table for the linear interpolation of the column indices.
+
+	static const float eps; ///< The small value being added to the norm to prevent division by zero.
 };
 
 } /* namespace imageprocessing */

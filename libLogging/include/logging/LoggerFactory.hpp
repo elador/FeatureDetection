@@ -27,9 +27,8 @@ namespace logging {
 class LoggerFactory
 {
 private:
-	/* Private constructor, destructor and copy constructor - we only want one instance of the factory. */
+	/* Private constructor and copy constructor - we only want one instance of the factory. */
 	LoggerFactory();
-	~LoggerFactory();
 	LoggerFactory(const LoggerFactory &);
 	LoggerFactory& operator=(const LoggerFactory &);
 

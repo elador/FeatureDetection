@@ -22,14 +22,6 @@ else()
 	set(KINECT_LIBNAME "")
 endif()
 
-if(WITH_LIBLINEAR_CLASSIFIER)
-	include_directories(${Linear_SOURCE_DIR}/include)
-	set(LIBLINEAR_LIB "Linear")
-	add_definitions(-DWITH_LIBLINEAR_CLASSIFIER)
-else()
-	set(LIBLINEAR_LIB "")
-endif()
-
 # source and header files
 set(HEADERS
 	TrackingBenchmark.hpp
@@ -46,9 +38,8 @@ include_directories(${ImageIO_SOURCE_DIR}/include)
 include_directories(${ImageProcessing_SOURCE_DIR}/include)
 include_directories(${Classification_SOURCE_DIR}/include)
 include_directories(${SVM_SOURCE_DIR}/include)
-include_directories(${Detection_SOURCE_DIR}/include)
 include_directories(${Condensation_SOURCE_DIR}/include)
 
 # make executable
 add_executable(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
-target_link_libraries(${SUBPROJECT_NAME} Detection Condensation ImageIO ${KINECT_LIBNAME} ImageProcessing ${LIBLINEAR_LIB} SVM Classification Logging ${OpenCV_LIBS} ${Boost_LIBRARIES})
+target_link_libraries(${SUBPROJECT_NAME} Condensation ImageIO ${KINECT_LIBNAME} ImageProcessing SVM Classification Logging ${OpenCV_LIBS} ${Boost_LIBRARIES})
