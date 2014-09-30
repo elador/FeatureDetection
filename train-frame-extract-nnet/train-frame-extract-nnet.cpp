@@ -12,6 +12,8 @@
 #include <chrono>
 #include <memory>
 #include <iostream>
+#include <iomanip>
+#include <random>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
