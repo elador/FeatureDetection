@@ -4,6 +4,10 @@
  *  Created on: 11.09.2014
  *      Author: Patrik Huber
  *
+ * Ideally we'd use video, match against highres stills? (and not the lowres). Because if still are lowres/bad, we could match a
+ * good frame against a bad gallery, which would give a bad score, but it shouldn't, because the frame is good.
+ * Do we have labels for this?
+ *
  * Example:
  * train-frame-extract-nnet ...
  *   
@@ -32,6 +36,7 @@
 #include "tiny_cnn.h"
 
 #include "facerecognition/pasc.hpp"
+#include "facerecognition/utils.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -49,6 +54,7 @@ using std::shared_ptr;
 using std::vector;
 using std::string;
 
+// Caution: This will eat a lot of RAM, 1-2 GB for 600 RGB frames at 720p
 vector<Mat> getFrames(path videoFilename)
 {
 	vector<Mat> frames;
@@ -59,10 +65,18 @@ vector<Mat> getFrames(path videoFilename)
 
 	Mat img;
 	while (cap.read(img)) {
-		frames.emplace_back(img);
+		frames.emplace_back(img.clone()); // we need to clone, otherwise we'd just get a reference to the same 'img' instance
 	}
 
 	return frames;
+}
+
+// pascFrameNumber starts with 1. Your counting might start with 0, so add 1 to it before passing it here.
+std::string getPascFrameName(path videoFilename, int pascFrameNumber)
+{
+	std::ostringstream ss;
+	ss << std::setw(3) << std::setfill('0') << pascFrameNumber;
+	return videoFilename.stem().string() + "/" + videoFilename.stem().string() + "-" + ss.str() + ".jpg";
 }
 
 int main(int argc, char *argv[])
@@ -87,7 +101,7 @@ int main(int argc, char *argv[])
 			("input,i", po::value<path>(&inputDirectory)->required(),
 				"input folder with training videos")
 			("landmarks,l", po::value<path>(&inputLandmarks)->required(),
-				"input landmarks")
+				"input landmarks in boost::serialization text format")
 			("output,o", po::value<path>(&outputPath)->default_value("."),
 				"path to an output folder")
 		;
@@ -133,6 +147,9 @@ int main(int argc, char *argv[])
 		ia >> pascVideoDetections;
 	} // archive and stream closed when destructors are called
 
+	// Read the training-video xml sigset and the training-still sigset to get the subject-id metadata:
+	
+
 	// Create the output directory if it doesn't exist yet:
 	if (!boost::filesystem::exists(outputPath)) {
 		boost::filesystem::create_directory(outputPath);
@@ -140,15 +157,17 @@ int main(int argc, char *argv[])
 	
 	// Read all videos:
 	if (!boost::filesystem::exists(inputDirectory)) {
-		cout << "hmm..";
+		appLogger.error("The given input files directory doesn't exist. Aborting.");
+		return EXIT_FAILURE;
 	}
 	vector<path> trainingVideos;
 	try {
 		copy(boost::filesystem::directory_iterator(inputDirectory), boost::filesystem::directory_iterator(), back_inserter(trainingVideos));
 	}
 	catch (boost::filesystem::filesystem_error& e) {
-		// Log: Something went wrong while loading the videos. Details:
-		cout << e.what();
+		string errorMsg("Error while loading the video files from the given input directory: " + string(e.what()));
+		appLogger.error(errorMsg);
+		return EXIT_FAILURE;
 	}
 	std::random_device rd;
 	auto videosSeed = rd();
@@ -165,8 +184,8 @@ int main(int argc, char *argv[])
 						  // In case of a negative pair, the label is the difference to 0.0
 
 	// Select random subset of videos:
-	int numVideosToTrain = 2;
-	int numFramesPerVideo = 2;
+	int numVideosToTrain = 10;
+	int numFramesPerVideo = 3;
 	for (int i = 0; i < numVideosToTrain; ++i) {
 		auto videoFilename = trainingVideos[randomVideo()];
 		auto frames = getFrames(videoFilename);
@@ -176,15 +195,14 @@ int main(int argc, char *argv[])
 			int frameNum = rndFrameDistr(rndGenFrames);
 			auto frame = frames[frameNum];
 			// Get the landmarks for this frame:
-			frameNum = frameNum + 1; // frame numbering in the CSV starts with 1
-			std::ostringstream ss;
-			ss << std::setw(3) << std::setfill('0') << frameNum;
-			string frameName = videoFilename.stem().string() + "/" + videoFilename.stem().string() + "-" + ss.str() + ".jpg";
-			
+			string frameName = getPascFrameName(videoFilename, frameNum + 1);
 			auto landmarks = std::find_if(begin(pascVideoDetections), end(pascVideoDetections), [frameName](const facerecognition::PascVideoDetection& d) { return (d.frame_id == frameName); });
 			// Use facebox (later: or eyes) to run the engine
 			if (landmarks == std::end(pascVideoDetections)) {
+				appLogger.info("Chose a frame but could not find a corresponding entry in the metadata file - skipping it.");
 				continue; // instead, do a while-loop and count the number of frames with landmarks (so we don't skip videos if we draw bad values)
+				// We throw away the frames with no landmarks. This basically means our algorithm will only be trained on frames where PittPatt succeeds, and
+				// frames where it doesn't are unknown data to our nnet. I think we should try including these frames as well, e.g. with an error/label of 1.0.
 			}
 
 			// Run the engine:
@@ -195,7 +213,7 @@ int main(int argc, char *argv[])
 
 			// From this pair:
 			// resulting score difference to class label = label, facebox = input, resize it
-			trainingFrames.emplace_back(frame);
+			trainingFrames.emplace_back(frame); // store only the resized frames!
 			labels.emplace_back(1.0f);
 		}
 	}
