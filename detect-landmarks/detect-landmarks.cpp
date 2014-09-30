@@ -11,6 +11,7 @@
 #include <chrono>
 #include <memory>
 #include <iostream>
+#include <iomanip>
 #include <stdexcept>
 
 #include "opencv2/core/core.hpp"
@@ -42,6 +43,7 @@
 #include "imageio/DefaultNamedLandmarkSource.hpp"
 #include "imageio/SimpleRectLandmarkFormatParser.hpp"
 #include "imageio/PascStillEyesLandmarkFormatParser.hpp"
+#include "imageio/PascVideoEyesLandmarkFormatParser.hpp"
 #include "imageio/SimpleModelLandmarkFormatParser.hpp"
 #include "imageio/LandmarkFileGatherer.hpp"
 #include "imageio/ModelLandmark.hpp"
@@ -107,7 +109,7 @@ int main(int argc, char *argv[])
 			("face-initialization,g", po::value<path>(&faceBoxesDirectory),
 				"path to face-boxes or landmarks to initialize the model. Either -f or -g is required.")
 			("landmark-type,t", po::value<string>(&landmarkType),
-				"specify the type of landmarks to load: rect-face-box, PaSC-still-PittPatt-eyes, SimpleModelLandmark")
+				"specify the type of landmarks to load: rect-face-box, PaSC-still-PittPatt-eyes, PaSC-video-PittPatt-detections, SimpleModelLandmark")
 			("output,o", po::value<path>(&outputDirectory)->required(),
 				"Output directory for the result images and landmarks.")
 		;
@@ -148,6 +150,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	
+	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("superviseddescent").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("detect-landmarks").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("detect-landmarks");
@@ -250,6 +253,10 @@ int main(int argc, char *argv[])
 			faceboxSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(nullptr, ".txt", GatherMethod::SEPARATE_FILES, vector<path>{ faceBoxesDirectory }), make_shared<PascStillEyesLandmarkFormatParser>());
 			alignToFacebox = false;
 		}
+		else if (boost::iequals(landmarkType, "PaSC-video-PittPatt-detections")) { // Todo/Note: Not sure this is working?
+			faceboxSource = make_shared<imageio::DefaultNamedLandmarkSource>(imageio::LandmarkFileGatherer::gather(nullptr, ".csv", imageio::GatherMethod::SEPARATE_FILES, vector<path>{ faceBoxesDirectory }), make_shared<imageio::PascVideoEyesLandmarkFormatParser>());
+			alignToFacebox = false;
+		}
 		else if (boost::iequals(landmarkType, "SimpleModelLandmark")) {
 			faceboxSource = make_shared<DefaultNamedLandmarkSource>(LandmarkFileGatherer::gather(imageSource, ".txt", GatherMethod::ONE_FILE_PER_IMAGE_SAME_DIR, vector<path>{ }), make_shared<SimpleModelLandmarkFormatParser>());
 			alignToFacebox = false;
@@ -294,8 +301,31 @@ int main(int argc, char *argv[])
 			}
 			else {
 				// aligning to landmarks:
-				LandmarkCollection tmpLms_pascName = faceboxSource->get(imageSource->getName());
+				path imageName;
+				if (boost::iequals(landmarkType, "PaSC-video-PittPatt-detections")) {	
+					string frameNumber = imageSource->getName().stem().extension().string();
+					frameNumber.erase(0, 1);
+					// Pad with zeros, if user entered an image like frame.3.png instead of frame.003.png
+					// If it's already 003, nothing will happen.
+					std::stringstream ss;
+					ss << std::setfill('0') << std::setw(3) << frameNumber;
+					frameNumber = ss.str();
+					frameNumber = "-" + frameNumber;
+					// Big Todo: Abstract this whole stuff into some PaSC-LM or PaSC-LM-Source class, it shouldn't be in the app here?
+					imageName = imageSource->getName().stem().stem() / imageSource->getName().stem().stem();
+					imageName += frameNumber;
+					imageName.replace_extension(".jpg");
+					// "name/name-012.jpg"
+				}
+				else {
+					imageName = imageSource->getName();
+				}
+				LandmarkCollection tmpLms_pascName = faceboxSource->get(imageName);
 				alignmentLandmarks = tmpLms_pascName;
+				if (alignmentLandmarks.getLandmarks().size() == 0) {
+					appLogger.info("No landmark information found for this image. Skipping it.");
+					continue;
+				}
 				// ugly hack to change the lm-id from 'le'/'re' (PittPatt) to our model-format
 				// We do this inside the align-function at the moment
 				/*for (auto&& lm : tmpLms_pascName.getLandmarks()) {

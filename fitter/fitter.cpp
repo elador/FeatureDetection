@@ -359,14 +359,8 @@ int main(int argc, char *argv[])
 		Mat affineCamLandmarksProjectionImage = landmarksImage.clone(); // the affine LMs are currently not used (don't know how to render without z-vals)
 
 		// Convert the landmarks to clip-space, and only convert the ones that exist in the model
-		vector<imageio::ModelLandmark> landmarksClipSpace;
-		for (const auto& lm : landmarks) {
-			if (morphableModel.getShapeModel().landmarkExists(lm.getName())) {
-				cv::Vec2f clipCoords = render::utils::screenToClipSpace(lm.getPosition2D(), img.cols, img.rows);
-				landmarksClipSpace.push_back(imageio::ModelLandmark(lm.getName(), Vec3f(clipCoords[0], clipCoords[1], 0.0f), lm.isVisible()));
-			}
-		}
-
+		vector<imageio::ModelLandmark> landmarksClipSpace = fitting::convertAvailableLandmarksToClipSpace(landmarks, morphableModel, img.cols, img.rows);
+		
 		Mat affineCam = fitting::estimateAffineCamera(landmarksClipSpace, morphableModel);
 
 		// Render the mean-face landmarks projected using the estimated camera:

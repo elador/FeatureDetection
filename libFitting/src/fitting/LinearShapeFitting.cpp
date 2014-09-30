@@ -6,6 +6,7 @@
  */
 
 #include "fitting/LinearShapeFitting.hpp"
+#include "render/utils.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -87,6 +88,18 @@ vector<float> fitShapeToLandmarksLinear(MorphableModel morphableModel, Mat affin
 	Mat c_s = -AtOmegaARegInv * AtOmegatb; // Note/Todo: We get coefficients ~ N(0, sigma) I think. They are not multiplied with the eigenvalues.
 	
 	return vector<float>(c_s);
+}
+
+std::vector<imageio::ModelLandmark> convertAvailableLandmarksToClipSpace(std::vector<imageio::ModelLandmark> landmarks, morphablemodel::MorphableModel morphableModel, int screenWidth, int screenHeight)
+{
+	vector<imageio::ModelLandmark> landmarksClipSpace;
+	for (const auto& lm : landmarks) {
+		if (morphableModel.getShapeModel().landmarkExists(lm.getName())) {
+			cv::Vec2f clipCoords = render::utils::screenToClipSpace(lm.getPosition2D(), screenWidth, screenHeight);
+			landmarksClipSpace.push_back(imageio::ModelLandmark(lm.getName(), cv::Vec3f(clipCoords[0], clipCoords[1], 0.0f), lm.isVisible()));
+		}
+	}
+	return landmarksClipSpace;
 }
 
 } /* namespace fitting */

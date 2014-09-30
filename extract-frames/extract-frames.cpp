@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
 	cap >> img;
 	path fn = outputPath / inputFilename.filename();
 	frameToExtract++; // PaSC starts naming them from 1
-	fn.replace_extension(std::to_string(frameToExtract) + ".png");
+	fn.replace_extension(std::to_string(frameToExtract) + ".png"); // Note/Todo: We should add zeros here if we want to pad the filename
 	cv::imwrite(fn.string(), img);
 
 	// Get and write the frames landmarks:

@@ -39,5 +39,13 @@ namespace fitting {
  */
 std::vector<float> fitShapeToLandmarksLinear(morphablemodel::MorphableModel morphableModel, cv::Mat affineCameraMatrix, std::vector<imageio::ModelLandmark> landmarks, float lambda=20.0f, boost::optional<int> numCoefficientsToFit=boost::optional<int>(), boost::optional<float> detectorStandardDeviation=boost::optional<float>(), boost::optional<float> modelStandardDeviation=boost::optional<float>());
 
+/**
+ * Convert the landmarks to clip-space, and only convert the ones that exist in the model
+ *
+ * @param[in] morphableModel The Morphable Model ...
+ * @return The fitted shape-coefficients (alphas).
+ */
+std::vector<imageio::ModelLandmark> convertAvailableLandmarksToClipSpace(std::vector<imageio::ModelLandmark> landmarks, morphablemodel::MorphableModel morphableModel, int screenWidth, int screenHeight);
+
 } /* namespace fitting */
 #endif /* LINEARSHAPEFITTING_HPP_ */
