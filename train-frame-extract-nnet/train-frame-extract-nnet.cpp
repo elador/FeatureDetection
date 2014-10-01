@@ -36,6 +36,9 @@
 
 #include "tiny_cnn.h"
 
+#include <frsdk/config.h>
+#include <frsdk/match.h>
+
 #include "facerecognition/pasc.hpp"
 #include "facerecognition/utils.hpp"
 
@@ -54,6 +57,22 @@ using std::make_shared;
 using std::shared_ptr;
 using std::vector;
 using std::string;
+
+// templates instead of inheritance? (compile-time fine, don't need runtime selection)
+class FaceVacsEngine
+{
+	FaceVacsEngine(); // cfg etc
+
+	// matches a pair of images, Cog LMs
+	double match(cv::Mat first, cv::Mat second)
+	{
+		
+		return 0.0;
+	};
+	// matches a pair of images, given LMs as Cog init
+	// match(fn, fn, ...)
+	// match(Mat, Mat, ...)
+};
 
 // Caution: This will eat a lot of RAM, 1-2 GB for 600 RGB frames at 720p
 vector<Mat> getFrames(path videoFilename)
@@ -141,12 +160,16 @@ int main(int argc, char *argv[])
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
+	// Read the video detections metadata (eyes, face-coords):
 	vector<facerecognition::PascVideoDetection> pascVideoDetections;
 	{
 		std::ifstream ifs(inputLandmarks.string()); // ("pasc.bin", std::ios::binary | std::ios::in)
 		boost::archive::text_iarchive ia(ifs); // binary_iarchive
 		ia >> pascVideoDetections;
 	} // archive and stream closed when destructors are called
+
+	// We would read the still images detection metadata (eyes, face-coords) here, but it's not provided with PaSC. Emailed Ross.
+	// TODO!
 
 	// Read the training-video xml sigset and the training-still sigset to get the subject-id metadata:
 	auto videoQuerySet = facerecognition::utils::readPascSigset(R"(C:\Users\Patrik\Documents\GitHub\data\PaSC\Web\nd1Fall2010VideoPaSCTrainingSet.xml)", true);
@@ -162,6 +185,8 @@ int main(int argc, char *argv[])
 		appLogger.error("The given input files directory doesn't exist. Aborting.");
 		return EXIT_FAILURE;
 	}
+
+	/*
 	vector<path> trainingVideos;
 	try {
 		copy(boost::filesystem::directory_iterator(inputDirectory), boost::filesystem::directory_iterator(), back_inserter(trainingVideos));
@@ -170,65 +195,18 @@ int main(int argc, char *argv[])
 		string errorMsg("Error while loading the video files from the given input directory: " + string(e.what()));
 		appLogger.error(errorMsg);
 		return EXIT_FAILURE;
-	}
+	}*/
 
-	// DO SOME TESTS ON THE SIGSETS / FOLDER:
-	vector<path> trainingStills;
-	path inputDirectoryStills = R"(Z:\datasets\multiview02\PaSC\training\stills)";
-	try {
-		copy(boost::filesystem::directory_iterator(inputDirectoryStills), boost::filesystem::directory_iterator(), back_inserter(trainingStills));
-	}
-	catch (boost::filesystem::filesystem_error& e) {
-		string errorMsg("Error while loading the video files from the given input directory: " + string(e.what()));
-		appLogger.error(errorMsg);
-		return EXIT_FAILURE;
-	}
-	
-	cout << "Stills over files:" << endl;
-	int numStillOnHddThatDontExistInXml = 0;
-	for (auto& s : trainingStills) {
-		auto fn = s.filename();
-		auto res = std::find_if(begin(stillTargetSet), end(stillTargetSet), [fn](const facerecognition::FaceRecord& fr) { return (fr.dataPath == fn); });
-		if (res == std::end(stillTargetSet)) {
-			++numStillOnHddThatDontExistInXml;
-			cout << "I'm on the HDD, but not in the XML: " << fn << endl;
-		}
-		else {
-			
-		}
-	}
-
-
-	cout << "Stills over xml:" << endl;
-	int numStillOfXmlThatExistAsFiles = 0;
-	for (auto& s : stillTargetSet) {
-		auto p = inputDirectoryStills / s.dataPath;
-		if (boost::filesystem::exists(p)) {
-			++numStillOfXmlThatExistAsFiles;
-		}
-		else {
-			cout << "I'm in the XML, but not in the Dir: " << p.string() << endl;
-		}
-	}
-	cout << "Videos over xml:" << endl;
-	int numVideosOfXmlThatExistAsFiles = 0;
-	for (auto& s : videoQuerySet) {
-		auto p = inputDirectory / s.dataPath;
-		if (boost::filesystem::exists(p)) {
-			++numVideosOfXmlThatExistAsFiles;
-		}
-		else {
-			cout << "I'm in the XML, but not in the Dir: " << p.string() << endl;
-		}
-	}
-
-	// END TESTS
 	std::random_device rd;
 	auto videosSeed = rd();
 	auto framesSeed = rd();
+	auto posTargetsSeed = rd();
+	auto negTargetsSeed = rd();
 	std::mt19937 rndGenVideos(videosSeed);
 	std::mt19937 rndGenFrames(framesSeed);
-	std::uniform_int_distribution<> rndVidDistr(0, trainingVideos.size() - 1);
+	std::mt19937 rndGenPosTargets(posTargetsSeed);
+	std::mt19937 rndGenNegTargets(negTargetsSeed);
+	std::uniform_int_distribution<> rndVidDistr(0, videoQuerySet.size() - 1);
 	auto randomVideo = std::bind(rndVidDistr, rndGenVideos);
 	
 	// The training data:
@@ -237,19 +215,28 @@ int main(int argc, char *argv[])
 						  // I.e. if it's a positive pair, the label is the difference to 1.0
 						  // In case of a negative pair, the label is the difference to 0.0
 
-	// Select random subset of videos:
+	// Select random subset of videos: (Note: This means we may select the same video twice - not so optimal?)
 	int numVideosToTrain = 10;
 	int numFramesPerVideo = 3;
+	int numPositivePairsPerFrame = 1;
+	int numNegativePairsPerFrame = 1;
 	for (int i = 0; i < numVideosToTrain; ++i) {
-		auto videoFilename = trainingVideos[randomVideo()];
-		auto frames = getFrames(videoFilename);
+		auto queryVideo = videoQuerySet[randomVideo()];
+		auto frames = getFrames(inputDirectory / queryVideo.dataPath);
+		// For the currently selected video, partition the target set. The distributions don't change each frame, whole video has the same FaceRecord.
+		auto bound = std::partition(begin(stillTargetSet), end(stillTargetSet), [queryVideo](facerecognition::FaceRecord& target) { return target.subjectId == queryVideo.subjectId; });
+		// begin to bound = positive pairs, rest = negative
+		auto numPositivePairs = std::distance(begin(stillTargetSet), bound);
+		auto numNegativePairs = std::distance(bound, end(stillTargetSet));
+		std::uniform_int_distribution<> rndPositiveDistr(0, numPositivePairs - 1); // -1 because all vector indices start with 0
+		std::uniform_int_distribution<> rndNegativeDistr(numPositivePairs, stillTargetSet.size() - 1);
 		// Select random subset of frames:
 		std::uniform_int_distribution<> rndFrameDistr(0, frames.size() - 1);
 		for (int j = 0; j < numFramesPerVideo; ++j) {
 			int frameNum = rndFrameDistr(rndGenFrames);
 			auto frame = frames[frameNum];
 			// Get the landmarks for this frame:
-			string frameName = getPascFrameName(videoFilename, frameNum + 1);
+			string frameName = getPascFrameName(queryVideo.dataPath, frameNum + 1);
 			auto landmarks = std::find_if(begin(pascVideoDetections), end(pascVideoDetections), [frameName](const facerecognition::PascVideoDetection& d) { return (d.frame_id == frameName); });
 			// Use facebox (later: or eyes) to run the engine
 			if (landmarks == std::end(pascVideoDetections)) {
@@ -257,6 +244,18 @@ int main(int argc, char *argv[])
 				continue; // instead, do a while-loop and count the number of frames with landmarks (so we don't skip videos if we draw bad values)
 				// We throw away the frames with no landmarks. This basically means our algorithm will only be trained on frames where PittPatt succeeds, and
 				// frames where it doesn't are unknown data to our nnet. I think we should try including these frames as well, e.g. with an error/label of 1.0.
+			}
+			// Choose one random positive and one random negative pair (we could use more, this is just the first attempt):
+			// Actually with the Cog engine we could enrol the whole gallery and get all the scores in one go, should be much faster
+			for (int k = 0; k < numPositivePairsPerFrame; ++k) { // we can also get twice (or more) times the same, but doesn't matter for now
+				auto targetStill = stillTargetSet[rndPositiveDistr(rndGenPosTargets)];
+				// TODO get LMs for targetStill from PaSC - see further up, email Ross
+
+
+				// match (targetStill (FaceRecord), LMS TODO ) against ('frame' (Mat), queryVideo (FaceRecord), landmarks)
+			}
+			for (int k = 0; k < numNegativePairsPerFrame; ++k) {
+
 			}
 
 			// Run the engine:
