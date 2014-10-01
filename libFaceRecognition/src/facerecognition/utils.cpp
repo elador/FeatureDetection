@@ -22,7 +22,7 @@ using std::string;
 namespace facerecognition {
 	namespace utils {
 
-std::vector<FaceRecord> readPascSigset(boost::filesystem::path filename)
+std::vector<FaceRecord> readPascSigset(boost::filesystem::path filename, bool stripFilePath)
 {
 	ptree sigsetXml;
 	try {
@@ -50,7 +50,12 @@ std::vector<FaceRecord> readPascSigset(boost::filesystem::path filename)
 			facerecognition::FaceRecord faceRecord;
 			faceRecord.identifier = pres_name;
 			faceRecord.subjectId = bio_sig_name;
-			faceRecord.dataPath = pres_filename;
+			if (stripFilePath) {
+				faceRecord.dataPath = path(pres_filename).filename().string();
+			}
+			else {
+				faceRecord.dataPath = pres_filename;
+			}
 			//faceRecord.other = pres_name; // Use this or the filename as identifier?
 			records.push_back(faceRecord);
 		}

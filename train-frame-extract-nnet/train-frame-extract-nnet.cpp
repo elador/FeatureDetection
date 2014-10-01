@@ -7,6 +7,7 @@
  * Ideally we'd use video, match against highres stills? (and not the lowres). Because if still are lowres/bad, we could match a
  * good frame against a bad gallery, which would give a bad score, but it shouldn't, because the frame is good.
  * Do we have labels for this?
+ * Maybe "sensor_id","stage_id","env_id","illuminant_id" in the files emailed by Ross.
  *
  * Example:
  * train-frame-extract-nnet ...
@@ -148,7 +149,8 @@ int main(int argc, char *argv[])
 	} // archive and stream closed when destructors are called
 
 	// Read the training-video xml sigset and the training-still sigset to get the subject-id metadata:
-	
+	auto videoQuerySet = facerecognition::utils::readPascSigset(R"(C:\Users\Patrik\Documents\GitHub\data\PaSC\Web\nd1Fall2010VideoPaSCTrainingSet.xml)", true);
+	auto stillTargetSet = facerecognition::utils::readPascSigset(R"(C:\Users\Patrik\Documents\GitHub\data\PaSC\Web\nd1Fall2010PaSCamerasStillTrainingSet.xml)", true);
 
 	// Create the output directory if it doesn't exist yet:
 	if (!boost::filesystem::exists(outputPath)) {
@@ -169,6 +171,58 @@ int main(int argc, char *argv[])
 		appLogger.error(errorMsg);
 		return EXIT_FAILURE;
 	}
+
+	// DO SOME TESTS ON THE SIGSETS / FOLDER:
+	vector<path> trainingStills;
+	path inputDirectoryStills = R"(Z:\datasets\multiview02\PaSC\training\stills)";
+	try {
+		copy(boost::filesystem::directory_iterator(inputDirectoryStills), boost::filesystem::directory_iterator(), back_inserter(trainingStills));
+	}
+	catch (boost::filesystem::filesystem_error& e) {
+		string errorMsg("Error while loading the video files from the given input directory: " + string(e.what()));
+		appLogger.error(errorMsg);
+		return EXIT_FAILURE;
+	}
+	
+	cout << "Stills over files:" << endl;
+	int numStillOnHddThatDontExistInXml = 0;
+	for (auto& s : trainingStills) {
+		auto fn = s.filename();
+		auto res = std::find_if(begin(stillTargetSet), end(stillTargetSet), [fn](const facerecognition::FaceRecord& fr) { return (fr.dataPath == fn); });
+		if (res == std::end(stillTargetSet)) {
+			++numStillOnHddThatDontExistInXml;
+			cout << "I'm on the HDD, but not in the XML: " << fn << endl;
+		}
+		else {
+			
+		}
+	}
+
+
+	cout << "Stills over xml:" << endl;
+	int numStillOfXmlThatExistAsFiles = 0;
+	for (auto& s : stillTargetSet) {
+		auto p = inputDirectoryStills / s.dataPath;
+		if (boost::filesystem::exists(p)) {
+			++numStillOfXmlThatExistAsFiles;
+		}
+		else {
+			cout << "I'm in the XML, but not in the Dir: " << p.string() << endl;
+		}
+	}
+	cout << "Videos over xml:" << endl;
+	int numVideosOfXmlThatExistAsFiles = 0;
+	for (auto& s : videoQuerySet) {
+		auto p = inputDirectory / s.dataPath;
+		if (boost::filesystem::exists(p)) {
+			++numVideosOfXmlThatExistAsFiles;
+		}
+		else {
+			cout << "I'm in the XML, but not in the Dir: " << p.string() << endl;
+		}
+	}
+
+	// END TESTS
 	std::random_device rd;
 	auto videosSeed = rd();
 	auto framesSeed = rd();
