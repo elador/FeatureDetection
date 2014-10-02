@@ -17,6 +17,7 @@
 #include <chrono>
 #include <memory>
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <random>
 
@@ -37,6 +38,7 @@
 #include "tiny_cnn.h"
 
 #include <frsdk/config.h>
+#include <frsdk/enroll.h>
 #include <frsdk/match.h>
 
 #include "facerecognition/pasc.hpp"
@@ -58,10 +60,61 @@ using std::shared_ptr;
 using std::vector;
 using std::string;
 
+// for the CoutEnrol
+std::ostream&
+operator<<(std::ostream& o, const FRsdk::Position& p)
+{
+	o << "[" << p.x() << ", " << p.y() << "]";
+	return o;
+}
+
 // templates instead of inheritance? (compile-time fine, don't need runtime selection)
 class FaceVacsEngine
 {
-	FaceVacsEngine(); // cfg etc
+public:
+	// tempDirectory a path where temp files stored... only FIRs? More? firDir?
+	FaceVacsEngine(path frsdkConfig, path tempDirectory) : tempDir(tempDirectory) {
+		// initialize and resource allocation
+		cfg = std::make_unique<FRsdk::Configuration>(frsdkConfig.string());
+		firBuilder = std::make_unique<FRsdk::FIRBuilder>(*cfg.get());
+		// initialize matching facility
+		me = std::make_unique<FRsdk::FacialMatchingEngine>(*cfg.get());
+		// load the fir population (gallery)
+		population = std::make_unique<FRsdk::Population>(*cfg.get());
+
+		// Add somewhere: 
+		//catch (const FRsdk::FeatureDisabled& e) 
+		//catch (const FRsdk::LicenseSignatureMismatch& e)
+	};
+
+	// because it often stays the same
+	void enrollGallery(std::vector<facerecognition::FaceRecord> galleryRecords, path databasePath)
+	{
+
+		// We first enroll the whole gallery:
+		
+		cout << "Loading the input images..." << endl;
+		FRsdk::SampleSet enrollmentImages;
+		FRsdk::Image img(FRsdk::ImageIO::load(R"(C:\Users\Patrik\Documents\GitHub\aaatmp\04261d1822.jpg)"));
+		enrollmentImages.push_back(FRsdk::Sample(img));
+		// create an enrollment processor
+		FRsdk::Enrollment::Processor proc(*cfg);
+		// create the needed interaction instances
+		FRsdk::Enrollment::Feedback feedback(new EnrolCoutFeedback("bla.fir"));
+
+		// do the enrollment    
+		proc.process(enrollmentImages.begin(), enrollmentImages.end(), feedback);
+
+
+		for (auto& r : galleryRecords) {
+			path imagePath(R"(C:\Users\Patrik\Documents\GitHub\aaatmp\04261d1822.jpg)"); //databasePath / r.dataPath;
+			std::ifstream firIn(imagePath.string(), std::ios::in | std::ios::binary);
+			if (firIn.is_open() && firIn.good()) {
+				auto fir = firBuilder->build(firIn);
+				population->append(fir, imagePath.string());
+			}
+		}
+	};
 
 	// matches a pair of images, Cog LMs
 	double match(cv::Mat first, cv::Mat second)
@@ -72,6 +125,105 @@ class FaceVacsEngine
 	// matches a pair of images, given LMs as Cog init
 	// match(fn, fn, ...)
 	// match(Mat, Mat, ...)
+
+private:
+	path tempDir;
+	std::unique_ptr<FRsdk::Configuration> cfg; // static? (recommendation by fvsdk doc)
+	std::unique_ptr<FRsdk::FIRBuilder> firBuilder;
+	std::unique_ptr<FRsdk::FacialMatchingEngine> me;
+	std::unique_ptr<FRsdk::Population> population;
+
+	class EnrolCoutFeedback : public FRsdk::Enrollment::FeedbackBody
+	{
+	public:
+		EnrolCoutFeedback(const std::string& firFilename)
+			: firFN(firFilename), firvalid(false) { }
+		~EnrolCoutFeedback() {}
+
+		void start() {
+			firvalid = false;
+			std::cout << "start" << std::endl;
+		}
+
+		void processingImage(const FRsdk::Image& img)
+		{
+			std::cout << "processing image[" << img.name() << "]" << std::endl;
+		}
+
+		void eyesFound(const FRsdk::Eyes::Location& eyeLoc)
+		{
+			std::cout << "found eyes at [" << eyeLoc.first
+				<< " " << eyeLoc.second << "; confidences: "
+				<< eyeLoc.firstConfidence << " "
+				<< eyeLoc.secondConfidence << "]" << std::endl;
+		}
+
+		void eyesNotFound()
+		{
+			std::cout << "eyes not found" << std::endl;
+		}
+
+		void sampleQualityTooLow() {
+			std::cout << "sampleQualityTooLow" << std::endl;
+		}
+
+
+		void sampleQuality(const float& f) {
+			std::cout << "Sample Quality: " << f << std::endl;
+		}
+
+		void success(const FRsdk::FIR& fir_)
+		{
+			fir = new FRsdk::FIR(fir_);
+			std::cout
+				<< "successful enrollment";
+			if (firFN != std::string("")) {
+
+				std::cout << " FIR[filename,id,size] = [\""
+					<< firFN.c_str() << "\",\"" << (fir->version()).c_str() << "\","
+					<< fir->size() << "]";
+				// write the fir
+				std::ofstream firOut(firFN.c_str(),
+					std::ios::binary | std::ios::out | std::ios::trunc);
+				firOut << *fir;
+			}
+			firvalid = true;
+			std::cout << std::endl;
+		}
+
+		void failure() { std::cout << "failure" << std::endl; }
+
+		void end() { std::cout << "end" << std::endl; }
+
+		const FRsdk::FIR& getFir() const {
+			// call only if success() has been invoked    
+			if (!firvalid)
+				throw InvalidFIRAccessError();
+
+			return *fir;
+		}
+
+		bool firValid() const {
+			return firvalid;
+		}
+
+	private:
+		FRsdk::CountedPtr<FRsdk::FIR> fir;
+		std::string firFN;
+		bool firvalid;
+	};
+
+	class InvalidFIRAccessError : public std::exception
+	{
+	public:
+		InvalidFIRAccessError() throw() :
+			msg("Trying to access invalid FIR") {}
+		~InvalidFIRAccessError() throw() { }
+		const char* what() const throw() { return msg.c_str(); }
+	private:
+		std::string msg;
+	};
+
 };
 
 // Caution: This will eat a lot of RAM, 1-2 GB for 600 RGB frames at 720p
@@ -107,7 +259,7 @@ int main(int argc, char *argv[])
 	#endif
 	
 	string verboseLevelConsole;
-	path inputDirectory;
+	path inputDirectoryVideos, inputDirectoryStills;
 	path inputLandmarks;
 	path outputPath;
 
@@ -118,7 +270,9 @@ int main(int argc, char *argv[])
 				"produce help message")
 			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
 				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
-			("input,i", po::value<path>(&inputDirectory)->required(),
+			("input-videos,i", po::value<path>(&inputDirectoryVideos)->required(),
+				"input folder with training videos")
+			("input-stills,j", po::value<path>(&inputDirectoryStills)->required(),
 				"input folder with training videos")
 			("landmarks,l", po::value<path>(&inputLandmarks)->required(),
 				"input landmarks in boost::serialization text format")
@@ -181,7 +335,7 @@ int main(int argc, char *argv[])
 	}
 	
 	// Read all videos:
-	if (!boost::filesystem::exists(inputDirectory)) {
+	if (!boost::filesystem::exists(inputDirectoryVideos)) {
 		appLogger.error("The given input files directory doesn't exist. Aborting.");
 		return EXIT_FAILURE;
 	}
@@ -189,13 +343,16 @@ int main(int argc, char *argv[])
 	/*
 	vector<path> trainingVideos;
 	try {
-		copy(boost::filesystem::directory_iterator(inputDirectory), boost::filesystem::directory_iterator(), back_inserter(trainingVideos));
+		copy(boost::filesystem::directory_iterator(inputDirectoryVideos), boost::filesystem::directory_iterator(), back_inserter(trainingVideos));
 	}
 	catch (boost::filesystem::filesystem_error& e) {
 		string errorMsg("Error while loading the video files from the given input directory: " + string(e.what()));
 		appLogger.error(errorMsg);
 		return EXIT_FAILURE;
 	}*/
+
+	FaceVacsEngine faceRecEngine(R"(C:\FVSDK_8_9_5\etc\frsdk.cfg)", R"(C:\Users\Patrik\Documents\GitHub\aaatmp)");
+	faceRecEngine.enrollGallery(stillTargetSet, inputDirectoryStills);
 
 	std::random_device rd;
 	auto videosSeed = rd();
@@ -222,7 +379,7 @@ int main(int argc, char *argv[])
 	int numNegativePairsPerFrame = 1;
 	for (int i = 0; i < numVideosToTrain; ++i) {
 		auto queryVideo = videoQuerySet[randomVideo()];
-		auto frames = getFrames(inputDirectory / queryVideo.dataPath);
+		auto frames = getFrames(inputDirectoryVideos / queryVideo.dataPath);
 		// For the currently selected video, partition the target set. The distributions don't change each frame, whole video has the same FaceRecord.
 		auto bound = std::partition(begin(stillTargetSet), end(stillTargetSet), [queryVideo](facerecognition::FaceRecord& target) { return target.subjectId == queryVideo.subjectId; });
 		// begin to bound = positive pairs, rest = negative
@@ -253,6 +410,7 @@ int main(int argc, char *argv[])
 
 
 				// match (targetStill (FaceRecord), LMS TODO ) against ('frame' (Mat), queryVideo (FaceRecord), landmarks)
+
 			}
 			for (int k = 0; k < numNegativePairsPerFrame; ++k) {
 
