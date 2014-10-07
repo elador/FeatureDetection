@@ -35,11 +35,13 @@
 #include "boost/lexical_cast.hpp"
 #include "boost/archive/text_iarchive.hpp"
 
-#include "tiny_cnn.h"
+#include <boost/timer.hpp>
+#include <boost/progress.hpp>
 
 #include <frsdk/config.h>
 #include <frsdk/enroll.h>
 #include <frsdk/match.h>
+#include <frsdk/eyes.h>
 
 #include "facerecognition/pasc.hpp"
 #include "facerecognition/utils.hpp"
@@ -74,6 +76,8 @@ class FaceVacsEngine
 public:
 	// tempDirectory a path where temp files stored... only FIRs? More? firDir?
 	FaceVacsEngine(path frsdkConfig, path tempDirectory) : tempDir(tempDirectory) {
+		// Todo: Create the tempDir if it doesn't exist yet
+
 		// initialize and resource allocation
 		cfg = std::make_unique<FRsdk::Configuration>(frsdkConfig.string());
 		firBuilder = std::make_unique<FRsdk::FIRBuilder>(*cfg.get());
@@ -90,48 +94,163 @@ public:
 	// because it often stays the same
 	void enrollGallery(std::vector<facerecognition::FaceRecord> galleryRecords, path databasePath)
 	{
+		this->galleryRecords = galleryRecords;
 
 		// We first enroll the whole gallery:
-		
 		cout << "Loading the input images..." << endl;
-		FRsdk::SampleSet enrollmentImages;
-		FRsdk::Image img(FRsdk::ImageIO::load(R"(C:\Users\Patrik\Documents\GitHub\aaatmp\04261d1822.jpg)"));
-		enrollmentImages.push_back(FRsdk::Sample(img));
 		// create an enrollment processor
 		FRsdk::Enrollment::Processor proc(*cfg);
-		// create the needed interaction instances
-		FRsdk::Enrollment::Feedback feedback(new EnrolCoutFeedback("bla.fir"));
-
-		// do the enrollment    
-		proc.process(enrollmentImages.begin(), enrollmentImages.end(), feedback);
-
-
+		// Todo: FaceVACS should be able to do batch-enrolment?
+		auto cnt = 0;
 		for (auto& r : galleryRecords) {
-			path imagePath(R"(C:\Users\Patrik\Documents\GitHub\aaatmp\04261d1822.jpg)"); //databasePath / r.dataPath;
-			std::ifstream firIn(imagePath.string(), std::ios::in | std::ios::binary);
+			++cnt;
+			std::cout << cnt << std::endl;
+			// Does the FIR already exist in the temp-dir? If yes, skip FD/EyeDet!
+			auto firPath = tempDir / r.dataPath;
+			firPath.replace_extension(".fir");
+			if (boost::filesystem::exists(firPath)) {
+				continue;
+			}
+
+			boost::optional<path> fir = createFir(databasePath / r.dataPath);
+			if (!fir) {
+				continue;
+			}
+		}
+		// Enrol all the FIRs now:
+		for (auto& r : galleryRecords) {
+			auto firPath = tempDir / r.dataPath;
+			firPath.replace_extension(".fir");
+			std::ifstream firIn(firPath.string(), std::ios::in | std::ios::binary);
+			// Some of the FIRs might not exist due to enrolment failure
+			//std::cout << firPath.string() << std::endl;
 			if (firIn.is_open() && firIn.good()) {
-				auto fir = firBuilder->build(firIn);
-				population->append(fir, imagePath.string());
+				try {
+					auto fir = firBuilder->build(firIn);
+					population->append(fir, firPath.string());
+				}
+				catch (const FRsdk::FeatureDisabled& e) {
+					std::cout << e.what() << std::endl;
+				}
+				catch (const FRsdk::LicenseSignatureMismatch& e) {
+					std::cout << e.what() << std::endl;
+				}
+				catch (std::exception& e) {
+					std::cout << e.what() << std::endl;
+				}
 			}
 		}
 	};
 
+	// Make a matchAgainstGallery or matchSingle function as well
 	// matches a pair of images, Cog LMs
 	double match(cv::Mat first, cv::Mat second)
 	{
-		
 		return 0.0;
+	};
+	// Always pass in images/image-filenames. The "outside" should never have to worry
+	// about FIRs or other intermediate representations.
+	// Eyes: Currently unused, use PaSC-tr eyes in the future
+	double match(path g, std::string gallerySubjectId, cv::Mat p, std::string probeFilename, cv::Vec2f firstEye, cv::Vec2f secondEye)
+	{
+		auto galleryFirPath = tempDir / g.filename();
+		galleryFirPath.replace_extension(".fir"); // we probably don't need this - only the basename / subject ID (if it is already enroled)
+
+		auto tempProbeImageFilename = tempDir / path(probeFilename).filename();
+		cv::imwrite(tempProbeImageFilename.string(), p);
+
+		boost::optional<path> probeFrameFir = createFir(tempProbeImageFilename);
+		if (!probeFrameFir) {
+			std::cout << "Couldn't enroll the probe - not a good frame. Return score 0.0." << std::endl;
+			return 0.0; // Couldn't enroll the probe - not a good frame. Return score 0.0.
+		}
+
+
+		std::ifstream firStream(probeFrameFir->string(), std::ios::in | std::ios::binary);
+		FRsdk::FIR fir = firBuilder->build(firStream);
+
+		//compare() does not care about the configured number of Threads
+		//for the comparison algorithm. It uses always one thrad to
+		//compare all inorder to preserve the order of the scores
+		//according to the order in the population (orer of adding FIRs to
+		//the population)
+		FRsdk::CountedPtr<FRsdk::Scores> scores = me->compare(fir, *population);
+
+		// Find the score from "g" in the gallery
+		auto subjectInGalleryIter = std::find_if(begin(galleryRecords), end(galleryRecords), [gallerySubjectId](const facerecognition::FaceRecord& g) { return (g.subjectId == gallerySubjectId); });
+		if (subjectInGalleryIter == end(galleryRecords)) {
+			return 0.0; // We didn't find the given gallery image / subject ID in the enroled gallery. Throw?
+		}
+		auto subjectInGalleryIdx = std::distance(begin(galleryRecords), subjectInGalleryIter);
+		auto givenProbeVsGivenGallery = std::next(begin(*scores), subjectInGalleryIdx);
+		return *givenProbeVsGivenGallery;
 	};
 	// matches a pair of images, given LMs as Cog init
 	// match(fn, fn, ...)
 	// match(Mat, Mat, ...)
+
+	// creates the FIR in temp-dir. Returns path to FIR if successful.
+	// Todo: Directly return FIR?
+	boost::optional<path> createFir(path image)
+	{
+		// create an enrollment processor
+		FRsdk::Enrollment::Processor proc(*cfg);
+		// Todo: FaceVACS should be able to do batch-enrolment?
+		
+		// Does the FIR already exist in the temp-dir? If yes, skip FD/EyeDet!
+		auto firPath = tempDir / image.filename();
+		firPath.replace_extension(".fir");
+		if (boost::filesystem::exists(firPath)) {
+			//throw std::runtime_error("Unexpected. Should check for that.");
+			// just overwrite
+		}
+
+		FRsdk::Image img(FRsdk::ImageIO::load(image.string()));
+		FRsdk::SampleSet enrollmentImages;
+		auto sample = FRsdk::Sample(img);
+		// Once we have pasc-still-training landmarks from Ross, we can use those here. In the mean-time, use the Cog Eyefinder:
+		FRsdk::Face::Finder faceFinder(*cfg);
+		FRsdk::Eyes::Finder eyesFinder(*cfg);
+		float mindist = 0.01f; // minEyeDist, def = 0.1
+		float maxdist = 0.3f; // maxEyeDist, def = 0.4
+		FRsdk::Face::LocationSet faceLocations = faceFinder.find(img, mindist, maxdist);
+		if (faceLocations.empty()) {
+			std::cout << "FaceFinder: No face found." << std::endl;
+			return boost::none;
+		}
+		// We just use the first found face:
+		// doing eyes finding
+		FRsdk::Eyes::LocationSet eyesLocations = eyesFinder.find(img, *faceLocations.begin());
+		if (eyesLocations.empty()) {
+			std::cout << "EyeFinder: No eyes found." << std::endl;
+			return boost::none;
+		}
+		auto foundEyes = eyesLocations.begin(); // We just use the first found eyes
+		auto firstEye = FRsdk::Position(foundEyes->first.x(), foundEyes->first.y()); // first eye (image left-most), second eye (image right-most)
+		auto secondEye = FRsdk::Position(foundEyes->second.x(), foundEyes->second.y());
+		sample.annotate(FRsdk::Eyes::Location(firstEye, secondEye, foundEyes->firstConfidence, foundEyes->secondConfidence));
+		enrollmentImages.push_back(sample);
+		// create the needed interaction instances
+		FRsdk::Enrollment::Feedback feedback(new EnrolCoutFeedback(firPath.string()));
+		// Note: We could do a SignalBasedFeedback, that sends a signal. We could then here wait for the signal and process stuff, i.e. get the FIR directly.
+		// do the enrollment
+		proc.process(enrollmentImages.begin(), enrollmentImages.end(), feedback);
+		// Better solution would be to change the callback into some event-based stuff
+		if (boost::filesystem::exists(firPath)) {
+			return firPath;
+		}
+		else {
+			return boost::none;
+		}
+	};
 
 private:
 	path tempDir;
 	std::unique_ptr<FRsdk::Configuration> cfg; // static? (recommendation by fvsdk doc)
 	std::unique_ptr<FRsdk::FIRBuilder> firBuilder;
 	std::unique_ptr<FRsdk::FacialMatchingEngine> me;
-	std::unique_ptr<FRsdk::Population> population;
+	std::vector<facerecognition::FaceRecord> galleryRecords; // We keep this for the subject IDs
+	std::unique_ptr<FRsdk::Population> population; // enrolled gallery FIRs, same order
 
 	class EnrolCoutFeedback : public FRsdk::Enrollment::FeedbackBody
 	{
@@ -283,7 +402,7 @@ int main(int argc, char *argv[])
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm); // style(po::command_line_style::unix_style | po::command_line_style::allow_long_disguise)
 		if (vm.count("help")) {
-			cout << "Usage: train-frame-extract-nnet [options]\n";
+			cout << "Usage: train-frameselect-extract [options]" << std::endl;
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
@@ -352,6 +471,13 @@ int main(int argc, char *argv[])
 	}*/
 
 	FaceVacsEngine faceRecEngine(R"(C:\FVSDK_8_9_5\etc\frsdk.cfg)", R"(C:\Users\Patrik\Documents\GitHub\aaatmp)");
+	//auto stillTargetSetSmall = { stillTargetSet[1092]/*, stillTargetSet[0] */};
+	//path = L"C:\\Users\\Patrik\\Documents\\GitHub\\aaatmp\\06340d96.fir"
+	//auto dp = path("06340d96.jpg");
+	//auto galSubj = std::find_if(begin(stillTargetSet), end(stillTargetSet), [dp](const facerecognition::FaceRecord& g) { return (g.dataPath == dp); });
+	// check
+	//auto galSubjIdx = std::distance(begin(stillTargetSet), galSubj);
+	stillTargetSet.resize(250); // 1000 = FIR limit atm
 	faceRecEngine.enrollGallery(stillTargetSet, inputDirectoryStills);
 
 	std::random_device rd;
@@ -373,18 +499,27 @@ int main(int argc, char *argv[])
 						  // In case of a negative pair, the label is the difference to 0.0
 
 	// Select random subset of videos: (Note: This means we may select the same video twice - not so optimal?)
-	int numVideosToTrain = 10;
-	int numFramesPerVideo = 3;
+	int numVideosToTrain = 5;
+	int numFramesPerVideo = 5;
 	int numPositivePairsPerFrame = 1;
-	int numNegativePairsPerFrame = 1;
+	int numNegativePairsPerFrame = 0;
 	for (int i = 0; i < numVideosToTrain; ++i) {
+		numPositivePairsPerFrame = 1; // it has to be set to 1 again if we set it to 0 below in the previous iteration.
 		auto queryVideo = videoQuerySet[randomVideo()];
+		if (!boost::filesystem::exists(inputDirectoryVideos / queryVideo.dataPath)) {  // Shouldn't be necessary, but there are 5 videos in the xml sigset that we don't have.
+			continue;
+		}
 		auto frames = getFrames(inputDirectoryVideos / queryVideo.dataPath);
 		// For the currently selected video, partition the target set. The distributions don't change each frame, whole video has the same FaceRecord.
 		auto bound = std::partition(begin(stillTargetSet), end(stillTargetSet), [queryVideo](facerecognition::FaceRecord& target) { return target.subjectId == queryVideo.subjectId; });
 		// begin to bound = positive pairs, rest = negative
 		auto numPositivePairs = std::distance(begin(stillTargetSet), bound);
 		auto numNegativePairs = std::distance(bound, end(stillTargetSet));
+		if (numPositivePairs == 0) { // Not sure if this should be happening in the PaSC sigsets - ask Ross
+			numPositivePairs = 1; // Causes the uniform_int_distribution c'tor not to crash because of negative value
+			numPositivePairsPerFrame = 0; // Causes the positive-pairs stuff further down to be skipped
+			continue; // only for debugging!
+		}
 		std::uniform_int_distribution<> rndPositiveDistr(0, numPositivePairs - 1); // -1 because all vector indices start with 0
 		std::uniform_int_distribution<> rndNegativeDistr(numPositivePairs, stillTargetSet.size() - 1);
 		// Select random subset of frames:
@@ -394,6 +529,7 @@ int main(int argc, char *argv[])
 			auto frame = frames[frameNum];
 			// Get the landmarks for this frame:
 			string frameName = getPascFrameName(queryVideo.dataPath, frameNum + 1);
+			std::cout << "=== STARTING TO PROCESS " << frameName << " ===" << std::endl;
 			auto landmarks = std::find_if(begin(pascVideoDetections), end(pascVideoDetections), [frameName](const facerecognition::PascVideoDetection& d) { return (d.frame_id == frameName); });
 			// Use facebox (later: or eyes) to run the engine
 			if (landmarks == std::end(pascVideoDetections)) {
@@ -407,13 +543,26 @@ int main(int argc, char *argv[])
 			for (int k = 0; k < numPositivePairsPerFrame; ++k) { // we can also get twice (or more) times the same, but doesn't matter for now
 				auto targetStill = stillTargetSet[rndPositiveDistr(rndGenPosTargets)];
 				// TODO get LMs for targetStill from PaSC - see further up, email Ross
-
-
 				// match (targetStill (FaceRecord), LMS TODO ) against ('frame' (Mat), queryVideo (FaceRecord), landmarks)
+				double recognitionScore = faceRecEngine.match(inputDirectoryStills / targetStill.dataPath, targetStill.subjectId, frame, frameName, cv::Vec2f(), cv::Vec2f());
+				std::cout << "===== Got a score!" << recognitionScore << "=====" << std::endl;
+				string out = (outputPath / path(frameName).stem()).string() + "_" + std::to_string(recognitionScore) + ".png";
+				cv::imwrite(out, frame);
+				double frameScore = recognitionScore; // This is our label. It's a positive pair, so the higher the score the higher our framescore.
 
+				// The face box is always given. Only the eyes are missing sometimes.
+				cv::Rect roi(landmarks->fcen_x - landmarks->fwidth / 2.0 - landmarks->fwidth / 10.0, landmarks->fcen_y - landmarks->fheight / 2.0 - landmarks->fheight / 10.0, landmarks->fwidth + landmarks->fwidth / 5.0, landmarks->fheight + landmarks->fheight / 5.0);
+				Mat croppedFace = frame(roi);
+				cv::resize(croppedFace, croppedFace, cv::Size(32, 32)); // need to set this higher... 40x40? What about aspect ratio?
+				cv::cvtColor(croppedFace, croppedFace, cv::COLOR_BGR2GRAY);
+
+				trainingFrames.emplace_back(croppedFace);
+				labels.emplace_back(frameScore);
 			}
 			for (int k = 0; k < numNegativePairsPerFrame; ++k) {
-
+				double recognitionScore;
+				double frameScore = 1.0 - recognitionScore; // This is our label. It's a negative pair, so a facerec-score close to 0 is good, meaning 1-frScore is the frameScore
+				// This is problematic here because we return a score of 0 for frames that we couldn't enrol - they would get 0 error here, which is bad.
 			}
 
 			// Run the engine:
@@ -424,8 +573,8 @@ int main(int argc, char *argv[])
 
 			// From this pair:
 			// resulting score difference to class label = label, facebox = input, resize it
-			trainingFrames.emplace_back(frame); // store only the resized frames!
-			labels.emplace_back(1.0f);
+			//trainingFrames.emplace_back(frame); // store only the resized frames!
+			//labels.emplace_back(1.0f); // 1.0 means good frame, 0.0 means bad frame.
 		}
 	}
 
@@ -436,18 +585,6 @@ int main(int argc, char *argv[])
 	// FaceVacs : Engine; C'tor - nothing? FV-Config?
 
 	// Or: All the FaceVacs stuff in libFaceVacsWrapper. Direct-calls and exe-runner. With CMake-Option.
-	
-	
-	// Train NN:
-	// trainingFrames, labels
-
-
-	// Save it:
-
-	// Test it:
-	// - Error on train-set?
-	// - Split the train set in train/test
-	// - Error on 'real' PaSC part? (i.e. the validation set)
 
 	return EXIT_SUCCESS;
 }

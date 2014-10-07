@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME train-frame-extract-nnet)
+set(SUBPROJECT_NAME train-frameselect-learn)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -20,19 +20,9 @@ set(TinyCNN_INCLUDE_DIR "C:\\Users\\Patrik\\Documents\\GitHub\\FeatureDetection\
 add_definitions(-DCNN_USE_AVX)
 add_definitions(-DCNN_USE_SSE)
 
-# Add the FaceVACS SDK as a dependency:
-set(FVSDKLIB_DBG "C:\\FVSDK_8_9_5\\lib\\x86_64\\msc_12.0-ipp_crtdll_g\\libfrsdk-8.9.5d")
-set(FVSDKLIB "C:\\FVSDK_8_9_5\\lib\\x86_64\\msc_12.0-ipp_crtdll\\libfrsdk-8.9.5")
-add_library(fvsdk SHARED IMPORTED)
-set_property(TARGET fvsdk PROPERTY IMPORTED_LOCATION ${FVSDKLIB}.dll)
-set_property(TARGET fvsdk PROPERTY IMPORTED_IMPLIB ${FVSDKLIB}.lib)
-set_property(TARGET fvsdk PROPERTY IMPORTED_LOCATION_DEBUG ${FVSDKLIB_DBG}.dll)
-set_property(TARGET fvsdk PROPERTY IMPORTED_IMPLIB_DEBUG ${FVSDKLIB_DBG}.lib)
-include_directories("C:\\FVSDK_8_9_5\\include")
-
 # Source and header files:
 set(SOURCE
-	train-frame-extract-nnet.cpp
+	train-frameselect-learn.cpp
 )
 
 set(HEADERS
@@ -45,7 +35,6 @@ include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${Logging_SOURCE_DIR}/include)
 include_directories(${ImageIO_SOURCE_DIR}/include)
-include_directories(${FaceRecognition_SOURCE_DIR}/include)
 
 # Make the app depend on the libraries
-target_link_libraries(${SUBPROJECT_NAME} FaceRecognition ImageIO Logging ${Boost_LIBRARIES} ${OpenCV_LIBS} fvsdk)
+target_link_libraries(${SUBPROJECT_NAME} ImageIO Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})
