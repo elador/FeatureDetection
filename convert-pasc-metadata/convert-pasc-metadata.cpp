@@ -113,11 +113,11 @@ int main(int argc, char *argv[])
 	auto outputFilename = outputFolder / inputFile.filename();
 	outputFilename.replace_extension(".txt");
 	std::ofstream ofPascT(outputFilename.string());
-	{
+	{ // use scope to ensure archive goes out of scope before stream
 		boost::archive::text_oarchive oa(ofPascT);
 		oa << videoDetections;
-		// archive and stream closed when destructors are called
 	}
+	ofPascT.close();
 	
 	// Same, but binary file instead. Note: The writing works but the reading gives a runtime crash.
 /*	outputFilename.replace_extension(".bin");

@@ -34,6 +34,9 @@
 #include "boost/filesystem.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/archive/text_iarchive.hpp"
+#include "boost/archive/text_oarchive.hpp"
+#include "boost/archive/binary_iarchive.hpp"
+#include "boost/archive/binary_oarchive.hpp"
 
 #include <boost/timer.hpp>
 #include <boost/progress.hpp>
@@ -43,6 +46,7 @@
 #include <frsdk/match.h>
 #include <frsdk/eyes.h>
 
+#include "imageio/MatSerialization.hpp"
 #include "facerecognition/pasc.hpp"
 #include "facerecognition/utils.hpp"
 
@@ -459,6 +463,23 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
+
+	cv::Mat test = cv::Mat::ones(10, 15, CV_8UC2);
+	std::ofstream ofPascT("test.txt");
+	{ // use scope to ensure archive goes out of scope before stream
+		boost::archive::text_oarchive oa(ofPascT);
+		oa << test;
+	}
+	ofPascT.close();
+
+	Mat test2;
+	std::ifstream ifPascT("test.txt");
+	{ // use scope to ensure archive goes out of scope before stream
+		boost::archive::text_iarchive ia(ifPascT);
+		ia >> test2;
+	}
+	ifPascT.close();
+
 	/*
 	vector<path> trainingVideos;
 	try {
@@ -499,8 +520,8 @@ int main(int argc, char *argv[])
 						  // In case of a negative pair, the label is the difference to 0.0
 
 	// Select random subset of videos: (Note: This means we may select the same video twice - not so optimal?)
-	int numVideosToTrain = 5;
-	int numFramesPerVideo = 5;
+	int numVideosToTrain = 2;
+	int numFramesPerVideo = 2;
 	int numPositivePairsPerFrame = 1;
 	int numNegativePairsPerFrame = 0;
 	for (int i = 0; i < numVideosToTrain; ++i) {

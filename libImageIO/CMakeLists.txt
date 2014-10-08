@@ -50,6 +50,7 @@ set(HEADERS
 	include/imageio/LandmarksHelper.hpp
 	include/imageio/LfpwLandmarkFormatParser.hpp
 	include/imageio/LstLandmarkFormatParser.hpp
+	include/imageio/MatSerialization.hpp
 	include/imageio/ModelLandmark.hpp
 	include/imageio/MuctLandmarkFormatParser.hpp
 	include/imageio/NamedLabeledImageSource.hpp
