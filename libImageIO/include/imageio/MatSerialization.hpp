@@ -46,15 +46,13 @@ namespace boost {
 		template<class Archive>
 		void save(Archive & ar, const ::cv::Mat& m, const unsigned int version)
 		{
-			//size_t elem_size = m.elemSize();
 			int elem_type = m.type();
 
-			ar & m.cols;
 			ar & m.rows;
-			//ar & elem_size; // I don't think we need to serialize this, it's deduced from type(). See the SO link.
+			ar & m.cols;
 			ar & elem_type;
-			auto es = m.elemSize();
-			const size_t data_size = m.cols * m.rows * m.elemSize();
+
+			const size_t data_size = m.rows * m.cols * m.elemSize();
 			ar & boost::serialization::make_array(m.ptr(), data_size);
 		}
 
@@ -65,17 +63,14 @@ namespace boost {
 		template<class Archive>
 		void load(Archive & ar, ::cv::Mat& m, const unsigned int version)
 		{
-			int cols, rows;
-			//size_t elem_size, elem_type;
+			int rows, cols;
 			int elem_type;
 
-			ar & cols;
 			ar & rows;
-			//ar & elem_size;
+			ar & cols;
 			ar & elem_type;
 
 			m.create(rows, cols, elem_type);
-			auto es = m.elemSize();
 			size_t data_size = m.cols * m.rows * m.elemSize();
 			ar & boost::serialization::make_array(m.ptr(), data_size);
 		}
