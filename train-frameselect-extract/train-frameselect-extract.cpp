@@ -464,7 +464,11 @@ int main(int argc, char *argv[])
 	}
 
 
-	cv::Mat test = cv::Mat::ones(10, 15, CV_8UC2);
+	cv::Mat testbig = cv::Mat::ones(100, 150, CV_8UC2);
+	cv::Rect roi(10, 12, 30, 34);
+	Mat test = testbig(roi);
+	test.setTo(100.0f);
+	cout << test.isContinuous();
 	std::ofstream ofPascT("test.txt");
 	{ // use scope to ensure archive goes out of scope before stream
 		boost::archive::text_oarchive oa(ofPascT);
