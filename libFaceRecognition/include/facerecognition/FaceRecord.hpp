@@ -27,7 +27,7 @@ namespace facerecognition {
  */
 class FaceRecord {
 public:
-	std::string identifier; ///< A unique (among the respective database) subject identifier.
+	std::string identifier; ///< A unique (among the respective database) media/record identifier.
 	std::string subjectId; ///< The ID of the subject.
 	boost::filesystem::path dataPath; ///< The full path to where the image (or whatever data is associated with this record) inside the database can be found
 

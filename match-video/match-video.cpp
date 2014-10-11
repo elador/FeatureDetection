@@ -147,19 +147,44 @@ int main(int argc, char *argv[])
 
 	
 	facerecognition::FaceVacsEngine faceRecEngine(R"(C:\FVSDK_8_9_5\etc\frsdk.cfg)", R"(C:\Users\Patrik\Documents\GitHub\aaatmp)");
-	//auto stillTargetSetSmall = { stillTargetSet[1092]/*, stillTargetSet[0] */};
-	//path = L"C:\\Users\\Patrik\\Documents\\GitHub\\aaatmp\\06340d96.fir"
-	//auto dp = path("06340d96.jpg");
-	//auto galSubj = std::find_if(begin(stillTargetSet), end(stillTargetSet), [dp](const facerecognition::FaceRecord& g) { return (g.dataPath == dp); });
-	// check
-	//auto galSubjIdx = std::distance(begin(stillTargetSet), galSubj);
+
 	stillTargetSet.resize(100); // 1000 = FIR limit atm
 	faceRecEngine.enrollGallery(stillTargetSet, inputDirectoryStills);
 
 	auto frames = facerecognition::utils::getFrames(inputDirectoryVideos / videoQuerySet[184].dataPath);
-	int frameNum = 170;
-	string frameName = facerecognition::getPascFrameName(videoQuerySet[0].dataPath, frameNum + 1);
-	auto recognitionScores = faceRecEngine.matchAll(frames[frameNum], frameName, cv::Vec2f(), cv::Vec2f());
+	//auto w = frames.front().cols;
+	//auto h = frames.front().rows;
+	//auto step = 1.0 / (w + 1); // x-step in every frame iteration
+	std::ofstream out("video_184.txt");
+
+	for (size_t frameNum = 0; frameNum < frames.size(); ++frameNum)
+	{
+		string frameName = facerecognition::getPascFrameName(videoQuerySet[184].dataPath, frameNum + 1);
+		auto recognitionScores = faceRecEngine.matchAll(frames[frameNum], frameName, cv::Vec2f(), cv::Vec2f());
+
+		// For the currently selected video, partition the target set. The distributions don't change each frame, whole video has the same FaceRecord.
+		auto querySubject = videoQuerySet[184].subjectId;
+		auto bound = std::partition(begin(recognitionScores), end(recognitionScores), [querySubject](std::pair<facerecognition::FaceRecord, float>& target) { return target.first.subjectId == querySubject; });
+		// begin to bound = positive pairs, rest = negative
+		auto numPositivePairs = std::distance(begin(recognitionScores), bound);
+		auto numNegativePairs = std::distance(bound, end(recognitionScores));
+
+		out << numPositivePairs << ",";
+		out << numNegativePairs << ",";
+
+		//Mat outFrame = frames[frameNum]; // no need to clone, we'll throw it away anyway
+
+		for (auto& iter = begin(recognitionScores); iter != bound; ++iter) {
+			out << iter->second << ",";
+		}
+		for (auto& iter = bound; iter != end(recognitionScores); ++iter) {
+			out << iter->second << ",";
+		}
+		out << endl;
+		// Display the 10 top matches
+	}
+
+	out.close();
 
 	return EXIT_SUCCESS;
 }

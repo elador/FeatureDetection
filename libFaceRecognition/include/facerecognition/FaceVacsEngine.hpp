@@ -75,6 +75,7 @@ public:
 	};
 
 	// because it often stays the same
+	// Returns a new vector of FaceRecord with all the ones that could be enroled
 	void enrollGallery(std::vector<facerecognition::FaceRecord> galleryRecords, path databasePath)
 	{
 		// We first enroll the whole gallery:
@@ -124,6 +125,7 @@ public:
 				}
 			}
 		}
+		//return enrolledGalleryRecords;
 	};
 
 	// Make a matchAgainstGallery or matchSingle function as well
@@ -171,14 +173,16 @@ public:
 		return *givenProbeVsGivenGallery;
 	};
 
-	std::vector<float> matchAll(cv::Mat p, std::string probeFilename, cv::Vec2f firstEye, cv::Vec2f secondEye)
+	// Return will have the same order as enrolled gallery subjects!
+	// I think returning a vec<pair<score, FaceRecord>> would be better
+	std::vector<std::pair<FaceRecord, float>> matchAll(cv::Mat p, std::string probeFilename, cv::Vec2f firstEye, cv::Vec2f secondEye)
 	{
 		auto tempProbeImageFilename = tempDir / path(probeFilename).filename();
 		tempProbeImageFilename.replace_extension(".fir");
 		boost::optional<path> probeFrameFir = createFir(matToFRsdkImage(p), tempProbeImageFilename);
 		if (!probeFrameFir) {
-			std::cout << "Couldn't enroll the probe - not a good frame. Return score 0.0." << std::endl;
-			return std::vector<float>{};
+			std::cout << "Couldn't enroll the probe - not a good frame. Return an empty vector." << std::endl;
+			return std::vector<std::pair<FaceRecord, float>>{};
 		}
 
 		std::ifstream firStream(probeFrameFir->string(), std::ios::in | std::ios::binary);
@@ -190,8 +194,16 @@ public:
 		//according to the order in the population (order of adding FIRs to
 		//the population)
 		FRsdk::CountedPtr<FRsdk::Scores> scores = me->compare(fir, *population);
-
-		return std::vector<float>{ std::make_move_iterator(std::begin(*scores)), std::make_move_iterator(std::end(*scores)) };
+		//std::vector<float>{ std::make_move_iterator(std::begin(*scores)), std::make_move_iterator(std::end(*scores)) };
+		
+		std::vector<std::pair<FaceRecord, float>> ret;
+		ret.reserve(enrolledGalleryRecords.size());
+		size_t i = 0;
+		for (auto& e : *scores) {
+			ret.emplace_back(std::make_pair(enrolledGalleryRecords[i], e));
+			++i;
+		}
+		return ret;
 	};
 
 	// matches a pair of images, given LMs as Cog init
