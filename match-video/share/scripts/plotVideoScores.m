@@ -1,19 +1,19 @@
 clear
 close all;
-F = csvread('C:\Users\Patrik\Documents\GitHub\build\match-video\video_184.txt');
-numPosPairs = F(1, 1);
-numNegPairs = F(1, 2);
-numFrames = 1:size(F, 1);
+F = csvread('C:\Users\Patrik\Documents\GitHub\build\match-video\out\04327d2442.txt');
+numPosPairs = F(2, 1);
+numNegPairs = F(2, 2);
+numFrames = 1:size(F, 1) - 1; % -1 because of the header line
 
 figure(1);
 subplot(1,2,1);
 hold on;
 
 for p = 3:numPosPairs+2 % plot all positive pairs
-    plot(numFrames, F(:, p), 'g', 'DisplayName', sprintf('%d', p-3));
+    plot(numFrames, F(2:end, p), 'g', 'DisplayName', sprintf('%d', p-3)); % 2:end because we skip the header line
 end
 for p = (numPosPairs+2+1):(size(F, 2)-1) % plot all negative pairs
-    plot(numFrames, F(:, p), 'r', 'DisplayName', sprintf('%d', p-3));
+    plot(numFrames, F(2:end, p), 'r', 'DisplayName', sprintf('%d', p-3)); % 2:end because we skip the header line
 end
 legend('-DynamicLegend');
 

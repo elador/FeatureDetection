@@ -280,9 +280,10 @@ private:
 	std::unique_ptr<FRsdk::Configuration> cfg; // static? (recommendation by fvsdk doc)
 	std::unique_ptr<FRsdk::FIRBuilder> firBuilder;
 	std::unique_ptr<FRsdk::FacialMatchingEngine> me;
-	std::vector<facerecognition::FaceRecord> enrolledGalleryRecords; // We keep this for the subject IDs
 	std::unique_ptr<FRsdk::Population> population; // enrolled gallery FIRs, same order
-
+public:
+	std::vector<facerecognition::FaceRecord> enrolledGalleryRecords; // We keep this for the subject IDs
+private:
 	class EnrolCoutFeedback : public FRsdk::Enrollment::FeedbackBody
 	{
 	public:

@@ -145,46 +145,56 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	
 	facerecognition::FaceVacsEngine faceRecEngine(R"(C:\FVSDK_8_9_5\etc\frsdk.cfg)", R"(C:\Users\Patrik\Documents\GitHub\aaatmp)");
 
-	stillTargetSet.resize(100); // 1000 = FIR limit atm
+	stillTargetSet.resize(1000); // 1000 = FIR limit atm
 	faceRecEngine.enrollGallery(stillTargetSet, inputDirectoryStills);
 
-	auto frames = facerecognition::utils::getFrames(inputDirectoryVideos / videoQuerySet[184].dataPath);
-	//auto w = frames.front().cols;
-	//auto h = frames.front().rows;
-	//auto step = 1.0 / (w + 1); // x-step in every frame iteration
-	std::ofstream out("video_184.txt");
-
-	for (size_t frameNum = 0; frameNum < frames.size(); ++frameNum)
+	for (auto& video : videoQuerySet)
+	//auto& video = videoQuerySet[184];
 	{
-		string frameName = facerecognition::getPascFrameName(videoQuerySet[184].dataPath, frameNum + 1);
-		auto recognitionScores = faceRecEngine.matchAll(frames[frameNum], frameName, cv::Vec2f(), cv::Vec2f());
-
-		// For the currently selected video, partition the target set. The distributions don't change each frame, whole video has the same FaceRecord.
-		auto querySubject = videoQuerySet[184].subjectId;
-		auto bound = std::partition(begin(recognitionScores), end(recognitionScores), [querySubject](std::pair<facerecognition::FaceRecord, float>& target) { return target.first.subjectId == querySubject; });
-		// begin to bound = positive pairs, rest = negative
-		auto numPositivePairs = std::distance(begin(recognitionScores), bound);
-		auto numNegativePairs = std::distance(bound, end(recognitionScores));
-
-		out << numPositivePairs << ",";
-		out << numNegativePairs << ",";
-
-		//Mat outFrame = frames[frameNum]; // no need to clone, we'll throw it away anyway
-
-		for (auto& iter = begin(recognitionScores); iter != bound; ++iter) {
-			out << iter->second << ",";
-		}
-		for (auto& iter = bound; iter != end(recognitionScores); ++iter) {
-			out << iter->second << ",";
+		auto videoName = inputDirectoryVideos / video.dataPath;
+		auto frames = facerecognition::utils::getFrames(videoName);
+		//auto w = frames.front().cols;
+		//auto h = frames.front().rows;
+		//auto step = 1.0 / (w + 1); // x-step in every frame iteration
+		path scoreOutputFile{ outputPath / videoName.filename().stem() };
+		scoreOutputFile.replace_extension(".txt");
+		std::ofstream out(scoreOutputFile.string());
+		// Write the subject id's into a header line
+		out << ",";
+		out << ",";
+		for (auto& s : faceRecEngine.enrolledGalleryRecords) {
+			out << s.dataPath.stem().string() << ",";
 		}
 		out << endl;
-		// Display the 10 top matches
+
+		for (size_t frameNum = 0; frameNum < frames.size(); ++frameNum)
+		{
+			appLogger.debug("Processing frame " + std::to_string(frameNum));
+
+			string frameName = facerecognition::getPascFrameName(video.dataPath, frameNum + 1); // 184 is a good test-video and it's in the first 100 gallery
+			auto recognitionScores = faceRecEngine.matchAll(frames[frameNum], frameName, cv::Vec2f(), cv::Vec2f());
+
+			// For the currently selected video, partition the target set. The distributions don't change each frame, whole video has the same FaceRecord.
+			auto querySubject = video.subjectId;
+			auto bound = std::partition(begin(recognitionScores), end(recognitionScores), [querySubject](std::pair<facerecognition::FaceRecord, float>& target) { return target.first.subjectId == querySubject; });
+			// begin to bound = positive pairs, rest = negative
+			auto numPositivePairs = std::distance(begin(recognitionScores), bound);
+			auto numNegativePairs = std::distance(bound, end(recognitionScores));
+
+			out << numPositivePairs << ",";
+			out << numNegativePairs << ",";
+
+			for (auto& iter = begin(recognitionScores); iter != bound; ++iter) {
+				out << iter->second << ",";
+			}
+			for (auto& iter = bound; iter != end(recognitionScores); ++iter) {
+				out << iter->second << ",";
+			}
+			out << endl;
+		}
+		out.close();
 	}
-
-	out.close();
-
 	return EXIT_SUCCESS;
 }
