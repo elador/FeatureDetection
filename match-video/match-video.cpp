@@ -67,31 +67,6 @@ using std::shared_ptr;
 using std::vector;
 using std::string;
 
-// Caution: This will eat a lot of RAM, 1-2 GB for 600 RGB frames at 720p
-vector<Mat> getFrames(path videoFilename)
-{
-	vector<Mat> frames;
-
-	cv::VideoCapture cap(videoFilename.string());
-	if (!cap.isOpened())
-		throw("Couldn't open video file.");
-
-	Mat img;
-	while (cap.read(img)) {
-		frames.emplace_back(img.clone()); // we need to clone, otherwise we'd just get a reference to the same 'img' instance
-	}
-
-	return frames;
-}
-
-// pascFrameNumber starts with 1. Your counting might start with 0, so add 1 to it before passing it here.
-std::string getPascFrameName(path videoFilename, int pascFrameNumber)
-{
-	std::ostringstream ss;
-	ss << std::setw(3) << std::setfill('0') << pascFrameNumber;
-	return videoFilename.stem().string() + "/" + videoFilename.stem().string() + "-" + ss.str() + ".jpg";
-}
-
 int main(int argc, char *argv[])
 {
 	#ifdef WIN32

@@ -62,31 +62,6 @@ using std::shared_ptr;
 using std::vector;
 using std::string;
 
-// Caution: This will eat a lot of RAM, 1-2 GB for 600 RGB frames at 720p
-vector<Mat> getFrames(path videoFilename)
-{
-	vector<Mat> frames;
-
-	cv::VideoCapture cap(videoFilename.string());
-	if (!cap.isOpened())
-		throw("Couldn't open video file.");
-
-	Mat img;
-	while (cap.read(img)) {
-		frames.emplace_back(img.clone()); // we need to clone, otherwise we'd just get a reference to the same 'img' instance
-	}
-
-	return frames;
-}
-
-// pascFrameNumber starts with 1. Your counting might start with 0, so add 1 to it before passing it here.
-std::string getPascFrameName(path videoFilename, int pascFrameNumber)
-{
-	std::ostringstream ss;
-	ss << std::setw(3) << std::setfill('0') << pascFrameNumber;
-	return videoFilename.stem().string() + "/" + videoFilename.stem().string() + "-" + ss.str() + ".jpg";
-}
-
 int main(int argc, char *argv[])
 {
 	#ifdef WIN32
@@ -253,7 +228,7 @@ int main(int argc, char *argv[])
 		if (!boost::filesystem::exists(inputDirectoryVideos / queryVideo.dataPath)) {  // Shouldn't be necessary, but there are 5 videos in the xml sigset that we don't have.
 			continue;
 		}
-		auto frames = getFrames(inputDirectoryVideos / queryVideo.dataPath);
+		auto frames = facerecognition::utils::getFrames(inputDirectoryVideos / queryVideo.dataPath);
 		// For the currently selected video, partition the target set. The distributions don't change each frame, whole video has the same FaceRecord.
 		auto bound = std::partition(begin(stillTargetSet), end(stillTargetSet), [queryVideo](facerecognition::FaceRecord& target) { return target.subjectId == queryVideo.subjectId; });
 		// begin to bound = positive pairs, rest = negative
@@ -272,7 +247,7 @@ int main(int argc, char *argv[])
 			int frameNum = rndFrameDistr(rndGenFrames);
 			auto frame = frames[frameNum];
 			// Get the landmarks for this frame:
-			string frameName = getPascFrameName(queryVideo.dataPath, frameNum + 1);
+			string frameName = facerecognition::getPascFrameName(queryVideo.dataPath, frameNum + 1);
 			std::cout << "=== STARTING TO PROCESS " << frameName << " ===" << std::endl;
 			auto landmarks = std::find_if(begin(pascVideoDetections), end(pascVideoDetections), [frameName](const facerecognition::PascVideoDetection& d) { return (d.frame_id == frameName); });
 			// Use facebox (later: or eyes) to run the engine

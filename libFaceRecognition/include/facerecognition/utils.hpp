@@ -17,6 +17,9 @@
 #endif
 #include "boost/filesystem/path.hpp"
 
+#include "opencv2/core/core.hpp"
+#include "opencv2/highgui/highgui.hpp"
+
 #include <vector>
 
 /**
@@ -25,6 +28,24 @@
  */
 namespace facerecognition {
 	namespace utils {
+
+// TODO: This should rather go into libImageIO.
+// Caution: This will eat a lot of RAM, 1-2 GB for 600 RGB frames at 720p
+std::vector<cv::Mat> getFrames(boost::filesystem::path videoFilename)
+{
+	std::vector<cv::Mat> frames;
+
+	cv::VideoCapture cap(videoFilename.string());
+	if (!cap.isOpened())
+		throw("Couldn't open video file.");
+
+	cv::Mat img;
+	while (cap.read(img)) {
+		frames.emplace_back(img.clone()); // we need to clone, otherwise we'd just get a reference to the same 'img' instance
+	}
+
+	return frames;
+}
 
 /**
  * Reads in a sigset from the PaSC database.

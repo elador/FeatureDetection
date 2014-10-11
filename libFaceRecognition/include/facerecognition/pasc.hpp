@@ -21,8 +21,17 @@
 #include "boost/serialization/string.hpp"
 
 #include <vector>
+#include <iomanip>
 
 namespace facerecognition {
+
+// pascFrameNumber starts with 1. Your counting might start with 0, so add 1 to it before passing it here.
+std::string getPascFrameName(boost::filesystem::path videoFilename, int pascFrameNumber)
+{
+	std::ostringstream ss;
+	ss << std::setw(3) << std::setfill('0') << pascFrameNumber;
+	return videoFilename.stem().string() + "/" + videoFilename.stem().string() + "-" + ss.str() + ".jpg";
+}
 
 /**
  * Todo.
