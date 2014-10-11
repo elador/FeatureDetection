@@ -35,6 +35,7 @@ set(SOURCE
 
 set(HEADERS
 	include/facerecognition/FaceRecord.hpp
+	include/facerecognition/FaceVacsEngine.hpp
 	include/facerecognition/frsdk.hpp
 	include/facerecognition/pasc.hpp
 	include/facerecognition/utils.hpp
