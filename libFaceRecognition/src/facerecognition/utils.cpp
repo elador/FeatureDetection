@@ -8,6 +8,8 @@
 
 #include "logging/LoggerFactory.hpp"
 
+#include "opencv2/highgui/highgui.hpp"
+
 #include "boost/property_tree/ptree.hpp"
 #include "boost/property_tree/info_parser.hpp"
 #include "boost/property_tree/xml_parser.hpp"
@@ -21,6 +23,22 @@ using std::string;
 
 namespace facerecognition {
 	namespace utils {
+
+std::vector<cv::Mat> getFrames(boost::filesystem::path videoFilename)
+{
+	vector<cv::Mat> frames;
+
+	cv::VideoCapture cap(videoFilename.string());
+	if (!cap.isOpened())
+		throw("Couldn't open video file.");
+
+	cv::Mat img;
+	while (cap.read(img)) {
+		frames.emplace_back(img.clone()); // we need to clone, otherwise we'd just get a reference to the same 'img' instance
+	}
+
+	return frames;
+}
 
 std::vector<FaceRecord> readPascSigset(boost::filesystem::path filename, bool stripFilePath)
 {

@@ -1,6 +1,8 @@
 /*
  * frsdk.hpp
  *
+ * Todo: Rename to frsdkHelpers or frsdkUtils
+ *
  *  Created on: 11.10.2014
  *      Author: Patrik Huber
  */

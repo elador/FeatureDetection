@@ -21,6 +21,7 @@
 #include "boost/serialization/string.hpp"
 
 #include <vector>
+#include <sstream>
 #include <iomanip>
 
 namespace facerecognition {

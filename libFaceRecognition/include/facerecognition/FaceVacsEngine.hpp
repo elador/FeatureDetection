@@ -10,6 +10,9 @@
 #define FACEVACSENGINE_HPP_
 
 #include "facerecognition/FaceRecord.hpp"
+#include "facerecognition/frsdk.hpp"
+
+#include "logging/LoggerFactory.hpp"
 
 #include "frsdk/config.h"
 #include "frsdk/enroll.h"
@@ -30,6 +33,7 @@
 #include <memory>
 #include <fstream>
 
+using logging::LoggerFactory;
 using boost::filesystem::path;
 using std::cout;
 using std::endl;
@@ -73,10 +77,10 @@ public:
 	// because it often stays the same
 	void enrollGallery(std::vector<facerecognition::FaceRecord> galleryRecords, path databasePath)
 	{
-		this->galleryRecords = galleryRecords;
-
 		// We first enroll the whole gallery:
-		cout << "Loading the input images..." << endl;
+		auto logger = Loggers->getLogger("facerecognition");
+		logger.info("Enroling gallery, " + std::to_string(galleryRecords.size()) + " records...");
+
 		// create an enrollment processor
 		FRsdk::Enrollment::Processor proc(*cfg);
 		// Todo: FaceVACS should be able to do batch-enrolment?
@@ -107,6 +111,7 @@ public:
 				try {
 					auto fir = firBuilder->build(firIn);
 					population->append(fir, firPath.string());
+					this->enrolledGalleryRecords.push_back(r); // we make a copy of the record? not sure?
 				}
 				catch (const FRsdk::FeatureDisabled& e) {
 					std::cout << e.what() << std::endl;
@@ -130,11 +135,12 @@ public:
 	// Always pass in images/image-filenames. The "outside" should never have to worry
 	// about FIRs or other intermediate representations.
 	// Eyes: Currently unused, use PaSC-tr eyes in the future
-	double match(path g, std::string gallerySubjectId, cv::Mat p, std::string probeFilename, cv::Vec2f firstEye, cv::Vec2f secondEye)
+	float match(path g, std::string gallerySubjectId, cv::Mat p, std::string probeFilename, cv::Vec2f firstEye, cv::Vec2f secondEye)
 	{
 		auto galleryFirPath = tempDir / g.filename();
 		galleryFirPath.replace_extension(".fir"); // we probably don't need this - only the basename / subject ID (if it is already enroled)
 
+		// TODO: 2 versions of this function: path and Mat. Change the Mat version => remove imwrite.
 		auto tempProbeImageFilename = tempDir / path(probeFilename).filename();
 		cv::imwrite(tempProbeImageFilename.string(), p);
 
@@ -156,14 +162,38 @@ public:
 		FRsdk::CountedPtr<FRsdk::Scores> scores = me->compare(fir, *population);
 
 		// Find the score from "g" in the gallery
-		auto subjectInGalleryIter = std::find_if(begin(galleryRecords), end(galleryRecords), [gallerySubjectId](const facerecognition::FaceRecord& g) { return (g.subjectId == gallerySubjectId); });
-		if (subjectInGalleryIter == end(galleryRecords)) {
+		auto subjectInGalleryIter = std::find_if(begin(enrolledGalleryRecords), end(enrolledGalleryRecords), [gallerySubjectId](const facerecognition::FaceRecord& g) { return (g.subjectId == gallerySubjectId); });
+		if (subjectInGalleryIter == end(enrolledGalleryRecords)) {
 			return 0.0; // We didn't find the given gallery image / subject ID in the enroled gallery. Throw?
 		}
-		auto subjectInGalleryIdx = std::distance(begin(galleryRecords), subjectInGalleryIter);
+		auto subjectInGalleryIdx = std::distance(begin(enrolledGalleryRecords), subjectInGalleryIter);
 		auto givenProbeVsGivenGallery = std::next(begin(*scores), subjectInGalleryIdx);
 		return *givenProbeVsGivenGallery;
 	};
+
+	std::vector<float> matchAll(cv::Mat p, std::string probeFilename, cv::Vec2f firstEye, cv::Vec2f secondEye)
+	{
+		auto tempProbeImageFilename = tempDir / path(probeFilename).filename();
+		tempProbeImageFilename.replace_extension(".fir");
+		boost::optional<path> probeFrameFir = createFir(matToFRsdkImage(p), tempProbeImageFilename);
+		if (!probeFrameFir) {
+			std::cout << "Couldn't enroll the probe - not a good frame. Return score 0.0." << std::endl;
+			return std::vector<float>{};
+		}
+
+		std::ifstream firStream(probeFrameFir->string(), std::ios::in | std::ios::binary);
+		FRsdk::FIR fir = firBuilder->build(firStream);
+
+		//compare() does not care about the configured number of Threads
+		//for the comparison algorithm. It uses always one thread to
+		//compare all in order to preserve the order of the scores
+		//according to the order in the population (order of adding FIRs to
+		//the population)
+		FRsdk::CountedPtr<FRsdk::Scores> scores = me->compare(fir, *population);
+
+		return std::vector<float>{ std::make_move_iterator(std::begin(*scores)), std::make_move_iterator(std::end(*scores)) };
+	};
+
 	// matches a pair of images, given LMs as Cog init
 	// match(fn, fn, ...)
 	// match(Mat, Mat, ...)
@@ -184,22 +214,32 @@ public:
 			// just overwrite
 		}
 
-		FRsdk::Image img(FRsdk::ImageIO::load(image.string()));
+		return createFir(FRsdk::ImageIO::load(image.string()), firPath);
+		
+	};
+	// Todos etc see one function above!
+	// Todo: We can remove 'firPath' here once we replace EnrolCoutFeedback by a direct-FIR-return class
+	boost::optional<path> createFir(FRsdk::Image image, path firPath)
+	{
+		// create an enrollment processor
+		FRsdk::Enrollment::Processor proc(*cfg);
+		// Todo: FaceVACS should be able to do batch-enrolment?
+
 		FRsdk::SampleSet enrollmentImages;
-		auto sample = FRsdk::Sample(img);
+		auto sample = FRsdk::Sample(image);
 		// Once we have pasc-still-training landmarks from Ross, we can use those here. In the mean-time, use the Cog Eyefinder:
 		FRsdk::Face::Finder faceFinder(*cfg);
 		FRsdk::Eyes::Finder eyesFinder(*cfg);
-		float mindist = 0.01f; // minEyeDist, def = 0.1
-		float maxdist = 0.3f; // maxEyeDist, def = 0.4
-		FRsdk::Face::LocationSet faceLocations = faceFinder.find(img, mindist, maxdist);
+		float mindist = 0.005f; // minEyeDist, def = 0.1; me: 0.01; philipp: 0.005
+		float maxdist = 0.3f; // maxEyeDist, def = 0.4; me: 0.3; philipp: 0.4
+		FRsdk::Face::LocationSet faceLocations = faceFinder.find(image, mindist, maxdist);
 		if (faceLocations.empty()) {
 			std::cout << "FaceFinder: No face found." << std::endl;
 			return boost::none;
 		}
 		// We just use the first found face:
 		// doing eyes finding
-		FRsdk::Eyes::LocationSet eyesLocations = eyesFinder.find(img, *faceLocations.begin());
+		FRsdk::Eyes::LocationSet eyesLocations = eyesFinder.find(image, *faceLocations.begin());
 		if (eyesLocations.empty()) {
 			std::cout << "EyeFinder: No eyes found." << std::endl;
 			return boost::none;
@@ -228,7 +268,7 @@ private:
 	std::unique_ptr<FRsdk::Configuration> cfg; // static? (recommendation by fvsdk doc)
 	std::unique_ptr<FRsdk::FIRBuilder> firBuilder;
 	std::unique_ptr<FRsdk::FacialMatchingEngine> me;
-	std::vector<facerecognition::FaceRecord> galleryRecords; // We keep this for the subject IDs
+	std::vector<facerecognition::FaceRecord> enrolledGalleryRecords; // We keep this for the subject IDs
 	std::unique_ptr<FRsdk::Population> population; // enrolled gallery FIRs, same order
 
 	class EnrolCoutFeedback : public FRsdk::Enrollment::FeedbackBody
