@@ -40,8 +40,8 @@ if(WITH_LIBLINEAR_CLASSIFIER)
 	add_subdirectory(libLinear)				# liblinear (linear classification with SVM and regression)
 endif()
 
-add_subdirectory(libDetection)			# Sliding-window detection, Skin detection (Note: Do we use it anymore? Yes, Condensation depends on it)
-add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
+#add_subdirectory(libDetection)			# Sliding-window detection, Skin detection (Note: Do we use it anymore? Yes, Condensation depends on it)
+#add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 
 add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
 add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes
@@ -50,13 +50,13 @@ add_subdirectory(libSupervisedDescent)	# A non-parametric model for landmark det
 add_subdirectory(libFaceRecognition)	# Utility library for face recognition experiments, to work with databases, face-record, etc.
 
 # Tracking apps:
-add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.
-add_subdirectory(trackingBenchmarkApp)	# Benchmark app for adaptive condensation tracking.
-add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
-add_subdirectory(adaptiveTrackingApp)	# Adaptive tracking app.
-add_subdirectory(partiallyAdaptiveTrackingApp)	# Old adaptive tracking app.
-add_subdirectory(headTrackingApp)		# Adaptive head tracking app.
-add_subdirectory(VideoPlayerApp)		# App for playing videos, showing landmarks and storing videos.
+#add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.
+#add_subdirectory(trackingBenchmarkApp)	# Benchmark app for adaptive condensation tracking.
+#add_subdirectory(faceTrackingApp)		# Face tracking app (no adaptation to target).
+#add_subdirectory(adaptiveTrackingApp)	# Adaptive tracking app.
+#add_subdirectory(partiallyAdaptiveTrackingApp)	# Old adaptive tracking app.
+#add_subdirectory(headTrackingApp)		# Adaptive head tracking app.
+#add_subdirectory(VideoPlayerApp)		# App for playing videos, showing landmarks and storing videos.
 
 # Face-detection apps:
 #add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe). (Note: Check if it still works)
@@ -78,6 +78,7 @@ add_subdirectory(visualise-landmarks)	# Simple app to read landmarks and images 
 add_subdirectory(convert-landmarks)		# Simple app to convert landmarks from one format into another
 add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks and perform an evaluation.
 add_subdirectory(extract-frames)		# Extracts frames from a video, given a specific criteria (e.g. random or IED)
+add_subdirectory(match-video)			# Match a whole video, write out scores to plot in Matlab
 add_subdirectory(train-frameselect-extract)	# Extract frames and label information for training
 add_subdirectory(train-frameselect-learn)	# Training of learning-based best-frame-extraction
 

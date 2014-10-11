@@ -42,7 +42,7 @@
 namespace tiny_cnn {
 
 struct result {
-    result() : num_success(0), num_total(0) {}
+    result() : num_success(0), num_total(0), total_loss(0.0) {}
 
     double accuracy() const {
         return num_success * 100.0 / num_total;
@@ -50,13 +50,15 @@ struct result {
 
     template <typename Char, typename CharTraits>
     void print_summary(std::basic_ostream<Char, CharTraits>& os) const {
-        os << "accuracy:" << accuracy() << "% (" << num_success << "/" << num_total << std::endl;
+        //os << "accuracy:" << accuracy() << "% (" << num_success << "/" << num_total << std::endl;
+		os << "average loss per image: " << total_loss / num_total << ", " << num_total << " test images." << std::endl;
     }
 
     template <typename Char, typename CharTraits>
     void print_detail(std::basic_ostream<Char, CharTraits>& os) {
         print_summary(os);
-        auto all_labels = labels();
+		/*
+		auto all_labels = labels();
 
         os << std::setw(5) << "*" << " ";
         for (auto c : all_labels) 
@@ -69,6 +71,7 @@ struct result {
                 os << std::setw(5) << confusion_matrix[r][c] << " ";
             os << std::endl;
         }
+		*/
     }
 
     std::set<label_t> labels() const {
@@ -84,6 +87,7 @@ struct result {
     int num_success;
     int num_total;
     std::map<label_t, std::map<label_t, int> > confusion_matrix;
+	double total_loss;
 };
 
 enum grad_check_mode {
@@ -162,12 +166,16 @@ public:
             vec_t out;
             predict(in[i], &out);
 
-            const label_t predicted = max_index(out);
+            //const label_t predicted = max_index(out);
+			const label_t predicted = out.front(); // no need to get the index, label is 1-dim float
             const label_t actual = t[i];
 
-            if (predicted == actual) test_result.num_success++;
+			const auto loss = E_.f(predicted, actual);
+
+            //if (predicted == actual) test_result.num_success++;
             test_result.num_total++;
-            test_result.confusion_matrix[predicted][actual]++;
+            //test_result.confusion_matrix[predicted][actual]++;
+			test_result.total_loss += loss;
         }
         return test_result;
     }
@@ -230,8 +238,9 @@ private:
         vec->reserve(num);
         for (int i = 0; i < num; i++) {
             assert(t[i] < outdim);
-            vec->emplace_back(outdim, target_value_min());
-            vec->back()[t[i]] = target_value_max();
+            //vec->emplace_back(outdim, target_value_min());
+			vec->emplace_back(outdim, t[i]);
+            //vec->back()[t[i]] = target_value_max();
         }
     }
 

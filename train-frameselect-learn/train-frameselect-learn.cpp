@@ -20,6 +20,7 @@
 #include <fstream>
 #include <iomanip>
 #include <random>
+#include <stdexcept>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -34,12 +35,14 @@
 #include "boost/filesystem.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/archive/text_iarchive.hpp"
+#include "boost/serialization/vector.hpp"
 
 #include <boost/timer.hpp>
 #include <boost/progress.hpp>
 
 #include "tiny_cnn.h"
 
+#include "imageio/MatSerialization.hpp"
 #include "logging/LoggerFactory.hpp"
 
 namespace po = boost::program_options;
@@ -122,16 +125,28 @@ int main(int argc, char *argv[])
 		boost::filesystem::create_directory(outputPath);
 	}
 	
-
-	
-	
 	// The training data:
 	vector<Mat> trainingFrames;
 	vector<float> labels; // the score difference to the value we would optimally like
 						  // I.e. if it's a positive pair, the label is the difference to 1.0
 						  // In case of a negative pair, the label is the difference to 0.0
+	
+	std::ifstream ifFrames("../train-frameselect-extract/frames_data.txt");
+	{ // use scope to ensure archive goes out of scope before stream
+		boost::archive::text_iarchive ia(ifFrames);
+		ia >> trainingFrames;
+	}
+	ifFrames.close();
 
-
+	std::ifstream ifLabels("../train-frameselect-extract/frames_labels.txt");
+	{ // use scope to ensure archive goes out of scope before stream
+		boost::archive::text_iarchive ia(ifLabels);
+		ia >> labels;
+	}
+	ifLabels.close();
+	
+	//trainingFrames = { trainingFrames[0], trainingFrames[1], trainingFrames[2] };
+	//labels = { labels[0], labels[1], labels[2] };
 
 	// Train NN:
 	// trainingFrames, labels
@@ -142,13 +157,19 @@ int main(int argc, char *argv[])
 	std::vector<vec_t> train_images, test_images; // double -1.0 to 1.0
 	// vec_t is a std::vector<float_t>, float_t = double
 
-	train_labels = labels;
-	test_labels = labels;
+	// scale the labels from [0, 1] to [-0.8, 0.8]
+	for (auto& l : labels) {
+		train_labels.emplace_back(((l * 2.0) - 1.0) * 0.8);
+	}
+	test_labels = train_labels;
+
+	// scale the image data from [0, 255] to [-1.0, 1.0]. (later: subtract the mean as well?)
 	for (auto& f : trainingFrames) {
 		Mat imageAsRowVector = f.reshape(1, 1);
-		vec_t test(imageAsRowVector);
-		cout << "hi!";
+		imageAsRowVector.convertTo(imageAsRowVector, CV_32FC1, 1.0 / 127.5, -1.0);
+		train_images.emplace_back(vec_t(imageAsRowVector));
 	}
+	test_images = train_images;
 
 	typedef network<mse, gradient_descent> CNN;
 	CNN nn;
@@ -214,7 +235,8 @@ int main(int argc, char *argv[])
 
 		tiny_cnn::result res = nn.test(test_images, test_labels);
 
-		std::cout << nn.optimizer().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
+		//std::cout << nn.optimizer().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
+		std::cout << nn.optimizer().alpha << ", " << res.num_total << ", " << res.total_loss << std::endl;
 
 		nn.optimizer().alpha *= 0.85; // decay learning rate
 		nn.optimizer().alpha = std::max(0.00001, nn.optimizer().alpha);
@@ -248,6 +270,7 @@ int main(int argc, char *argv[])
 	// save networks
 	std::ofstream ofs("LeNet-weights");
 	ofs << C1 << S2 << C3 << S4 << C5 << F6;
+	ofs.close();
 
 	// Save it:
 

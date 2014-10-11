@@ -7,7 +7,7 @@ set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # find dependencies
-find_package(Boost 1.48.0 COMPONENTS system filesystem REQUIRED)
+find_package(Boost 1.48.0 COMPONENTS system filesystem serialization REQUIRED)
 
 find_package(OpenCV 2.4.3 REQUIRED core highgui)
 

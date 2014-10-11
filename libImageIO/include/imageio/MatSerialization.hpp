@@ -13,7 +13,7 @@
 //#include "boost/serialization/vector.hpp" // Todo: Some includes are most likely missing
 
 /**
- * Serialization for the OpenCV cv::Mat class.
+ * Serialization for the OpenCV cv::Mat class. Supports text and binary serialization.
  *
  * Based on answer from: http://stackoverflow.com/questions/4170745/serializing-opencv-mat-vec3f 
  * Different method and tests: http://cheind.wordpress.com/2011/12/06/serialization-of-cvmat-objects-using-boost/
