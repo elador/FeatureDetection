@@ -17,6 +17,9 @@ numFrames = 1:size(F, 1);
 figure(1);
 subplot(1,2,1);
 hold on;
+title('Time-plot of scores. Green = positive pair, red = negative pair.');
+xlabel('Frame #');
+ylabel('Matching score');
 
 imageNames_invalid = F(:,3:2:end-1);  % odd matrix. invalid because csvread doesn't read text
 scores = F(:,4:2:end-1);  % even matrix
