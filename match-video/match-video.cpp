@@ -147,11 +147,11 @@ int main(int argc, char *argv[])
 
 	facerecognition::FaceVacsEngine faceRecEngine(R"(C:\FVSDK_8_9_5\etc\frsdk.cfg)", R"(C:\Users\Patrik\Documents\GitHub\aaatmp)");
 
-	stillTargetSet.resize(1000); // 1000 = FIR limit atm
+	stillTargetSet.resize(100); // 1000 = FIR limit atm
 	faceRecEngine.enrollGallery(stillTargetSet, inputDirectoryStills);
 
-	for (auto& video : videoQuerySet)
 	//auto& video = videoQuerySet[184];
+	for (auto& video : videoQuerySet)
 	{
 		auto videoName = inputDirectoryVideos / video.dataPath;
 		auto frames = facerecognition::utils::getFrames(videoName);
@@ -161,13 +161,6 @@ int main(int argc, char *argv[])
 		path scoreOutputFile{ outputPath / videoName.filename().stem() };
 		scoreOutputFile.replace_extension(".txt");
 		std::ofstream out(scoreOutputFile.string());
-		// Write the subject id's into a header line
-		out << ",";
-		out << ",";
-		for (auto& s : faceRecEngine.enrolledGalleryRecords) {
-			out << s.dataPath.stem().string() << ",";
-		}
-		out << endl;
 
 		for (size_t frameNum = 0; frameNum < frames.size(); ++frameNum)
 		{
@@ -187,10 +180,10 @@ int main(int argc, char *argv[])
 			out << numNegativePairs << ",";
 
 			for (auto& iter = begin(recognitionScores); iter != bound; ++iter) {
-				out << iter->second << ",";
+				out << iter->first.dataPath.stem().string() << "," << iter->second << ",";
 			}
 			for (auto& iter = bound; iter != end(recognitionScores); ++iter) {
-				out << iter->second << ",";
+				out << iter->first.dataPath.stem().string() << "," << iter->second << ",";
 			}
 			out << endl;
 		}
