@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME match-video)
+set(SUBPROJECT_NAME plot-video-scores)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -28,7 +28,7 @@ include_directories("C:\\FVSDK_8_9_5\\include")
 
 # Source and header files:
 set(SOURCE
-	match-video.cpp
+	plot-video-scores.cpp
 )
 
 set(HEADERS
