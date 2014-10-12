@@ -179,10 +179,10 @@ int main(int argc, char *argv[])
 			out << numPositivePairs << ",";
 			out << numNegativePairs << ",";
 
-			for (auto& iter = begin(recognitionScores); iter != bound; ++iter) {
+			for (auto iter = begin(recognitionScores); iter != bound; ++iter) {
 				out << iter->first.dataPath.stem().string() << "," << iter->second << ",";
 			}
-			for (auto& iter = bound; iter != end(recognitionScores); ++iter) {
+			for (auto iter = bound; iter != end(recognitionScores); ++iter) {
 				out << iter->first.dataPath.stem().string() << "," << iter->second << ",";
 			}
 			out << endl;

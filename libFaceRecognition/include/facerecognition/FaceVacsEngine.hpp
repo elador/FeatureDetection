@@ -62,12 +62,16 @@ public:
 		// Todo: Create the tempDir if it doesn't exist yet
 
 		// initialize and resource allocation
-		cfg = std::make_unique<FRsdk::Configuration>(frsdkConfig.string());
-		firBuilder = std::make_unique<FRsdk::FIRBuilder>(*cfg.get());
+		//cfg = std::make_unique<FRsdk::Configuration>(frsdkConfig.string());
+		cfg = std::unique_ptr<FRsdk::Configuration>(new FRsdk::Configuration(frsdkConfig.string()));
+		//firBuilder = std::make_unique<FRsdk::FIRBuilder>(*cfg.get());
+		firBuilder = std::unique_ptr<FRsdk::FIRBuilder>(new FRsdk::FIRBuilder(*cfg.get()));
 		// initialize matching facility
-		me = std::make_unique<FRsdk::FacialMatchingEngine>(*cfg.get());
+		//me = std::make_unique<FRsdk::FacialMatchingEngine>(*cfg.get());
+		me = std::unique_ptr<FRsdk::FacialMatchingEngine>(new FRsdk::FacialMatchingEngine(*cfg.get()));
 		// load the fir population (gallery)
-		population = std::make_unique<FRsdk::Population>(*cfg.get());
+		//population = std::make_unique<FRsdk::Population>(*cfg.get());
+		population = std::unique_ptr<FRsdk::Population>(new FRsdk::Population(*cfg.get()));
 
 		// Add somewhere: 
 		//catch (const FRsdk::FeatureDisabled& e) 
