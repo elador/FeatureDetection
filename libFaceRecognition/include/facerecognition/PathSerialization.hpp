@@ -31,7 +31,8 @@ void serialize(Archive& ar, boost::filesystem::path& p, const unsigned int versi
 	std::string s;
 	if (Archive::is_saving::value)
 		s = p.string();
-	ar & boost::serialization::make_nvp("string", s);
+	//ar & boost::serialization::make_nvp("string", s); // Doesn't work with Boost 1.48.0
+	ar & s;
 	if (Archive::is_loading::value)
 		p = s;
 };
