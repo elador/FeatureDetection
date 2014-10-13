@@ -1,11 +1,16 @@
 /*
- * plot-video-scores.cpp
+ * match-video.cpp
  *
- *  Created on: 11.10.2014
+ *  Created on: 11.09.2014
  *      Author: Patrik Huber
  *
+ * Ideally we'd use video, match against highres stills? (and not the lowres). Because if still are lowres/bad, we could match a
+ * good frame against a bad gallery, which would give a bad score, but it shouldn't, because the frame is good.
+ * Do we have labels for this?
+ * Maybe "sensor_id","stage_id","env_id","illuminant_id" in the files emailed by Ross.
+ *
  * Example:
- * plot-video-scores ...
+ * match-video ...
  *   
  */
 
@@ -13,6 +18,7 @@
 #include <memory>
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 #include <random>
 
 #include "opencv2/core/core.hpp"
@@ -32,9 +38,8 @@
 //#include "boost/archive/binary_iarchive.hpp"
 //#include "boost/archive/binary_oarchive.hpp"
 
-#include "boost/serialization/vector.hpp"
-#include "boost/serialization/optional.hpp"
-#include "boost/serialization/utility.hpp"
+#include <boost/timer.hpp>
+#include <boost/progress.hpp>
 
 #include "imageio/MatSerialization.hpp"
 #include "facerecognition/pasc.hpp"
@@ -57,23 +62,13 @@ using std::shared_ptr;
 using std::vector;
 using std::string;
 
-//#include <boost/config.hpp>
-//#include <boost/filesystem/path.hpp>
-//#include <boost/serialization/level.hpp>
-#include "facerecognition/PathSerialization.hpp"
-
 class VideoScore
 {
 public:
-	std::vector<std::vector<std::pair<facerecognition::FaceRecord, float>>> scores; // For every frame, have a vector with the scores for all gallery
+	std::vector<std::vector<float>> scores; // For every frame, have a vector with the scores for all gallery
 	// Gallery records?
 private:
-	friend class boost::serialization::access;
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version)
-	{
-		ar & scores;
-	}
+
 };
 
 int main(int argc, char *argv[])
@@ -85,8 +80,7 @@ int main(int argc, char *argv[])
 	
 	string verboseLevelConsole;
 	path inputDirectoryVideos, inputDirectoryStills;
-	path querySigset, targetSigset;
-	path queryLandmarks;
+	path inputLandmarks;
 	path outputPath;
 	path fvsdkConfig;
 
@@ -97,22 +91,18 @@ int main(int argc, char *argv[])
 				"produce help message")
 			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
 				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
-			("query-sigset,q", po::value<path>(&querySigset)->required(),
-				  "PaSC video training query sigset")
-			("query-path,r", po::value<path>(&inputDirectoryVideos)->required(),
-				"path to the training videos")
-			("query-landmarks,l", po::value<path>(&queryLandmarks)->required(),
-				"landmarks for the training videos in boost::serialization text format")
-			("target-sigset,t", po::value<path>(&targetSigset)->required(),
-				"PaSC still training target sigset")
-			("target-path,u", po::value<path>(&inputDirectoryStills)->required(),
-				"path to the training still images")
+			("input-videos,i", po::value<path>(&inputDirectoryVideos)->required(),
+				"input folder with training videos")
+			("input-stills,j", po::value<path>(&inputDirectoryStills)->required(),
+				"input folder with training videos")
+			("landmarks,l", po::value<path>(&inputLandmarks)->required(),
+				"input landmarks in boost::serialization text format")
 			("output,o", po::value<path>(&outputPath)->default_value("."),
 				"path to an output folder")
 			("fvsdk-config,c", po::value<path>(&fvsdkConfig)->default_value(R"(C:\FVSDK_8_9_5\etc\frsdk.cfg)"),
-				"path to frsdk.cfg. Usually something like C:\\FVSDK_8_9_5\\etc\\frsdk.cfg")
+				"path to frsdk.cfg. Usually something like C:\FVSDK_8_9_5\etc\frsdk.cfg")
 		;
-
+		
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm); // style(po::command_line_style::unix_style | po::command_line_style::allow_long_disguise)
 		if (vm.count("help")) {
@@ -142,7 +132,6 @@ int main(int argc, char *argv[])
 	}
 	
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Loggers->getLogger("facerecognition").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("match-video").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("match-video");
 
@@ -160,7 +149,7 @@ int main(int argc, char *argv[])
 	// Read the video detections metadata (eyes, face-coords):
 	vector<facerecognition::PascVideoDetection> pascVideoDetections;
 	{
-		std::ifstream ifs(queryLandmarks.string());
+		std::ifstream ifs(inputLandmarks.string()); // ("pasc.bin", std::ios::binary | std::ios::in)
 		boost::archive::text_iarchive ia(ifs); // binary_iarchive
 		ia >> pascVideoDetections;
 	} // archive and stream closed when destructors are called
@@ -182,26 +171,22 @@ int main(int argc, char *argv[])
 		boost::filesystem::create_directory(fvsdkTempDir);
 	}
 	facerecognition::FaceVacsEngine faceRecEngine(fvsdkConfig, fvsdkTempDir);
-	stillTargetSet.resize(100); // 1000 = FIR limit atm
+	stillTargetSet.resize(1000); // 1000 = FIR limit atm
 	faceRecEngine.enrollGallery(stillTargetSet, inputDirectoryStills);
 
-	//auto& video = videoQuerySet[184];
 	for (auto& video : videoQuerySet)
 	{
 		auto videoName = inputDirectoryVideos / video.dataPath;
 		auto frames = facerecognition::utils::getFrames(videoName);
-		//auto w = frames.front().cols;
-		//auto h = frames.front().rows;
-		//auto step = 1.0 / (w + 1); // x-step in every frame iteration
+		VideoScore videoScore;
+
 		path scoreOutputFile{ outputPath / videoName.filename().stem() };
 		scoreOutputFile.replace_extension(".txt");
 		std::ofstream out(scoreOutputFile.string());
-		VideoScore videoScore;
 
 		for (size_t frameNum = 0; frameNum < frames.size(); ++frameNum)
 		{
 			appLogger.debug("Processing frame " + std::to_string(frameNum));
-
 			string frameName = facerecognition::getPascFrameName(video.dataPath, frameNum + 1); // 184 is a good test-video and it's in the first 100 gallery
 			auto recognitionScores = faceRecEngine.matchAll(frames[frameNum], frameName, cv::Vec2f(), cv::Vec2f());
 
@@ -211,8 +196,6 @@ int main(int argc, char *argv[])
 			// begin to bound = positive pairs, rest = negative
 			auto numPositivePairs = std::distance(begin(recognitionScores), bound);
 			auto numNegativePairs = std::distance(bound, end(recognitionScores));
-
-			videoScore.scores.push_back(recognitionScores);
 
 			out << numPositivePairs << ",";
 			out << numNegativePairs << ",";
@@ -226,14 +209,7 @@ int main(int argc, char *argv[])
 			out << endl;
 		}
 		out.close();
-		// save videoScore
-		scoreOutputFile.replace_extension(".bs.txt");
-		std::ofstream outSer(scoreOutputFile.string());
-		{ // use scope to ensure archive goes out of scope before stream
-			boost::archive::text_oarchive oa(outSer);
-			oa << videoScore;
-		}
-		outSer.close();
 	}
+
 	return EXIT_SUCCESS;
 }

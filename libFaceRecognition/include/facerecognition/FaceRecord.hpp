@@ -9,6 +9,8 @@
 #ifndef FACERECORD_HPP_
 #define FACERECORD_HPP_
 
+#include "facerecognition/PathSerialization.hpp"
+
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
@@ -57,6 +59,22 @@ public:
 	* @return Todo.
 	*/
 	static boost::property_tree::ptree convertTo(FaceRecord faceRecord);
+
+	friend class boost::serialization::access;
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version)
+	{
+		ar & identifier;
+		ar & subjectId;
+		ar & dataPath;
+		ar & roll;
+		ar & pitch;
+		ar & yaw;
+		ar & session;
+		ar & lighting;
+		ar & expression;
+		ar & other;
+	}
 };
 
 } /* namespace facerecognition */
