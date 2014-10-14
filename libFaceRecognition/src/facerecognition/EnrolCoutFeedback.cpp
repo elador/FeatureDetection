@@ -41,14 +41,13 @@ void EnrolCoutFeedback::success(const FRsdk::FIR& fir_)
 	logging::Loggers->getLogger("facerecognition").debug("Enrolment: Successful enrollment");
 	if (firFN != std::string("")) {
 		std::stringstream msg;
-		msg << "FIR[filename,id,size] = [\"" << firFN.c_str() << "\",\"" << (fir->version()).c_str() << "\"," << fir->size() << "]";
+		msg << "FIR[filename,id,size] = [\"" << firFN << "\",\"" << fir->version() << "\"," << fir->size() << "]";
 		logging::Loggers->getLogger("facerecognition").debug("Enrolment: " + msg.str());
 		// write the fir
 		std::ofstream firOut(firFN.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
 		firOut << *fir;
 	}
 	firvalid = true;
-	std::cout << std::endl;
 }
 
 const FRsdk::FIR& EnrolCoutFeedback::getFir() const
