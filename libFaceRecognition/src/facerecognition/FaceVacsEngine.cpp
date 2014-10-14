@@ -69,7 +69,7 @@ void FaceVacsEngine::enrollGallery(std::vector<facerecognition::FaceRecord> gall
 	auto cnt = 0;
 	for (auto& r : galleryRecords) {
 		++cnt;
-		std::cout << cnt << std::endl;
+		logger.info("Enroling gallery image " + std::to_string(cnt));
 		// Does the FIR already exist in the temp-dir? If yes, skip FD/EyeDet!
 		auto firPath = tempDir / r.dataPath;
 		firPath.replace_extension(".fir");
@@ -88,7 +88,6 @@ void FaceVacsEngine::enrollGallery(std::vector<facerecognition::FaceRecord> gall
 		firPath.replace_extension(".fir");
 		std::ifstream firIn(firPath.string(), std::ios::in | std::ios::binary);
 		// Some of the FIRs might not exist due to enrolment failure
-		//std::cout << firPath.string() << std::endl;
 		if (firIn.is_open() && firIn.good()) {
 			try {
 				auto fir = firBuilder->build(firIn);
@@ -96,13 +95,13 @@ void FaceVacsEngine::enrollGallery(std::vector<facerecognition::FaceRecord> gall
 				this->enrolledGalleryRecords.push_back(r); // we make a copy of the record? not sure?
 			}
 			catch (const FRsdk::FeatureDisabled& e) {
-				std::cout << e.what() << std::endl;
+				logger.error(e.what());
 			}
 			catch (const FRsdk::LicenseSignatureMismatch& e) {
-				std::cout << e.what() << std::endl;
+				logger.error(e.what());
 			}
 			catch (std::exception& e) {
-				std::cout << e.what() << std::endl;
+				logger.error(e.what());
 			}
 		}
 	}
@@ -178,10 +177,6 @@ std::vector<std::pair<FaceRecord, float>> FaceVacsEngine::matchAll(cv::Mat p, st
 
 boost::optional<path> FaceVacsEngine::createFir(path image)
 {
-	// create an enrollment processor
-	FRsdk::Enrollment::Processor proc(*cfg);
-	// Todo: FaceVACS should be able to do batch-enrolment?
-
 	// Does the FIR already exist in the temp-dir? If yes, skip FD/EyeDet!
 	auto firPath = tempDir / image.filename();
 	firPath.replace_extension(".fir");

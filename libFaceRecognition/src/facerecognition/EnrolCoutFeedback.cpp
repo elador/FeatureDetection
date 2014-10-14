@@ -9,6 +9,8 @@
 
 #include "logging/LoggerFactory.hpp"
 
+#include <fstream>
+
 using logging::LoggerFactory;
 using std::cout;
 using std::endl;
@@ -23,30 +25,26 @@ std::ostream& operator<<(std::ostream& o, const FRsdk::Position& p)
 
 void EnrolCoutFeedback::processingImage(const FRsdk::Image& img)
 {
-	std::cout << "processing image[" << img.name() << "]" << std::endl;
+	logging::Loggers->getLogger("facerecognition").debug("Enrolment: processing image[" + img.name() + "]");
 }
 
 void EnrolCoutFeedback::eyesFound(const FRsdk::Eyes::Location& eyeLoc)
 {
-	std::cout << "found eyes at [" << eyeLoc.first
-		<< " " << eyeLoc.second << "; confidences: "
-		<< eyeLoc.firstConfidence << " "
-		<< eyeLoc.secondConfidence << "]" << std::endl;
+	std::stringstream msg;
+	msg << "found eyes at [" << eyeLoc.first << " " << eyeLoc.second << "; confidences: " << eyeLoc.firstConfidence << " " << eyeLoc.secondConfidence << "]" << std::endl;
+	logging::Loggers->getLogger("facerecognition").debug("Enrolment: " + msg.str());
 }
 
 void EnrolCoutFeedback::success(const FRsdk::FIR& fir_)
 {
 	fir = new FRsdk::FIR(fir_);
-	std::cout
-		<< "successful enrollment";
+	logging::Loggers->getLogger("facerecognition").debug("Enrolment: Successful enrollment");
 	if (firFN != std::string("")) {
-
-		std::cout << " FIR[filename,id,size] = [\""
-			<< firFN.c_str() << "\",\"" << (fir->version()).c_str() << "\","
-			<< fir->size() << "]";
+		std::stringstream msg;
+		msg << " FIR[filename,id,size] = [\"" << firFN.c_str() << "\",\"" << (fir->version()).c_str() << "\"," << fir->size() << "]";
+		logging::Loggers->getLogger("facerecognition").debug("Enrolment: " + msg.str());
 		// write the fir
-		std::ofstream firOut(firFN.c_str(),
-			std::ios::binary | std::ios::out | std::ios::trunc);
+		std::ofstream firOut(firFN.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
 		firOut << *fir;
 	}
 	firvalid = true;

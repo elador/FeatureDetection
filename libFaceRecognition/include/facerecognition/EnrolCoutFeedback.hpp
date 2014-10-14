@@ -9,10 +9,14 @@
 #ifndef ENROLCOUTFEEDBACK_HPP_
 #define ENROLCOUTFEEDBACK_HPP_
 
+#include "logging/LoggerFactory.hpp"
+
 #include "frsdk/enroll.h"
 
-#include <iostream>
-#include <fstream>
+//#include <iostream>
+//#include <fstream>
+
+//using logging::LoggerFactory;
 
 namespace facerecognition {
 
@@ -27,32 +31,35 @@ public:
 
 	void start() {
 		firvalid = false;
-		std::cout << "start" << std::endl;
+		logging::Loggers->getLogger("facerecognition").debug("Enrolment: Start");
 	}
 
 	void processingImage(const FRsdk::Image& img);
 
 	void eyesFound(const FRsdk::Eyes::Location& eyeLoc);
 
-	void eyesNotFound()
-	{
-		std::cout << "eyes not found" << std::endl;
+	void eyesNotFound() {
+		logging::Loggers->getLogger("facerecognition").debug("Enrolment: Eyes not found");
 	}
 
 	void sampleQualityTooLow() {
-		std::cout << "sampleQualityTooLow" << std::endl;
+		logging::Loggers->getLogger("facerecognition").debug("Enrolment: sampleQualityTooLow");
 	}
 
 
 	void sampleQuality(const float& f) {
-		std::cout << "Sample Quality: " << f << std::endl;
+		logging::Loggers->getLogger("facerecognition").debug("Enrolment: Sample Quality: " + std::to_string(f));
 	}
 
 	void success(const FRsdk::FIR& fir_);
 
-	void failure() { std::cout << "failure" << std::endl; }
+	void failure() {
+		logging::Loggers->getLogger("facerecognition").debug("Enrolment: Failure");
+	}
 
-	void end() { std::cout << "end" << std::endl; }
+	void end() {
+		logging::Loggers->getLogger("facerecognition").debug("Enrolment: End");
+	}
 
 	const FRsdk::FIR& getFir() const;
 

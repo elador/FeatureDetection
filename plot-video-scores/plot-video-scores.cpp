@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 		boost::filesystem::create_directory(fvsdkTempDir);
 	}
 	facerecognition::FaceVacsEngine faceRecEngine(fvsdkConfig, fvsdkTempDir);
-	stillTargetSet.resize(100); // 1000 = FIR limit atm
+	//stillTargetSet.resize(100); // 1000 = FIR limit atm
 	faceRecEngine.enrollGallery(stillTargetSet, inputDirectoryStills);
 
 	//auto& video = videoQuerySet[184];
