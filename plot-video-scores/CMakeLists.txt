@@ -16,16 +16,6 @@ else(Boost_FOUND)
   message(FATAL_ERROR "Boost not found")
 endif()
 
-# Add the FaceVACS SDK as a dependency:
-set(FVSDKLIB_DBG "C:\\FVSDK_8_9_5\\lib\\x86_64\\msc_12.0-ipp_crtdll_g\\libfrsdk-8.9.5d")
-set(FVSDKLIB "C:\\FVSDK_8_9_5\\lib\\x86_64\\msc_12.0-ipp_crtdll\\libfrsdk-8.9.5")
-add_library(fvsdk SHARED IMPORTED)
-set_property(TARGET fvsdk PROPERTY IMPORTED_LOCATION ${FVSDKLIB}.dll)
-set_property(TARGET fvsdk PROPERTY IMPORTED_IMPLIB ${FVSDKLIB}.lib)
-set_property(TARGET fvsdk PROPERTY IMPORTED_LOCATION_DEBUG ${FVSDKLIB_DBG}.dll)
-set_property(TARGET fvsdk PROPERTY IMPORTED_IMPLIB_DEBUG ${FVSDKLIB_DBG}.lib)
-include_directories("C:\\FVSDK_8_9_5\\include")
-
 # Source and header files:
 set(SOURCE
 	plot-video-scores.cpp
@@ -44,4 +34,4 @@ include_directories(${ImageIO_SOURCE_DIR}/include)
 include_directories(${FaceRecognition_SOURCE_DIR}/include)
 
 # Make the app depend on the libraries
-target_link_libraries(${SUBPROJECT_NAME} FaceRecognition ImageIO Logging ${Boost_LIBRARIES} ${OpenCV_LIBS} fvsdk)
+target_link_libraries(${SUBPROJECT_NAME} FaceRecognition ImageIO Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})

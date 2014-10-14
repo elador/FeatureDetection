@@ -17,23 +17,30 @@ endif()
 find_package(OpenCV 2.4.3 REQUIRED core highgui)
 
 # Add the FaceVACS SDK as a dependency:
-set(FVSDKLIB_DBG "C:\\FVSDK_8_9_5\\lib\\x86_64\\msc_12.0-ipp_crtdll_g\\libfrsdk-8.9.5d")
-set(FVSDKLIB "C:\\FVSDK_8_9_5\\lib\\x86_64\\msc_12.0-ipp_crtdll\\libfrsdk-8.9.5")
-add_library(fvsdk SHARED IMPORTED)
-set_property(TARGET fvsdk PROPERTY IMPORTED_LOCATION ${FVSDKLIB}.dll)
-set_property(TARGET fvsdk PROPERTY IMPORTED_IMPLIB ${FVSDKLIB}.lib)
-set_property(TARGET fvsdk PROPERTY IMPORTED_LOCATION_DEBUG ${FVSDKLIB_DBG}.dll)
-set_property(TARGET fvsdk PROPERTY IMPORTED_IMPLIB_DEBUG ${FVSDKLIB_DBG}.lib)
-include_directories("C:\\FVSDK_8_9_5\\include")
+if(WIN32) # I think this doesn't include Cygwin/MingW, but we would want it too
+	set(FVSDKLIB_DBG ${FVSDK_LIB_DIR})
+	set(FVSDKLIB ${FVSDK_DBG_LIB_DIR})
+	add_library(fvsdk SHARED IMPORTED)
+	set_property(TARGET fvsdk PROPERTY IMPORTED_LOCATION ${FVSDKLIB}.dll)
+	set_property(TARGET fvsdk PROPERTY IMPORTED_IMPLIB ${FVSDKLIB}.lib)
+	set_property(TARGET fvsdk PROPERTY IMPORTED_LOCATION_DEBUG ${FVSDKLIB_DBG}.dll)
+	set_property(TARGET fvsdk PROPERTY IMPORTED_IMPLIB_DEBUG ${FVSDKLIB_DBG}.lib)
+else(WIN32)
+	
+endif()
+include_directories(${FVSDK_INCLUDE_DIR})
 
 # source and header files
 set(SOURCE
+	src/facerecognition/EnrolCoutFeedback.cpp
 	src/facerecognition/FaceRecord.cpp
+	src/facerecognition/FaceVacsEngine.cpp
 	src/facerecognition/pasc.cpp
 	src/facerecognition/utils.cpp
 )
 
 set(HEADERS
+	include/facerecognition/EnrolCoutFeedback.hpp
 	include/facerecognition/FaceRecord.hpp
 	include/facerecognition/FaceVacsEngine.hpp
 	include/facerecognition/frsdk.hpp
