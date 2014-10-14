@@ -169,8 +169,8 @@ int main(int argc, char *argv[])
 	// Todo: Try with and without the 5 Cog LMs
 
 	// Read the training-video xml sigset and the training-still sigset to get the subject-id metadata:
-	auto videoQuerySet = facerecognition::utils::readPascSigset(R"(C:\Users\Patrik\Documents\GitHub\data\PaSC\Web\nd1Fall2010VideoPaSCTrainingSet.xml)", true);
-	auto stillTargetSet = facerecognition::utils::readPascSigset(R"(C:\Users\Patrik\Documents\GitHub\data\PaSC\Web\nd1Fall2010PaSCamerasStillTrainingSet.xml)", true);
+	auto videoQuerySet = facerecognition::utils::readPascSigset(querySigset, true);
+	auto stillTargetSet = facerecognition::utils::readPascSigset(targetSigset, true);
 
 	// Create the output directory if it doesn't exist yet:
 	if (!boost::filesystem::exists(outputPath)) {
@@ -189,6 +189,10 @@ int main(int argc, char *argv[])
 	for (auto& video : videoQuerySet)
 	{
 		auto videoName = inputDirectoryVideos / video.dataPath;
+		if (!boost::filesystem::exists(videoName)) {
+			appLogger.info("Found a video in the sigset that doesn't exist in the filesystem. Skipping it.");
+			continue; // We have 5 videos in the video-training-sigset that don't exist in the database
+		}
 		auto frames = facerecognition::utils::getFrames(videoName);
 		//auto w = frames.front().cols;
 		//auto h = frames.front().rows;
