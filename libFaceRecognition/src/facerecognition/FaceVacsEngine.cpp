@@ -110,6 +110,8 @@ void FaceVacsEngine::enrollGallery(std::vector<facerecognition::FaceRecord> gall
 
 float FaceVacsEngine::match(path g, std::string gallerySubjectId, cv::Mat p, std::string probeFilename, cv::Vec2f firstEye, cv::Vec2f secondEye)
 {
+	auto logger = Loggers->getLogger("facerecognition");
+
 	auto galleryFirPath = tempDir / g.filename();
 	galleryFirPath.replace_extension(".fir"); // we probably don't need this - only the basename / subject ID (if it is already enroled)
 
@@ -119,18 +121,17 @@ float FaceVacsEngine::match(path g, std::string gallerySubjectId, cv::Mat p, std
 
 	boost::optional<path> probeFrameFir = createFir(tempProbeImageFilename);
 	if (!probeFrameFir) {
-		std::cout << "Couldn't enroll the probe - not a good frame. Return score 0.0." << std::endl;
-		return 0.0; // Couldn't enroll the probe - not a good frame. Return score 0.0.
+		logger.info("Couldn't enroll the given probe - not a good frame. Returning score 0.0.");
+		return 0.0;
 	}
-
 
 	std::ifstream firStream(probeFrameFir->string(), std::ios::in | std::ios::binary);
 	FRsdk::FIR fir = firBuilder->build(firStream);
 
-	//compare() does not care about the configured number of Threads
-	//for the comparison algorithm. It uses always one thrad to
-	//compare all inorder to preserve the order of the scores
-	//according to the order in the population (orer of adding FIRs to
+	//compare() does not care about the configured number of threads
+	//for the comparison algorithm. It uses always one thread to
+	//compare all in order to preserve the order of the scores
+	//according to the order in the population (order of adding FIRs to
 	//the population)
 	FRsdk::CountedPtr<FRsdk::Scores> scores = me->compare(fir, *population);
 

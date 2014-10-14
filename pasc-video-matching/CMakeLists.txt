@@ -22,7 +22,6 @@ set(SOURCE
 )
 
 set(HEADERS
-	ThreadPool.hpp
 )
 
 add_executable(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})

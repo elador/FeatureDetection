@@ -51,6 +51,7 @@ set(HEADERS
 	include/facerecognition/frsdk.hpp
 	include/facerecognition/pasc.hpp
 	include/facerecognition/PathSerialization.hpp
+	include/facerecognition/ThreadPool.hpp
 	include/facerecognition/utils.hpp
 )
 

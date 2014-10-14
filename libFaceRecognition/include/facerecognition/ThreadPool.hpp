@@ -1,5 +1,16 @@
-#ifndef THREAD_POOL_H
-#define THREAD_POOL_H
+/*
+* ThreadPool.hpp
+*
+*  Added on: 14.10.2014
+*      By: Patrik Huber
+*
+* This file is from Github ...
+* Todo add license, credit etc...
+*/
+#pragma once
+
+#ifndef THREAD_POOL_HPP_
+#define THREAD_POOL_HPP_
 
 #include <vector>
 #include <queue>
@@ -90,4 +101,4 @@ inline ThreadPool::~ThreadPool()
         workers[i].join();
 }
 
-#endif
+#endif /* THREAD_POOL_HPP_ */
