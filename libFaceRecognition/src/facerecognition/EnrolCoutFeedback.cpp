@@ -31,7 +31,7 @@ void EnrolCoutFeedback::processingImage(const FRsdk::Image& img)
 void EnrolCoutFeedback::eyesFound(const FRsdk::Eyes::Location& eyeLoc)
 {
 	std::stringstream msg;
-	msg << "found eyes at [" << eyeLoc.first << " " << eyeLoc.second << "; confidences: " << eyeLoc.firstConfidence << " " << eyeLoc.secondConfidence << "]" << std::endl;
+	msg << "found eyes at [" << eyeLoc.first << " " << eyeLoc.second << "; confidences: " << eyeLoc.firstConfidence << " " << eyeLoc.secondConfidence << "]";
 	logging::Loggers->getLogger("facerecognition").debug("Enrolment: " + msg.str());
 }
 
@@ -41,7 +41,7 @@ void EnrolCoutFeedback::success(const FRsdk::FIR& fir_)
 	logging::Loggers->getLogger("facerecognition").debug("Enrolment: Successful enrollment");
 	if (firFN != std::string("")) {
 		std::stringstream msg;
-		msg << " FIR[filename,id,size] = [\"" << firFN.c_str() << "\",\"" << (fir->version()).c_str() << "\"," << fir->size() << "]";
+		msg << "FIR[filename,id,size] = [\"" << firFN.c_str() << "\",\"" << (fir->version()).c_str() << "\"," << fir->size() << "]";
 		logging::Loggers->getLogger("facerecognition").debug("Enrolment: " + msg.str());
 		// write the fir
 		std::ofstream firOut(firFN.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);

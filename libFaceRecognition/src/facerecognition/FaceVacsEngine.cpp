@@ -190,6 +190,7 @@ boost::optional<path> FaceVacsEngine::createFir(path image)
 
 boost::optional<path> FaceVacsEngine::createFir(FRsdk::Image image, path firPath)
 {
+	auto logger = Loggers->getLogger("facerecognition");
 	// create an enrollment processor
 	FRsdk::Enrollment::Processor proc(*cfg);
 	// Todo: FaceVACS should be able to do batch-enrolment?
@@ -203,14 +204,14 @@ boost::optional<path> FaceVacsEngine::createFir(FRsdk::Image image, path firPath
 	float maxdist = 0.3f; // maxEyeDist, def = 0.4; me: 0.3; philipp: 0.4
 	FRsdk::Face::LocationSet faceLocations = faceFinder.find(image, mindist, maxdist);
 	if (faceLocations.empty()) {
-		std::cout << "FaceFinder: No face found." << std::endl;
+		logger.info("FaceFinder: No face found.");
 		return boost::none;
 	}
 	// We just use the first found face:
 	// doing eyes finding
 	FRsdk::Eyes::LocationSet eyesLocations = eyesFinder.find(image, *faceLocations.begin());
 	if (eyesLocations.empty()) {
-		std::cout << "EyeFinder: No eyes found." << std::endl;
+		logger.info("EyeFinder: No eyes found.");
 		return boost::none;
 	}
 	auto foundEyes = eyesLocations.begin(); // We just use the first found eyes
