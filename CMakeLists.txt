@@ -43,10 +43,10 @@ endif()
 #add_subdirectory(libDetection)			# Sliding-window detection, Skin detection (Note: Do we use it anymore? Yes, Condensation depends on it)
 #add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 
-add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
-add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes
-add_subdirectory(libFitting)			# Camera (Pose) estimation and shape-fitting
-add_subdirectory(libSupervisedDescent)	# A non-parametric model for landmark detection. Uses the supervised descent method.
+#add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
+#add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes
+#add_subdirectory(libFitting)			# Camera (Pose) estimation and shape-fitting
+#add_subdirectory(libSupervisedDescent)	# A non-parametric model for landmark detection. Uses the supervised descent method.
 add_subdirectory(libFaceRecognition)	# Utility library for face recognition experiments, to work with databases, face-record, etc.
 
 # Tracking apps:
@@ -62,34 +62,34 @@ add_subdirectory(libFaceRecognition)	# Utility library for face recognition expe
 #add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe). (Note: Check if it still works)
 
 # Face- and landmark detection apps:
-add_subdirectory(detect-and-correct-faces) # Detect faces and validate them using given ground-truth.
-add_subdirectory(detect-landmarks)		# Run the SDM landmark detection on one or several images, the input is either images (V&J will be run) or images & faceboxes.
-add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
-add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
+#add_subdirectory(detect-and-correct-faces) # Detect faces and validate them using given ground-truth.
+#add_subdirectory(detect-landmarks)		# Run the SDM landmark detection on one or several images, the input is either images (V&J will be run) or images & faceboxes.
+#add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
+#add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
 
 # 3DMM fitting:
-add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
-add_subdirectory(fittingRenderer)	# App to render fitting results
-add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
-add_subdirectory(fittingTools) # Tools for fitting and model-rendering (e.g. compare isomaps)
+#add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
+#add_subdirectory(fittingRenderer)	# App to render fitting results
+#add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
+#add_subdirectory(fittingTools) # Tools for fitting and model-rendering (e.g. compare isomaps)
 
 # Tools:
-add_subdirectory(visualise-landmarks)	# Simple app to read landmarks and images and display them
-add_subdirectory(convert-landmarks)		# Simple app to convert landmarks from one format into another
-add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks and perform an evaluation.
-add_subdirectory(extract-frames)		# Extracts frames from a video, given a specific criteria (e.g. random or IED)
-add_subdirectory(match-video)			# Match video...
+#add_subdirectory(visualise-landmarks)	# Simple app to read landmarks and images and display them
+#add_subdirectory(convert-landmarks)		# Simple app to convert landmarks from one format into another
+#add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks and perform an evaluation.
+#add_subdirectory(extract-frames)		# Extracts frames from a video, given a specific criteria (e.g. random or IED)
+#add_subdirectory(match-video)			# Match video...
 add_subdirectory(plot-video-scores)			# Match one or multiple videos, write scores to CSV file to plot in Matlab
-add_subdirectory(train-frameselect-extract)	# Extract frames and label information for training
-add_subdirectory(train-frameselect-learn)	# Training of learning-based best-frame-extraction
+#add_subdirectory(train-frameselect-extract)	# Extract frames and label information for training
+#add_subdirectory(train-frameselect-learn)	# Training of learning-based best-frame-extraction
 
 # Face-recognition:
-add_subdirectory(convert-pasc-metadata)	# Convert the PaSC metadata csv to boost::serialization objects
-add_subdirectory(pasc-video-matching)	# Runs the whole pipeline on the PaSC video-video experiment
-add_subdirectory(facerecognitionTools) # Tools (e.g. create probe/gallery image-lists)
-add_subdirectory(frRunCogExp)		# App for doing face recognition tests with a gallery and probe images
-add_subdirectory(frDbTool)		# App for managing (creating and populating) the sqlite-database used for face-recognition experiments
-add_subdirectory(frDbExp)		# App for doing experiments with the face recognition scores in the database
+#add_subdirectory(convert-pasc-metadata)	# Convert the PaSC metadata csv to boost::serialization objects
+#add_subdirectory(pasc-video-matching)	# Runs the whole pipeline on the PaSC video-video experiment
+#add_subdirectory(facerecognitionTools) # Tools (e.g. create probe/gallery image-lists)
+#add_subdirectory(frRunCogExp)		# App for doing face recognition tests with a gallery and probe images
+#add_subdirectory(frDbTool)		# App for managing (creating and populating) the sqlite-database used for face-recognition experiments
+#add_subdirectory(frDbExp)		# App for doing experiments with the face recognition scores in the database
 
 # ============================================================================
 # Experimental, non-working or deprecated:

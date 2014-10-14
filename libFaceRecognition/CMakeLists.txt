@@ -17,17 +17,22 @@ endif()
 find_package(OpenCV 2.4.3 REQUIRED core highgui)
 
 # Add the FaceVACS SDK as a dependency:
+message(STATUS "FVSDK library at: ${FVSDK_LIB_DIR}")
+message(STATUS "FVSDK debug library at (empty for linux): ${FVSDK_DBG_LIB_DIR}")
 if(WIN32) # I think this doesn't include Cygwin/MingW, but we would want it too
-	set(FVSDKLIB_DBG ${FVSDK_LIB_DIR})
-	set(FVSDKLIB ${FVSDK_DBG_LIB_DIR})
+	set(FVSDKLIB ${FVSDK_LIB_DIR})
+	set(FVSDKLIB_DBG ${FVSDK_DBG_LIB_DIR})
 	add_library(fvsdk SHARED IMPORTED)
 	set_property(TARGET fvsdk PROPERTY IMPORTED_LOCATION ${FVSDKLIB}.dll)
 	set_property(TARGET fvsdk PROPERTY IMPORTED_IMPLIB ${FVSDKLIB}.lib)
 	set_property(TARGET fvsdk PROPERTY IMPORTED_LOCATION_DEBUG ${FVSDKLIB_DBG}.dll)
 	set_property(TARGET fvsdk PROPERTY IMPORTED_IMPLIB_DEBUG ${FVSDKLIB_DBG}.lib)
 else(WIN32)
-	
+	set(FVSDKLIB ${FVSDK_LIB_DIR})
+	add_library(fvsdk SHARED IMPORTED)
+	set_property(TARGET fvsdk PROPERTY IMPORTED_LOCATION ${FVSDKLIB}/libfrsdk-8.9.5.so)
 endif()
+message(STATUS "Including FVSDK at ${FVSDK_INCLUDE_DIR}")
 include_directories(${FVSDK_INCLUDE_DIR})
 
 # source and header files
