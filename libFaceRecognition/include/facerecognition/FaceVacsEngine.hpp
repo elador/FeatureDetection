@@ -82,6 +82,7 @@ public:
 
 	// creates the FIR in temp-dir. Returns path to FIR if successful.
 	// Todo: Directly return FIR?
+	// If the method doesn't depend on the class instance/state, make it static?
 	boost::optional<boost::filesystem::path> createFir(boost::filesystem::path image);
 
 	// Todos etc see one function above!

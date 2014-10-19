@@ -9,6 +9,7 @@
 
 #include "facerecognition/frsdk.hpp"
 #include "facerecognition/EnrolCoutFeedback.hpp"
+#include "facerecognition/ThreadPool.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -63,6 +64,9 @@ void FaceVacsEngine::enrollGallery(std::vector<facerecognition::FaceRecord> gall
 	auto logger = Loggers->getLogger("facerecognition");
 	logger.info("Enroling gallery, " + std::to_string(galleryRecords.size()) + " records...");
 
+	ThreadPool threadPool(4);
+	vector<std::future<boost::optional<path>>> firFutures;
+
 	// create an enrollment processor
 	FRsdk::Enrollment::Processor proc(*cfg);
 	// Todo: FaceVACS should be able to do batch-enrolment?
@@ -76,12 +80,23 @@ void FaceVacsEngine::enrollGallery(std::vector<facerecognition::FaceRecord> gall
 		if (boost::filesystem::exists(firPath)) {
 			continue;
 		}
-
-		boost::optional<path> fir = createFir(databasePath / r.dataPath);
-		if (!fir) {
-			continue;
-		}
+		// Create the FIR:
+		// We can't enqueue createFir directly because it has overloads. std::async/std::bind suffer
+		// from the same. Options: Casting, lambda, a wrapper struct.
+		firFutures.emplace_back(threadPool.enqueue([this](const path& s) { return createFir(s); }, databasePath / r.dataPath));
+		//boost::optional<path> fir = createFir(databasePath / r.dataPath);
 	}
+	// Wait for all the threads.
+	// We don't check for boost::none, we don't reuse the path anyway.
+	// A boost::none means we couldn't create the .fir, i.e. couldn't enrol the image
+	for (auto& f : firFutures) {
+		//f.get();
+		auto fir = f.get();
+		//if (!fir) {
+		//	continue;
+		//}
+	}
+
 	// Enrol all the FIRs now:
 	for (auto& r : galleryRecords) {
 		auto firPath = tempDir / r.dataPath;
@@ -94,13 +109,17 @@ void FaceVacsEngine::enrollGallery(std::vector<facerecognition::FaceRecord> gall
 				population->append(fir, firPath.string());
 				this->enrolledGalleryRecords.push_back(r); // we make a copy of the record? not sure?
 			}
+			// Catch the following here - we can't continue.
 			catch (const FRsdk::FeatureDisabled& e) {
 				logger.error(e.what());
+				// Terminate/exit? No, well we shouldn't do that here. We should abort in main, so all the d'tors get
+				// called. I think we should re-throw a generic, own fr::enrollment_exception here that every Engine class shares.
+				// That also gives a chance for the calling code to handle it!
 			}
 			catch (const FRsdk::LicenseSignatureMismatch& e) {
 				logger.error(e.what());
 			}
-			catch (std::exception& e) {
+			catch (std::exception& e) { // I think we shouldn't catch this here
 				logger.error(e.what());
 			}
 		}
@@ -195,6 +214,8 @@ boost::optional<path> FaceVacsEngine::createFir(FRsdk::Image image, path firPath
 	// create an enrollment processor
 	FRsdk::Enrollment::Processor proc(*cfg);
 	// Todo: FaceVACS should be able to do batch-enrolment?
+
+	logger.info("Trying to create the FIR: " + firPath.string());
 
 	FRsdk::SampleSet enrollmentImages;
 	auto sample = FRsdk::Sample(image);
