@@ -62,20 +62,6 @@ using std::string;
 //#include <boost/serialization/level.hpp>
 #include "facerecognition/PathSerialization.hpp"
 
-class VideoScore
-{
-public:
-	std::vector<std::vector<std::pair<facerecognition::FaceRecord, float>>> scores; // For every frame, have a vector with the scores for all gallery
-	// Gallery records?
-private:
-	friend class boost::serialization::access;
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version)
-	{
-		ar & scores;
-	}
-};
-
 int main(int argc, char *argv[])
 {
 	#ifdef WIN32
@@ -200,7 +186,7 @@ int main(int argc, char *argv[])
 		path scoreOutputFile{ outputPath / videoName.filename().stem() };
 		scoreOutputFile.replace_extension(".txt");
 		std::ofstream out(scoreOutputFile.string());
-		VideoScore videoScore;
+		facerecognition::utils::VideoScore videoScore;
 
 		for (size_t frameNum = 0; frameNum < frames.size(); ++frameNum)
 		{

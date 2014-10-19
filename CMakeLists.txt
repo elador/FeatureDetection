@@ -79,9 +79,10 @@ add_subdirectory(libFaceRecognition)	# Utility library for face recognition expe
 #add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks and perform an evaluation.
 #add_subdirectory(extract-frames)		# Extracts frames from a video, given a specific criteria (e.g. random or IED)
 #add_subdirectory(match-video)			# Match video...
-add_subdirectory(plot-video-scores)			# Match one or multiple videos, write scores to CSV file to plot in Matlab
-#add_subdirectory(train-frameselect-extract)	# Extract frames and label information for training
-#add_subdirectory(train-frameselect-learn)	# Training of learning-based best-frame-extraction
+add_subdirectory(plot-video-scores)			# Match each frame of PaSC videos, outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
+add_subdirectory(train-frameselect-extract)	# Extract frames and label information for training. Random subset of vids & frames. Unfinished.
+add_subdirectory(train-frameselect-extract-all)	# Extract frames and label information for training. All vids, all frames. Newest implementation.
+add_subdirectory(train-frameselect-learn)	# Training of learning-based best-frame-extraction
 
 # Face-recognition:
 #add_subdirectory(convert-pasc-metadata)	# Convert the PaSC metadata csv to boost::serialization objects

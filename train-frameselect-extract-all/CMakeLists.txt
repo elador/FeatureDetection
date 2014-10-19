@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME train-frameselect-extract)
+set(SUBPROJECT_NAME train-frameselect-extract-all)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -9,7 +9,7 @@ message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 # find dependencies:
 find_package(OpenCV 2.4.3 REQUIRED core imgproc)
 
-find_package(Boost 1.48.0 COMPONENTS program_options system filesystem REQUIRED)
+find_package(Boost 1.48.0 COMPONENTS program_options system filesystem serialization REQUIRED)
 if(Boost_FOUND)
   message(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
 else(Boost_FOUND)
@@ -18,7 +18,7 @@ endif()
 
 # Source and header files:
 set(SOURCE
-	train-frameselect-extract.cpp
+	train-frameselect-extract-all.cpp
 )
 
 set(HEADERS

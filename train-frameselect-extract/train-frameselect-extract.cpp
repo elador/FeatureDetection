@@ -151,44 +151,6 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	auto stillTrainingGBU = facerecognition::utils::readPascSigset(R"(C:\Users\Patrik\Documents\GitHub\data\PaSC\Mail_Ross\GBU_Training_Uncontrolledx8.xml)");
-	vector<path> trainingStills;
-
-	cout << "Stills over files:" << endl;
-	int numVideosThatHaveAnIdInStillGBU = 0;
-	for (auto& s : videoQuerySet) {
-		auto res = std::find_if(begin(stillTrainingGBU), end(stillTrainingGBU), [s](const facerecognition::FaceRecord& fr) { return (fr.subjectId == s.subjectId); });
-		if (res == std::end(stillTrainingGBU)) {
-			
-			//cout << "I'm on the HDD, but not in the XML: " << fn << endl;
-		}
-		else {
-			++numVideosThatHaveAnIdInStillGBU;
-		}
-	}
-	cout << "Stills over xml:" << endl;
-	int numStillOfXmlThatExistAsFiles = 0;
-	for (auto& s : stillTrainingGBU) {
-		auto p = inputDirectoryStills / s.dataPath;
-		if (boost::filesystem::exists(p)) {
-			++numStillOfXmlThatExistAsFiles;
-		}
-		else {
-			//cout << "I'm in the XML, but not in the Dir: " << p.string() << endl;
-		}
-	}
-
-	/*
-	vector<path> trainingVideos;
-	try {
-		copy(boost::filesystem::directory_iterator(inputDirectoryVideos), boost::filesystem::directory_iterator(), back_inserter(trainingVideos));
-	}
-	catch (boost::filesystem::filesystem_error& e) {
-		string errorMsg("Error while loading the video files from the given input directory: " + string(e.what()));
-		appLogger.error(errorMsg);
-		return EXIT_FAILURE;
-	}*/
-
 	facerecognition::FaceVacsEngine faceRecEngine(R"(C:\FVSDK_8_9_5\etc\frsdk.cfg)", R"(C:\Users\Patrik\Documents\GitHub\aaatmp)");
 	//auto stillTargetSetSmall = { stillTargetSet[1092]/*, stillTargetSet[0] */};
 	//path = L"C:\\Users\\Patrik\\Documents\\GitHub\\aaatmp\\06340d96.fir"

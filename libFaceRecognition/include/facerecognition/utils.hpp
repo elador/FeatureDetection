@@ -59,6 +59,23 @@ std::vector<FaceRecord> readSigset(boost::filesystem::path filename);
 */
 //std::vector<FaceRecord> transformSigset(boost::filesystem::path filename);
 
+// TODO: This is not really a "utils", move it to somewhere else
+//#include "boost/serialization/utility.hpp" // This should best be here, including the one for vector. But there's some error with it.
+class VideoScore
+{
+public:
+	std::vector<std::vector<std::pair<facerecognition::FaceRecord, float>>> scores; // For every frame, have a vector with the scores for all gallery
+	// Gallery records?
+private:
+	friend class boost::serialization::access;
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version)
+	{
+		ar & scores;
+	}
+};
+
+
 class DataPathTransformation
 {
 public:
