@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 	#endif
 	
 	string verboseLevelConsole;
-	path inputDirectoryVideos;
+	path inputDirectoryVideos, scoresDirectory;
 	path querySigset;
 	path queryLandmarks;
 	path outputPath;
@@ -88,8 +88,10 @@ int main(int argc, char *argv[])
 				"PaSC video training query sigset")
 			("query-path,r", po::value<path>(&inputDirectoryVideos)->required(),
 				"path to the training videos")
+			("scores,s", po::value<path>(&scoresDirectory)->required(),
+				"path to a directory with face recognition scores in boost::serialization text format")
 			("query-landmarks,l", po::value<path>(&queryLandmarks)->required(),
-				"landmarks for the training videos in boost::serialization text format")
+				"PaSC landmarks for the training videos in boost::serialization text format")
 			("output,o", po::value<path>(&outputPath)->default_value("."),
 				"path to an output folder")
 		;
@@ -163,8 +165,6 @@ int main(int argc, char *argv[])
 	int numNegativePairsPerFrame = 0;
 	// Try: Out of pos (4-5), select max score
 
-	path scoresDirectory(R"(Z:\FRonPaSC\patrik\plot-video-scores_out_v2s)");
-	
 	for (auto& queryVideo : videoQuerySet) {
 		// Shouldn't be necessary, but there are 5 videos in the xml sigset that we don't have:
 		if (!fs::exists(inputDirectoryVideos / queryVideo.dataPath)) {
@@ -177,7 +177,9 @@ int main(int argc, char *argv[])
 			tmp.replace_extension(".bs.txt");
 			if (!fs::exists(tmp)) {
 				// Scores don't exist, this shouldn't happen, as we process all 280 PaSC-training videos
-				throw std::runtime_error("");
+				string msg("Score file for this video does not exist. Did you specify the correct directory? " + tmp.string());
+				appLogger.error(msg);
+				throw std::runtime_error(msg);
 			}
 			std::ifstream ifs(tmp.string());
 			boost::archive::text_iarchive ia(ifs);
