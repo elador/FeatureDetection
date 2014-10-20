@@ -82,7 +82,8 @@ add_subdirectory(libFaceRecognition)	# Utility library for face recognition expe
 add_subdirectory(plot-video-scores)			# Match each frame of PaSC videos, outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
 add_subdirectory(train-frameselect-extract)	# Extract frames and label information for training. Random subset of vids & frames. Unfinished.
 add_subdirectory(train-frameselect-extract-all)	# Extract frames and label information for training. All vids, all frames. Newest implementation.
-add_subdirectory(train-frameselect-learn)	# Training of learning-based best-frame-extraction
+#add_subdirectory(train-frameselect-learn)	# Training of learning-based best-frame-extraction
+add_subdirectory(frames-labels-to-caffe)	# Convert boost::serialization file with patches and labels to Caffe format (currently: images. Later, I might add LevelDB/LMDB/HDF5)
 
 # Face-recognition:
 #add_subdirectory(convert-pasc-metadata)	# Convert the PaSC metadata csv to boost::serialization objects
