@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
 
 	std::ofstream labelOut((outputPath / "filelist.txt").string());
 	for (auto i = 0; i < trainingFrames.size(); ++i) {
-		auto img = trainingFrames[i];
+		appLogger.info("Extracting patch " + std::to_string(i) + " of " + std::to_string(trainingFrames.size()));
 		path patchName = outputPath / ("img_" + std::to_string(i) + ".png");
 		cv::imwrite(patchName.string(), trainingFrames[i]);
 		labelOut << patchName.filename().string() << " " << labels[i] << std::endl;
