@@ -5,7 +5,7 @@
  *      Author: Patrik Huber
  *
  * Example:
- * frameselect-simple -i ...
+ * frameselect-simple -v -s "C:\Users\Patrik\Documents\GitHub\data\PaSC\Protocol\PaSC_20130611\PaSC\metadata\sigsets\pasc_video_handheld.xml" -d "Z:\datasets\multiview02\PaSC\video" -l "C:\Users\Patrik\Documents\GitHub\data\PaSC\pasc_video_pittpatt_detections.txt" -o out
  *   
  */
 
@@ -402,17 +402,17 @@ int main(int argc, char *argv[])
 	vector<future<pair<Mat, path>>> futures;
 
 	// If we don't want to loop over all videos: (e.g. to get a quick Matlab output)
-// 	std::random_device rd;
-// 	auto seed = rd();
-// 	std::mt19937 rndGenVideos(seed);
-// 	std::uniform_real<> rndVidDistr(0.0f, 1.0f);
-// 	auto randomVideo = std::bind(rndVidDistr, rndGenVideos);
+	std::random_device rd;
+	auto seed = rd();
+	std::mt19937 rndGenVideos(seed);
+	std::uniform_real<> rndVidDistr(0.0f, 1.0f);
+	auto randomVideo = std::bind(rndVidDistr, rndGenVideos);
 	//auto videoIter = std::find_if(begin(videoSigset), end(videoSigset), [](const facerecognition::FaceRecord& d) { return (d.dataPath == "05846d694.mp4"); });
 	//auto video = *videoIter; {
 	for (auto& video : videoSigset) {
-// 		if (randomVideo() >= 0.003) {
-// 			continue;
-// 		}
+		if (randomVideo() >= 0.003) {
+			continue;
+		}
 		appLogger.info("Starting to process " + video.dataPath.string());
 
 		// Shouldn't be necessary, but there are 5 videos in the xml sigset that we don't have.
@@ -425,15 +425,22 @@ int main(int argc, char *argv[])
 		futures.emplace_back(threadPool.enqueue(&selectFrameSimple, inputDirectoryVideos, video, pascVideoDetections));
 	}
 
+	std::ofstream framesListFile((outputPath / "frameselect-simple.txt").string());
+
 	vector<pair<Mat, path>> bestFrames;
 	for (auto& f : futures) {
 		//bestFrames.emplace_back(f.get());
-
 		auto res = f.get();
 
 		path bestFrameName = outputPath / res.second;
 		//bestFrameName.replace_extension(std::to_string(bestFrameId + 1) + ".png");
 		cv::imwrite(bestFrameName.string(), res.first); // idOfBestFrame is 0-based, PaSC is 1-based
+
+		path frameNameCsv = bestFrameName.stem();
+		frameNameCsv.replace_extension(".mp4");
+		string frameNumCsv = bestFrameName.stem().extension().string();
+		frameNumCsv.erase(std::remove(frameNumCsv.begin(), frameNumCsv.end(), '.'), frameNumCsv.end());
+		framesListFile << frameNameCsv.string() << "," << frameNumCsv << endl;
 
 		appLogger.info("Saved best frame to the filesystem as " + bestFrameName.string() + ".");
 	}
@@ -446,6 +453,7 @@ int main(int argc, char *argv[])
 // 		appLogger.info("Saved best frame to the filesystem as " + bestFrameName.string() + ".");
 // 	}
 	
+	framesListFile.close();
 	appLogger.info("Finished processing all videos.");
 
 	return EXIT_SUCCESS;
