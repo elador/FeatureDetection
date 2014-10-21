@@ -53,6 +53,7 @@
 
 #include "facerecognition/pasc.hpp"
 #include "facerecognition/utils.hpp"
+#include "facerecognition/ThreadPool.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -69,6 +70,8 @@ using std::endl;
 using std::make_shared;
 using std::shared_ptr;
 using std::vector;
+using std::pair;
+using std::future;
 
 float sharpnessScoreCanny(cv::Mat frame)
 {
@@ -200,29 +203,12 @@ vector<float> getVideoNormalizedCannySharpnessScores(vector<float> sharpnesses)
 	std::transform(begin(sharpnesses), end(sharpnesses), begin(sharpnesses), [m, b](float x) {return m * x + b; });
 
 	return sharpnesses;
-	/*
-	// < 1.5 = blurred, in movement
-	// 1.5 to 6 = acceptable
-	// > 6 = stable, sharp
-	float m = 2.0 / 9.0;
-	float b = -1.0 / 3.0;
-	float y;
-	if (sharpness < 1.5f) {
-	y = 0.0f;
-	}
-	else if (sharpness > 6.0f) {
-	y = 1.0f;
-	}
-	else {
-	y = m * sharpness + b;
-	}
-	*/
 }
 
 // Might rename to "assessQualitySimple(video...)"
-std::pair<cv::Mat, int> selectFrameSimple(path inputDirectoryVideos, const facerecognition::FaceRecord& video, const vector<facerecognition::PascVideoDetection>& pascVideoDetections)
+std::pair<cv::Mat, path> selectFrameSimple(path inputDirectoryVideos, const facerecognition::FaceRecord& video, const vector<facerecognition::PascVideoDetection>& pascVideoDetections)
 {
-	auto logger = Loggers->getLogger("app");
+	auto logger = Loggers->getLogger("frameselect-simple");
 
 	auto frames = facerecognition::utils::getFrames(inputDirectoryVideos / video.dataPath);
 	vector<float> headBoxSizes;
@@ -301,7 +287,10 @@ std::pair<cv::Mat, int> selectFrameSimple(path inputDirectoryVideos, const facer
 	//for (int i = 0; i < frameIds.size(); ++i) {
 	//	cv::imwrite("out/out_" + std::to_string(i) + "_" + std::to_string(frameIds[i]) + ".png", frames[frameIds[i]]);
 	//}
-	return std::make_pair(bestFrame, idOfBestFrame);
+
+	path bestFrameName = video.dataPath.stem();
+	bestFrameName.replace_extension(std::to_string(idOfBestFrame + 1) + ".png");
+	return std::make_pair(bestFrame, bestFrameName);
 }
 
 int main(int argc, char *argv[])
@@ -392,36 +381,47 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
+	ThreadPool threadPool(numThreads);
+	vector<future<pair<Mat, path>>> futures;
+
 	// If we don't want to loop over all videos: (e.g. to get a quick Matlab output)
-	//std::random_device rd;
-	//auto seed = rd();
-	//std::mt19937 rndGenVideos(seed);
-	//std::uniform_real<> rndVidDistr(0.0f, 1.0f);
-	//auto randomVideo = std::bind(rndVidDistr, rndGenVideos);
+	std::random_device rd;
+	auto seed = rd();
+	std::mt19937 rndGenVideos(seed);
+	std::uniform_real<> rndVidDistr(0.0f, 1.0f);
+	auto randomVideo = std::bind(rndVidDistr, rndGenVideos);
 	for (auto& video : videoSigset) {
-		//if (randomVideo() >= 0.02) {
-		//	continue;
-		//}
+		if (randomVideo() >= 0.003) {
+			continue;
+		}
 		appLogger.info("Starting to process " + video.dataPath.string());
 
 		// Shouldn't be necessary, but there are 5 videos in the xml sigset that we don't have.
 		// Does it happen for the test-videos? No?
 		if (!fs::exists(inputDirectoryVideos / video.dataPath)) {
-			appLogger.info("Video in the sigset not found on the filesystem!");
+			appLogger.warn("Video in the sigset not found on the filesystem!");
 			continue;
 		}
 
-		cv::Mat bestFrame;
-		int bestFrameId;
-		std::tie(bestFrame, bestFrameId) = selectFrameSimple(inputDirectoryVideos, video, pascVideoDetections);
+		//cv::Mat bestFrame;
+		//path bestFrameName;
+		//std::tie(bestFrame, bestFrameName) = selectFrameSimple(inputDirectoryVideos, video, pascVideoDetections);
 
-		path bestFrameName = outputPath / video.dataPath.stem();
-		bestFrameName.replace_extension(std::to_string(bestFrameId + 1) + ".png");
-		cv::imwrite(bestFrameName.string(), bestFrame); // idOfBestFrame is 0-based, PaSC is 1-based
+		futures.emplace_back(threadPool.enqueue(&selectFrameSimple, inputDirectoryVideos, video, pascVideoDetections));
+	}
+
+	vector<pair<Mat, path>> bestFrames;
+	for (auto& f : futures) {
+		bestFrames.emplace_back(f.get());
+	}
+
+	for (auto& f : bestFrames) {
+		path bestFrameName = outputPath / f.second;
+		//bestFrameName.replace_extension(std::to_string(bestFrameId + 1) + ".png");
+		cv::imwrite(bestFrameName.string(), f.first); // idOfBestFrame is 0-based, PaSC is 1-based
 
 		appLogger.info("Saved best frame to the filesystem as " + bestFrameName.string() + ".");
 	}
-
 	appLogger.info("Finished processing all videos.");
 
 	return EXIT_SUCCESS;
