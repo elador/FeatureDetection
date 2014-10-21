@@ -145,6 +145,7 @@ double normalizedGraylevelVariance(const cv::Mat& src)
 }
 
 // Could all be renamed to "transform/fitLinear" or something
+// Note: Segfaults if the given vector is empty (iterator not dereferentiable)
 vector<float> getVideoNormalizedHeadBoxScores(vector<float> headBoxSizes)
 {
 	auto result = std::minmax_element(begin(headBoxSizes), end(headBoxSizes));
@@ -260,6 +261,19 @@ std::pair<cv::Mat, path> selectFrameSimple(path inputDirectoryVideos, const face
 			}*/
 	}
 
+	if (headBoxSizes.size() == 0) {
+		// We don't have ANY frame with PaSC landmarks (or we threw it away because it's out of image borders). Happened for 1 test video so far.
+		logger.warn("No metadata available for this video, or threw all available frames away.");
+		int idOfBestFrame = 0;
+		cv::Mat bestFrame = frames[idOfBestFrame];
+
+		path bestFrameName = video.dataPath.stem();
+		std::ostringstream ss;
+		ss << std::setw(3) << std::setfill('0') << idOfBestFrame + 1;
+		bestFrameName.replace_extension(ss.str() + ".png");
+		return std::make_pair(bestFrame, bestFrameName);
+	}
+
 	cv::Mat headBoxScores(getVideoNormalizedHeadBoxScores(headBoxSizes), true); // function returns a temporary, so we need to copy the data
 	cv::Mat interEyeDistanceScores(getVideoNormalizedInterEyeDistanceScores(ieds), true);
 	cv::Mat yawPoseScores(getVideoNormalizedYawPoseScores(yaws), true);
@@ -290,7 +304,9 @@ std::pair<cv::Mat, path> selectFrameSimple(path inputDirectoryVideos, const face
 	//}
 
 	path bestFrameName = video.dataPath.stem();
-	bestFrameName.replace_extension(std::to_string(idOfBestFrame + 1) + ".png");
+	std::ostringstream ss;
+	ss << std::setw(3) << std::setfill('0') << idOfBestFrame + 1;
+	bestFrameName.replace_extension(ss.str() + ".png");
 	return std::make_pair(bestFrame, bestFrameName);
 }
 
@@ -391,6 +407,8 @@ int main(int argc, char *argv[])
 // 	std::mt19937 rndGenVideos(seed);
 // 	std::uniform_real<> rndVidDistr(0.0f, 1.0f);
 // 	auto randomVideo = std::bind(rndVidDistr, rndGenVideos);
+	//auto videoIter = std::find_if(begin(videoSigset), end(videoSigset), [](const facerecognition::FaceRecord& d) { return (d.dataPath == "05846d694.mp4"); });
+	//auto video = *videoIter; {
 	for (auto& video : videoSigset) {
 // 		if (randomVideo() >= 0.003) {
 // 			continue;
@@ -403,10 +421,6 @@ int main(int argc, char *argv[])
 			appLogger.warn("Video in the sigset not found on the filesystem!");
 			continue;
 		}
-
-		//cv::Mat bestFrame;
-		//path bestFrameName;
-		//std::tie(bestFrame, bestFrameName) = selectFrameSimple(inputDirectoryVideos, video, pascVideoDetections);
 
 		futures.emplace_back(threadPool.enqueue(&selectFrameSimple, inputDirectoryVideos, video, pascVideoDetections));
 	}
