@@ -34,6 +34,7 @@
 
 #include <memory>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <random>
 #include <iomanip>
@@ -385,15 +386,15 @@ int main(int argc, char *argv[])
 	vector<future<pair<Mat, path>>> futures;
 
 	// If we don't want to loop over all videos: (e.g. to get a quick Matlab output)
-	std::random_device rd;
-	auto seed = rd();
-	std::mt19937 rndGenVideos(seed);
-	std::uniform_real<> rndVidDistr(0.0f, 1.0f);
-	auto randomVideo = std::bind(rndVidDistr, rndGenVideos);
+// 	std::random_device rd;
+// 	auto seed = rd();
+// 	std::mt19937 rndGenVideos(seed);
+// 	std::uniform_real<> rndVidDistr(0.0f, 1.0f);
+// 	auto randomVideo = std::bind(rndVidDistr, rndGenVideos);
 	for (auto& video : videoSigset) {
-		if (randomVideo() >= 0.003) {
-			continue;
-		}
+// 		if (randomVideo() >= 0.003) {
+// 			continue;
+// 		}
 		appLogger.info("Starting to process " + video.dataPath.string());
 
 		// Shouldn't be necessary, but there are 5 videos in the xml sigset that we don't have.
