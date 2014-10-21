@@ -221,7 +221,7 @@ std::pair<cv::Mat, path> selectFrameSimple(path inputDirectoryVideos, const face
 	vector<int> frameIds;
 	for (int frameNum = 0; frameNum < frames.size(); ++frameNum) {
 		string frameName = facerecognition::getPascFrameName(video.dataPath, frameNum + 1);
-		logger.debug("Starting to process " + frameName);
+		logger.debug("Processing frame " + frameName);
 		auto landmarks = std::find_if(begin(pascVideoDetections), end(pascVideoDetections), [frameName](const facerecognition::PascVideoDetection& d) { return (d.frame_id == frameName); });
 		// If we were to run it on the training-videos, we'd have to test if we got the eyes and facebox?
 		// The face box is always given. Only the eyes are missing sometimes.
@@ -413,16 +413,25 @@ int main(int argc, char *argv[])
 
 	vector<pair<Mat, path>> bestFrames;
 	for (auto& f : futures) {
-		bestFrames.emplace_back(f.get());
-	}
+		//bestFrames.emplace_back(f.get());
 
-	for (auto& f : bestFrames) {
-		path bestFrameName = outputPath / f.second;
+		auto res = f.get();
+
+		path bestFrameName = outputPath / res.second;
 		//bestFrameName.replace_extension(std::to_string(bestFrameId + 1) + ".png");
-		cv::imwrite(bestFrameName.string(), f.first); // idOfBestFrame is 0-based, PaSC is 1-based
+		cv::imwrite(bestFrameName.string(), res.first); // idOfBestFrame is 0-based, PaSC is 1-based
 
 		appLogger.info("Saved best frame to the filesystem as " + bestFrameName.string() + ".");
 	}
+
+// 	for (auto& f : bestFrames) {
+// 		path bestFrameName = outputPath / f.second;
+// 		//bestFrameName.replace_extension(std::to_string(bestFrameId + 1) + ".png");
+// 		cv::imwrite(bestFrameName.string(), f.first); // idOfBestFrame is 0-based, PaSC is 1-based
+// 
+// 		appLogger.info("Saved best frame to the filesystem as " + bestFrameName.string() + ".");
+// 	}
+	
 	appLogger.info("Finished processing all videos.");
 
 	return EXIT_SUCCESS;
