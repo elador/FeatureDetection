@@ -84,6 +84,7 @@ add_subdirectory(train-frameselect-extract)	# Extract frames and label informati
 add_subdirectory(train-frameselect-extract-all)	# Extract frames and label information for training. All vids, all frames. Newest implementation.
 #add_subdirectory(train-frameselect-learn)	# Training of learning-based best-frame-extraction
 add_subdirectory(frames-labels-to-caffe)	# Convert boost::serialization file with patches and labels to Caffe format (currently: images. Later, I might add LevelDB/LMDB/HDF5)
+add_subdirectory(frameselect-simple)		# Simple weighting out of ...
 
 # Face-recognition:
 #add_subdirectory(convert-pasc-metadata)	# Convert the PaSC metadata csv to boost::serialization objects
