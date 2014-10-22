@@ -80,17 +80,17 @@ add_subdirectory(libFaceRecognition)	# Utility library for face recognition expe
 
 
 # Deep learning based frame selection:
-#add_subdirectory(train-frameselect-learn)	# Training of learning-based best-frame-extraction. Old? Deleted?
 add_subdirectory(train-frameselect-extract)	# Extract frames and label information for training. Random subset of vids & frames. With random selection, and (partly) negative patches. Unfinished.
 add_subdirectory(train-frameselect-extract-all)	# Extract frames and label information for training. All vids, all frames. Store as boost::serialization. Newest implementation.
+add_subdirectory(train-frameselect-learn)	# Train tiny-cnn using the boost::serialization patches.
 add_subdirectory(frames-labels-to-caffe)	# Convert boost::serialization file with patches and labels to Caffe format (currently: images. Later, I might add LevelDB/LMDB/HDF5)
 
 # Simple frame selection:
-add_subdirectory(extract-frames)		# Extracts frames from a video, given a specific criteria (e.g. random or IED). ==> Rewrite and use it for stuff like comparison with random 25 frames (baseline) (frameselect-random ?)
+add_subdirectory(frameselect-random)		# Extracts random frames from a video. Can be used as a baseline.
 add_subdirectory(frameselect-simple)		# Simple weighting out of ...
 
 # Face-recognition on PaSC:
-add_subdirectory(convert-pasc-metadata)	# Convert PaSC video detections and metadata (CSV) to boost::serialization format ==> RENAME
+add_subdirectory(convert-pasc-video-metadata-to-bs)	# Convert PaSC video detections and metadata (CSV) to boost::serialization format ==> RENAME
 add_subdirectory(convert-pasc-sigset)		# Convert a PaSC xml sigset to a text file in property tree format, using FaceRecords ==> Use it to read XML, but otherwise, I think I shouldn't use it anymore. (but we used the ptree format to create MultiPIE sigsets)
 
 # Matching:

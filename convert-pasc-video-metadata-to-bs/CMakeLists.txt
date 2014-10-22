@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME convert-pasc-metadata)
+set(SUBPROJECT_NAME convert-pasc-video-metadata-to-bs)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -18,7 +18,7 @@ endif()
 
 # Source and header files:
 set(SOURCE
-	convert-pasc-metadata.cpp
+	convert-pasc-video-metadata-to-bs.cpp
 )
 
 set(HEADERS

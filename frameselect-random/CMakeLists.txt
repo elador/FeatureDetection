@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME extract-frames)
+set(SUBPROJECT_NAME frameselect-random)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -18,7 +18,7 @@ endif()
 
 # Source and header files:
 set(SOURCE
-	extract-frames.cpp
+	frameselect-random.cpp
 )
 
 set(HEADERS

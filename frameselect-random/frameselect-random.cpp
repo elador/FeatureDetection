@@ -1,11 +1,11 @@
 /*
- * extract-frames.cpp
+ * frameselect-random.cpp
  *
  *  Created on: 29.09.2014
  *      Author: Patrik Huber
  *
  * Example:
- * extract-frames -i ...
+ * frameselect-random -i ...
  *   
  */
 
@@ -146,6 +146,9 @@ int main(int argc, char *argv[])
 	Logger appLogger = Loggers->getLogger("extract-frames");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
+
+	// TODO: REWRITE TO EXTRACT ONLY RANDOM FRAMES.
+	// WRITE A FUNCTION extractFrame(int) THAT GIVES ONE FRAME (=>library) AND USE THAT IN THIS APP.
 
 	// Read the PaSC video landmarks:
 	shared_ptr<imageio::NamedLandmarkSource> landmarkSource;
