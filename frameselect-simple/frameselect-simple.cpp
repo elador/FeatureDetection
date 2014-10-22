@@ -71,7 +71,8 @@ using std::endl;
 using std::make_shared;
 using std::shared_ptr;
 using std::vector;
-using std::pair;
+//using std::pair;
+using std::tuple;
 using std::future;
 
 float sharpnessScoreCanny(cv::Mat frame)
@@ -207,8 +208,10 @@ vector<float> getVideoNormalizedCannySharpnessScores(vector<float> sharpnesses)
 	return sharpnesses;
 }
 
-// Might rename to "assessQualitySimple(video...)"
-std::pair<cv::Mat, path> selectFrameSimple(path inputDirectoryVideos, const facerecognition::FaceRecord& video, const vector<facerecognition::PascVideoDetection>& pascVideoDetections)
+// Might rename to "assessQualitySimple(video...)" or assessFrames(...)
+// Assesses all or part of the frames in the video (e.g. not those without metadata)
+// and returns a score for each.
+std::vector<std::tuple<cv::Mat, path, float>> selectFrameSimple(path inputDirectoryVideos, const facerecognition::FaceRecord& video, const vector<facerecognition::PascVideoDetection>& pascVideoDetections)
 {
 	auto logger = Loggers->getLogger("frameselect-simple");
 
@@ -271,7 +274,7 @@ std::pair<cv::Mat, path> selectFrameSimple(path inputDirectoryVideos, const face
 		std::ostringstream ss;
 		ss << std::setw(3) << std::setfill('0') << idOfBestFrame + 1;
 		bestFrameName.replace_extension(ss.str() + ".png");
-		return std::make_pair(bestFrame, bestFrameName);
+		return vector<std::tuple<Mat, path, float>>{ std::make_tuple(bestFrame, bestFrameName, 0.0f) };
 	}
 
 	cv::Mat headBoxScores(getVideoNormalizedHeadBoxScores(headBoxSizes), true); // function returns a temporary, so we need to copy the data
@@ -280,34 +283,35 @@ std::pair<cv::Mat, path> selectFrameSimple(path inputDirectoryVideos, const face
 	cv::Mat cannySharpnessScores(getVideoNormalizedCannySharpnessScores(sharpnesses), true);
 	cv::Mat modifiedLaplacianInFocusScores(getVideoNormalizedCannySharpnessScores(laplModif), true);
 	cv::Mat varianceOfLaplacianInFocusScores(getVideoNormalizedCannySharpnessScores(laplVari), true);
-
+	
 	// Weights:
-	// 0.2 head
-	// 0.1 ied
-	// 0.4 yaw pose
-	// 0.1 canny
-	// 0.1 modified laplace
-	// 0.1 laplace variance
+	//  0.2 head box size
+	//  0.1 IED
+	//  0.4 yaw pose
+	//  0.1 canny edges blur measurement
+	//  0.1 modified laplace
+	//  0.1 laplace variance
 	cv::Mat scores = 0.2f * headBoxScores + 0.1f * interEyeDistanceScores + 0.4f * yawPoseScores + 0.1f * cannySharpnessScores + 0.1f * modifiedLaplacianInFocusScores + 0.1f * varianceOfLaplacianInFocusScores;
 
+	/*
 	double minScore, maxScore;
 	int minIdx[2], maxIdx[2];
 	cv::minMaxIdx(scores, &minScore, &maxScore, &minIdx[0], &maxIdx[0]); // can use NULL if argument not needed
 	int idOfBestFrame = frameIds[maxIdx[0]]; // scores is a single column so it will be M x 1, i.e. we need maxIdx[0]
 	cv::Mat bestFrame = frames[idOfBestFrame];
-
 	//int idOfWorstFrame = frameIds[minIdx];
 	//cv::Mat worstFrame = frames[idOfWorstFrame];
+	*/
 
-	//for (int i = 0; i < frameIds.size(); ++i) {
-	//	cv::imwrite("out/out_" + std::to_string(i) + "_" + std::to_string(frameIds[i]) + ".png", frames[frameIds[i]]);
-	//}
-
-	path bestFrameName = video.dataPath.stem();
-	std::ostringstream ss;
-	ss << std::setw(3) << std::setfill('0') << idOfBestFrame + 1;
-	bestFrameName.replace_extension(ss.str() + ".png");
-	return std::make_pair(bestFrame, bestFrameName);
+	vector<std::tuple<Mat, path, float>> assessedFrames;
+	for (int i = 0; i < scores.rows; ++i) {
+		path bestFrameName = video.dataPath.stem();
+		std::ostringstream ss;
+		ss << std::setw(3) << std::setfill('0') << frameIds[i] + 1;
+		bestFrameName.replace_extension(ss.str() + ".png");
+		assessedFrames.emplace_back(std::make_tuple(frames[frameIds[i]], bestFrameName, scores.at<float>(i)));
+	}
+	return assessedFrames;
 }
 
 int main(int argc, char *argv[])
@@ -319,6 +323,7 @@ int main(int argc, char *argv[])
 	
 	string verboseLevelConsole;
 	path sigsetPath, inputDirectoryVideos, landmarksPath;
+	int numFramesPerVideo;
 	int numThreads;
 	path outputPath;
 
@@ -336,10 +341,12 @@ int main(int argc, char *argv[])
 				"path to the videos")
 			("landmarks,l", po::value<path>(&landmarksPath)->required(),
 				"PaSC landmarks for the videos in boost::serialization text format")
+			("num-frames,n", po::value<int>(&numFramesPerVideo)->default_value(1),
+				"number of frames per video (maximum - actual number of assessed frames might be smaller")
 			("threads,t", po::value<int>(&numThreads)->default_value(2),
-				"num threads, video proc. in par.")
+				"number of threads, i.e. number of video that will be processed in parallel")
 			("output,o", po::value<path>(&outputPath)->default_value("."),
-				"path to an output folder")
+				"path to an output folder. In addition to the frames, a CSV-file 'frameselect-simple.txt' will be written to this location")
 		;
 
 		po::variables_map vm;
@@ -399,20 +406,20 @@ int main(int argc, char *argv[])
 	}
 
 	ThreadPool threadPool(numThreads);
-	vector<future<pair<Mat, path>>> futures;
+	vector<future<vector<std::tuple<Mat, path, float>>>> futures;
 
 	// If we don't want to loop over all videos: (e.g. to get a quick Matlab output)
-	std::random_device rd;
-	auto seed = rd();
-	std::mt19937 rndGenVideos(seed);
-	std::uniform_real<> rndVidDistr(0.0f, 1.0f);
-	auto randomVideo = std::bind(rndVidDistr, rndGenVideos);
+// 	std::random_device rd;
+// 	auto seed = rd();
+// 	std::mt19937 rndGenVideos(seed);
+// 	std::uniform_real<> rndVidDistr(0.0f, 1.0f);
+// 	auto randomVideo = std::bind(rndVidDistr, rndGenVideos);
 	//auto videoIter = std::find_if(begin(videoSigset), end(videoSigset), [](const facerecognition::FaceRecord& d) { return (d.dataPath == "05846d694.mp4"); });
 	//auto video = *videoIter; {
 	for (auto& video : videoSigset) {
-		if (randomVideo() >= 0.003) {
-			continue;
-		}
+// 		if (randomVideo() >= 0.002) {
+// 			continue;
+// 		}
 		appLogger.info("Starting to process " + video.dataPath.string());
 
 		// Shouldn't be necessary, but there are 5 videos in the xml sigset that we don't have.
@@ -426,32 +433,27 @@ int main(int argc, char *argv[])
 	}
 
 	std::ofstream framesListFile((outputPath / "frameselect-simple.txt").string());
-
-	vector<pair<Mat, path>> bestFrames;
+	// Wait for all the threads and save the result as soon as a thread is finished:
 	for (auto& f : futures) {
-		//bestFrames.emplace_back(f.get());
-		auto res = f.get();
+		auto frames = f.get();
 
-		path bestFrameName = outputPath / res.second;
-		//bestFrameName.replace_extension(std::to_string(bestFrameId + 1) + ".png");
-		cv::imwrite(bestFrameName.string(), res.first); // idOfBestFrame is 0-based, PaSC is 1-based
+		// Sort by score, higher ones first
+		std::sort(begin(frames), end(frames), [](tuple<Mat, path, float> lhs, tuple<Mat, path, float> rhs) { return std::get<2>(rhs) < std::get<2>(lhs); });
+		if (frames.size() < numFramesPerVideo) {
+			numFramesPerVideo = frames.size(); // we got fewer frames than desired
+		}
+		for (int i = 0; i < numFramesPerVideo; ++i) {
+			path frameName = outputPath / std::get<1>(frames[i]); // The filename is already 1-based (PaSC format)
+			cv::imwrite(frameName.string(), std::get<0>(frames[i]));
 
-		path frameNameCsv = bestFrameName.stem();
-		frameNameCsv.replace_extension(".mp4");
-		string frameNumCsv = bestFrameName.stem().extension().string();
-		frameNumCsv.erase(std::remove(frameNumCsv.begin(), frameNumCsv.end(), '.'), frameNumCsv.end());
-		framesListFile << frameNameCsv.string() << "," << frameNumCsv << endl;
-
-		appLogger.info("Saved best frame to the filesystem as " + bestFrameName.string() + ".");
+			path frameNameCsv = frameName.stem();
+			frameNameCsv.replace_extension(".mp4");
+			string frameNumCsv = frameName.stem().extension().string();
+			frameNumCsv.erase(std::remove(frameNumCsv.begin(), frameNumCsv.end(), '.'), frameNumCsv.end());
+			framesListFile << frameNameCsv.string() << "," << frameNumCsv << "," << std::get<2>(frames[i]) << endl;
+		}
+		//appLogger.info("Saved frames and scores of " + frameNameCsv.string() + " to the filesystem.");
 	}
-
-// 	for (auto& f : bestFrames) {
-// 		path bestFrameName = outputPath / f.second;
-// 		//bestFrameName.replace_extension(std::to_string(bestFrameId + 1) + ".png");
-// 		cv::imwrite(bestFrameName.string(), f.first); // idOfBestFrame is 0-based, PaSC is 1-based
-// 
-// 		appLogger.info("Saved best frame to the filesystem as " + bestFrameName.string() + ".");
-// 	}
 	
 	framesListFile.close();
 	appLogger.info("Finished processing all videos.");
