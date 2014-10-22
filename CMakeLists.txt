@@ -77,22 +77,34 @@ add_subdirectory(libFaceRecognition)	# Utility library for face recognition expe
 #add_subdirectory(visualise-landmarks)	# Simple app to read landmarks and images and display them
 #add_subdirectory(convert-landmarks)		# Simple app to convert landmarks from one format into another
 #add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks and perform an evaluation.
-#add_subdirectory(extract-frames)		# Extracts frames from a video, given a specific criteria (e.g. random or IED)
-#add_subdirectory(match-video)			# Match video...
-add_subdirectory(plot-video-scores)			# Match each frame of PaSC videos, outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
-add_subdirectory(train-frameselect-extract)	# Extract frames and label information for training. Random subset of vids & frames. Unfinished.
-add_subdirectory(train-frameselect-extract-all)	# Extract frames and label information for training. All vids, all frames. Newest implementation.
-#add_subdirectory(train-frameselect-learn)	# Training of learning-based best-frame-extraction
+
+
+# Deep learning based frame selection:
+#add_subdirectory(train-frameselect-learn)	# Training of learning-based best-frame-extraction. Old? Deleted?
+add_subdirectory(train-frameselect-extract)	# Extract frames and label information for training. Random subset of vids & frames. With random selection, and (partly) negative patches. Unfinished.
+add_subdirectory(train-frameselect-extract-all)	# Extract frames and label information for training. All vids, all frames. Store as boost::serialization. Newest implementation.
 add_subdirectory(frames-labels-to-caffe)	# Convert boost::serialization file with patches and labels to Caffe format (currently: images. Later, I might add LevelDB/LMDB/HDF5)
+
+# Simple frame selection:
+add_subdirectory(extract-frames)		# Extracts frames from a video, given a specific criteria (e.g. random or IED). ==> Rewrite and use it for stuff like comparison with random 25 frames (baseline) (frameselect-random ?)
 add_subdirectory(frameselect-simple)		# Simple weighting out of ...
 
-# Face-recognition:
-#add_subdirectory(convert-pasc-metadata)	# Convert the PaSC metadata csv to boost::serialization objects
-#add_subdirectory(pasc-video-matching)	# Runs the whole pipeline on the PaSC video-video experiment
-#add_subdirectory(facerecognitionTools) # Tools (e.g. create probe/gallery image-lists)
-#add_subdirectory(frRunCogExp)		# App for doing face recognition tests with a gallery and probe images
-#add_subdirectory(frDbTool)		# App for managing (creating and populating) the sqlite-database used for face-recognition experiments
-#add_subdirectory(frDbExp)		# App for doing experiments with the face recognition scores in the database
+# Face-recognition on PaSC:
+add_subdirectory(convert-pasc-metadata)	# Convert PaSC video detections and metadata (CSV) to boost::serialization format ==> RENAME
+add_subdirectory(convert-pasc-sigset)		# Convert a PaSC xml sigset to a text file in property tree format, using FaceRecords ==> Use it to read XML, but otherwise, I think I shouldn't use it anymore. (but we used the ptree format to create MultiPIE sigsets)
+
+# Matching:
+add_subdirectory(plot-video-scores)			# Match each frame of PaSC videos, outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
+add_subdirectory(pasc-video-matching)	# Runs the whole pipeline on the PaSC video-video experiment, including fitting. A bit outdated and unfinished - only the skeletton. But some useful comments!
+add_subdirectory(match-video)			# Matches a video sigset using fvsdk, writes out results to CSV. Similar to the other apps?
+
+# Tools for matching on MultiPIE, some a bit dated:
+add_subdirectory(generate-matchlist)		# Takes a gallery and probe sigset (ptree, FaceRecords) and a matching-config and generates a (huge...) matchlist in ptree format that can be used to run matching engines. For MultiPIE. Hmm, maybe not a sooo good idea?
+add_subdirectory(generate-sigset-multipie) # Specify subsets of MultiPIE and then gather the files and create FaceRecords and a ptree Sigset.
+add_subdirectory(generate-imglist-multipie)	# Specify subsets of MultiPIE and then gather the files and create an image list with paths to the images. Kind of similar to above. But MultiPIE has a non-trivial directory structure. How to handle it?
+add_subdirectory(frRunCogExp)		# Run FaceVACS executables enroll for probes & galleries. Commented out. New usage: Read 2 ptree sigsets and DataPathTransformation configs, enroll them using the SDK, match them, and store to the SQLite DB.
+add_subdirectory(frDbTool)		# Create and popule the sqlite-database used for face-recognition experiments
+add_subdirectory(frDbExp)		# Query the database for matching scores, store them as txt for plotting in Matlab.
 
 # ============================================================================
 # Experimental, non-working or deprecated:
