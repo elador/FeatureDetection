@@ -136,7 +136,9 @@ int main(int argc, char *argv[])
 	}
 
 	for (auto& file : files) {
+		appLogger.info("Processing " + file.string());
 		if (!fs::is_regular(file) || file.extension() != ".png") {
+			appLogger.debug("Not a regular file or no .png extension, skipping: " + file.string());
 			continue;
 		}
 		string frameNumExtension = file.stem().extension().string(); // from videoname.123.png to ".123"
