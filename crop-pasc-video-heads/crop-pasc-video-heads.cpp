@@ -149,9 +149,10 @@ int main(int argc, char *argv[])
 		string frameName = facerecognition::getPascFrameName(videoName, frameNum);
 		auto landmarks = std::find_if(begin(pascVideoDetections), end(pascVideoDetections), [frameName](const facerecognition::PascVideoDetection& d) { return (d.frame_id == frameName); });
 		if (landmarks == end(pascVideoDetections)) {
-			string logMessage("Frame has no PittPatt detections in the metadata file. This shouldn't happen, or rather, we do not want it to happen, because we didn't select a frame where this should happen.");
-			appLogger.error(logMessage);
-			throw std::runtime_error(logMessage);
+			string logMessage("Frame has no PittPatt detections in the metadata file. This should only happen in a few videos where we don't have metadata even for a single frame (which means the frameselection will just output the first or a random frame. Skipping this image!");
+			appLogger.warn(logMessage);
+			//throw std::runtime_error(logMessage);
+			continue;
 		}
 		int tlx = landmarks->fcen_x - landmarks->fwidth / 2.0;
 		int tly = landmarks->fcen_y - landmarks->fheight / 2.0;
