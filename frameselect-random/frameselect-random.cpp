@@ -149,6 +149,7 @@ int main(int argc, char *argv[])
 
 	// TODO: REWRITE TO EXTRACT ONLY RANDOM FRAMES.
 	// WRITE A FUNCTION extractFrame(int) THAT GIVES ONE FRAME (=>library) AND USE THAT IN THIS APP.
+	// NOTE: Choose a random frame WITH PaSC landmarks, not just any.
 
 	// Read the PaSC video landmarks:
 	shared_ptr<imageio::NamedLandmarkSource> landmarkSource;

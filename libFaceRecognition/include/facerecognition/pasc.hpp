@@ -27,6 +27,7 @@
 namespace facerecognition {
 
 // pascFrameNumber starts with 1. Your counting might start with 0, so add 1 to it before passing it here.
+// pass a videoFilename as filename.mp4
 std::string getPascFrameName(boost::filesystem::path videoFilename, int pascFrameNumber)
 {
 	std::ostringstream ss;
@@ -79,6 +80,8 @@ public:
 
 /**
  * Todo
+ * From PaSC CSV file.
+ * Todo: Make a 2nd function that reads from boost::serialization.
  *
  * @param[in] in Todo
  * @return Todo.

@@ -92,6 +92,7 @@ add_subdirectory(frameselect-simple)		# Simple weighting out of ...
 # Face-recognition on PaSC:
 add_subdirectory(convert-pasc-video-metadata-to-bs)	# Convert PaSC video detections and metadata (CSV) to boost::serialization format ==> RENAME
 add_subdirectory(convert-pasc-sigset)		# Convert a PaSC xml sigset to a text file in property tree format, using FaceRecords ==> Use it to read XML, but otherwise, I think I shouldn't use it anymore. (but we used the ptree format to create MultiPIE sigsets)
+add_subdirectory(crop-pasc-video-heads)		# Takes PaSC frames from our frameselection and the metadata and saves cropped head patches.
 
 # Matching:
 add_subdirectory(plot-video-scores)			# Match each frame of PaSC videos, outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
