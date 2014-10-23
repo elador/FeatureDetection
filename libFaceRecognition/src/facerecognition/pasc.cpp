@@ -20,6 +20,13 @@ using std::vector;
 
 namespace facerecognition {
 
+std::string getPascFrameName(boost::filesystem::path videoFilename, int pascFrameNumber)
+{
+	std::ostringstream ss;
+	ss << std::setw(3) << std::setfill('0') << pascFrameNumber;
+	return videoFilename.stem().string() + "/" + videoFilename.stem().string() + "-" + ss.str() + ".jpg";
+}
+
 std::vector<PascVideoDetection> readPascVideoDetections(boost::filesystem::path csvFile)
 {
 	std::vector<PascVideoDetection> detections;
