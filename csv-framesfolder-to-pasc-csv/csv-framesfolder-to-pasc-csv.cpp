@@ -133,12 +133,12 @@ int main(int argc, char *argv[])
 		int linesProcessed = 0;
 		for (std::string line; std::getline(inputCsv, line);) {
 			if (linesProcessed >= numPngFiles) {
-				throw std::runtime_error("linesProcessed >= numPngFiles");
+				throw std::runtime_error("(linesProcessed >= numPngFiles), " + std::to_string(linesProcessed) + " >= " + std::to_string(numPngFiles));
 			}
 			vector<string> rowValues;
 			boost::split(rowValues, line, boost::is_any_of(","), boost::token_compress_on);
 			if (rowValues.size() != numPngFiles) {
-				throw std::runtime_error("rowValues.size() != numPngFiles");
+				throw std::runtime_error("(rowValues.size() != numPngFiles), " + std::to_string(rowValues.size()) + " != " + std::to_string(numPngFiles));
 			}
 			for (auto col = 0; col < rowValues.size(); ++col) {
 				inputSimilarityMatrix.at<float>(linesProcessed, col) = boost::lexical_cast<float>(rowValues[col]);
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 			++linesProcessed;
 		}
 		if (linesProcessed != numPngFiles) {
-			throw std::runtime_error("linesProcessed != numPngFiles");
+			throw std::runtime_error("(linesProcessed != numPngFiles), " + std::to_string(linesProcessed) + " != " + std::to_string(numPngFiles));
 		}
 	}
 
