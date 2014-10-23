@@ -170,6 +170,7 @@ int main(int argc, char *argv[])
 		path croppedImageFilename = outputFolder / file.filename();
 		cv::imwrite(croppedImageFilename.string(), croppedFace);
 	}
+	appLogger.info("Finished cropping all files in the directory.");
 
 	return EXIT_SUCCESS;
 }
