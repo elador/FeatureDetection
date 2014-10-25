@@ -234,6 +234,7 @@ boost::optional<path> FaceVacsEngine::createFir(path image)
 	if (boost::filesystem::exists(firPath)) {
 		//throw std::runtime_error("Unexpected. Should check for that.");
 		// just overwrite
+		return firPath;
 	}
 
 	return createFir(FRsdk::ImageIO::load(image.string()), firPath);
