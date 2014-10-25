@@ -73,8 +73,11 @@ public:
 	float match(boost::filesystem::path g, std::string gallerySubjectId, cv::Mat p, std::string probeFilename, cv::Vec2f firstEye, cv::Vec2f secondEye);
 
 	// Return will have the same order as enrolled gallery subjects!
-	// I think returning a vec<pair<score, FaceRecord>> would be better
+	// I think returning a vec<pair<FaceRecord, score>> would be better - done
 	std::vector<std::pair<FaceRecord, float>> matchAll(cv::Mat p, std::string probeFilename, cv::Vec2f firstEye, cv::Vec2f secondEye);
+
+	// Same as above, but the image is on the filesystem (e.g. from a frameselection)
+	std::vector<std::pair<FaceRecord, float>> matchAll(boost::filesystem::path probeFilename, cv::Vec2f firstEye, cv::Vec2f secondEye);
 
 	// matches a pair of images, given LMs as Cog init
 	// match(fn, fn, ...)

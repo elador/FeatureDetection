@@ -195,6 +195,37 @@ std::vector<std::pair<FaceRecord, float>> FaceVacsEngine::matchAll(cv::Mat p, st
 	return ret;
 }
 
+std::vector<std::pair<FaceRecord, float>> FaceVacsEngine::matchAll(path probeFilename, cv::Vec2f firstEye, cv::Vec2f secondEye)
+{
+	//auto tempProbeImageFilename = tempDir / path(probeFilename).filename(); // img already on fs, no need to create temporary in ./fvsdk_tmp. Pass orig FN.
+	//tempProbeImageFilename.replace_extension(".fir"); // difference to other matchAll function. Pass img-fn, not fir-fn.
+	boost::optional<path> probeFrameFir = createFir(probeFilename); // difference to other matchAll function
+	if (!probeFrameFir) {
+		std::cout << "Couldn't enroll the probe - not a good frame. Return an empty vector." << std::endl;
+		return std::vector<std::pair<FaceRecord, float>>{};
+	}
+
+	std::ifstream firStream(probeFrameFir->string(), std::ios::in | std::ios::binary);
+	FRsdk::FIR fir = firBuilder->build(firStream);
+
+	//compare() does not care about the configured number of Threads
+	//for the comparison algorithm. It uses always one thread to
+	//compare all in order to preserve the order of the scores
+	//according to the order in the population (order of adding FIRs to
+	//the population)
+	FRsdk::CountedPtr<FRsdk::Scores> scores = me->compare(fir, *population);
+	//std::vector<float>{ std::make_move_iterator(std::begin(*scores)), std::make_move_iterator(std::end(*scores)) };
+
+	std::vector<std::pair<FaceRecord, float>> ret;
+	ret.reserve(enrolledGalleryRecords.size());
+	size_t i = 0;
+	for (auto& e : *scores) {
+		ret.emplace_back(std::make_pair(enrolledGalleryRecords[i], e));
+		++i;
+	}
+	return ret;
+}
+
 boost::optional<path> FaceVacsEngine::createFir(path image)
 {
 	// Does the FIR already exist in the temp-dir? If yes, skip FD/EyeDet!

@@ -97,6 +97,8 @@ add_subdirectory(csv-framesfolder-to-pasc-csv) # Take a folder with frames and a
 
 # Matching:
 add_subdirectory(plot-video-scores)			# Match each frame of PaSC videos, outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
+add_subdirectory(match-videos-single-frames) # Match the best frame of a video (pre-selected by a frameselection), output the scores (CSV or BEE?)
+
 add_subdirectory(pasc-video-matching)	# Runs the whole pipeline on the PaSC video-video experiment, including fitting. A bit outdated and unfinished - only the skeletton. But some useful comments!
 add_subdirectory(match-video)			# Matches a video sigset using fvsdk, writes out results to CSV. Similar to the other apps?
 

@@ -16,6 +16,7 @@
 
 //using logging::Logger;
 using logging::LoggerFactory;
+using cv::Mat;
 using boost::property_tree::ptree;
 using boost::filesystem::path;
 using std::vector;
@@ -119,6 +120,24 @@ std::vector<FaceRecord> readSigset(boost::filesystem::path filename)
 	return faceRecords;
 }
 
+void saveSimilarityMatrixAsCSV(Mat similarityMatrix, path filename)
+{
+	// Save the full matrix as CSV:
+	std::ofstream inputCsv(filename.string());
+	for (auto r = 0; r < similarityMatrix.rows; ++r) {
+		for (auto c = 0; c < similarityMatrix.cols; ++c) {
+			inputCsv << similarityMatrix.at<float>(r, c);
+			if (c != similarityMatrix.cols - 1) {
+				inputCsv << ","; // Output a semicolon, except for the last element
+			}
+		}
+		if (r != similarityMatrix.rows - 1) {
+			inputCsv << std::endl; // Output a newline, except when on the last line
+		}
+	}
+	inputCsv.close();
+}
+
 path transformDataPath(const path& originalDataPath, DataPathTransformation transformation)
 {
 	path dataPath;
@@ -150,6 +169,8 @@ path transformDataPath(const path& originalDataPath, DataPathTransformation tran
 	}
 	return fullFilePath;
 }
+
+
 
 	} /* namespace utils */
 } /* namespace facerecognition */

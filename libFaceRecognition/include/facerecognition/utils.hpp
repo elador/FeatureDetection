@@ -52,6 +52,16 @@ std::vector<FaceRecord> readPascSigset(boost::filesystem::path filename, bool st
 std::vector<FaceRecord> readSigset(boost::filesystem::path filename);
 
 /**
+* Todo
+*
+* @param[in] in Todo
+* @return Todo.
+*/
+void saveSimilarityMatrixAsCSV(cv::Mat similarityMatrix, boost::filesystem::path filename);
+
+
+
+/**
 * Desc.
 *
 * @param[in] in Todo

@@ -184,19 +184,7 @@ int main(int argc, char *argv[])
 	}
 	appLogger.info("Finished filling the full similarity matrix. Saving as CSV...");
 	// Save the full matrix as CSV:
-	std::ofstream inputCsv(outputFile.string());
-	for (auto r = 0; r < fullSimilarityMatrix.rows; ++r) {
-		for (auto c = 0; c < fullSimilarityMatrix.cols; ++c) {
-			inputCsv << fullSimilarityMatrix.at<float>(r, c);
-			if (c != fullSimilarityMatrix.cols - 1) {
-				inputCsv << ","; // Output a semicolon, except for the last element
-			}
-		}
-		if (r != fullSimilarityMatrix.rows - 1) {
-			inputCsv << endl; // Output a newline, except when on the last line
-		}
-	}
-	inputCsv.close();
+	facerecognition::utils::saveSimilarityMatrixAsCSV(fullSimilarityMatrix, outputFile);
 	appLogger.info("Successfully saved PaSC CSV similarity matrix.");
 
 	return EXIT_SUCCESS;
