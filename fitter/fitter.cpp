@@ -385,9 +385,9 @@ int main(int argc, char *argv[])
 		vector<float> fittedCoeffs = fitting::fitShapeToLandmarksLinear(morphableModel, affineCam, landmarksClipSpace, lambda);
 
 		// Obtain the full mesh and render it using the estimated camera:
-//		Mesh mesh = morphableModel.drawSample(fittedCoeffs, vector<float>()); // takes standard-normal (not-normalised) coefficients
+/*		Mesh mesh = morphableModel.drawSample(fittedCoeffs, vector<float>()); // takes standard-normal (not-normalised) coefficients
 
-/*		render::SoftwareRenderer softwareRenderer(img.cols, img.rows);
+		render::SoftwareRenderer softwareRenderer(img.cols, img.rows);
 		Mat fullAffineCam = fitting::calculateAffineZDirection(affineCam);
 		fullAffineCam.at<float>(2, 3) = fullAffineCam.at<float>(2, 2); // Todo: Find out and document why this is necessary!
 		fullAffineCam.at<float>(2, 2) = 1.0f;
@@ -415,28 +415,36 @@ int main(int argc, char *argv[])
 */
 		// Write the fitting output files containing:
 		// - Camera parameters, fitting parameters, shape coefficients
-		ptree fittingFile;
-		fittingFile.put("camera", string("affine"));
-//		fittingFile.put("camera.matrix", affineCameraMatrixToString(fullAffineCam));
+// Changed from ptree to normal txt with alphas for Guosheng:
+// 		ptree fittingFile;
+// 		fittingFile.put("camera", string("affine"));
+// //		fittingFile.put("camera.matrix", affineCameraMatrixToString(fullAffineCam));
+// 
+// 		fittingFile.put("imageWidth", img.cols);
+// 		fittingFile.put("imageHeight", img.rows);
+// 
+// 		fittingFile.put("fittingParameters.lambda", lambda);
+// 
+// 		//fittingFile.put("textureMap", isomapFilename.filename().string());
+// 		fittingFile.put("model", config.get_child("morphableModel").get<string>("filename")); // This can throw, but the filename should really exist.
+// 
+// 		// alphas:
+// 		fittingFile.put("shapeCoefficients", "");
+// 		for (size_t i = 0; i < fittedCoeffs.size(); ++i) {
+// 			fittingFile.put("shapeCoefficients." + std::to_string(i), fittedCoeffs[i]);
+// 		}
+// 
+// 		// Save the fitting file
+ 		path fittingFileName = outputPath / labeledImageSource->getName().stem();
+ 		fittingFileName += ".txt";
+// 		boost::property_tree::write_info(fittingFileName.string(), fittingFile);
 
-		fittingFile.put("imageWidth", img.cols);
-		fittingFile.put("imageHeight", img.rows);
-
-		fittingFile.put("fittingParameters.lambda", lambda);
-
-		//fittingFile.put("textureMap", isomapFilename.filename().string());
-		fittingFile.put("model", config.get_child("morphableModel").get<string>("filename")); // This can throw, but the filename should really exist.
-
-		// alphas:
-		fittingFile.put("shapeCoefficients", "");
+		// New txt format for Guosheng:
+		std::ofstream alphasFile(fittingFileName.string());
 		for (size_t i = 0; i < fittedCoeffs.size(); ++i) {
-			fittingFile.put("shapeCoefficients." + std::to_string(i), fittedCoeffs[i]);
+			alphasFile << fittedCoeffs[i] << endl;
 		}
-
-		// Save the fitting file
-		path fittingFileName = outputPath / labeledImageSource->getName().stem();
-		fittingFileName += ".txt";
-		boost::property_tree::write_info(fittingFileName.string(), fittingFile);
+		alphasFile.close();
 
 		// Additional optional output, as set in the config file:
 		if (config.get_child("output", ptree()).get<bool>("copyInputImage", false)) {
