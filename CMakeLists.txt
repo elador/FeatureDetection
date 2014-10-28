@@ -43,9 +43,9 @@ endif()
 #add_subdirectory(libDetection)			# Sliding-window detection, Skin detection (Note: Do we use it anymore? Yes, Condensation depends on it)
 #add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 
-#add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
-#add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes
-#add_subdirectory(libFitting)			# Camera (Pose) estimation and shape-fitting
+add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
+add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes
+add_subdirectory(libFitting)			# Camera (Pose) estimation and shape-fitting
 #add_subdirectory(libSupervisedDescent)	# A non-parametric model for landmark detection. Uses the supervised descent method.
 add_subdirectory(libFaceRecognition)	# Utility library for face recognition experiments, to work with databases, face-record, etc.
 
@@ -68,10 +68,10 @@ add_subdirectory(libFaceRecognition)	# Utility library for face recognition expe
 #add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
 
 # 3DMM fitting:
-#add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
-#add_subdirectory(fittingRenderer)	# App to render fitting results
-#add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
-#add_subdirectory(fittingTools) # Tools for fitting and model-rendering (e.g. compare isomaps)
+add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
+add_subdirectory(fittingRenderer)	# App to render fitting results
+add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
+add_subdirectory(compareIsomaps)	# Compare isomaps (extracted textures)
 
 # Tools:
 #add_subdirectory(visualise-landmarks)	# Simple app to read landmarks and images and display them
