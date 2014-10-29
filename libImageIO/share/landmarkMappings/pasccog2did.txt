@@ -1,0 +1,12 @@
+; Mapping from the 5 point Cognitec annotations (that we also use to train
+; our SDM model) to the Surrey DID format (3DMM vertex indices).
+; Created by: Patrik Huber, 28.10.2014
+
+landmarkMappings ; A mapping from input landmarks (iBug, lhs) to output landmarks (DID, rhs)
+{
+	re_c	  171 ; right eye center on 845 vtx mdl, looks reasonable
+	le_c	  604 ; left eye center on 845 vtx mdl, looks reasonable
+	nt		  114 ; nose-tip (3)
+	botn	  438 ; bridge of the nose. 289 would be one lower. 11140 in high-res model.
+	mouth_c	  423 ; center of the mouth. Chose 'upper lip middle bottom' in the 3DMM.
+}
