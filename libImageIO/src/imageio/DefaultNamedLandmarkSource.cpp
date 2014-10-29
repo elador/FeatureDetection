@@ -58,6 +58,7 @@ LandmarkCollection DefaultNamedLandmarkSource::get(const path& imagePath) {
 
 	LandmarkCollection landmarks;
 	try { // Todo: We should probably change this unreadable try-catch code to find()
+		// Also, Jon Kalb says we shouldn't use exception for normal (expected) program flow
 		landmarks = landmarkCollections.at(imagePath);
 	} catch (std::out_of_range& e) {
 		try {

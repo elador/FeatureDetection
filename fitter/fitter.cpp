@@ -338,6 +338,10 @@ int main(int argc, char *argv[])
 		img = labeledImageSource->getImage();
 
 		LandmarkCollection lms = labeledImageSource->getLandmarks();
+		if (lms.isEmpty()) {
+			appLogger.warn("No landmarks found for this image. Skipping it!");
+			continue;
+		}
 		LandmarkCollection didLms;
 		if (!landmarkMappings.empty()) {
 			didLms = landmarkMapper.convert(lms);
