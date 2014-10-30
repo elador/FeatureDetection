@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME plot-video-scores)
+set(SUBPROJECT_NAME match-all-frames)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -18,7 +18,7 @@ endif()
 
 # Source and header files:
 set(SOURCE
-	plot-video-scores.cpp
+	match-all-frames.cpp
 )
 
 set(HEADERS
