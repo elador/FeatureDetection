@@ -125,9 +125,17 @@ int main(int argc, char *argv[])
 	}
 
 	std::sort(begin(files), end(files)); // Sort files alphabetically, same as in the loaded CSV - so their indices will match
+	size_t indexInFilelist = 0;
+	// Convert to a map - otherwise, the search will be be very slow.
+	std::map<path, size_t> filesMap;
+	for (auto& f : files) {
+		filesMap.emplace(std::make_pair(f.stem().stem(), indexInFilelist));
+		indexInFilelist++;
+	}
 
 	int numPngFiles = files.size();
 	cv::Mat inputSimilarityMatrix(numPngFiles, numPngFiles, CV_32FC1);
+	// Fill the inputSimilarityMatrix with the values from the CSV:
 	{
 		std::ifstream inputCsv(csvInputFile.string());
 		int linesProcessed = 0;
@@ -159,23 +167,27 @@ int main(int argc, char *argv[])
 	for (auto q = 0; q < sigset.size(); ++q) {
 		path queryImageName = sigset[q].dataPath.stem();
 		appLogger.debug("Writing row of query subject " + queryImageName.string());
-		auto queryIter = std::find_if(begin(files), end(files), [queryImageName](const path& p) { return (p.stem().stem() == queryImageName); });
-		if (queryIter == end(files)) {
+		//auto queryIter = std::find_if(begin(files), end(files), [queryImageName](const path& p) { return (p.stem().stem() == queryImageName); });
+		auto queryIter = filesMap.find(queryImageName);
+		if (queryIter == end(filesMap)) {
 			// File not found, means somewhere we had a FTE. We can set the whole row's scores to 0.
 			fullSimilarityMatrix(cv::Range(q, q + 1), cv::Range(0, fullSimilarityMatrix.cols)) = cv::Scalar::all(0.0f); // rowRange, colRange. First is inclusive, second is exclusive.
 			continue; // Skip the whole row, start with the next query image
 		}
 		// Otherwise, loop through all targets (columns) and set the score if the target image is found as well:
-		auto queryIndex = std::distance(begin(files), queryIter);
+		//auto queryIndex = std::distance(begin(files), queryIter);
+		auto queryIndex = queryIter->second;
 		for (auto t = 0; t < sigset.size(); ++t) {
 			path targetImageName = sigset[t].dataPath.stem();
-			auto targetIter = std::find_if(begin(files), end(files), [targetImageName](const path& p) { return (p.stem().stem() == targetImageName); });
-			if (targetIter == end(files)) {
+			//auto targetIter = std::find_if(begin(files), end(files), [targetImageName](const path& p) { return (p.stem().stem() == targetImageName); });
+			auto targetIter = filesMap.find(targetImageName);
+			if (targetIter == end(filesMap)) {
 				// File not found, means somewhere we had a FTE. We could set the whole column to 0.0f but we loop over it on the next row anyway so it doesn't matter if we do.
 				fullSimilarityMatrix.at<float>(q, t) = 0.0f;
 			}
 			else {
-				auto targetIndex = std::distance(begin(files), targetIter);
+				//auto targetIndex = std::distance(begin(files), targetIter);
+				auto targetIndex = targetIter->second;
 				//fullSimilarityMatrix.at<float>(q, t) = inputSimilarityMatrix.at<float>(queryIndex, targetIndex);
 				// We got dissimilarity-scores in the Matlab CSV, so flip around:
 				fullSimilarityMatrix.at<float>(q, t) = maxScore - inputSimilarityMatrix.at<float>(queryIndex, targetIndex);
