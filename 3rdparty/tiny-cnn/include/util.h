@@ -44,7 +44,7 @@
 namespace tiny_cnn {
 
 typedef double float_t;
-typedef float label_t;
+typedef int label_t;
 typedef std::vector<float_t> vec_t;
 
 class nn_error : public std::exception {
