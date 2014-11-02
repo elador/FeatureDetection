@@ -99,7 +99,8 @@ add_subdirectory(match-all-frames)			# Match each frame of PaSC videos, outputs 
 add_subdirectory(match-video)			# Matches a video sigset using fvsdk, writes out results to CSV. Very similar to plot-video-scores?
 add_subdirectory(match-videos-single-frames) # Match the best frame of a video (pre-selected by a frameselection), output the full similarity matrix as CSV (BEE-ready)
 
-add_subdirectory(train-deeplearning-matcher)	# New! Todo
+add_subdirectory(train-deeplearning-matcher-extract)	# New! Todo
+add_subdirectory(train-deeplearning-matcher-learn) # New! Todo
 
 # Tools for matching on PaSC, some a bit dated:
 #add_subdirectory(convert-pasc-sigset)		# Convert a PaSC xml sigset to a text file in property tree format, using FaceRecords ==> Use it to read XML, but otherwise, I think I shouldn't use it anymore. (but we used the ptree format to create MultiPIE sigsets)
