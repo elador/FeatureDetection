@@ -1,5 +1,5 @@
 /*
- * train-deeplearning-matcher.cpp
+ * train-deeplearning-matcher-learn.cpp
  *
  *  Created on: 01.11.2014
  *      Author: Patrik Huber
@@ -65,8 +65,8 @@ int main(int argc, char *argv[])
 	#endif
 	
 	string verboseLevelConsole;
-	path inputFrames;
-	path querySigsetFile;
+	path trainingFramesFile, testFramesFile;
+	path trainingSigsetFile, testSigsetFile;
 	path outputPath;
 
 	try {
@@ -76,9 +76,13 @@ int main(int argc, char *argv[])
 				"produce help message")
 			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
 				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
-			("images,i", po::value<path>(&inputFrames)->required(),
+			("training-data,i", po::value<path>(&trainingFramesFile)->required(),
 				"input file with training images (extracted frames) in boost::serialization text format")
-			("query-sigset,q", po::value<path>(&querySigsetFile)->required(),
+			("training-sigset,j", po::value<path>(&trainingSigsetFile)->required(),
+				"PaSC video query sigset, used for building the pairs and labels")
+			("test-data,s", po::value<path>(&testFramesFile)->required(),
+				"input file with test images (extracted frames) in boost::serialization text format")
+			("test-sigset,t", po::value<path>(&testSigsetFile)->required(),
 				"PaSC video query sigset, used for building the pairs and labels")
 			("output,o", po::value<path>(&outputPath)->default_value("."),
 				"path to an output folder to save the learned neural network")
@@ -123,25 +127,32 @@ int main(int argc, char *argv[])
 		boost::filesystem::create_directory(outputPath);
 	}
 
-	auto querySigset = facerecognition::utils::readPascSigset(querySigsetFile, true);
+	// Prepare the training and test data, i.e. create the pairs:
+	auto trainingQuerySigset = facerecognition::utils::readPascSigset(trainingSigsetFile, true);
+	auto testQuerySigset = facerecognition::utils::readPascSigset(testSigsetFile, true);
 	
 	// The training data:
 	vector<Mat> trainingFrames;
-	
-	std::ifstream ifFrames("../train-deeplearning-matcher-extract/training_data.txt");
-	{ // use scope to ensure archive goes out of scope before stream
+	{
+		std::ifstream ifFrames(trainingFramesFile.string());
 		boost::archive::text_iarchive ia(ifFrames);
 		ia >> trainingFrames;
 	}
-	ifFrames.close();
+	// The test data:
+	vector<Mat> testFrames;
+	{
+		std::ifstream ifFrames(testFramesFile.string());
+		boost::archive::text_iarchive ia(ifFrames);
+		ia >> testFrames;
+	}
 
 	// Build the pairs, which will be the training data:
 	vector<tiny_cnn::vec_t> trainingData; // preallocate?
-	vector<tiny_cnn::label_t> labels; // preallocate?
-	for (int q = 0; q < querySigset.size(); ++q) {
+	vector<tiny_cnn::label_t> trainingLabels; // preallocate?
+	for (int q = 0; q < trainingQuerySigset.size(); ++q) {
 		// Let's see that we only get the upper diagonal, or we'll have double pairs in it.
 		// Okay actually we want that? It will be [a b] and [b a]
-		for (int t = 0; t < querySigset.size(); ++t) { // We might want to loop over the target sigset
+		for (int t = 0; t < trainingQuerySigset.size(); ++t) { // We might want to loop over the target sigset
 			if (trainingFrames[q].empty() || trainingFrames[t].empty()) {
 				continue;
 			}
@@ -153,23 +164,49 @@ int main(int argc, char *argv[])
 				data.emplace_back(datum.at<uchar>(0, i));
 			}
 			trainingData.emplace_back(data);
-			if (querySigset[q].subjectId == querySigset[t].subjectId) {
-				labels.emplace_back(1);
+			if (trainingQuerySigset[q].subjectId == trainingQuerySigset[t].subjectId) {
+				trainingLabels.emplace_back(1);
 			}
 			else {
-				labels.emplace_back(0);
+				trainingLabels.emplace_back(0);
 			}
-			if (trainingData.size() >= 10000) {
+			if (trainingData.size() >= 5000) {
 				break;
 			}
 		}
 	}
 
-	//trainingFrames = { trainingFrames[0], trainingFrames[1], trainingFrames[2] };
-	//labels = { labels[0], labels[1], labels[2] };
+	// Build the pairs, which will be the test data:
+	vector<tiny_cnn::vec_t> testData; // preallocate?
+	vector<tiny_cnn::label_t> testLabels; // preallocate?
+	for (int q = 0; q < testQuerySigset.size(); ++q) {
+		// Let's see that we only get the upper diagonal, or we'll have double pairs in it.
+		// Okay actually we want that? It will be [a b] and [b a]
+		for (int t = 0; t < testQuerySigset.size(); ++t) { // We might want to loop over the target sigset
+			if (testFrames[q].empty() || testFrames[t].empty()) {
+				continue;
+			}
+			Mat datum; // preallocate? No, because we don't want to actually copy the data
+			cv::hconcat(testFrames[q], testFrames[t], datum); // Does this copy the data? We shouldn't!
+			tiny_cnn::vec_t data; // vector<double>
+			data.reserve(datum.cols);
+			for (int i = 0; i < datum.cols; ++i) {
+				data.emplace_back(datum.at<uchar>(0, i));
+			}
+			testData.emplace_back(data);
+			if (testQuerySigset[q].subjectId == testQuerySigset[t].subjectId) {
+				testLabels.emplace_back(1);
+			}
+			else {
+				testLabels.emplace_back(0);
+			}
+			if (testData.size() >= 150000) {
+				break;
+			}
+		}
+	}
 
 	// Train NN:
-	// trainingFrames, labels
 	// MNIST: data is 28x28. On load, a border of 2 on each side gets added, resulting in 32x32. This is so that the convolution 5x5 window can reach each pixel as center.
 	using namespace tiny_cnn;
 
@@ -186,11 +223,16 @@ int main(int argc, char *argv[])
 	*/
 
 	// Split whole data into train and test data:
-	int numTrainingData = 7000;
-	train_labels.assign(begin(labels), begin(labels) + numTrainingData);
-	test_labels.assign(begin(labels) + numTrainingData, end(labels));
+/*	int numTrainingData = 7000;
+	train_labels.assign(begin(trainingLabels), begin(trainingLabels) + numTrainingData);
+	test_labels.assign(begin(trainingLabels) + numTrainingData, end(trainingLabels));
 	train_images.assign(begin(trainingData), begin(trainingData) + numTrainingData);
 	test_images.assign(begin(trainingData) + numTrainingData, end(trainingData));
+*/
+	train_images = trainingData;
+	train_labels = trainingLabels;
+	test_images = testData;
+	test_labels = trainingLabels;
 
 	typedef network<mse, gradient_descent> CNN;
 	CNN nn;

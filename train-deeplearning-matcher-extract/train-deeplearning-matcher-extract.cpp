@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 	string verboseLevelConsole;
 	path sigsetFile;
 	path inputPatchesDirectory;
-	path outputPath;
+	path outputFile;
 
 	try {
 		po::options_description desc("Allowed options");
@@ -78,8 +78,8 @@ int main(int argc, char *argv[])
 				  "PaSC video sigset")
 			("query-path,r", po::value<path>(&inputPatchesDirectory)->required(),
 				"path to video frames, from sigset, cropped")
-			("output,o", po::value<path>(&outputPath)->default_value("."),
-				"path to an output folder for the data, in boost::serialization text format")
+			("output,o", po::value<path>(&outputFile)->default_value("."),
+				"output file for the data, in boost::serialization text format. Folder needs to exist.")
 		;
 
 		po::variables_map vm;
@@ -117,9 +117,9 @@ int main(int argc, char *argv[])
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
 	// Create the output directory if it doesn't exist yet:
-	if (!boost::filesystem::exists(outputPath)) {
-		boost::filesystem::create_directory(outputPath);
-	}
+	//if (!boost::filesystem::exists(outputFile)) {
+	//	boost::filesystem::create_directory(outputFile);
+	//}
 	
 	// The training data:
 	vector<Mat> trainingData; // Will have the same size and order of the sigset
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
 		trainingData.emplace_back(patch);
 	}
 	
-	std::ofstream ofFrames("training_data.txt");
+	std::ofstream ofFrames(outputFile.string());
 	{ // use scope to ensure archive goes out of scope before stream
 		boost::archive::text_oarchive oa(ofFrames);
 		oa << trainingData;
