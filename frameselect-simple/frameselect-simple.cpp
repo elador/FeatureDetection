@@ -246,8 +246,17 @@ std::vector<std::tuple<cv::Mat, path, float>> selectFrameSimple(path inputDirect
 		cv::Rect roi(tlx, tly, w, h);
 		Mat croppedFace = frames[frameNum](roi);
 
+		// In the training videos metadata, some eye coordinates are missing. If any coordinate is missing, set the score to 0:
+		if (!landmarks->le_x || !landmarks->le_y || !landmarks->re_x || !landmarks->re_y) {
+			//ieds.emplace_back(0);
+			// Hmm, but then, the normalisation we do later goes wrong. We just skip these frames for now.
+			logger.debug("Throwing away patch because some of the eye coordinates are missing.");
+			continue;
+		}
+
 		headBoxSizes.emplace_back((landmarks->fwidth + landmarks->fheight) / 2.0f);
-		ieds.emplace_back(cv::norm(cv::Vec2f(*landmarks->le_x, *landmarks->le_y), cv::Vec2f(*landmarks->re_x, *landmarks->re_y), cv::NORM_L2));
+		// If we reach here, we got valid eye coordinates
+		ieds.emplace_back(cv::norm(cv::Vec2f(landmarks->le_x.get(), landmarks->le_y.get()), cv::Vec2f(landmarks->re_x.get(), landmarks->re_y.get()), cv::NORM_L2));
 		yaws.emplace_back(landmarks->fpose_y);
 		sharpnesses.emplace_back(sharpnessScoreCanny(croppedFace));
 		frameIds.emplace_back(frameNum);
@@ -414,7 +423,7 @@ int main(int argc, char *argv[])
 // 	std::mt19937 rndGenVideos(seed);
 // 	std::uniform_real<> rndVidDistr(0.0f, 1.0f);
 // 	auto randomVideo = std::bind(rndVidDistr, rndGenVideos);
-	//auto videoIter = std::find_if(begin(videoSigset), end(videoSigset), [](const facerecognition::FaceRecord& d) { return (d.dataPath == "05846d694.mp4"); });
+	//auto videoIter = std::find_if(begin(videoSigset), end(videoSigset), [](const facerecognition::FaceRecord& d) { return (d.dataPath == "05795d567.mp4"); });
 	//auto video = *videoIter; {
 	for (auto& video : videoSigset) {
 // 		if (randomVideo() >= 0.002) {
