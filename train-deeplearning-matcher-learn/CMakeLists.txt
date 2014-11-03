@@ -17,7 +17,7 @@ else(Boost_FOUND)
 endif()
 
 set(TinyCNN_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/3rdparty/tiny-cnn/include")
-add_definitions(-DCNN_USE_AVX)
+#add_definitions(-DCNN_USE_AVX)
 add_definitions(-DCNN_USE_SSE)
 
 # Source and header files:
