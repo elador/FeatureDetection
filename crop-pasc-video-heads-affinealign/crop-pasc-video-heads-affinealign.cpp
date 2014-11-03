@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
 		Mat croppedFace = rotatedFrame(roi);
 
 		// Normalise:
-		croppedFace = equaliseIntensity(croppedFace);
+		//croppedFace = equaliseIntensity(croppedFace);
 		
 		/*
 		Mat mask(0, 0, IPL_DEPTH_8U, 1);
