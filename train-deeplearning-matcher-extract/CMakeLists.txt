@@ -9,16 +9,12 @@ message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 # find dependencies:
 find_package(OpenCV 2.4.3 REQUIRED core imgproc)
 
-find_package(Boost 1.48.0 COMPONENTS program_options system filesystem REQUIRED)
+find_package(Boost 1.48.0 COMPONENTS program_options system filesystem serialization REQUIRED)
 if(Boost_FOUND)
   message(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
 else(Boost_FOUND)
   message(FATAL_ERROR "Boost not found")
 endif()
-
-set(TinyCNN_INCLUDE_DIR "C:\\Users\\Patrik\\Documents\\GitHub\\FeatureDetection\\3rdparty\\tiny-cnn\\include")
-add_definitions(-DCNN_USE_AVX)
-add_definitions(-DCNN_USE_SSE)
 
 # Source and header files:
 set(SOURCE
@@ -30,7 +26,6 @@ set(HEADERS
 
 add_executable(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
 
-include_directories(${TinyCNN_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${Logging_SOURCE_DIR}/include)

@@ -16,7 +16,7 @@ else(Boost_FOUND)
   message(FATAL_ERROR "Boost not found")
 endif()
 
-set(TinyCNN_INCLUDE_DIR "C:\\Users\\Patrik\\Documents\\GitHub\\FeatureDetection\\3rdparty\\tiny-cnn\\include")
+set(TinyCNN_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/3rdparty/tiny-cnn-regression/include")
 add_definitions(-DCNN_USE_AVX)
 add_definitions(-DCNN_USE_SSE)
 
