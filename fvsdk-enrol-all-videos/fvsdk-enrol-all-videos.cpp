@@ -168,6 +168,7 @@ int main(int argc, char *argv[])
 	int counter = 0;
 	for (auto& video : videoSigset)
 	{
+		++counter;
 		appLogger.info("Enroling video " + std::to_string(counter) + " of " + std::to_string(videoSigset.size()) + "...");
 		auto videoName = inputDirectoryVideos / video.dataPath;
 		if (!boost::filesystem::exists(videoName)) {
@@ -191,7 +192,6 @@ int main(int argc, char *argv[])
 			f.get();
 		}
 		// Note: If a frame can't be enroled, the FIR file will just be missing.
-
 	}
 	return EXIT_SUCCESS;
 }
