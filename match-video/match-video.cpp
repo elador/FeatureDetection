@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 			("output,o", po::value<path>(&outputPath)->default_value("."),
 				"path to an output folder")
 			("fvsdk-config,c", po::value<path>(&fvsdkConfig)->default_value(R"(C:\FVSDK_8_9_5\etc\frsdk.cfg)"),
-				"path to frsdk.cfg. Usually something like C:\FVSDK_8_9_5\etc\frsdk.cfg")
+				"path to frsdk.cfg. Usually something like C:\\FVSDK_8_9_5\\etc\\frsdk.cfg")
 		;
 		
 		po::variables_map vm;
