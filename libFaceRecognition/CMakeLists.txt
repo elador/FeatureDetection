@@ -18,8 +18,8 @@ find_package(OpenCV 2.4.3 REQUIRED core highgui)
 
 # Add the FaceVACS SDK as a dependency:
 message(STATUS "FVSDK library at: ${FVSDK_LIB_DIR}")
-message(STATUS "FVSDK debug library at (empty for linux): ${FVSDK_DBG_LIB_DIR}")
 if(WIN32) # I think this doesn't include Cygwin/MingW, but we would want it too
+	message(STATUS "FVSDK debug library at: ${FVSDK_DBG_LIB_DIR}") # Windows only
 	set(FVSDKLIB ${FVSDK_LIB_DIR})
 	set(FVSDKLIB_DBG ${FVSDK_DBG_LIB_DIR})
 	add_library(fvsdk SHARED IMPORTED)
@@ -40,6 +40,7 @@ set(SOURCE
 	src/facerecognition/EnrolCoutFeedback.cpp
 	src/facerecognition/FaceRecord.cpp
 	src/facerecognition/FaceVacsEngine.cpp
+	src/facerecognition/frsdk.cpp
 	src/facerecognition/pasc.cpp
 	src/facerecognition/utils.cpp
 )

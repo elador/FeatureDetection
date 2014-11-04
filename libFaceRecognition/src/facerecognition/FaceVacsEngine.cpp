@@ -26,6 +26,7 @@ using logging::LoggerFactory;
 using boost::filesystem::path;
 using std::cout;
 using std::endl;
+using std::vector;
 
 namespace facerecognition {
 

@@ -96,7 +96,8 @@ add_subdirectory(csv-framesfolder-to-pasc-csv) # Take a folder with frames and a
 
 # Matching:
 add_subdirectory(match-all-frames)			# Match each frame of PaSC videos to a still image gallery. Outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
-add_subdirectory(match-all-frames-to-all-frames)			# Match each frame of PaSC videos to all other frames of a target video. Outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
+add_subdirectory(match-all-frames-to-all-frames)	# Match each frame of PaSC videos to all other frames of a target video. Outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
+add_subdirectory(fvsdk-enrol-all-videos)	# Enrol all videos using the fvsdk. match-all-frames-to-all-frames is too inefficient at the moment.
 add_subdirectory(match-video)			# Matches a video sigset using fvsdk, writes out results to CSV. Very similar to plot-video-scores?
 add_subdirectory(match-videos-single-frames) # Match the best frame of a video (pre-selected by a frameselection), output the full similarity matrix as CSV (BEE-ready)
 
