@@ -96,10 +96,11 @@ add_subdirectory(csv-framesfolder-to-pasc-csv) # Take a folder with frames and a
 
 # Matching:
 add_subdirectory(match-all-frames)			# Match each frame of PaSC videos to a still image gallery. Outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
-add_subdirectory(match-all-frames-to-all-frames)	# Match each frame of PaSC videos to all other frames of a target video. Outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
 add_subdirectory(fvsdk-enrol-all-videos)	# Enrol all videos using the fvsdk. match-all-frames-to-all-frames is too inefficient at the moment.
+add_subdirectory(fvsdk-match-video-to-video-allframes) # Read pre-enroled FIRs and match each frame of PaSC videos to all other frames of a target video. Do some selection and output the full similarity matrix as CSV (BEE-ready).
+# No app atm: Match each frame of PaSC videos to all other frames of a target video. Outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
 add_subdirectory(match-video)			# Matches a video sigset using fvsdk, writes out results to CSV. Very similar to plot-video-scores?
-add_subdirectory(match-videos-single-frames) # Match the best frame of a video (pre-selected by a frameselection), output the full similarity matrix as CSV (BEE-ready)
+add_subdirectory(match-videos-single-frames) # Match the best frame of a video (pre-selected by a frameselection), output the full similarity matrix as CSV (BEE-ready).
 
 add_subdirectory(train-deeplearning-matcher-extract)	# Use images, frames or (cropped) patches as input, convert them (e.g. graylevel) or extract features, and then write a boost::serialization file. The files have the same order as in the given sigset.
 add_subdirectory(train-deeplearning-matcher-learn) # Use the data from 'train-deeplearning-matcher-extract' app, create pairs including labels (0 or 1), and use them to learn a neural network for classification.

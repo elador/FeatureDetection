@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME match-all-frames-to-all-frames)
+set(SUBPROJECT_NAME fvsdk-match-video-to-video-allframes)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -18,7 +18,7 @@ endif()
 
 # Source and header files:
 set(SOURCE
-	match-all-frames-to-all-frames.cpp
+	fvsdk-match-video-to-video-allframes.cpp
 )
 
 set(HEADERS
