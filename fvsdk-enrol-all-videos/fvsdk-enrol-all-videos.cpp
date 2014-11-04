@@ -177,17 +177,25 @@ int main(int argc, char *argv[])
 		}
 		auto frames = facerecognition::utils::getFrames(videoName);
 		
+		// Create a directory for this video if it doesn't exist yet:
+		path outputPathThisVideo = outputPath / video.dataPath.stem();
+		if (!boost::filesystem::exists(outputPathThisVideo)) {
+			boost::filesystem::create_directory(outputPathThisVideo);
+		}
+
+		// Enrol all the frames in parallel:
 		vector<std::future<boost::optional<path>>> firs;
 		for (size_t frameNum = 0; frameNum < frames.size(); ++frameNum)
 		{
 			appLogger.debug("Processing frame " + std::to_string(frameNum + 1));
 			string frameName = facerecognition::getPascFrameName(video.dataPath, frameNum + 1); // 184 is a good test-video and it's in the first 100 gallery
-			path firPath = outputPath / video.dataPath.stem();
+			path firPath = outputPathThisVideo / video.dataPath.stem();
 			firPath += "-" + facerecognition::getZeroPadded(frameNum + 1) + ".fir";
 			firs.emplace_back(threadPool.enqueue([&faceRecEngine](const cv::Mat& frame, path firPath) { return faceRecEngine.createFir(facerecognition::matToFRsdkImage(frame), firPath); }, frames[frameNum], firPath));
 			//faceRecEngine.createFir(facerecognition::matToFRsdkImage(frames[frameNum]), firPath);
 		}
-		// Wait until all frames of this video are enroled
+
+		// Wait until all frames of this video are enroled:
 		for (auto& f : firs) {
 			f.get();
 		}
