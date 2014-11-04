@@ -133,8 +133,8 @@ int main(int argc, char *argv[])
 	
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("facerecognition").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Loggers->getLogger("match-all-frames").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Logger appLogger = Loggers->getLogger("match-all-frames");
+	Loggers->getLogger("app").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Logger appLogger = Loggers->getLogger("app");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
@@ -151,10 +151,8 @@ int main(int argc, char *argv[])
 		ia >> pascVideoDetections;
 	} // archive and stream closed when destructors are called
 
-	// We would read the still images detection metadata (eyes, face-coords) here, but it's not provided with PaSC.
-	// Todo: Try with and without the 5 Cog LMs
 
-	// Read the training-video xml sigset and the training-still sigset to get the subject-id metadata:
+	// Read the sigset:
 	auto videoSigset = facerecognition::utils::readPascSigset(sigsetFile, true);
 
 	// Create the output directory if it doesn't exist yet:
@@ -167,15 +165,18 @@ int main(int argc, char *argv[])
 	ThreadPool threadPool(numThreads);
 
 	//auto& queryVideo = videoQuerySet[184];
+	int counter = 0;
 	for (auto& video : videoSigset)
 	{
+		appLogger.info("Enroling video " + std::to_string(counter) + " of " + std::to_string(videoSigset.size()) + "...");
 		auto videoName = inputDirectoryVideos / video.dataPath;
 		if (!boost::filesystem::exists(videoName)) {
 			appLogger.info("Found a video in the query sigset that doesn't exist in the filesystem. Skipping it.");
 			continue; // We have 5 videos in the video-training-sigset that don't exist in the database
 		}
 		auto frames = facerecognition::utils::getFrames(videoName);
-		vector<std::future<path>> firs;
+		
+		vector<std::future<boost::optional<path>>> firs;
 		for (size_t frameNum = 0; frameNum < frames.size(); ++frameNum)
 		{
 			appLogger.debug("Processing frame " + std::to_string(frameNum + 1));
