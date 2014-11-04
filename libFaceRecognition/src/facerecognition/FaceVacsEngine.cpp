@@ -10,6 +10,7 @@
 #include "facerecognition/frsdk.hpp"
 #include "facerecognition/EnrolCoutFeedback.hpp"
 #include "facerecognition/ThreadPool.hpp"
+#include "facerecognition/pasc.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -31,6 +32,9 @@ namespace facerecognition {
 FaceVacsEngine::FaceVacsEngine(path frsdkConfig, path tempDirectory) : tempDir(tempDirectory)
 {
 	// Todo: Create the tempDir if it doesn't exist yet
+	if (!boost::filesystem::exists(tempDir)) {
+		boost::filesystem::create_directory(tempDir);
+	}
 
 	// initialize and resource allocation
 	//cfg = std::make_unique<FRsdk::Configuration>(frsdkConfig.string());
@@ -127,6 +131,80 @@ void FaceVacsEngine::enrollGallery(std::vector<facerecognition::FaceRecord> gall
 	//return enrolledGalleryRecords;
 }
 
+void FaceVacsEngine::enrollGallery(std::vector<cv::Mat> galleryFrames, boost::filesystem::path videoIdentifier)
+{
+	// We first enroll the whole gallery:
+	auto logger = Loggers->getLogger("facerecognition");
+	logger.info("Enroling gallery, " + std::to_string(galleryFrames.size()) + " frames...");
+
+	ThreadPool threadPool(4);
+	vector<std::future<boost::optional<path>>> firFutures;
+
+	// create an enrollment processor
+	FRsdk::Enrollment::Processor proc(*cfg);
+	// Todo: FaceVACS should be able to do batch-enrolment?
+	auto cnt = 0;
+	for (auto& r : galleryFrames) {
+		++cnt;
+		logger.info("Enroling frame " + std::to_string(cnt));
+		// Does the FIR already exist in the temp-dir? If yes, skip FD/EyeDet!
+		auto firPath = tempDir / videoIdentifier;
+		firPath += "-" + getZeroPadded(cnt);
+		firPath.replace_extension(".fir"); // the path will be videoname-012.fir
+		if (boost::filesystem::exists(firPath)) {
+			continue;
+		}
+		// Create the FIR:
+		// We can't enqueue createFir directly because it has overloads. std::async/std::bind suffer
+		// from the same. Options: Casting, lambda, a wrapper struct.
+		firFutures.emplace_back(threadPool.enqueue([this, r](const path& s) { return createFir(matToFRsdkImage(r), s); }, firPath));
+		//boost::optional<path> fir = createFir(databasePath / r.dataPath);
+	}
+	// Wait for all the threads.
+	// We don't check for boost::none, we don't reuse the path anyway.
+	// A boost::none means we couldn't create the .fir, i.e. couldn't enrol the image
+	for (auto& f : firFutures) {
+		//f.get();
+		auto fir = f.get();
+		//if (!fir) {
+		//	continue;
+		//}
+	}
+
+	// Enrol all the FIRs now:
+	cnt = 0;
+	for (auto& r : galleryFrames) {
+		++cnt;
+		auto firPath = tempDir / videoIdentifier;
+		firPath += "-" + getZeroPadded(cnt);
+		firPath.replace_extension(".fir"); // the path will be videoname-012.fir
+		std::ifstream firIn(firPath.string(), std::ios::in | std::ios::binary);
+		// Some of the FIRs might not exist due to enrolment failure
+		if (firIn.is_open() && firIn.good()) {
+			try {
+				auto fir = firBuilder->build(firIn);
+				population->append(fir, firPath.string());
+				FaceRecord r;
+				r.identifier = videoIdentifier.string() + "-" + getZeroPadded(cnt); //frameNum. Not sure if we should use 'identifier' member?
+				this->enrolledGalleryRecords.push_back(r); // we make a copy of the record? not sure?
+			}
+			// Catch the following here - we can't continue.
+			catch (const FRsdk::FeatureDisabled& e) {
+				logger.error(e.what());
+				// Terminate/exit? No, well we shouldn't do that here. We should abort in main, so all the d'tors get
+				// called. I think we should re-throw a generic, own fr::enrollment_exception here that every Engine class shares.
+				// That also gives a chance for the calling code to handle it!
+			}
+			catch (const FRsdk::LicenseSignatureMismatch& e) {
+				logger.error(e.what());
+			}
+			catch (std::exception& e) { // I think we shouldn't catch this here
+				logger.error(e.what());
+			}
+		}
+	}
+}
+
 float FaceVacsEngine::match(path g, std::string gallerySubjectId, cv::Mat p, std::string probeFilename, cv::Vec2f firstEye, cv::Vec2f secondEye)
 {
 	auto logger = Loggers->getLogger("facerecognition");
@@ -171,7 +249,7 @@ std::vector<std::pair<FaceRecord, float>> FaceVacsEngine::matchAll(cv::Mat p, st
 	boost::optional<path> probeFrameFir = createFir(matToFRsdkImage(p), tempProbeImageFilename);
 	if (!probeFrameFir) {
 		std::cout << "Couldn't enroll the probe - not a good frame. Return an empty vector." << std::endl;
-		return std::vector < std::pair<FaceRecord, float> > {};
+		return std::vector<std::pair<FaceRecord, float>> {};
 	}
 
 	std::ifstream firStream(probeFrameFir->string(), std::ios::in | std::ios::binary);
@@ -248,6 +326,11 @@ boost::optional<path> FaceVacsEngine::createFir(FRsdk::Image image, path firPath
 	// Todo: FaceVACS should be able to do batch-enrolment?
 
 	logger.info("Trying to create the FIR: " + firPath.string());
+	// Skip if already exists:
+	// Note: We check in enrollGallery() as well. I think we should only check here to prevent double checking.
+	if (boost::filesystem::exists(firPath)) {
+		return firPath;
+	}
 
 	FRsdk::SampleSet enrollmentImages;
 	auto sample = FRsdk::Sample(image);

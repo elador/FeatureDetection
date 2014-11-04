@@ -20,6 +20,13 @@ using std::vector;
 
 namespace facerecognition {
 
+std::string getZeroPadded(int pascFrameNumber)
+{
+	std::ostringstream ss;
+	ss << std::setw(3) << std::setfill('0') << pascFrameNumber;
+	return ss.str();
+}
+
 std::string getPascFrameName(boost::filesystem::path videoFilename, int pascFrameNumber)
 {
 	std::ostringstream ss;

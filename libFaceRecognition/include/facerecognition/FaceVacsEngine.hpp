@@ -60,6 +60,8 @@ public:
 	// because it often stays the same
 	// Returns a new vector of FaceRecord with all the ones that could be enroled
 	void enrollGallery(std::vector<facerecognition::FaceRecord> galleryRecords, boost::filesystem::path databasePath);
+	// Enrol a whole video. Will name the frames as subjects, starting from 0 to numFrames.
+	void enrollGallery(std::vector<cv::Mat> galleryFrames, boost::filesystem::path videoIdentifier);
 
 	// Make a matchAgainstGallery or matchSingle function as well
 	// matches a pair of images, Cog LMs

@@ -95,7 +95,8 @@ add_subdirectory(crop-pasc-video-heads-affinealign)	# Same as above, but does af
 add_subdirectory(csv-framesfolder-to-pasc-csv) # Take a folder with frames and a CSV (converted from Matlab) with a matrix in the same order as the images in the folder. Then, use a PaSC XML sigset to generate a conforming CSV or BEE matrix file, with similarity-scores and the FTEs.
 
 # Matching:
-add_subdirectory(match-all-frames)			# Match each frame of PaSC videos, outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
+add_subdirectory(match-all-frames)			# Match each frame of PaSC videos to a still image gallery. Outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
+add_subdirectory(match-all-frames-to-all-frames)			# Match each frame of PaSC videos to all other frames of a target video. Outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
 add_subdirectory(match-video)			# Matches a video sigset using fvsdk, writes out results to CSV. Very similar to plot-video-scores?
 add_subdirectory(match-videos-single-frames) # Match the best frame of a video (pre-selected by a frameselection), output the full similarity matrix as CSV (BEE-ready)
 

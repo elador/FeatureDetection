@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 	#endif
 	
 	string verboseLevelConsole;
-	path inputDirectoryVideos, inputDirectoryStills;
+	path inputDirectoryQueryVideos, inputDirectoryTargetVideos;
 	path querySigset, targetSigset;
 	path queryLandmarks;
 	path outputPath;
@@ -85,13 +85,13 @@ int main(int argc, char *argv[])
 				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
 			("query-sigset,q", po::value<path>(&querySigset)->required(),
 				  "PaSC video training query sigset")
-			("query-path,r", po::value<path>(&inputDirectoryVideos)->required(),
+			("query-path,r", po::value<path>(&inputDirectoryQueryVideos)->required(),
 				"path to the training videos")
 			("query-landmarks,l", po::value<path>(&queryLandmarks)->required(),
 				"landmarks for the training videos in boost::serialization text format")
 			("target-sigset,t", po::value<path>(&targetSigset)->required(),
 				"PaSC still training target sigset")
-			("target-path,u", po::value<path>(&inputDirectoryStills)->required(),
+			("target-path,u", po::value<path>(&inputDirectoryTargetVideos)->required(),
 				"path to the training still images")
 			("output,o", po::value<path>(&outputPath)->default_value("."),
 				"path to an output folder")
@@ -134,11 +134,11 @@ int main(int argc, char *argv[])
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
-	if (!boost::filesystem::exists(inputDirectoryVideos)) {
+	if (!boost::filesystem::exists(inputDirectoryQueryVideos)) {
 		appLogger.error("The given input video directory doesn't exist. Aborting.");
 		return EXIT_FAILURE;
 	}
-	if (!boost::filesystem::exists(inputDirectoryStills)) {
+	if (!boost::filesystem::exists(inputDirectoryTargetVideos)) {
 		appLogger.error("The given input stills directory doesn't exist. Aborting.");
 		return EXIT_FAILURE;
 	}
@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
 
 	// Read the training-video xml sigset and the training-still sigset to get the subject-id metadata:
 	auto videoQuerySet = facerecognition::utils::readPascSigset(querySigset, true);
-	auto stillTargetSet = facerecognition::utils::readPascSigset(targetSigset, true);
+	auto videoTargetSet = facerecognition::utils::readPascSigset(targetSigset, true);
 
 	// Create the output directory if it doesn't exist yet:
 	if (!boost::filesystem::exists(outputPath)) {
@@ -164,62 +164,76 @@ int main(int argc, char *argv[])
 	}
 	
 	facerecognition::FaceVacsEngine faceRecEngine(fvsdkConfig, "./tmp_fvsdk");
-	//stillTargetSet.resize(100); // 1000 = FIR limit atm
-	faceRecEngine.enrollGallery(stillTargetSet, inputDirectoryStills);
 
-	//auto& video = videoQuerySet[184];
-	for (auto& video : videoQuerySet)
+	//auto& queryVideo = videoQuerySet[184];
+	for (auto& queryVideo : videoQuerySet)
 	{
-		auto videoName = inputDirectoryVideos / video.dataPath;
-		if (!boost::filesystem::exists(videoName)) {
-			appLogger.info("Found a video in the sigset that doesn't exist in the filesystem. Skipping it.");
+		auto queryVideoName = inputDirectoryQueryVideos / queryVideo.dataPath;
+		if (!boost::filesystem::exists(queryVideoName)) {
+			appLogger.info("Found a video in the query sigset that doesn't exist in the filesystem. Skipping it.");
 			continue; // We have 5 videos in the video-training-sigset that don't exist in the database
 		}
-		auto frames = facerecognition::utils::getFrames(videoName);
-		//auto w = frames.front().cols;
-		//auto h = frames.front().rows;
-		//auto step = 1.0 / (w + 1); // x-step in every frame iteration
-		path scoreOutputFile{ outputPath / videoName.filename().stem() };
-		scoreOutputFile.replace_extension(".txt");
-		std::ofstream out(scoreOutputFile.string());
-		facerecognition::utils::VideoScore videoScore;
-
-		for (size_t frameNum = 0; frameNum < frames.size(); ++frameNum)
+		for (auto& targetVideo : videoTargetSet)
 		{
-			appLogger.debug("Processing frame " + std::to_string(frameNum));
-
-			string frameName = facerecognition::getPascFrameName(video.dataPath, frameNum + 1); // 184 is a good test-video and it's in the first 100 gallery
-			auto recognitionScores = faceRecEngine.matchAll(frames[frameNum], frameName, cv::Vec2f(), cv::Vec2f());
-
-			// For the currently selected video, partition the target set. The distributions don't change each frame, whole video has the same FaceRecord.
-			auto querySubject = video.subjectId;
-			auto bound = std::partition(begin(recognitionScores), end(recognitionScores), [querySubject](std::pair<facerecognition::FaceRecord, float>& target) { return target.first.subjectId == querySubject; });
-			// begin to bound = positive pairs, rest = negative
-			auto numPositivePairs = std::distance(begin(recognitionScores), bound);
-			auto numNegativePairs = std::distance(bound, end(recognitionScores));
-
-			videoScore.scores.push_back(recognitionScores);
-
-			out << numPositivePairs << ",";
-			out << numNegativePairs << ",";
-
-			for (auto iter = begin(recognitionScores); iter != bound; ++iter) {
-				out << iter->first.dataPath.stem().string() << "," << iter->second << ",";
+			auto targetVideoName = inputDirectoryTargetVideos / targetVideo.dataPath;
+			if (!boost::filesystem::exists(targetVideoName)) {
+				appLogger.info("Found a video in the target sigset that doesn't exist in the filesystem. Skipping it.");
+				continue; // We have 5 videos in the video-training-sigset that don't exist in the database
 			}
-			for (auto iter = bound; iter != end(recognitionScores); ++iter) {
-				out << iter->first.dataPath.stem().string() << "," << iter->second << ",";
+
+			// Enrol all the target video frames as gallery. Then, match every query frame against it.
+			auto targetFrames = facerecognition::utils::getFrames(targetVideoName);
+			//videoTargetSet.resize(100); // 1000 = FIR limit atm
+			//faceRecEngine.enrollGallery(videoTargetSet, inputDirectoryTargetVideos);
+			//targetFrames.resize(3);
+			faceRecEngine.enrollGallery(targetFrames, targetVideoName.stem());
+
+			auto queryFrames = facerecognition::utils::getFrames(queryVideoName);
+
+			path scoreOutputFile = outputPath / queryVideoName.filename().stem();
+			scoreOutputFile += "-vs-" + targetVideoName.filename().stem().string();
+			scoreOutputFile.replace_extension(".txt");
+			std::ofstream out(scoreOutputFile.string());
+			facerecognition::utils::VideoScore videoScore;
+
+			for (size_t frameNum = 0; frameNum < queryFrames.size(); ++frameNum)
+			{
+				appLogger.debug("Processing frame " + std::to_string(frameNum));
+
+				string frameName = facerecognition::getPascFrameName(queryVideo.dataPath, frameNum + 1); // 184 is a good test-video and it's in the first 100 gallery
+				auto recognitionScores = faceRecEngine.matchAll(queryFrames[frameNum], frameName, cv::Vec2f(), cv::Vec2f());
+
+				// For the currently selected video, partition the target set. The distributions don't change each frame, whole video has the same FaceRecord.
+				auto querySubject = queryVideo.subjectId;
+				// Note/Warning: Ok this doesn't work atm as the 'recognitionScores' is missing the subject id. But all pairs of a video are either positive or negative so it doesn't matter so much.
+				auto bound = std::partition(begin(recognitionScores), end(recognitionScores), [querySubject](std::pair<facerecognition::FaceRecord, float>& target) { return target.first.subjectId == querySubject; });
+				// begin to bound = positive pairs, rest = negative
+				auto numPositivePairs = std::distance(begin(recognitionScores), bound);
+				auto numNegativePairs = std::distance(bound, end(recognitionScores));
+
+				videoScore.scores.push_back(recognitionScores);
+
+				out << numPositivePairs << ",";
+				out << numNegativePairs << ",";
+
+				for (auto iter = begin(recognitionScores); iter != bound; ++iter) {
+					out << iter->first.dataPath.stem().string() << "," << iter->second << ",";
+				}
+				for (auto iter = bound; iter != end(recognitionScores); ++iter) {
+					out << iter->first.dataPath.stem().string() << "," << iter->second << ",";
+				}
+				out << endl;
 			}
-			out << endl;
-		}
-		out.close();
-		// save videoScore
-		scoreOutputFile.replace_extension(".bs.txt");
-		std::ofstream outSer(scoreOutputFile.string());
-		{ // use scope to ensure archive goes out of scope before stream
-			boost::archive::text_oarchive oa(outSer);
-			oa << videoScore;
-		}
-		outSer.close();
+			out.close();
+			// save videoScore
+			scoreOutputFile.replace_extension(".bs.txt");
+			std::ofstream outSer(scoreOutputFile.string());
+			{ // use scope to ensure archive goes out of scope before stream
+				boost::archive::text_oarchive oa(outSer);
+				oa << videoScore;
+			}
+			outSer.close();
+		} // end for over all target videos
 	}
 	return EXIT_SUCCESS;
 }

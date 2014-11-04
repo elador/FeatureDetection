@@ -26,6 +26,8 @@
 
 namespace facerecognition {
 
+std::string getZeroPadded(int pascFrameNumber);
+
 // pascFrameNumber starts with 1. Your counting might start with 0, so add 1 to it before passing it here.
 // pass a videoFilename as filename.mp4
 std::string getPascFrameName(boost::filesystem::path videoFilename, int pascFrameNumber);
