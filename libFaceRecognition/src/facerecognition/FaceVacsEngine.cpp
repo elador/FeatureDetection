@@ -371,4 +371,9 @@ boost::optional<path> FaceVacsEngine::createFir(FRsdk::Image image, path firPath
 	}
 }
 
+std::shared_ptr<FRsdk::Configuration> FaceVacsEngine::getConfigurationInstance() const
+{
+	return cfg;
+}
+
 } /* namespace facerecognition */

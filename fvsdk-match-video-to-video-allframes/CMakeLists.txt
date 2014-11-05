@@ -31,6 +31,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${Logging_SOURCE_DIR}/include)
 include_directories(${ImageIO_SOURCE_DIR}/include)
 include_directories(${FaceRecognition_SOURCE_DIR}/include)
+include_directories(${FVSDK_INCLUDE_DIR})
 
 # Make the app depend on the libraries
 target_link_libraries(${SUBPROJECT_NAME} FaceRecognition ImageIO Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})

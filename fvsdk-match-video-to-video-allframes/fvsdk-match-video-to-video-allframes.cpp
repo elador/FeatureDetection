@@ -1,11 +1,11 @@
 /*
- * match-all-frames.cpp
+ * fvsdk-match-video-to-video-allframes.cpp
  *
  *  Created on: 11.10.2014
  *      Author: Patrik Huber
  *
  * Example:
- * match-all-frames ...
+ * match-all-frames -s "Z:/datasets/multiview02/PaSC/Protocol/PaSC_20130611/PaSC/metadata/sigsets/pasc_video_handheld.xml" -f "Z:\FRonPaSC\patrik\video_handheld_fvsdk_allFrames_vs_allFrames\FIRs"
  *   
  */
 
@@ -14,6 +14,7 @@
 #include <iostream>
 #include <fstream>
 #include <random>
+#include <numeric>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -36,6 +37,9 @@
 #include "boost/serialization/optional.hpp"
 #include "boost/serialization/utility.hpp"
 
+#include "frsdk/enroll.h"
+#include "frsdk/match.h"
+
 #include "imageio/MatSerialization.hpp"
 #include "facerecognition/pasc.hpp"
 #include "facerecognition/utils.hpp"
@@ -44,6 +48,7 @@
 #include "logging/LoggerFactory.hpp"
 
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 using logging::Logger;
 using logging::LoggerFactory;
 using logging::LogLevel;
@@ -70,10 +75,9 @@ int main(int argc, char *argv[])
 	#endif
 	
 	string verboseLevelConsole;
-	path inputDirectoryQueryVideos, inputDirectoryTargetVideos;
-	path querySigset, targetSigset;
-	path queryLandmarks;
-	path outputPath;
+	path firDirectory;
+	path sigsetFile;
+	path outputFile;
 	path fvsdkConfig;
 
 	try {
@@ -83,18 +87,12 @@ int main(int argc, char *argv[])
 				"produce help message")
 			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
 				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
-			("query-sigset,q", po::value<path>(&querySigset)->required(),
-				  "PaSC video training query sigset")
-			("query-path,r", po::value<path>(&inputDirectoryQueryVideos)->required(),
-				"path to the training videos")
-			("query-landmarks,l", po::value<path>(&queryLandmarks)->required(),
-				"landmarks for the training videos in boost::serialization text format")
-			("target-sigset,t", po::value<path>(&targetSigset)->required(),
-				"PaSC still training target sigset")
-			("target-path,u", po::value<path>(&inputDirectoryTargetVideos)->required(),
-				"path to the training still images")
-			("output,o", po::value<path>(&outputPath)->default_value("."),
-				"path to an output folder")
+			("sigset,s", po::value<path>(&sigsetFile)->required(),
+				  "PaSC video sigset. Used as query and target.")
+			("firs,f", po::value<path>(&firDirectory)->required(),
+				"path to the pre-enroled FIRs")
+			("output,o", po::value<path>(&outputFile)->default_value("./output.csv"),
+				"output similarity matrix")
 			("fvsdk-config,c", po::value<path>(&fvsdkConfig)->default_value(R"(C:\FVSDK_8_9_5\etc\frsdk.cfg)"),
 				"path to frsdk.cfg. Usually something like C:\\FVSDK_8_9_5\\etc\\frsdk.cfg")
 		;
@@ -134,106 +132,139 @@ int main(int argc, char *argv[])
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
-	if (!boost::filesystem::exists(inputDirectoryQueryVideos)) {
-		appLogger.error("The given input video directory doesn't exist. Aborting.");
+	if (!boost::filesystem::exists(firDirectory)) {
+		appLogger.error("The given input FIRs directory doesn't exist. Aborting.");
 		return EXIT_FAILURE;
 	}
-	if (!boost::filesystem::exists(inputDirectoryTargetVideos)) {
-		appLogger.error("The given input stills directory doesn't exist. Aborting.");
-		return EXIT_FAILURE;
-	}
-
-	// Read the video detections metadata (eyes, face-coords):
-	vector<facerecognition::PascVideoDetection> pascVideoDetections;
-	{
-		std::ifstream ifs(queryLandmarks.string());
-		boost::archive::text_iarchive ia(ifs); // binary_iarchive
-		ia >> pascVideoDetections;
-	} // archive and stream closed when destructors are called
-
-	// We would read the still images detection metadata (eyes, face-coords) here, but it's not provided with PaSC.
-	// Todo: Try with and without the 5 Cog LMs
 
 	// Read the training-video xml sigset and the training-still sigset to get the subject-id metadata:
-	auto videoQuerySet = facerecognition::utils::readPascSigset(querySigset, true);
-	auto videoTargetSet = facerecognition::utils::readPascSigset(targetSigset, true);
+	auto videoSigset = facerecognition::utils::readPascSigset(sigsetFile, true);
 
-	// Create the output directory if it doesn't exist yet:
-	if (!boost::filesystem::exists(outputPath)) {
-		boost::filesystem::create_directory(outputPath);
-	}
-	
-	facerecognition::FaceVacsEngine faceRecEngine(fvsdkConfig, "./tmp_fvsdk");
+	facerecognition::FaceVacsEngine faceRecEngine(fvsdkConfig, "./tmp_fvsdk"); // temp-dir not needed, we only match
+	auto engineCfg = faceRecEngine.getConfigurationInstance();
+	auto firBuilder = std::unique_ptr<FRsdk::FIRBuilder>(new FRsdk::FIRBuilder(*engineCfg.get()));
+	auto matchingEngine = std::unique_ptr<FRsdk::FacialMatchingEngine>(new FRsdk::FacialMatchingEngine(*engineCfg.get()));
 
-	//auto& queryVideo = videoQuerySet[184];
-	for (auto& queryVideo : videoQuerySet)
+	Mat fullSimilarityMatrix = Mat::zeros(videoSigset.size(), videoSigset.size(), CV_32FC1);
+	// Later on, targetFirFiles and queryFirFiles could be empty if no frame of a video could be
+	// enroled. We'll just skip over them and leave these entries 0.
+
+	// Preload all FIRs, i.e. only ever read all of them once, for speed (profiling showed bottleneck):
+	// We can only pre-select 14. 14*1401 <= 20'000 max allowed FIR instances.
+	//std::map<string, FRsdk::FIR> firs;
+	std::map<string, vector<std::pair<string, FRsdk::FIR>>> firs;
+	for (size_t q = 0; q < videoSigset.size(); ++q)
 	{
-		auto queryVideoName = inputDirectoryQueryVideos / queryVideo.dataPath;
-		if (!boost::filesystem::exists(queryVideoName)) {
-			appLogger.info("Found a video in the query sigset that doesn't exist in the filesystem. Skipping it.");
-			continue; // We have 5 videos in the video-training-sigset that don't exist in the database
+		//if (q > 2) {
+		//	break;
+		//}
+		appLogger.info("Loading FIRs of video " + std::to_string(q + 1) + " of " + std::to_string(videoSigset.size()) + "...");
+		auto queryVideoFirDirectory = firDirectory / videoSigset[q].dataPath.stem();
+		if (!boost::filesystem::exists(queryVideoFirDirectory)) {
+			appLogger.info("No FIRs for this query video. No frames could be enrolled.");
+			throw std::runtime_error("Does this happen? I think the enrol app always creates the folder?");
 		}
-		for (auto& targetVideo : videoTargetSet)
-		{
-			auto targetVideoName = inputDirectoryTargetVideos / targetVideo.dataPath;
-			if (!boost::filesystem::exists(targetVideoName)) {
-				appLogger.info("Found a video in the target sigset that doesn't exist in the filesystem. Skipping it.");
-				continue; // We have 5 videos in the video-training-sigset that don't exist in the database
+		vector<path> queryFirFiles;
+		std::copy(fs::directory_iterator(queryVideoFirDirectory), fs::directory_iterator(), std::back_inserter(queryFirFiles));
+
+		int numFirsPerVideo = 2; // max 14 for <= 20'000 FIRs
+		vector<size_t> randomIndices(queryFirFiles.size());
+		std::iota(begin(randomIndices), end(randomIndices), 0);
+		std::random_device rd;
+		std::mt19937 g(rd());
+		std::shuffle(begin(randomIndices), end(randomIndices), g);
+		randomIndices.resize(numFirsPerVideo);
+		
+		vector<std::pair<string, FRsdk::FIR>> firsThisVideo;
+		//for (auto& firPath : queryFirFiles) {
+		for (size_t i = 0; i < randomIndices.size(); ++i) {
+			std::ifstream firIn(queryFirFiles[randomIndices[i]].string(), std::ios::in | std::ios::binary);
+			if (firIn.is_open() && firIn.good()) {
+				firsThisVideo.push_back(std::make_pair(queryFirFiles[randomIndices[i]].stem().string(), firBuilder->build(firIn)));
+				//population->append(fir, firPath.stem().string());
+				// extract & push back frame num:
+				//populationIdentifiers.emplace_back(firPath.stem().string());
 			}
+		}
 
-			// Enrol all the target video frames as gallery. Then, match every query frame against it.
-			auto targetFrames = facerecognition::utils::getFrames(targetVideoName);
-			//videoTargetSet.resize(100); // 1000 = FIR limit atm
-			//faceRecEngine.enrollGallery(videoTargetSet, inputDirectoryTargetVideos);
-			//targetFrames.resize(3);
-			faceRecEngine.enrollGallery(targetFrames, targetVideoName.stem());
-
-			auto queryFrames = facerecognition::utils::getFrames(queryVideoName);
-
-			path scoreOutputFile = outputPath / queryVideoName.filename().stem();
-			scoreOutputFile += "-vs-" + targetVideoName.filename().stem().string();
-			scoreOutputFile.replace_extension(".txt");
-			std::ofstream out(scoreOutputFile.string());
-			facerecognition::utils::VideoScore videoScore;
-
-			for (size_t frameNum = 0; frameNum < queryFrames.size(); ++frameNum)
-			{
-				appLogger.debug("Processing frame " + std::to_string(frameNum));
-
-				string frameName = facerecognition::getPascFrameName(queryVideo.dataPath, frameNum + 1); // 184 is a good test-video and it's in the first 100 gallery
-				auto recognitionScores = faceRecEngine.matchAll(queryFrames[frameNum], frameName, cv::Vec2f(), cv::Vec2f());
-
-				// For the currently selected video, partition the target set. The distributions don't change each frame, whole video has the same FaceRecord.
-				auto querySubject = queryVideo.subjectId;
-				// Note/Warning: Ok this doesn't work atm as the 'recognitionScores' is missing the subject id. But all pairs of a video are either positive or negative so it doesn't matter so much.
-				auto bound = std::partition(begin(recognitionScores), end(recognitionScores), [querySubject](std::pair<facerecognition::FaceRecord, float>& target) { return target.first.subjectId == querySubject; });
-				// begin to bound = positive pairs, rest = negative
-				auto numPositivePairs = std::distance(begin(recognitionScores), bound);
-				auto numNegativePairs = std::distance(bound, end(recognitionScores));
-
-				videoScore.scores.push_back(recognitionScores);
-
-				out << numPositivePairs << ",";
-				out << numNegativePairs << ",";
-
-				for (auto iter = begin(recognitionScores); iter != bound; ++iter) {
-					out << iter->first.dataPath.stem().string() << "," << iter->second << ",";
-				}
-				for (auto iter = bound; iter != end(recognitionScores); ++iter) {
-					out << iter->first.dataPath.stem().string() << "," << iter->second << ",";
-				}
-				out << endl;
-			}
-			out.close();
-			// save videoScore
-			scoreOutputFile.replace_extension(".bs.txt");
-			std::ofstream outSer(scoreOutputFile.string());
-			{ // use scope to ensure archive goes out of scope before stream
-				boost::archive::text_oarchive oa(outSer);
-				oa << videoScore;
-			}
-			outSer.close();
-		} // end for over all target videos
+		firs.emplace(videoSigset[q].dataPath.stem().string(), firsThisVideo);
 	}
+
+	for (size_t q = 0; q < videoSigset.size(); ++q)
+	{
+		appLogger.info("Matching query video " + std::to_string(q + 1) + " of " + std::to_string(videoSigset.size()) + "...");
+		auto queryVideoFirDirectory = firDirectory / videoSigset[q].dataPath.stem();
+		if (!boost::filesystem::exists(queryVideoFirDirectory)) {
+			appLogger.info("No FIRs for this query video. No frames could be enrolled. Setting every score to 0.0.");
+			throw std::runtime_error("Does this happen? I think the enrol app always creates the folder?");
+		}
+		//vector<path> queryFirFiles;
+		//std::copy(fs::directory_iterator(queryVideoFirDirectory), fs::directory_iterator(), std::back_inserter(queryFirFiles));
+
+		for (size_t t = q; t < videoSigset.size(); ++t) // start at t = q to only match the upper diagonal (scores are symmetric)
+		{
+			appLogger.info("... against target video " + std::to_string(t + 1) + " of " + std::to_string(videoSigset.size()));
+			auto targetVideoFirDirectory = firDirectory / videoSigset[t].dataPath.stem();
+			if (!boost::filesystem::exists(targetVideoFirDirectory)) {
+				appLogger.info("No FIRs for this target video. No frames could be enrolled. Setting every score to 0.0.");
+				throw std::runtime_error("Does this happen? I think the enrol app always creates the folder?");
+			}
+
+			// Read in all FIRs, with frame-number, put in gallery:
+			// We extract the frame-number too, but only for informational purposes (e.g. to be able to visually inspect it)
+			//vector<path> targetFirFiles;
+			//std::copy(fs::directory_iterator(targetVideoFirDirectory), fs::directory_iterator(), std::back_inserter(targetFirFiles));
+
+			// Match every query frame against every target frame.
+			// We do this by enroling all target frames as gallery:
+			auto population = std::unique_ptr<FRsdk::Population>(new FRsdk::Population(*engineCfg.get()));
+			vector<string> populationIdentifiers;
+			auto targetFirsThisVideo = firs.find(videoSigset[t].dataPath.stem().string()); // pre-loaded
+			//for (auto& firPath : targetFirFiles) {
+			for (auto& targetFir : targetFirsThisVideo->second) {
+				//std::ifstream firIn(targetFir.first, std::ios::in | std::ios::binary);
+				//if (firIn.is_open() && firIn.good()) {
+					//auto fir = firBuilder->build(firIn);
+					//population->append(fir, path(targetFir.first).stem().string());
+					population->append(targetFir.second, targetFir.first);
+					// extract & push back frame num:
+					populationIdentifiers.emplace_back(targetFir.first);
+				//}
+			}
+			// For every query frame:
+			typedef std::tuple<string, string, float> MatchingPair; // queryFrame, targetFrame, score
+			vector<MatchingPair> allScores;
+			auto queryFirsThisVideo = firs.find(videoSigset[q].dataPath.stem().string()); // pre-loaded
+			//for (auto& queryFrameFirPath : queryFirFiles) {
+			for (auto& queryFir : queryFirsThisVideo->second) {
+				// Match against gallery (=all target frames)
+				//std::ifstream firStream(queryFrameFirPath.string(), std::ios::in | std::ios::binary);
+				//FRsdk::FIR queryFrameFir = firBuilder->build(firStream);
+				//FRsdk::CountedPtr<FRsdk::Scores> scores = matchingEngine->compare(queryFrameFir, *population);
+				FRsdk::CountedPtr<FRsdk::Scores> scores = matchingEngine->compare(queryFir.second, *population);
+				// Add all scores for this query frame as tuple to the allScores vector:
+				int ele = 0;
+				for (auto s : *scores) {
+					allScores.emplace_back(std::make_tuple(queryFir.first, populationIdentifiers[ele], s));
+					++ele;
+				}
+			}
+			// We now got all scores of all query frames of one video against all target frames of a target video.
+			// Do some selection magic (or save result?)
+			// Note/Todo: allScores could be empty?
+			if (allScores.size() != 0) {
+				auto maxScoreIter = std::max_element(begin(allScores), end(allScores), [](const MatchingPair& a, const MatchingPair& b) {return (std::get<2>(a) < std::get<2>(b)); });
+				//auto maxScoreIndex = std::distance(begin(allScores), maxScoreIter);
+				fullSimilarityMatrix.at<float>(q, t) = std::get<2>(*maxScoreIter);
+				fullSimilarityMatrix.at<float>(t, q) = std::get<2>(*maxScoreIter); // fill the lower diagonal - scores are symmetric
+			}
+			// otherwise, leave entries at 0 (initialised value)
+		} // end for over all target videos
+	} // end for over all query videos
+
+	appLogger.info("Finished filling the full similarity matrix. Saving as CSV...");
+	facerecognition::utils::saveSimilarityMatrixAsCSV(fullSimilarityMatrix, outputFile);
+	appLogger.info("Successfully saved PaSC CSV similarity matrix.");
+
 	return EXIT_SUCCESS;
 }

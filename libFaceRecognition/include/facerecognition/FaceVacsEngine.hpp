@@ -96,12 +96,14 @@ public:
 
 private:
 	boost::filesystem::path tempDir;
-	std::unique_ptr<FRsdk::Configuration> cfg; // static? (recommendation by fvsdk doc)
+	std::shared_ptr<FRsdk::Configuration> cfg; // static? (recommendation by fvsdk doc)
 	std::unique_ptr<FRsdk::FIRBuilder> firBuilder;
 	std::unique_ptr<FRsdk::FacialMatchingEngine> me;
 	std::unique_ptr<FRsdk::Population> population; // enrolled gallery FIRs, same order
 public:
 	std::vector<facerecognition::FaceRecord> enrolledGalleryRecords; // We keep this for the subject IDs
+
+	std::shared_ptr<FRsdk::Configuration> getConfigurationInstance() const;
 
 };
 
