@@ -180,8 +180,8 @@ private:
 void enrolImageSet(const std::vector<cv::Mat>& frames, std::shared_ptr<facerecognition::FaceVacsEngine> faceRecEngine, path firPath)
 {
 	FRsdk::SampleSet enrollmentImages;
-	//for (size_t frameNum = 0; frameNum < frames.size(); ++frameNum)
-	for (size_t frameNum = 0; frameNum < 2; ++frameNum)
+	//for (size_t frameNum = 0; frameNum < 2; ++frameNum)
+	for (size_t frameNum = 0; frameNum < frames.size(); ++frameNum)
 	{
 		Loggers->getLogger("app").debug("Processing frame " + std::to_string(frameNum + 1));
 
