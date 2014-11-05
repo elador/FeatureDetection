@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 		vector<path> queryFirFiles;
 		std::copy(fs::directory_iterator(queryVideoFirDirectory), fs::directory_iterator(), std::back_inserter(queryFirFiles));
 
-		int numFirsPerVideo = 2; // max 14 for <= 20'000 FIRs
+		int numFirsPerVideo = 14; // max 14 for <= 20'000 FIRs
 		vector<size_t> randomIndices(queryFirFiles.size());
 		std::iota(begin(randomIndices), end(randomIndices), 0);
 		std::random_device rd;
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
 
 		for (size_t t = q; t < videoSigset.size(); ++t) // start at t = q to only match the upper diagonal (scores are symmetric)
 		{
-			appLogger.info("... against target video " + std::to_string(t + 1) + " of " + std::to_string(videoSigset.size()));
+			//appLogger.info("... against target video " + std::to_string(t + 1) + " of " + std::to_string(videoSigset.size()));
 			auto targetVideoFirDirectory = firDirectory / videoSigset[t].dataPath.stem();
 			if (!boost::filesystem::exists(targetVideoFirDirectory)) {
 				appLogger.info("No FIRs for this target video. No frames could be enrolled. Setting every score to 0.0.");
