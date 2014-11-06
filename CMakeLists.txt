@@ -105,6 +105,7 @@ add_subdirectory(match-videos-single-frames) # Match the best frame of a video (
 
 add_subdirectory(train-deeplearning-matcher-extract)	# Use images, frames or (cropped) patches as input, convert them (e.g. graylevel) or extract features, and then write a boost::serialization file. The files have the same order as in the given sigset.
 add_subdirectory(train-deeplearning-matcher-learn) # Use the data from 'train-deeplearning-matcher-extract' app, create pairs including labels (0 or 1), and use them to learn a neural network for classification.
+add_subdirectory(train-deeplearning-matcher-match) # Match PaSC video-video
 
 # Tools for matching on PaSC, some a bit dated:
 #add_subdirectory(convert-pasc-sigset)		# Convert a PaSC xml sigset to a text file in property tree format, using FaceRecords ==> Use it to read XML, but otherwise, I think I shouldn't use it anymore. (but we used the ptree format to create MultiPIE sigsets)
