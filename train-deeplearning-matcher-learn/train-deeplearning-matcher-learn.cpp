@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 
 	// Prepare the training and test data, i.e. create the pairs:
 	auto trainingQuerySigset = facerecognition::utils::readPascSigset(trainingSigsetFile, true);
-	auto testQuerySigset = facerecognition::utils::readPascSigset(testSigsetFile, true);
+	//auto testQuerySigset = facerecognition::utils::readPascSigset(testSigsetFile, true);
 	
 	// The training data:
 	vector<Mat> trainingFrames;
@@ -139,13 +139,13 @@ int main(int argc, char *argv[])
 		ia >> trainingFrames;
 	}
 	// The test data:
-	vector<Mat> testFrames;
+/*	vector<Mat> testFrames;
 	{
 		std::ifstream ifFrames(testFramesFile.string());
 		boost::archive::text_iarchive ia(ifFrames);
 		ia >> testFrames;
 	}
-
+*/
 	// Build the pairs, which will be the training data:
 	vector<tiny_cnn::vec_t> trainingData; // preallocate?
 	vector<tiny_cnn::label_t> trainingLabels; // preallocate?
@@ -170,13 +170,13 @@ int main(int argc, char *argv[])
 			else {
 				trainingLabels.emplace_back(0);
 			}
-			if (trainingData.size() >= 5000) {
-				break;
-			}
+			//if (trainingData.size() >= 20) {
+			//	break;
+			//}
 		}
 	}
 
-	// Build the pairs, which will be the test data:
+/*	// Build the pairs, which will be the test data:
 	vector<tiny_cnn::vec_t> testData; // preallocate?
 	vector<tiny_cnn::label_t> testLabels; // preallocate?
 	for (int q = 0; q < testQuerySigset.size(); ++q) {
@@ -200,18 +200,18 @@ int main(int argc, char *argv[])
 			else {
 				testLabels.emplace_back(0);
 			}
-			if (testData.size() >= 150000) {
+			if (testData.size() >= 10) {
 				break;
 			}
 		}
 	}
-
+*/
 	// Train NN:
 	// MNIST: data is 28x28. On load, a border of 2 on each side gets added, resulting in 32x32. This is so that the convolution 5x5 window can reach each pixel as center.
 	using namespace tiny_cnn;
 
-	vector<label_t> train_labels, test_labels; // a int from 0 to 9 (MNIST)
-	vector<vec_t> train_images, test_images; // double -1.0 to 1.0
+	vector<label_t> train_labels;// , test_labels; // a int from 0 to 9 (MNIST)
+	vector<vec_t> train_images;// , test_images; // double -1.0 to 1.0
 	// vec_t is a std::vector<float_t>, float_t = double
 
 	// scale the image data from [0, 255] to [-1.0, 1.0]. (later: subtract the mean as well?)
@@ -231,8 +231,8 @@ int main(int argc, char *argv[])
 */
 	train_images = trainingData;
 	train_labels = trainingLabels;
-	test_images = testData;
-	test_labels = trainingLabels;
+	//test_images = testData;
+	//test_labels = trainingLabels;
 
 	typedef network<mse, gradient_descent> CNN;
 	CNN nn;
@@ -296,9 +296,9 @@ int main(int argc, char *argv[])
 	auto on_enumerate_epoch = [&](){
 		std::cout << t.elapsed() << "s elapsed." << std::endl;
 
-		tiny_cnn::result res = nn.test(test_images, test_labels);
+		//tiny_cnn::result res = nn.test(test_images, test_labels);
 
-		std::cout << "LR: " << nn.optimizer().alpha << ", numSuccess/numTotal: " << res.num_success << "/" << res.num_total << std::endl;
+		//std::cout << "LR: " << nn.optimizer().alpha << ", numSuccess/numTotal: " << res.num_success << "/" << res.num_total << std::endl;
 
 		nn.optimizer().alpha *= 0.85; // decay learning rate
 		nn.optimizer().alpha = std::max(0.00001, nn.optimizer().alpha);
@@ -323,17 +323,21 @@ int main(int argc, char *argv[])
 
 	// training:
 	// 20 = epochs. = For how many iterations to train the NN for. After each, we do testing.
-	nn.train(train_images, train_labels, minibatch_size, 20, on_enumerate_minibatch, on_enumerate_epoch);
+	//vector<vec_t> testl;
+	nn.train(train_images, train_labels, minibatch_size, 5, on_enumerate_minibatch, on_enumerate_epoch);
+	//nn.train(train_images, train_labels, minibatch_size, 20, on_enumerate_minibatch, on_enumerate_epoch);
 
 	std::cout << "end training." << std::endl;
 
 	// test and show results
-	nn.test(test_images, test_labels).print_detail(std::cout);
+	//nn.test(test_images, test_labels).print_detail(std::cout);
 
 	// save networks
-	std::ofstream ofs("LeNet-weights");
+	std::ofstream ofs("LeNet-weights_100mb_5ep_declr_alltr");
 	ofs << C1 << S2 << C3 << S4 << C5 << F6;
 	ofs.close();
+
+	//nn.predict()
 
 	// Save it:
 
