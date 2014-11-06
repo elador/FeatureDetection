@@ -163,6 +163,7 @@ int main(int argc, char *argv[])
 			if (trainingSubjectIds[q] == trainingSubjectIds[t]) {
 				trainingLabels.emplace_back(1);
 				++positivePairs;
+				trainingData.emplace_back(data);
 			}
 			else {
 				std::random_device rd;
@@ -172,9 +173,9 @@ int main(int argc, char *argv[])
 				if (num <= 0.03) {
 					trainingLabels.emplace_back(0);
 					++negativePairs;
+					trainingData.emplace_back(data);
 				}
 			}
-			trainingData.emplace_back(data);
 			//if (trainingData.size() >= 20) {
 			//	break;
 			//}
