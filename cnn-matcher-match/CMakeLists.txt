@@ -17,10 +17,7 @@ else(Boost_FOUND)
 endif()
 
 set(TinyCNN_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/3rdparty/tiny-cnn/include")
-#add_definitions(-DCNN_USE_AVX)
 add_definitions(-DCNN_USE_SSE)
-#add_definitions(-DCNN_USE_TBB)
-#add_definitions(-DCNN_TASK_SIZE 16) # 8 is default (in tiny-cnn/include/config.h). Which one takes precedence?
 
 # Source and header files:
 set(SOURCE

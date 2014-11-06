@@ -43,9 +43,9 @@ endif()
 #add_subdirectory(libDetection)			# Sliding-window detection, Skin detection (Note: Do we use it anymore? Yes, Condensation depends on it)
 #add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 
-add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
-add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes
-add_subdirectory(libFitting)			# Camera (Pose) estimation and shape-fitting
+#add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
+#add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes
+#add_subdirectory(libFitting)			# Camera (Pose) estimation and shape-fitting
 #add_subdirectory(libSupervisedDescent)	# A non-parametric model for landmark detection. Uses the supervised descent method.
 add_subdirectory(libFaceRecognition)	# Utility library for face recognition experiments, to work with databases, face-record, etc.
 
@@ -68,10 +68,10 @@ add_subdirectory(libFaceRecognition)	# Utility library for face recognition expe
 #add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
 
 # 3DMM fitting:
-add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
-add_subdirectory(fittingRenderer)	# App to render fitting results
-add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
-add_subdirectory(compareIsomaps)	# Compare isomaps (extracted textures)
+#add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
+#add_subdirectory(fittingRenderer)	# App to render fitting results
+#add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
+#add_subdirectory(compareIsomaps)	# Compare isomaps (extracted textures)
 
 # Landmark tools:
 #add_subdirectory(visualise-landmarks)	# Simple app to read landmarks and images and display them
@@ -79,10 +79,10 @@ add_subdirectory(compareIsomaps)	# Compare isomaps (extracted textures)
 #add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks and perform an evaluation.
 
 # Deep learning based frame selection:
-add_subdirectory(train-frameselect-extract)	# Extract frames and label information for training. Random subset of vids & frames. With random selection, and (partly) negative patches. Also runs FR engine. Unfinished.
-add_subdirectory(train-frameselect-extract-all)	# Input: Scores for every frame and the frames. Extracts frames and label information for training. All vids, all frames. Store as boost::serialization. Newest implementation.
-add_subdirectory(train-frameselect-learn)	# Train tiny-cnn using the boost::serialization patches.
-add_subdirectory(frames-labels-to-caffe)	# Convert boost::serialization file with patches and labels to Caffe format (currently: images. Later, I might add LevelDB/LMDB/HDF5)
+#add_subdirectory(train-frameselect-extract)	# Extract frames and label information for training. Random subset of vids & frames. With random selection, and (partly) negative patches. Also runs FR engine. Unfinished.
+#add_subdirectory(train-frameselect-extract-all)	# Input: Scores for every frame and the frames. Extracts frames and label information for training. All vids, all frames. Store as boost::serialization. Newest implementation.
+#add_subdirectory(train-frameselect-learn)	# Train tiny-cnn using the boost::serialization patches.
+#add_subdirectory(frames-labels-to-caffe)	# Convert boost::serialization file with patches and labels to Caffe format (currently: images. Later, I might add LevelDB/LMDB/HDF5)
 
 # Simple frame selection:
 add_subdirectory(frameselect-random)		# Extracts random frames from a video. Can be used as a baseline.

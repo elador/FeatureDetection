@@ -69,3 +69,4 @@ set(WITH_LIBLINEAR_CLASSIFIER OFF CACHE BOOL "Enables support for loading libLin
 set(WITH_RENDER_QOPENGL OFF CACHE BOOL "Enables support for a QOpenGL-based renderer in addition to the software renderer and a few interop functions (requires Qt5)" FORCE)
 set(WITH_MORPHABLEMODEL_HDF5 OFF CACHE BOOL "Enables support for loading statismo h5 Morphable Models (requires HDF5)" FORCE)
 set(WITH_FITTING_LIBEIGEN ON CACHE BOOL "Uses libEigen for linear algebra operations in the fitting instead of OpenCV." FORCE)
+set(WITH_TINYCNN_TBB OFF CACHE BOOL "Compiles the tiny-cnn headers with Intel TBB support. Massively speeds up training." FORCE)
