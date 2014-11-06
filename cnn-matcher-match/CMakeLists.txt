@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME train-deeplearning-matcher-match)
+set(SUBPROJECT_NAME cnn-matcher-match)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -24,7 +24,7 @@ add_definitions(-DCNN_USE_SSE)
 
 # Source and header files:
 set(SOURCE
-	train-deeplearning-matcher-match.cpp
+	cnn-matcher-match.cpp
 )
 
 set(HEADERS

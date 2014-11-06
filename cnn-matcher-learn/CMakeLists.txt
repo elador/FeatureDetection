@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME train-deeplearning-matcher-learn)
+set(SUBPROJECT_NAME cnn-matcher-learn)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -30,7 +30,7 @@ set_target_properties(tbb PROPERTIES IMPORTED_LOCATION /usr/lib/libtbb.so.2)
 
 # Source and header files:
 set(SOURCE
-	train-deeplearning-matcher-learn.cpp
+	cnn-matcher-learn.cpp
 )
 
 set(HEADERS

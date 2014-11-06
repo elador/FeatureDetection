@@ -74,9 +74,9 @@ int main(int argc, char *argv[])
 				"produce help message")
 			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
 				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
-			("query-sigset,q", po::value<path>(&sigsetFile)->required(),
+			("sigset,s", po::value<path>(&sigsetFile)->required(),
 				  "PaSC video sigset")
-			("query-path,r", po::value<path>(&inputPatchesDirectory)->required(),
+			("data-path,d", po::value<path>(&inputPatchesDirectory)->required(),
 				"path to video frames, from sigset, cropped")
 			("output,o", po::value<path>(&outputFile)->default_value("."),
 				"output file for the data, in boost::serialization text format. Folder needs to exist.")
