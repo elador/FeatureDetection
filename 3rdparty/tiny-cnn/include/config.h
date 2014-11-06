@@ -45,4 +45,4 @@
  * number of task in batch-gradient-descent.
  * @todo automatic optimization
  */
-#define CNN_TASK_SIZE 8
+#define CNN_TASK_SIZE 32

@@ -284,7 +284,7 @@ int main(int argc, char *argv[])
 	nn.add(&C5);
 	nn.add(&F6);
 
-	std::cout << "start learning" << std::endl;
+	std::cout << "start learning with " << train_images.size() << " training samples..." <<  std::endl;
 
 	boost::progress_display disp(train_images.size());
 	boost::timer t;

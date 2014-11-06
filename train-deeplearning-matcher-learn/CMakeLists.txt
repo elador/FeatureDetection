@@ -19,8 +19,14 @@ endif()
 set(TinyCNN_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/3rdparty/tiny-cnn/include")
 #add_definitions(-DCNN_USE_AVX)
 add_definitions(-DCNN_USE_SSE)
-#add_definitions(-DCNN_USE_TBB)
+add_definitions(-DCNN_USE_TBB)
 #add_definitions(-DCNN_TASK_SIZE 16) # 8 is default (in tiny-cnn/include/config.h). Which one takes precedence?
+
+# Your-external "mylib"
+add_library(tbb SHARED IMPORTED )
+# You can define two import-locations: one for debug and one for release.
+set_target_properties(tbb PROPERTIES IMPORTED_LOCATION /usr/lib/libtbb.so.2)
+
 
 # Source and header files:
 set(SOURCE
@@ -40,4 +46,4 @@ include_directories(${ImageIO_SOURCE_DIR}/include)
 include_directories(${FaceRecognition_SOURCE_DIR}/include)
 
 # Make the app depend on the libraries
-target_link_libraries(${SUBPROJECT_NAME} FaceRecognition ImageIO Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(${SUBPROJECT_NAME} FaceRecognition ImageIO Logging ${Boost_LIBRARIES} ${OpenCV_LIBS} tbb)
