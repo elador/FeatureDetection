@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 	// NN definition:
 	// MNIST: data is 28x28. On load, a border of 2 on each side gets added, resulting in 32x32. This is so that the convolution 5x5 window can reach each pixel as center.
 	using namespace tiny_cnn;
-	typedef network<mse, gradient_descent> CNN;
+	typedef network<mse, gradient_descent_levenberg_marquardt> CNN;
 	CNN nn;
 	// First layer:
 	int in_width = 32;
@@ -149,9 +149,9 @@ int main(int argc, char *argv[])
 	// in: 32x32x1, out: 28x28x6
 	// param_size: 150 w + 6 b; 5*5 window = 25, 25 * 6 chan = 150. Plus 1 bias for each chan = 156.
 	// connection_size: 150 * 784 + 6 * 784; (28*28=784)
-	convolutional_layer<CNN, activation::rectified_linear> C1(in_width, in_height, window_size, in_channels, out_channels);
+	convolutional_layer<CNN, activation::tan_h> C1(in_width, in_height, window_size, in_channels, out_channels);
 	// in: 28x28x6, out: 14x14x6
-	average_pooling_layer<CNN, activation::rectified_linear> S2(28, 28, 6, 2); // int in_width, int in_height, int in_channels, int pooling_size
+	average_pooling_layer<CNN, activation::tan_h> S2(28, 28, 6, 2); // int in_width, int in_height, int in_channels, int pooling_size
 
 	// connection table [Y.Lecun, 1998 Table.1]
 #define O true
