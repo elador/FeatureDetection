@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
 		// Convert to float/double, scale to [-1.0, 1.0]
 		patch.convertTo(patch, CV_64FC1, 1.0 / 127.5, -1.0);
 
-		subjectIds.emplace_back(queryIter->first.stem().string());
+		subjectIds.emplace_back(s.subjectId);
 		data.push_back(patch);
 	}
 	// Calculate the mean

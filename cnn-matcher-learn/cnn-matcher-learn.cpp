@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
 	// training:
 	// 20 = epochs. = For how many iterations to train the NN for. After each, we do testing.
 	//vector<vec_t> testl;
-	nn.train(train_images, train_labels, minibatch_size, 5, on_enumerate_minibatch, on_enumerate_epoch);
+	nn.train(train_images, train_labels, minibatch_size, 2, on_enumerate_minibatch, on_enumerate_epoch);
 	//nn.train(train_images, train_labels, minibatch_size, 20, on_enumerate_minibatch, on_enumerate_epoch);
 
 	std::cout << "end training." << std::endl;
