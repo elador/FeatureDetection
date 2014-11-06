@@ -177,8 +177,11 @@ private:
 	bool firvalid;
 };
 
-void enrolImageSet(const std::vector<cv::Mat>& frames, std::shared_ptr<facerecognition::FaceVacsEngine> faceRecEngine, path firPath)
+void enrolImageSet(path videoName, std::shared_ptr<facerecognition::FaceVacsEngine> faceRecEngine, path firPath)
 {
+
+	auto frames = facerecognition::utils::getFrames(videoName);
+
 	FRsdk::SampleSet enrollmentImages;
 	//for (size_t frameNum = 0; frameNum < 2; ++frameNum)
 	for (size_t frameNum = 0; frameNum < frames.size(); ++frameNum)
@@ -325,11 +328,10 @@ int main(int argc, char *argv[])
 			appLogger.info("Found a video in the query sigset that doesn't exist in the filesystem. Skipping it.");
 			continue; // We have 5 videos in the video-training-sigset that don't exist in the database
 		}
-		auto frames = facerecognition::utils::getFrames(videoName);
 
 		path firPath = outputPath / video.dataPath;
 		firPath.replace_extension(".fir");
-		threads.emplace_back(threadPool.enqueue(enrolImageSet, frames, faceRecEngine, firPath));
+		threads.emplace_back(threadPool.enqueue(enrolImageSet, videoName, faceRecEngine, firPath));
 		//enrolImageSet(frames, faceRecEngine, firPath);
 
 		/*
