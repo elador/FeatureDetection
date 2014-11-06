@@ -1,21 +1,16 @@
 /*
- * train-deeplearning-matcher-learn.cpp
+ * cnn-matcher-learn.cpp
  *
  *  Created on: 01.11.2014
  *      Author: Patrik Huber
   *
  * Example:
- * train-deeplearning-matcher ...
+ * ./cnn-matcher-learn -d "C:\Users\Patrik\Documents\GitHub\build\cnn-matcher-extract-trainingdata\training_video_best1_cropped_aa.bs.txt"
  *   
  */
-
-#include <chrono>
 #include <memory>
 #include <iostream>
 #include <fstream>
-#include <iomanip>
-#include <random>
-#include <stdexcept>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -31,6 +26,8 @@
 #include "boost/lexical_cast.hpp"
 #include "boost/archive/text_iarchive.hpp"
 #include "boost/serialization/vector.hpp"
+#include "boost/serialization/string.hpp"
+#include "boost/serialization/utility.hpp"
 
 #include <boost/timer.hpp>
 #include <boost/progress.hpp>
@@ -52,8 +49,6 @@ using boost::filesystem::path;
 using boost::lexical_cast;
 using std::cout;
 using std::endl;
-using std::make_shared;
-using std::shared_ptr;
 using std::vector;
 using std::string;
 
@@ -65,8 +60,8 @@ int main(int argc, char *argv[])
 	#endif
 	
 	string verboseLevelConsole;
-	path trainingFramesFile, testFramesFile;
-	path trainingSigsetFile, testSigsetFile;
+	path trainingFramesFile;
+	//path testFramesFile, testSigsetFile;
 	path outputPath;
 
 	try {
@@ -76,14 +71,12 @@ int main(int argc, char *argv[])
 				"produce help message")
 			("verbose,v", po::value<string>(&verboseLevelConsole)->implicit_value("DEBUG")->default_value("INFO","show messages with INFO loglevel or below."),
 				  "specify the verbosity of the console output: PANIC, ERROR, WARN, INFO, DEBUG or TRACE")
-			("training-data,i", po::value<path>(&trainingFramesFile)->required(),
+			("training-data,d", po::value<path>(&trainingFramesFile)->required(),
 				"input file with training images (extracted frames) in boost::serialization text format")
-			("training-sigset,j", po::value<path>(&trainingSigsetFile)->required(),
-				"PaSC video query sigset, used for building the pairs and labels")
-			("test-data,s", po::value<path>(&testFramesFile)->required(),
-				"input file with test images (extracted frames) in boost::serialization text format")
-			("test-sigset,t", po::value<path>(&testSigsetFile)->required(),
-				"PaSC video query sigset, used for building the pairs and labels")
+//			("test-data,s", po::value<path>(&testFramesFile)->required(),
+//				"input file with test images (extracted frames) in boost::serialization text format")
+//			("test-sigset,t", po::value<path>(&testSigsetFile)->required(),
+//				"PaSC video query sigset, used for building the pairs and labels")
 			("output,o", po::value<path>(&outputPath)->default_value("."),
 				"path to an output folder to save the learned neural network")
 		;
@@ -91,7 +84,7 @@ int main(int argc, char *argv[])
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm); // style(po::command_line_style::unix_style | po::command_line_style::allow_long_disguise)
 		if (vm.count("help")) {
-			cout << "Usage: train-frameselect-learn [options]" << std::endl;
+			cout << "Usage: cnn-matcher-learn [options]" << std::endl;
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
@@ -116,8 +109,8 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	
-	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Loggers->getLogger("app").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("imageio").addAppender(std::make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("app").addAppender(std::make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("app");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
@@ -128,15 +121,19 @@ int main(int argc, char *argv[])
 	}
 
 	// Prepare the training and test data, i.e. create the pairs:
-	auto trainingQuerySigset = facerecognition::utils::readPascSigset(trainingSigsetFile, true);
+	//auto trainingQuerySigset = facerecognition::utils::readPascSigset(trainingSigsetFile, true);
 	//auto testQuerySigset = facerecognition::utils::readPascSigset(testSigsetFile, true);
 	
 	// The training data:
-	vector<Mat> trainingFrames;
+	Mat trainingFrames;
+	vector<string> trainingSubjectIds;
 	{
+		std::pair<vector<string>, Mat> data;
 		std::ifstream ifFrames(trainingFramesFile.string());
 		boost::archive::text_iarchive ia(ifFrames);
-		ia >> trainingFrames;
+		ia >> data;
+		trainingSubjectIds = data.first;
+		trainingFrames = data.second;
 	}
 	// The test data:
 /*	vector<Mat> testFrames;
@@ -149,22 +146,20 @@ int main(int argc, char *argv[])
 	// Build the pairs, which will be the training data:
 	vector<tiny_cnn::vec_t> trainingData; // preallocate?
 	vector<tiny_cnn::label_t> trainingLabels; // preallocate?
-	for (int q = 0; q < trainingQuerySigset.size(); ++q) {
+	for (int q = 0; q < trainingSubjectIds.size(); ++q) {
 		// Let's see that we only get the upper diagonal, or we'll have double pairs in it.
 		// Okay actually we want that? It will be [a b] and [b a]
-		for (int t = 0; t < trainingQuerySigset.size(); ++t) { // We might want to loop over the target sigset
-			if (trainingFrames[q].empty() || trainingFrames[t].empty()) {
-				continue;
-			}
+		for (int t = 0; t < trainingSubjectIds.size(); ++t)
+		{
 			Mat datum; // preallocate? No, because we don't want to actually copy the data
-			cv::hconcat(trainingFrames[q], trainingFrames[t], datum); // Does this copy the data? We shouldn't!
+			cv::hconcat(trainingFrames.row(q), trainingFrames.row(t), datum); // Does this copy the data? We shouldn't!
 			tiny_cnn::vec_t data; // vector<double>
 			data.reserve(datum.cols);
 			for (int i = 0; i < datum.cols; ++i) {
-				data.emplace_back(datum.at<uchar>(0, i));
+				data.emplace_back(datum.at<double>(0, i));
 			}
 			trainingData.emplace_back(data);
-			if (trainingQuerySigset[q].subjectId == trainingQuerySigset[t].subjectId) {
+			if (trainingSubjectIds[q] == trainingSubjectIds[t]) {
 				trainingLabels.emplace_back(1);
 			}
 			else {
@@ -330,7 +325,7 @@ int main(int argc, char *argv[])
 	std::cout << "end training." << std::endl;
 
 	// test and show results
-	//nn.test(test_images, test_labels).print_detail(std::cout);
+	nn.test(train_images, train_labels).print_detail(std::cout);
 
 	// save networks
 	std::ofstream ofs("LeNet-weights_100mb_5ep_declr_alltr");
