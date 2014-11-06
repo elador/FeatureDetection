@@ -144,6 +144,8 @@ int main(int argc, char *argv[])
 	}
 */
 	// Build the pairs, which will be the training data:
+	int positivePairs = 0;
+	int negativePairs = 0;
 	vector<tiny_cnn::vec_t> trainingData; // preallocate?
 	vector<tiny_cnn::label_t> trainingLabels; // preallocate?
 	for (int q = 0; q < trainingSubjectIds.size(); ++q) {
@@ -158,18 +160,27 @@ int main(int argc, char *argv[])
 			for (int i = 0; i < datum.cols; ++i) {
 				data.emplace_back(datum.at<double>(0, i));
 			}
-			trainingData.emplace_back(data);
 			if (trainingSubjectIds[q] == trainingSubjectIds[t]) {
 				trainingLabels.emplace_back(1);
+				++positivePairs;
 			}
 			else {
-				trainingLabels.emplace_back(0);
+				std::random_device rd;
+				std::mt19937 mt(rd());
+				std::uniform_real_distribution<> dist;
+				auto num = dist(mt);
+				if (num <= 0.03) {
+					trainingLabels.emplace_back(0);
+					++negativePairs;
+				}
 			}
+			trainingData.emplace_back(data);
 			//if (trainingData.size() >= 20) {
 			//	break;
 			//}
 		}
 	}
+	std::cout << "pos: " << positivePairs << ", neg: " << negativePairs << std::endl;
 
 /*	// Build the pairs, which will be the test data:
 	vector<tiny_cnn::vec_t> testData; // preallocate?
