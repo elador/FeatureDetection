@@ -217,7 +217,8 @@ int main(int argc, char *argv[])
 			tiny_cnn::vec_t out;
 			nn.predict(data, &out);
 			float score;
-			if (out[0] >= out[1]) { // It's class 0 = same
+			// class 0 = not the same, class 1 = the same individual
+			if (out[0] >= out[1]) { // It's class 0, i.e. not the same
 				score = out[0];
 			}
 			else {
