@@ -193,16 +193,17 @@ int main(int argc, char *argv[])
 
 	// Learn SDAE - reduce dim, learn better representation?
 	//auto nn = tiny_cnn::make_mlp<tiny_cnn::mse, tiny_cnn::gradient_descent, tiny_cnn::activation::tan_h>({ 1760, 880, 440, 880, 1760 });
-	typedef tiny_cnn::network<tiny_cnn::mse, tiny_cnn::gradient_descent> net_t;
+	using namespace tiny_cnn;
+	typedef network<mse, gradient_descent> net_t;
 	net_t nn;
-	auto layer_sizes = { 1760, 880, 440, 880, 1760 };
+	auto layer_sizes = { 1760, 500, 1760 };
 	auto first = begin(layer_sizes);
 	auto next = first + 1;
 	auto last = end(layer_sizes);
-	vector<tiny_cnn::layer_base<net_t>*> mlp_layers; // delete them before exiting?
+	vector<layer_base<net_t>*> mlp_layers; // delete them before exiting?
 	int cnt = 0;
 	for (; next != last; ++first, ++next) {
-		mlp_layers.emplace_back(new tiny_cnn::fully_connected_layer<net_t, tiny_cnn::activation::tan_h>(*first, *next));
+		mlp_layers.emplace_back(new fully_connected_layer<net_t, activation::sigmoid>(*first, *next));
 		nn.add(mlp_layers[cnt]);
 		++cnt;
 	}

@@ -87,6 +87,7 @@ add_subdirectory(libFaceRecognition)	# Utility library for face recognition expe
 # Simple frame selection:
 add_subdirectory(frameselect-random)		# Extracts random frames from a video. Can be used as a baseline.
 add_subdirectory(frameselect-simple)		# Rates frames with a simple weighting of blurriness, in-focus-ness, IED, head size.
+add_subdirectory(frameselect-simple-frontal) # Pre-selection of frontal frames, then head-size.
 
 # Face-recognition on PaSC:
 add_subdirectory(convert-pasc-video-metadata-to-bs)	# Convert PaSC video detections and metadata (CSV) to boost::serialization format

@@ -216,6 +216,7 @@ std::vector<std::tuple<cv::Mat, path, float>> selectFrameSimple(path inputDirect
 	auto logger = Loggers->getLogger("frameselect-simple");
 
 	auto frames = facerecognition::utils::getFrames(inputDirectoryVideos / video.dataPath);
+	
 	vector<float> headBoxSizes;
 	vector<float> ieds;
 	vector<float> yaws;
@@ -223,6 +224,7 @@ std::vector<std::tuple<cv::Mat, path, float>> selectFrameSimple(path inputDirect
 	vector<float> laplModif;
 	vector<float> laplVari;
 	vector<int> frameIds;
+	
 	for (int frameNum = 0; frameNum < frames.size(); ++frameNum) {
 		string frameName = facerecognition::getPascFrameName(video.dataPath, frameNum + 1);
 		logger.debug("Processing frame " + frameName);
@@ -261,9 +263,9 @@ std::vector<std::tuple<cv::Mat, path, float>> selectFrameSimple(path inputDirect
 		yaws.emplace_back(landmarks->fpose_y);
 		sharpnesses.emplace_back(sharpnessScoreCanny(croppedFace));
 		frameIds.emplace_back(frameNum);
-
 		laplModif.emplace_back(modifiedLaplacian(croppedFace));
 		laplVari.emplace_back(varianceOfLaplacian(croppedFace));
+		
 		/*{
 			cv::imwrite("out/out_" + std::to_string(frameIds.size() - 1) + "_" + std::to_string(frameNum) + ".png", croppedFace);
 			Mat cannyEdges;
@@ -277,7 +279,6 @@ std::vector<std::tuple<cv::Mat, path, float>> selectFrameSimple(path inputDirect
 	if (headBoxSizes.size() == 0) {
 		// We don't have ANY frame with PaSC landmarks (or we threw it away because it's out of image borders).
 		// Around 25-40 videos for handheld / control.
-		// Instead of outputting the first, we could return 'n' random frames. But we can't make use of them without PittPatt eyes, so...
 		logger.warn("No metadata available for this video, or threw all available frames away.");
 		int idOfBestFrame = 0;
 		cv::Mat bestFrame = frames[idOfBestFrame];
@@ -289,13 +290,55 @@ std::vector<std::tuple<cv::Mat, path, float>> selectFrameSimple(path inputDirect
 		return vector<std::tuple<Mat, path, float>>{ std::make_tuple(bestFrame, bestFrameName, 0.0f) };
 	}
 
-	cv::Mat headBoxScores(getVideoNormalizedHeadBoxScores(headBoxSizes), true); // function returns a temporary, so we need to copy the data
-	cv::Mat interEyeDistanceScores(getVideoNormalizedInterEyeDistanceScores(ieds), true);
-	cv::Mat yawPoseScores(getVideoNormalizedYawPoseScores(yaws), true);
+	//cv::Mat headBoxScores(getVideoNormalizedHeadBoxScores(headBoxSizes), true); // function returns a temporary, so we need to copy the data
+	//cv::Mat interEyeDistanceScores(getVideoNormalizedInterEyeDistanceScores(ieds), true);
+	//cv::Mat yawPoseScores(getVideoNormalizedYawPoseScores(yaws), true);
 	cv::Mat cannySharpnessScores(getVideoNormalizedCannySharpnessScores(sharpnesses), true);
 	cv::Mat modifiedLaplacianInFocusScores(getVideoNormalizedCannySharpnessScores(laplModif), true);
 	cv::Mat varianceOfLaplacianInFocusScores(getVideoNormalizedCannySharpnessScores(laplVari), true);
 	
+	// Finished normalising the individual scores - write into one vector now:
+	struct FrameScore
+	{
+		FrameScore(float frameId, float headBoxSize, float ied, float yaw, float sharpness, float laplModif, float laplVari)
+			: frameId(frameId), headBoxSize(headBoxSize), ied(ied), yaw(yaw), sharpness(sharpness), laplModif(laplModif), laplVari(laplVari)
+		{};
+		int frameId;
+		float headBoxSize;
+		float ied;
+		float yaw;
+		float sharpness;
+		float laplModif;
+		float laplVari;
+	};
+	vector<FrameScore> frameScores;
+	for (int f = 0; f < cannySharpnessScores.rows; ++f) {
+		frameScores.emplace_back(FrameScore(frameIds[f], headBoxSizes[f], ieds[f], yaws[f], cannySharpnessScores.at<float>(f), modifiedLaplacianInFocusScores.at<float>(f), varianceOfLaplacianInFocusScores.at<float>(f)));
+	}
+	// Select, yaw:
+	vector<FrameScore> frameScoresTruncated;
+	std::remove_copy_if(begin(frameScores), end(frameScores), std::back_inserter(frameScoresTruncated), [](const FrameScore& score) { return std::abs(score.yaw) > 5.0f; });
+	if (frameScoresTruncated.empty()) {
+		std::remove_copy_if(begin(frameScores), end(frameScores), back_inserter(frameScoresTruncated), [](const FrameScore& score) { return std::abs(score.yaw) > 10.0f; });
+		if (frameScoresTruncated.empty()) {
+			std::remove_copy_if(begin(frameScores), end(frameScores), back_inserter(frameScoresTruncated), [](const FrameScore& score) { return std::abs(score.yaw) > 15.0f; });
+			if (frameScoresTruncated.empty()) {
+				logger.warn("No frames with yaw angle <= 15.0f! Returning first frame... Todo: Optimise this!");
+				int idOfBestFrame = 0;
+				cv::Mat bestFrame = frames[idOfBestFrame];
+
+				path bestFrameName = video.dataPath.stem();
+				std::ostringstream ss;
+				ss << std::setw(3) << std::setfill('0') << idOfBestFrame + 1;
+				bestFrameName.replace_extension(ss.str() + ".png");
+				return vector < std::tuple<Mat, path, float> > { std::make_tuple(bestFrame, bestFrameName, 0.0f) };
+			}
+		}
+	}
+	std::sort(begin(frameScoresTruncated), end(frameScoresTruncated), [](const FrameScore& lhs, const FrameScore& rhs) { return std::abs(lhs.ied) > std::abs(rhs.ied); });
+	// All above: Maybe not so optimal. Try: Throw away >= 15, then headbox 0.5 and pose 0.5...?
+
+
 	// Weights:
 	//  0.2 head box size
 	//  0.1 IED
@@ -303,7 +346,8 @@ std::vector<std::tuple<cv::Mat, path, float>> selectFrameSimple(path inputDirect
 	//  0.1 canny edges blur measurement
 	//  0.1 modified laplace
 	//  0.1 laplace variance
-	cv::Mat scores = 0.2f * headBoxScores + 0.1f * interEyeDistanceScores + 0.4f * yawPoseScores + 0.1f * cannySharpnessScores + 0.1f * modifiedLaplacianInFocusScores + 0.1f * varianceOfLaplacianInFocusScores;
+	//cv::Mat scores = 0.2f * headBoxScores + 0.1f * interEyeDistanceScores + 0.4f * yawPoseScores + 0.1f * cannySharpnessScores + 0.1f * modifiedLaplacianInFocusScores + 0.1f * varianceOfLaplacianInFocusScores;
+	cv::Mat scores;
 
 	/*
 	double minScore, maxScore;
@@ -316,12 +360,15 @@ std::vector<std::tuple<cv::Mat, path, float>> selectFrameSimple(path inputDirect
 	*/
 
 	vector<std::tuple<Mat, path, float>> assessedFrames;
-	for (int i = 0; i < scores.rows; ++i) {
+	//for (int i = 0; i < scores.rows; ++i) {
+	for (int i = 0; i < frameScoresTruncated.size(); ++i) {
 		path bestFrameName = video.dataPath.stem();
 		std::ostringstream ss;
-		ss << std::setw(3) << std::setfill('0') << frameIds[i] + 1;
+		//ss << std::setw(3) << std::setfill('0') << frameIds[i] + 1;
+		ss << std::setw(3) << std::setfill('0') << frameScoresTruncated[i].frameId + 1;
 		bestFrameName.replace_extension(ss.str() + ".png");
-		assessedFrames.emplace_back(std::make_tuple(frames[frameIds[i]], bestFrameName, scores.at<float>(i)));
+		//assessedFrames.emplace_back(std::make_tuple(frames[frameIds[i]], bestFrameName, scores.at<float>(i)));
+		assessedFrames.emplace_back(std::make_tuple(frames[frameScoresTruncated[i].frameId], bestFrameName, frameScoresTruncated[i].ied));
 	}
 	return assessedFrames;
 }
