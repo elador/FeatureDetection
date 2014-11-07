@@ -29,8 +29,8 @@
 #include "boost/serialization/string.hpp"
 #include "boost/serialization/utility.hpp"
 
-#include <boost/timer.hpp>
-#include <boost/progress.hpp>
+#include "boost/timer.hpp"
+#include "boost/progress.hpp"
 
 #include "tiny_cnn.h"
 

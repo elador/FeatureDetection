@@ -172,6 +172,21 @@ public:
         return test_result;
     }
 
+	// Added by Patrik Huber, 07.11.2014
+	// Reconstruction error. E.g. for AutoEncoder, when reconstructing input.
+	// assert(in.size() = lastLayerOut.size())
+	// Returns avg-loss per training sample
+	float_t test(const std::vector<vec_t>& in) {
+		float_t average_loss = 0.0;
+		for (size_t i = 0; i < in.size(); i++) {
+			vec_t out;
+			predict(in[i], &out);
+			for (size_t j = 0; j < in[i].size(); ++j) {
+				average_loss += E_.f(in[i][j], out[j]);
+			}			
+		}
+		return average_loss / in.size();
+	}
 
     bool gradient_check(const vec_t* in, const label_t* t, int data_size, float_t eps, grad_check_mode mode = GRAD_CHECK_FIRST) {
         assert(!layers_.empty());
