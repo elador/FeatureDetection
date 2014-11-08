@@ -95,6 +95,8 @@ add_subdirectory(crop-pasc-video-heads)		# Takes PaSC frames from our frameselec
 add_subdirectory(crop-pasc-video-heads-affinealign)	# Same as above, but does affine alignment / warping, then saves cropped head patches.
 add_subdirectory(csv-framesfolder-to-pasc-csv) # Take a folder with frames and a CSV (converted from Matlab) with a matrix in the same order as the images in the folder. Then, use a PaSC XML sigset to generate a conforming CSV or BEE matrix file, with similarity-scores and the FTEs.
 
+add_subdirectory(preprocess-pasc-videos) # Test on control: Assess, select,  align, crop, light-normalise... Maybe feature extraction
+
 # Matching:
 add_subdirectory(match-all-frames)			# Match each frame of PaSC videos to a still image gallery. Outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
 add_subdirectory(fvsdk-enrol-all-videos)	# Enrol all videos using the fvsdk. match-all-frames-to-all-frames is too inefficient at the moment.

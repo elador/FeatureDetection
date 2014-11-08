@@ -12,6 +12,7 @@
 #include "boost/algorithm/string.hpp"
 
 #include <fstream>
+#include <iomanip>
 
 using logging::LoggerFactory;
 using boost::lexical_cast;
