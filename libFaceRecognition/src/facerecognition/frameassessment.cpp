@@ -80,7 +80,7 @@ double normalizedGraylevelVariance(const cv::Mat& src)
 	return focusMeasure;
 }
 
-std::vector<float> getVideoNormalizedHeadBoxScores(std::vector<float> headBoxSizes)
+std::vector<float> minMaxFitTransformLinear(std::vector<float> headBoxSizes)
 {
 	auto result = std::minmax_element(begin(headBoxSizes), end(headBoxSizes));
 	auto min = *result.first;
@@ -92,20 +92,6 @@ std::vector<float> getVideoNormalizedHeadBoxScores(std::vector<float> headBoxSiz
 	std::transform(begin(headBoxSizes), end(headBoxSizes), begin(headBoxSizes), [m, b](float x) {return m * x + b; });
 
 	return headBoxSizes;
-}
-
-std::vector<float> getVideoNormalizedInterEyeDistanceScores(std::vector<float> ieds)
-{
-	auto result = std::minmax_element(begin(ieds), end(ieds));
-	auto min = *result.first;
-	auto max = *result.second;
-
-	float m = 1.0f / (max - min);
-	float b = -m * min;
-
-	std::transform(begin(ieds), end(ieds), begin(ieds), [m, b](float x) {return m * x + b; });
-
-	return ieds;
 }
 
 std::vector<float> getVideoNormalizedYawPoseScores(std::vector<float> yaws)
@@ -126,21 +112,5 @@ std::vector<float> getVideoNormalizedYawPoseScores(std::vector<float> yaws)
 	}
 	return yaws;
 }
-
-std::vector<float> getVideoNormalizedCannySharpnessScores(std::vector<float> sharpnesses)
-{
-	auto result = std::minmax_element(begin(sharpnesses), end(sharpnesses));
-	auto min = *result.first;
-	auto max = *result.second;
-
-	float m = 1.0f / (max - min);
-	float b = -m * min;
-
-	std::transform(begin(sharpnesses), end(sharpnesses), begin(sharpnesses), [m, b](float x) {return m * x + b; });
-
-	return sharpnesses;
-}
-
-
 
 } /* namespace facerecognition */

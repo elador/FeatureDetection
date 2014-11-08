@@ -165,9 +165,9 @@ std::vector<std::tuple<cv::Mat, path, float>> selectFrameSimple(path inputDirect
 	//cv::Mat headBoxScores(getVideoNormalizedHeadBoxScores(headBoxSizes), true); // function returns a temporary, so we need to copy the data
 	//cv::Mat interEyeDistanceScores(getVideoNormalizedInterEyeDistanceScores(ieds), true);
 	//cv::Mat yawPoseScores(getVideoNormalizedYawPoseScores(yaws), true);
-	cv::Mat cannySharpnessScores(getVideoNormalizedCannySharpnessScores(sharpnesses), true);
-	cv::Mat modifiedLaplacianInFocusScores(getVideoNormalizedCannySharpnessScores(laplModif), true);
-	cv::Mat varianceOfLaplacianInFocusScores(getVideoNormalizedCannySharpnessScores(laplVari), true);
+	cv::Mat cannySharpnessScores(minMaxFitTransformLinear(sharpnesses), true);
+	cv::Mat modifiedLaplacianInFocusScores(minMaxFitTransformLinear(laplModif), true);
+	cv::Mat varianceOfLaplacianInFocusScores(minMaxFitTransformLinear(laplVari), true);
 	
 	// Finished normalising the individual scores - write into one vector now:
 	struct FrameScore

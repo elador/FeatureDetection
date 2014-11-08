@@ -158,12 +158,12 @@ std::vector<std::tuple<cv::Mat, path, float>> selectFrameSimple(path inputDirect
 		return vector<std::tuple<Mat, path, float>>{ std::make_tuple(bestFrame, bestFrameName, 0.0f) };
 	}
 
-	cv::Mat headBoxScores(getVideoNormalizedHeadBoxScores(headBoxSizes), true); // function returns a temporary, so we need to copy the data
-	cv::Mat interEyeDistanceScores(getVideoNormalizedInterEyeDistanceScores(ieds), true);
+	cv::Mat headBoxScores(minMaxFitTransformLinear(headBoxSizes), true); // function returns a temporary, so we need to copy the data
+	cv::Mat interEyeDistanceScores(minMaxFitTransformLinear(ieds), true);
 	cv::Mat yawPoseScores(getVideoNormalizedYawPoseScores(yaws), true);
-	cv::Mat cannySharpnessScores(getVideoNormalizedCannySharpnessScores(sharpnesses), true);
-	cv::Mat modifiedLaplacianInFocusScores(getVideoNormalizedCannySharpnessScores(laplModif), true);
-	cv::Mat varianceOfLaplacianInFocusScores(getVideoNormalizedCannySharpnessScores(laplVari), true);
+	cv::Mat cannySharpnessScores(minMaxFitTransformLinear(sharpnesses), true);
+	cv::Mat modifiedLaplacianInFocusScores(minMaxFitTransformLinear(laplModif), true);
+	cv::Mat varianceOfLaplacianInFocusScores(minMaxFitTransformLinear(laplVari), true);
 	
 	// Weights:
 	//  0.2 head box size

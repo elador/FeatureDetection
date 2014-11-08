@@ -39,14 +39,11 @@ double tenengrad(const cv::Mat& src, int ksize);
 double normalizedGraylevelVariance(const cv::Mat& src);
 
 // Could all be renamed to "transform/fitLinear" or something
+// Todo: Proper doc
 // Note: Segfaults if the given vector is empty (iterator not dereferentiable)
-std::vector<float> getVideoNormalizedHeadBoxScores(std::vector<float> headBoxSizes);
-
-std::vector<float> getVideoNormalizedInterEyeDistanceScores(std::vector<float> ieds);
+std::vector<float> minMaxFitTransformLinear(std::vector<float> values);
 
 std::vector<float> getVideoNormalizedYawPoseScores(std::vector<float> yaws);
-
-std::vector<float> getVideoNormalizedCannySharpnessScores(std::vector<float> sharpnesses);
 
 } /* namespace facerecognition */
 
