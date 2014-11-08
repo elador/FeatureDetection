@@ -40,6 +40,7 @@ set(SOURCE
 	src/facerecognition/EnrolCoutFeedback.cpp
 	src/facerecognition/FaceRecord.cpp
 	src/facerecognition/FaceVacsEngine.cpp
+	src/facerecognition/frameassessment.cpp
 	src/facerecognition/frsdk.cpp
 	src/facerecognition/pasc.cpp
 	src/facerecognition/utils.cpp
@@ -49,6 +50,7 @@ set(HEADERS
 	include/facerecognition/EnrolCoutFeedback.hpp
 	include/facerecognition/FaceRecord.hpp
 	include/facerecognition/FaceVacsEngine.hpp
+	include/facerecognition/frameassessment.hpp
 	include/facerecognition/frsdk.hpp
 	include/facerecognition/pasc.hpp
 	include/facerecognition/PathSerialization.hpp
