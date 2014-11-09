@@ -104,7 +104,11 @@ public:
 	std::vector<facerecognition::FaceRecord> enrolledGalleryRecords; // We keep this for the subject IDs
 
 	std::shared_ptr<FRsdk::Configuration> getConfigurationInstance() const;
-
+	
+	// For hack Guosheng
+	std::unique_ptr<FRsdk::Population> getPopulation() {
+		return std::move(population);
+	};
 };
 
 } /* namespace facerecognition */

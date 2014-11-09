@@ -308,7 +308,8 @@ std::vector<std::pair<FaceRecord, float>> FaceVacsEngine::matchAll(path probeFil
 boost::optional<path> FaceVacsEngine::createFir(path image)
 {
 	// Does the FIR already exist in the temp-dir? If yes, skip FD/EyeDet!
-	auto firPath = tempDir / image.filename();
+	//auto firPath = tempDir / image.filename();
+	auto firPath = tempDir / image.parent_path().leaf() / image.filename(); // Hack for experiment Guosheng
 	firPath.replace_extension(".fir");
 	if (boost::filesystem::exists(firPath)) {
 		//throw std::runtime_error("Unexpected. Should check for that.");
@@ -333,13 +334,22 @@ boost::optional<path> FaceVacsEngine::createFir(FRsdk::Image image, path firPath
 		return firPath;
 	}
 
+	// Hack Guosheng:
+	if (!boost::filesystem::exists(firPath.parent_path())) {
+		boost::filesystem::create_directory(firPath.parent_path());
+	}
+
 	FRsdk::SampleSet enrollmentImages;
 	auto sample = FRsdk::Sample(image);
+	/* GUOSHENG HACK
 	// Once we have pasc-still-training landmarks from Ross, we can use those here. In the mean-time, use the Cog Eyefinder:
 	FRsdk::Face::Finder faceFinder(*cfg);
 	FRsdk::Eyes::Finder eyesFinder(*cfg);
-	float mindist = 0.005f; // minEyeDist, def = 0.1; me: 0.01; philipp: 0.005
-	float maxdist = 0.3f; // maxEyeDist, def = 0.4; me: 0.3; philipp: 0.4
+	//float mindist = 0.005f; // minEyeDist, def = 0.1; me: 0.01; philipp: 0.005
+	//float maxdist = 0.3f; // maxEyeDist, def = 0.4; me: 0.3; philipp: 0.4
+	float mindist = 0.4f; // Guosheng AR
+	float maxdist = 1.0f; // Guosheng AR
+
 	FRsdk::Face::LocationSet faceLocations = faceFinder.find(image, mindist, maxdist);
 	if (faceLocations.empty()) {
 		logger.info("FaceFinder: No face found.");
@@ -355,7 +365,9 @@ boost::optional<path> FaceVacsEngine::createFir(FRsdk::Image image, path firPath
 	auto foundEyes = eyesLocations.begin(); // We just use the first found eyes
 	auto firstEye = FRsdk::Position(foundEyes->first.x(), foundEyes->first.y()); // first eye (image left-most), second eye (image right-most)
 	auto secondEye = FRsdk::Position(foundEyes->second.x(), foundEyes->second.y());
-	sample.annotate(FRsdk::Eyes::Location(firstEye, secondEye, foundEyes->firstConfidence, foundEyes->secondConfidence));
+	END GUOSHENG HACK */
+	sample.annotate(FRsdk::Eyes::Location(FRsdk::Position(32, 62), FRsdk::Position(88, 62), 6.0, 6.0)); // Guosheng hack
+	//sample.annotate(FRsdk::Eyes::Location(firstEye, secondEye, foundEyes->firstConfidence, foundEyes->secondConfidence));
 	enrollmentImages.push_back(sample);
 	// create the needed interaction instances
 	FRsdk::Enrollment::Feedback feedback(new EnrolCoutFeedback(firPath.string()));

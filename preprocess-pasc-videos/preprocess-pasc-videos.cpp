@@ -80,6 +80,7 @@ using std::future;
 // Might rename to "assessQualitySimple(video...)" or assessFrames(...)
 // Assesses all or part of the frames in the video (e.g. not those without metadata)
 // and returns a score for each.
+// Returns: tuple<Frame, Videoname-Framenum, Score>
 std::vector<std::tuple<cv::Mat, path, float>> selectFrameSimple(path inputDirectoryVideos, const facerecognition::FaceRecord& video, const vector<facerecognition::PascVideoDetection>& pascVideoDetections)
 {
 	auto logger = Loggers->getLogger("frameselect-simple");
@@ -172,7 +173,7 @@ std::vector<std::tuple<cv::Mat, path, float>> selectFrameSimple(path inputDirect
 	//  0.1 canny edges blur measurement
 	//  0.1 modified laplace
 	//  0.1 laplace variance
-	cv::Mat scores = 0.2f * headBoxScores + 0.1f * interEyeDistanceScores + 0.4f * yawPoseScores + 0.1f * cannySharpnessScores + 0.1f * modifiedLaplacianInFocusScores + 0.1f * varianceOfLaplacianInFocusScores;
+	cv::Mat scores = 0.2f * headBoxScores + 0.2f * interEyeDistanceScores + 0.5f * yawPoseScores + 0.03f * cannySharpnessScores + 0.04f * modifiedLaplacianInFocusScores + 0.03f * varianceOfLaplacianInFocusScores;
 
 	/*
 	double minScore, maxScore;
@@ -233,7 +234,7 @@ int main(int argc, char *argv[])
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm); // style(po::command_line_style::unix_style | po::command_line_style::allow_long_disguise)
 		if (vm.count("help")) {
-			cout << "Usage: frameselect-simple [options]" << endl;
+			cout << "Usage: preprocess-pasc-videos [options]" << endl;
 			cout << desc;
 			return EXIT_SUCCESS;
 		}
@@ -259,8 +260,9 @@ int main(int argc, char *argv[])
 	}
 	
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Loggers->getLogger("frameselect-simple").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
-	Logger appLogger = Loggers->getLogger("frameselect-simple");
+	Loggers->getLogger("facerecognition").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("app").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Logger appLogger = Loggers->getLogger("app");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
@@ -286,21 +288,10 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	ThreadPool threadPool(numThreads);
-	vector<future<vector<std::tuple<Mat, path, float>>>> futures;
-
 	// If we don't want to loop over all videos: (e.g. to get a quick Matlab output)
-// 	std::random_device rd;
-// 	auto seed = rd();
-// 	std::mt19937 rndGenVideos(seed);
-// 	std::uniform_real<> rndVidDistr(0.0f, 1.0f);
-// 	auto randomVideo = std::bind(rndVidDistr, rndGenVideos);
 	//auto videoIter = std::find_if(begin(videoSigset), end(videoSigset), [](const facerecognition::FaceRecord& d) { return (d.dataPath == "05795d567.mp4"); });
 	//auto video = *videoIter; {
 	for (auto& video : videoSigset) {
-// 		if (randomVideo() >= 0.002) {
-// 			continue;
-// 		}
 		appLogger.info("Starting to process " + video.dataPath.string());
 
 		// Shouldn't be necessary, but there are 5 videos in the xml sigset that we don't have.
@@ -310,33 +301,18 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		futures.emplace_back(threadPool.enqueue(&selectFrameSimple, inputDirectoryVideos, video, pascVideoDetections));
-	}
+		auto assessedFrames = selectFrameSimple(inputDirectoryVideos, video, pascVideoDetections);
 
-	std::ofstream framesListFile((outputPath / "frameselect-simple.txt").string());
-	// Wait for all the threads and save the result as soon as a thread is finished:
-	for (auto& f : futures) {
-		auto frames = f.get();
+
 
 		// Sort by score, higher ones first
-		std::sort(begin(frames), end(frames), [](tuple<Mat, path, float> lhs, tuple<Mat, path, float> rhs) { return std::get<2>(rhs) < std::get<2>(lhs); });
-		if (frames.size() < numFramesPerVideo) {
-			numFramesPerVideo = frames.size(); // we got fewer frames than desired
-		}
-		for (int i = 0; i < numFramesPerVideo; ++i) {
-			path frameName = outputPath / std::get<1>(frames[i]); // The filename is already 1-based (PaSC format)
-			cv::imwrite(frameName.string(), std::get<0>(frames[i]));
-
-			path frameNameCsv = frameName.stem();
-			frameNameCsv.replace_extension(".mp4");
-			string frameNumCsv = frameName.stem().extension().string();
-			frameNumCsv.erase(std::remove(frameNumCsv.begin(), frameNumCsv.end(), '.'), frameNumCsv.end());
-			framesListFile << frameNameCsv.string() << "," << frameNumCsv << "," << std::get<2>(frames[i]) << endl;
-		}
-		//appLogger.info("Saved frames and scores of " + frameNameCsv.string() + " to the filesystem.");
+		//std::sort(begin(frames), end(frames), [](tuple<Mat, path, float> lhs, tuple<Mat, path, float> rhs) { return std::get<2>(rhs) < std::get<2>(lhs); });
+		//if (frames.size() < numFramesPerVideo) {
+		//	numFramesPerVideo = frames.size(); // we got fewer frames than desired
+		//}
+		//for (int i = 0; i < numFramesPerVideo; ++i)
 	}
-	
-	framesListFile.close();
+
 	appLogger.info("Finished processing all videos.");
 
 	return EXIT_SUCCESS;

@@ -113,6 +113,8 @@ add_subdirectory(cnn-matcher-extract-testdata)	# Same as above, but for test-dat
 add_subdirectory(cnn-matcher-learn) # Use the data from 'train-deeplearning-matcher-extract' app, create pairs including labels (0 or 1), and use them to learn a neural network for classification.
 add_subdirectory(cnn-matcher-match) # Match PaSC video-video
 
+add_subdirectory(fvsdk-run-guosheng-ar) # Run FaceVACS matching on some images (AR?) for Guosheng
+
 # Tools for matching on PaSC, some a bit dated:
 #add_subdirectory(convert-pasc-sigset)		# Convert a PaSC xml sigset to a text file in property tree format, using FaceRecords ==> Use it to read XML, but otherwise, I think I shouldn't use it anymore. (but we used the ptree format to create MultiPIE sigsets)
 #add_subdirectory(pasc-video-matching)	# Runs the whole pipeline on the PaSC video-video experiment, including fitting. A bit outdated and unfinished - only the skeletton. But some useful comments!
