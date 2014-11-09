@@ -30,9 +30,7 @@ cv::Mat getRotationMatrixFromEyePairs(cv::Vec2f rightEye, cv::Vec2f leftEye)
 
 cv::Mat cropAligned(cv::Mat image, cv::Vec2f rightEye, cv::Vec2f leftEye, float widthFactor/*=1.1f*/, float heightFactor/*=0.8f*/, float* translationX/*=nullptr*/, float* translationY/*=nullptr*/)
 {
-	// Crop, place eyes in "middle" horizontal, and at 1/3 vertical
-	float widthFactor = 1.1f; // total 2.2
-	float heightFactor = 0.8f; // total 2.4
+	// Crop, place eyes in "middle" horizontal, and at around 1/3 vertical
 	cv::Vec2f cropCenter = (rightEye + leftEye) / 2; // between the eyes
 	auto ied = cv::norm(leftEye - rightEye, cv::NORM_L2);
 	cv::Rect roi(cropCenter[0] - widthFactor * ied, cropCenter[1] - heightFactor * ied, 2 * widthFactor * ied, (heightFactor + 2 * heightFactor) * ied);

@@ -153,13 +153,13 @@ int main(int argc, char *argv[])
 	
 	path dataRoot = galleryDirectory.parent_path();
 	faceRecEngine.enrollGallery(galleryImages, dataRoot);
-	// auto population = faceRecEngine.getPopulation(); // for rank 1 id rate
+	auto population = faceRecEngine.getPopulation(); // for rank 1 id rate
 	int numRank1IdMatches = 0;
 	for (size_t p = 0; p < probeImagePaths.size(); ++p)
 	{
 		appLogger.info("Matching probe " + std::to_string(p + 1) + "...");
 		// Simi Mtx:
-		auto scores = faceRecEngine.matchAll(probeImagePaths[p], cv::Vec2f(), cv::Vec2f());
+	/*	auto scores = faceRecEngine.matchAll(probeImagePaths[p], cv::Vec2f(), cv::Vec2f());
 		if (scores.size() != 100) {
 			throw std::runtime_error("Couldn't enrol probe, fix me!");
 		}
@@ -167,9 +167,9 @@ int main(int argc, char *argv[])
 		for (auto s : scores) {
 			fullSimilarityMatrix.at<float>(p, gallery) = static_cast<float>(s.second);
 			++gallery;
-		}
+		}*/
 		// Rank-1 id rate:
-	/*	path probeFrameFir = path("./tmp_fvsdk") / probeImagePaths[p].parent_path().leaf() / probeImagePaths[p].filename();
+		path probeFrameFir = path("./tmp_fvsdk") / probeImagePaths[p].parent_path().leaf() / probeImagePaths[p].filename();
 		probeFrameFir.replace_extension(".fir");
 		std::ifstream firStream(probeFrameFir.string(), std::ios::in | std::ios::binary);
 		FRsdk::FIR fir = firBuilder->build(firStream);
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
 		if (a == b) {
 			++numRank1IdMatches;
 		}
-	*/
+	
 	} // end for over all query videos
 
 	appLogger.info("Rank 1 matches: " + std::to_string(numRank1IdMatches) + " out of 100 images.");

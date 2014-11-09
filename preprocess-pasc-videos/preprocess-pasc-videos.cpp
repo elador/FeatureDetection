@@ -55,6 +55,7 @@
 #include "facerecognition/pasc.hpp"
 #include "facerecognition/utils.hpp"
 #include "facerecognition/frameassessment.hpp"
+#include "facerecognition/alignment.hpp"
 #include "facerecognition/ThreadPool.hpp"
 
 #include "logging/LoggerFactory.hpp"
@@ -173,7 +174,7 @@ std::vector<std::tuple<cv::Mat, path, float>> selectFrameSimple(path inputDirect
 	//  0.1 canny edges blur measurement
 	//  0.1 modified laplace
 	//  0.1 laplace variance
-	cv::Mat scores = 0.2f * headBoxScores + 0.2f * interEyeDistanceScores + 0.5f * yawPoseScores + 0.03f * cannySharpnessScores + 0.04f * modifiedLaplacianInFocusScores + 0.03f * varianceOfLaplacianInFocusScores;
+	cv::Mat scores = 0.15f * headBoxScores + 0.15f * interEyeDistanceScores + 0.6f * yawPoseScores + 0.03f * cannySharpnessScores + 0.04f * modifiedLaplacianInFocusScores + 0.03f * varianceOfLaplacianInFocusScores;
 
 	/*
 	double minScore, maxScore;
@@ -302,11 +303,47 @@ int main(int argc, char *argv[])
 		}
 
 		auto assessedFrames = selectFrameSimple(inputDirectoryVideos, video, pascVideoDetections);
-
-
-
-		// Sort by score, higher ones first
-		//std::sort(begin(frames), end(frames), [](tuple<Mat, path, float> lhs, tuple<Mat, path, float> rhs) { return std::get<2>(rhs) < std::get<2>(lhs); });
+		// Sort by score, higher ones first:
+		using std::get;
+		std::sort(begin(assessedFrames), end(assessedFrames), [](tuple<Mat, path, float> lhs, tuple<Mat, path, float> rhs) { return get<2>(rhs) < get<2>(lhs); });
+		int minNumFramesToKeep = 15;
+		if (assessedFrames.size() > minNumFramesToKeep) {
+			// Start from rear, remove all non-frontal frames as long as we still have 15:
+			for (int i = assessedFrames.size() - 1; (assessedFrames.size() > minNumFramesToKeep) && (i >= 0); --i) {
+				auto framePath = get<1>(assessedFrames[i]);
+				string frameName = facerecognition::getPascFrameName(framePath.stem().stem(), boost::lexical_cast<int>(framePath.stem().extension().string().substr(1, string::npos)));
+				auto landmarks = std::find_if(begin(pascVideoDetections), end(pascVideoDetections), [frameName](const facerecognition::PascVideoDetection& d) { return (d.frame_id == frameName); });
+				if (landmarks->fpose_y > 5.0f) {
+					assessedFrames.erase(begin(assessedFrames) + i);
+				}
+			}
+		}
+		int cnt = 1;
+		for (auto& frame : assessedFrames) {
+			auto f = get<0>(frame);
+			auto framePath = get<1>(frame); // Hmm we're repeating that find_if a bit often
+			cv::imwrite((outputPath / framePath).string(), f);
+			if (cnt > minNumFramesToKeep) {
+				break;
+			}
+			++cnt;
+		}
+		/*
+		for (auto& frame : assessedFrames) {
+			auto framePath = get<1>(frame); // Hmm we're repeating that find_if a bit often
+			string frameName = facerecognition::getPascFrameName(framePath.stem().stem(), boost::lexical_cast<int>(framePath.stem().extension().string().substr(1, string::npos)));
+			auto landmarks = std::find_if(begin(pascVideoDetections), end(pascVideoDetections), [frameName](const facerecognition::PascVideoDetection& d) { return (d.frame_id == frameName); });
+			cv::Vec2f re(landmarks->re_x.get(), landmarks->re_y.get());
+			cv::Vec2f le(landmarks->le_x.get(), landmarks->le_y.get());
+			Mat rotationMatrix = facerecognition::getRotationMatrixFromEyePairs(re, le);
+			cv::Mat rotatedFrame;
+			cv::warpAffine(get<0>(frame), rotatedFrame, rotationMatrix, rotatedFrame.size(), cv::INTER_LANCZOS4, cv::BORDER_CONSTANT);
+			Mat croppedFace = facerecognition::cropAligned(rotatedFrame, re, le, 1.1f, 0.8f); // total w = 2.2, total h = 2.4
+			auto f = get<0>(frame);
+			auto s = get<2>(frame);
+			cv::imwrite((outputPath / framePath).string(), f);
+		}
+		*/
 		//if (frames.size() < numFramesPerVideo) {
 		//	numFramesPerVideo = frames.size(); // we got fewer frames than desired
 		//}
