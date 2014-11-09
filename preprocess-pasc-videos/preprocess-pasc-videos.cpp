@@ -289,6 +289,9 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
+	// Write all frames and scores to a file:
+	std::ofstream framesListFile((outputPath / "frames.txt").string());
+
 	// If we don't want to loop over all videos: (e.g. to get a quick Matlab output)
 	//auto videoIter = std::find_if(begin(videoSigset), end(videoSigset), [](const facerecognition::FaceRecord& d) { return (d.dataPath == "05795d567.mp4"); });
 	//auto video = *videoIter; {
@@ -323,6 +326,15 @@ int main(int argc, char *argv[])
 			auto f = get<0>(frame);
 			auto framePath = get<1>(frame); // Hmm we're repeating that find_if a bit often
 			cv::imwrite((outputPath / framePath).string(), f);
+
+			// Write to frames.txt:
+			path frameName = outputPath / get<1>(frame); // The filename is already 1-based (PaSC format)
+			path frameNameCsv = frameName.stem();
+			frameNameCsv.replace_extension(".mp4");
+			string frameNumCsv = frameName.stem().extension().string();
+			frameNumCsv.erase(std::remove(frameNumCsv.begin(), frameNumCsv.end(), '.'), frameNumCsv.end());
+			framesListFile << frameNameCsv.string() << "," << frameNumCsv << "," << get<2>(frame) << endl;
+
 			if (cnt > minNumFramesToKeep) {
 				break;
 			}
@@ -349,7 +361,7 @@ int main(int argc, char *argv[])
 		//}
 		//for (int i = 0; i < numFramesPerVideo; ++i)
 	}
-
+	framesListFile.clear();
 	appLogger.info("Finished processing all videos.");
 
 	return EXIT_SUCCESS;
