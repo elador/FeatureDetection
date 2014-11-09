@@ -32,6 +32,7 @@
 
 #include "facerecognition/pasc.hpp"
 #include "facerecognition/utils.hpp"
+#include "facerecognition/alignment.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -218,25 +219,10 @@ int main(int argc, char *argv[])
 		
 		cv::Vec2f re(landmarks->re_x.get(), landmarks->re_y.get());
 		cv::Vec2f le(landmarks->le_x.get(), landmarks->le_y.get());
-
-		// Angle calc:
-		cv::Vec2f reToLeLandmarksLine(le[0] - re[0], le[1] - re[1]);
-		float angle = std::atan2(reToLeLandmarksLine[1], reToLeLandmarksLine[0]);
-		float angleDegrees = angle * (180.0 / 3.141592654);
-		// IED:
-		float ied = cv::norm(reToLeLandmarksLine, cv::NORM_L2);
-
-		// Rotate it:
-		cv::Vec2f centerOfRotation = (re + le) / 2; // between the eyes
-		Mat rotationMatrix = cv::getRotationMatrix2D(centerOfRotation, angleDegrees, 1.0f);
+		Mat rotationMatrix = facerecognition::getRotationMatrixFromEyePairs(re, le);
 		cv::Mat rotatedFrame;
 		cv::warpAffine(frame, rotatedFrame, rotationMatrix, rotatedFrame.size(), cv::INTER_LANCZOS4, cv::BORDER_CONSTANT);
-
-		// Crop, place eyes in "middle" horizontal, and at 1/3 vertical
-		float widthFactor = 1.1f; // total 2.2
-		float heightFactor = 0.8f; // total 2.4
-		cv::Rect roi(centerOfRotation[0] - widthFactor * ied, centerOfRotation[1] - heightFactor * ied, 2 * widthFactor * ied, (heightFactor + 2 * heightFactor) * ied);
-		Mat croppedFace = rotatedFrame(roi);
+		Mat croppedFace = facerecognition::cropAligned(rotatedFrame, re, le, 1.1f, 0.8f); // total w = 2.2, total h = 2.4
 
 		// Normalise:
 		//croppedFace = equaliseIntensity(croppedFace);

@@ -37,6 +37,7 @@ include_directories(${FVSDK_INCLUDE_DIR})
 
 # source and header files
 set(SOURCE
+	src/facerecognition/alignment.cpp
 	src/facerecognition/EnrolCoutFeedback.cpp
 	src/facerecognition/FaceRecord.cpp
 	src/facerecognition/FaceVacsEngine.cpp
@@ -47,6 +48,7 @@ set(SOURCE
 )
 
 set(HEADERS
+	include/facerecognition/alignment.hpp
 	include/facerecognition/EnrolCoutFeedback.hpp
 	include/facerecognition/FaceRecord.hpp
 	include/facerecognition/FaceVacsEngine.hpp
