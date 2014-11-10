@@ -41,6 +41,7 @@ private:
 	 *
 	 * @param[in] filename The file name of the file to parse.
 	 * @return A collection of all the landmarks.
+	 * Throws a runtime_error if error while trying to access the file.
 	 */
 	LandmarkCollection parseFile(const std::string& filename);
 

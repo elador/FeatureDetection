@@ -37,6 +37,9 @@ const map<path, LandmarkCollection> SimpleModelLandmarkFormatParser::read(path l
 
 LandmarkCollection SimpleModelLandmarkFormatParser::parseFile(const string& filename) {
 	ifstream landmarksFile(filename);
+	if (!landmarksFile.is_open() || !landmarksFile.good()) {
+		throw std::runtime_error("Error trying to open the landmarks file: " + filename);
+	}
 	string line;
 	LandmarkCollection landmarks;
 
