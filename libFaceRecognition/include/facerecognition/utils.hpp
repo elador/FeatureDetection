@@ -52,13 +52,23 @@ std::vector<FaceRecord> readPascSigset(boost::filesystem::path filename, bool st
 std::vector<FaceRecord> readSigset(boost::filesystem::path filename);
 
 /**
-* Todo
-*
-* @param[in] in Todo
-* @return Todo.
-*/
+ * Todo
+ *
+ * @param[in] in Todo
+ * @return Todo.
+ */
 void saveSimilarityMatrixAsCSV(cv::Mat similarityMatrix, boost::filesystem::path filename);
 
+/**
+ * Histogram equalisation on the intensity values
+ * of a color image.
+ *
+ * Involves BGR2YCrCb conversion.
+ *
+ * @param[in] inputImage Todo
+ * @return Normalised input image, or the original image, if < 3 channels.
+ */
+cv::Mat equaliseIntensity(const cv::Mat& inputImage);
 
 
 /**

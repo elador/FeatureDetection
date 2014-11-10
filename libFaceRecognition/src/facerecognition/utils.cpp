@@ -8,6 +8,7 @@
 
 #include "logging/LoggerFactory.hpp"
 
+#include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
 #include "boost/property_tree/ptree.hpp"
@@ -138,6 +139,28 @@ void saveSimilarityMatrixAsCSV(Mat similarityMatrix, path filename)
 	inputCsv.close();
 }
 
+Mat equaliseIntensity(const Mat& inputImage)
+{
+	if (inputImage.channels() >= 3) {
+		Mat ycrcb;
+
+		cvtColor(inputImage, ycrcb, CV_BGR2YCrCb);
+
+		vector<Mat> channels;
+		split(ycrcb, channels);
+
+		equalizeHist(channels[0], channels[0]);
+
+		Mat result;
+		merge(channels, ycrcb);
+
+		cvtColor(ycrcb, result, CV_YCrCb2BGR);
+
+		return result;
+	}
+	return inputImage;
+}
+
 path transformDataPath(const path& originalDataPath, DataPathTransformation transformation)
 {
 	path dataPath;
@@ -169,8 +192,6 @@ path transformDataPath(const path& originalDataPath, DataPathTransformation tran
 	}
 	return fullFilePath;
 }
-
-
 
 	} /* namespace utils */
 } /* namespace facerecognition */

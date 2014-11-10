@@ -1,11 +1,11 @@
 /*
- * crop-pasc-video-heads-eyealign.cpp
+ * crop-pasc-video-heads-affinealign.cpp
  *
  *  Created on: 28.10.2014
  *      Author: Patrik Huber
  *
  * Example:
- * crop-pasc-video-heads-eyealign ...
+ * crop-pasc-video-heads-affinealign ...
  *   
  */
 
@@ -49,6 +49,28 @@ using std::vector;
 using std::string;
 using std::make_shared;
 
+Mat equaliseIntensity(const Mat& inputImage)
+{
+	if (inputImage.channels() >= 3) {
+		Mat ycrcb;
+
+		cvtColor(inputImage, ycrcb, CV_BGR2YCrCb);
+
+		vector<Mat> channels;
+		split(ycrcb, channels);
+
+		equalizeHist(channels[0], channels[0]);
+
+		Mat result;
+		merge(channels, ycrcb);
+
+		cvtColor(ycrcb, result, CV_YCrCb2BGR);
+
+		return result;
+	}
+	return Mat();
+}
+
 int main(int argc, char *argv[])
 {
 	#ifdef WIN32
@@ -57,7 +79,7 @@ int main(int argc, char *argv[])
 	#endif
 	
 	string verboseLevelConsole;
-	path sigsetFile, metadataFile, inputDirectory;
+	path sigsetFile, metadataFile, landmarksDirectory, inputDirectory;
 	path outputFolder;
 
 	try {
@@ -73,6 +95,8 @@ int main(int argc, char *argv[])
 				"directory containing the frames. Files should be in the format 'videoname.012.png'")
 			("metadata,m", po::value<path>(&metadataFile)->required(),
 				"PaSC video detections metadata in boost::serialization format")
+			("landmarks,l", po::value<path>(&landmarksDirectory)->required(),
+				"Directory containing landmarks to perform the piecewise affine alignment with")
 			("output,o", po::value<path>(&outputFolder)->default_value("."),
 				"path to save the cropped patches to")
 		;
@@ -80,7 +104,7 @@ int main(int argc, char *argv[])
 		po::variables_map vm;
 		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm); // style(po::command_line_style::unix_style | po::command_line_style::allow_long_disguise)
 		if (vm.count("help")) {
-			cout << "Usage: crop-pasc-video-heads-eyealign [options]" << endl;
+			cout << "Usage: crop-pasc-video-heads-affinealign [options]" << endl;
 			cout << desc;
 			return EXIT_SUCCESS;
 		}

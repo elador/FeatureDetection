@@ -92,7 +92,8 @@ add_subdirectory(frameselect-simple-frontal) # Pre-selection of frontal frames, 
 # Face-recognition on PaSC:
 add_subdirectory(convert-pasc-video-metadata-to-bs)	# Convert PaSC video detections and metadata (CSV) to boost::serialization format
 add_subdirectory(crop-pasc-video-heads)		# Takes PaSC frames from our frameselection and the metadata and saves cropped head patches.
-add_subdirectory(crop-pasc-video-heads-affinealign)	# Same as above, but does affine alignment / warping, then saves cropped head patches.
+add_subdirectory(crop-pasc-video-heads-eyealign)	# Same as above, and aligns the patches to the PaSC eye coordinates (i.e. in-plane rotation). Then saves cropped head patches.
+add_subdirectory(crop-pasc-video-heads-affinealign)	# Same as above, and does a piecewise-affine alignment using landmarks, then saves cropped head patches.
 add_subdirectory(csv-framesfolder-to-pasc-csv) # Take a folder with frames and a CSV (converted from Matlab) with a matrix in the same order as the images in the folder. Then, use a PaSC XML sigset to generate a conforming CSV or BEE matrix file, with similarity-scores and the FTEs.
 
 add_subdirectory(preprocess-pasc-videos) # Test on control: Assess, select,  align, crop, light-normalise... Maybe feature extraction
