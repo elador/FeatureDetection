@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME crop-pasc-video-heads-affinealign)
+set(SUBPROJECT_NAME crop-pasc-video-heads-eyealign)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -18,7 +18,7 @@ endif()
 
 # Source and header files:
 set(SOURCE
-	crop-pasc-video-heads-affinealign.cpp
+	crop-pasc-video-heads-eyealign.cpp
 )
 
 set(HEADERS
