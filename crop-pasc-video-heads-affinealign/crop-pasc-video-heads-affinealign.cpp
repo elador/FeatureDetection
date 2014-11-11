@@ -53,6 +53,30 @@ using std::make_shared;
 
 using namespace cv;
 
+// Returns true if inside the tri or on the border
+bool isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Point2f triV1, cv::Point2f triV2) {
+	/* See http://www.blackpawn.com/texts/pointinpoly/ */
+	// Compute vectors        
+	cv::Point2f v0 = triV2 - triV0;
+	cv::Point2f v1 = triV1 - triV0;
+	cv::Point2f v2 = point - triV0;
+
+	// Compute dot products
+	float dot00 = v0.dot(v0);
+	float dot01 = v0.dot(v1);
+	float dot02 = v0.dot(v2);
+	float dot11 = v1.dot(v1);
+	float dot12 = v1.dot(v2);
+
+	// Compute barycentric coordinates
+	float invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+	float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+	float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+	// Check if point is in triangle
+	return (u >= 0) && (v >= 0) && (u + v < 1);
+}
+
 // Draws the visible (i.e. inside the image boundaries) triangles.
 void draw_subdiv(Mat& img, Subdiv2D& subdiv, Scalar delaunay_color)
 {
@@ -280,34 +304,131 @@ int main(int argc, char *argv[])
 		auto lms = lmParser.read(landmarksFile).at(file.stem().string());
 
 		Mat frame = cv::imread(file.string());
-		// Calculate the triangulation only once:
-		Scalar active_facet_color(0, 0, 255), delaunay_color(255, 255, 255);
-		Rect rect({ 0, 0 }, frame.size());
-		Subdiv2D subdiv(rect);
-		Mat img(rect.size(), CV_8UC3);
-		img = Scalar::all(0);
 
+		// Delaunay triangulation:
+		// Todo: Calculate the triangulation only once per app-start, or even 'offline'
+		// Mean, reference:
+		vector<Point2f> meanLms;
+		meanLms.emplace_back(Point2f(561.2688f, 528.9627f)); // re_c
+		meanLms.emplace_back(Point2f(645.7872f, 528.7401f)); // le_c
+		meanLms.emplace_back(Point2f(603.2419f, 624.6601f)); // mouth_c
+		meanLms.emplace_back(Point2f(603.2317f, 577.7201f)); // nt
+		meanLms.emplace_back(Point2f(603.4039f, 529.2591f)); // botn
+		// Create some 'artificial', additional points:
+		auto re_m = Vec2f(meanLms[0]);
+		auto le_m = Vec2f(meanLms[1]);
+		auto ied_m = cv::norm(le_m - re_m, cv::NORM_L2);
+		auto eyeLine_m = le_m - re_m;
+		auto rightOuter_m = re_m - eyeLine_m * 0.6f; // move 0.5 times the ied in the eye-line direction
+		auto leftOuter_m = le_m + eyeLine_m * 0.6f;
+		auto mouth_m = Vec2f(meanLms[2]);
+		auto betweenEyes_m = (le_m + re_m) / 2.0f;
+		auto eyesMouthLine_m = mouth_m - betweenEyes_m;
+		auto belowMouth_m = mouth_m + eyesMouthLine_m;
+		auto aboveRightEyebrow_m = re_m - eyesMouthLine_m;
+		auto aboveLeftEyebrow_m = le_m - eyesMouthLine_m;
+		auto rightOfMouth_m = mouth_m - 0.8f * eyeLine_m;
+		auto leftOfMouth_m = mouth_m + 0.8f * eyeLine_m;
+		meanLms.emplace_back(Point2f(rightOuter_m));
+		meanLms.emplace_back(Point2f(leftOuter_m));
+		meanLms.emplace_back(Point2f(belowMouth_m));
+		meanLms.emplace_back(Point2f(aboveRightEyebrow_m));
+		meanLms.emplace_back(Point2f(aboveLeftEyebrow_m));
+		meanLms.emplace_back(Point2f(rightOfMouth_m));
+		meanLms.emplace_back(Point2f(leftOfMouth_m));
+		for (auto& p : meanLms) {
+			//cv::circle(frame, p, 4, { 255, 0, 0 });
+		}
+
+		auto triangleList = delaunayTriangulate(meanLms);
+
+		// Now the same for the detected landmarks:
 		vector<Point2f> landmarkPoints;
+		// Create some 'artificial', additional points:
+		auto re = lms.getLandmark("re_c")->getPosition2D(), le = lms.getLandmark("le_c")->getPosition2D();
+		auto ied = cv::norm(le - re, cv::NORM_L2);
+		auto eyeLine = le - re;
+		auto rightOuter = re - eyeLine * 0.6f; // move 0.5 times the ied in the eye-line direction
+		auto leftOuter = le + eyeLine * 0.6f;
+		auto mouth = lms.getLandmark("mouth_c")->getPosition2D();
+		auto betweenEyes = (le + re) / 2.0f;
+		auto eyesMouthLine = mouth - betweenEyes;
+		auto belowMouth = mouth + eyesMouthLine;
+		auto aboveRightEyebrow = re - eyesMouthLine;
+		auto aboveLeftEyebrow = le - eyesMouthLine;
+		auto rightOfMouth = mouth - 0.8f * eyeLine;
+		auto leftOfMouth = mouth + 0.8f * eyeLine;
 		for (auto& l : lms.getLandmarks()) {
-			landmarkPoints.emplace_back(l->getPoint2D());
+			landmarkPoints.emplace_back(l->getPoint2D()); // order: re_c, le_c, mouth_c, nt, botn
 		}
-		for (auto& p : landmarkPoints)
-		{
-			//Point2f fp((float)(rand() % (rect.width - 10) + 5), (float)(rand() % (rect.height - 10) + 5));
-			//locate_point(img, subdiv, fp, active_facet_color);
-			subdiv.insert(p);
-			//img = Scalar::all(0);
-
+		landmarkPoints.emplace_back(Point2f(rightOuter));
+		landmarkPoints.emplace_back(Point2f(leftOuter));
+		landmarkPoints.emplace_back(Point2f(belowMouth));
+		landmarkPoints.emplace_back(Point2f(aboveRightEyebrow));
+		landmarkPoints.emplace_back(Point2f(aboveLeftEyebrow));
+		landmarkPoints.emplace_back(Point2f(rightOfMouth));
+		landmarkPoints.emplace_back(Point2f(leftOfMouth));
+		for (auto& p : landmarkPoints) {
+			//cv::circle(frame, p, 4, { 255, 0, 0 });
 		}
-		draw_subdiv(img, subdiv, delaunay_color);
-		Mat voro = img.clone();
-		paint_voronoi(voro, subdiv);
-
-		auto triangleList = delaunayTriangulate(landmarkPoints);
+		/*
 		for (auto& tri : triangleList) {
-			cv::line(frame, landmarkPoints[tri[0]], landmarkPoints[tri[1]], { 255, 0, 0 });
-			cv::line(frame, landmarkPoints[tri[1]], landmarkPoints[tri[2]], { 255, 0, 0 });
-			cv::line(frame, landmarkPoints[tri[2]], landmarkPoints[tri[0]], { 255, 0, 0 });
+			cv::line(frame, meanLms[tri[0]], meanLms[tri[1]], { 255, 0, 0 });
+			cv::line(frame, meanLms[tri[1]], meanLms[tri[2]], { 255, 0, 0 });
+			cv::line(frame, meanLms[tri[2]], meanLms[tri[0]], { 255, 0, 0 });
+
+			cv::line(frame, landmarkPoints[tri[0]], landmarkPoints[tri[1]], { 0, 255, 0 });
+			cv::line(frame, landmarkPoints[tri[1]], landmarkPoints[tri[2]], { 0, 255, 0 });
+			cv::line(frame, landmarkPoints[tri[2]], landmarkPoints[tri[0]], { 0, 255, 0 });
+		}
+		*/
+		// Now warp the detected landmarks triangles to the reference (mean), using a triangle-wise (piecewise) affine mapping:
+		Mat textureMap = Mat::zeros(1024, 1024, frame.type());
+		for (auto& tri : triangleList) {
+			Mat dstTriImg;
+			vector<Point2f> srcTri, dstTri;
+			srcTri.emplace_back(landmarkPoints[tri[0]]);
+			srcTri.emplace_back(landmarkPoints[tri[1]]);
+			srcTri.emplace_back(landmarkPoints[tri[2]]);
+			dstTri.emplace_back(meanLms[tri[0]]);
+			dstTri.emplace_back(meanLms[tri[1]]);
+			dstTri.emplace_back(meanLms[tri[2]]);
+
+			// ROI in the source image:
+			// Todo: Check if the triangle is on screen. If it's outside, we crash here.
+			float src_tri_min_x = std::min(srcTri[0].x, std::min(srcTri[1].x, srcTri[2].x)); // note: might be better to round later (i.e. use the float points for getAffineTransform for a more accurate warping)
+			float src_tri_max_x = std::max(srcTri[0].x, std::max(srcTri[1].x, srcTri[2].x));
+			float src_tri_min_y = std::min(srcTri[0].y, std::min(srcTri[1].y, srcTri[2].y));
+			float src_tri_max_y = std::max(srcTri[0].y, std::max(srcTri[1].y, srcTri[2].y));
+
+			Mat inputImageRoi = frame.rowRange(cvFloor(src_tri_min_y), cvCeil(src_tri_max_y)).colRange(cvFloor(src_tri_min_x), cvCeil(src_tri_max_x)); // We round down and up. ROI is possibly larger. But wrong pixels get thrown away later when we check if the point is inside the triangle? Correct?
+			srcTri[0] -= Point2f(src_tri_min_x, src_tri_min_y);
+			srcTri[1] -= Point2f(src_tri_min_x, src_tri_min_y);
+			srcTri[2] -= Point2f(src_tri_min_x, src_tri_min_y); // shift all the points to correspond to the roi
+
+			//dstTri[0] = cv::Point2f(textureMap.cols*mesh.vertex[triangleIndices[0]].texcrd[0], textureMap.rows*mesh.vertex[triangleIndices[0]].texcrd[1] - 1.0f);
+			//dstTri[1] = cv::Point2f(textureMap.cols*mesh.vertex[triangleIndices[1]].texcrd[0], textureMap.rows*mesh.vertex[triangleIndices[1]].texcrd[1] - 1.0f);
+			//dstTri[2] = cv::Point2f(textureMap.cols*mesh.vertex[triangleIndices[2]].texcrd[0], textureMap.rows*mesh.vertex[triangleIndices[2]].texcrd[1] - 1.0f);
+
+			/// Get the Affine Transform
+			Mat warp_mat = getAffineTransform(srcTri, dstTri);
+
+			/// Apply the Affine Transform just found to the src image
+			Mat tmpDstBuffer = Mat::zeros(textureMap.rows, textureMap.cols, frame.type()); // I think using the source-size here is not correct. The dst might be larger. We should warp the endpoints and set to max-w/h. No, I think it would be even better to directly warp to the final textureMap size. (so that the last step is only a 1:1 copy)
+			warpAffine(inputImageRoi, tmpDstBuffer, warp_mat, tmpDstBuffer.size(), cv::INTER_LANCZOS4, cv::BORDER_TRANSPARENT); // last row/col is zeros, depends on interpolation method. Maybe because of rounding or interpolation? So it cuts a little. Maybe try to implement by myself?
+
+			// only copy to final img if point is inside the triangle (or on the border)
+			for (int x = std::min(dstTri[0].x, std::min(dstTri[1].x, dstTri[2].x)); x < std::max(dstTri[0].x, std::max(dstTri[1].x, dstTri[2].x)); ++x) {
+				for (int y = std::min(dstTri[0].y, std::min(dstTri[1].y, dstTri[2].y)); y < std::max(dstTri[0].y, std::max(dstTri[1].y, dstTri[2].y)); ++y) {
+					if (isPointInTriangle(cv::Point2f(x, y), dstTri[0], dstTri[1], dstTri[2])) {
+						textureMap.at<cv::Vec3b>(y, x) = tmpDstBuffer.at<cv::Vec3b>(y, x);
+					}
+				}
+			}
+
+			//Mat M = cv::getAffineTransform(src, dst);
+			//cv::warpAffine(frame, dstTriImg, M, dstTriImg.size(), cv::INTER_LANCZOS4); // Could choose border value
+
 		}
 			
 		//string logMessage("Throwing away patch because it goes outside the image bounds. This shouldn't happen, or rather, we do not want it to happen, because we didn't select a frame where this should happen.");
