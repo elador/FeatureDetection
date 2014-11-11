@@ -53,6 +53,35 @@ using std::make_shared;
 
 using namespace cv;
 
+// Expects the given 5 points, in the following order:
+// re_c, le_c, mouth_c, nt, botn
+vector<Point2f> addArtificialPoints(vector<Point2f> points)
+{
+	// Create some 'artificial', additional points:
+	auto re_m = Vec2f(points[0]);
+	auto le_m = Vec2f(points[1]);
+	auto ied_m = cv::norm(le_m - re_m, cv::NORM_L2);
+	auto eyeLine_m = le_m - re_m;
+	auto rightOuter_m = re_m - eyeLine_m * 0.6f; // move 0.5 times the ied in the eye-line direction
+	auto leftOuter_m = le_m + eyeLine_m * 0.6f;
+	auto mouth_m = Vec2f(points[2]);
+	auto betweenEyes_m = (le_m + re_m) / 2.0f;
+	auto eyesMouthLine_m = mouth_m - betweenEyes_m;
+	auto belowMouth_m = mouth_m + eyesMouthLine_m;
+	auto aboveRightEyebrow_m = re_m - eyesMouthLine_m;
+	auto aboveLeftEyebrow_m = le_m - eyesMouthLine_m;
+	auto rightOfMouth_m = mouth_m - 0.8f * eyeLine_m;
+	auto leftOfMouth_m = mouth_m + 0.8f * eyeLine_m;
+	points.emplace_back(Point2f(rightOuter_m));
+	points.emplace_back(Point2f(leftOuter_m));
+	points.emplace_back(Point2f(belowMouth_m));
+	points.emplace_back(Point2f(aboveRightEyebrow_m));
+	points.emplace_back(Point2f(aboveLeftEyebrow_m));
+	points.emplace_back(Point2f(rightOfMouth_m));
+	points.emplace_back(Point2f(leftOfMouth_m));
+	return points;
+};
+
 // Returns true if inside the tri or on the border
 bool isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Point2f triV1, cv::Point2f triV2) {
 	/* See http://www.blackpawn.com/texts/pointinpoly/ */
@@ -308,74 +337,45 @@ int main(int argc, char *argv[])
 		// Delaunay triangulation:
 		// Todo: Calculate the triangulation only once per app-start, or even 'offline'
 		// Mean, reference:
-		vector<Point2f> meanLms;
-		meanLms.emplace_back(Point2f(561.2688f, 528.9627f)); // re_c
-		meanLms.emplace_back(Point2f(645.7872f, 528.7401f)); // le_c
-		meanLms.emplace_back(Point2f(603.2419f, 624.6601f)); // mouth_c
-		meanLms.emplace_back(Point2f(603.2317f, 577.7201f)); // nt
-		meanLms.emplace_back(Point2f(603.4039f, 529.2591f)); // botn
-		// Create some 'artificial', additional points:
-		auto re_m = Vec2f(meanLms[0]);
-		auto le_m = Vec2f(meanLms[1]);
-		auto ied_m = cv::norm(le_m - re_m, cv::NORM_L2);
-		auto eyeLine_m = le_m - re_m;
-		auto rightOuter_m = re_m - eyeLine_m * 0.6f; // move 0.5 times the ied in the eye-line direction
-		auto leftOuter_m = le_m + eyeLine_m * 0.6f;
-		auto mouth_m = Vec2f(meanLms[2]);
-		auto betweenEyes_m = (le_m + re_m) / 2.0f;
-		auto eyesMouthLine_m = mouth_m - betweenEyes_m;
-		auto belowMouth_m = mouth_m + eyesMouthLine_m;
-		auto aboveRightEyebrow_m = re_m - eyesMouthLine_m;
-		auto aboveLeftEyebrow_m = le_m - eyesMouthLine_m;
-		auto rightOfMouth_m = mouth_m - 0.8f * eyeLine_m;
-		auto leftOfMouth_m = mouth_m + 0.8f * eyeLine_m;
-		meanLms.emplace_back(Point2f(rightOuter_m));
-		meanLms.emplace_back(Point2f(leftOuter_m));
-		meanLms.emplace_back(Point2f(belowMouth_m));
-		meanLms.emplace_back(Point2f(aboveRightEyebrow_m));
-		meanLms.emplace_back(Point2f(aboveLeftEyebrow_m));
-		meanLms.emplace_back(Point2f(rightOfMouth_m));
-		meanLms.emplace_back(Point2f(leftOfMouth_m));
-		for (auto& p : meanLms) {
+		vector<Point2f> referencePoints;
+		referencePoints.emplace_back(Point2f(561.2688f, 528.9627f)); // re_c
+		referencePoints.emplace_back(Point2f(645.7872f, 528.7401f)); // le_c
+		referencePoints.emplace_back(Point2f(603.2419f, 624.6601f)); // mouth_c
+		referencePoints.emplace_back(Point2f(603.2317f, 577.7201f)); // nt
+		referencePoints.emplace_back(Point2f(603.4039f, 529.2591f)); // botn
+		referencePoints = addArtificialPoints(referencePoints);
+		for (auto& p : referencePoints) {
 			//cv::circle(frame, p, 4, { 255, 0, 0 });
 		}
+		auto triangleList = delaunayTriangulate(referencePoints);
 
-		auto triangleList = delaunayTriangulate(meanLms);
+		// Convert to texture coordinates, i.e. rescale the points to lie in [0, 1] x [0, 1]
+		auto minMaxX = std::minmax_element(begin(referencePoints), end(referencePoints), [](const Point2f& lhs, const Point2f& rhs) { return lhs.x < rhs.x; });
+		auto minMaxY = std::minmax_element(begin(referencePoints), end(referencePoints), [](const Point2f& lhs, const Point2f& rhs) { return lhs.y < rhs.y; });
+		auto width = minMaxX.second->x - minMaxX.first->x; // max - min
+		auto height = minMaxY.second->y - minMaxY.first->y; // max - min
+		auto offsetX = minMaxX.first->x; // subtract to each point
+		auto offsetY = minMaxY.first->y; // Maybe we want to subtract floor(val) instead?
+		cv::Point2f offset(offsetX, offsetY);
+		auto maxY = minMaxY.second->y; // minMaxY is only an iterator, so we have to store it
+		for (auto& p : referencePoints) {
+			p = (p - offset) * (1.0 / (maxY-offset.y)); // y is usually bigger. To keep the aspect ratio, we rescale y to [0, 1]. Then, x will be [0, 1] too.
+		}
 
 		// Now the same for the detected landmarks:
 		vector<Point2f> landmarkPoints;
-		// Create some 'artificial', additional points:
-		auto re = lms.getLandmark("re_c")->getPosition2D(), le = lms.getLandmark("le_c")->getPosition2D();
-		auto ied = cv::norm(le - re, cv::NORM_L2);
-		auto eyeLine = le - re;
-		auto rightOuter = re - eyeLine * 0.6f; // move 0.5 times the ied in the eye-line direction
-		auto leftOuter = le + eyeLine * 0.6f;
-		auto mouth = lms.getLandmark("mouth_c")->getPosition2D();
-		auto betweenEyes = (le + re) / 2.0f;
-		auto eyesMouthLine = mouth - betweenEyes;
-		auto belowMouth = mouth + eyesMouthLine;
-		auto aboveRightEyebrow = re - eyesMouthLine;
-		auto aboveLeftEyebrow = le - eyesMouthLine;
-		auto rightOfMouth = mouth - 0.8f * eyeLine;
-		auto leftOfMouth = mouth + 0.8f * eyeLine;
 		for (auto& l : lms.getLandmarks()) {
 			landmarkPoints.emplace_back(l->getPoint2D()); // order: re_c, le_c, mouth_c, nt, botn
 		}
-		landmarkPoints.emplace_back(Point2f(rightOuter));
-		landmarkPoints.emplace_back(Point2f(leftOuter));
-		landmarkPoints.emplace_back(Point2f(belowMouth));
-		landmarkPoints.emplace_back(Point2f(aboveRightEyebrow));
-		landmarkPoints.emplace_back(Point2f(aboveLeftEyebrow));
-		landmarkPoints.emplace_back(Point2f(rightOfMouth));
-		landmarkPoints.emplace_back(Point2f(leftOfMouth));
+		landmarkPoints = addArtificialPoints(landmarkPoints);
 		for (auto& p : landmarkPoints) {
 			//cv::circle(frame, p, 4, { 255, 0, 0 });
 		}
 		/*
 		for (auto& tri : triangleList) {
-			cv::line(frame, meanLms[tri[0]], meanLms[tri[1]], { 255, 0, 0 });
-			cv::line(frame, meanLms[tri[1]], meanLms[tri[2]], { 255, 0, 0 });
-			cv::line(frame, meanLms[tri[2]], meanLms[tri[0]], { 255, 0, 0 });
+			cv::line(frame, referencePoints[tri[0]], referencePoints[tri[1]], { 255, 0, 0 });
+			cv::line(frame, referencePoints[tri[1]], referencePoints[tri[2]], { 255, 0, 0 });
+			cv::line(frame, referencePoints[tri[2]], referencePoints[tri[0]], { 255, 0, 0 });
 
 			cv::line(frame, landmarkPoints[tri[0]], landmarkPoints[tri[1]], { 0, 255, 0 });
 			cv::line(frame, landmarkPoints[tri[1]], landmarkPoints[tri[2]], { 0, 255, 0 });
@@ -383,16 +383,16 @@ int main(int argc, char *argv[])
 		}
 		*/
 		// Now warp the detected landmarks triangles to the reference (mean), using a triangle-wise (piecewise) affine mapping:
-		Mat textureMap = Mat::zeros(1024, 1024, frame.type());
+		Mat textureMap = Mat::zeros(100, 100, frame.type());
 		for (auto& tri : triangleList) {
 			Mat dstTriImg;
 			vector<Point2f> srcTri, dstTri;
 			srcTri.emplace_back(landmarkPoints[tri[0]]);
 			srcTri.emplace_back(landmarkPoints[tri[1]]);
 			srcTri.emplace_back(landmarkPoints[tri[2]]);
-			dstTri.emplace_back(meanLms[tri[0]]);
-			dstTri.emplace_back(meanLms[tri[1]]);
-			dstTri.emplace_back(meanLms[tri[2]]);
+			dstTri.emplace_back(referencePoints[tri[0]]);
+			dstTri.emplace_back(referencePoints[tri[1]]);
+			dstTri.emplace_back(referencePoints[tri[2]]);
 
 			// ROI in the source image:
 			// Todo: Check if the triangle is on screen. If it's outside, we crash here.
@@ -406,9 +406,9 @@ int main(int argc, char *argv[])
 			srcTri[1] -= Point2f(src_tri_min_x, src_tri_min_y);
 			srcTri[2] -= Point2f(src_tri_min_x, src_tri_min_y); // shift all the points to correspond to the roi
 
-			//dstTri[0] = cv::Point2f(textureMap.cols*mesh.vertex[triangleIndices[0]].texcrd[0], textureMap.rows*mesh.vertex[triangleIndices[0]].texcrd[1] - 1.0f);
-			//dstTri[1] = cv::Point2f(textureMap.cols*mesh.vertex[triangleIndices[1]].texcrd[0], textureMap.rows*mesh.vertex[triangleIndices[1]].texcrd[1] - 1.0f);
-			//dstTri[2] = cv::Point2f(textureMap.cols*mesh.vertex[triangleIndices[2]].texcrd[0], textureMap.rows*mesh.vertex[triangleIndices[2]].texcrd[1] - 1.0f);
+			dstTri[0] = cv::Point2f(textureMap.cols*dstTri[0].x, textureMap.rows*dstTri[0].y - 1.0f);
+			dstTri[1] = cv::Point2f(textureMap.cols*dstTri[1].x, textureMap.rows*dstTri[1].y - 1.0f);
+			dstTri[2] = cv::Point2f(textureMap.cols*dstTri[2].x, textureMap.rows*dstTri[2].y - 1.0f);
 
 			/// Get the Affine Transform
 			Mat warp_mat = getAffineTransform(srcTri, dstTri);
@@ -425,11 +425,8 @@ int main(int argc, char *argv[])
 					}
 				}
 			}
-
-			//Mat M = cv::getAffineTransform(src, dst);
-			//cv::warpAffine(frame, dstTriImg, M, dstTriImg.size(), cv::INTER_LANCZOS4); // Could choose border value
-
 		}
+		Mat finalMap = textureMap.colRange(0, 66);
 			
 		//string logMessage("Throwing away patch because it goes outside the image bounds. This shouldn't happen, or rather, we do not want it to happen, because we didn't select a frame where this should happen.");
 		//string logMessage("Hmm no PP eyes. How are we going to do the affine alignment? Skipping the image for now.");
