@@ -19,6 +19,7 @@
 #include "opencv2/core/core.hpp"
 
 #include <vector>
+#include <array>
 
 namespace facerecognition {
 
@@ -35,6 +36,40 @@ cv::Mat getRotationMatrixFromEyePairs(cv::Vec2f rightEye, cv::Vec2f leftEye);
 // What happens if the cropping goes outside the borders? Atm OpenCV throws.
 // We could throw a custom exception, or check and use copyMakeBorder?
 cv::Mat cropAligned(cv::Mat image, cv::Vec2f rightEye, cv::Vec2f leftEye, float widthFactor=1.1f, float heightFactor=0.8f, float* translationX=nullptr, float* translationY=nullptr);
+
+
+// Find a Delaunay triangulation of given points. Return the triangles.
+// Generalisation of the OpenCV Delaunay example
+// In: Points
+// Out: Triangle list, with indices corresponding to the input points.
+std::vector<std::array<int, 3>> delaunayTriangulate(std::vector<cv::Point2f> points);
+
+/**
+ * TODO
+ *
+ * From SDM Zhenhua, trained on PaSC, 5 semi-automatic landmarks.
+ *
+ */
+class FivePointModel
+{
+public:
+	FivePointModel();
+
+	cv::Mat extractTexture2D(cv::Mat image, std::vector<cv::Point2f> landmarkPoints);
+
+private:
+	std::vector<cv::Point2f> points;
+	std::vector<std::array<int, 3>> triangleList;
+};
+
+// Expects the given 5 points, in the following order:
+// re_c, le_c, mouth_c, nt, botn
+// Belongs to FivePointModel
+std::vector<cv::Point2f> addArtificialPoints(std::vector<cv::Point2f> points);
+
+// NOTE: Exact copy from libRender!
+// Returns true if inside the tri or on the border
+bool isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Point2f triV1, cv::Point2f triV2);
 
 } /* namespace facerecognition */
 

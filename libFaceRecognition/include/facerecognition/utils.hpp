@@ -70,13 +70,12 @@ void saveSimilarityMatrixAsCSV(cv::Mat similarityMatrix, boost::filesystem::path
  */
 cv::Mat equaliseIntensity(const cv::Mat& inputImage);
 
-
 /**
-* Desc.
-*
-* @param[in] in Todo
-* @return Todo.
-*/
+ * Desc.
+ *
+ * @param[in] in Todo
+ * @return Todo.
+ */
 //std::vector<FaceRecord> transformSigset(boost::filesystem::path filename);
 
 // TODO: This is not really a "utils", move it to somewhere else

@@ -40,6 +40,7 @@
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+using namespace facerecognition;
 using logging::Logger;
 using logging::LoggerFactory;
 using logging::LogLevel;
@@ -52,59 +53,6 @@ using std::string;
 using std::make_shared;
 
 using namespace cv;
-
-// Expects the given 5 points, in the following order:
-// re_c, le_c, mouth_c, nt, botn
-vector<Point2f> addArtificialPoints(vector<Point2f> points)
-{
-	// Create some 'artificial', additional points:
-	auto re_m = Vec2f(points[0]);
-	auto le_m = Vec2f(points[1]);
-	auto ied_m = cv::norm(le_m - re_m, cv::NORM_L2);
-	auto eyeLine_m = le_m - re_m;
-	auto rightOuter_m = re_m - eyeLine_m * 0.6f; // move 0.5 times the ied in the eye-line direction
-	auto leftOuter_m = le_m + eyeLine_m * 0.6f;
-	auto mouth_m = Vec2f(points[2]);
-	auto betweenEyes_m = (le_m + re_m) / 2.0f;
-	auto eyesMouthLine_m = mouth_m - betweenEyes_m;
-	auto belowMouth_m = mouth_m + eyesMouthLine_m;
-	auto aboveRightEyebrow_m = re_m - eyesMouthLine_m;
-	auto aboveLeftEyebrow_m = le_m - eyesMouthLine_m;
-	auto rightOfMouth_m = mouth_m - 0.8f * eyeLine_m;
-	auto leftOfMouth_m = mouth_m + 0.8f * eyeLine_m;
-	points.emplace_back(Point2f(rightOuter_m));
-	points.emplace_back(Point2f(leftOuter_m));
-	points.emplace_back(Point2f(belowMouth_m));
-	points.emplace_back(Point2f(aboveRightEyebrow_m));
-	points.emplace_back(Point2f(aboveLeftEyebrow_m));
-	points.emplace_back(Point2f(rightOfMouth_m));
-	points.emplace_back(Point2f(leftOfMouth_m));
-	return points;
-};
-
-// Returns true if inside the tri or on the border
-bool isPointInTriangle(cv::Point2f point, cv::Point2f triV0, cv::Point2f triV1, cv::Point2f triV2) {
-	/* See http://www.blackpawn.com/texts/pointinpoly/ */
-	// Compute vectors        
-	cv::Point2f v0 = triV2 - triV0;
-	cv::Point2f v1 = triV1 - triV0;
-	cv::Point2f v2 = point - triV0;
-
-	// Compute dot products
-	float dot00 = v0.dot(v0);
-	float dot01 = v0.dot(v1);
-	float dot02 = v0.dot(v2);
-	float dot11 = v1.dot(v1);
-	float dot12 = v1.dot(v2);
-
-	// Compute barycentric coordinates
-	float invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
-	float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-	float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
-
-	// Check if point is in triangle
-	return (u >= 0) && (v >= 0) && (u + v < 1);
-}
 
 // Draws the visible (i.e. inside the image boundaries) triangles.
 void draw_subdiv(Mat& img, Subdiv2D& subdiv, Scalar delaunay_color)
@@ -157,66 +105,6 @@ void paint_voronoi(Mat& img, Subdiv2D& subdiv)
 		polylines(img, ifacets, true, Scalar(), 1, CV_AA, 0);
 		circle(img, centers[i], 3, Scalar(), -1, CV_AA, 0);
 	}
-}
-
-// Find a delauney triangulation of given points. Return the triangles.
-// In: Points
-// Out: Triangle list, with indices corresponding to the input points.
-std::vector<std::array<int, 3>> delaunayTriangulate(std::vector<cv::Point2f> points)
-{
-	auto minMaxX = std::minmax_element(begin(points), end(points), [](const Point2f& lhs, const Point2f& rhs) { return lhs.x < rhs.x; });
-	auto minMaxY = std::minmax_element(begin(points), end(points), [](const Point2f& lhs, const Point2f& rhs) { return lhs.y < rhs.y; });
-	auto width = minMaxX.second->x - minMaxX.first->x; // max - min
-	auto height = minMaxY.second->y - minMaxY.first->y; // max - min
-	auto offsetX = minMaxX.first->x; // subtract to each point
-	auto offsetY = minMaxY.first->y; // Maybe we want to subtract floor(val) instead?
-	cv::Point2f offset(offsetX, offsetY);
-	Rect rect(0, 0, std::ceil(width), std::ceil(height));
-	Subdiv2D subdiv(rect);
-	
-	Mat tmp = Mat::zeros(rect.size(), CV_8UC3);
-
-	for (auto& p : points)
-	{
-		subdiv.insert(p - offset);
-	}
-	vector<Vec6f> triangleListTmp;
-	subdiv.getTriangleList(triangleListTmp);
-	vector<Point2f> pt(3);
-
-	vector<std::array<int, 3>> triangleList;
-
-	for (size_t i = 0; i < triangleListTmp.size(); i++)
-	{
-		Vec6f t = triangleListTmp[i];
-		if (t[0] >= tmp.cols || t[1] >= tmp.rows || t[2] >= tmp.cols || t[3] >= tmp.rows || t[4] >= tmp.cols || t[5] >= tmp.rows) {
-			continue;
-		}
-		if (t[0] < 0 || t[1] < 0 || t[2] < 0 || t[3] < 0 || t[4] < 0 || t[5] < 0) {
-			continue;
-		}
-		pt[0] = Point2f(t[0], t[1]);
-		pt[1] = Point2f(t[2], t[3]);
-		pt[2] = Point2f(t[4], t[5]);
-		// Find these points in 'points':
-		auto ret = std::find(begin(points), end(points), pt[0] + offset);
-		if (ret == end(points)) {
-			throw std::runtime_error("Shouldn't happen, floating point equality comparison failed?");
-		}
-		auto idx0 = std::distance(begin(points), ret);
-		ret = std::find(begin(points), end(points), pt[1] + offset);
-		if (ret == end(points)) {
-			throw std::runtime_error("Shouldn't happen, floating point equality comparison failed?");
-		}
-		auto idx1 = std::distance(begin(points), ret);
-		ret = std::find(begin(points), end(points), pt[2] + offset);
-		if (ret == end(points)) {
-			throw std::runtime_error("Shouldn't happen, floating point equality comparison failed?");
-		}
-		auto idx2 = std::distance(begin(points), ret);
-		triangleList.emplace_back(std::array<int, 3>({ idx0, idx1, idx2 }));
-	}
-	return triangleList;
 }
 
 int main(int argc, char *argv[])
@@ -315,6 +203,8 @@ int main(int argc, char *argv[])
 		cout << ex.what() << endl;
 	}
 
+	FivePointModel model;
+
 	for (auto& file : files) {
 		appLogger.info("Processing " + file.string());
 
@@ -334,127 +224,34 @@ int main(int argc, char *argv[])
 
 		Mat frame = cv::imread(file.string());
 
-		// Delaunay triangulation:
-		// Todo: Calculate the triangulation only once per app-start, or even 'offline'
-		// Mean, reference:
-		vector<Point2f> referencePoints;
-		referencePoints.emplace_back(Point2f(561.2688f, 528.9627f)); // re_c
-		referencePoints.emplace_back(Point2f(645.7872f, 528.7401f)); // le_c
-		referencePoints.emplace_back(Point2f(603.2419f, 624.6601f)); // mouth_c
-		referencePoints.emplace_back(Point2f(603.2317f, 577.7201f)); // nt
-		referencePoints.emplace_back(Point2f(603.4039f, 529.2591f)); // botn
-		referencePoints = addArtificialPoints(referencePoints);
-		for (auto& p : referencePoints) {
-			//cv::circle(frame, p, 4, { 255, 0, 0 });
-		}
-		auto triangleList = delaunayTriangulate(referencePoints);
-
-		// Convert to texture coordinates, i.e. rescale the points to lie in [0, 1] x [0, 1]
-		auto minMaxX = std::minmax_element(begin(referencePoints), end(referencePoints), [](const Point2f& lhs, const Point2f& rhs) { return lhs.x < rhs.x; });
-		auto minMaxY = std::minmax_element(begin(referencePoints), end(referencePoints), [](const Point2f& lhs, const Point2f& rhs) { return lhs.y < rhs.y; });
-		auto width = minMaxX.second->x - minMaxX.first->x; // max - min
-		auto height = minMaxY.second->y - minMaxY.first->y; // max - min
-		auto offsetX = minMaxX.first->x; // subtract to each point
-		auto offsetY = minMaxY.first->y; // Maybe we want to subtract floor(val) instead?
-		cv::Point2f offset(offsetX, offsetY);
-		auto maxY = minMaxY.second->y; // minMaxY is only an iterator, so we have to store it
-		for (auto& p : referencePoints) {
-			p = (p - offset) * (1.0 / (maxY-offset.y)); // y is usually bigger. To keep the aspect ratio, we rescale y to [0, 1]. Then, x will be [0, 1] too.
-		}
-
 		// Now the same for the detected landmarks:
 		vector<Point2f> landmarkPoints;
 		for (auto& l : lms.getLandmarks()) {
 			landmarkPoints.emplace_back(l->getPoint2D()); // order: re_c, le_c, mouth_c, nt, botn
 		}
 		landmarkPoints = addArtificialPoints(landmarkPoints);
-		for (auto& p : landmarkPoints) {
-			//cv::circle(frame, p, 4, { 255, 0, 0 });
-		}
-		/*
-		for (auto& tri : triangleList) {
-			cv::line(frame, referencePoints[tri[0]], referencePoints[tri[1]], { 255, 0, 0 });
-			cv::line(frame, referencePoints[tri[1]], referencePoints[tri[2]], { 255, 0, 0 });
-			cv::line(frame, referencePoints[tri[2]], referencePoints[tri[0]], { 255, 0, 0 });
 
-			cv::line(frame, landmarkPoints[tri[0]], landmarkPoints[tri[1]], { 0, 255, 0 });
-			cv::line(frame, landmarkPoints[tri[1]], landmarkPoints[tri[2]], { 0, 255, 0 });
-			cv::line(frame, landmarkPoints[tri[2]], landmarkPoints[tri[0]], { 0, 255, 0 });
-		}
-		*/
 		// Now warp the detected landmarks triangles to the reference (mean), using a triangle-wise (piecewise) affine mapping:
-		Mat textureMap = Mat::zeros(100, 100, frame.type());
-		for (auto& tri : triangleList) {
-			Mat dstTriImg;
-			vector<Point2f> srcTri, dstTri;
-			srcTri.emplace_back(landmarkPoints[tri[0]]);
-			srcTri.emplace_back(landmarkPoints[tri[1]]);
-			srcTri.emplace_back(landmarkPoints[tri[2]]);
-			dstTri.emplace_back(referencePoints[tri[0]]);
-			dstTri.emplace_back(referencePoints[tri[1]]);
-			dstTri.emplace_back(referencePoints[tri[2]]);
-
-			// ROI in the source image:
-			// Todo: Check if the triangle is on screen. If it's outside, we crash here.
-			float src_tri_min_x = std::min(srcTri[0].x, std::min(srcTri[1].x, srcTri[2].x)); // note: might be better to round later (i.e. use the float points for getAffineTransform for a more accurate warping)
-			float src_tri_max_x = std::max(srcTri[0].x, std::max(srcTri[1].x, srcTri[2].x));
-			float src_tri_min_y = std::min(srcTri[0].y, std::min(srcTri[1].y, srcTri[2].y));
-			float src_tri_max_y = std::max(srcTri[0].y, std::max(srcTri[1].y, srcTri[2].y));
-
-			Mat inputImageRoi = frame.rowRange(cvFloor(src_tri_min_y), cvCeil(src_tri_max_y)).colRange(cvFloor(src_tri_min_x), cvCeil(src_tri_max_x)); // We round down and up. ROI is possibly larger. But wrong pixels get thrown away later when we check if the point is inside the triangle? Correct?
-			srcTri[0] -= Point2f(src_tri_min_x, src_tri_min_y);
-			srcTri[1] -= Point2f(src_tri_min_x, src_tri_min_y);
-			srcTri[2] -= Point2f(src_tri_min_x, src_tri_min_y); // shift all the points to correspond to the roi
-
-			dstTri[0] = cv::Point2f(textureMap.cols*dstTri[0].x, textureMap.rows*dstTri[0].y - 1.0f);
-			dstTri[1] = cv::Point2f(textureMap.cols*dstTri[1].x, textureMap.rows*dstTri[1].y - 1.0f);
-			dstTri[2] = cv::Point2f(textureMap.cols*dstTri[2].x, textureMap.rows*dstTri[2].y - 1.0f);
-
-			/// Get the Affine Transform
-			Mat warp_mat = getAffineTransform(srcTri, dstTri);
-
-			/// Apply the Affine Transform just found to the src image
-			Mat tmpDstBuffer = Mat::zeros(textureMap.rows, textureMap.cols, frame.type()); // I think using the source-size here is not correct. The dst might be larger. We should warp the endpoints and set to max-w/h. No, I think it would be even better to directly warp to the final textureMap size. (so that the last step is only a 1:1 copy)
-			warpAffine(inputImageRoi, tmpDstBuffer, warp_mat, tmpDstBuffer.size(), cv::INTER_LANCZOS4, cv::BORDER_TRANSPARENT); // last row/col is zeros, depends on interpolation method. Maybe because of rounding or interpolation? So it cuts a little. Maybe try to implement by myself?
-
-			// only copy to final img if point is inside the triangle (or on the border)
-			for (int x = std::min(dstTri[0].x, std::min(dstTri[1].x, dstTri[2].x)); x < std::max(dstTri[0].x, std::max(dstTri[1].x, dstTri[2].x)); ++x) {
-				for (int y = std::min(dstTri[0].y, std::min(dstTri[1].y, dstTri[2].y)); y < std::max(dstTri[0].y, std::max(dstTri[1].y, dstTri[2].y)); ++y) {
-					if (isPointInTriangle(cv::Point2f(x, y), dstTri[0], dstTri[1], dstTri[2])) {
-						textureMap.at<cv::Vec3b>(y, x) = tmpDstBuffer.at<cv::Vec3b>(y, x);
-					}
-				}
-			}
-		}
-		Mat finalMap = textureMap.colRange(0, 66);
+		Mat textureMap = model.extractTexture2D(frame, landmarkPoints);
 			
 		//string logMessage("Throwing away patch because it goes outside the image bounds. This shouldn't happen, or rather, we do not want it to happen, because we didn't select a frame where this should happen.");
 		//string logMessage("Hmm no PP eyes. How are we going to do the affine alignment? Skipping the image for now.");
 
 		// Normalise:
-		//croppedFace = equaliseIntensity(croppedFace);
+		//textureMap = utils::equaliseIntensity(textureMap);
 		
 		/*
-		Mat mask(0, 0, IPL_DEPTH_8U, 1);
-		Mat gr;
-		Mat gf; // out
-		cv::cvtColor(croppedFace, gr, cv::COLOR_BGR2GRAY);
-		// gamma stuff:
-		Mat temp;
-		cvConvertScale(gr, temp, 1.0 / 255, 0);
-		cvPow(temp, temp, 0.2);
-		cvConvertScale(temp, gf, 255, 0);
-
-		cvSmooth(gf, b1, CV_GAUSSIAN, 1);
-		cvSmooth(gf, b2, CV_GAUSSIAN, 23);
-		cvSub(b1, b2, b2, mask);
-		cvConvertScale(b2, gr, 127, 127);
-		cvEqualizeHist(gr, gr); // ==> use CvNormalize
-		//cvThreshold(gr,tr,255,0,CV_THRESH_TRUNC);
+		Mat quotientImage;
+		cv::cvtColor(textureMap, textureMap, CV_RGB2GRAY);
+		textureMap.convertTo(textureMap, CV_32FC1, 1.0 / 255);
+		cv::GaussianBlur(textureMap, quotientImage, cv::Size(7, 7), 1.0);
+		quotientImage = textureMap / quotientImage;
+		auto mean = cv::mean(quotientImage);
+		quotientImage = quotientImage - mean[0];
 		*/
 
 		path croppedImageFilename = outputFolder / file.filename();
-		cv::imwrite(croppedImageFilename.string(), frame);
+		cv::imwrite(croppedImageFilename.string(), textureMap);
 	}
 	appLogger.info("Finished cropping all files in the directory.");
 
