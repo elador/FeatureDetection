@@ -80,18 +80,21 @@ double normalizedGraylevelVariance(const cv::Mat& src)
 	return focusMeasure;
 }
 
-std::vector<float> minMaxFitTransformLinear(std::vector<float> headBoxSizes)
+std::vector<float> minMaxFitTransformLinear(std::vector<float> values)
 {
-	auto result = std::minmax_element(begin(headBoxSizes), end(headBoxSizes));
+	if (values.size() == 1) {
+		return { 0.0f }; // We can't assess them - just return 0.
+	}
+	auto result = std::minmax_element(begin(values), end(values));
 	auto min = *result.first;
 	auto max = *result.second;
 
 	float m = 1.0f / (max - min);
 	float b = -m * min;
 
-	std::transform(begin(headBoxSizes), end(headBoxSizes), begin(headBoxSizes), [m, b](float x) {return m * x + b; });
+	std::transform(begin(values), end(values), begin(values), [m, b](float x) {return m * x + b; });
 
-	return headBoxSizes;
+	return values;
 }
 
 std::vector<float> getVideoNormalizedYawPoseScores(std::vector<float> yaws)

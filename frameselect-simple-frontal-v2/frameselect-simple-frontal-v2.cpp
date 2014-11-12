@@ -293,16 +293,16 @@ int main(int argc, char *argv[])
 	std::ofstream framesListFile((outputPath / "frames.txt").string());
 
 	// If we don't want to loop over all videos: (e.g. to get a quick Matlab output)
-	//auto videoIter = std::find_if(begin(videoSigset), end(videoSigset), [](const facerecognition::FaceRecord& d) { return (d.dataPath == "05795d567.mp4"); });
-	//auto video = *videoIter; {
-	for (auto& video : videoSigset) {
+	auto videoIter = std::find_if(begin(videoSigset), end(videoSigset), [](const facerecognition::FaceRecord& d) { return (d.dataPath == "05033d2639.mp4"); });
+	auto video = *videoIter; {
+	//for (auto& video : videoSigset) {
 		appLogger.info("Starting to process " + video.dataPath.string());
 
 		// Shouldn't be necessary, but there are 5 videos in the xml sigset that we don't have.
 		// Does it happen for the test-videos? No?
 		if (!fs::exists(inputDirectoryVideos / video.dataPath)) {
 			appLogger.warn("Video in the sigset not found on the filesystem!");
-			continue;
+			//continue;
 		}
 
 		auto assessedFrames = selectFrameSimple(inputDirectoryVideos, video, pascVideoDetections);
@@ -335,7 +335,7 @@ int main(int argc, char *argv[])
 			frameNumCsv.erase(std::remove(frameNumCsv.begin(), frameNumCsv.end(), '.'), frameNumCsv.end());
 			framesListFile << frameNameCsv.string() << "," << frameNumCsv << "," << get<2>(frame) << endl;
 
-			if (cnt > minNumFramesToKeep) {
+			if (cnt >= minNumFramesToKeep) {
 				break;
 			}
 			++cnt;

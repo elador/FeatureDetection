@@ -11,9 +11,13 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
+#include "boost/lexical_cast.hpp"
+#include "boost/algorithm/string.hpp"
 #include "boost/property_tree/ptree.hpp"
 #include "boost/property_tree/info_parser.hpp"
 #include "boost/property_tree/xml_parser.hpp"
+
+#include <fstream>
 
 //using logging::Logger;
 using logging::LoggerFactory;
@@ -191,6 +195,49 @@ path transformDataPath(const path& originalDataPath, DataPathTransformation tran
 		fullFilePath = transformation.rootPath / filename;
 	}
 	return fullFilePath;
+}
+
+std::map<boost::filesystem::path, std::vector<std::pair<int, float>>> readFramesList(boost::filesystem::path filename)
+{
+	std::ifstream file(filename.string());
+	if (!file.is_open() || !file.good()) {
+		throw std::runtime_error("Error while trying to open and read the frames-list file.");
+	}
+	string line;
+
+	std::map<boost::filesystem::path, std::vector<std::pair<int, float>>> allFrames;
+
+	// Hmm this function contains a bit too many hacks for my taste. We might want to rewrite it.
+	bool newVideo = false;
+	int first = true;
+	path lastVideo;
+	std::vector<std::pair<int, float>> frames;
+	while (std::getline(file, line))
+	{
+		vector<string> tokens;
+		boost::trim_right_if(line, boost::is_any_of("\r")); // Windows line-endings are \r\n, Linux only \n. Thus, when a file has been created on Windows and is read on Linux, we need to remove the trailing \r.
+		boost::split(tokens, line, boost::is_any_of(","));
+		auto videoName = static_cast<path>(tokens[0]);
+		auto frameNumber = boost::lexical_cast<int>(tokens[1]);
+		auto frameScore = boost::lexical_cast<float>(tokens[2]);
+
+		if (first) {
+			lastVideo = videoName; // Initialisation in the very first iteration
+			first = false;
+		}
+
+		if (videoName != lastVideo) {
+			allFrames.emplace(make_pair(lastVideo, frames));
+			frames.resize(0);
+			lastVideo = videoName;
+		}
+
+		frames.emplace_back(std::make_pair(frameNumber, frameScore));
+	}
+	// Data for last video not saved yet, do it now:
+	allFrames.emplace(make_pair(lastVideo, frames));
+
+	return allFrames;
 }
 
 	} /* namespace utils */

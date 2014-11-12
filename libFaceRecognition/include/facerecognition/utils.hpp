@@ -70,6 +70,9 @@ void saveSimilarityMatrixAsCSV(cv::Mat similarityMatrix, boost::filesystem::path
  */
 cv::Mat equaliseIntensity(const cv::Mat& inputImage);
 
+// One vector for every video file. It contains an entry for every frame, with the frame number and the score.
+std::map<boost::filesystem::path, std::vector<std::pair<int, float>>> readFramesList(boost::filesystem::path filename);
+
 /**
  * Desc.
  *

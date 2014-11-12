@@ -289,8 +289,19 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	// Write all frames and scores to a file:
-	std::ofstream framesListFile((outputPath / "frames.txt").string());
+	path framesListFile = path(R"(Z:\FRonPaSC\IJCB2014Competition\1_Preprocessing\SimpleFrameselect_frontal_video_control_best15_Patrik_10112014\frames.txt)");
+	path framesListFile2 = path(R"(Z:\FRonPaSC\IJCB2014Competition\1_Preprocessing\SimpleFrameselect_video_control_best20_Patrik_22102014\frameselect-simple.txt)");
+	auto framesList = utils::readFramesList(framesListFile);
+	auto framesList2 = utils::readFramesList(framesListFile2);
+
+	for (auto& f2 : framesList2) {
+		auto isInL1 = framesList.find(f2.first);
+		if (isInL1 == end(framesList)) {
+			appLogger.info("Didn't find video " + f2.first.string() + " in list 1 (best15_... new frontal)");
+		}
+	}
+
+	path videoFramesPath = path(R"(Z:\datasets\multiview02\PaSC\video_frame)");
 
 	// If we don't want to loop over all videos: (e.g. to get a quick Matlab output)
 	//auto videoIter = std::find_if(begin(videoSigset), end(videoSigset), [](const facerecognition::FaceRecord& d) { return (d.dataPath == "05795d567.mp4"); });
@@ -305,41 +316,18 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		auto assessedFrames = selectFrameSimple(inputDirectoryVideos, video, pascVideoDetections);
-		// Sort by score, higher ones first:
-		using std::get;
-		std::sort(begin(assessedFrames), end(assessedFrames), [](tuple<Mat, path, float> lhs, tuple<Mat, path, float> rhs) { return get<2>(rhs) < get<2>(lhs); });
-		int minNumFramesToKeep = 15;
-		if (assessedFrames.size() > minNumFramesToKeep) {
-			// Start from rear, remove all non-frontal frames as long as we still have 15:
-			for (int i = assessedFrames.size() - 1; (assessedFrames.size() > minNumFramesToKeep) && (i >= 0); --i) {
-				auto framePath = get<1>(assessedFrames[i]);
-				string frameName = facerecognition::getPascFrameName(framePath.stem().stem(), boost::lexical_cast<int>(framePath.stem().extension().string().substr(1, string::npos)));
-				auto landmarks = std::find_if(begin(pascVideoDetections), end(pascVideoDetections), [frameName](const facerecognition::PascVideoDetection& d) { return (d.frame_id == frameName); });
-				if (landmarks->fpose_y > 5.0f) {
-					assessedFrames.erase(begin(assessedFrames) + i);
-				}
-			}
+		auto frames = framesList.find(video.dataPath.filename());
+		if (frames == end(framesList)) {
+			// Set whole row in simi mtx to 0?
+			// Or are we only processing the vids here... i.e. just skip the video
 		}
-		int cnt = 1;
-		for (auto& frame : assessedFrames) {
-			auto f = get<0>(frame);
-			auto framePath = get<1>(frame); // Hmm we're repeating that find_if a bit often
-			cv::imwrite((outputPath / framePath).string(), f);
-
-			// Write to frames.txt:
-			path frameName = outputPath / get<1>(frame); // The filename is already 1-based (PaSC format)
-			path frameNameCsv = frameName.stem();
-			frameNameCsv.replace_extension(".mp4");
-			string frameNumCsv = frameName.stem().extension().string();
-			frameNumCsv.erase(std::remove(frameNumCsv.begin(), frameNumCsv.end(), '.'), frameNumCsv.end());
-			framesListFile << frameNameCsv.string() << "," << frameNumCsv << "," << get<2>(frame) << endl;
-
-			if (cnt > minNumFramesToKeep) {
-				break;
-			}
-			++cnt;
+		// Else: We got some frames for this video. Process them:
+		for (auto& f : frames->second) {
+			// f is pair<frameNum, frameScore>
+			auto frameName = getPascFrameName(video.dataPath, f.first);
+			auto tmp = videoFramesPath / frameName;
 		}
+
 		/*
 		for (auto& frame : assessedFrames) {
 			auto framePath = get<1>(frame); // Hmm we're repeating that find_if a bit often
@@ -361,7 +349,7 @@ int main(int argc, char *argv[])
 		//}
 		//for (int i = 0; i < numFramesPerVideo; ++i)
 	}
-	framesListFile.clear();
+
 	appLogger.info("Finished processing all videos.");
 
 	return EXIT_SUCCESS;

@@ -41,6 +41,7 @@ double normalizedGraylevelVariance(const cv::Mat& src);
 // Could all be renamed to "transform/fitLinear" or something
 // Todo: Proper doc
 // Note: Segfaults if the given vector is empty (iterator not dereferentiable)
+// Actually we should assert(values>=2), otherwise we can't perform a line fitting anyway
 std::vector<float> minMaxFitTransformLinear(std::vector<float> values);
 
 std::vector<float> getVideoNormalizedYawPoseScores(std::vector<float> yaws);

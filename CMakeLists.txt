@@ -88,7 +88,8 @@ add_subdirectory(libFaceRecognition)	# Utility library for face recognition expe
 add_subdirectory(frameselect-random)		# Extracts random frames from a video. Can be used as a baseline.
 add_subdirectory(frameselect-simple)		# Rates frames with a simple weighting of blurriness, in-focus-ness, IED, head size.
 #add_subdirectory(frameselect-simple-frontal) # Pre-selection of frontal frames, then head-size. Weird behaviour on the server - I didn't continue it. See below instead.
-add_subdirectory(frameselect-simple-frontal-v2) # Normal simple frameselection, but more weight on pose. Then throw away all large pose frames until 'n' left.
+add_subdirectory(frameselect-simple-frontal-v2) # Normal simple frameselection, but more weight on pose. Then throw away all large pose frames until 'n' left. TODO: Doesn't output a frame for all 1401 videos. Probably some bug...
+
 # Face-recognition on PaSC:
 #add_subdirectory(convert-pasc-video-metadata-to-bs)	# Convert PaSC video detections and metadata (CSV) to boost::serialization format
 add_subdirectory(crop-pasc-video-heads)		# Takes PaSC frames from our frameselection and the metadata and saves cropped head patches.
