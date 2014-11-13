@@ -59,6 +59,7 @@
 #include "facerecognition/ThreadPool.hpp"
 
 #include "logging/LoggerFactory.hpp"
+#include "logging/FileAppender.hpp"
 
 using namespace facerecognition;
 namespace po = boost::program_options;
@@ -84,7 +85,7 @@ using std::future;
 // Returns: tuple<Frame, Videoname-Framenum, Score>
 std::vector<std::tuple<cv::Mat, path, float>> selectFrameSimple(path inputDirectoryVideos, const facerecognition::FaceRecord& video, const vector<facerecognition::PascVideoDetection>& pascVideoDetections)
 {
-	auto logger = Loggers->getLogger("frameselect-simple");
+	auto logger = Loggers->getLogger("app");
 
 	auto frames = facerecognition::utils::getFrames(inputDirectoryVideos / video.dataPath);
 	vector<float> headBoxSizes;
@@ -263,6 +264,7 @@ int main(int argc, char *argv[])
 	Loggers->getLogger("imageio").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("facerecognition").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("app").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("app").addAppender(make_shared<logging::FileAppender>(logLevel, "/vol/vssp/FRonPaSC/IJCB2014Competition/1_Preprocessing/SimpleFrameselect_frontal_video_control_best15_Patrik_13112014/log.txt"));
 	Logger appLogger = Loggers->getLogger("app");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
@@ -293,16 +295,16 @@ int main(int argc, char *argv[])
 	std::ofstream framesListFile((outputPath / "frames.txt").string());
 
 	// If we don't want to loop over all videos: (e.g. to get a quick Matlab output)
-	auto videoIter = std::find_if(begin(videoSigset), end(videoSigset), [](const facerecognition::FaceRecord& d) { return (d.dataPath == "05033d2639.mp4"); });
-	auto video = *videoIter; {
-	//for (auto& video : videoSigset) {
+	//auto videoIter = std::find_if(begin(videoSigset), end(videoSigset), [](const facerecognition::FaceRecord& d) { return (d.dataPath == "05033d2639.mp4"); });
+	//auto video = *videoIter; {
+	for (auto& video : videoSigset) {
 		appLogger.info("Starting to process " + video.dataPath.string());
 
 		// Shouldn't be necessary, but there are 5 videos in the xml sigset that we don't have.
 		// Does it happen for the test-videos? No?
 		if (!fs::exists(inputDirectoryVideos / video.dataPath)) {
 			appLogger.warn("Video in the sigset not found on the filesystem!");
-			//continue;
+			continue;
 		}
 
 		auto assessedFrames = selectFrameSimple(inputDirectoryVideos, video, pascVideoDetections);
