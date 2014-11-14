@@ -10,9 +10,12 @@
 
 #include "opencv2/imgproc/imgproc.hpp"
 
+#include "boost/lexical_cast.hpp"
+
 #include <algorithm>
 #include <array>
 #include <vector>
+#include <fstream>
 
 using logging::LoggerFactory;
 using cv::Mat;
@@ -56,6 +59,10 @@ std::vector<std::array<int, 3>> delaunayTriangulate(std::vector<cv::Point2f> poi
 	cv::Subdiv2D subdiv(rect);
 
 	Mat tmp = Mat::zeros(rect.size(), CV_8UC3);
+	// Note/Todo: We might want to do the triangulation on a higher resolution? This can
+	// end up being 80x75 which is pretty low when we have e.g. 68 landmarks and they are
+	// close to each other. Or does the triangulation use the floating point values and it
+	// doesn't matter?
 
 	for (auto& p : points)
 	{
@@ -97,28 +104,51 @@ std::vector<std::array<int, 3>> delaunayTriangulate(std::vector<cv::Point2f> poi
 		auto idx2 = std::distance(begin(points), ret);
 		triangleList.emplace_back(std::array<int, 3>({ idx0, idx1, idx2 }));
 	}
+
+/*	for (auto& tri : triangleList) {
+		cv::line(tmp, points[tri[0]], points[tri[1]], { 255, 0, 0 });
+		cv::line(tmp, points[tri[1]], points[tri[2]], { 255, 0, 0 });
+		cv::line(tmp, points[tri[2]], points[tri[0]], { 255, 0, 0 });
+	}*/
+
 	return triangleList;
-	/*
-	for (auto& tri : triangleList) {
-		cv::line(frame, points[tri[0]], points[tri[1]], { 255, 0, 0 });
-		cv::line(frame, points[tri[1]], points[tri[2]], { 255, 0, 0 });
-		cv::line(frame, points[tri[2]], points[tri[0]], { 255, 0, 0 });
-	}
-	*/
 }
 
 FivePointModel::FivePointModel()
 {
 	using cv::Point2f;
+	// 5-point model:
+	/*
 	points.emplace_back(Point2f(561.2688f, 528.9627f)); // re_c
 	points.emplace_back(Point2f(645.7872f, 528.7401f)); // le_c
 	points.emplace_back(Point2f(603.2419f, 624.6601f)); // mouth_c
 	points.emplace_back(Point2f(603.2317f, 577.7201f)); // nt
 	points.emplace_back(Point2f(603.4039f, 529.2591f)); // botn
 	points = addArtificialPoints(points);
+	*/
+	// 68 iBug model:
+	// Read the mean from a file...
+	{
+		std::ifstream modelMeanFile(R"(C:\Users\Patrik\Documents\GitHub\model_mean_sdm_pasc_ibug_68pts.txt)");
+		if (!modelMeanFile.is_open() || !modelMeanFile.good()) {
+			throw std::runtime_error("Error opening mean file.");
+		}
+		std::string line;
+		vector<float> lines;
+		while (std::getline(modelMeanFile, line)) {
+			lines.emplace_back(boost::lexical_cast<float>(line));
+		}
+		modelMeanFile.close();
+		if (lines.size() != 68 * 2) {
+			throw std::runtime_error("File with mean doesn't contain 68 LMs");
+		}
+		for (int i = 0; i < 68; ++i) {
+			points.emplace_back(Point2f(lines[i], lines[i + 68]));
+		}
+	}
 
 	triangleList = delaunayTriangulate(points);
-
+	
 	// Convert to texture coordinates, i.e. rescale the points to lie in [0, 1] x [0, 1]
 	auto minMaxX = std::minmax_element(begin(points), end(points), [](const Point2f& lhs, const Point2f& rhs) { return lhs.x < rhs.x; });
 	auto minMaxY = std::minmax_element(begin(points), end(points), [](const Point2f& lhs, const Point2f& rhs) { return lhs.y < rhs.y; });
@@ -129,7 +159,7 @@ FivePointModel::FivePointModel()
 	cv::Point2f offset(offsetX, offsetY);
 	auto maxY = minMaxY.second->y; // minMaxY is only an iterator, so we have to store it
 	for (auto& p : points) {
-		p = (p - offset) * (1.0 / (maxY - offset.y)); // y is usually bigger. To keep the aspect ratio, we rescale y to [0, 1]. Then, x will be [0, 1] too.
+		p = (p - offset) * (1.0 / (maxY - offset.y)); // y is usually bigger. To keep the aspect ratio, we rescale y to [0, 1]. Then, x will be inside [0, 1] too. Note: This doesn't hold for the 68-point model? Odd?
 	}
 }
 

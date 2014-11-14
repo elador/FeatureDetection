@@ -295,8 +295,8 @@ int main(int argc, char *argv[])
 	std::ofstream framesListFile((outputPath / "frames.txt").string());
 
 	// If we don't want to loop over all videos: (e.g. to get a quick Matlab output)
-	//auto videoIter = std::find_if(begin(videoSigset), end(videoSigset), [](const facerecognition::FaceRecord& d) { return (d.dataPath == "05033d2639.mp4"); });
-	//auto video = *videoIter; {
+	auto videoIter = std::find_if(begin(videoSigset), end(videoSigset), [](const facerecognition::FaceRecord& d) { return (d.dataPath == "02463d3667.mp4"); });
+	auto video = *videoIter; {
 	for (auto& video : videoSigset) {
 		appLogger.info("Starting to process " + video.dataPath.string());
 
@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
 		// Does it happen for the test-videos? No?
 		if (!fs::exists(inputDirectoryVideos / video.dataPath)) {
 			appLogger.warn("Video in the sigset not found on the filesystem!");
-			continue;
+	//		continue;
 		}
 
 		auto assessedFrames = selectFrameSimple(inputDirectoryVideos, video, pascVideoDetections);
