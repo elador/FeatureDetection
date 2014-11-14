@@ -43,10 +43,10 @@ endif()
 #add_subdirectory(libDetection)			# Sliding-window detection, Skin detection (Note: Do we use it anymore? Yes, Condensation depends on it)
 #add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 
-#add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
-#add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes
-#add_subdirectory(libFitting)			# Camera (Pose) estimation and shape-fitting
-#add_subdirectory(libSupervisedDescent)	# A non-parametric model for landmark detection. Uses the supervised descent method.
+add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
+add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes
+add_subdirectory(libFitting)			# Camera (Pose) estimation and shape-fitting
+add_subdirectory(libSupervisedDescent)	# A non-parametric model for landmark detection. Uses the supervised descent method.
 add_subdirectory(libFaceRecognition)	# Utility library for face recognition experiments, to work with databases, face-record, etc.
 
 # Tracking apps:
@@ -62,10 +62,10 @@ add_subdirectory(libFaceRecognition)	# Utility library for face recognition expe
 #add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe). (Note: Check if it still works)
 
 # Face- and landmark detection apps:
-#add_subdirectory(detect-and-correct-faces) # Detect faces and validate them using given ground-truth.
-#add_subdirectory(detect-landmarks)		# Run the SDM landmark detection on one or several images, the input is either images (V&J will be run) or images & faceboxes.
-#add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
-#add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
+add_subdirectory(detect-and-correct-faces) # Detect faces and validate them using given ground-truth.
+add_subdirectory(detect-landmarks)		# Run the SDM landmark detection on one or several images, the input is either images (V&J will be run) or images & faceboxes.
+add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
+add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
 
 # 3DMM fitting:
 #add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
@@ -74,9 +74,9 @@ add_subdirectory(libFaceRecognition)	# Utility library for face recognition expe
 #add_subdirectory(compareIsomaps)	# Compare isomaps (extracted textures)
 
 # Landmark tools:
-#add_subdirectory(visualise-landmarks)	# Simple app to read landmarks and images and display them
-#add_subdirectory(convert-landmarks)		# Simple app to convert landmarks from one format into another
-#add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks and perform an evaluation.
+add_subdirectory(visualise-landmarks)	# Simple app to read landmarks and images and display them
+add_subdirectory(convert-landmarks)		# Simple app to convert landmarks from one format into another
+add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks and perform an evaluation.
 
 # Deep learning based frame selection:
 #add_subdirectory(train-frameselect-extract)	# Extract frames and label information for training. Random subset of vids & frames. With random selection, and (partly) negative patches. Also runs FR engine. Unfinished.
@@ -85,35 +85,35 @@ add_subdirectory(libFaceRecognition)	# Utility library for face recognition expe
 #add_subdirectory(frames-labels-to-caffe)	# Convert boost::serialization file with patches and labels to Caffe format (currently: images. Later, I might add LevelDB/LMDB/HDF5)
 
 # Simple frame selection:
-add_subdirectory(frameselect-random)		# Extracts random frames from a video. Can be used as a baseline.
-add_subdirectory(frameselect-simple)		# Rates frames with a simple weighting of blurriness, in-focus-ness, IED, head size.
+#add_subdirectory(frameselect-random)		# Extracts random frames from a video. Can be used as a baseline.
+#add_subdirectory(frameselect-simple)		# Rates frames with a simple weighting of blurriness, in-focus-ness, IED, head size.
 #add_subdirectory(frameselect-simple-frontal) # Pre-selection of frontal frames, then head-size. Weird behaviour on the server - I didn't continue it. See below instead.
-add_subdirectory(frameselect-simple-frontal-v2) # Normal simple frameselection, but more weight on pose. Then throw away all large pose frames until 'n' left. TODO: Doesn't output a frame for all 1401 videos. Probably some bug...
+#add_subdirectory(frameselect-simple-frontal-v2) # Normal simple frameselection, but more weight on pose. Then throw away all large pose frames until 'n' left.
 
 # Face-recognition on PaSC:
 #add_subdirectory(convert-pasc-video-metadata-to-bs)	# Convert PaSC video detections and metadata (CSV) to boost::serialization format
-add_subdirectory(crop-pasc-video-heads)		# Takes PaSC frames from our frameselection and the metadata and saves cropped head patches.
-add_subdirectory(crop-pasc-video-heads-eyealign)	# Same as above, and aligns the patches to the PaSC eye coordinates (i.e. in-plane rotation). Then saves cropped head patches.
-add_subdirectory(crop-pasc-video-heads-affinealign)	# Same as above, and does a piecewise-affine alignment using landmarks, then saves cropped head patches.
-add_subdirectory(csv-framesfolder-to-pasc-csv) # Take a folder with frames and a CSV (converted from Matlab) with a matrix in the same order as the images in the folder. Then, use a PaSC XML sigset to generate a conforming CSV or BEE matrix file, with similarity-scores and the FTEs.
+#add_subdirectory(crop-pasc-video-heads)		# Takes PaSC frames from our frameselection and the metadata and saves cropped head patches.
+#add_subdirectory(crop-pasc-video-heads-eyealign)	# Same as above, and aligns the patches to the PaSC eye coordinates (i.e. in-plane rotation). Then saves cropped head patches.
+#add_subdirectory(crop-pasc-video-heads-affinealign)	# Same as above, and does a piecewise-affine alignment using landmarks, then saves cropped head patches.
+#add_subdirectory(csv-framesfolder-to-pasc-csv) # Take a folder with frames and a CSV (converted from Matlab) with a matrix in the same order as the images in the folder. Then, use a PaSC XML sigset to generate a conforming CSV or BEE matrix file, with similarity-scores and the FTEs.
 
-add_subdirectory(preprocess-pasc-videos) # Test on control: Assess, select,  align, crop, light-normalise... Maybe feature extraction
+#add_subdirectory(preprocess-pasc-videos) # Test on control: Assess, select,  align, crop, light-normalise... Maybe feature extraction
 
 # Matching:
-add_subdirectory(match-all-frames)			# Match each frame of PaSC videos to a still image gallery. Outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
-add_subdirectory(fvsdk-enrol-all-videos)	# Enrol all videos using the fvsdk. match-all-frames-to-all-frames is too inefficient at the moment.
-add_subdirectory(fvsdk-enrol-all-videos-one-fir-per-video)	# Same as above, but use all the frames of a video to enrol it to ONE FIR.
-add_subdirectory(fvsdk-match-video-to-video-allframes) # Read pre-enroled FIRs and match each frame of PaSC videos to all other frames of a target video. Do some selection and output the full similarity matrix as CSV (BEE-ready).
+#add_subdirectory(match-all-frames)			# Match each frame of PaSC videos to a still image gallery. Outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
+#add_subdirectory(fvsdk-enrol-all-videos)	# Enrol all videos using the fvsdk. match-all-frames-to-all-frames is too inefficient at the moment.
+#add_subdirectory(fvsdk-enrol-all-videos-one-fir-per-video)	# Same as above, but use all the frames of a video to enrol it to ONE FIR.
+#add_subdirectory(fvsdk-match-video-to-video-allframes) # Read pre-enroled FIRs and match each frame of PaSC videos to all other frames of a target video. Do some selection and output the full similarity matrix as CSV (BEE-ready).
 # No app atm: Match each frame of PaSC videos to all other frames of a target video. Outputs the scores as boost::serialization file and to a CSV file to plot in Matlab
-add_subdirectory(fvsdk-match-firs) # Load pre-calculated FIRs (one FIR per video) and generate the full similarity matrix as CSV (BEE-ready).
-add_subdirectory(match-video)			# Matches a video sigset using fvsdk, writes out results to CSV. Very similar to plot-video-scores?
-add_subdirectory(match-videos-single-frames) # Match the best frame of a video (pre-selected by a frameselection), output the full similarity matrix as CSV (BEE-ready).
+#add_subdirectory(fvsdk-match-firs) # Load pre-calculated FIRs (one FIR per video) and generate the full similarity matrix as CSV (BEE-ready).
+#add_subdirectory(match-video)			# Matches a video sigset using fvsdk, writes out results to CSV. Very similar to plot-video-scores?
+#add_subdirectory(match-videos-single-frames) # Match the best frame of a video (pre-selected by a frameselection), output the full similarity matrix as CSV (BEE-ready).
 
-add_subdirectory(cnn-matcher-extract-trainingdata) # Use images, frames or (cropped) patches as input, convert them (e.g. graylevel) or extract features, and then write a boost::serialization file. The files have the same order as in the given sigset. Calculate and save the mean, etc.
-add_subdirectory(cnn-matcher-extract-trainingdata-sdae) # 
-add_subdirectory(cnn-matcher-extract-testdata)	# Same as above, but for test-data, i.e. uses the mean generated with the traindata app
-add_subdirectory(cnn-matcher-learn) # Use the data from 'train-deeplearning-matcher-extract' app, create pairs including labels (0 or 1), and use them to learn a neural network for classification.
-add_subdirectory(cnn-matcher-match) # Match PaSC video-video
+#add_subdirectory(cnn-matcher-extract-trainingdata) # Use images, frames or (cropped) patches as input, convert them (e.g. graylevel) or extract features, and then write a boost::serialization file. The files have the same order as in the given sigset. Calculate and save the mean, etc.
+#add_subdirectory(cnn-matcher-extract-trainingdata-sdae) # 
+#add_subdirectory(cnn-matcher-extract-testdata)	# Same as above, but for test-data, i.e. uses the mean generated with the traindata app
+#add_subdirectory(cnn-matcher-learn) # Use the data from 'train-deeplearning-matcher-extract' app, create pairs including labels (0 or 1), and use them to learn a neural network for classification.
+#add_subdirectory(cnn-matcher-match) # Match PaSC video-video
 
 add_subdirectory(fvsdk-run-guosheng-ar) # Run FaceVACS matching on some images (AR?) for Guosheng
 
