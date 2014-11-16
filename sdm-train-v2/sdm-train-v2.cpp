@@ -192,16 +192,29 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	Mat test = x_tr.t() * x_tr;
-	auto bla = cv::norm(test);
+	//vector<std::unique_ptr<int>> bla;
+	//auto a = std::make_unique<int>(5);
+
 	v2::LinearRegressor lr;
 	v2::TrivialEvaluationFunction ev;
-	v2::Optimiser<v2::LinearRegressor, v2::TrivialEvaluationFunction> o(lr, ev);
-	o.train(x_tr, y_tr);
+	
+	auto rgrs1 = { std::make_unique<v2::LinearRegressor>() };
+	auto rgrs2 = { std::make_unique<v2::LinearRegressor>(), std::make_unique<v2::LinearRegressor>() };
+	auto rgrs3 = std::vector<std::unique_ptr<v2::Regressor>>{ std::make_unique<v2::LinearRegressor>(), std::make_unique<v2::LinearRegressor>() };
 
-	o.test(x_ts, y_ts);
+	//v2::SupervisedDescentOptimiser<v2::TrivialEvaluationFunction> o1(std::vector<std::unique_ptr<v2::Regressor>>(), ev);
+	//v2::SupervisedDescentOptimiser<v2::TrivialEvaluationFunction> o2(std::vector<std::unique_ptr<v2::Regressor>>({ std::make_unique<v2::LinearRegressor>() }), ev);
+	//v2::SupervisedDescentOptimiser<v2::TrivialEvaluationFunction> o3(std::vector<std::unique_ptr<v2::Regressor>>({ std::make_unique<v2::LinearRegressor>(), std::make_unique<v2::LinearRegressor>() }), ev);
+	//v2::SupervisedDescentOptimiser<v2::TrivialEvaluationFunction> o4({ std::make_unique<v2::LinearRegressor>(), std::make_unique<v2::LinearRegressor>() }, ev);
 
-	using SDMLMOptimiser = v2::Optimiser<v2::LinearRegressor, v2::TrivialEvaluationFunction>;
+	//v2::SupervisedDescentOptimiser<v2::CascadedRegressor, v2::TrivialEvaluationFunction> o1(cr, ev);
+
+	//v2::SupervisedDescentOptimiser<v2::LinearRegressor, v2::TrivialEvaluationFunction> o2(lr, ev);
+	//o2.train(x_tr, y_tr);
+
+	//o2.test(x_ts, y_ts);
+
+	//using SDMLMOptimiser = v2::SupervisedDescentOptimiser<v2::LinearRegressor, v2::TrivialEvaluationFunction>;
 	// END v2 EXP
 	struct Dataset {
 		string databaseName;

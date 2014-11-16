@@ -188,28 +188,8 @@ private:
 	// Add serialisation
 };
 
-// I think it would be better to delete this and store a
-// vector<R> instead in Optimiser, because multiple levels
-// may require different features and different normalisations (i.e. IED)?
-// Yep, try this first. But it has the disadvantage that we need to remove
-// this template parameter from Optimiser and use "standard" inheritance
-// instead. Same as in tiny-cnn.
-class CascadedRegressor : public Regressor
-{
-public:
-	void learn(cv::Mat data, cv::Mat labels)
-	{
 
-	};
 
-	cv::Mat predict(cv::Mat values)
-	{
-		return cv::Mat();
-	};
-
-private:
-	std::vector<std::unique_ptr<Regressor>> regressors;
-};
 
 // or... LossFunction, CostFunction, Evaluator, ...?
 // No inheritance, so the user can plug in anything without inheriting.
@@ -220,27 +200,45 @@ class TrivialEvaluationFunction
 
 // template blabla.. requires Evaluator with function eval(Mat, blabla)
 // or... Learner? SDMLearner? Just SDM? SupervDescOpt? SDMTraining?
-template<class R, class E>
-class Optimiser {
+template<class E>
+class SupervisedDescentOptimiser {
 public:
-	Optimiser(R regressor, E evaluator) : regressor(regressor), evaluator(evaluator)
+	/*SupervisedDescentOptimiser(std::vector<std::unique_ptr<Regressor>> regressors, E evaluator) : regressors(std::move(regressors)), evaluator(evaluator)
 	{
-	};
+	};*/
 
 	// Hmm in case of LM / 3DMM, we might need to give more info than this? How to handle that?
 	// Yea, some optimisers need access to the image data to optimise. Think about where this belongs.
 	void train(cv::Mat data, cv::Mat labels)
 	{
-		regressor.learn(data, labels);
+		for (auto&& regressor : regressors) {
+			// Do some more stuff
+			regressor->learn(data, labels);
+		}
 	};
 
 	void test(cv::Mat data, cv::Mat labels)
 	{
-		double residual = regressor.test(data, labels);
+		for (auto&& regressor : regressors) {
+			double residual = regressor->test(data, labels);
+			// do some accumulation? printing?
+		}
 	};
 
 private:
-	R regressor;
+	// If we don't want to allow different regressor types, we
+	// could make the Regressor a template parameter
+	std::vector<std::unique_ptr<Regressor>> regressors; // TRY IN LX; TRY SHAREDPTR
+	// I think it would be better to delete this ('CascadedRegressor') and store a
+	// vector<R> instead in Optimiser, because multiple levels
+	// may require different features and different normalisations (i.e. IED)?
+	// Yep, try this first. But it has the disadvantage that we need to remove
+	// this template parameter from Optimiser and use "standard" inheritance
+	// instead. Same as in tiny-cnn.
+	// The right approach seems definitely to put it in the Optimiser.
+	// Because only he can now about the feature extraction required for each
+	// regressor step, and the scales etc.
+
 	E evaluator;
 };
 
