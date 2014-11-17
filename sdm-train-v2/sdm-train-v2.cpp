@@ -155,13 +155,70 @@ int main(int argc, char *argv[])
 	Logger appLogger = Loggers->getLogger("sdmTraining");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
+	// START v2 EXP SIMPLE
+	// for x^2:
+	auto testh = [](float value) { return std::pow(value, 2); };
+	Mat x_0_tr(31, 1, CV_32FC1);
+	{
+		int idx = 0;
+		for (float i = 0.0f; i <= 6.0f; i += 0.2f) {
+			x_0_tr.at<float>(idx) = i;
+			++idx;
+		}
+		x_0_tr.at<float>(30) = 6.0f; // because incrementing by 0.2f can lead to a value > 6.0f in the end
+	}
+	Mat y_tr(31, 1, CV_32FC1);
+	{
+		int idx = 0;
+		for (float i = 0.0f; i <= 6.0f; i += 0.2f) {
+			y_tr.at<float>(idx) = 9.0f;
+			++idx;
+		}
+	}
+
+	v2::LinearRegressor r(v2::LinearRegressor::RegularisationType::Manual, 0.0f);
+	v2::GenericDM1D<std::function<float(float)>> g(r, testh);
+	g.train(x_0_tr, y_tr, testh);
+
+
+	/*auto h_inv = [](float y) { return std::asin(y); };
+	Mat y_tr(11, 1, CV_32FC1);
 	
+	Mat y_ts(41, 1, CV_32FC1);
+	Mat x_ts(41, 1, CV_32FC1);
+	{
+		int idx = 0;
+		for (float i = -1.0f; i <= 1.0f; i += 0.2f) {
+			y_tr.at<float>(idx) = i;
+			++idx;
+		}
+		y_tr.at<float>(10) = 1.0f; // because incrementing 0.8f by 0.2f can be > 1.0f
+		idx = 0;
+		for (float i = -1.0f; i <= 1.0f; i += 0.05f) {
+			y_ts.at<float>(idx) = i;
+			++idx;
+		}
+		y_ts.at<float>(40) = 1.0f;
+	}
+	{
+		for (int i = 0; i < y_tr.rows; ++i) {
+			x_tr.at<float>(i) = h_inv(y_tr.at<float>(i));
+		}
+		for (int i = 0; i < y_ts.rows; ++i) {
+			x_ts.at<float>(i) = h_inv(y_ts.at<float>(i));
+		}
+	}
+	*/
+
+	// END v2 EXP SIMPLE
+
 	// START v2 EXP
 	// Note: h is actually the function we're learning the descent map from.
 	// E.g. here we learn it from sin(x). In which direction to go.
 	// In the LM case, we learn a descent map for SIFT features!
 	// 
 	// Here: y = h(x), lin reg. Here we want to approximate y = sin(x) with this linear regression.
+	/*
 	auto h_inv = [](float y) { return std::asin(y); };
 	Mat y_tr(11, 1, CV_32FC1);	// This is our labels, our y, our b. The value we want to regress. In this case, 1D. In LM case, the hand labeled landmarks.
 	Mat x_tr(11, 1, CV_32FC1);	// Our training data, x. In this case, the exact function values. In LM case, the SIFT features.
@@ -192,28 +249,17 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	//vector<std::unique_ptr<int>> bla;
-	//auto a = std::make_unique<int>(5);
-
-	v2::LinearRegressor lr;
 	v2::TrivialEvaluationFunction ev;
 	
-	auto rgrs1 = { std::make_unique<v2::LinearRegressor>() };
-	auto rgrs2 = { std::make_unique<v2::LinearRegressor>(), std::make_unique<v2::LinearRegressor>() };
-	auto rgrs3 = std::vector<std::unique_ptr<v2::Regressor>>{ std::make_unique<v2::LinearRegressor>(), std::make_unique<v2::LinearRegressor>() };
+	auto cascadedRegressors = std::vector<std::shared_ptr<v2::Regressor>>{ std::make_shared<v2::LinearRegressor>(), std::make_shared<v2::LinearRegressor>() };
+	auto singleRegressor = std::vector<std::shared_ptr<v2::Regressor>>{ std::make_shared<v2::LinearRegressor>() };
 
-	//v2::SupervisedDescentOptimiser<v2::TrivialEvaluationFunction> o1(std::vector<std::unique_ptr<v2::Regressor>>(), ev);
-	//v2::SupervisedDescentOptimiser<v2::TrivialEvaluationFunction> o2(std::vector<std::unique_ptr<v2::Regressor>>({ std::make_unique<v2::LinearRegressor>() }), ev);
-	//v2::SupervisedDescentOptimiser<v2::TrivialEvaluationFunction> o3(std::vector<std::unique_ptr<v2::Regressor>>({ std::make_unique<v2::LinearRegressor>(), std::make_unique<v2::LinearRegressor>() }), ev);
-	//v2::SupervisedDescentOptimiser<v2::TrivialEvaluationFunction> o4({ std::make_unique<v2::LinearRegressor>(), std::make_unique<v2::LinearRegressor>() }, ev);
+	v2::SupervisedDescentOptimiser<v2::TrivialEvaluationFunction> opt(cascadedRegressors, ev);
 
-	//v2::SupervisedDescentOptimiser<v2::CascadedRegressor, v2::TrivialEvaluationFunction> o1(cr, ev);
+	opt.train(x_tr, y_tr);
 
-	//v2::SupervisedDescentOptimiser<v2::LinearRegressor, v2::TrivialEvaluationFunction> o2(lr, ev);
-	//o2.train(x_tr, y_tr);
-
-	//o2.test(x_ts, y_ts);
-
+	opt.test(x_ts, y_ts);
+	*/
 	//using SDMLMOptimiser = v2::SupervisedDescentOptimiser<v2::LinearRegressor, v2::TrivialEvaluationFunction>;
 	// END v2 EXP
 	struct Dataset {

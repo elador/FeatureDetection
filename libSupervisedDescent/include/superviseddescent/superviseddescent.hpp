@@ -53,10 +53,11 @@ public:
 
 class LinearRegressor : public Regressor
 {
-private:
+
+public:
 	/**
-	 * Todo: Description.
-	 */
+	* Todo: Description.
+	*/
 	enum class RegularisationType
 	{
 		Manual, ///< use lambda
@@ -64,7 +65,6 @@ private:
 		EigenvalueThreshold ///< see description libEigen
 	};
 
-public:
 	LinearRegressor(RegularisationType regularisationType = RegularisationType::Automatic, float lambda = 0.5f, bool regulariseAffineComponent = true) : x(), regularisationType(regularisationType), lambda(lambda), regulariseAffineComponent(regulariseAffineComponent)
 	{
 
@@ -107,6 +107,7 @@ public:
 		Mat regulariser = Mat::eye(AtA.rows, AtA.rows, CV_32FC1) * lambda;
 		if (!regulariseAffineComponent) {
 			// Note: The following line breaks if we enter 1-dimensional data
+			// Update: No, it doesn't crash, it points to (0, 0) then. Has the wrong effect though.
 			regulariser.at<float>(regulariser.rows - 1, regulariser.cols - 1) = 0.0f; // no lambda for the bias
 		}
 		// solve for x!
@@ -179,8 +180,9 @@ public:
 		return prediction;
 	};
 	
+	cv::Mat x; // move back to private once finished
 private:
-	cv::Mat x;
+	
 	RegularisationType regularisationType;
 	float lambda;
 	bool regulariseAffineComponent;
@@ -198,37 +200,88 @@ class TrivialEvaluationFunction
 
 };
 
-// template blabla.. requires Evaluator with function eval(Mat, blabla)
-// or... Learner? SDMLearner? Just SDM? SupervDescOpt? SDMTraining?
-template<class E>
-class SupervisedDescentOptimiser {
+template<class Test>
+class GenericDM1D
+{
 public:
-	/*SupervisedDescentOptimiser(std::vector<std::unique_ptr<Regressor>> regressors, E evaluator) : regressors(std::move(regressors)), evaluator(evaluator)
+	GenericDM1D(LinearRegressor r, Test mytest) : r(r), mytest(mytest)
 	{
-	};*/
+	};
 
-	// Hmm in case of LM / 3DMM, we might need to give more info than this? How to handle that?
-	// Yea, some optimisers need access to the image data to optimise. Think about where this belongs.
-	void train(cv::Mat data, cv::Mat labels)
+	template<typename H>
+	void train(cv::Mat data, cv::Mat labels, H func)
 	{
-		for (auto&& regressor : regressors) {
-			// Do some more stuff
-			regressor->learn(data, labels);
+		auto logger = Loggers->getLogger("superviseddescent");
+		r.learn(data, labels); // data = extractedFeatures; labels = delta
+		logger.info("r is: " + std::to_string(r.x.at<float>(0, 0)));
+		
+		// For one training example. If we were to define h vector-valued, then we could do it for all x_0 at once.
+		float x_0_0 = data.at<float>(0);
+		float x_prev_0 = x_0_0;
+		logger.info("x_0 is: " + std::to_string(x_0_0));
+		for (int i = 1; i <= 20; ++i) {
+			//float x_next_0 = x_prev_0 - r.x.at<float>(0, 0) * (func(x_prev_0) - func(labels.at<float>(0))); // This, but shouldn't take func(labels), it will be 9^2
+			float x_next_0 = x_prev_0 - r.x.at<float>(0, 0) * (func(x_prev_0) - (labels.at<float>(0)));
+			logger.info("Iter " + std::to_string(i) + ", x: " + std::to_string(x_next_0));
+			
+			x_prev_0 = x_next_0;
 		}
 	};
 
 	void test(cv::Mat data, cv::Mat labels)
 	{
+		auto logger = Loggers->getLogger("superviseddescent");
+	};
+
+private:
+	LinearRegressor r;
+	Test mytest; // member cannot acquire a function type
+};
+
+
+
+// template blabla.. requires Evaluator with function eval(Mat, blabla)
+// or... Learner? SDMLearner? Just SDM? SupervDescOpt? SDMTraining?
+template<class E>
+class SupervisedDescentOptimiser
+{
+public:
+	SupervisedDescentOptimiser(std::vector<std::shared_ptr<Regressor>> regressors, E evaluator) : regressors(regressors), evaluator(evaluator)
+	{
+	};
+
+	// Hmm in case of LM / 3DMM, we might need to give more info than this? How to handle that?
+	// Yea, some optimisers need access to the image data to optimise. Think about where this belongs.
+	// The input to this will be something different (e.g. only images? a templated class?)
+	void train(cv::Mat data, cv::Mat labels)
+	{
+		// Input has to be: GT, and X0 (eg aligned shapes - this could be the template param?). We'll extract features from there.
+		for (auto&& regressor : regressors) {
+			// 1) Extract features from data, use a templated class?
+			// 2) Learn using that data
+			regressor->learn(data, labels); // data = extractedFeatures; labels = delta
+
+			// 3) If not finished, 
+			//    apply learned regressor, set data = newData or rather calculate new delta
+			//    use it to learn the next regressor in next loop iter
+	
+		}
+	};
+
+	void test(cv::Mat data, cv::Mat labels)
+	{
+		auto logger = Loggers->getLogger("superviseddescent");
 		for (auto&& regressor : regressors) {
 			double residual = regressor->test(data, labels);
 			// do some accumulation? printing?
+			logger.info("Residual: " + std::to_string(residual));
 		}
 	};
 
 private:
 	// If we don't want to allow different regressor types, we
 	// could make the Regressor a template parameter
-	std::vector<std::unique_ptr<Regressor>> regressors; // TRY IN LX; TRY SHAREDPTR
+	std::vector<std::shared_ptr<Regressor>> regressors; // Switch to shared_ptr, but VS2013 has a problem with it. VS2015 is fine.
 	// I think it would be better to delete this ('CascadedRegressor') and store a
 	// vector<R> instead in Optimiser, because multiple levels
 	// may require different features and different normalisations (i.e. IED)?
