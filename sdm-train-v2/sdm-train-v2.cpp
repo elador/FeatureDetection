@@ -85,6 +85,15 @@ using logging::LoggerFactory;
 using logging::LogLevel;
 
 
+template<typename ForwardIterator, typename T>
+void strided_iota(ForwardIterator first, ForwardIterator last, T value, T stride)
+{
+	while (first != last) {
+		*first++ = value;
+		value += stride;
+	}
+}
+
 template<class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 {
@@ -155,28 +164,26 @@ int main(int argc, char *argv[])
 	Logger appLogger = Loggers->getLogger("sdmTraining");
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
+
 	// START v2 EXP SIMPLE
 	// for x^2:
 	auto testh = [](float value) { return std::pow(value, 2); };
-	Mat x_0_tr(31, 1, CV_32FC1);
+	
+
+	Mat x_0_tr(31, 1, CV_32FC1); // [0:0.2:1]
 	{
-		int idx = 0;
-		for (float i = 0.0f; i <= 6.0f; i += 0.2f) {
-			x_0_tr.at<float>(idx) = i;
-			++idx;
-		}
-		x_0_tr.at<float>(30) = 6.0f; // because incrementing by 0.2f can lead to a value > 6.0f in the end
+		vector<float> values(31);
+		strided_iota(std::begin(values), std::next(std::begin(values), 31), 0.0f, 0.2f);
+		x_0_tr = Mat(values, true);
 	}
-	Mat y_tr(31, 1, CV_32FC1);
+	Mat y_tr(31, 1, CV_32FC1); // all = 9;
 	{
-		int idx = 0;
-		for (float i = 0.0f; i <= 6.0f; i += 0.2f) {
-			y_tr.at<float>(idx) = 9.0f;
-			++idx;
-		}
+		vector<float> values(31);
+		std::fill(begin(values), end(values), 9.0f);
+		y_tr = Mat(values, true);
 	}
 
-	v2::LinearRegressor r(v2::LinearRegressor::RegularisationType::Manual, 0.0f);
+	v2::LinearRegressor r(v2::LinearRegressor::RegularisationType::Manual, 1.0f);
 	v2::GenericDM1D<std::function<float(float)>> g(r, testh);
 	g.train(x_0_tr, y_tr, testh);
 

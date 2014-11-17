@@ -212,17 +212,29 @@ public:
 	void train(cv::Mat data, cv::Mat labels, H func)
 	{
 		auto logger = Loggers->getLogger("superviseddescent");
-		r.learn(data, labels); // data = extractedFeatures; labels = delta
+		Mat features;
+		for (int i = 0; i < data.rows; ++i) {
+			features.push_back(func(data.at<float>(i)));
+		}
+		Mat delta = labels - features;
+		
+		r.learn(features, delta); // data = extractedFeatures; labels = delta
+		r.x.at<float>(0, 0) = 0.221f; // test
 		logger.info("r is: " + std::to_string(r.x.at<float>(0, 0)));
 		
 		// For one training example. If we were to define h vector-valued, then we could do it for all x_0 at once.
-		float x_0_0 = data.at<float>(0);
+		int whichStartPoint = 29;
+		float x_0_0 = data.at<float>(whichStartPoint);
 		float x_prev_0 = x_0_0;
-		logger.info("x_0 is: " + std::to_string(x_0_0));
+		logger.info("x_0_0 is: " + std::to_string(x_0_0));
 		for (int i = 1; i <= 20; ++i) {
 			//float x_next_0 = x_prev_0 - r.x.at<float>(0, 0) * (func(x_prev_0) - func(labels.at<float>(0))); // This, but shouldn't take func(labels), it will be 9^2
-			float x_next_0 = x_prev_0 - r.x.at<float>(0, 0) * (func(x_prev_0) - (labels.at<float>(0)));
-			logger.info("Iter " + std::to_string(i) + ", x: " + std::to_string(x_next_0));
+			// Update x_0, the starting positions, using the learned regressor:
+			auto thisDelta = func(x_prev_0) - (labels.at<float>(whichStartPoint));
+			auto thisDeltaRegressed = r.x.at<float>(0, 0) * thisDelta;
+			auto x_next_0 = x_prev_0 - thisDeltaRegressed;
+			//float x_next_0 = x_prev_0 - r.x.at<float>(0, 0) * (func(x_prev_0) - (labels.at<float>(0)));
+			logger.info("Iter " + std::to_string(i) + ", x_iter_0: " + std::to_string(x_next_0));
 			
 			x_prev_0 = x_next_0;
 		}
@@ -235,7 +247,7 @@ public:
 
 private:
 	LinearRegressor r;
-	Test mytest; // member cannot acquire a function type
+	Test mytest; // Delete either this or 'H' in train(), we only need one.
 };
 
 
