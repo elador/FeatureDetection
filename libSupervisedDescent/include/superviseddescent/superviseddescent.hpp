@@ -200,43 +200,43 @@ class TrivialEvaluationFunction
 
 };
 
-template<class Test>
+//template<class Test>
 class GenericDM1D
 {
 public:
-	GenericDM1D(LinearRegressor r, Test mytest) : r(r), mytest(mytest)
+	GenericDM1D(/*float genericDescentMap, Test mytest*/)/* : r(r), mytest(mytest)*/
 	{
 	};
 
 	template<typename H>
-	void train(cv::Mat data, cv::Mat labels, H func)
+	void train(cv::Mat data, cv::Mat labels, float genericDescentMap, H h)
 	{
 		auto logger = Loggers->getLogger("superviseddescent");
 		Mat features;
 		for (int i = 0; i < data.rows; ++i) {
-			features.push_back(func(data.at<float>(i)));
+			features.push_back(h(data.at<float>(i)));
 		}
 		Mat delta = labels - features;
 		
-		r.learn(features, delta); // data = extractedFeatures; labels = delta
-		r.x.at<float>(0, 0) = 0.221f; // test
-		logger.info("r is: " + std::to_string(r.x.at<float>(0, 0)));
+		//r.learn(features, delta); // data = extractedFeatures; labels = delta
+		//r.x.at<float>(0, 0) = 0.221f; // test
+		logger.info("r is: " + std::to_string(genericDescentMap));
 		
-		// For one training example. If we were to define h vector-valued, then we could do it for all x_0 at once.
-		int whichStartPoint = 29;
-		float x_0_0 = data.at<float>(whichStartPoint);
-		float x_prev_0 = x_0_0;
-		logger.info("x_0_0 is: " + std::to_string(x_0_0));
-		for (int i = 1; i <= 20; ++i) {
-			//float x_next_0 = x_prev_0 - r.x.at<float>(0, 0) * (func(x_prev_0) - func(labels.at<float>(0))); // This, but shouldn't take func(labels), it will be 9^2
+		// For all training example, do the update step for 50 iterations.
+		cv::Mat x_0 = data;
+		cv::Mat x_prev = x_0;
+		std::cout << x_0 << std::endl;
+		for (int i = 1; i <= 50; ++i) {
 			// Update x_0, the starting positions, using the learned regressor:
-			auto thisDelta = func(x_prev_0) - (labels.at<float>(whichStartPoint));
-			auto thisDeltaRegressed = r.x.at<float>(0, 0) * thisDelta;
-			auto x_next_0 = x_prev_0 - thisDeltaRegressed;
-			//float x_next_0 = x_prev_0 - r.x.at<float>(0, 0) * (func(x_prev_0) - (labels.at<float>(0)));
-			logger.info("Iter " + std::to_string(i) + ", x_iter_0: " + std::to_string(x_next_0));
-			
-			x_prev_0 = x_next_0;
+			//float x_next_0 = x_prev_0 - r.x.at<float>(0, 0) * (h(x_prev_0) - (labels.at<float>(0)));
+			cv::Mat x_next(x_prev.rows, 1, CV_32FC1);
+			for (int i = 0; i < x_prev.rows; ++i) {
+				auto thisDelta = h(x_prev.at<float>(i)) - labels.at<float>(i);
+				auto thisDeltaRegressed = genericDescentMap * thisDelta;
+				x_next.at<float>(i) = x_prev.at<float>(i) -thisDeltaRegressed;
+			}
+			std::cout << x_next << std::endl;
+			x_prev = x_next;
 		}
 	};
 
@@ -246,8 +246,8 @@ public:
 	};
 
 private:
-	LinearRegressor r;
-	Test mytest; // Delete either this or 'H' in train(), we only need one.
+	//LinearRegressor r;
+	//Test mytest; // Delete either this or 'H' in train(), we only need one.
 };
 
 

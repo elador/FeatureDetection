@@ -167,10 +167,13 @@ int main(int argc, char *argv[])
 
 	// START v2 EXP SIMPLE
 	// for x^2:
-	auto testh = [](float value) { return std::pow(value, 2); };
+	auto testexp = [](float value) { return std::exp(value); };
+	auto testinv = [](float value) { return 1.0f/value; };
+	auto testpow = [](float value) { return std::pow(value, 2); };
 	
 
-	Mat x_0_tr(31, 1, CV_32FC1); // [0:0.2:1]
+	Mat x_0_tr(31, 1, CV_32FC1); // [0:0.2:6]
+	//Mat x_0_tr(31, 1, CV_32FC1); // [-2:0.2:4]
 	{
 		vector<float> values(31);
 		strided_iota(std::begin(values), std::next(std::begin(values), 31), 0.0f, 0.2f);
@@ -183,11 +186,11 @@ int main(int argc, char *argv[])
 		y_tr = Mat(values, true);
 	}
 
-	v2::LinearRegressor r(v2::LinearRegressor::RegularisationType::Manual, 1.0f);
-	v2::GenericDM1D<std::function<float(float)>> g(r, testh);
-	g.train(x_0_tr, y_tr, testh);
+	v2::LinearRegressor r(v2::LinearRegressor::RegularisationType::Manual, 0.0f);
+	v2::GenericDM1D g;
+	g.train(x_0_tr, y_tr, 0.221, testpow);
 
-
+	std::cout << "stop";
 	/*auto h_inv = [](float y) { return std::asin(y); };
 	Mat y_tr(11, 1, CV_32FC1);
 	
