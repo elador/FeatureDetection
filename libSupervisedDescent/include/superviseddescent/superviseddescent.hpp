@@ -56,8 +56,8 @@ class LinearRegressor : public Regressor
 
 public:
 	/**
-	* Todo: Description.
-	*/
+	 * Todo: Description.
+	 */
 	enum class RegularisationType
 	{
 		Manual, ///< use lambda
@@ -200,6 +200,41 @@ class TrivialEvaluationFunction
 
 };
 
+/**
+ * This implements ... todo.
+ *
+ * Usage example:
+ * @code
+ * auto testexp = [](float value) { return std::exp(value); };
+ * auto testinv = [](float value) { return 1.0f / value; };
+ * auto testpow = [](float value) { return std::pow(value, 2); };
+ * float r_exp = 0.115f;
+ * float r_inv = -7.0f;
+ * float r_pow = 0.221;
+ *
+ * int dims = 31; Mat x_0_tr(dims, 1, CV_32FC1); // exp: [-2:0.2:4]
+ * //int dims = 26; Mat x_0_tr(dims, 1, CV_32FC1); // inv: [1:0.2:6]
+ * //int dims = 31; Mat x_0_tr(dims, 1, CV_32FC1); // pow: [0:0.2:6]
+ * {
+ * 	vector<float> values(dims);
+ * 	strided_iota(std::begin(values), std::next(std::begin(values), dims), -2.0f, 0.2f); // exp
+ * 	//strided_iota(std::begin(values), std::next(std::begin(values), dims), 1.0f, 0.2f); // inv
+ * 	//strided_iota(std::begin(values), std::next(std::begin(values), dims), 0.0f, 0.2f); // pow
+ * 	x_0_tr = Mat(values, true);
+ * }
+ * Mat y_tr(31, 1, CV_32FC1); // exp: all = exp(1) = 2.7...;
+ * //Mat y_tr(dims, 1, CV_32FC1); // inv: all = 0.286;
+ * //Mat y_tr(31, 1, CV_32FC1); // pow: all = 9;
+ * {
+ * 	vector<float> values(dims);
+ * 	std::fill(begin(values), end(values), std::exp(1.0f));
+ * 	y_tr = Mat(values, true);
+ * }
+ *
+ * v2::GenericDM1D g;
+ * g.train(x_0_tr, y_tr, r_exp, testexp);
+ * @endcode
+ */
 class GenericDM1D
 {
 public:

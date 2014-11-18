@@ -166,7 +166,6 @@ int main(int argc, char *argv[])
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
 	// START v2 EXP SIMPLE
-	// for x^2:
 	auto testexp = [](float value) { return std::exp(value); };
 	auto testinv = [](float value) { return 1.0f/value; };
 	auto testpow = [](float value) { return std::pow(value, 2); };
