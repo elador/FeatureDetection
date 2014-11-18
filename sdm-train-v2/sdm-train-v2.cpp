@@ -196,6 +196,8 @@ int main(int argc, char *argv[])
 	v2::GenericDM1D g;
 	g.train(x_0_tr, y_tr, r_exp, testexp);
 
+	// $\mathbf{h}$ generic, should return a cv::Mat row-vector (1 row)
+
 	std::cout << "stop";
 	/*auto h_inv = [](float y) { return std::asin(y); };
 	Mat y_tr(11, 1, CV_32FC1);

@@ -200,6 +200,71 @@ class TrivialEvaluationFunction
 
 };
 
+// template blabla.. requires Evaluator with function eval(Mat, blabla)
+// or... Learner? SDMLearner? Just SDM? SupervDescOpt? SDMTraining?
+template<class E>
+class SupervisedDescentOptimiser
+{
+public:
+	SupervisedDescentOptimiser(std::vector<std::shared_ptr<Regressor>> regressors, E evaluator) : regressors(regressors), evaluator(evaluator)
+	{
+	};
+
+	// Hmm in case of LM / 3DMM, we might need to give more info than this? How to handle that?
+	// Yea, some optimisers need access to the image data to optimise. Think about where this belongs.
+	// The input to this will be something different (e.g. only images? a templated class?)
+	void train(cv::Mat data, cv::Mat labels)
+	{
+		// Input has to be: GT, and X0 (eg aligned shapes - this could be the template param?). We'll extract features from there.
+		for (auto&& regressor : regressors) {
+			auto logger = Loggers->getLogger("superviseddescent");
+			/*
+			Mat features;
+			for (int i = 0; i < data.rows; ++i) {
+				features.push_back(h(data.at<float>(i)));
+			}
+			Mat delta = labels - features;
+			*/
+			//r.learn(features, delta); // data = extractedFeatures; labels = delta
+			// 1) Extract features from data, use a templated class?
+			// 2) Learn using that data
+			regressor->learn(data, labels); // data = extractedFeatures; labels = delta
+
+			// 3) If not finished, 
+			//    apply learned regressor, set data = newData or rather calculate new delta
+			//    use it to learn the next regressor in next loop iter
+	
+		}
+	};
+
+	void test(cv::Mat data, cv::Mat labels)
+	{
+		auto logger = Loggers->getLogger("superviseddescent");
+		for (auto&& regressor : regressors) {
+			double residual = regressor->test(data, labels);
+			// do some accumulation? printing?
+			logger.info("Residual: " + std::to_string(residual));
+		}
+	};
+
+private:
+	// If we don't want to allow different regressor types, we
+	// could make the Regressor a template parameter
+	std::vector<std::shared_ptr<Regressor>> regressors; // Switch to shared_ptr, but VS2013 has a problem with it. VS2015 is fine.
+	// I think it would be better to delete this ('CascadedRegressor') and store a
+	// vector<R> instead in Optimiser, because multiple levels
+	// may require different features and different normalisations (i.e. IED)?
+	// Yep, try this first. But it has the disadvantage that we need to remove
+	// this template parameter from Optimiser and use "standard" inheritance
+	// instead. Same as in tiny-cnn.
+	// The right approach seems definitely to put it in the Optimiser.
+	// Because only he can now about the feature extraction required for each
+	// regressor step, and the scales etc.
+
+	E evaluator;
+};
+
+
 /**
  * This implements ... todo.
  *
@@ -267,73 +332,6 @@ public:
 		}
 	};
 };
-
-
-
-// template blabla.. requires Evaluator with function eval(Mat, blabla)
-// or... Learner? SDMLearner? Just SDM? SupervDescOpt? SDMTraining?
-template<class E>
-class SupervisedDescentOptimiser
-{
-public:
-	SupervisedDescentOptimiser(std::vector<std::shared_ptr<Regressor>> regressors, E evaluator) : regressors(regressors), evaluator(evaluator)
-	{
-	};
-
-	// Hmm in case of LM / 3DMM, we might need to give more info than this? How to handle that?
-	// Yea, some optimisers need access to the image data to optimise. Think about where this belongs.
-	// The input to this will be something different (e.g. only images? a templated class?)
-	void train(cv::Mat data, cv::Mat labels)
-	{
-		// Input has to be: GT, and X0 (eg aligned shapes - this could be the template param?). We'll extract features from there.
-		for (auto&& regressor : regressors) {
-			auto logger = Loggers->getLogger("superviseddescent");
-			/*
-			Mat features;
-			for (int i = 0; i < data.rows; ++i) {
-				features.push_back(h(data.at<float>(i)));
-			}
-			Mat delta = labels - features;
-			*/
-			//r.learn(features, delta); // data = extractedFeatures; labels = delta
-			// 1) Extract features from data, use a templated class?
-			// 2) Learn using that data
-			regressor->learn(data, labels); // data = extractedFeatures; labels = delta
-
-			// 3) If not finished, 
-			//    apply learned regressor, set data = newData or rather calculate new delta
-			//    use it to learn the next regressor in next loop iter
-	
-		}
-	};
-
-	void test(cv::Mat data, cv::Mat labels)
-	{
-		auto logger = Loggers->getLogger("superviseddescent");
-		for (auto&& regressor : regressors) {
-			double residual = regressor->test(data, labels);
-			// do some accumulation? printing?
-			logger.info("Residual: " + std::to_string(residual));
-		}
-	};
-
-private:
-	// If we don't want to allow different regressor types, we
-	// could make the Regressor a template parameter
-	std::vector<std::shared_ptr<Regressor>> regressors; // Switch to shared_ptr, but VS2013 has a problem with it. VS2015 is fine.
-	// I think it would be better to delete this ('CascadedRegressor') and store a
-	// vector<R> instead in Optimiser, because multiple levels
-	// may require different features and different normalisations (i.e. IED)?
-	// Yep, try this first. But it has the disadvantage that we need to remove
-	// this template parameter from Optimiser and use "standard" inheritance
-	// instead. Same as in tiny-cnn.
-	// The right approach seems definitely to put it in the Optimiser.
-	// Because only he can now about the feature extraction required for each
-	// regressor step, and the scales etc.
-
-	E evaluator;
-};
-
 
 	} /* namespace v2 */
 } /* namespace superviseddescent */
