@@ -200,33 +200,23 @@ class TrivialEvaluationFunction
 
 };
 
-//template<class Test>
 class GenericDM1D
 {
 public:
-	GenericDM1D(/*float genericDescentMap, Test mytest*/)/* : r(r), mytest(mytest)*/
-	{
-	};
-
 	template<typename H>
 	void train(cv::Mat data, cv::Mat labels, float genericDescentMap, H h)
 	{
 		auto logger = Loggers->getLogger("superviseddescent");
-		Mat features;
-		for (int i = 0; i < data.rows; ++i) {
-			features.push_back(h(data.at<float>(i)));
-		}
-		Mat delta = labels - features;
-		
-		//r.learn(features, delta); // data = extractedFeatures; labels = delta
-		//r.x.at<float>(0, 0) = 0.221f; // test
+
 		logger.info("r is: " + std::to_string(genericDescentMap));
 		
-		// For all training example, do the update step for 50 iterations.
+		// For all training example, do the update step for 25 iterations.
 		cv::Mat x_0 = data;
 		cv::Mat x_prev = x_0;
-		std::cout << x_0 << std::endl;
-		for (int i = 1; i <= 50; ++i) {
+		std::stringstream out;
+		out << x_0 << std::endl;
+		logger.info(out.str());
+		for (int i = 1; i <= 25; ++i) {
 			// Update x_0, the starting positions, using the learned regressor:
 			//float x_next_0 = x_prev_0 - r.x.at<float>(0, 0) * (h(x_prev_0) - (labels.at<float>(0)));
 			cv::Mat x_next(x_prev.rows, 1, CV_32FC1);
@@ -235,19 +225,12 @@ public:
 				auto thisDeltaRegressed = genericDescentMap * thisDelta;
 				x_next.at<float>(i) = x_prev.at<float>(i) -thisDeltaRegressed;
 			}
-			std::cout << x_next << std::endl;
+			std::stringstream outIter;
+			outIter << x_next << std::endl;
+			logger.info(outIter.str());
 			x_prev = x_next;
 		}
 	};
-
-	void test(cv::Mat data, cv::Mat labels)
-	{
-		auto logger = Loggers->getLogger("superviseddescent");
-	};
-
-private:
-	//LinearRegressor r;
-	//Test mytest; // Delete either this or 'H' in train(), we only need one.
 };
 
 
@@ -269,6 +252,15 @@ public:
 	{
 		// Input has to be: GT, and X0 (eg aligned shapes - this could be the template param?). We'll extract features from there.
 		for (auto&& regressor : regressors) {
+			auto logger = Loggers->getLogger("superviseddescent");
+			/*
+			Mat features;
+			for (int i = 0; i < data.rows; ++i) {
+				features.push_back(h(data.at<float>(i)));
+			}
+			Mat delta = labels - features;
+			*/
+			//r.learn(features, delta); // data = extractedFeatures; labels = delta
 			// 1) Extract features from data, use a templated class?
 			// 2) Learn using that data
 			regressor->learn(data, labels); // data = extractedFeatures; labels = delta

@@ -184,12 +184,12 @@ int main(int argc, char *argv[])
 		//strided_iota(std::begin(values), std::next(std::begin(values), dims), 0.0f, 0.2f); // pow
 		x_0_tr = Mat(values, true);
 	}
-	Mat y_tr(31, 1, CV_32FC1); // exp: all = 1;
+	Mat y_tr(31, 1, CV_32FC1); // exp: all = exp(1) = 2.7...;
 	//Mat y_tr(dims, 1, CV_32FC1); // inv: all = 0.286;
 	//Mat y_tr(31, 1, CV_32FC1); // pow: all = 9;
 	{
 		vector<float> values(dims);
-		std::fill(begin(values), end(values), 1.0f);
+		std::fill(begin(values), end(values), std::exp(1.0f));
 		y_tr = Mat(values, true);
 	}
 
