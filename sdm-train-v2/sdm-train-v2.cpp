@@ -170,25 +170,32 @@ int main(int argc, char *argv[])
 	auto testexp = [](float value) { return std::exp(value); };
 	auto testinv = [](float value) { return 1.0f/value; };
 	auto testpow = [](float value) { return std::pow(value, 2); };
-	
+	float r_exp = 0.115f;
+	float r_inv = -7.0f;
+	float r_pow = 0.221;
 
-	Mat x_0_tr(31, 1, CV_32FC1); // [0:0.2:6]
-	//Mat x_0_tr(31, 1, CV_32FC1); // [-2:0.2:4]
+	int dims = 31; Mat x_0_tr(dims, 1, CV_32FC1); // exp: [-2:0.2:4]
+	//int dims = 26; Mat x_0_tr(dims, 1, CV_32FC1); // inv: [1:0.2:6]
+	//int dims = 31; Mat x_0_tr(dims, 1, CV_32FC1); // pow: [0:0.2:6]
 	{
-		vector<float> values(31);
-		strided_iota(std::begin(values), std::next(std::begin(values), 31), 0.0f, 0.2f);
+		vector<float> values(dims);
+		strided_iota(std::begin(values), std::next(std::begin(values), dims), -2.0f, 0.2f); // exp
+		//strided_iota(std::begin(values), std::next(std::begin(values), dims), 1.0f, 0.2f); // inv
+		//strided_iota(std::begin(values), std::next(std::begin(values), dims), 0.0f, 0.2f); // pow
 		x_0_tr = Mat(values, true);
 	}
-	Mat y_tr(31, 1, CV_32FC1); // all = 9;
+	Mat y_tr(31, 1, CV_32FC1); // exp: all = 1;
+	//Mat y_tr(dims, 1, CV_32FC1); // inv: all = 0.286;
+	//Mat y_tr(31, 1, CV_32FC1); // pow: all = 9;
 	{
-		vector<float> values(31);
-		std::fill(begin(values), end(values), 9.0f);
+		vector<float> values(dims);
+		std::fill(begin(values), end(values), 1.0f);
 		y_tr = Mat(values, true);
 	}
 
 	v2::LinearRegressor r(v2::LinearRegressor::RegularisationType::Manual, 0.0f);
 	v2::GenericDM1D g;
-	g.train(x_0_tr, y_tr, 0.221, testpow);
+	g.train(x_0_tr, y_tr, r_exp, testexp);
 
 	std::cout << "stop";
 	/*auto h_inv = [](float y) { return std::asin(y); };
