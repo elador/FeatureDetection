@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 
 	// START v2 EXP SIMPLE
 	// sin(x):
-	auto h = [](float value) { return std::sin(value); };
+/*	auto h = [](float value) { return std::sin(value); };
 	auto h_inv = [](float value) {
 		if (value >= 1.0f) // our upper border of y is 1.0f, but it can be a bit larger due to floating point representation. asin then returns NaN.
 			return std::asin(1.0f);
@@ -175,35 +175,32 @@ int main(int argc, char *argv[])
 			return std::asin(value);
 		};
 	// x^3:
-/*	auto h = [](float value) { return std::pow(value, 3); };
-	auto h_inv = [](float value) { return std::pow(value, 3); }; // cube: y^(1/3)
+	auto h = [](float value) { return std::pow(value, 3); };
+	auto h_inv = [](float value) { return std::cbrt(value); }; // cube: y^(1/3) (cubic root)
 	// erf(x):
 	auto h = [](float value) { return 0.0f; };
 	auto h_inv = [](float value) { return 0.0f; }; // erf: erf^-1(y)
-	// exp(x):
+*/	// exp(x):
 	auto h = [](float value) { return std::exp(value); };
-	auto h_inv = [](float value) { return std::exp(value); }; // exp: log(y)
-*/	
-	int dims = 11; Mat y_tr(dims, 1, CV_32FC1); // sin: [-1:0.2:1]
-	//int dims = 19; Mat y_tr(dims, 1, CV_32FC1); // cube: [-27:3:27]
-	//int dims = 19; Mat y_tr(dims, 1, CV_32FC1); // erf: [-0.99:0.11:0.99]
-	//int dims = 10; Mat y_tr(dims, 1, CV_32FC1); // exp: [1:3:28]
+	auto h_inv = [](float value) { return std::log(value); }; // exp: log(y)
+
+	//float startInterval = -1.0f; float stepSize = 0.2f; int numValues = 11; Mat y_tr(numValues, 1, CV_32FC1); // sin: [-1:0.2:1]
+	//float startInterval = -27.0f; float stepSize = 3.0f; int numValues = 19; Mat y_tr(numValues, 1, CV_32FC1); // cube: [-27:3:27]
+	//float startInterval = -0.99f; float stepSize = 0.11f; int numValues = 19; Mat y_tr(numValues, 1, CV_32FC1); // erf: [-0.99:0.11:0.99]
+	float startInterval = 1.0f; float stepSize = 3.0f; int numValues = 10; Mat y_tr(numValues, 1, CV_32FC1); // exp: [1:3:28]
 	{
-		vector<float> values(dims);
-		strided_iota(std::begin(values), std::next(std::begin(values), dims), -1.0f, 0.2f); // sin
-		//strided_iota(std::begin(values), std::next(std::begin(values), dims), -27.0f, 3.0f); // cube
-		//strided_iota(std::begin(values), std::next(std::begin(values), dims), -0.99f, 0.11f); // erf
-		//strided_iota(std::begin(values), std::next(std::begin(values), dims), 1.0f, 3.0f); // exp
+		vector<float> values(numValues);
+		strided_iota(std::begin(values), std::next(std::begin(values), numValues), startInterval, stepSize);
 		y_tr = Mat(values, true);
 	}
-	Mat x_tr(dims, 1, CV_32FC1); // Will be the inverse of y_tr
+	Mat x_tr(numValues, 1, CV_32FC1); // Will be the inverse of y_tr
 	{
-		vector<float> values(dims);
+		vector<float> values(numValues);
 		std::transform(y_tr.begin<float>(), y_tr.end<float>(), begin(values), h_inv);
 		x_tr = Mat(values, true);
 	}
 
-	Mat x0 = 0.5f * Mat::ones(dims, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
+	Mat x0 = 0.5f * Mat::ones(numValues, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
 
 	//v2::SupervisedDescentOptimiser sdo({ std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f) });
 	vector<shared_ptr<v2::Regressor>> regressors;
@@ -222,25 +219,22 @@ int main(int argc, char *argv[])
 	
 	// Test the trained model:
 	// Test data with finer resolution:
-	dims = 41; Mat y_ts(dims, 1, CV_32FC1); // sin: [-1:0.05:1]
-	//dims = 109; Mat y_ts(dims, 1, CV_32FC1); // cube: [-27:0.5:27]
-	//dims = 67; Mat y_ts(dims, 1, CV_32FC1); // erf: [-0.99:0.03:0.99]
-	//dims = 55; Mat y_ts(dims, 1, CV_32FC1); // exp: [1:0.5:28]
+	//float startIntervalTest = -1.0f; float stepSizeTest = 0.05f; int numValuesTest = 41; Mat y_ts(numValuesTest, 1, CV_32FC1); // sin: [-1:0.05:1]
+	//float startIntervalTest = -27.0f; float stepSizeTest = 0.5f; int numValuesTest = 109; Mat y_ts(numValuesTest, 1, CV_32FC1); // cube: [-27:0.5:27]
+	//float startIntervalTest = -0.99f; float stepSizeTest = 0.03f; int numValuesTest = 67; Mat y_ts(numValuesTest, 1, CV_32FC1); // erf: [-0.99:0.03:0.99]
+	float startIntervalTest = 1.0f; float stepSizeTest = 0.5f; int numValuesTest = 55; Mat y_ts(numValuesTest, 1, CV_32FC1); // exp: [1:0.5:28]
 	{
-		vector<float> values(dims);
-		strided_iota(std::begin(values), std::next(std::begin(values), dims), -1.0f, 0.05f); // sin
-		//strided_iota(std::begin(values), std::next(std::begin(values), dims), -27.0f, 0.5f); // cube
-		//strided_iota(std::begin(values), std::next(std::begin(values), dims), -0.99f, 0.03f); // erf
-		//strided_iota(std::begin(values), std::next(std::begin(values), dims), 1.0f, 0.5f); // exp
+		vector<float> values(numValuesTest);
+		strided_iota(std::begin(values), std::next(std::begin(values), numValuesTest), startIntervalTest, stepSizeTest);
 		y_ts = Mat(values, true);
 	}
-	Mat x_ts_gt(dims, 1, CV_32FC1); // Will be the inverse of y_ts
+	Mat x_ts_gt(numValuesTest, 1, CV_32FC1); // Will be the inverse of y_ts
 	{
-		vector<float> values(dims);
+		vector<float> values(numValuesTest);
 		std::transform(y_ts.begin<float>(), y_ts.end<float>(), begin(values), h_inv);
 		x_ts_gt = Mat(values, true);
 	}
-	Mat x0_ts = 0.5f * Mat::ones(dims, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
+	Mat x0_ts = 0.5f * Mat::ones(numValuesTest, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
 	sdo.test(x_ts_gt, y_ts, x0_ts, h); // x_ts_gt will only be used to calculate the residual
 	
 	// $\mathbf{h}$ generic, should return a cv::Mat row-vector (1 row). Should process 1 training data. Optimally, whatever it is - float or a whole cv::Mat. But we can also simulate the 1D-case with a 1x1 cv::Mat for now.
