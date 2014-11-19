@@ -50,6 +50,7 @@
 #include "boost/algorithm/string.hpp"
 #include "boost/filesystem/path.hpp"
 #include "boost/lexical_cast.hpp"
+#include "boost/math/special_functions/erf.hpp"
 
 #include "imageio/ImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
@@ -178,8 +179,8 @@ int main(int argc, char *argv[])
 	auto h = [](float value) { return std::pow(value, 3); };
 	auto h_inv = [](float value) { return std::cbrt(value); }; // cube: y^(1/3) (cubic root)
 	// erf(x):
-	auto h = [](float value) { return 0.0f; };
-	auto h_inv = [](float value) { return 0.0f; }; // erf: erf^-1(y)
+	auto h = [](float value) { return std::erf(value); };
+	auto h_inv = [](float value) { return boost::math::erf_inv(value); }; // erf: erf^-1(y)
 */	// exp(x):
 	auto h = [](float value) { return std::exp(value); };
 	auto h_inv = [](float value) { return std::log(value); }; // exp: log(y)
