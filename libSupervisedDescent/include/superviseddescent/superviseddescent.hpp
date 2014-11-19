@@ -222,6 +222,7 @@ public:
 		Mat currentX = x0;
 		std::cout << x0 << std::endl;
 		for (auto&& regressor : regressors) {
+			// 1) Extract features where necessary
 			Mat features;
 			for (int i = 0; i < currentX.rows; ++i) {
 				features.push_back(h(currentX.at<float>(i)));
@@ -234,7 +235,6 @@ public:
 			// it cancels out, as we later subtract the learned direction, while in the 2013 paper they add it.
 			Mat b = currentX - x; // correct
 			
-			// 1) Extract features where necessary
 			// 2) Learn using that data
 			regressor->learn(insideRegressor, b);
 			auto tmp = dynamic_cast<LinearRegressor*>(regressor.get());
@@ -245,7 +245,10 @@ public:
 			Mat x_k;
 			// Mat x_k = currentX - tmp->x.at<float>(0) * (h(currentX) - y);
 			for (int i = 0; i < currentX.rows; ++i) {
-				x_k.push_back(currentX.at<float>(i) - tmp->x.at<float>(0) * (h(currentX.at<float>(i)) - y.at<float>(i))); // minus here is correct. CVPR paper got a '+'. See above for reason why.
+				auto oldWorking = tmp->x.at<float>(0) * (h(currentX.at<float>(i)) - y.at<float>(i));
+				//auto newTest = regressor->predict(h(currentX.at<float>(i)) - y.at<float>(i));
+				// predict takes a Mat, one row, and predicts only one example. The stuff in brackets is a float.
+				x_k.push_back(currentX.at<float>(i) - oldWorking); // minus here is correct. CVPR paper got a '+'. See above for reason why.
 			}
 			currentX = x_k;
 			std::cout << currentX << std::endl;

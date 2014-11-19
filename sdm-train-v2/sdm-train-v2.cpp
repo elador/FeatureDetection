@@ -542,7 +542,7 @@ int main(int argc, char *argv[])
 
 	end = std::chrono::system_clock::now();
 	int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-	appLogger.debug("Finished after " + lexical_cast<string>(elapsed_mseconds)+"ms.");
+	appLogger.debug("Finished after " + lexical_cast<string>(elapsed_mseconds) + "ms.");
 
 	LandmarkBasedSupervisedDescentTraining tr;
 	tr.setNumSamplesPerImage(numSamplesPerImage);
