@@ -229,8 +229,10 @@ public:
 			Mat insideRegressor = features - y; // Todo: Find better name ;-)
 			// We got $\sum\|x_*^i - x_k^i + R_k(h(x_k^i)-y^i)\|_2^2 $
 			// That is: $-b + Ax = 0$, $Ax = b$, $x = A^-1 * b$
-			// Thus: $b = x_k^i - x_*^i$. Correct? Check with my regression code and old paper.
-			Mat b = currentX - x;
+			// Thus: $b = x_k^i - x_*^i$. 
+			// This is correct! It's the other way round than in the CVPR 2013 paper though. However,
+			// it cancels out, as we later subtract the learned direction, while in the 2013 paper they add it.
+			Mat b = currentX - x; // correct
 			
 			// 1) Extract features where necessary
 			// 2) Learn using that data
@@ -243,7 +245,7 @@ public:
 			Mat x_k;
 			// Mat x_k = currentX - tmp->x.at<float>(0) * (h(currentX) - y);
 			for (int i = 0; i < currentX.rows; ++i) {
-				x_k.push_back(currentX.at<float>(i) - tmp->x.at<float>(0) * (h(currentX.at<float>(i)) - y.at<float>(i)));
+				x_k.push_back(currentX.at<float>(i) - tmp->x.at<float>(0) * (h(currentX.at<float>(i)) - y.at<float>(i))); // minus here is correct. CVPR paper got a '+'. See above for reason why.
 			}
 			currentX = x_k;
 			std::cout << currentX << std::endl;

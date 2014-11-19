@@ -206,17 +206,23 @@ int main(int argc, char *argv[])
 
 	//v2::SupervisedDescentOptimiser sdo({ std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f) });
 	vector<shared_ptr<v2::Regressor>> regressors;
-	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
 	v2::SupervisedDescentOptimiser sdo(regressors);
+	
+	// Differences for LM Det:
+	// - y_* used for testing unknown (and different from the one at training. I.e. different subjects)
+	// - h is parametrised not only on x but also by the images
+	// - ==> we learn an additional bias term b_k
+	
 	sdo.train(x_tr, y_tr, x0, h);
 	
 	// Test the trained model:
