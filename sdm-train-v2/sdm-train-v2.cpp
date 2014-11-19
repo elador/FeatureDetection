@@ -167,6 +167,7 @@ int main(int argc, char *argv[])
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
 	// START v2 EXP SIMPLE
+	// $\mathbf{h}$ generic, should return a cv::Mat row-vector (1 row). Should process 1 training data. Optimally, whatever it is - float or a whole cv::Mat. But we can also simulate the 1D-case with a 1x1 cv::Mat for now.
 	// sin(x):
 /*	auto h = [](float value) { return std::sin(value); };
 	auto h_inv = [](float value) {
@@ -177,13 +178,13 @@ int main(int argc, char *argv[])
 		};
 	// x^3:
 	auto h = [](float value) { return std::pow(value, 3); };
-	auto h_inv = [](float value) { return std::cbrt(value); }; // cube: y^(1/3) (cubic root)
+	auto h_inv = [](float value) { return std::cbrt(value); }; // cubic root
 	// erf(x):
 	auto h = [](float value) { return std::erf(value); };
-	auto h_inv = [](float value) { return boost::math::erf_inv(value); }; // erf: erf^-1(y)
+	auto h_inv = [](float value) { return boost::math::erf_inv(value); };
 */	// exp(x):
 	auto h = [](float value) { return std::exp(value); };
-	auto h_inv = [](float value) { return std::log(value); }; // exp: log(y)
+	auto h_inv = [](float value) { return std::log(value); };
 
 	//float startInterval = -1.0f; float stepSize = 0.2f; int numValues = 11; Mat y_tr(numValues, 1, CV_32FC1); // sin: [-1:0.2:1]
 	//float startInterval = -27.0f; float stepSize = 3.0f; int numValues = 19; Mat y_tr(numValues, 1, CV_32FC1); // cube: [-27:3:27]
@@ -238,8 +239,6 @@ int main(int argc, char *argv[])
 	Mat x0_ts = 0.5f * Mat::ones(numValuesTest, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
 	sdo.test(x_ts_gt, y_ts, x0_ts, h); // x_ts_gt will only be used to calculate the residual
 	
-	// $\mathbf{h}$ generic, should return a cv::Mat row-vector (1 row). Should process 1 training data. Optimally, whatever it is - float or a whole cv::Mat. But we can also simulate the 1D-case with a 1x1 cv::Mat for now.
-
 	std::cout << "stop";
 
 	struct Dataset {
