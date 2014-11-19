@@ -202,38 +202,54 @@ class TrivialEvaluationFunction
 
 // template blabla.. requires Evaluator with function eval(Mat, blabla)
 // or... Learner? SDMLearner? Just SDM? SupervDescOpt? SDMTraining?
-template<class E>
 class SupervisedDescentOptimiser
 {
 public:
-	SupervisedDescentOptimiser(std::vector<std::shared_ptr<Regressor>> regressors, E evaluator) : regressors(regressors), evaluator(evaluator)
+	SupervisedDescentOptimiser(std::vector<std::shared_ptr<Regressor>> regressors) : regressors(regressors)
 	{
 	};
 
 	// Hmm in case of LM / 3DMM, we might need to give more info than this? How to handle that?
 	// Yea, some optimisers need access to the image data to optimise. Think about where this belongs.
 	// The input to this will be something different (e.g. only images? a templated class?)
-	void train(cv::Mat data, cv::Mat labels)
+	template<class H>
+	void train(cv::Mat data, cv::Mat labels, cv::Mat x0, H h)
 	{
-		// Input has to be: GT, and X0 (eg aligned shapes - this could be the template param?). We'll extract features from there.
+		// data = x, labels = y. x0 = c = initialisation
+		// data = x = the parameters we want to learn
+		// Simple experiments with sin etc.
+		auto logger = Loggers->getLogger("superviseddescent");
+		Mat currentX = x0;
+		std::cout << x0 << std::endl;
 		for (auto&& regressor : regressors) {
-			auto logger = Loggers->getLogger("superviseddescent");
-			/*
 			Mat features;
-			for (int i = 0; i < data.rows; ++i) {
-				features.push_back(h(data.at<float>(i)));
+			for (int i = 0; i < currentX.rows; ++i) {
+				features.push_back(h(currentX.at<float>(i)));
 			}
-			Mat delta = labels - features;
-			*/
-			//r.learn(features, delta); // data = extractedFeatures; labels = delta
-			// 1) Extract features from data, use a templated class?
+			Mat insideRegressor = features - labels; // Todo: Find better name ;-)
+			// We got $\sum\|x_*^i - x_k^i + R_k(h(x_k^i)-y^i)\|_2^2 $
+			// That is: $-b + Ax = 0$, $Ax = b$, $x = A^-1 * b$
+			// Thus: $b = x_k^i - x_*^i$. Correct? Check with my regression code and old paper.
+			Mat b = currentX - data;
+			
+			// 1) Extract features where necessary
 			// 2) Learn using that data
-			regressor->learn(data, labels); // data = extractedFeatures; labels = delta
-
+			regressor->learn(insideRegressor, b);
+			auto tmp = dynamic_cast<LinearRegressor*>(regressor.get());
+			logger.info(std::to_string(tmp->x.at<float>(0)));
 			// 3) If not finished, 
 			//    apply learned regressor, set data = newData or rather calculate new delta
 			//    use it to learn the next regressor in next loop iter
-	
+			Mat x_k;
+			// Mat x_k = currentX - tmp->x.at<float>(0) * (h(currentX) - labels);
+			for (int i = 0; i < currentX.rows; ++i) {
+				x_k.push_back(currentX.at<float>(i) - tmp->x.at<float>(0) * (h(currentX.at<float>(i)) - labels.at<float>(i)));
+			}
+			currentX = x_k;
+			std::cout << currentX << std::endl;
+			double differenceNorm = cv::norm(x_k, data, cv::NORM_L2);
+			double residual = differenceNorm / cv::norm(data, cv::NORM_L2);
+			std::cout << "normalised least square residual: " << residual << std::endl;
 		}
 	};
 
@@ -261,7 +277,7 @@ private:
 	// Because only he can now about the feature extraction required for each
 	// regressor step, and the scales etc.
 
-	E evaluator;
+	//E evaluator;
 };
 
 
@@ -281,7 +297,7 @@ private:
  * //int dims = 26; Mat x_0_tr(dims, 1, CV_32FC1); // inv: [1:0.2:6]
  * //int dims = 31; Mat x_0_tr(dims, 1, CV_32FC1); // pow: [0:0.2:6]
  * {
- * 	vector<float> values(dims);
+ *	vector<float> values(dims);
  * 	strided_iota(std::begin(values), std::next(std::begin(values), dims), -2.0f, 0.2f); // exp
  * 	//strided_iota(std::begin(values), std::next(std::begin(values), dims), 1.0f, 0.2f); // inv
  * 	//strided_iota(std::begin(values), std::next(std::begin(values), dims), 0.0f, 0.2f); // pow

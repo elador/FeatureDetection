@@ -166,35 +166,52 @@ int main(int argc, char *argv[])
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
 	// START v2 EXP SIMPLE
-	auto testexp = [](float value) { return std::exp(value); };
-	auto testinv = [](float value) { return 1.0f/value; };
-	auto testpow = [](float value) { return std::pow(value, 2); };
-	float r_exp = 0.115f;
-	float r_inv = -7.0f;
-	float r_pow = 0.221;
-
-	int dims = 31; Mat x_0_tr(dims, 1, CV_32FC1); // exp: [-2:0.2:4]
-	//int dims = 26; Mat x_0_tr(dims, 1, CV_32FC1); // inv: [1:0.2:6]
-	//int dims = 31; Mat x_0_tr(dims, 1, CV_32FC1); // pow: [0:0.2:6]
+	auto h_sin = [](float value) { return std::sin(value); };
+	auto h_cube = [](float value) { return std::pow(value, 3); };
+	auto h_erf = [](float value) { return 0.0f; };
+	auto h_exp = [](float value) { return std::exp(value); };
+	
+	int dims = 11; Mat y_tr(dims, 1, CV_32FC1); // sin: [-1:0.2:1]
+	//int dims = 19; Mat y_tr(dims, 1, CV_32FC1); // cube: [-27:3:27]
+	//int dims = 19; Mat y_tr(dims, 1, CV_32FC1); // erf: [-0.99:0.11:0.99]
+	//int dims = 10; Mat y_tr(dims, 1, CV_32FC1); // exp: [1:3:28]
 	{
 		vector<float> values(dims);
-		strided_iota(std::begin(values), std::next(std::begin(values), dims), -2.0f, 0.2f); // exp
-		//strided_iota(std::begin(values), std::next(std::begin(values), dims), 1.0f, 0.2f); // inv
-		//strided_iota(std::begin(values), std::next(std::begin(values), dims), 0.0f, 0.2f); // pow
-		x_0_tr = Mat(values, true);
-	}
-	Mat y_tr(31, 1, CV_32FC1); // exp: all = exp(1) = 2.7...;
-	//Mat y_tr(dims, 1, CV_32FC1); // inv: all = 0.286;
-	//Mat y_tr(31, 1, CV_32FC1); // pow: all = 9;
-	{
-		vector<float> values(dims);
-		std::fill(begin(values), end(values), std::exp(1.0f));
+		strided_iota(std::begin(values), std::next(std::begin(values), dims), -1.0f, 0.2f); // sin
+		//strided_iota(std::begin(values), std::next(std::begin(values), dims), -27.0f, 3.0f); // cube
+		//strided_iota(std::begin(values), std::next(std::begin(values), dims), -0.99f, 0.11f); // erf
+		//strided_iota(std::begin(values), std::next(std::begin(values), dims), 1.0f, 3.0f); // exp
 		y_tr = Mat(values, true);
 	}
+	Mat x_tr(dims, 1, CV_32FC1); // sin: asin of y_tr
+	//Mat x_tr(dims, 1, CV_32FC1); // cube: inverse...
+	//Mat x_tr(31, 1, CV_32FC1); // erf: ...
+	//Mat x_tr(31, 1, CV_32FC1); // exp: ...
+	{
+		vector<float> values(dims);
+		std::transform(y_tr.begin<float>(), y_tr.end<float>(), begin(values), [](float value) { return std::asin(value); }); // sin: asin(y)
+		//std::transform(y_tr.begin<float>(), y_tr.end<float>(), begin(values), [](float value) { return std::asin(value); }); // cube: y^(1/3)
+		//std::transform(y_tr.begin<float>(), y_tr.end<float>(), begin(values), [](float value) { return std::asin(value); }); // erf: erf^-1(y)
+		//std::transform(y_tr.begin<float>(), y_tr.end<float>(), begin(values), [](float value) { return std::asin(value); }); // exp: log(y)
+		x_tr = Mat(values, true);
+	}
 
-	v2::LinearRegressor r(v2::LinearRegressor::RegularisationType::Manual, 0.0f);
-	v2::GenericDM1D g;
-	g.train(x_0_tr, y_tr, r_exp, testexp);
+	Mat x0 = 0.5f * Mat::ones(dims, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
+
+	//v2::SupervisedDescentOptimiser sdo({ std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f) });
+	vector<shared_ptr<v2::Regressor>> regressors;
+	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
+	v2::SupervisedDescentOptimiser sdo(regressors);
+	sdo.train(x_tr, y_tr, x0, h_sin);
 
 	// $\mathbf{h}$ generic, should return a cv::Mat row-vector (1 row)
 
