@@ -212,8 +212,42 @@ int main(int argc, char *argv[])
 	regressors.emplace_back(std::make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
 	v2::SupervisedDescentOptimiser sdo(regressors);
 	sdo.train(x_tr, y_tr, x0, h_sin);
-
-	// $\mathbf{h}$ generic, should return a cv::Mat row-vector (1 row)
+	
+	// Test the trained model:
+	// Test data with finer resolution:
+	dims = 41; Mat y_ts(dims, 1, CV_32FC1); // sin: [-1:0.05:1]
+	//dims = 19; Mat y_ts(dims, 1, CV_32FC1); // cube: [-27:0.5:27]
+	//dims = 19; Mat y_ts(dims, 1, CV_32FC1); // erf: [-0.99:0.03:0.99]
+	//dims = 10; Mat y_ts(dims, 1, CV_32FC1); // exp: [1:0.5:28]
+	{
+		vector<float> values(dims);
+		strided_iota(std::begin(values), std::next(std::begin(values), dims), -1.0f, 0.05f); // sin
+		//strided_iota(std::begin(values), std::next(std::begin(values), dims), -27.0f, 0.5f); // cube
+		//strided_iota(std::begin(values), std::next(std::begin(values), dims), -0.99f, 0.03f); // erf
+		//strided_iota(std::begin(values), std::next(std::begin(values), dims), 1.0f, 0.5f); // exp
+		y_ts = Mat(values, true);
+	}
+	Mat x_ts_gt(dims, 1, CV_32FC1); // sin: asin of y_tr
+	//Mat x_tr(dims, 1, CV_32FC1); // cube: inverse...
+	//Mat x_tr(31, 1, CV_32FC1); // erf: ...
+	//Mat x_tr(31, 1, CV_32FC1); // exp: ...
+	{
+		vector<float> values(dims);
+		std::transform(y_ts.begin<float>(), y_ts.end<float>(), begin(values), [](float value) { 
+			if (value >= 1.0f)
+				return std::asin(1.0f);
+			else
+				return std::asin(value);
+			}); // sin: asin(y)
+		//std::transform(y_tr.begin<float>(), y_tr.end<float>(), begin(values), [](float value) { return std::asin(value); }); // cube: y^(1/3)
+		//std::transform(y_tr.begin<float>(), y_tr.end<float>(), begin(values), [](float value) { return std::asin(value); }); // erf: erf^-1(y)
+		//std::transform(y_tr.begin<float>(), y_tr.end<float>(), begin(values), [](float value) { return std::asin(value); }); // exp: log(y)
+		x_ts_gt = Mat(values, true);
+	}
+	Mat x0_ts = 0.5f * Mat::ones(dims, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
+	sdo.test(x_ts_gt, y_ts, x0_ts, h_sin); // x_ts_gt will only be used to calculate the residual
+	
+	// $\mathbf{h}$ generic, should return a cv::Mat row-vector (1 row). Should process 1 training data. Optimally, whatever it is - float or a whole cv::Mat. But we can also simulate the 1D-case with a 1x1 cv::Mat for now.
 
 	std::cout << "stop";
 	/*auto h_inv = [](float y) { return std::asin(y); };

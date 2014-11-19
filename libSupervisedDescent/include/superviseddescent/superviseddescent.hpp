@@ -202,6 +202,7 @@ class TrivialEvaluationFunction
 
 // template blabla.. requires Evaluator with function eval(Mat, blabla)
 // or... Learner? SDMLearner? Just SDM? SupervDescOpt? SDMTraining?
+// This at the moment handles the case of _known_ y (target) values.
 class SupervisedDescentOptimiser
 {
 public:
@@ -213,10 +214,9 @@ public:
 	// Yea, some optimisers need access to the image data to optimise. Think about where this belongs.
 	// The input to this will be something different (e.g. only images? a templated class?)
 	template<class H>
-	void train(cv::Mat data, cv::Mat labels, cv::Mat x0, H h)
+	void train(cv::Mat x, cv::Mat y, cv::Mat x0, H h)
 	{
-		// data = x, labels = y. x0 = c = initialisation
-		// data = x = the parameters we want to learn
+		// data = x = the parameters we want to learn, ground truth labels for them = y. x0 = c = initialisation
 		// Simple experiments with sin etc.
 		auto logger = Loggers->getLogger("superviseddescent");
 		Mat currentX = x0;
@@ -226,11 +226,11 @@ public:
 			for (int i = 0; i < currentX.rows; ++i) {
 				features.push_back(h(currentX.at<float>(i)));
 			}
-			Mat insideRegressor = features - labels; // Todo: Find better name ;-)
+			Mat insideRegressor = features - y; // Todo: Find better name ;-)
 			// We got $\sum\|x_*^i - x_k^i + R_k(h(x_k^i)-y^i)\|_2^2 $
 			// That is: $-b + Ax = 0$, $Ax = b$, $x = A^-1 * b$
 			// Thus: $b = x_k^i - x_*^i$. Correct? Check with my regression code and old paper.
-			Mat b = currentX - data;
+			Mat b = currentX - x;
 			
 			// 1) Extract features where necessary
 			// 2) Learn using that data
@@ -241,23 +241,47 @@ public:
 			//    apply learned regressor, set data = newData or rather calculate new delta
 			//    use it to learn the next regressor in next loop iter
 			Mat x_k;
-			// Mat x_k = currentX - tmp->x.at<float>(0) * (h(currentX) - labels);
+			// Mat x_k = currentX - tmp->x.at<float>(0) * (h(currentX) - y);
 			for (int i = 0; i < currentX.rows; ++i) {
-				x_k.push_back(currentX.at<float>(i) - tmp->x.at<float>(0) * (h(currentX.at<float>(i)) - labels.at<float>(i)));
+				x_k.push_back(currentX.at<float>(i) - tmp->x.at<float>(0) * (h(currentX.at<float>(i)) - y.at<float>(i)));
 			}
 			currentX = x_k;
 			std::cout << currentX << std::endl;
-			double differenceNorm = cv::norm(x_k, data, cv::NORM_L2);
-			double residual = differenceNorm / cv::norm(data, cv::NORM_L2);
+			double differenceNorm = cv::norm(x_k, x, cv::NORM_L2);
+			double residual = differenceNorm / cv::norm(x, cv::NORM_L2);
 			std::cout << "normalised least square residual: " << residual << std::endl;
 		}
 	};
 
-	void test(cv::Mat data, cv::Mat labels)
+	// x_groundtruth will only be used to calculate the residual!
+	template<class H>
+	void test(cv::Mat x_groundtruth, cv::Mat y, cv::Mat x0, H h)
 	{
 		auto logger = Loggers->getLogger("superviseddescent");
+		Mat currentX = x0;
+		std::cout << x0 << std::endl;
 		for (auto&& regressor : regressors) {
-			double residual = regressor->test(data, labels);
+			Mat features;
+			for (int i = 0; i < currentX.rows; ++i) {
+				features.push_back(h(currentX.at<float>(i)));
+			}
+			Mat insideRegressor = features - y; // Todo: Find better name ;-)
+
+			auto tmp = dynamic_cast<LinearRegressor*>(regressor.get());
+			logger.info(std::to_string(tmp->x.at<float>(0)));
+
+			Mat x_k;
+			// Mat x_k = currentX - tmp->x.at<float>(0) * (h(currentX) - y);
+			for (int i = 0; i < currentX.rows; ++i) {
+				x_k.push_back(currentX.at<float>(i) -tmp->x.at<float>(0) * (h(currentX.at<float>(i)) - y.at<float>(i)));
+			}
+			currentX = x_k;
+			std::cout << currentX << std::endl;
+			double differenceNorm = cv::norm(x_k, x_groundtruth, cv::NORM_L2);
+			double residual = differenceNorm / cv::norm(x_groundtruth, cv::NORM_L2);
+			std::cout << "normalised least square residual: " << residual << std::endl;
+
+			//double residual = regressor->test(x0, labels); // Use this instead!
 			// do some accumulation? printing?
 			logger.info("Residual: " + std::to_string(residual));
 		}
