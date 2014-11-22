@@ -288,22 +288,10 @@ public:
 		return train(x, y, x0, h, noEval);
 	};
 
-	// x_groundtruth will only be used to calculate the residual!
-	// This could return the final residual, a vector of residuals,
-	// or actually we should return the predictions (of each or only
-	// the final level?). Or via callback.
-	// The question is, on what level do we want to test/evaluate here. Nlsr or
-	// e.g. normalised by IED already. Well, use a callback and leave the decision to the user?
-	// We could add a function OnFinishedRegressorIterationCallback
-	// Decide if we want to use regressor.test(...)
-	// SDO::predict only returns the result of the final regressor.
-	// So if this should print the resulting residual or values for each 
-	// regressor step, we indeed need to duplicate some of the prediction code.
-	template<class H>
-	double test(cv::Mat x_groundtruth, cv::Mat y, cv::Mat x0, H h)
+	template<class H, class OnRegressorIterationCallback>
+	cv::Mat test(cv::Mat y, cv::Mat x0, H h, OnRegressorIterationCallback onRegressorIterationCallback)
 	{
 		Mat currentX = x0;
-		double residual = 0.0;
 		for (auto&& regressor : regressors) {
 			Mat features;
 			for (int i = 0; i < currentX.rows; ++i) {
@@ -312,15 +300,21 @@ public:
 			Mat insideRegressor = features - y; // Todo: Find better name ;-)
 			Mat x_k; // (currentX.rows, currentX.cols, currentX.type())
 			// For every training example:
-			// This calculates x_k = currentX - R * (h(currentX) - y);
+			// This calculates x_k = currentX - R * (h(currentX) - y):
 			for (int i = 0; i < currentX.rows; ++i) {
 				Mat myInside = h(currentX.row(i)) - y.row(i);
 				x_k.push_back(Mat(currentX.row(i) - regressor.predict(myInside))); // we need Mat() because the subtraction yields a (non-persistent) MatExpr
 			}
 			currentX = x_k;
-			residual = cv::norm(x_k, x_groundtruth, cv::NORM_L2) / cv::norm(x_groundtruth, cv::NORM_L2);
+			onRegressorIterationCallback(currentX);
 		}
-		return residual; // For now, we return the residual of the last regressor.
+		return currentX; // Return the final predictions
+	};
+
+	template<class H>
+	cv::Mat test(cv::Mat y, cv::Mat x0, H h)
+	{
+		return test(y, x0, h, noEval);
 	};
 
 	// Predicts the result value for a single example, using all regressors.
@@ -339,6 +333,12 @@ public:
 	};
 
 private:
+	// Note/Todo:
+	// Maybe we want a private function:
+	// getNextX(currentX, h, y, regressor); to eliminate duplicate code in predict() and test().
+	// Then, we could make an overload without y.
+	// However, it wouldn't solve the problem of with/without y at the learning stage.
+
 	std::vector<RegressorType> regressors;
 };
 

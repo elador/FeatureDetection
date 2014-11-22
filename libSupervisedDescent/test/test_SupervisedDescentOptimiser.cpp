@@ -51,10 +51,11 @@ TEST(SupervisedDescentOptimiser, SinConvergence) {
 
 	v2::SupervisedDescentOptimiser<v2::LinearRegressor> sdo({ v2::LinearRegressor() });
 	
+	// Test the callback mechanism as well: (better move to a separate unit test?)
 	auto logNormalisedLSResidual = [&](const Mat& currentX){
 		double differenceNorm = cv::norm(currentX, x_tr, cv::NORM_L2);
 		double residual = differenceNorm / cv::norm(x_tr, cv::NORM_L2);
-		std::cout << residual << std::endl;
+		EXPECT_DOUBLE_EQ(0.21369851877468238, residual);
 	};
 
 	sdo.train(x_tr, y_tr, x0, h, logNormalisedLSResidual);
