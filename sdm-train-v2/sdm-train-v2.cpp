@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
 	auto h = [](float value) { return std::erf(value); };
 	auto h_inv = [](float value) { return boost::math::erf_inv(value); };
 */	// exp(x):
-	auto h = [](float value) { return std::exp(value); };
+	auto h = [](Mat value) { return std::exp(value.at<float>(0)); };
 	auto h_inv = [](float value) { return std::log(value); };
 
 	//float startInterval = -1.0f; float stepSize = 0.2f; int numValues = 11; Mat y_tr(numValues, 1, CV_32FC1); // sin: [-1:0.2:1]

@@ -225,6 +225,10 @@ class TrivialEvaluationFunction
 
 };
 
+inline void noEval(const cv::Mat& currentPredictions) // do nothing
+{
+};
+
 // template blabla.. requires Evaluator with function eval(Mat, blabla)
 // or... Learner? SDMLearner? Just SDM? SupervDescOpt? SDMTraining?
 // This at the moment handles the case of _known_ y (target) values.
@@ -236,22 +240,23 @@ public:
 	{
 	};
 
+
 	// Hmm in case of LM / 3DMM, we might need to give more info than this? How to handle that?
 	// Yea, some optimisers need access to the image data to optimise. Think about where this belongs.
 	// The input to this will be something different (e.g. only images? a templated class?)
-	template<class H>
-	void train(cv::Mat x, cv::Mat y, cv::Mat x0, H h)
+	// OnTrainingEpochCallback will get called
+	template<class H, class OnTrainingEpochCallback>
+	void train(cv::Mat x, cv::Mat y, cv::Mat x0, H h, OnTrainingEpochCallback onTrainingEpochCallback)
 	{
 		// data = x = the parameters we want to learn, ground truth labels for them = y. x0 = c = initialisation
 		// Simple experiments with sin etc.
 		auto logger = Loggers->getLogger("superviseddescent");
 		Mat currentX = x0;
-		std::cout << x0 << std::endl;
 		for (auto&& regressor : regressors) {
 			// 1) Extract features where necessary
 			Mat features;
 			for (int i = 0; i < currentX.rows; ++i) {
-				features.push_back(h(currentX.at<float>(i)));
+				features.push_back(h(currentX.row(i)));
 			}
 			Mat insideRegressor = features - y; // Todo: Find better name ;-)
 			// We got $\sum\|x_*^i - x_k^i + R_k(h(x_k^i)-y^i)\|_2^2 $
@@ -263,24 +268,24 @@ public:
 			
 			// 2) Learn using that data
 			regressor.learn(insideRegressor, b);
-			logger.info(std::to_string(regressor.x.at<float>(0)));
 			// 3) If not finished, 
 			//    apply learned regressor, set data = newData or rather calculate new delta
 			//    use it to learn the next regressor in next loop iter
-			Mat x_k;
-			// Mat x_k = currentX - tmp->x.at<float>(0) * (h(currentX) - y);
+			
+			Mat x_k; // x_k = currentX - R * (h(currentX) - y):
 			for (int i = 0; i < currentX.rows; ++i) {
-				auto oldWorking = regressor.x.at<float>(0) * (h(currentX.at<float>(i)) - y.at<float>(i));
-				//auto newTest = regressor->predict(h(currentX.at<float>(i)) - y.at<float>(i));
-				// predict takes a Mat, one row, and predicts only one example. The stuff in brackets is a float.
-				x_k.push_back(currentX.at<float>(i) - oldWorking); // minus here is correct. CVPR paper got a '+'. See above for reason why.
+				// No need to re-extract the features, we already did so in step 1)
+				x_k.push_back(Mat(currentX.row(i) - regressor.predict(insideRegressor.row(i)))); // minus here is correct. CVPR paper got a '+'. See above for reason why.
 			}
 			currentX = x_k;
-			std::cout << currentX << std::endl;
-			double differenceNorm = cv::norm(x_k, x, cv::NORM_L2);
-			double residual = differenceNorm / cv::norm(x, cv::NORM_L2);
-			std::cout << "normalised least square residual: " << residual << std::endl;
+			onTrainingEpochCallback(currentX);
 		}
+	};
+
+	template<class H>
+	void train(cv::Mat x, cv::Mat y, cv::Mat x0, H h)
+	{
+		return train(x, y, x0, h, noEval);
 	};
 
 	// x_groundtruth will only be used to calculate the residual!
@@ -290,79 +295,51 @@ public:
 	// The question is, on what level do we want to test/evaluate here. Nlsr or
 	// e.g. normalised by IED already. Well, use a callback and leave the decision to the user?
 	// We could add a function OnFinishedRegressorIterationCallback
+	// Decide if we want to use regressor.test(...)
+	// SDO::predict only returns the result of the final regressor.
+	// So if this should print the resulting residual or values for each 
+	// regressor step, we indeed need to duplicate some of the prediction code.
 	template<class H>
 	double test(cv::Mat x_groundtruth, cv::Mat y, cv::Mat x0, H h)
 	{
-		auto logger = Loggers->getLogger("superviseddescent");
 		Mat currentX = x0;
 		double residual = 0.0;
 		for (auto&& regressor : regressors) {
 			Mat features;
 			for (int i = 0; i < currentX.rows; ++i) {
-				features.push_back(h(currentX.at<float>(i)));
+				features.push_back(h(currentX.row(i)));
 			}
 			Mat insideRegressor = features - y; // Todo: Find better name ;-)
-
-			logger.info(std::to_string(regressor.x.at<float>(0)));
-
-			// Move the following to a separate function, overloaded on float or cv::Mat?
 			Mat x_k; // (currentX.rows, currentX.cols, currentX.type())
 			// For every training example:
 			// This calculates x_k = currentX - R * (h(currentX) - y);
 			for (int i = 0; i < currentX.rows; ++i) {
-				cv::Mat myInside; // (1, y.cols, CV_32FC1);
-				// cv::subtract uses a InputArray(double) constructor or something
-				// So if h returns a float, it will work as well!
-				// Actually we could make that a little bit better by making our own overloaded subtract function
-				// NOTE/TODO: h(currentX.at<float>(i)) only ever returns 1 float!!! Not what we want!!!
-				cv::subtract(h(currentX.at<float>(i)), y.row(i), myInside, cv::noArray(), CV_32FC1);
+				Mat myInside = h(currentX.row(i)) - y.row(i);
 				x_k.push_back(Mat(currentX.row(i) - regressor.predict(myInside))); // we need Mat() because the subtraction yields a (non-persistent) MatExpr
 			}
 			currentX = x_k;
 			residual = cv::norm(x_k, x_groundtruth, cv::NORM_L2) / cv::norm(x_groundtruth, cv::NORM_L2);
-			std::cout << "normalised least square residual: " << residual << std::endl;
-
-			//double residual = regressor->test(x0, labels); // Use this instead!
-			// Well, see notes above!
-			// do some accumulation? printing?
-			logger.info("Residual: " + std::to_string(residual));
 		}
 		return residual; // For now, we return the residual of the last regressor.
 	};
 
-	// Predicts the ...result?value? for a single example...
-	// for the case where we have a template y (known y)
+	// Predicts the result value for a single example, using all regressors.
+	// For the case where we have a template y (known y).
 	template<class H>
 	cv::Mat predict(cv::Mat x0, cv::Mat template_y, H h)
 	{
 		Mat currentX = x0;
 		for (auto&& regressor : regressors) {
 			// calculate x_k = currentX - R * (h(currentX) - y):
-			cv::Mat myInside; // (1, y.cols, CV_32FC1);
-			cv::subtract(h(currentX.at<float>(i)), y, myInside, cv::noArray(), CV_32FC1); // we have to explicitly state the output type because one of our inputs may be a scalar (float)
-			Mat x_k = currentX.row(i) - regressor.predict(myInside);
+			cv::Mat myInside = h(currentX) - y;
+			Mat x_k = currentX - regressor.predict(myInside);
 			currentX = x_k;
 		}
-		
-
-		return cv::Mat();
+		return currentX;
 	};
 
 private:
-	// If we don't want to allow different regressor types, we
-	// could make the Regressor a template parameter
-	std::vector<RegressorType> regressors; // (Old: Switch to shared_ptr, but VS2013 has a problem with it. VS2015 is fine.)
-	// I think it would be better to delete this ('CascadedRegressor') and store a
-	// vector<R> instead in Optimiser, because multiple levels
-	// may require different features and different normalisations (i.e. IED)?
-	// Yep, try this first. But it has the disadvantage that we need to remove
-	// this template parameter from Optimiser and use "standard" inheritance
-	// instead. Same as in tiny-cnn.
-	// The right approach seems definitely to put it in the Optimiser.
-	// Because only he can now about the feature extraction required for each
-	// regressor step, and the scales etc.
-
-	//E evaluator;
+	std::vector<RegressorType> regressors;
 };
 
 

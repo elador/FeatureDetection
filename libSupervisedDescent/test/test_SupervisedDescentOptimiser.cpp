@@ -26,7 +26,7 @@ void strided_iota(ForwardIterator first, ForwardIterator last, T value, T stride
 
 TEST(SupervisedDescentOptimiser, SinConvergence) {
 	// sin(x):
-	auto h = [](float value) { return std::sin(value); };
+	auto h = [](Mat value) { return std::sin(value.at<float>(0)); };
 	auto h_inv = [](float value) {
 		if (value >= 1.0f) // our upper border of y is 1.0f, but it can be a bit larger due to floating point representation. asin then returns NaN.
 			return std::asin(1.0f);
@@ -50,7 +50,14 @@ TEST(SupervisedDescentOptimiser, SinConvergence) {
 	Mat x0 = 0.5f * Mat::ones(numValues, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
 
 	v2::SupervisedDescentOptimiser<v2::LinearRegressor> sdo({ v2::LinearRegressor() });
-	sdo.train(x_tr, y_tr, x0, h);
+	
+	auto logNormalisedLSResidual = [&](const Mat& currentX){
+		double differenceNorm = cv::norm(currentX, x_tr, cv::NORM_L2);
+		double residual = differenceNorm / cv::norm(x_tr, cv::NORM_L2);
+		std::cout << residual << std::endl;
+	};
+
+	sdo.train(x_tr, y_tr, x0, h, logNormalisedLSResidual);
 
 	// Make sure the training converges, i.e. the residual is correct on the training data:
 	double trainingResidual = sdo.test(x_tr, y_tr, x0, h);
@@ -78,7 +85,7 @@ TEST(SupervisedDescentOptimiser, SinConvergence) {
 
 TEST(SupervisedDescentOptimiser, SinConvergenceCascade) {
 	// sin(x):
-	auto h = [](float value) { return std::sin(value); };
+	auto h = [](Mat value) { return std::sin(value.at<float>(0)); };
 	auto h_inv = [](float value) {
 		if (value >= 1.0f) // our upper border of y is 1.0f, but it can be a bit larger due to floating point representation. asin then returns NaN.
 			return std::asin(1.0f);
@@ -141,7 +148,7 @@ TEST(SupervisedDescentOptimiser, SinConvergenceCascade) {
 
 TEST(SupervisedDescentOptimiser, XCubeConvergence) {
 	// x^3:
-	auto h = [](float value) { return std::pow(value, 3); };
+	auto h = [](Mat value) { return std::pow(value.at<float>(0), 3); };
 	auto h_inv = [](float value) { return std::cbrt(value); }; // cubic root
 
 	float startInterval = -27.0f; float stepSize = 3.0f; int numValues = 19; Mat y_tr(numValues, 1, CV_32FC1); // cube: [-27:3:27]
@@ -188,7 +195,7 @@ TEST(SupervisedDescentOptimiser, XCubeConvergence) {
 
 TEST(SupervisedDescentOptimiser, XCubeConvergenceCascade) {
 	// x^3:
-	auto h = [](float value) { return std::pow(value, 3); };
+	auto h = [](Mat value) { return std::pow(value.at<float>(0), 3); };
 	auto h_inv = [](float value) { return std::cbrt(value); }; // cubic root
 
 	float startInterval = -27.0f; float stepSize = 3.0f; int numValues = 19; Mat y_tr(numValues, 1, CV_32FC1); // cube: [-27:3:27]
@@ -246,7 +253,7 @@ TEST(SupervisedDescentOptimiser, XCubeConvergenceCascade) {
 
 TEST(SupervisedDescentOptimiser, ErfConvergence) {
 	// erf(x):
-	auto h = [](float value) { return std::erf(value); };
+	auto h = [](Mat value) { return std::erf(value.at<float>(0)); };
 	auto h_inv = [](float value) { return boost::math::erf_inv(value); };
 
 	float startInterval = -0.99f; float stepSize = 0.11f; int numValues = 19; Mat y_tr(numValues, 1, CV_32FC1); // erf: [-0.99:0.11:0.99]
@@ -293,7 +300,7 @@ TEST(SupervisedDescentOptimiser, ErfConvergence) {
 
 TEST(SupervisedDescentOptimiser, ErfConvergenceCascade) {
 	// erf(x):
-	auto h = [](float value) { return std::erf(value); };
+	auto h = [](Mat value) { return std::erf(value.at<float>(0)); };
 	auto h_inv = [](float value) { return boost::math::erf_inv(value); };
 
 	float startInterval = -0.99f; float stepSize = 0.11f; int numValues = 19; Mat y_tr(numValues, 1, CV_32FC1); // erf: [-0.99:0.11:0.99]
@@ -351,7 +358,7 @@ TEST(SupervisedDescentOptimiser, ErfConvergenceCascade) {
 
 TEST(SupervisedDescentOptimiser, ExpConvergence) {
 	// exp(x):
-	auto h = [](float value) { return std::exp(value); };
+	auto h = [](Mat value) { return std::exp(value.at<float>(0)); };
 	auto h_inv = [](float value) { return std::log(value); };
 
 	float startInterval = 1.0f; float stepSize = 3.0f; int numValues = 10; Mat y_tr(numValues, 1, CV_32FC1); // exp: [1:3:28]
@@ -398,7 +405,7 @@ TEST(SupervisedDescentOptimiser, ExpConvergence) {
 
 TEST(SupervisedDescentOptimiser, ExpConvergenceCascade) {
 	// exp(x):
-	auto h = [](float value) { return std::exp(value); };
+	auto h = [](Mat value) { return std::exp(value.at<float>(0)); };
 	auto h_inv = [](float value) { return std::log(value); };
 
 	float startInterval = 1.0f; float stepSize = 3.0f; int numValues = 10; Mat y_tr(numValues, 1, CV_32FC1); // exp: [1:3:28]
