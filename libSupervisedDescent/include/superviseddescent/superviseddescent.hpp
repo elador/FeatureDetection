@@ -40,8 +40,9 @@ public:
 	virtual ~Regressor() {};
 
 	// or train()
-	// return? maybe the prediction error?
-	virtual void learn(cv::Mat data, cv::Mat labels) = 0;
+	// Returns whether the learning was successful.
+	// or maybe the prediction error? => no, for that case, we can use test() with the same data.
+	virtual bool learn(cv::Mat data, cv::Mat labels) = 0;
 
 	// maybe, for testing:
 	// return a results struct or something, like in tiny-cnn
@@ -49,28 +50,83 @@ public:
 	virtual double test(cv::Mat data, cv::Mat labels) = 0;
 
 	virtual cv::Mat predict(cv::Mat values) = 0;
+
+	// overload for float, let's see if we can use it in this way
+	virtual float predict(float value) = 0;
+};
+
+class Regulariser
+{
+public:
+	/**
+	* Todo: Description.
+	*/
+	enum class RegularisationType
+	{
+		Manual, ///< use lambda
+		MatrixNorm, ///< use norm... optional lambda used as factor. If used, a suitable default is 0.5f.As mentioned by the authors of [SDM].
+		EigenvalueThreshold ///< see description libEigen
+	};
+
+	Regulariser(RegularisationType regularisationType = RegularisationType::Manual, float param = 0.0f, bool regulariseLastRow = true) : regularisationType(regularisationType), lambda(param), regulariseLastRow(regulariseLastRow)
+	{
+	};
+
+	// Returns a diagonal regularisation matrix with the same dimensions as the given data matrix.
+	// Might use the data to calculate an automatic value for lambda.
+	cv::Mat getMatrix(cv::Mat data, int numTrainingElements)
+	{
+		auto logger = Loggers->getLogger("superviseddescent");
+		// move regularisation to a separate function, so we can also test it separately. getRegulariser()?
+		// Actually all that stuff can go in a class Regulariser
+		switch (regularisationType)
+		{
+		case RegularisationType::Manual:
+			// We just take lambda as it was given, no calculation necessary.
+			break;
+		case RegularisationType::MatrixNorm:
+			// The given lambda is the factor we have to multiply the automatic value with
+			lambda = lambda * static_cast<float>(cv::norm(data)) / static_cast<float>(numTrainingElements); // We divide by the number of images.
+			// However, division by (AtA.rows * AtA.cols) might make more sense? Because this would be an approximation for the
+			// RMS (eigenvalue? see sheet of paper, ev's of diag-matrix etc.), and thus our (conservative?) guess for a lambda that makes AtA invertible.
+			break;
+		case RegularisationType::EigenvalueThreshold:
+			//lambda = calculateEigenvalueThreshold(AtA);
+			lambda = 0.5f; // TODO COPY FROM OLD CODE
+			break;
+		default:
+			break;
+		}
+		logger.debug("Lambda is: " + lexical_cast<string>(lambda));
+
+		Mat regulariser = Mat::eye(data.rows, data.cols, CV_32FC1) * lambda; // always symmetric
+
+		if (!regulariseLastRow) {
+			regulariser.at<float>(regulariser.rows - 1, regulariser.cols - 1) = 0.0f; // no lambda for the bias
+		}
+		return regulariser;
+	};
+private:
+	RegularisationType regularisationType;
+	float lambda; // param for RegularisationType. Can be lambda directly or a factor with which the lambda from MatrixNorm will be multiplied with.
+	bool regulariseLastRow; // if your last row of data matrix is a bias (offset), then you might want to choose whether it should be regularised as well. Otherwise, just leave it to default (true).
 };
 
 class LinearRegressor : public Regressor
 {
 
 public:
-	/**
-	 * Todo: Description.
-	 */
-	enum class RegularisationType
+	// The default should be the simplest case: Do not regularisation at all.
+	// regulariseBias assumes the last row (col?) that will be given as training is a row to learn a bias b (affine component)
+	// ==> If anywhere, learnBias should go to SDO class. Nothing changes in the regressor.
+	// If you want to learn a bias term, add it as a column with [1; 1; ...; 1] to the data
+	// A few of those params could go to the learn function?
+	LinearRegressor(Regulariser regulariser = Regulariser()) : x(), regulariser(regulariser)
 	{
-		Manual, ///< use lambda
-		Automatic, ///< use norm... optional lambda used as factor
-		EigenvalueThreshold ///< see description libEigen
 	};
 
-	LinearRegressor(RegularisationType regularisationType = RegularisationType::Automatic, float lambda = 0.5f, bool regulariseAffineComponent = true) : x(), regularisationType(regularisationType), lambda(lambda), regulariseAffineComponent(regulariseAffineComponent)
-	{
-
-	};
-
-	void learn(cv::Mat data, cv::Mat labels)
+	// Returns if the learning was successful or not. I.e. in this case, if the matrix was invertible.
+	bool learn(cv::Mat data, cv::Mat labels)
 	{
 		Logger logger = Loggers->getLogger("superviseddescent");
 		std::chrono::time_point<std::chrono::system_clock> start, end;
@@ -78,40 +134,10 @@ public:
 
 		Mat AtA = data.t() * data;
 
-		switch (regularisationType)
-		{
-		case RegularisationType::Manual:
-			// We just take lambda as it was given, no calculation necessary.
-			break;
-		case RegularisationType::Automatic:
-			// The given lambda is the factor we have to multiply the automatic value with
-			lambda = lambda * static_cast<float>(cv::norm(AtA)) / static_cast<float>(data.rows); // We divide by the number of images.
-			// However, division by (AtA.rows * AtA.cols) might make more sense? Because this would be an approximation for the
-			// RMS (eigenvalue? see sheet of paper, ev's of diag-matrix etc.), and thus our (conservative?) guess for a lambda that makes AtA invertible.
-			break;
-		case RegularisationType::EigenvalueThreshold:
-		{
-			std::chrono::time_point<std::chrono::system_clock> eigenTimeStart = std::chrono::system_clock::now();
-			//lambda = calculateEigenvalueThreshold(AtA);
-			lambda = 0.5f; // TODO COPY FROM OLD CODE
-			std::chrono::time_point<std::chrono::system_clock> eigenTimeEnd = std::chrono::system_clock::now();
-			elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(eigenTimeEnd - eigenTimeStart).count();
-			logger.debug("Automatic calculation of lambda for AtA took " + lexical_cast<string>(elapsed_mseconds)+"ms.");
-		}
-			break;
-		default:
-			break;
-		}
-		logger.debug("Setting lambda to: " + lexical_cast<string>(lambda));
-
-		Mat regulariser = Mat::eye(AtA.rows, AtA.rows, CV_32FC1) * lambda;
-		if (!regulariseAffineComponent) {
-			// Note: The following line breaks if we enter 1-dimensional data
-			// Update: No, it doesn't crash, it points to (0, 0) then. Has the wrong effect though.
-			regulariser.at<float>(regulariser.rows - 1, regulariser.cols - 1) = 0.0f; // no lambda for the bias
-		}
+		Mat regularisationMatrix = regulariser.getMatrix(AtA, data.rows);
+		
 		// solve for x!
-		Mat AtAReg = AtA + regulariser;
+		Mat AtAReg = AtA + regularisationMatrix;
 		if (!AtAReg.isContinuous()) {
 			std::string msg("Matrix is not continuous. This should not happen as we allocate it directly.");
 			logger.error(msg);
@@ -131,11 +157,8 @@ public:
 			// Eigen will most likely return garbage here (according to their docu anyway). We have a few options:
 			// - Increase lambda
 			// - Calculate the pseudo-inverse. See: http://eigen.tuxfamily.org/index.php?title=FAQ#Is_there_a_method_to_compute_the_.28Moore-Penrose.29_pseudo_inverse_.3F
-			string msg("The regularized AtA is not invertible (its rank is " + lexical_cast<string>(rankOfAtAReg)+", full rank would be " + lexical_cast<string>(AtAReg_Eigen.rows()) + "). Increase lambda (or use the pseudo-inverse, which is not implemented yet).");
+			string msg("The regularised AtA is not invertible. We continued learning, but Eigen calculates garbage in this case according to their documentation. (The rank is " + lexical_cast<string>(rankOfAtAReg)+", full rank would be " + lexical_cast<string>(AtAReg_Eigen.rows()) + "). Increase lambda (or use the pseudo-inverse, which is not implemented yet).");
 			logger.error(msg);
-#ifndef _DEBUG
-			//throw std::runtime_error(msg); // Don't throw while debugging. Makes debugging with small amounts of data possible.
-#endif
 		}
 		Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> AtARegInv_EigenFullLU = luOfAtAReg.inverse();
 		//Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> AtARegInv_Eigen = AtAReg_Eigen.inverse(); // This would be the cheap variant (PartialPivotLU), but we can't check if the matrix is invertible.
@@ -151,9 +174,10 @@ public:
 
 		Mat AtARegInvAt = AtARegInvFullLU * data.t(); // Todo: We could use luOfAtAReg.solve(b, x) instead of .inverse() and these lines.
 		Mat AtARegInvAtb = AtARegInvAt * labels; // = x
+		
 		x = AtARegInvAtb; // store in member variable.
-		return; // Could we return something useful?
-		// Maybe isInvertible. This can happen in normal control flow, so prefer this to exceptions?
+		
+		return luOfAtAReg.isInvertible();
 	};
 
 	// Return the normalised least square residuals?
@@ -166,32 +190,33 @@ public:
 			cv::Mat prediction = predict(data.row(i));
 			predictions.push_back(prediction);
 		}
-		cv::Mat difference = predictions - labels;
-		double differenceNorm = cv::norm(predictions, labels, cv::NORM_L2);
-		double residual = differenceNorm / cv::norm(labels, cv::NORM_L2); // TODO Check the paper - x* is the ground truth, right?
-		return residual;
+		return cv::norm(predictions, labels, cv::NORM_L2) / cv::norm(labels, cv::NORM_L2);
 	};
 
 	// values has to be a row vector. One row for every data point.
 	// The input to this function is only 1 data point, i.e. one row-vector.
 	cv::Mat predict(cv::Mat values)
 	{
-		cv::Mat prediction = values.mul(x); // .dot?
+		cv::Mat prediction = values * x;
+		return prediction;
+	};
+
+	float predict(float value)
+	{
+		if (x.rows != 1 || x.cols != 1) {
+			throw std::runtime_error("Trying to predict a float value, but the used regressor doesn't have exactly one row and one column.");
+		}
+		float prediction = value * x.at<float>(0);
 		return prediction;
 	};
 	
 	cv::Mat x; // move back to private once finished
+	// could rename to 'R' (as used in the SDM)
 private:
-	
-	RegularisationType regularisationType;
-	float lambda;
-	bool regulariseAffineComponent;
+	Regulariser regulariser;
 
 	// Add serialisation
 };
-
-
-
 
 // or... LossFunction, CostFunction, Evaluator, ...?
 // No inheritance, so the user can plug in anything without inheriting.
@@ -203,10 +228,11 @@ class TrivialEvaluationFunction
 // template blabla.. requires Evaluator with function eval(Mat, blabla)
 // or... Learner? SDMLearner? Just SDM? SupervDescOpt? SDMTraining?
 // This at the moment handles the case of _known_ y (target) values.
+template<class RegressorType>
 class SupervisedDescentOptimiser
 {
 public:
-	SupervisedDescentOptimiser(std::vector<std::shared_ptr<Regressor>> regressors) : regressors(regressors)
+	SupervisedDescentOptimiser(std::vector<RegressorType> regressors) : regressors(regressors)
 	{
 	};
 
@@ -236,16 +262,15 @@ public:
 			Mat b = currentX - x; // correct
 			
 			// 2) Learn using that data
-			regressor->learn(insideRegressor, b);
-			auto tmp = dynamic_cast<LinearRegressor*>(regressor.get());
-			logger.info(std::to_string(tmp->x.at<float>(0)));
+			regressor.learn(insideRegressor, b);
+			logger.info(std::to_string(regressor.x.at<float>(0)));
 			// 3) If not finished, 
 			//    apply learned regressor, set data = newData or rather calculate new delta
 			//    use it to learn the next regressor in next loop iter
 			Mat x_k;
 			// Mat x_k = currentX - tmp->x.at<float>(0) * (h(currentX) - y);
 			for (int i = 0; i < currentX.rows; ++i) {
-				auto oldWorking = tmp->x.at<float>(0) * (h(currentX.at<float>(i)) - y.at<float>(i));
+				auto oldWorking = regressor.x.at<float>(0) * (h(currentX.at<float>(i)) - y.at<float>(i));
 				//auto newTest = regressor->predict(h(currentX.at<float>(i)) - y.at<float>(i));
 				// predict takes a Mat, one row, and predicts only one example. The stuff in brackets is a float.
 				x_k.push_back(currentX.at<float>(i) - oldWorking); // minus here is correct. CVPR paper got a '+'. See above for reason why.
@@ -259,12 +284,18 @@ public:
 	};
 
 	// x_groundtruth will only be used to calculate the residual!
+	// This could return the final residual, a vector of residuals,
+	// or actually we should return the predictions (of each or only
+	// the final level?). Or via callback.
+	// The question is, on what level do we want to test/evaluate here. Nlsr or
+	// e.g. normalised by IED already. Well, use a callback and leave the decision to the user?
+	// We could add a function OnFinishedRegressorIterationCallback
 	template<class H>
-	void test(cv::Mat x_groundtruth, cv::Mat y, cv::Mat x0, H h)
+	double test(cv::Mat x_groundtruth, cv::Mat y, cv::Mat x0, H h)
 	{
 		auto logger = Loggers->getLogger("superviseddescent");
 		Mat currentX = x0;
-		std::cout << x0 << std::endl;
+		double residual = 0.0;
 		for (auto&& regressor : regressors) {
 			Mat features;
 			for (int i = 0; i < currentX.rows; ++i) {
@@ -272,30 +303,55 @@ public:
 			}
 			Mat insideRegressor = features - y; // Todo: Find better name ;-)
 
-			auto tmp = dynamic_cast<LinearRegressor*>(regressor.get());
-			logger.info(std::to_string(tmp->x.at<float>(0)));
+			logger.info(std::to_string(regressor.x.at<float>(0)));
 
-			Mat x_k;
-			// Mat x_k = currentX - tmp->x.at<float>(0) * (h(currentX) - y);
+			// Move the following to a separate function, overloaded on float or cv::Mat?
+			Mat x_k; // (currentX.rows, currentX.cols, currentX.type())
+			// For every training example:
+			// This calculates x_k = currentX - R * (h(currentX) - y);
 			for (int i = 0; i < currentX.rows; ++i) {
-				x_k.push_back(currentX.at<float>(i) -tmp->x.at<float>(0) * (h(currentX.at<float>(i)) - y.at<float>(i)));
+				cv::Mat myInside; // (1, y.cols, CV_32FC1);
+				// cv::subtract uses a InputArray(double) constructor or something
+				// So if h returns a float, it will work as well!
+				// Actually we could make that a little bit better by making our own overloaded subtract function
+				// NOTE/TODO: h(currentX.at<float>(i)) only ever returns 1 float!!! Not what we want!!!
+				cv::subtract(h(currentX.at<float>(i)), y.row(i), myInside, cv::noArray(), CV_32FC1);
+				x_k.push_back(Mat(currentX.row(i) - regressor.predict(myInside))); // we need Mat() because the subtraction yields a (non-persistent) MatExpr
 			}
 			currentX = x_k;
-			std::cout << currentX << std::endl;
-			double differenceNorm = cv::norm(x_k, x_groundtruth, cv::NORM_L2);
-			double residual = differenceNorm / cv::norm(x_groundtruth, cv::NORM_L2);
+			residual = cv::norm(x_k, x_groundtruth, cv::NORM_L2) / cv::norm(x_groundtruth, cv::NORM_L2);
 			std::cout << "normalised least square residual: " << residual << std::endl;
 
 			//double residual = regressor->test(x0, labels); // Use this instead!
+			// Well, see notes above!
 			// do some accumulation? printing?
 			logger.info("Residual: " + std::to_string(residual));
 		}
+		return residual; // For now, we return the residual of the last regressor.
+	};
+
+	// Predicts the ...result?value? for a single example...
+	// for the case where we have a template y (known y)
+	template<class H>
+	cv::Mat predict(cv::Mat x0, cv::Mat template_y, H h)
+	{
+		Mat currentX = x0;
+		for (auto&& regressor : regressors) {
+			// calculate x_k = currentX - R * (h(currentX) - y):
+			cv::Mat myInside; // (1, y.cols, CV_32FC1);
+			cv::subtract(h(currentX.at<float>(i)), y, myInside, cv::noArray(), CV_32FC1); // we have to explicitly state the output type because one of our inputs may be a scalar (float)
+			Mat x_k = currentX.row(i) - regressor.predict(myInside);
+			currentX = x_k;
+		}
+		
+
+		return cv::Mat();
 	};
 
 private:
 	// If we don't want to allow different regressor types, we
 	// could make the Regressor a template parameter
-	std::vector<std::shared_ptr<Regressor>> regressors; // Switch to shared_ptr, but VS2013 has a problem with it. VS2015 is fine.
+	std::vector<RegressorType> regressors; // (Old: Switch to shared_ptr, but VS2013 has a problem with it. VS2015 is fine.)
 	// I think it would be better to delete this ('CascadedRegressor') and store a
 	// vector<R> instead in Optimiser, because multiple levels
 	// may require different features and different normalisations (i.e. IED)?

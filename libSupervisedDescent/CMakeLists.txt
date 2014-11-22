@@ -46,7 +46,7 @@ set(SOURCE
 
 include_directories("include")
 
-# add dependencies
+# Add header includes:
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
@@ -54,6 +54,29 @@ include_directories(${Logging_SOURCE_DIR}/include)
 include_directories(${ImageIO_SOURCE_DIR}/include)
 include_directories(${ImageProcessing_SOURCE_DIR}/include)
 
-# make library
+# Make the library:
 add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
 target_link_libraries(${SUBPROJECT_NAME} ImageProcessing ImageIO Logging ${OpenCV_LIBS} ${Boost_LIBRARIES})
+
+# The install target:
+install(TARGETS ${SUBPROJECT_NAME} DESTINATION lib)
+install(FILES ${HEADERS} DESTINATION include/${SUBPROJECT_NAME}) # Todo: This is uppercase. Rename project to lowercase? This then clashes with toplevel project
+
+# Unit tests:
+# Set properties / executable of the test:
+include_directories(${gtest_SOURCE_DIR}/include)
+
+set(TEST_LINREG1D test_LinearRegressor1D)
+add_executable(${TEST_LINREG1D} test/test_LinearRegressor1D.cpp)
+target_link_libraries(${TEST_LINREG1D} ${SUBPROJECT_NAME} gtest_main gtest)
+add_test(${TEST_LINREG1D} ${TEST_LINREG1D}) # testname exename
+
+set(TEST_LINREGND test_LinearRegressorND)
+add_executable(${TEST_LINREGND} test/test_LinearRegressorND.cpp)
+target_link_libraries(${TEST_LINREGND} ${SUBPROJECT_NAME} gtest_main gtest)
+add_test(${TEST_LINREGND} ${TEST_LINREGND})
+
+set(TEST_SDO test_SupervisedDescentOptimiser)
+add_executable(${TEST_SDO} test/test_SupervisedDescentOptimiser.cpp)
+target_link_libraries(${TEST_SDO} ${SUBPROJECT_NAME} gtest_main gtest)
+add_test(${TEST_SDO} ${TEST_SDO})

@@ -43,3 +43,5 @@ include_directories(${SupervisedDescent_SOURCE_DIR}/include)
 
 # Make the app depend on the libraries
 target_link_libraries(${SUBPROJECT_NAME} SupervisedDescent Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})
+
+install(TARGETS ${SUBPROJECT_NAME} DESTINATION bin)

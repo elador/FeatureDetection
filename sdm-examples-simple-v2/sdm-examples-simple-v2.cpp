@@ -156,18 +156,18 @@ int main(int argc, char *argv[])
 	Mat x0 = 0.5f * Mat::ones(numValues, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
 
 	//v2::SupervisedDescentOptimiser sdo({ make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f) });
-	vector<shared_ptr<v2::Regressor>> regressors;
-	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	regressors.emplace_back(make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f));
-	v2::SupervisedDescentOptimiser sdo(regressors);
+	vector<v2::LinearRegressor> regressors;
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	v2::SupervisedDescentOptimiser<v2::LinearRegressor> sdo(regressors);
 	sdo.train(x_tr, y_tr, x0, h);
 	
 	// Test the trained model:
