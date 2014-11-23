@@ -27,6 +27,20 @@ message(STATUS "WITH_MORPHABLEMODEL_HDF5: ${WITH_MORPHABLEMODEL_HDF5}")
 option(WITH_FITTING_LIBEIGEN "Uses libEigen for linear algebra operations in the fitting instead of OpenCV." OFF) # not used yet
 message(STATUS "WITH_FITTING_LIBEIGEN: ${WITH_FITTING_LIBEIGEN}")
 
+message(STATUS "=== Configuring gtest-1.7.0 ===")
+set(gtest_force_shared_crt ON CACHE BOOL "Use shared (DLL) run-time lib (CRT) even when Google Test is built as static lib.") # THIS IS NEWEST
+#message(STATUS "GTEST_LINKED_AS_SHARED_LIBRARY: ${GTEST_LINKED_AS_SHARED_LIBRARY}")
+#set(GTEST_LINKED_AS_SHARED_LIBRARY 1 CACHE BOOL "shrd") # has no influence?
+#message(STATUS "GTEST_LINKED_AS_SHARED_LIBRARY: ${GTEST_LINKED_AS_SHARED_LIBRARY}")
+#message(STATUS "BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
+add_subdirectory(3rdparty/gtest-1.7.0)
+#message(STATUS "BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
+#set(BUILD_SHARED_LIBS "" CACHE BOOL)
+#message(STATUS "BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
+enable_testing() # Enables CTest
+
+add_custom_target(checkd COMMAND ${CMAKE_CTEST_COMMAND} -V -C Debug) # to get detailed output on VS
+add_custom_target(checkr COMMAND ${CMAKE_CTEST_COMMAND} -V -C Release)
 
 # Core libraries:
 add_subdirectory(libLogging)			# Text logging
@@ -40,7 +54,7 @@ if(WITH_LIBLINEAR_CLASSIFIER)
 	add_subdirectory(libLinear)				# liblinear (linear classification with SVM and regression)
 endif()
 
-#add_subdirectory(libDetection)			# Sliding-window detection, Skin detection (Note: Do we use it anymore? Yes, Condensation depends on it)
+add_subdirectory(libDetection)			# Sliding-window detection, Skin detection (Note: Do we use it anymore? Yes, Condensation depends on it)
 #add_subdirectory(libCondensation)		# Condensation tracking (particle filter)
 
 add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
