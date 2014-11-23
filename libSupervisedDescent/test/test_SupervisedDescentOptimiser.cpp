@@ -482,3 +482,92 @@ TEST(SupervisedDescentOptimiser, ExpConvergenceCascade) {
 	double testResidual = normalisedLeastSquaresResidual(predictions, x_ts_gt);
 	ASSERT_DOUBLE_EQ(0.012534944044555876, testResidual);
 }
+
+TEST(SupervisedDescentOptimiser, SinErfConvergenceCascadeMultiY) {
+	// sin(x):
+	auto h_sin = [](float value) { return std::sin(value); };
+	auto h_sin_inv = [](float value) {
+		if (value >= 1.0f) // our upper border of y is 1.0f, but it can be a bit larger due to floating point representation. asin then returns NaN.
+			return std::asin(1.0f);
+		else
+			return std::asin(value);
+	};
+	// erf(x):
+	auto h_erf = [](float value) { return std::erf(value); };
+	auto h_erf_inv = [](float value) { return boost::math::erf_inv(value); };
+
+	auto h = [&](Mat value) {
+		Mat result(1, 2, CV_32FC1);
+		result.at<float>(0) = h_sin(value.at<float>(0));
+		result.at<float>(1) = h_erf(value.at<float>(1));
+		return result;
+	};
+	auto h_inv = [&](Mat value) {
+		Mat result(1, 2, CV_32FC1);
+		result.at<float>(0) = h_sin_inv(value.at<float>(0));
+		result.at<float>(1) = h_erf_inv(value.at<float>(1));
+		return result;
+	};
+
+	float startInterval = -0.99f; float stepSize = 0.11f; int numValues = 19; Mat y_tr(numValues, 2, CV_32FC1); // should work for sin and erf: [-0.99:0.11:0.99]
+	{
+		vector<float> values(numValues);
+		strided_iota(std::begin(values), std::next(std::begin(values), numValues), startInterval, stepSize);
+		for (auto r = 0; r < y_tr.rows; ++r) {
+			y_tr.at<float>(r, 0) = values[r];
+			y_tr.at<float>(r, 1) = values[r];
+		}
+
+	}
+	Mat x_tr(numValues, 2, CV_32FC1); // Will be the inverse of y_tr
+	{
+		for (auto r = 0; r < x_tr.rows; ++r) {
+			x_tr.at<float>(r, 0) = h_sin_inv(y_tr.at<float>(r, 0));
+			x_tr.at<float>(r, 1) = h_erf_inv(y_tr.at<float>(r, 1));
+		}
+	}
+
+	Mat x0 = 0.5f * Mat::ones(numValues, 2, CV_32FC1); // fixed initialization x0 = c = 0.5.
+
+	vector<v2::LinearRegressor> regressors;
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor());
+	v2::SupervisedDescentOptimiser<v2::LinearRegressor> sdo(regressors);
+
+	sdo.train(x_tr, y_tr, x0, h);
+	Mat predictions = sdo.test(y_tr, x0, h);
+	double trainingResidual = cv::norm(predictions, x_tr, cv::NORM_L2) / cv::norm(x_tr, cv::NORM_L2);
+	EXPECT_DOUBLE_EQ(0.00026777312923967225, trainingResidual);
+
+	// Test the trained model:
+	// Test data with finer resolution:
+	float startIntervalTest = -0.99f; float stepSizeTest = 0.03f; int numValuesTest = 67; Mat y_ts(numValuesTest, 2, CV_32FC1); // sin and erf: [-0.99:0.03:0.99]
+	{
+		vector<float> values(numValuesTest);
+		strided_iota(std::begin(values), std::next(std::begin(values), numValuesTest), startIntervalTest, stepSizeTest);
+		for (auto r = 0; r < y_ts.rows; ++r) {
+			y_ts.at<float>(r, 0) = values[r];
+			y_ts.at<float>(r, 1) = values[r];
+		}
+	}
+	Mat x_ts_gt(numValuesTest, 2, CV_32FC1); // Will be the inverse of y_ts
+	{
+		for (auto r = 0; r < x_ts_gt.rows; ++r) {
+			x_ts_gt.at<float>(r, 0) = h_sin_inv(y_ts.at<float>(r, 0));
+			x_ts_gt.at<float>(r, 1) = h_erf_inv(y_ts.at<float>(r, 1));
+		}
+	}
+	Mat x0_ts = 0.5f * Mat::ones(numValuesTest, 2, CV_32FC1); // fixed initialization x0 = c = 0.5.
+
+	predictions = sdo.test(y_ts, x0_ts, h);
+	double testingResidual = cv::norm(predictions, x_ts_gt, cv::NORM_L2) / cv::norm(x_ts_gt, cv::NORM_L2);
+	ASSERT_DOUBLE_EQ(0.0024807352670185964, testingResidual);
+}

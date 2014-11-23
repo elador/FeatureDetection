@@ -245,6 +245,8 @@ public:
 	// Yea, some optimisers need access to the image data to optimise. Think about where this belongs.
 	// The input to this will be something different (e.g. only images? a templated class?)
 	// OnTrainingEpochCallback will get called
+	//
+	// $\mathbf{H}$ a function, should return a cv::Mat row-vector (1 row). Should process 1 training data. Optimally, whatever it is - float or a whole cv::Mat. But we can also simulate the 1D-case with a 1x1 cv::Mat for now.
 	template<class H, class OnTrainingEpochCallback>
 	void train(cv::Mat x, cv::Mat y, cv::Mat x0, H h, OnTrainingEpochCallback onTrainingEpochCallback)
 	{
@@ -272,6 +274,8 @@ public:
 			//    apply learned regressor, set data = newData or rather calculate new delta
 			//    use it to learn the next regressor in next loop iter
 			
+			// If it's a performance problem, we should do R * featureMatrix only once, for all examples at the same time.
+			// Note/Todo: Why does the old code have 'shapeStep = featureMatrix * R' the other way round?
 			Mat x_k; // x_k = currentX - R * (h(currentX) - y):
 			for (int i = 0; i < currentX.rows; ++i) {
 				// No need to re-extract the features, we already did so in step 1)
