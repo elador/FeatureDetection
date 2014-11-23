@@ -23,6 +23,10 @@ void strided_iota(ForwardIterator first, ForwardIterator last, T value, T stride
 		value += stride;
 	}
 }
+double normalisedLeastSquaresResidual(const Mat& prediction, const Mat& groundtruth)
+{
+	return cv::norm(prediction, groundtruth, cv::NORM_L2) / cv::norm(groundtruth, cv::NORM_L2);
+}
 
 TEST(SupervisedDescentOptimiser, SinConvergence) {
 	// sin(x):
@@ -61,7 +65,8 @@ TEST(SupervisedDescentOptimiser, SinConvergence) {
 	sdo.train(x_tr, y_tr, x0, h, logNormalisedLSResidual);
 
 	// Make sure the training converges, i.e. the residual is correct on the training data:
-	double trainingResidual = sdo.test(x_tr, y_tr, x0, h);
+	Mat predictions = sdo.test(y_tr, x0, h);
+	double trainingResidual = normalisedLeastSquaresResidual(predictions, x_tr);
 	EXPECT_DOUBLE_EQ(0.21369851877468238, trainingResidual);
 
 	// Test the trained model:
@@ -80,7 +85,8 @@ TEST(SupervisedDescentOptimiser, SinConvergence) {
 	}
 	Mat x0_ts = 0.5f * Mat::ones(numValuesTest, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
 	
-	double testResidual = sdo.test(x_ts_gt, y_ts, x0_ts, h); // x_ts_gt will only be used to calculate the residual
+	predictions = sdo.test(y_ts, x0_ts, h);
+	double testResidual = normalisedLeastSquaresResidual(predictions, x_ts_gt);
 	ASSERT_DOUBLE_EQ(0.18001012289821938, testResidual);
 }
 
@@ -124,7 +130,8 @@ TEST(SupervisedDescentOptimiser, SinConvergenceCascade) {
 	sdo.train(x_tr, y_tr, x0, h);
 
 	// Make sure the training converges, i.e. the residual is correct on the training data:
-	double trainingResidual = sdo.test(x_tr, y_tr, x0, h);
+	Mat predictions = sdo.test(y_tr, x0, h);
+	double trainingResidual = normalisedLeastSquaresResidual(predictions, x_tr);
 	EXPECT_DOUBLE_EQ(0.040279395431369915, trainingResidual);
 
 	// Test the trained model:
@@ -143,7 +150,9 @@ TEST(SupervisedDescentOptimiser, SinConvergenceCascade) {
 	}
 	Mat x0_ts = 0.5f * Mat::ones(numValuesTest, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
 
-	double testResidual = sdo.test(x_ts_gt, y_ts, x0_ts, h); // x_ts_gt will only be used to calculate the residual
+	predictions = sdo.test(y_ts, x0_ts, h);
+	double testResidual = normalisedLeastSquaresResidual(predictions, x_ts_gt);
+	
 	ASSERT_DOUBLE_EQ(0.026156775112579144, testResidual);
 }
 
@@ -171,7 +180,8 @@ TEST(SupervisedDescentOptimiser, XCubeConvergence) {
 	sdo.train(x_tr, y_tr, x0, h);
 
 	// Make sure the training converges, i.e. the residual is correct on the training data:
-	double trainingResidual = sdo.test(x_tr, y_tr, x0, h);
+	Mat predictions = sdo.test(y_tr, x0, h);
+	double trainingResidual = normalisedLeastSquaresResidual(predictions, x_tr);
 	EXPECT_DOUBLE_EQ(0.34416553222013058, trainingResidual);
 
 	// Test the trained model:
@@ -190,7 +200,8 @@ TEST(SupervisedDescentOptimiser, XCubeConvergence) {
 	}
 	Mat x0_ts = 0.5f * Mat::ones(numValuesTest, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
 
-	double testResidual = sdo.test(x_ts_gt, y_ts, x0_ts, h); // x_ts_gt will only be used to calculate the residual
+	predictions = sdo.test(y_ts, x0_ts, h);
+	double testResidual = normalisedLeastSquaresResidual(predictions, x_ts_gt);
 	ASSERT_DOUBLE_EQ(0.35342861514516261, testResidual);
 }
 
@@ -229,7 +240,8 @@ TEST(SupervisedDescentOptimiser, XCubeConvergenceCascade) {
 	sdo.train(x_tr, y_tr, x0, h);
 
 	// Make sure the training converges, i.e. the residual is correct on the training data:
-	double trainingResidual = sdo.test(x_tr, y_tr, x0, h);
+	Mat predictions = sdo.test(y_tr, x0, h);
+	double trainingResidual = normalisedLeastSquaresResidual(predictions, x_tr);
 	EXPECT_DOUBLE_EQ(0.043127251144503408, trainingResidual);
 
 	// Test the trained model:
@@ -248,7 +260,8 @@ TEST(SupervisedDescentOptimiser, XCubeConvergenceCascade) {
 	}
 	Mat x0_ts = 0.5f * Mat::ones(numValuesTest, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
 
-	double testResidual = sdo.test(x_ts_gt, y_ts, x0_ts, h); // x_ts_gt will only be used to calculate the residual
+	predictions = sdo.test(y_ts, x0_ts, h);
+	double testResidual = normalisedLeastSquaresResidual(predictions, x_ts_gt);
 	ASSERT_DOUBLE_EQ(0.058898552312675233, testResidual);
 }
 
@@ -276,7 +289,8 @@ TEST(SupervisedDescentOptimiser, ErfConvergence) {
 	sdo.train(x_tr, y_tr, x0, h);
 
 	// Make sure the training converges, i.e. the residual is correct on the training data:
-	double trainingResidual = sdo.test(x_tr, y_tr, x0, h);
+	Mat predictions = sdo.test(y_tr, x0, h);
+	double trainingResidual = normalisedLeastSquaresResidual(predictions, x_tr);
 	EXPECT_DOUBLE_EQ(0.30944183062755731, trainingResidual);
 
 	// Test the trained model:
@@ -295,7 +309,8 @@ TEST(SupervisedDescentOptimiser, ErfConvergence) {
 	}
 	Mat x0_ts = 0.5f * Mat::ones(numValuesTest, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
 
-	double testResidual = sdo.test(x_ts_gt, y_ts, x0_ts, h); // x_ts_gt will only be used to calculate the residual
+	predictions = sdo.test(y_ts, x0_ts, h);
+	double testResidual = normalisedLeastSquaresResidual(predictions, x_ts_gt);
 	ASSERT_DOUBLE_EQ(0.25736006623771107, testResidual);
 }
 
@@ -334,7 +349,8 @@ TEST(SupervisedDescentOptimiser, ErfConvergenceCascade) {
 	sdo.train(x_tr, y_tr, x0, h);
 
 	// Make sure the training converges, i.e. the residual is correct on the training data:
-	double trainingResidual = sdo.test(x_tr, y_tr, x0, h);
+	Mat predictions = sdo.test(y_tr, x0, h);
+	double trainingResidual = normalisedLeastSquaresResidual(predictions, x_tr);
 	EXPECT_DOUBLE_EQ(0.069510675228435778, trainingResidual);
 
 	// Test the trained model:
@@ -353,7 +369,8 @@ TEST(SupervisedDescentOptimiser, ErfConvergenceCascade) {
 	}
 	Mat x0_ts = 0.5f * Mat::ones(numValuesTest, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
 
-	double testResidual = sdo.test(x_ts_gt, y_ts, x0_ts, h); // x_ts_gt will only be used to calculate the residual
+	predictions = sdo.test(y_ts, x0_ts, h);
+	double testResidual = normalisedLeastSquaresResidual(predictions, x_ts_gt);
 	ASSERT_DOUBLE_EQ(0.046327173469310361, testResidual);
 }
 
@@ -381,7 +398,8 @@ TEST(SupervisedDescentOptimiser, ExpConvergence) {
 	sdo.train(x_tr, y_tr, x0, h);
 
 	// Make sure the training converges, i.e. the residual is correct on the training data:
-	double trainingResidual = sdo.test(x_tr, y_tr, x0, h);
+	Mat predictions = sdo.test(y_tr, x0, h);
+	double trainingResidual = normalisedLeastSquaresResidual(predictions, x_tr);
 	EXPECT_DOUBLE_EQ(0.19952251597692217, trainingResidual);
 
 	// Test the trained model:
@@ -400,7 +418,8 @@ TEST(SupervisedDescentOptimiser, ExpConvergence) {
 	}
 	Mat x0_ts = 0.5f * Mat::ones(numValuesTest, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
 
-	double testResidual = sdo.test(x_ts_gt, y_ts, x0_ts, h); // x_ts_gt will only be used to calculate the residual
+	predictions = sdo.test(y_ts, x0_ts, h);
+	double testResidual = normalisedLeastSquaresResidual(predictions, x_ts_gt);
 	ASSERT_DOUBLE_EQ(0.19245695013636951, testResidual);
 }
 
@@ -439,7 +458,8 @@ TEST(SupervisedDescentOptimiser, ExpConvergenceCascade) {
 	sdo.train(x_tr, y_tr, x0, h);
 
 	// Make sure the training converges, i.e. the residual is correct on the training data:
-	double trainingResidual = sdo.test(x_tr, y_tr, x0, h);
+	Mat predictions = sdo.test(y_tr, x0, h);
+	double trainingResidual = normalisedLeastSquaresResidual(predictions, x_tr);
 	EXPECT_DOUBLE_EQ(0.025108688779870918, trainingResidual);
 
 	// Test the trained model:
@@ -458,6 +478,7 @@ TEST(SupervisedDescentOptimiser, ExpConvergenceCascade) {
 	}
 	Mat x0_ts = 0.5f * Mat::ones(numValuesTest, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
 
-	double testResidual = sdo.test(x_ts_gt, y_ts, x0_ts, h); // x_ts_gt will only be used to calculate the residual
+	predictions = sdo.test(y_ts, x0_ts, h);
+	double testResidual = normalisedLeastSquaresResidual(predictions, x_ts_gt);
 	ASSERT_DOUBLE_EQ(0.012534944044555876, testResidual);
 }

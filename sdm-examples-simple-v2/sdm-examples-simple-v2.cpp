@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
 		x_ts_gt = Mat(values, true);
 	}
 	Mat x0_ts = 0.5f * Mat::ones(numValuesTest, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
-	sdo.test(x_ts_gt, y_ts, x0_ts, h); // x_ts_gt will only be used to calculate the residual
+	sdo.test(y_ts, x0_ts, h);
 	
 	appLogger.info("Finished. Exiting...");
 
