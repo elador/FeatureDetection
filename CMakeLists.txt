@@ -84,10 +84,11 @@ add_subdirectory(sdm-examples-simple-v2)	# The simple examples with functions li
 add_subdirectory(sdm-train-v2)			# Playground for supervised descent reimplementation (v2)
 
 # 3DMM fitting:
-#add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
-#add_subdirectory(fittingRenderer)	# App to render fitting results
-#add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
-#add_subdirectory(compareIsomaps)	# Compare isomaps (extracted textures)
+add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
+add_subdirectory(fittingRenderer)	# App to render fitting results
+add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
+add_subdirectory(compareIsomaps)	# Compare isomaps (extracted textures)
+add_subdirectory(convert-scm-to-hdf5) # Convert a .scm model to a .h5 model
 
 # Landmark tools:
 add_subdirectory(visualise-landmarks)	# Simple app to read landmarks and images and display them
