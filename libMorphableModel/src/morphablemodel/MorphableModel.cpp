@@ -36,7 +36,10 @@ morphablemodel::MorphableModel MorphableModel::load(const boost::property_tree::
 	MorphableModel morphableModel;
 	path filename = configTree.get<path>("filename");
 	if (filename.extension().string() == ".scm") {
-		path vertexMappingFile = configTree.get<path>("vertexMapping");
+		path vertexMappingFile; // = configTree.get<path>("vertexMapping");
+		// We ignore the mapping for now. Todo: A proper solution that would make sense:
+		// With each SCM, store a file "landmark id" (the low number from the diagram) to vertexId.
+		// The MorphableModel should then have separate access function overloads for landmarkId(string) and vertexId(int).
 		path isomapFile = configTree.get<path>("isomap", "");
 		morphableModel = MorphableModel::loadScmModel(filename.string(), vertexMappingFile, isomapFile);
 	}
@@ -102,8 +105,9 @@ render::Mesh MorphableModel::getMean() const
 	unsigned int numVertices = shapeModel.getDataDimension() / 3;
 	unsigned int numVerticesColor = colorModel.getDataDimension() / 3;
 	if (numVertices != numVerticesColor) {
-		// TODO throw more meaningful error, maybe log
-		throw std::runtime_error("numVertices should be equal to numVerticesColor.");
+		string msg("MorphableModel: The number of vertices of the shape and color models are not the same: " + lexical_cast<string>(numVertices)+" != " + lexical_cast<string>(numVerticesColor));
+		Loggers->getLogger("morphablemodel").debug(msg);
+		throw std::runtime_error(msg);
 	}
 
 	// Construct the mesh vertices
@@ -117,7 +121,6 @@ render::Mesh MorphableModel::getMean() const
 		for (unsigned int i = 0; i < numVertices; ++i) {
 			mean.vertex[i].texcrd = textureCoordinates[i];
 		}
-		
 	}
 	
 	mean.hasTexture = false; // hasTexture is not the same as hasTextureCoordinates...
@@ -125,21 +128,21 @@ render::Mesh MorphableModel::getMean() const
 	return mean;
 }
 
-render::Mesh MorphableModel::drawSample(float sigma /*= 1.0f*/)
+render::Mesh MorphableModel::drawSample(float shapeSigma /*= 1.0f*/, float colorSigma /*= 1.0f*/)
 {
 	render::Mesh mean;
 
 	mean.tvi = shapeModel.getTriangleList();
 	mean.tci = colorModel.getTriangleList();
 
-	Mat shapeMean = shapeModel.drawSample(sigma);
-	Mat colorMean = colorModel.drawSample(sigma);
+	Mat shapeMean = shapeModel.drawSample(shapeSigma);
+	Mat colorMean = colorModel.drawSample(colorSigma);
 
 	unsigned int numVertices = shapeModel.getDataDimension() / 3;
 	unsigned int numVerticesColor = colorModel.getDataDimension() / 3;
 	if (numVertices != numVerticesColor) {
 		string msg("MorphableModel: The number of vertices of the shape and color models are not the same: " + lexical_cast<string>(numVertices) + " != " + lexical_cast<string>(numVerticesColor));
-		Loggers->getLogger("shapemodels").debug(msg);
+        Loggers->getLogger("morphablemodel").error(msg);
 		throw std::runtime_error(msg);
 	}
 
@@ -149,6 +152,8 @@ render::Mesh MorphableModel::drawSample(float sigma /*= 1.0f*/)
 		mean.vertex[i].position = Vec4f(shapeMean.at<float>(i*3 + 0), shapeMean.at<float>(i*3 + 1), shapeMean.at<float>(i*3 + 2), 1.0f);
 		mean.vertex[i].color = Vec3f(colorMean.at<float>(i*3 + 0), colorMean.at<float>(i*3 + 1), colorMean.at<float>(i*3 + 2));        // order in hdf5: RGB. Order in OCV: BGR. But order in vertex.color: RGB
 	}
+
+	// Todo: if (hasTextureCoordinates) ...? (see getMean())
 
 	mean.hasTexture = false;
 
@@ -180,7 +185,7 @@ render::Mesh MorphableModel::drawSample(vector<float> shapeCoefficients, vector<
 	unsigned int numVerticesColor = colorModel.getDataDimension() / 3;
 	if (numVertices != numVerticesColor) {
 		string msg("MorphableModel: The number of vertices of the shape and color models are not the same: " + lexical_cast<string>(numVertices) + " != " + lexical_cast<string>(numVerticesColor));
-		Loggers->getLogger("morphablemodel").debug(msg);
+        Loggers->getLogger("morphablemodel").error(msg);
 		throw std::runtime_error(msg);
 	}
 
@@ -207,7 +212,9 @@ vector<Vec2f> MorphableModel::loadIsomap(path isomapFile)
 	string line;
 	std::ifstream myfile(isomapFile.string());
 	if (!myfile.is_open()) {
-		//TODO log "Isomap file could not be opened. Did you specify a correct filename?" isomapFile
+        string logMessage("The Isomap file could not be opened. Did you specify a correct filename? " + isomapFile.string());
+        Loggers->getLogger("morphablemodel").error(logMessage);
+        throw std::runtime_error(logMessage);
 	} else {
 		while (getline(myfile, line))
 		{

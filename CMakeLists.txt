@@ -90,6 +90,11 @@ add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Rend
 add_subdirectory(compareIsomaps)	# Compare isomaps (extracted textures)
 add_subdirectory(convert-scm-to-hdf5) # Convert a .scm model to a .h5 model
 
+add_subdirectory(generate-sample)		# Generate samples (coefficients, renderings and landmarks) of the 3DMM
+add_subdirectory(generate-warping-data)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
+add_subdirectory(generate-warping-data-playground)
+add_subdirectory(model-renderer-gui)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
+
 # Landmark tools:
 add_subdirectory(visualise-landmarks)	# Simple app to read landmarks and images and display them
 add_subdirectory(convert-landmarks)		# Simple app to convert landmarks from one format into another
@@ -148,8 +153,6 @@ add_subdirectory(fvsdk-run-guosheng-ar) # Run FaceVACS matching on some images (
 # ============================================================================
 # Experimental, non-working or deprecated:
 #add_subdirectory(sdmTracking)			# Experimental app that does tracking using an SDM model.
-#add_subdirectory(generateSyntheticLandmarkDataKlaus)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
-#add_subdirectory(softwareRendererTestApp) # Contains a QOpenGL and SW-renderer and was used to compare both, including shape-fitting.
-#add_subdirectory(3dmmRendererGUI)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
+add_subdirectory(softwareRendererTestApp) # Contains a QOpenGL and SW-renderer and was used to compare both, including shape-fitting.
 #add_subdirectory(ffpDetectAppExp)		# Old experimental playground for FFD with the 3DMM/POSIT. It's deprecated (uses old code from libShapeModels). Used to generate the results for the FDDB benchmark.
 #add_subdirectory(patchConverter)	# Converts patches (in .txt format) to other feature spaces (e.g. gray to WHI)

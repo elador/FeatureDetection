@@ -8,8 +8,13 @@
 
 #include "render/Vertex.hpp"
 
-#include <algorithm>
+#include <algorithm> // min/max
+//#include <cmath> // for ceil/floor, should be needed!
 
+using cv::Vec2f;
+using cv::Vec3f;
+using cv::Vec4f;
+using cv::Mat;
 using std::min;
 using std::max;
 using std::floor;
@@ -23,7 +28,14 @@ cv::Vec2f clipToScreenSpace(cv::Vec2f clipCoordinates, int screenWidth, int scre
 	// Window transform:
 	float x_ss = (clipCoordinates[0] + 1.0f) * (screenWidth / 2.0f);
 	float y_ss = screenHeight - (clipCoordinates[1] + 1.0f) * (screenHeight / 2.0f); // also flip y; // Qt: Origin top-left. OpenGL: bottom-left.
-	return cv::Vec2f(x_ss, y_ss);
+	return Vec2f(x_ss, y_ss);
+	/* Note: What we do here is equivalent to
+	   x_w = (x *  vW/2) + vW/2;
+	   However, Shirley says we should do:
+	   x_w = (x *  vW/2) + (vW-1)/2;
+	   (analogous for y)
+	   TODO: Check the math!
+	*/
 }
 
 cv::Vec2f screenToClipSpace(cv::Vec2f screenCoordinates, int screenWidth, int screenHeight)
@@ -31,8 +43,23 @@ cv::Vec2f screenToClipSpace(cv::Vec2f screenCoordinates, int screenWidth, int sc
 	float x_cs = screenCoordinates[0] / (screenWidth / 2.0f) - 1.0f;
 	float y_cs = screenCoordinates[1] / (screenHeight / 2.0f) - 1.0f;
 	y_cs *= -1.0f;
-	return cv::Vec2f(x_cs, y_cs);
+	return Vec2f(x_cs, y_cs);
 }
+
+cv::Vec3f projectVertex(cv::Vec4f vertex, cv::Mat modelViewProjection, int screenWidth, int screenHeight)
+{
+	Mat clipSpace = modelViewProjection * Mat(vertex);
+	Vec4f clipSpaceV(clipSpace);
+	// divide by w:
+	clipSpaceV = clipSpaceV / clipSpaceV[3]; // we're in NDC now
+
+	// project from 4D to 2D window position with depth value in z coordinate
+	// Viewport transform:
+	Vec2f screenSpace = clipToScreenSpace(Vec2f(clipSpaceV[0], clipSpaceV[1]), screenWidth, screenHeight);
+
+	return Vec3f(screenSpace[0], screenSpace[1], clipSpaceV[2]);
+}
+
 
 cv::Rect calculateBoundingBox(Vertex v0, Vertex v1, Vertex v2, int viewportWidth, int viewportHeight)
 {
@@ -42,9 +69,9 @@ cv::Rect calculateBoundingBox(Vertex v0, Vertex v1, Vertex v2, int viewportWidth
 	t.minY = max(min(t.v0.position[1], min(t.v1.position[1], t.v2.position[1])), 0.0f);
 	t.maxY = min(max(t.v0.position[1], max(t.v1.position[1], t.v2.position[1])), (float)(viewportHeight - 1));*/
 	
-    int minX = max(min(floor(v0.position[0]), min(floor(v1.position[0]), floor(v2.position[0]))), 0.0f); // What about rounding, or rather the conversion from double to int?
-    int maxX = min(max(ceil(v0.position[0]), max(ceil(v1.position[0]), ceil(v2.position[0]))), static_cast<float>(viewportWidth - 1));
-    int minY = max(min(floor(v0.position[1]), min(floor(v1.position[1]), floor(v2.position[1]))), 0.0f);
+	int minX = max(min(floor(v0.position[0]), min(floor(v1.position[0]), floor(v2.position[0]))), 0.0f); // Readded this comment after merge: What about rounding, or rather the conversion from double to int?
+	int maxX = min(max(ceil(v0.position[0]), max(ceil(v1.position[0]), ceil(v2.position[0]))), static_cast<float>(viewportWidth - 1));
+	int minY = max(min(floor(v0.position[1]), min(floor(v1.position[1]), floor(v2.position[1]))), 0.0f);
 	int maxY = min(max(ceil(v0.position[1]), max(ceil(v1.position[1]), ceil(v2.position[1]))), static_cast<float>(viewportHeight - 1));
 	return cv::Rect(minX, minY, maxX - minX, maxY - minY);
 }

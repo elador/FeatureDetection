@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME 3dmmRendererGUI)
+set(SUBPROJECT_NAME model-renderer-gui)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -7,7 +7,7 @@ set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
 message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
 
 # Find dependencies:
-find_package( OpenCV 2.4.3 REQUIRED core imgproc highgui)
+find_package(OpenCV 2.4.3 REQUIRED core imgproc highgui)
 
 find_package(Boost 1.48.0 COMPONENTS program_options system filesystem REQUIRED)
 if(Boost_FOUND)
@@ -16,9 +16,11 @@ else(Boost_FOUND)
   message(FATAL_ERROR "Boost not found")
 endif()
 
+find_package(Qt5Gui REQUIRED)
+
 # Source and header files:
 set(SOURCE
-	3dmmRendererGUI.cpp
+	model-renderer-gui.cpp
 )
 
 set(HEADERS
@@ -34,4 +36,4 @@ include_directories(${MorphableModel_SOURCE_DIR}/include)
 ADD_EXECUTABLE( ${SUBPROJECT_NAME} ${SOURCE} ${HEADERS} )
 
 # Make the app depend on the libraries
-target_link_libraries(${SUBPROJECT_NAME} MorphableModel Render Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(${SUBPROJECT_NAME} MorphableModel Render Logging Qt5::Gui ${Boost_LIBRARIES} ${OpenCV_LIBS})

@@ -105,10 +105,11 @@ public:
 	 * for the shape- and color models are both drawn from a standard
 	 * normal (or with the given standard deviation).
 	 *
-	 * @param[in] sigma The standard deviation. (TODO find out which one, sigma=var, sigmaSq=sdev)
+	 * @param[in] shapeSigma The shape model standard deviation.
+	 * @param[in] colorSigma The color model standard deviation.
 	 * @return A random sample from the model.
 	 */
-	render::Mesh drawSample(float sigma = 1.0f); // Todo sigmaShape, sigmaColor? or 2 functions?
+	render::Mesh drawSample(float shapeSigma = 1.0f, float colorSigma = 1.0f);
 
 	/**
 	 * Returns a sample from the model with the given shape- and

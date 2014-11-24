@@ -36,7 +36,7 @@ set(SOURCE
 	src/render/Camera.cpp
 	src/render/Texture.cpp
 	src/render/Mesh.cpp
-	src/render/MatrixUtils.cpp
+	src/render/matrixutils.cpp
 	src/render/MeshUtils.cpp
 	src/render/utils.cpp
 )
@@ -49,7 +49,7 @@ set(HEADERS
 	include/render/Camera.hpp
 	include/render/Texture.hpp
 	include/render/Mesh.hpp
-	include/render/MatrixUtils.hpp
+	include/render/matrixutils.hpp
 	include/render/MeshUtils.hpp
 	include/render/utils.hpp
 )

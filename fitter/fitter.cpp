@@ -53,6 +53,8 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/lexical_cast.hpp"
 
+#include "boost/math/constants/constants.hpp"
+
 #include "Eigen/Dense"
 
 #include "morphablemodel/MorphableModel.hpp"
@@ -391,9 +393,27 @@ int main(int argc, char *argv[])
 
 		render::SoftwareRenderer softwareRenderer(img.cols, img.rows);
 		Mat fullAffineCam = fitting::calculateAffineZDirection(affineCam);
+
+		Mat outCamMat, outRotMat, outTransVec;
+		Mat rotMX, rotMY, rotMZ, eulerAngles;
+		Mat fullAffineCam3x4 = fullAffineCam.rowRange(0, 3);
+		// we should check the calculated z faces in the right direction
+		cv::decomposeProjectionMatrix(fullAffineCam3x4, outCamMat, outRotMat, outTransVec, rotMX, rotMY, rotMZ, eulerAngles);
+		// the eulerAngles conform to MPEG standard: E.g. Yaw (Y-axis) pos = subject looking left, neg = subject looking right
+		// I'm not sure why I get transposes, maybe col/row major or because I right-multiply, ocv does left-multiply (as OGL, their doc says we can use these directly with OGL). TODO So how does an OGL rot matrix look like? the transpose of mine?
+		Mat myrotMX = render::utils::MatrixUtils::createRotationMatrixX(eulerAngles.at<double>(0) * (boost::math::constants::pi<double>() / 180.0));
+		Mat myrotMY = render::utils::MatrixUtils::createRotationMatrixY(eulerAngles.at<double>(1) * (boost::math::constants::pi<double>() / 180.0)); // mine is the transpose of ocv
+		Mat myrotMZ = render::utils::MatrixUtils::createRotationMatrixZ(eulerAngles.at<double>(2) * (boost::math::constants::pi<double>() / 180.0)); // mine is the transpose of ocv
+		Mat myrotMat = myrotMX.t() * myrotMY.t() * myrotMZ.t(); // the transpose of outRotMat
+		Mat myrotMat2 = myrotMZ * myrotMY * myrotMX; // identical with outRotMat
+
+		Mat t1 = rotMX * rotMY * rotMZ; // t1 is outRotMat.t(). Weird?
+		Mat t2 = rotMZ * rotMY * rotMX; // completely different
+
 		fullAffineCam.at<float>(2, 3) = fullAffineCam.at<float>(2, 2); // Todo: Find out and document why this is necessary!
 		fullAffineCam.at<float>(2, 2) = 1.0f;
 		softwareRenderer.doBackfaceCulling = true;
+		softwareRenderer.clearBuffers();
 		auto framebuffer = softwareRenderer.render(mesh, fullAffineCam); // hmm, do we have the z-test disabled?
 		Mat renderedModel = framebuffer.first.clone(); // we save that later, and the framebuffer gets overwritten
 
@@ -413,6 +433,7 @@ int main(int argc, char *argv[])
 		auto texture = make_shared<render::Texture>();
 		texture->createFromFile(isomapFilename.string());
 		softwareRenderer.setCurrentTexture(texture);
+		softwareRenderer.clearBuffers();
 		auto frFrontal = softwareRenderer.render(mesh, frontalCam);
 
 		// Write the fitting output files containing:

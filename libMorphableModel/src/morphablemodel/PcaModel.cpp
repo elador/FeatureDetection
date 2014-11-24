@@ -31,7 +31,8 @@ namespace morphablemodel {
 
 PcaModel::PcaModel()
 {
-	engine.seed();
+	const auto seed = std::random_device()();
+	engine.seed(seed);
 }
 
 PcaModel PcaModel::loadStatismoModel(path h5file, PcaModel::ModelType modelType)
@@ -266,7 +267,7 @@ PcaModel PcaModel::loadScmModel(path modelFilename, path landmarkVertexMappingFi
 
 	// Read shape projection matrix
 	Mat unnormalizedPcaBasisShape(numShapeDims, numShapePcaCoeffs, CV_32FC1); // m x n (rows x cols) = numShapeDims x numShapePcaCoeffs
-	logger.debug("Loading PCA basis matrix with " + lexical_cast<string>(unnormalizedPcaBasisShape.rows) + " rows and " + lexical_cast<string>(unnormalizedPcaBasisShape.cols) + "cols.");
+    logger.debug("Loading PCA basis matrix with " + lexical_cast<string>(unnormalizedPcaBasisShape.rows) + " rows and " + lexical_cast<string>(unnormalizedPcaBasisShape.cols) + " cols.");
 	for (unsigned int col = 0; col < numShapePcaCoeffs; ++col) {
 		for (unsigned int row = 0; row < numShapeDims; ++row) {
 			double var = 0.0;
@@ -333,7 +334,7 @@ PcaModel PcaModel::loadScmModel(path modelFilename, path landmarkVertexMappingFi
 	modelFile.read(reinterpret_cast<char*>(&numTextureDims), 4);
 	// Read color projection matrix
 	Mat unnormalizedPcaBasisColor(numTextureDims, numTexturePcaCoeffs, CV_32FC1);
-	logger.debug("Loading PCA basis matrix with " + lexical_cast<string>(unnormalizedPcaBasisColor.rows) + " rows and " + lexical_cast<string>(unnormalizedPcaBasisColor.cols) + "cols.");
+    logger.debug("Loading PCA basis matrix with " + lexical_cast<string>(unnormalizedPcaBasisColor.rows) + " rows and " + lexical_cast<string>(unnormalizedPcaBasisColor.cols) + " cols.");
 	for (unsigned int col = 0; col < numTexturePcaCoeffs; ++col) {
 		for (unsigned int row = 0; row < numTextureDims; ++row) {
 			double var = 0.0;
@@ -433,7 +434,7 @@ Vec3f PcaModel::getMeanAtPoint(unsigned int vertexIndex) const
 
 Mat PcaModel::drawSample(float sigma/*=1.0f*/)
 {
-	std::normal_distribution<float> distribution(0.0f, sigma); // TODO: c'tor takes the stddev. Update all the documentation!!!
+	std::normal_distribution<float> distribution(0.0f, sigma); // this constructor takes the stddev
 
 	vector<float> alphas(getNumberOfPrincipalComponents());
 

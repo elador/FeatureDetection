@@ -29,6 +29,11 @@ namespace render {
  * Note that the y-coordinate is flipped because the image origin
  * is top-left while in clip space top is +1 and bottom is -1.
  * No z-division is performed.
+ * Note: It should rather be called from NDC to screen space?
+ *
+ * Exactly conforming to the OpenGL viewport transform, except that
+ * we flip y at the end.
+ * Qt: Origin top-left. OpenGL: bottom-left. OCV: top-left.
  *
  * @param[in] clipCoordinates Todo
  * @param[in] screenWidth Todo
@@ -43,12 +48,30 @@ cv::Vec2f clipToScreenSpace(cv::Vec2f clipCoordinates, int screenWidth, int scre
  * Note that the y-coordinate is flipped because the image origin
  * is top-left while in clip space top is +1 and bottom is -1.
  *
+ * Todo: Hmm is this useful? Do we use it? What are we doing here?
+ * What about https://www.opengl.org/sdk/docs/man2/xhtml/gluUnProject.xml?
+ *
  * @param[in] screenCoordinates Todo
  * @param[in] screenWidth Todo
  * @param[in] screenHeight Todo
  * @return A vector with x and y coordinates transformed to clip space.
  */
 cv::Vec2f screenToClipSpace(cv::Vec2f screenCoordinates, int screenWidth, int screenHeight);
+
+/**
+* Transforms a point from ...object... coordinates to
+* image (screen) coordinates, i.e. ....the window transform.
+* Note that the y-coordinate is flipped because the image origin
+* is top-left while in clip space top is +1 and bottom is -1.
+* No z-division is performed.
+* Todo: Check if it's equal to https://www.opengl.org/sdk/docs/man2/xhtml/gluProject.xml
+*
+* @param[in] clipCoordinates Todo
+* @param[in] screenWidth Todo
+* @param[in] screenHeight Todo
+* @return A vector with x and y and z... coordinates transformed to ... space.
+*/
+cv::Vec3f projectVertex(cv::Vec4f vertex, cv::Mat modelViewProjection, int screenWidth, int screenHeight);
 
 /**
  * Returns the 2D bounding box of the triangle given by the
