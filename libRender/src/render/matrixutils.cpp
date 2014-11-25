@@ -11,6 +11,7 @@
 namespace render {
 	namespace matrixutils {
 
+// Pitch, identical to OpenGL
 cv::Mat createRotationMatrixX(float angle) // angle is in radians!
 {
 	cv::Mat rotX = (cv::Mat_<float>(4,4) << 
@@ -21,6 +22,7 @@ cv::Mat createRotationMatrixX(float angle) // angle is in radians!
 	return rotX;
 }
 
+// Yaw, identical to OpenGL
 cv::Mat createRotationMatrixY(float angle) // angle is in radians!
 {
 	cv::Mat rotY = (cv::Mat_<float>(4,4) << 
@@ -31,6 +33,7 @@ cv::Mat createRotationMatrixY(float angle) // angle is in radians!
 	return rotY;
 }
 
+// Roll, identical to OpenGL
 cv::Mat createRotationMatrixZ(float angle) // angle is in radians!
 {
 	cv::Mat rotZ = (cv::Mat_<float>(4,4) << 

@@ -85,7 +85,7 @@ add_subdirectory(sdm-train-v2)			# Playground for supervised descent reimplement
 
 # 3DMM fitting:
 add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
-add_subdirectory(fittingRenderer)	# App to render fitting results
+add_subdirectory(fittingRenderer)	# Todo rename to 'render-fitting'; App to render fitting results
 add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
 add_subdirectory(compareIsomaps)	# Compare isomaps (extracted textures)
 add_subdirectory(convert-scm-to-hdf5) # Convert a .scm model to a .h5 model
@@ -153,6 +153,6 @@ add_subdirectory(fvsdk-run-guosheng-ar) # Run FaceVACS matching on some images (
 # ============================================================================
 # Experimental, non-working or deprecated:
 #add_subdirectory(sdmTracking)			# Experimental app that does tracking using an SDM model.
-add_subdirectory(softwareRendererTestApp) # Contains a QOpenGL and SW-renderer and was used to compare both, including shape-fitting.
+#add_subdirectory(softwareRendererTestApp) # Contains a QOpenGL and SW-renderer and was used to compare both, including shape-fitting.
 #add_subdirectory(ffpDetectAppExp)		# Old experimental playground for FFD with the 3DMM/POSIT. It's deprecated (uses old code from libShapeModels). Used to generate the results for the FDDB benchmark.
 #add_subdirectory(patchConverter)	# Converts patches (in .txt format) to other feature spaces (e.g. gray to WHI)

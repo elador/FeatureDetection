@@ -64,7 +64,9 @@
 #include "fitting/LinearShapeFitting.hpp"
 
 #include "render/SoftwareRenderer.hpp"
+#include "render/Camera.hpp"
 #include "render/MeshUtils.hpp"
+#include "render/matrixutils.hpp"
 #include "render/utils.hpp"
 
 #include "imageio/ImageSource.hpp"
@@ -391,7 +393,11 @@ int main(int argc, char *argv[])
 		// Obtain the full mesh and render it using the estimated camera:
 		Mesh mesh = morphableModel.drawSample(fittedCoeffs, vector<float>()); // takes standard-normal (not-normalised) coefficients
 
+		// Creates a new Cam with orthogonal (affine) projection
+		const float aspect = (float)img.cols / (float)img.rows;
+		render::Camera camera(Vec3f(0.0f, 0.0f, 100.0f), Vec3f(0.0f, 0.0f, -1.0f), render::Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 1.0f, 500.0f));
 		render::SoftwareRenderer softwareRenderer(img.cols, img.rows);
+		
 		Mat fullAffineCam = fitting::calculateAffineZDirection(affineCam);
 
 		Mat outCamMat, outRotMat, outTransVec;
@@ -401,22 +407,29 @@ int main(int argc, char *argv[])
 		cv::decomposeProjectionMatrix(fullAffineCam3x4, outCamMat, outRotMat, outTransVec, rotMX, rotMY, rotMZ, eulerAngles);
 		// the eulerAngles conform to MPEG standard: E.g. Yaw (Y-axis) pos = subject looking left, neg = subject looking right
 		// I'm not sure why I get transposes, maybe col/row major or because I right-multiply, ocv does left-multiply (as OGL, their doc says we can use these directly with OGL). TODO So how does an OGL rot matrix look like? the transpose of mine?
-		Mat myrotMX = render::utils::MatrixUtils::createRotationMatrixX(eulerAngles.at<double>(0) * (boost::math::constants::pi<double>() / 180.0));
-		Mat myrotMY = render::utils::MatrixUtils::createRotationMatrixY(eulerAngles.at<double>(1) * (boost::math::constants::pi<double>() / 180.0)); // mine is the transpose of ocv
-		Mat myrotMZ = render::utils::MatrixUtils::createRotationMatrixZ(eulerAngles.at<double>(2) * (boost::math::constants::pi<double>() / 180.0)); // mine is the transpose of ocv
+		// According to Song Ho: "OpenGL uses post-multiplication to produce the final transform matrix: M = M * M_R".
+		// These matrices are the transpose of the ones returned by cv::decomposeProjectionMatrix, which is a bit strange, since I am using OGL convention too.
+		Mat myrotMX = render::matrixutils::createRotationMatrixX(eulerAngles.at<double>(0) * (boost::math::constants::pi<double>() / 180.0));
+		Mat myrotMY = render::matrixutils::createRotationMatrixY(eulerAngles.at<double>(1) * (boost::math::constants::pi<double>() / 180.0)); // mine is the transpose of ocv
+		Mat myrotMZ = render::matrixutils::createRotationMatrixZ(eulerAngles.at<double>(2) * (boost::math::constants::pi<double>() / 180.0)); // mine is the transpose of ocv
 		Mat myrotMat = myrotMX.t() * myrotMY.t() * myrotMZ.t(); // the transpose of outRotMat
 		Mat myrotMat2 = myrotMZ * myrotMY * myrotMX; // identical with outRotMat
 
 		Mat t1 = rotMX * rotMY * rotMZ; // t1 is outRotMat.t(). Weird?
 		Mat t2 = rotMZ * rotMY * rotMX; // completely different
-
-		fullAffineCam.at<float>(2, 3) = fullAffineCam.at<float>(2, 2); // Todo: Find out and document why this is necessary!
-		fullAffineCam.at<float>(2, 2) = 1.0f;
+		
+		//fullAffineCam.at<float>(2, 3) = fullAffineCam.at<float>(2, 2); // Todo: Find out and document why this is necessary!
+		//fullAffineCam.at<float>(2, 2) = 1.0f;
+		
 		softwareRenderer.doBackfaceCulling = true;
 		softwareRenderer.clearBuffers();
-		auto framebuffer = softwareRenderer.render(mesh, fullAffineCam); // hmm, do we have the z-test disabled?
+		//auto framebuffer = softwareRenderer.render(mesh, fullAffineCam); // hmm, do we have the z-test disabled?
+		Mat modelMatrix = myrotMat2 * render::matrixutils::createScalingMatrix(1.0f / 140.0f, 1.0f / 140.0f, 1.0f / 140.0f);
+		Mat viewM = camera.getViewMatrix();
+		Mat projM = camera.getProjectionMatrix();
+		auto framebuffer = softwareRenderer.render(mesh, camera.getViewMatrix() * modelMatrix, camera.getProjectionMatrix());
 		Mat renderedModel = framebuffer.first.clone(); // we save that later, and the framebuffer gets overwritten
-
+		/*
 		// Extract the texture
 		// Todo: check for if hasTexture, we can't do it if the model doesn't have texture coordinates
 		Mat textureMap = render::utils::extractTexture(mesh, fullAffineCam, img.cols, img.rows, img, framebuffer.second);
@@ -428,7 +441,7 @@ int main(int argc, char *argv[])
 
 		// Render the shape-model with the extracted texture from a frontal viewpoint:
 		float aspect = static_cast<float>(img.cols) / static_cast<float>(img.rows);
-		Mat frontalCam = render::utils::MatrixUtils::createOrthogonalProjectionMatrix(-1.0f * aspect, 1.0f * aspect, -1.0f, 1.0f, 0.1f, 100.0f) * render::utils::MatrixUtils::createScalingMatrix(1.0f / 120.0f, 1.0f / 120.0f, 1.0f / 120.0f);
+		Mat frontalCam = render::matrixutils::createOrthogonalProjectionMatrix(-1.0f * aspect, 1.0f * aspect, -1.0f, 1.0f, 0.1f, 100.0f) * render::matrixutils::createScalingMatrix(1.0f / 120.0f, 1.0f / 120.0f, 1.0f / 120.0f);
 		softwareRenderer.enableTexturing(true);
 		auto texture = make_shared<render::Texture>();
 		texture->createFromFile(isomapFilename.string());
@@ -486,7 +499,7 @@ int main(int argc, char *argv[])
 			outFrontalRenderResult += "_render_frontal.png";
 			cv::imwrite(outFrontalRenderResult.string(), frFrontal.first);
 		}
-
+		*/
 		end = std::chrono::system_clock::now();
 		int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 		appLogger.info("Finished processing. Elapsed time: " + lexical_cast<string>(elapsed_mseconds)+"ms.");
