@@ -396,39 +396,52 @@ int main(int argc, char *argv[])
 		// Creates a new Cam with orthogonal (affine) projection
 		const float aspect = (float)img.cols / (float)img.rows;
 		render::Camera camera(Vec3f(0.0f, 0.0f, 100.0f), Vec3f(0.0f, 0.0f, -1.0f), render::Frustum(-1.0f*aspect, 1.0f*aspect, -1.0f, 1.0f, 1.0f, 500.0f));
+		// Camera::setView/Proj...? Store it as a member, with a isUpToDate or needsUpdate; the getters/setters act depending on that bool.
 		render::SoftwareRenderer softwareRenderer(img.cols, img.rows);
-		
-		Mat fullAffineCam = fitting::calculateAffineZDirection(affineCam);
 
-		Mat outCamMat, outRotMat, outTransVec;
-		Mat rotMX, rotMY, rotMZ, eulerAngles;
-		Mat fullAffineCam3x4 = fullAffineCam.rowRange(0, 3);
-		// we should check the calculated z faces in the right direction
-		cv::decomposeProjectionMatrix(fullAffineCam3x4, outCamMat, outRotMat, outTransVec, rotMX, rotMY, rotMZ, eulerAngles);
-		// the eulerAngles conform to MPEG standard: E.g. Yaw (Y-axis) pos = subject looking left, neg = subject looking right
-		// I'm not sure why I get transposes, maybe col/row major or because I right-multiply, ocv does left-multiply (as OGL, their doc says we can use these directly with OGL). TODO So how does an OGL rot matrix look like? the transpose of mine?
-		// According to Song Ho: "OpenGL uses post-multiplication to produce the final transform matrix: M = M * M_R".
-		// These matrices are the transpose of the ones returned by cv::decomposeProjectionMatrix, which is a bit strange, since I am using OGL convention too.
-		Mat myrotMX = render::matrixutils::createRotationMatrixX(eulerAngles.at<double>(0) * (boost::math::constants::pi<double>() / 180.0));
-		Mat myrotMY = render::matrixutils::createRotationMatrixY(eulerAngles.at<double>(1) * (boost::math::constants::pi<double>() / 180.0)); // mine is the transpose of ocv
-		Mat myrotMZ = render::matrixutils::createRotationMatrixZ(eulerAngles.at<double>(2) * (boost::math::constants::pi<double>() / 180.0)); // mine is the transpose of ocv
-		Mat myrotMat = myrotMX.t() * myrotMY.t() * myrotMZ.t(); // the transpose of outRotMat
-		Mat myrotMat2 = myrotMZ * myrotMY * myrotMX; // identical with outRotMat
+		// Decompose the estimated affine camera matrix and get the translation and angles:
+		Mat modelRotation; // 3x3 external rotation matrix R, in 4x4 homogenous coordinates form
+		Mat modelTranslation; // 4x1 translation vector T. clip space? not sure. Well, the space the affineCam is in - eg. clip?
+		Mat intrinsicCameraInClip; // 3x3 camera matrix K
+		{
+			Mat fullAffineCam = fitting::calculateAffineZDirection(affineCam);
 
-		Mat t1 = rotMX * rotMY * rotMZ; // t1 is outRotMat.t(). Weird?
-		Mat t2 = rotMZ * rotMY * rotMX; // completely different
-		
-		//fullAffineCam.at<float>(2, 3) = fullAffineCam.at<float>(2, 2); // Todo: Find out and document why this is necessary!
-		//fullAffineCam.at<float>(2, 2) = 1.0f;
-		
+			Mat outCamMat, outRotMat, outTransVec;
+			Mat rotMX, rotMY, rotMZ, eulerAngles;
+			Mat fullAffineCam3x4 = fullAffineCam.rowRange(0, 3);
+			// we should check the calculated z faces in the right direction
+			cv::decomposeProjectionMatrix(fullAffineCam3x4, outCamMat, outRotMat, outTransVec, rotMX, rotMY, rotMZ, eulerAngles);
+			// the eulerAngles conform to MPEG standard: E.g. Yaw (Y-axis) pos = subject looking left, neg = subject looking right
+			// I'm not sure why I get transposes, maybe col/row major or because I right-multiply, ocv does left-multiply (as OGL, their doc says we can use these directly with OGL). TODO So how does an OGL rot matrix look like? the transpose of mine?
+			// According to Song Ho: "OpenGL uses post-multiplication to produce the final transform matrix: M = M * M_R".
+			// These matrices are the transpose of the ones returned by cv::decomposeProjectionMatrix, which is a bit strange, since I am using OGL convention too.
+			Mat myrotMX = render::matrixutils::createRotationMatrixX(eulerAngles.at<double>(0) * (boost::math::constants::pi<double>() / 180.0));
+			Mat myrotMY = render::matrixutils::createRotationMatrixY(eulerAngles.at<double>(1) * (boost::math::constants::pi<double>() / 180.0)); // mine is the transpose of ocv
+			Mat myrotMZ = render::matrixutils::createRotationMatrixZ(eulerAngles.at<double>(2) * (boost::math::constants::pi<double>() / 180.0)); // mine is the transpose of ocv
+			
+			modelRotation = myrotMZ * myrotMY * myrotMX; // identical with outRotMat
+			modelTranslation = outTransVec;
+			intrinsicCameraInClip = outCamMat;
+		}
+
 		softwareRenderer.doBackfaceCulling = true;
 		softwareRenderer.clearBuffers();
-		//auto framebuffer = softwareRenderer.render(mesh, fullAffineCam); // hmm, do we have the z-test disabled?
-		Mat modelMatrix = myrotMat2 * render::matrixutils::createScalingMatrix(1.0f / 140.0f, 1.0f / 140.0f, 1.0f / 140.0f);
+		// Todo: Check if we have the z-test disabled?
+		Mat modelMatrix = modelRotation;// *render::matrixutils::createScalingMatrix(1.0f / 140.0f, 1.0f / 140.0f, 1.0f / 140.0f);
 		Mat viewM = camera.getViewMatrix();
+		camera.moveRight(modelTranslation.at<float>(0));
+		camera.moveUp(modelTranslation.at<float>(1));
+		Mat viewM2 = camera.getViewMatrix();
 		Mat projM = camera.getProjectionMatrix();
-		auto framebuffer = softwareRenderer.render(mesh, camera.getViewMatrix() * modelMatrix, camera.getProjectionMatrix());
+		projM.at<float>(0, 0) = projM.at<float>(0, 0) * intrinsicCameraInClip.at<float>(0, 0);
+		projM.at<float>(1, 1) = projM.at<float>(1, 1) * intrinsicCameraInClip.at<float>(1, 1);
+
+		auto framebuffer = softwareRenderer.render(mesh, viewM * modelMatrix, projM);
 		Mat renderedModel = framebuffer.first.clone(); // we save that later, and the framebuffer gets overwritten
+
+		auto framebuffer2 = softwareRenderer.render(mesh, viewM2 * modelMatrix, projM);
+		Mat renderedModel2 = framebuffer2.first.clone(); // we save that later, and the framebuffer gets overwritten
+
 		/*
 		// Extract the texture
 		// Todo: check for if hasTexture, we can't do it if the model doesn't have texture coordinates
