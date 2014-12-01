@@ -78,6 +78,8 @@ For more details, see doc of SoftwareRenderer class.
 Still be careful, we can't pass the underlying data directly to OpenGL because OGL expects the data
 to be in col-major memory layout, while OCV lays it out in row-major memory.
 */
+float left, right, top, bottom;
+// TODO move to renderer::software::glOrtho(l, r, b, t, n, f) (using ... = sw, i.e. sw::glOrtho(...))
 cv::Mat createOrthogonalProjectionMatrix(float l, float r, float b, float t, float n, float f)
 {
 	// OpenGL & Qt convention

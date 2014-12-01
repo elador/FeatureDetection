@@ -39,8 +39,8 @@ add_subdirectory(3rdparty/gtest-1.7.0)
 #message(STATUS "BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
 enable_testing() # Enables CTest
 
-add_custom_target(checkd COMMAND ${CMAKE_CTEST_COMMAND} -V -C Debug) # to get detailed output on VS
-add_custom_target(checkr COMMAND ${CMAKE_CTEST_COMMAND} -V -C Release)
+add_custom_target(check-dbg COMMAND ${CMAKE_CTEST_COMMAND} -V -C Debug) # to get detailed output on VS
+add_custom_target(check-rel COMMAND ${CMAKE_CTEST_COMMAND} -V -C Release)
 
 # Core libraries:
 add_subdirectory(libLogging)			# Text logging
@@ -60,8 +60,8 @@ add_subdirectory(libDetection)			# Sliding-window detection, Skin detection (Not
 add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
 add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes
 add_subdirectory(libFitting)			# Camera (Pose) estimation and shape-fitting
-add_subdirectory(libSupervisedDescent)	# A non-parametric model for landmark detection. Uses the supervised descent method.
-add_subdirectory(libFaceRecognition)	# Utility library for face recognition experiments, to work with databases, face-record, etc.
+#add_subdirectory(libSupervisedDescent)	# A non-parametric model for landmark detection. Uses the supervised descent method.
+#add_subdirectory(libFaceRecognition)	# Utility library for face recognition experiments, to work with databases, face-record, etc.
 
 # Tracking apps:
 #add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.
@@ -76,29 +76,32 @@ add_subdirectory(libFaceRecognition)	# Utility library for face recognition expe
 #add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe). (Note: Check if it still works)
 
 # Face- and landmark detection apps:
-add_subdirectory(detect-and-correct-faces) # Detect faces and validate them using given ground-truth.
-add_subdirectory(detect-landmarks)		# Run the SDM landmark detection on one or several images, the input is either images (V&J will be run) or images & faceboxes.
-add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
-add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
-add_subdirectory(sdm-examples-simple-v2)	# The simple examples with functions like sin(x) and x^2 from the SDM paper
-add_subdirectory(sdm-train-v2)			# Playground for supervised descent reimplementation (v2)
+#add_subdirectory(detect-and-correct-faces) # Detect faces and validate them using given ground-truth.
+#add_subdirectory(detect-landmarks)		# Run the SDM landmark detection on one or several images, the input is either images (V&J will be run) or images & faceboxes.
+#add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
+#add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
+#add_subdirectory(sdm-examples-simple-v2)	# The simple examples with functions like sin(x) and x^2 from the SDM paper
+#add_subdirectory(sdm-train-v2)			# Playground for supervised descent reimplementation (v2)
 
 # 3DMM fitting:
-add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
-add_subdirectory(fittingRenderer)	# Todo rename to 'render-fitting'; App to render fitting results
-add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
-add_subdirectory(compareIsomaps)	# Compare isomaps (extracted textures)
-add_subdirectory(convert-scm-to-hdf5) # Convert a .scm model to a .h5 model
+#add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
+#add_subdirectory(fittingRenderer)	# Todo rename to 'render-fitting'; App to render fitting results
+#add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
+#add_subdirectory(compareIsomaps)	# Compare isomaps (extracted textures)
+#add_subdirectory(convert-scm-to-hdf5) # Convert a .scm model to a .h5 model
 
-add_subdirectory(generate-sample)		# Generate samples (coefficients, renderings and landmarks) of the 3DMM
-add_subdirectory(generate-warping-data)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
-add_subdirectory(generate-warping-data-playground)
-add_subdirectory(model-renderer-gui)		# An interactive GUI for rendering 3D-meshes, and if it's a morphable model, modify the principal components
+#add_subdirectory(generate-sample)		# Generate samples (coefficients, renderings and landmarks) of the 3DMM
+#add_subdirectory(generate-warping-data)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
+#add_subdirectory(generate-warping-data-playground)
+#add_subdirectory(model-renderer-gui)		# A GUI using OpenCV for rendering the 3DMM and changing PCA coefficients. Uses the newest renderer and camera.
+
+add_subdirectory(pose-from-landmarks)	# Estimate the pose of a face (i.e. the camera parameters) from landmarks
+add_subdirectory(Qt_sample)				# OpenCV sample of POSIT + OpenGL + Qt
 
 # Landmark tools:
-add_subdirectory(visualise-landmarks)	# Simple app to read landmarks and images and display them
-add_subdirectory(convert-landmarks)		# Simple app to convert landmarks from one format into another
-add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks and perform an evaluation.
+#add_subdirectory(visualise-landmarks)	# Simple app to read landmarks and images and display them
+#add_subdirectory(convert-landmarks)		# Simple app to convert landmarks from one format into another
+#add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks and perform an evaluation.
 
 # Deep learning based frame selection:
 #add_subdirectory(train-frameselect-extract)	# Extract frames and label information for training. Random subset of vids & frames. With random selection, and (partly) negative patches. Also runs FR engine. Unfinished.
@@ -137,7 +140,7 @@ add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks 
 #add_subdirectory(cnn-matcher-learn) # Use the data from 'train-deeplearning-matcher-extract' app, create pairs including labels (0 or 1), and use them to learn a neural network for classification.
 #add_subdirectory(cnn-matcher-match) # Match PaSC video-video
 
-add_subdirectory(fvsdk-run-guosheng-ar) # Run FaceVACS matching on some images (AR?) for Guosheng
+#add_subdirectory(fvsdk-run-guosheng-ar) # Run FaceVACS matching on some images (AR?) for Guosheng
 
 # Tools for matching on PaSC, some a bit dated:
 #add_subdirectory(convert-pasc-sigset)		# Convert a PaSC xml sigset to a text file in property tree format, using FaceRecords ==> Use it to read XML, but otherwise, I think I shouldn't use it anymore. (but we used the ptree format to create MultiPIE sigsets)
@@ -153,6 +156,6 @@ add_subdirectory(fvsdk-run-guosheng-ar) # Run FaceVACS matching on some images (
 # ============================================================================
 # Experimental, non-working or deprecated:
 #add_subdirectory(sdmTracking)			# Experimental app that does tracking using an SDM model.
-#add_subdirectory(softwareRendererTestApp) # Contains a QOpenGL and SW-renderer and was used to compare both, including shape-fitting.
+add_subdirectory(softwareRendererTestApp) # Contains a QOpenGL and SW-renderer and was used to compare both, including shape-fitting.
 #add_subdirectory(ffpDetectAppExp)		# Old experimental playground for FFD with the 3DMM/POSIT. It's deprecated (uses old code from libShapeModels). Used to generate the results for the FDDB benchmark.
 #add_subdirectory(patchConverter)	# Converts patches (in .txt format) to other feature spaces (e.g. gray to WHI)

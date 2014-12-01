@@ -419,27 +419,41 @@ int main(int argc, char *argv[])
 			Mat myrotMY = render::matrixutils::createRotationMatrixY(eulerAngles.at<double>(1) * (boost::math::constants::pi<double>() / 180.0)); // mine is the transpose of ocv
 			Mat myrotMZ = render::matrixutils::createRotationMatrixZ(eulerAngles.at<double>(2) * (boost::math::constants::pi<double>() / 180.0)); // mine is the transpose of ocv
 			
-			modelRotation = myrotMZ * myrotMY * myrotMX; // identical with outRotMat
+			//modelRotation = myrotMZ * myrotMY * myrotMX; // identical with outRotMat. That's actually PYR. Hmm.
+			Mat tmp = Mat::zeros(4, 4, CV_32FC1);
+			outRotMat.copyTo(tmp.rowRange(0, 3).colRange(0, 3));
+			tmp.at<float>(3, 3) = 1.0f;
+			modelRotation = tmp;
 			modelTranslation = outTransVec;
 			intrinsicCameraInClip = outCamMat;
+			
+			Mat test = Mat::zeros(4, 4, CV_32FC1);
+			Mat(outCamMat * outRotMat).copyTo(test.rowRange(0, 3).colRange(0, 3));
+			outTransVec.copyTo(test.col(3));
 		}
 
-		softwareRenderer.doBackfaceCulling = true;
+		softwareRenderer.doBackfaceCulling = false;
 		softwareRenderer.clearBuffers();
 		// Todo: Check if we have the z-test disabled?
-		Mat modelMatrix = modelRotation;// *render::matrixutils::createScalingMatrix(1.0f / 140.0f, 1.0f / 140.0f, 1.0f / 140.0f);
+		Mat modelScaling = render::matrixutils::createScalingMatrix(intrinsicCameraInClip.at<float>(0, 0), intrinsicCameraInClip.at<float>(0, 0), intrinsicCameraInClip.at<float>(0, 0)); // take avg from (0, 0) and (1, 1)?
+		//Mat modelTrans = render::matrixutils::createTranslationMatrix(modelTranslation.at<float>(0), modelTranslation.at<float>(1), 0.0f);
+		Mat modelTrans = render::matrixutils::createTranslationMatrix(affineCam.at<float>(0, 3), affineCam.at<float>(1, 3), 0.0f);
+
+		Mat modelMatrix = modelRotation * modelScaling;
+		//Mat modelMatrixT = modelRotation * modelTrans * modelScaling;
+		Mat modelMatrixT = modelRotation * modelScaling;
+		modelMatrixT.at<float>(0, 3) = affineCam.at<float>(0, 3);
+		modelMatrixT.at<float>(1, 3) = affineCam.at<float>(1, 3);
 		Mat viewM = camera.getViewMatrix();
-		camera.moveRight(modelTranslation.at<float>(0));
-		camera.moveUp(modelTranslation.at<float>(1));
-		Mat viewM2 = camera.getViewMatrix();
 		Mat projM = camera.getProjectionMatrix();
-		projM.at<float>(0, 0) = projM.at<float>(0, 0) * intrinsicCameraInClip.at<float>(0, 0);
-		projM.at<float>(1, 1) = projM.at<float>(1, 1) * intrinsicCameraInClip.at<float>(1, 1);
+
+		Mat myaffreconstrtest = projM * viewM * modelMatrixT;
 
 		auto framebuffer = softwareRenderer.render(mesh, viewM * modelMatrix, projM);
 		Mat renderedModel = framebuffer.first.clone(); // we save that later, and the framebuffer gets overwritten
 
-		auto framebuffer2 = softwareRenderer.render(mesh, viewM2 * modelMatrix, projM);
+		softwareRenderer.clearBuffers();
+		auto framebuffer2 = softwareRenderer.render(mesh, viewM * modelMatrixT, projM);
 		Mat renderedModel2 = framebuffer2.first.clone(); // we save that later, and the framebuffer gets overwritten
 
 		/*
