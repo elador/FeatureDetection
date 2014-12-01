@@ -634,10 +634,14 @@ int main(int argc, char *argv[])
 		// Modify K to work with OpenGL:
 		Mat K_opengl = Mat::zeros(4, 4, CV_32FC1);
 		K.copyTo(K_opengl.rowRange(0, 3).colRange(0, 3));
-		// 1: negate the 3rd column, and K_33 needs to be -1
-		K_opengl.col(2) = -1.0f * K_opengl.col(2);
-		K_opengl.row(2).copyTo(K_opengl.row(3));
-		K_opengl.row(2) = Mat::zeros(1, 4, CV_32FC1);
+		K_opengl.at<float>(0, 2) = 0.0f;
+		K_opengl.at<float>(1, 2) = 0.0f; // camera is in the middle of the screen
+		K_opengl.at<float>(2, 2) = 0.0f;
+		K_opengl.at<float>(3, 2) = -1.0f; // for OpenGL
+		// TODO Divide the focal lengths by w and h? Divide both by w, and ortho will take care of the aspect later?
+		K_opengl.at<float>(0, 0) = K_opengl.at<float>(0, 0) / img.cols;
+		K_opengl.at<float>(1, 1) = K_opengl.at<float>(1, 1) / img.cols;
+
 		// 2: we need to prevent losing Z-depth information
 		// The new third row preserve the ordering of Z-values while mapping -near and -far onto themselves (after normalizing by w, proof left as an exercise). The result is that points between the clipping planes remain between clipping planes after multiplication by Persp
 		float nearPlane = 0.1f;
@@ -645,19 +649,58 @@ int main(int argc, char *argv[])
 		K_opengl.at<float>(2, 2) = nearPlane + farPlane; // The 'A'. Not sure if n and f should be pos or neg!
 		K_opengl.at<float>(2, 3) = nearPlane * farPlane; // The 'B'
 
+		float aspect = static_cast<float>(img.cols) / img.rows;
 		//Mat ortho = render::matrixutils::createOrthogonalProjectionMatrix(0, img.cols - 1, 0, img.rows - 1, near, far);
-		Mat ortho = render::matrixutils::createOrthogonalProjectionMatrix(-img.cols / 2.0, img.cols / 2.0, -img.rows / 2.0, img.rows / 2.0, nearPlane, farPlane);
+		//Mat ortho = render::matrixutils::createOrthogonalProjectionMatrix(-img.cols / 2.0, img.cols / 2.0, -img.rows / 2.0, img.rows / 2.0, nearPlane, farPlane);
+		
+		//Mat ortho = render::matrixutils::createOrthogonalProjectionMatrix(-1.0f * aspect, 1.0f * aspect, -1.0f, 1.0f, nearPlane, farPlane); // if (b, t) are like this, nothing is switched. Should be fine.
+		Mat ortho = render::matrixutils::createOrthogonalProjectionMatrix(-1.0f * aspect, 1.0f * aspect, 1.0f, -1.0f, nearPlane, farPlane); // now we switch twice: once in ortho, once in viewport. (?)
+		// I think the aspect stuff can go either here in ortho
 
 		Mat opengl_proj = ortho * K_opengl;
 
-		Mat opengl_modelview = Mat::zeros(4, 4, CV_32FC1);
-		R.copyTo(opengl_modelview.rowRange(0, 3).colRange(0, 3));
-		t.copyTo(opengl_modelview.rowRange(0, 3).col(3));
-		opengl_modelview.at<float>(3, 3) = 1.0f;
+		// try to get the model view matrix (R, t) right:
+		// NOTE: Aah, our window transform kind of "screws it up". It flips our y-axis because
+		// OpenGL has the origin bottom-left, but OpenCV has it top-left. That's good.
+		// However, as solvePnP directly estimates from the model-space to the "OpenCV-window-space", its
+		// R and t are of course flipped as well. However, the ANGLES are the same in all cases.
+		// This also explains why my rotation matrices are the transposes of the solvePnP one's (possibly also for POSIT etc.)
 
-		float aspect = static_cast<float>(img.cols) / img.rows;
-		float fovy = focalLengthToFovy(1500.0f, img.rows);
-		//float fovy = focalLengthToFovy(1500.0f, 2);
+	/*	Mat opengl_modelview = Mat::zeros(4, 4, CV_32FC1);
+		R.copyTo(opengl_modelview.rowRange(0, 3).colRange(0, 3));
+		opengl_modelview.at<float>(3, 3) = 1.0f;
+		//Mat flipIt = render::matrixutils::createRotationMatrixX(degreesToRadians(180.0f));
+		//opengl_modelview = opengl_modelview * flipIt;
+		t.at<float>(1) *= -1.0f; // flip y
+		t.at<float>(2) *= -1.0f; // solvePnP has the z-axis into the other direction I believe
+		t.copyTo(opengl_modelview.rowRange(0, 3).col(3));
+		*/
+		// Note: Better use rodrigues?
+		float theta_x = std::atan2(R.at<float>(2, 1), R.at<float>(2, 2)); // r_32, r_33
+		float theta_y = std::atan2(-R.at<float>(2, 0), std::sqrt(std::pow(R.at<float>(2, 1), 2) + std::pow(R.at<float>(2, 2), 2))); // r_31, sqrt(r_32^2 + r_33^2)
+		float theta_z = std::atan2(R.at<float>(1, 0), R.at<float>(0, 0)); // r_21, r_11
+		float theta_x_deg = radiansToDegrees(theta_x);
+		float theta_y_deg = radiansToDegrees(theta_y);
+		float theta_z_deg = radiansToDegrees(theta_z);
+
+		// compare angles with fitter affine+decomp: 16, 29, 16. Here: 11, 29, 11.
+		Mat mtxR, mtxQ, Qx, Qy, Qz;
+		cv::Vec3d eulerAngles = RQDecomp3x3(R, mtxR, mtxQ, Qx, Qy, Qz);
+
+		// My matrices are the transposes of those returned by QR. Maybe extrinsic/intrinsic rotation? (i.e. one rotates the camera, one the object)
+
+		// TODO: CHECK THESE WITH MY REDMINE WIKI!
+		Mat myrotMX = render::matrixutils::createRotationMatrixX(theta_x); // Pitch. Positive means the subject looks down.
+		Mat myrotMY = render::matrixutils::createRotationMatrixY(theta_y); // Yaw. Positive means the subject looks left, i.e. we see mre of his right side.
+		Mat myrotMZ = render::matrixutils::createRotationMatrixZ(theta_z); // Roll. Positive means the subjects (real) right eye moves downwards.
+		//Mat myTrans = render::matrixutils::createTranslationMatrix(t.at<float>(0), -t.at<float>(1), -t.at<float>(2)); // flip y (opengl <> opencv origin) and z
+		Mat myTrans = render::matrixutils::createTranslationMatrix(t.at<float>(0), t.at<float>(1), -t.at<float>(2)); // flip y (opengl <> opencv origin) and z
+		Mat opengl_modelview = myTrans * myrotMZ * myrotMY * myrotMX; // solvePnP uses rotation order Z * Y * X * vec
+		//Mat opengl_modelview = myTrans * myrotMX;
+		//Mat test = myrotMZ * myrotMY * myrotMX;
+
+		//float fovy = focalLengthToFovy(1500.0f, img.rows);
+		float fovy = focalLengthToFovy(3.4169, 2);
 		Mat MyProj = render::matrixutils::createPerspectiveProjectionMatrix(fovy, aspect, nearPlane, farPlane);
 
 		// Try it in SW:
@@ -669,14 +712,14 @@ int main(int argc, char *argv[])
 		// Working example:
 		//Mat scl = render::matrixutils::createScalingMatrix(1 / 10.0f, 1 / 10.0f, 1 / 10.0f);
 		// Move the model points further into the screen. Equivalent to "the camera is at +500 (world-space) and the points stay".
-		Mat camTr = render::matrixutils::createTranslationMatrix(0.0f, 0.0f, -500.0f);
-		Mat camPrj = render::matrixutils::createPerspectiveProjectionMatrix(45.0f, aspect, nearPlane, farPlane);
+		Mat camTr = render::matrixutils::createTranslationMatrix(0.0f, 0.0f, -1900.0f);
+		Mat camPrj = render::matrixutils::createPerspectiveProjectionMatrix(fovy, aspect, nearPlane, farPlane);
 		auto fbWorking = softwareRenderer.render(mesh, camTr, camPrj);
 		Mat mdlWorking = fbWorking.first.clone();
 		Mat mdlWorkingZ = fbWorking.second.clone();
 		
-
-		auto framebuffer = softwareRenderer.render(mesh, opengl_modelview, MyProj);
+		softwareRenderer.clearBuffers();
+		auto framebuffer = softwareRenderer.render(mesh, opengl_modelview, opengl_proj);
 		Mat renderedModel = framebuffer.first.clone(); // we save that later, and the framebuffer gets overwritten
 		Mat renderedModelZ = framebuffer.second.clone();
 
