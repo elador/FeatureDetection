@@ -278,7 +278,10 @@ public:
 	// TODO: Actually, split the "get the correspondences" to another function, and input two vectors of points here. Same for affine cam esti!
 	// img only for debug purposes
 	// camMatrix = K: intrinsic camera matrix. Focal length, principal point.
+	// From the OpenCV doc of solvePnP: "R, t bring points from the model coordinate system to the camera coordinate system."
+	// R is a 3x3 rotation matrix whose columns are the directions of the world axes in the camera's reference frame? Not sure if the case in solvePnP.
 	// Todo: Change the returned pair to out-params (refs)
+	// Returns: [R t; 0 0 0 1]: how to transform points in world coordinates to camera coordinates (rotation followed by translation)
 	std::pair<cv::Mat, cv::Mat> estimate(std::vector<imageio::ModelLandmark> landmarks, cv::Mat camMatrix, cv::Mat img, morphablemodel::MorphableModel morphableModel)
 	{
 		// Todo: Currently, the optional vertexIds are not used
@@ -364,6 +367,15 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 {
 	std::copy(v.begin(), v.end(), std::ostream_iterator<T>(cout, " "));
 	return os;
+}
+
+cv::Vec3f eulerAnglesFromRotationMatrix(cv::Mat R)
+{
+	Vec3f eulerAngles;
+	eulerAngles[0] = std::atan2(R.at<float>(2, 1), R.at<float>(2, 2)); // r_32, r_33. Theta_x.
+	eulerAngles[1] = std::atan2(-R.at<float>(2, 0), std::sqrt(std::pow(R.at<float>(2, 1), 2) + std::pow(R.at<float>(2, 2), 2))); // r_31, sqrt(r_32^2 + r_33^2). Theta_y.
+	eulerAngles[2] = std::atan2(R.at<float>(1, 0), R.at<float>(0, 0)); // r_21, r_11. Theta_z.
+	return eulerAngles;
 }
 
 int main(int argc, char *argv[])
@@ -604,8 +616,8 @@ int main(int argc, char *argv[])
 		vector<imageio::ModelLandmark> landmarksClipSpace = fitting::convertAvailableLandmarksToClipSpace(landmarks, morphableModel, img.cols, img.rows);
 
 		OpenCVsolvePnPWrapper pnp;
-
 		// We got K (3x3), R (3x3) and t (3x1)
+		
 	/*	Mat K = (cv::Mat_<float>(3, 3) << 1500.0f,    0.0f, img.cols / 2.0f, // subtract 1 somewhere or something? see window transform
 											 0.0f, 1500.0f, img.rows / 2.0f,
 											 0.0f,    0.0f, 1.0f); // K_33 = -1? Doesn't seem to make a difference for solvePnP. OpenCV expect +1 according to doc.
@@ -620,32 +632,25 @@ int main(int argc, char *argv[])
 		Mat tpnp, Rpnp;
 		std::tie(tpnp, Rpnp) = pnp.estimate(landmarksClipSpace, K, img, morphableModel);
 
-		// t: a column-vector representing the camera's position in world coordinates? But not for solvePnp:
-		// From the doc: "R, t bring points from the model coordinate system to the camera coordinate system."
-		
-		// R is a 3x3 rotation matrix whose columns are the directions of the world axes in the camera's reference frame.
-		// [R t; 0 0 0 1]: how to transform points in world coordinates to camera coordinates (rotation followed by translation)
-
-		// Actually, YEAH, we REALLY want the opposite! (i.e. don't scale the model). We're interested in the camera parameters, i.e. where's the camera. This way, we can also determine the face size (because we know the model is in milimetres). Only problem in tracking: The face AND the camera might both move, or only the face.
-
 		Mat t;
 		tpnp.convertTo(t, CV_32FC1);
 		Mat R(3, 3, CV_64FC1);
 		Rodrigues(Rpnp, R);
 		R.convertTo(R, CV_32FC1);
 		
-		// Modify K to work with OpenGL:
+		// Create a K, a projection matrix that works with OpenGL:
 		Mat K_opengl = Mat::zeros(4, 4, CV_32FC1);
 		K.copyTo(K_opengl.rowRange(0, 3).colRange(0, 3));
 		K_opengl.at<float>(0, 2) = 0.0f;
 		K_opengl.at<float>(1, 2) = 0.0f; // camera is in the middle of the screen
 		K_opengl.at<float>(2, 2) = 0.0f;
 		K_opengl.at<float>(3, 2) = -1.0f; // for OpenGL
-		// TODO Divide the focal lengths by w and h? Divide both by w, and ortho will take care of the aspect later?
-		//K_opengl.at<float>(0, 0) = K_opengl.at<float>(0, 0) / img.cols; // not in current test (i.e. pnp with clip coords)
+		// If we use a pixel-valued focal length in 'K' for solvePnP, we have to divide the focal lengths here by w and/or h. The aspect ration shouldn't play a role here so probably divide both by w, and ortho will take care of the aspect later?
+		// Not needed when solvePnP works in clip coords.
+		//K_opengl.at<float>(0, 0) = K_opengl.at<float>(0, 0) / img.cols;
 		//K_opengl.at<float>(1, 1) = K_opengl.at<float>(1, 1) / img.cols;
 
-		// 2: we need to prevent losing Z-depth information
+		// We need to prevent losing Z-depth information:
 		// The new third row preserve the ordering of Z-values while mapping -near and -far onto themselves (after normalizing by w, proof left as an exercise). The result is that points between the clipping planes remain between clipping planes after multiplication by Persp
 		float nearPlane = 0.1f;
 		float farPlane = 4000.0f;
@@ -653,47 +658,34 @@ int main(int argc, char *argv[])
 		K_opengl.at<float>(2, 3) = nearPlane * farPlane; // The 'B'
 
 		float aspect = static_cast<float>(img.cols) / img.rows;
-		//Mat ortho = render::matrixutils::createOrthogonalProjectionMatrix(0, img.cols - 1, 0, img.rows - 1, near, far);
-		//Mat ortho = render::matrixutils::createOrthogonalProjectionMatrix(-img.cols / 2.0, img.cols / 2.0, -img.rows / 2.0, img.rows / 2.0, nearPlane, farPlane);
-		
-		Mat ortho = render::matrixutils::createOrthogonalProjectionMatrix(-1.0f * aspect, 1.0f * aspect, -1.0f, 1.0f, nearPlane, farPlane); // if (b, t) are like this, nothing is switched. Should be fine.
-		//Mat ortho = render::matrixutils::createOrthogonalProjectionMatrix(-1.0f * aspect, 1.0f * aspect, 1.0f, -1.0f, nearPlane, farPlane); // now we switch twice: once in ortho, once in viewport. (?)
-		// I think the aspect stuff can go either here in ortho
+		Mat ortho = render::matrixutils::createOrthogonalProjectionMatrix(-1.0f * aspect, 1.0f * aspect, -1.0f, 1.0f, nearPlane, farPlane); // if (b, t) are like this, ortho doesn't switch anything. The viewport transform will later switch the y axis.
 
 		Mat opengl_proj = ortho * K_opengl;
 
-		// try to get the model view matrix (R, t) right:
-		// NOTE: Aah, our window transform kind of "screws it up". It flips our y-axis because
-		// OpenGL has the origin bottom-left, but OpenCV has it top-left. That's good.
-		// However, as solvePnP directly estimates from the model-space to the "OpenCV-window-space", its
-		// R and t are of course flipped as well. However, the ANGLES are the same in all cases.
-		// This also explains why my rotation matrices are the transposes of the solvePnP one's (possibly also for POSIT etc.)
+		// Model (and view) matrix (view is identity):
+		Mat modelTranslation = render::matrixutils::createTranslationMatrix(t.at<float>(0), t.at<float>(1), -t.at<float>(2)); // flip y (opengl <> opencv origin) and z
+		Mat modelR4x4 = Mat::zeros(4, 4, CV_32FC1);
+		R.copyTo(modelR4x4.rowRange(0, 3).colRange(0, 3));
+		modelR4x4.at<float>(3, 3) = 1.0f;
 
-		// Note: Better use rodrigues?
-		float theta_x = std::atan2(R.at<float>(2, 1), R.at<float>(2, 2)); // r_32, r_33
-		float theta_y = std::atan2(-R.at<float>(2, 0), std::sqrt(std::pow(R.at<float>(2, 1), 2) + std::pow(R.at<float>(2, 2), 2))); // r_31, sqrt(r_32^2 + r_33^2)
-		float theta_z = std::atan2(R.at<float>(1, 0), R.at<float>(0, 0)); // r_21, r_11
-		float theta_x_deg = radiansToDegrees(theta_x); // Pitch. Positive means the subject looks down.
-		float theta_y_deg = radiansToDegrees(theta_y); // Yaw. Positive means the subject looks left, i.e. we see mre of his right side.
-		float theta_z_deg = radiansToDegrees(theta_z); // Roll. Positive means the subjects (real) right eye moves downwards.
+		Mat opengl_modelview = modelTranslation * modelR4x4;
 
-		Mat myTrans = render::matrixutils::createTranslationMatrix(t.at<float>(0), t.at<float>(1), -t.at<float>(2)); // flip y (opengl <> opencv origin) and z
-
-		Mat R4x4 = Mat::zeros(4, 4, CV_32FC1);
-		R.copyTo(R4x4.rowRange(0, 3).colRange(0, 3));
-		R4x4.at<float>(3, 3) = 1.0f;
-
-		Mat opengl_modelview = myTrans * R4x4;
-
+		// Finished! Now rendering:
 		Mesh mesh = morphableModel.getMean();
 		render::SoftwareRenderer softwareRenderer(img.cols, img.rows);
 		softwareRenderer.doBackfaceCulling = false;
-		softwareRenderer.clearBuffers();
 		
 		softwareRenderer.clearBuffers();
 		auto framebuffer = softwareRenderer.render(mesh, opengl_modelview, opengl_proj);
 		Mat renderedModel = framebuffer.first.clone(); // we save that later, and the framebuffer gets overwritten
 		Mat renderedModelZ = framebuffer.second.clone();
+
+		{ // only for debug purposes:
+			cv::Vec3f eulerAngles = eulerAnglesFromRotationMatrix(R);
+			float theta_x_deg = radiansToDegrees(eulerAngles[0]); // Pitch. Positive means the subject looks down.
+			float theta_y_deg = radiansToDegrees(eulerAngles[1]); // Yaw. Positive means the subject looks left, i.e. we see mre of his right side.
+			float theta_z_deg = radiansToDegrees(eulerAngles[2]); // Roll. Positive means the subjects (real) right eye moves downwards.
+		}
 
 		// Some general notes:
 		// t_z = -1900: Move the model points further into the screen. Equivalent to "the camera is at +500 (world-space) and the points stay".
@@ -703,6 +695,14 @@ int main(int argc, char *argv[])
 		// ---
 		// Actually now of course R is equivalent to 'createRotationMatrixZ(theta_z) * createRotationMatrixY(theta_y) * createRotationMatrixX(theta_x)', so no need to extract these angles anymore. Just extend from 3x3 to 4x4.
 		// solvePnP uses rotation order Z * Y * X * vec
+		// ---
+		// Actually, YEAH, we REALLY want the opposite! (i.e. don't scale the model). We're interested in the camera parameters, i.e. where's the camera. This way, we can also determine the face size (because we know the model is in milimetres). Only problem in tracking: The face AND the camera might both move, or only the face.
+		// ---
+		// NOTE: Aah, our window transform kind of "screws it up". It flips our y-axis because
+		// OpenGL has the origin bottom-left, but OpenCV has it top-left. That's good.
+		// However, as solvePnP directly estimates from the model-space to the "OpenCV-window-space", its
+		// R and t are of course flipped as well. However, the ANGLES are the same in all cases.
+		// This also explains why my rotation matrices are the transposes of the solvePnP one's (possibly also for POSIT etc.)
 
 		/*
 		QGuiApplication app(argc, argv);
