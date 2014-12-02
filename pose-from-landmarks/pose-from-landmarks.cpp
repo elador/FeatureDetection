@@ -609,10 +609,10 @@ int main(int argc, char *argv[])
 	/*	Mat K = (cv::Mat_<float>(3, 3) << 1500.0f,    0.0f, img.cols / 2.0f, // subtract 1 somewhere or something? see window transform
 											 0.0f, 1500.0f, img.rows / 2.0f,
 											 0.0f,    0.0f, 1.0f); // K_33 = -1? Doesn't seem to make a difference for solvePnP. OpenCV expect +1 according to doc.
-	*/	// This focal length is in "image space" (pixels). I.e. divide by h/w to get it in "NDC"/clip/... space?
+		// This focal length is in "image space" (pixels). I.e. divide by h/w to get it in "NDC"/clip/... space?
 		// We specify the image center for the solvePnP camera.
 		// Later, in OpenGL, we don't, because OpenGLs NDC / clip coords are unit cube with center in the middle anyway.
-
+*/
 		Mat K = (cv::Mat_<float>(3, 3) << 3.4169f, 0.0f, 0.0f,
 										  0.0f, 3.4169f, 0.0f,
 										  0.0f, 0.0f, 1.0f);
@@ -669,62 +669,40 @@ int main(int argc, char *argv[])
 		// R and t are of course flipped as well. However, the ANGLES are the same in all cases.
 		// This also explains why my rotation matrices are the transposes of the solvePnP one's (possibly also for POSIT etc.)
 
-	/*	Mat opengl_modelview = Mat::zeros(4, 4, CV_32FC1);
-		R.copyTo(opengl_modelview.rowRange(0, 3).colRange(0, 3));
-		opengl_modelview.at<float>(3, 3) = 1.0f;
-		//Mat flipIt = render::matrixutils::createRotationMatrixX(degreesToRadians(180.0f));
-		//opengl_modelview = opengl_modelview * flipIt;
-		t.at<float>(1) *= -1.0f; // flip y
-		t.at<float>(2) *= -1.0f; // solvePnP has the z-axis into the other direction I believe
-		t.copyTo(opengl_modelview.rowRange(0, 3).col(3));
-		*/
 		// Note: Better use rodrigues?
 		float theta_x = std::atan2(R.at<float>(2, 1), R.at<float>(2, 2)); // r_32, r_33
 		float theta_y = std::atan2(-R.at<float>(2, 0), std::sqrt(std::pow(R.at<float>(2, 1), 2) + std::pow(R.at<float>(2, 2), 2))); // r_31, sqrt(r_32^2 + r_33^2)
 		float theta_z = std::atan2(R.at<float>(1, 0), R.at<float>(0, 0)); // r_21, r_11
-		float theta_x_deg = radiansToDegrees(theta_x);
-		float theta_y_deg = radiansToDegrees(theta_y);
-		float theta_z_deg = radiansToDegrees(theta_z);
+		float theta_x_deg = radiansToDegrees(theta_x); // Pitch. Positive means the subject looks down.
+		float theta_y_deg = radiansToDegrees(theta_y); // Yaw. Positive means the subject looks left, i.e. we see mre of his right side.
+		float theta_z_deg = radiansToDegrees(theta_z); // Roll. Positive means the subjects (real) right eye moves downwards.
 
-		// compare angles with fitter affine+decomp: 16, 29, 16. Here: 11, 29, 11.
-		Mat mtxR, mtxQ, Qx, Qy, Qz;
-		cv::Vec3d eulerAngles = RQDecomp3x3(R, mtxR, mtxQ, Qx, Qy, Qz);
-
-		// My matrices are the transposes of those returned by QR. Maybe extrinsic/intrinsic rotation? (i.e. one rotates the camera, one the object)
-
-		// TODO: CHECK THESE WITH MY REDMINE WIKI!
-		Mat myrotMX = render::matrixutils::createRotationMatrixX(theta_x); // Pitch. Positive means the subject looks down.
-		Mat myrotMY = render::matrixutils::createRotationMatrixY(theta_y); // Yaw. Positive means the subject looks left, i.e. we see mre of his right side.
-		Mat myrotMZ = render::matrixutils::createRotationMatrixZ(theta_z); // Roll. Positive means the subjects (real) right eye moves downwards.
-		//Mat myTrans = render::matrixutils::createTranslationMatrix(t.at<float>(0), -t.at<float>(1), -t.at<float>(2)); // flip y (opengl <> opencv origin) and z
 		Mat myTrans = render::matrixutils::createTranslationMatrix(t.at<float>(0), t.at<float>(1), -t.at<float>(2)); // flip y (opengl <> opencv origin) and z
-		Mat opengl_modelview = myTrans * myrotMZ * myrotMY * myrotMX; // solvePnP uses rotation order Z * Y * X * vec
-		//Mat opengl_modelview = myTrans * myrotMX;
-		//Mat test = myrotMZ * myrotMY * myrotMX;
 
-		//float fovy = focalLengthToFovy(1500.0f, img.rows);
-		float fovy = focalLengthToFovy(3.4169, 2);
-		Mat MyProj = render::matrixutils::createPerspectiveProjectionMatrix(fovy, aspect, nearPlane, farPlane);
+		Mat R4x4 = Mat::zeros(4, 4, CV_32FC1);
+		R.copyTo(R4x4.rowRange(0, 3).colRange(0, 3));
+		R4x4.at<float>(3, 3) = 1.0f;
 
-		// Try it in SW:
-		Mesh mesh = morphableModel.drawSample();
+		Mat opengl_modelview = myTrans * R4x4;
+
+		Mesh mesh = morphableModel.getMean();
 		render::SoftwareRenderer softwareRenderer(img.cols, img.rows);
 		softwareRenderer.doBackfaceCulling = false;
 		softwareRenderer.clearBuffers();
-		
-		// Working example:
-		//Mat scl = render::matrixutils::createScalingMatrix(1 / 10.0f, 1 / 10.0f, 1 / 10.0f);
-		// Move the model points further into the screen. Equivalent to "the camera is at +500 (world-space) and the points stay".
-		Mat camTr = render::matrixutils::createTranslationMatrix(0.0f, 0.0f, -1900.0f);
-		Mat camPrj = render::matrixutils::createPerspectiveProjectionMatrix(fovy, aspect, nearPlane, farPlane);
-		auto fbWorking = softwareRenderer.render(mesh, camTr, camPrj);
-		Mat mdlWorking = fbWorking.first.clone();
-		Mat mdlWorkingZ = fbWorking.second.clone();
 		
 		softwareRenderer.clearBuffers();
 		auto framebuffer = softwareRenderer.render(mesh, opengl_modelview, opengl_proj);
 		Mat renderedModel = framebuffer.first.clone(); // we save that later, and the framebuffer gets overwritten
 		Mat renderedModelZ = framebuffer.second.clone();
+
+		// Some general notes:
+		// t_z = -1900: Move the model points further into the screen. Equivalent to "the camera is at +500 (world-space) and the points stay".
+		//float fovy = focalLengthToFovy(1500.0f, img.rows);
+		//float fovy = focalLengthToFovy(3.4169, 2);
+		// My rotation matrices are the transposes of those returned by QR. Maybe extrinsic/intrinsic rotation? (i.e. one rotates the camera, one the object)
+		// ---
+		// Actually now of course R is equivalent to 'createRotationMatrixZ(theta_z) * createRotationMatrixY(theta_y) * createRotationMatrixX(theta_x)', so no need to extract these angles anymore. Just extend from 3x3 to 4x4.
+		// solvePnP uses rotation order Z * Y * X * vec
 
 		/*
 		QGuiApplication app(argc, argv);
