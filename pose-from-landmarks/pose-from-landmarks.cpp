@@ -277,8 +277,9 @@ class OpenCVsolvePnPWrapper
 public:
 	// TODO: Actually, split the "get the correspondences" to another function, and input two vectors of points here. Same for affine cam esti!
 	// img only for debug purposes
+	// camMatrix = K: intrinsic camera matrix. Focal length, principal point.
 	// Todo: Change the returned pair to out-params (refs)
-	std::pair<cv::Mat, cv::Mat> estimate(std::vector<imageio::ModelLandmark> landmarks, cv::Mat img, morphablemodel::MorphableModel morphableModel)
+	std::pair<cv::Mat, cv::Mat> estimate(std::vector<imageio::ModelLandmark> landmarks, cv::Mat camMatrix, cv::Mat img, morphablemodel::MorphableModel morphableModel)
 	{
 		// Todo: Currently, the optional vertexIds are not used
 		std::vector<Point2f> imagePoints;
@@ -301,10 +302,6 @@ public:
 			cv::circle(img, p, 3, { 255, 0, 0 });
 		}
 
-		// intrinsic camera matrix. Focal length, principal point.
-		Mat camMatrix = (cv::Mat_<double>(3, 3) << 1500.0,    0.0, img.cols / 2.0, // subtract 1 somewhere or something? see window transform
-													  0.0, 1500.0, img.rows / 2.0,
-													  0.0,    0.0, 1.0); // -1?
 		Mat rvec(3, 1, CV_64FC1);
 		Mat tvec(3, 1, CV_64FC1);
 		solvePnP(mmVertices, imagePoints, camMatrix, vector<float>(), rvec, tvec, false, CV_EPNP); // CV_ITERATIVE (3pts) | CV_P3P (4pts) | CV_EPNP (4pts)
@@ -604,18 +601,24 @@ int main(int argc, char *argv[])
 		}
 
 
+		vector<imageio::ModelLandmark> landmarksClipSpace = fitting::convertAvailableLandmarksToClipSpace(landmarks, morphableModel, img.cols, img.rows);
 
 		OpenCVsolvePnPWrapper pnp;
 
-		Mat tpnp, Rpnp;
-		std::tie(tpnp, Rpnp) = pnp.estimate(landmarks, img, morphableModel);
 		// We got K (3x3), R (3x3) and t (3x1)
-		Mat K = (cv::Mat_<float>(3, 3) << 1500.0f,    0.0f, img.cols / 2.0f, // subtract 1 somewhere or something? see window transform
+	/*	Mat K = (cv::Mat_<float>(3, 3) << 1500.0f,    0.0f, img.cols / 2.0f, // subtract 1 somewhere or something? see window transform
 											 0.0f, 1500.0f, img.rows / 2.0f,
 											 0.0f,    0.0f, 1.0f); // K_33 = -1? Doesn't seem to make a difference for solvePnP. OpenCV expect +1 according to doc.
-		// This focal length is in "image space". I.e. divide by h/w to get it in "NDC"/clip/... space?
+	*/	// This focal length is in "image space" (pixels). I.e. divide by h/w to get it in "NDC"/clip/... space?
 		// We specify the image center for the solvePnP camera.
 		// Later, in OpenGL, we don't, because OpenGLs NDC / clip coords are unit cube with center in the middle anyway.
+
+		Mat K = (cv::Mat_<float>(3, 3) << 3.4169f, 0.0f, 0.0f,
+										  0.0f, 3.4169f, 0.0f,
+										  0.0f, 0.0f, 1.0f);
+
+		Mat tpnp, Rpnp;
+		std::tie(tpnp, Rpnp) = pnp.estimate(landmarksClipSpace, K, img, morphableModel);
 
 		// t: a column-vector representing the camera's position in world coordinates? But not for solvePnp:
 		// From the doc: "R, t bring points from the model coordinate system to the camera coordinate system."
@@ -639,8 +642,8 @@ int main(int argc, char *argv[])
 		K_opengl.at<float>(2, 2) = 0.0f;
 		K_opengl.at<float>(3, 2) = -1.0f; // for OpenGL
 		// TODO Divide the focal lengths by w and h? Divide both by w, and ortho will take care of the aspect later?
-		K_opengl.at<float>(0, 0) = K_opengl.at<float>(0, 0) / img.cols;
-		K_opengl.at<float>(1, 1) = K_opengl.at<float>(1, 1) / img.cols;
+		//K_opengl.at<float>(0, 0) = K_opengl.at<float>(0, 0) / img.cols; // not in current test (i.e. pnp with clip coords)
+		//K_opengl.at<float>(1, 1) = K_opengl.at<float>(1, 1) / img.cols;
 
 		// 2: we need to prevent losing Z-depth information
 		// The new third row preserve the ordering of Z-values while mapping -near and -far onto themselves (after normalizing by w, proof left as an exercise). The result is that points between the clipping planes remain between clipping planes after multiplication by Persp
@@ -653,8 +656,8 @@ int main(int argc, char *argv[])
 		//Mat ortho = render::matrixutils::createOrthogonalProjectionMatrix(0, img.cols - 1, 0, img.rows - 1, near, far);
 		//Mat ortho = render::matrixutils::createOrthogonalProjectionMatrix(-img.cols / 2.0, img.cols / 2.0, -img.rows / 2.0, img.rows / 2.0, nearPlane, farPlane);
 		
-		//Mat ortho = render::matrixutils::createOrthogonalProjectionMatrix(-1.0f * aspect, 1.0f * aspect, -1.0f, 1.0f, nearPlane, farPlane); // if (b, t) are like this, nothing is switched. Should be fine.
-		Mat ortho = render::matrixutils::createOrthogonalProjectionMatrix(-1.0f * aspect, 1.0f * aspect, 1.0f, -1.0f, nearPlane, farPlane); // now we switch twice: once in ortho, once in viewport. (?)
+		Mat ortho = render::matrixutils::createOrthogonalProjectionMatrix(-1.0f * aspect, 1.0f * aspect, -1.0f, 1.0f, nearPlane, farPlane); // if (b, t) are like this, nothing is switched. Should be fine.
+		//Mat ortho = render::matrixutils::createOrthogonalProjectionMatrix(-1.0f * aspect, 1.0f * aspect, 1.0f, -1.0f, nearPlane, farPlane); // now we switch twice: once in ortho, once in viewport. (?)
 		// I think the aspect stuff can go either here in ortho
 
 		Mat opengl_proj = ortho * K_opengl;
