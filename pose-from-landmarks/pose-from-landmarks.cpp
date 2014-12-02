@@ -308,6 +308,7 @@ public:
 		Mat rvec(3, 1, CV_64FC1);
 		Mat tvec(3, 1, CV_64FC1);
 		solvePnP(mmVertices, imagePoints, camMatrix, vector<float>(), rvec, tvec, false, CV_EPNP); // CV_ITERATIVE (3pts) | CV_P3P (4pts) | CV_EPNP (4pts)
+		//solvePnPRansac(mmVertices, imagePoints, camMatrix, vector<float>(), rvec, tvec, false); // CV_ITERATIVE (3pts) | CV_P3P (4pts) | CV_EPNP (4pts)
 
 		// Visualize the points:
 		Mat rotation_matrix(3, 3, CV_64FC1);
@@ -663,7 +664,7 @@ int main(int argc, char *argv[])
 		Mat opengl_proj = ortho * K_opengl;
 
 		// Model (and view) matrix (view is identity):
-		Mat modelTranslation = render::matrixutils::createTranslationMatrix(t.at<float>(0), t.at<float>(1), -t.at<float>(2)); // flip y (opengl <> opencv origin) and z
+		Mat modelTranslation = render::matrixutils::createTranslationMatrix(t.at<float>(0), t.at<float>(1), -t.at<float>(2)); // Flip z. We don't flip y anymore if solvePnP is called with clip coordinates (otherwise we would because of opengl <> opencv origin).
 		Mat modelR4x4 = Mat::zeros(4, 4, CV_32FC1);
 		R.copyTo(modelR4x4.rowRange(0, 3).colRange(0, 3));
 		modelR4x4.at<float>(3, 3) = 1.0f;
@@ -685,6 +686,7 @@ int main(int argc, char *argv[])
 			float theta_x_deg = radiansToDegrees(eulerAngles[0]); // Pitch. Positive means the subject looks down.
 			float theta_y_deg = radiansToDegrees(eulerAngles[1]); // Yaw. Positive means the subject looks left, i.e. we see mre of his right side.
 			float theta_z_deg = radiansToDegrees(eulerAngles[2]); // Roll. Positive means the subjects (real) right eye moves downwards.
+			std::cout << "test" << std::endl;
 		}
 
 		// Some general notes:
