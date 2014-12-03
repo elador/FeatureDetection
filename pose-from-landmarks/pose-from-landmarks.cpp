@@ -139,6 +139,15 @@ TriangleWindow::TriangleWindow()
 {
 }
 
+cv::Vec3f eulerAnglesFromRotationMatrix(cv::Mat R)
+{
+	Vec3f eulerAngles;
+	eulerAngles[0] = std::atan2(R.at<float>(2, 1), R.at<float>(2, 2)); // r_32, r_33. Theta_x.
+	eulerAngles[1] = std::atan2(-R.at<float>(2, 0), std::sqrt(std::pow(R.at<float>(2, 1), 2) + std::pow(R.at<float>(2, 2), 2))); // r_31, sqrt(r_32^2 + r_33^2). Theta_y.
+	eulerAngles[2] = std::atan2(R.at<float>(1, 0), R.at<float>(0, 0)); // r_21, r_11. Theta_z.
+	return eulerAngles;
+}
+
 float radiansToDegrees(float radians) // change to constexpr in VS2014
 {
 	return radians * static_cast<float>(180 / CV_PI);
@@ -180,8 +189,9 @@ public:
 	// TODO: Actually, split the "get the correspondences" to another function, and input two vectors of points here. Same for affine cam esti!
 	// img only for debug purposes
 	// Todo: Change the returned pair to out-params (refs)
-	std::pair<cv::Mat, cv::Mat> estimate(std::vector<imageio::ModelLandmark> imagePoints, cv::Mat img, morphablemodel::MorphableModel morphableModel)
+	std::pair<cv::Mat, cv::Mat> estimate(std::vector<imageio::ModelLandmark> imagePoints, cv::Mat K, cv::Mat img, morphablemodel::MorphableModel morphableModel)
 	{
+		float focalLength = K.at<float>(0, 0);
 		// Todo: Currently, the optional vertexIds are not used
 		// Get the corresponding 3DMM vertices:
 		std::vector<Point3f> mmVertices;
@@ -221,16 +231,27 @@ public:
 		Mat rotation_matrix(3, 3, CV_32FC1);
 		Mat translation_vector(1, 3, CV_32FC1);
 		CvTermCriteria criteria = cvTermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 100, 1.0e-4f);
-		cvPOSIT(positObject.get(), &srcImagePoints[0], 1000, criteria, rotation_matrix.ptr<float>(0), translation_vector.ptr<float>(0)); // 1000 = focal length
+		cvPOSIT(positObject.get(), &srcImagePoints[0], focalLength, criteria, rotation_matrix.ptr<float>(0), translation_vector.ptr<float>(0));
+
+		cv::Vec3f eulerAngles = eulerAnglesFromRotationMatrix(rotation_matrix);
+		float theta_x_deg = radiansToDegrees(eulerAngles[0]); // Pitch. Positive means the subject looks down.
+		float theta_y_deg = radiansToDegrees(eulerAngles[1]); // Yaw. Positive means the subject looks left, i.e. we see mre of his right side.
+		float theta_z_deg = radiansToDegrees(eulerAngles[2]); // Roll. Positive means the subjects (real) right eye moves downwards.
+		std::cout << "test" << std::endl;
 
 		// Visualize the points:
 		for (auto&& p : imagePoints) {
 			cv::circle(img, p.getPoint2D(), 3, { 255, 0, 0 });
 		}
+		float centerX = ((float)(img.cols - 1)) / 2.0f;
+		float centerY = ((float)(img.rows - 1)) / 2.0f;
 		for (auto&& v : mmVertices) {
-			Point2f projpoint = project(v, translation_vector, rotation_matrix, 1000.0f);
-			projpoint = convertFromImageCenterOrigin(projpoint, img.cols, img.rows);
-			cv::circle(img, projpoint, 3, { 0, 0, 255 });
+			Mat projectedVertex = rotation_matrix * Mat(v) + translation_vector.t(); // P = R * v + t
+			projectedVertex = K * projectedVertex; // P = K * P
+			projectedVertex /= projectedVertex.at<float>(2); // Div. by z
+			projectedVertex.at<float>(1) = -1.0f * projectedVertex.at<float>(1); // $ centerY - p.y $ is equivalent to $ -1 * (p.y - centerY) $
+			Point2f point(projectedVertex.at<float>(0), projectedVertex.at<float>(1));
+			cv::circle(img, point, 3, { 0, 0, 255 });
 		}
 
 		return std::make_pair(translation_vector, rotation_matrix);
@@ -261,10 +282,11 @@ private:
 	Point2f convertFromImageCenterOrigin(Point2f positCoords, int imgWidth, int imgHeight) {
 		float centerX = ((float)(imgWidth - 1)) / 2.0f;
 		float centerY = ((float)(imgHeight - 1)) / 2.0f;
+		// Todo/Note: Hmm I don't really understand why it's "+ -" here and "- -" below in the reverse function
 		return Point2f(centerX + positCoords.x, centerY - positCoords.y);
 	};
 
-	// Convert from normal coordinates to image-center-origin coords
+	// Convert from normal coordinates (origin top-left) to image-center-origin coords
 	Point2f convertToImageCenterOrigin(Point2f imgCoords, int imgWidth, int imgHeight) {
 		float centerX = ((float)(imgWidth - 1)) / 2.0f;
 		float centerY = ((float)(imgHeight - 1)) / 2.0f;
@@ -368,15 +390,6 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 {
 	std::copy(v.begin(), v.end(), std::ostream_iterator<T>(cout, " "));
 	return os;
-}
-
-cv::Vec3f eulerAnglesFromRotationMatrix(cv::Mat R)
-{
-	Vec3f eulerAngles;
-	eulerAngles[0] = std::atan2(R.at<float>(2, 1), R.at<float>(2, 2)); // r_32, r_33. Theta_x.
-	eulerAngles[1] = std::atan2(-R.at<float>(2, 0), std::sqrt(std::pow(R.at<float>(2, 1), 2) + std::pow(R.at<float>(2, 2), 2))); // r_31, sqrt(r_32^2 + r_33^2). Theta_y.
-	eulerAngles[2] = std::atan2(R.at<float>(1, 0), R.at<float>(0, 0)); // r_21, r_11. Theta_z.
-	return eulerAngles;
 }
 
 int main(int argc, char *argv[])
@@ -626,7 +639,7 @@ int main(int argc, char *argv[])
 		// We specify the image center for the solvePnP camera.
 		// Later, in OpenGL, we don't, because OpenGLs NDC / clip coords are unit cube with center in the middle anyway.
 */
-		Mat K = (cv::Mat_<float>(3, 3) << 3.4169f, 0.0f, 0.0f,
+/*		Mat K = (cv::Mat_<float>(3, 3) << 3.4169f, 0.0f, 0.0f,
 										  0.0f, 3.4169f, 0.0f,
 										  0.0f, 0.0f, 1.0f);
 
@@ -638,7 +651,21 @@ int main(int argc, char *argv[])
 		Mat R(3, 3, CV_64FC1);
 		Rodrigues(Rpnp, R);
 		R.convertTo(R, CV_32FC1);
-		
+		*/
+		OpenCVPositWrapper posit;
+		float focalLengthImg = 1000.0f;
+		float focalLengthClip = focalLengthImg / img.cols;
+		float centerX = ((float)(img.cols - 1)) / 2.0f;
+		float centerY = ((float)(img.rows - 1)) / 2.0f;
+		Mat tposit, Rposit;
+		Mat K = (cv::Mat_<float>(3, 3) << focalLengthImg, 0.0f, centerX,
+											0.0f, focalLengthImg, -centerY,
+											0.0f,        0.0f, 1.0f);
+
+		std::tie(tposit, Rposit) = posit.estimate(landmarks, K, img, morphableModel);
+		Mat R = Rposit;
+		Mat t = tposit.t();
+				
 		// Create a K, a projection matrix that works with OpenGL:
 		Mat K_opengl = Mat::zeros(4, 4, CV_32FC1);
 		K.copyTo(K_opengl.rowRange(0, 3).colRange(0, 3));
@@ -705,6 +732,11 @@ int main(int argc, char *argv[])
 		// However, as solvePnP directly estimates from the model-space to the "OpenCV-window-space", its
 		// R and t are of course flipped as well. However, the ANGLES are the same in all cases.
 		// This also explains why my rotation matrices are the transposes of the solvePnP one's (possibly also for POSIT etc.)
+
+		// Open points:
+		// - Test with OpenGL
+		// - Affine cam? Increase f and farPlane, what happens to solvePnP?
+		// - Test with a cube to verify t, R etc are correct
 
 		/*
 		QGuiApplication app(argc, argv);
