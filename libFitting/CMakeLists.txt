@@ -21,6 +21,7 @@ set(HEADERS
 	include/fitting/OpenCVCameraEstimation.hpp
 	include/fitting/AffineCameraEstimation.hpp
 	include/fitting/LinearShapeFitting.hpp
+	include/fitting/utils.hpp
 )
 set(SOURCE
 	src/fitting/OpenCVCameraEstimation.cpp

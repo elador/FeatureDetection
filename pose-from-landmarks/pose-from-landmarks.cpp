@@ -91,6 +91,7 @@
 #include "logging/LoggerFactory.hpp"
 
 using namespace imageio;
+using namespace render::utils;
 namespace po = boost::program_options;
 using logging::Logger;
 using logging::LoggerFactory;
@@ -138,50 +139,6 @@ TriangleWindow::TriangleWindow()
 	, m_frame(0)
 {
 }
-
-cv::Vec3f eulerAnglesFromRotationMatrix(cv::Mat R)
-{
-	Vec3f eulerAngles;
-	eulerAngles[0] = std::atan2(R.at<float>(2, 1), R.at<float>(2, 2)); // r_32, r_33. Theta_x.
-	eulerAngles[1] = std::atan2(-R.at<float>(2, 0), std::sqrt(std::pow(R.at<float>(2, 1), 2) + std::pow(R.at<float>(2, 2), 2))); // r_31, sqrt(r_32^2 + r_33^2). Theta_y.
-	eulerAngles[2] = std::atan2(R.at<float>(1, 0), R.at<float>(0, 0)); // r_21, r_11. Theta_z.
-	return eulerAngles;
-}
-
-float radiansToDegrees(float radians) // change to constexpr in VS2014
-{
-	return radians * static_cast<float>(180 / CV_PI);
-};
-
-float degreesToRadians(float degrees) // change to constexpr in VS2014
-{
-	return degrees * static_cast<float>(CV_PI / 180);
-};
-
-// fovy to lrtb: http://nehe.gamedev.net/article/replacement_for_gluperspective/21002/
-
-float cot(float x)
-{
-	return std::tan(M_PI_2 - x);
-};
-
-// fovy is the field of view in degrees, along the y axis
-float fovyToFocalLength(float fovy, float height)
-{
-	// The actual equation is: $ cot(fov/2) = f/(h/2) $
-	// equivalent to: $ f = (h/2) * cot(fov/2) $
-	// Now I assume that in OpenGL, h = 2 (-1 to 1), so this simplifies to
-	// $ f = cot(fov/2) $, which corresponds with http://wiki.delphigl.com/index.php/gluPerspective.
-	// It also coincides with Rafaels Formula.
-
-	return (cot(degreesToRadians(fovy) / 2) * (height / 2.0f));
-};
-
-// height: window height in Rafael's case. But I think more correct is |top-bottom| in NDC/clip coords, i.e. 2?
-float focalLengthToFovy(float focalLength, float height)
-{
-	return radiansToDegrees(2.0f * std::atan2(height, 2.0f * focalLength)); // both are always positive, so atan() should do it as well?
-};
 
 class OpenCVPositWrapper
 {

@@ -40,9 +40,17 @@
 #endif
 #include "boost/program_options.hpp"
 #include "boost/algorithm/string.hpp"
-#include "boost/math/special_functions/erf.hpp"
+#include "boost/filesystem/path.hpp"
+#include "boost/property_tree/ptree.hpp"
+#include "boost/property_tree/info_parser.hpp"
 
+#include "render/matrixutils.hpp"
+#include "render/SoftwareRenderer.hpp"
+#include "render/Camera.hpp"
+#include "render/utils.hpp"
+#include "morphablemodel/MorphableModel.hpp"
 #include "superviseddescent/superviseddescent.hpp" // v2 stuff
+#include "fitting/utils.hpp"
 
 #include "logging/LoggerFactory.hpp"
 
@@ -54,9 +62,15 @@ using std::vector;
 using std::shared_ptr;
 using std::make_shared;
 using cv::Mat;
+using boost::filesystem::path;
 using logging::Logger;
 using logging::LoggerFactory;
 using logging::LogLevel;
+
+cv::Mat unrollParameters(fitting::ModelFitting fittingResult)
+{
+	return Mat();
+}
 
 template<typename ForwardIterator, typename T>
 void strided_iota(ForwardIterator first, ForwardIterator last, T value, T stride)
@@ -66,6 +80,31 @@ void strided_iota(ForwardIterator first, ForwardIterator last, T value, T stride
 		value += stride;
 	}
 }
+
+class h_proj
+{
+public:
+	// additional stuff needed by this specific 'h'
+	// M = 3d model, 3d points.
+	h_proj(Mat model) : model(model)
+	{
+
+	};
+	
+	// the generic params of 'h', i.e. exampleId etc.
+	// Here: R, t. (, f)
+	// Returns the transformed 2D coords
+	cv::Mat operator()(Mat parameters)
+	{
+		//project the 3D points using the current params
+		//for (auto&& id : vertexIds) { // for data.len/2?
+		//	Vec3f vtx2d = render::utils::projectVertex(meanMesh.vertex[398].position, projectionMatrix * modelMatrix, screenWidth, screenHeight);
+		//}
+		return Mat();
+	};
+
+	cv::Mat model;
+};
 
 int main(int argc, char *argv[])
 {
@@ -118,63 +157,157 @@ int main(int argc, char *argv[])
 
 	appLogger.debug("Verbose level for console output: " + logging::logLevelToString(logLevel));
 
+	// Generate RPY
+	path morphableModelConfigFilename(R"(C:\Users\Patrik\Documents\GitHub\FeatureDetection\fitter\share\configs\default.cfg)");
+	morphablemodel::MorphableModel morphableModel;
+	try {
+		boost::property_tree::ptree pt;
+		boost::property_tree::info_parser::read_info(morphableModelConfigFilename.string(), pt);
+		morphableModel = morphablemodel::MorphableModel::load(pt.get_child("morphableModel"));
+	}
+	catch (const boost::property_tree::ptree_error& error) {
+		appLogger.error(error.what());
+		return EXIT_FAILURE;
+	}
+	render::Mesh meanMesh = morphableModel.getMean();
+
+	vector<int> vertexIds;
+	/* Surrey full model: */
+	vertexIds.push_back(11389); // 177: left-eye-left - right.eye.corner_outer
+	vertexIds.push_back(25864/*10930*/); // 181: left-eye-right - right.eye.corner_inner
+	vertexIds.push_back(25868); // 614: right-eye-left - left.eye.corner_inner. But we take one a little bit more up
+	vertexIds.push_back(11395); // 610: right-eye-right - left.eye.corner_outer
+	vertexIds.push_back(398); // mouth-left - right.lips.corner
+	vertexIds.push_back(812); // mouth-right - left.lips.corner
+	vertexIds.push_back(11140); // bridge of the nose - // should use the new one from the reference, MnFMdl.obj
+	vertexIds.push_back(114); // nose-tip - center.nose.tip
+	vertexIds.push_back(270); // nasal septum - 
+	vertexIds.push_back(3284); // left-alare - right nose ...
+	vertexIds.push_back(572); // right-alare - left nose ...
+
+	int screenWidth = 640;
+	int screenHeight = 480;
+	const float aspect = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
+	render::SoftwareRenderer renderer(screenWidth, screenHeight);
+
+	const auto yawSeed = std::random_device()();
+	std::mt19937 engineYaw; engineYaw.seed(yawSeed);
+	std::uniform_real_distribution<> distrRandYaw(-35, 35);
+	auto randRealYaw = std::bind(distrRandYaw, engineYaw);
+
+	const auto pitchSeed = std::random_device()();
+	std::mt19937 enginePitch; enginePitch.seed(pitchSeed);
+	std::uniform_real_distribution<> distrRandPitch(-20, 20);
+	auto randRealPitch = std::bind(distrRandPitch, enginePitch);
+
+	const auto rollSeed = std::random_device()();
+	std::mt19937 engineRoll; engineRoll.seed(rollSeed);
+	std::uniform_real_distribution<> distrRandRoll(-20, 20);
+	auto randRealRoll = std::bind(distrRandRoll, engineRoll);
+
+	const auto txSeed = std::random_device()();
+	std::mt19937 engineTx; engineTx.seed(txSeed);
+	std::uniform_real_distribution<> distrRandTx(-20, 20); // millimetres, in model space
+	auto randRealTx = std::bind(distrRandTx, engineTx);
+
+	const auto tySeed = std::random_device()();
+	std::mt19937 engineTy; engineTy.seed(tySeed);
+	std::uniform_real_distribution<> distrRandTy(-20, 20);
+	auto randRealTy = std::bind(distrRandTy, engineTy);
+
+	// Try both and compare: rnd tx, ty (, tz) and with alignment (t, maybe scale?) to eyes
+	using fitting::ModelFitting;
+	vector<ModelFitting> fittings;
+	vector<vector<cv::Vec2f>> landmarks;
+
+	int numSamples = 5;
+	for (int i = 0; i < numSamples; ++i) {
+		// Generate a random pose:
+		ModelFitting fitting;
+		Mat modelMatrix;
+		{
+			auto yaw = randRealYaw();
+			auto pitch = randRealPitch();
+			auto roll = randRealRoll();
+			using render::utils::degreesToRadians;
+			Mat rotPitchX = render::matrixutils::createRotationMatrixX(degreesToRadians(pitch));
+			Mat rotYawY = render::matrixutils::createRotationMatrixY(degreesToRadians(yaw));
+			Mat rotRollZ = render::matrixutils::createRotationMatrixZ(degreesToRadians(roll));
+
+			auto tx = randRealTx();
+			auto ty = randRealTy();
+			Mat translation = render::matrixutils::createTranslationMatrix(tx, ty, -1900.0f); // move the model 1.9metres away from the camera
+
+			modelMatrix = translation * rotYawY * rotPitchX * rotRollZ;
+			fitting = ModelFitting(pitch, yaw, roll, tx, ty, -1900.0f, {}, {}, 1500.0f);
+		}
+		// Random tx, ty, tz, f, scale (camera-scale)
+		float fovY = render::utils::focalLengthToFovy(1500.0f, screenHeight); //
+		Mat projectionMatrix = render::matrixutils::createPerspectiveProjectionMatrix(fovY, aspect, 0.1f, 5000.0f);
+
+		// Test:
+	/*	renderer.clearBuffers();
+		Mat colorbuffer, depthbuffer;
+		std::tie(colorbuffer, depthbuffer) = renderer.render(meanMesh, modelMatrix, projectionMatrix);
+	*/
+		// Project all LMs to 2D:
+		vector<cv::Vec2f> lms;
+		for (auto&& id : vertexIds) {
+			Vec3f vtx2d = render::utils::projectVertex(meanMesh.vertex[id].position, projectionMatrix * modelMatrix, screenWidth, screenHeight);
+			lms.emplace_back(cv::Vec2f(vtx2d[0], vtx2d[1]));
+		}
+	
+		fittings.emplace_back(fitting);
+		landmarks.emplace_back(lms);
+	}
+
+	// Our data:
+	// Mat(numTr, numLms*2); (the 2D proj)
+	// vector<ModelFitting> bzw Mat(numTr, numParamsInUnrolledVec).
+
 	// $\mathbf{h}$ generic, should return a cv::Mat row-vector (1 row). Should process 1 training data. Optimally, whatever it is - float or a whole cv::Mat. But we can also simulate the 1D-case with a 1x1 cv::Mat for now.
-	// sin(x):
-/*	auto h = [](float value) { return std::sin(value); };
-	auto h_inv = [](float value) {
-		if (value >= 1.0f) // our upper border of y is 1.0f, but it can be a bit larger due to floating point representation. asin then returns NaN.
-			return std::asin(1.0f);
-		else
-			return std::asin(value);
-		};
-	// x^3:
-	auto h = [](float value) { return std::pow(value, 3); };
-	auto h_inv = [](float value) { return std::cbrt(value); }; // cubic root
-	// erf(x):
-	auto h = [](float value) { return std::erf(value); };
-	auto h_inv = [](float value) { return boost::math::erf_inv(value); };
-*/	// exp(x):
-	auto h = [](Mat value) { return std::exp(value.at<float>(0)); };
-	auto h_inv = [](float value) { return std::log(value); };
+	// Will be our projection function?
+	//auto h = [](Mat value) { return std::exp(value.at<float>(0)); };
+	//auto h_inv = [](float value) { return std::log(value); }; //N/A?
 
-	//float startInterval = -1.0f; float stepSize = 0.2f; int numValues = 11; Mat y_tr(numValues, 1, CV_32FC1); // sin: [-1:0.2:1]
-	//float startInterval = -27.0f; float stepSize = 3.0f; int numValues = 19; Mat y_tr(numValues, 1, CV_32FC1); // cube: [-27:3:27]
-	//float startInterval = -0.99f; float stepSize = 0.11f; int numValues = 19; Mat y_tr(numValues, 1, CV_32FC1); // erf: [-0.99:0.11:0.99]
-	float startInterval = 1.0f; float stepSize = 3.0f; int numValues = 10; Mat y_tr(numValues, 1, CV_32FC1); // exp: [1:3:28]
+
+	Mat y_tr(fittings.size(), vertexIds.size() * 2, CV_32FC1);
 	{
-		vector<float> values(numValues);
-		strided_iota(std::begin(values), std::next(std::begin(values), numValues), startInterval, stepSize);
-		y_tr = Mat(values, true);
+		for (int r = 0; r < y_tr.rows; ++r) {
+
+		}
 	}
-	Mat x_tr(numValues, 1, CV_32FC1); // Will be the inverse of y_tr
+	Mat x_tr(fittings.size(), 5, CV_32FC1); // 5 params atm: rx, ry, rz, tx, ty
 	{
-		vector<float> values(numValues);
-		std::transform(y_tr.begin<float>(), y_tr.end<float>(), begin(values), h_inv);
-		x_tr = Mat(values, true);
+		for (int r = 0; r < y_tr.rows; ++r) {
+
+		}
 	}
 
-	Mat x0 = 0.5f * Mat::ones(numValues, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
+	Mat x0 = Mat::zeros(fittings.size(), 5, CV_32FC1); // fixed initialization, all params = 0
 
-	//v2::SupervisedDescentOptimiser sdo({ make_shared<v2::LinearRegressor>(v2::LinearRegressor::RegularisationType::Manual, 0.0f) });
+	h_proj h(Mat());
+
 	vector<v2::LinearRegressor> regressors;
 	regressors.emplace_back(v2::LinearRegressor());
 	regressors.emplace_back(v2::LinearRegressor());
 	regressors.emplace_back(v2::LinearRegressor());
 	regressors.emplace_back(v2::LinearRegressor());
 	regressors.emplace_back(v2::LinearRegressor());
-	regressors.emplace_back(v2::LinearRegressor());
-	regressors.emplace_back(v2::LinearRegressor());
-	regressors.emplace_back(v2::LinearRegressor());
-	regressors.emplace_back(v2::LinearRegressor());
-	regressors.emplace_back(v2::LinearRegressor());
 	v2::SupervisedDescentOptimiser<v2::LinearRegressor> sdo(regressors);
-	sdo.train(x_tr, y_tr, x0, h);
 	
+	auto normalisedLeastSquaresResidual = [](const Mat& prediction, const Mat& groundtruth) {
+		return cv::norm(prediction, groundtruth, cv::NORM_L2) / cv::norm(groundtruth, cv::NORM_L2);
+	};
+
+	auto onTrainCallback = [&](const cv::Mat& currentPredictions) {
+		appLogger.info(std::to_string(normalisedLeastSquaresResidual(currentPredictions, x_tr)));
+	};
+
+	sdo.train(x_tr, y_tr, x0, &h, onTrainCallback);
+	appLogger.info("Finished training.");
+	/*
 	// Test the trained model:
-	// Test data with finer resolution:
-	//float startIntervalTest = -1.0f; float stepSizeTest = 0.05f; int numValuesTest = 41; Mat y_ts(numValuesTest, 1, CV_32FC1); // sin: [-1:0.05:1]
-	//float startIntervalTest = -27.0f; float stepSizeTest = 0.5f; int numValuesTest = 109; Mat y_ts(numValuesTest, 1, CV_32FC1); // cube: [-27:0.5:27]
-	//float startIntervalTest = -0.99f; float stepSizeTest = 0.03f; int numValuesTest = 67; Mat y_ts(numValuesTest, 1, CV_32FC1); // erf: [-0.99:0.03:0.99]
 	float startIntervalTest = 1.0f; float stepSizeTest = 0.5f; int numValuesTest = 55; Mat y_ts(numValuesTest, 1, CV_32FC1); // exp: [1:0.5:28]
 	{
 		vector<float> values(numValuesTest);
@@ -188,8 +321,13 @@ int main(int argc, char *argv[])
 		x_ts_gt = Mat(values, true);
 	}
 	Mat x0_ts = 0.5f * Mat::ones(numValuesTest, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
-	sdo.test(y_ts, x0_ts, h);
 	
+	auto onTestCallback = [&](const cv::Mat& currentPredictions) {
+		appLogger.info(std::to_string(normalisedLeastSquaresResidual(currentPredictions, x_ts_gt)));
+	};
+	cv::Mat res = sdo.test(y_ts, x0_ts, h, onTestCallback);
+	appLogger.info(std::to_string(normalisedLeastSquaresResidual(res, x_ts_gt)));
+	*/
 	appLogger.info("Finished. Exiting...");
 
 	return 0;

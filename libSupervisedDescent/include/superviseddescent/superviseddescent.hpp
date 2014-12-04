@@ -232,7 +232,11 @@ inline void noEval(const cv::Mat& currentPredictions) // do nothing
 // template blabla.. requires Evaluator with function eval(Mat, blabla)
 // or... Learner? SDMLearner? Just SDM? SupervDescOpt? SDMTraining?
 // This at the moment handles the case of _known_ y (target) values.
-template<class RegressorType>
+// Requirements on RegressorType: See Regressor abstract class
+// Requirements on UpdateStrategy: A function Mat(...Mat.. Regressor...);
+//  for one sample. Also possibly (if a performance problem) an overload
+//  for several samples at once.
+template<class RegressorType, class UpdateStrategy=void>
 class SupervisedDescentOptimiser
 {
 public:
@@ -245,6 +249,7 @@ public:
 	// Yea, some optimisers need access to the image data to optimise. Think about where this belongs.
 	// The input to this will be something different (e.g. only images? a templated class?)
 	// OnTrainingEpochCallback will get called
+	// The callback functions signature should look like:
 	//
 	// $\mathbf{H}$ a function, should return a cv::Mat row-vector (1 row). Should process 1 training data. Optimally, whatever it is - float or a whole cv::Mat. But we can also simulate the 1D-case with a 1x1 cv::Mat for now.
 	template<class H, class OnTrainingEpochCallback>
@@ -292,6 +297,7 @@ public:
 		return train(x, y, x0, h, noEval);
 	};
 
+	// Returns the final prediction
 	template<class H, class OnRegressorIterationCallback>
 	cv::Mat test(cv::Mat y, cv::Mat x0, H h, OnRegressorIterationCallback onRegressorIterationCallback)
 	{
@@ -344,6 +350,8 @@ private:
 	// However, it wouldn't solve the problem of with/without y at the learning stage.
 
 	std::vector<RegressorType> regressors;
+
+	//UpdateStrategy updateStrategy;
 };
 
 

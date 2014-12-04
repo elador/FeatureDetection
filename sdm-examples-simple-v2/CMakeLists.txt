@@ -39,9 +39,12 @@ add_executable(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${Logging_SOURCE_DIR}/include)
+include_directories(${MorphableModel_SOURCE_DIR}/include)
+include_directories(${Fitting_SOURCE_DIR}/include)
+include_directories(${Render_SOURCE_DIR}/include)
 include_directories(${SupervisedDescent_SOURCE_DIR}/include)
 
 # Make the app depend on the libraries
-target_link_libraries(${SUBPROJECT_NAME} SupervisedDescent Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(${SUBPROJECT_NAME} Fitting Render MorphableModel SupervisedDescent Logging ${Boost_LIBRARIES} ${OpenCV_LIBS})
 
 install(TARGETS ${SUBPROJECT_NAME} DESTINATION bin)

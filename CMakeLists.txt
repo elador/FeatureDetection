@@ -60,8 +60,8 @@ add_subdirectory(libDetection)			# Sliding-window detection, Skin detection (Not
 add_subdirectory(libRender)				# Mesh and Vertex classes. (And, currently not working so great: A software renderer to render vertices and 3D-meshes)
 add_subdirectory(libMorphableModel)		# PCA- and 3D Morphable Face Model classes
 add_subdirectory(libFitting)			# Camera (Pose) estimation and shape-fitting
-#add_subdirectory(libSupervisedDescent)	# A non-parametric model for landmark detection. Uses the supervised descent method.
-#add_subdirectory(libFaceRecognition)	# Utility library for face recognition experiments, to work with databases, face-record, etc.
+add_subdirectory(libSupervisedDescent)	# A non-parametric model for landmark detection. Uses the supervised descent method.
+add_subdirectory(libFaceRecognition)	# Utility library for face recognition experiments, to work with databases, face-record, etc.
 
 # Tracking apps:
 #add_subdirectory(benchmarkApp)			# Benchmark app for feature extractors and classifiers in a tracking-like online learning scenario.
@@ -76,22 +76,22 @@ add_subdirectory(libFitting)			# Camera (Pose) estimation and shape-fitting
 #add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe). (Note: Check if it still works)
 
 # Face- and landmark detection apps:
-#add_subdirectory(detect-and-correct-faces) # Detect faces and validate them using given ground-truth.
-#add_subdirectory(detect-landmarks)		# Run the SDM landmark detection on one or several images, the input is either images (V&J will be run) or images & faceboxes.
-#add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
-#add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
-#add_subdirectory(sdm-examples-simple-v2)	# The simple examples with functions like sin(x) and x^2 from the SDM paper
-#add_subdirectory(sdm-train-v2)			# Playground for supervised descent reimplementation (v2)
+add_subdirectory(detect-and-correct-faces) # Detect faces and validate them using given ground-truth.
+add_subdirectory(detect-landmarks)		# Run the SDM landmark detection on one or several images, the input is either images (V&J will be run) or images & faceboxes.
+add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
+add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
+add_subdirectory(sdm-examples-simple-v2)	# The simple examples with functions like sin(x) and x^2 from the SDM paper
+add_subdirectory(sdm-train-v2)			# Playground for supervised descent reimplementation (v2)
 
 # 3DMM fitting:
-#add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
+add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
 #add_subdirectory(fittingRenderer)	# Todo rename to 'render-fitting'; App to render fitting results
 #add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
 #add_subdirectory(compareIsomaps)	# Compare isomaps (extracted textures)
 #add_subdirectory(convert-scm-to-hdf5) # Convert a .scm model to a .h5 model
 
-#add_subdirectory(generate-sample)		# Generate samples (coefficients, renderings and landmarks) of the 3DMM
-#add_subdirectory(generate-warping-data)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
+add_subdirectory(generate-sample)		# Generate samples (coefficients, renderings and landmarks) of the 3DMM
+add_subdirectory(generate-warping-data)	# An app specifically created for the task of generating synthetic landmark data from random faces from the 3DMM.
 #add_subdirectory(generate-warping-data-playground)
 #add_subdirectory(model-renderer-gui)		# A GUI using OpenCV for rendering the 3DMM and changing PCA coefficients. Uses the newest renderer and camera.
 

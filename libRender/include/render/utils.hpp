@@ -111,6 +111,23 @@ double implicitLine(float x, float y, const cv::Vec4f& v1, const cv::Vec4f& v2);
  */
 bool areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Vertex& v2);
 
+float radiansToDegrees(float radians); // change to constexpr in VS2014
+
+float degreesToRadians(float degrees); // change to constexpr in VS2014
+
+// fovy to lrtb: http://nehe.gamedev.net/article/replacement_for_gluperspective/21002/
+
+float cot(float x);
+
+// fovy is the field of view in degrees, along the y axis
+float fovyToFocalLength(float fovy, float height);
+
+// height: window height in Rafael's case. But I think more correct is |top-bottom| in NDC/clip coords, i.e. 2?
+// (1500.0f, screenHeight) gives the same result as (1500.0f/screenHeight, 1)
+float focalLengthToFovy(float focalLength, float height);
+
+cv::Vec3f eulerAnglesFromRotationMatrix(cv::Mat R);
+
 	} /* namespace utils */
 } /* namespace render */
 

@@ -91,5 +91,45 @@ bool areVerticesCCWInScreenSpace(const Vertex& v0, const Vertex& v1, const Verte
 	return (dx01*dy02 - dy01*dx02 < 0.0f); // Original: (dx01*dy02 - dy01*dx02 > 0.0f). But: OpenCV has origin top-left, y goes down
 }
 
+float radiansToDegrees(float radians)
+{
+	return radians * static_cast<float>(180 / CV_PI);
+}
+
+float degreesToRadians(float degrees)
+{
+	return degrees * static_cast<float>(CV_PI / 180);
+}
+
+float cot(float x)
+{
+	return std::tan((CV_PI / 2.0f) - x);
+}
+
+float fovyToFocalLength(float fovy, float height)
+{
+	// The actual equation is: $ cot(fov/2) = f/(h/2) $
+	// equivalent to: $ f = (h/2) * cot(fov/2) $
+	// Now I assume that in OpenGL, h = 2 (-1 to 1), so this simplifies to
+	// $ f = cot(fov/2) $, which corresponds with http://wiki.delphigl.com/index.php/gluPerspective.
+	// It also coincides with Rafaels Formula.
+
+	return (cot(degreesToRadians(fovy) / 2) * (height / 2.0f));
+}
+
+float focalLengthToFovy(float focalLength, float height)
+{
+	return radiansToDegrees(2.0f * std::atan2(height, 2.0f * focalLength)); // both are always positive, so atan() should do it as well?
+}
+
+cv::Vec3f eulerAnglesFromRotationMatrix(cv::Mat R)
+{
+	cv::Vec3f eulerAngles;
+	eulerAngles[0] = std::atan2(R.at<float>(2, 1), R.at<float>(2, 2)); // r_32, r_33. Theta_x.
+	eulerAngles[1] = std::atan2(-R.at<float>(2, 0), std::sqrt(std::pow(R.at<float>(2, 1), 2) + std::pow(R.at<float>(2, 2), 2))); // r_31, sqrt(r_32^2 + r_33^2). Theta_y.
+	eulerAngles[2] = std::atan2(R.at<float>(1, 0), R.at<float>(0, 0)); // r_21, r_11. Theta_z.
+	return eulerAngles;
+}
+
 	} /* namespace utils */
 } /* namespace render */
