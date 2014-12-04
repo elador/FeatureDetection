@@ -255,7 +255,7 @@ H5::DataSet writeMatrixInt(const H5::CommonFG& fg, const string& name, const Mat
 		throw std::runtime_error(errorMsg);
 	}
 
-	hsize_t dims[2] = { matrix.rows, matrix.cols };
+	hsize_t dims[2] = { static_cast<hsize_t>(matrix.rows), static_cast<hsize_t>(matrix.cols) };
 	H5::DataSet ds = fg.createDataSet(name, H5::PredType::NATIVE_INT32, H5::DataSpace(2, dims));
 	ds.write(matrix.data, H5::PredType::NATIVE_INT32);
 	return ds;
@@ -277,7 +277,7 @@ H5::DataSet writeMatrixFloat(const H5::CommonFG& fg, const string& name, const M
 		throw std::runtime_error(errorMsg);
 	}
 
-	hsize_t dims[2] = { matrix.rows, matrix.cols };
+	hsize_t dims[2] = { static_cast<hsize_t>(matrix.rows), static_cast<hsize_t>(matrix.cols) };
 	H5::DataSet ds = fg.createDataSet(name, H5::PredType::NATIVE_FLOAT, H5::DataSpace(2, dims));
 	ds.write(matrix.data, H5::PredType::NATIVE_FLOAT);
 	return ds;
@@ -299,7 +299,7 @@ H5::DataSet writeMatrixDouble(const H5::CommonFG& fg, const string& name, const 
 		throw std::runtime_error(errorMsg);
 	}
 
-	hsize_t dims[2] = { matrix.rows, matrix.cols };
+	hsize_t dims[2] = { static_cast<hsize_t>(matrix.rows), static_cast<hsize_t>(matrix.cols) };
 	H5::DataSet ds = fg.createDataSet(name, H5::PredType::NATIVE_DOUBLE, H5::DataSpace(2, dims));
 	ds.write(matrix.data, H5::PredType::NATIVE_DOUBLE);
 	return ds;
@@ -321,7 +321,7 @@ H5::DataSet writeVectorInt(const H5::CommonFG& fg, const string& name, const Mat
 		string errorMsg("Given vector is not continuous in memory.");
 		throw std::runtime_error(errorMsg);
 	}
-	hsize_t dims[1] = { vector.rows };
+	hsize_t dims[1] = { static_cast<hsize_t>(vector.rows) };
 	H5::DataSet ds = fg.createDataSet(name, H5::PredType::NATIVE_INT32, H5::DataSpace(1, dims));
 	ds.write(vector.data, H5::PredType::NATIVE_INT32);
 	return ds;
@@ -343,7 +343,7 @@ H5::DataSet writeVectorFloat(const H5::CommonFG& fg, const string& name, const M
 		string errorMsg("Given vector is not continuous in memory.");
 		throw std::runtime_error(errorMsg);
 	}
-	hsize_t dims[1] = { vector.rows };
+	hsize_t dims[1] = { static_cast<hsize_t>(vector.rows) };
 	H5::DataSet ds = fg.createDataSet(name, H5::PredType::NATIVE_FLOAT, H5::DataSpace(1, dims));
 	ds.write(vector.data, H5::PredType::NATIVE_FLOAT);
 	return ds;
@@ -365,7 +365,7 @@ H5::DataSet writeVectorDouble(const H5::CommonFG& fg, const string& name, const 
 		string errorMsg("Given vector is not continuous in memory.");
 		throw std::runtime_error(errorMsg);
 	}
-	hsize_t dims[1] = { vector.rows };
+	hsize_t dims[1] = { static_cast<hsize_t>(vector.rows) };
 	H5::DataSet ds = fg.createDataSet(name, H5::PredType::NATIVE_DOUBLE, H5::DataSpace(1, dims));
 	ds.write(vector.data, H5::PredType::NATIVE_DOUBLE);
 	return ds;
