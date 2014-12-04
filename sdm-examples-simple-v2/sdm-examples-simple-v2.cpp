@@ -264,13 +264,6 @@ int main(int argc, char *argv[])
 	// Our data:
 	// Mat(numTr, numLms*2); (the 2D proj)
 	// vector<ModelFitting> bzw Mat(numTr, numParamsInUnrolledVec).
-
-	// $\mathbf{h}$ generic, should return a cv::Mat row-vector (1 row). Should process 1 training data. Optimally, whatever it is - float or a whole cv::Mat. But we can also simulate the 1D-case with a 1x1 cv::Mat for now.
-	// Will be our projection function?
-	//auto h = [](Mat value) { return std::exp(value.at<float>(0)); };
-	//auto h_inv = [](float value) { return std::log(value); }; //N/A?
-
-
 	Mat y_tr(fittings.size(), vertexIds.size() * 2, CV_32FC1);
 	{
 		for (int r = 0; r < y_tr.rows; ++r) {
@@ -286,7 +279,9 @@ int main(int argc, char *argv[])
 
 	Mat x0 = Mat::zeros(fittings.size(), 5, CV_32FC1); // fixed initialization, all params = 0
 
-	h_proj h(Mat());
+	Mat test;
+	h_proj h(test);
+	//auto h_lambda = [&test](Mat parameters) { return parameters * test; };
 
 	vector<v2::LinearRegressor> regressors;
 	regressors.emplace_back(v2::LinearRegressor());
@@ -304,7 +299,8 @@ int main(int argc, char *argv[])
 		appLogger.info(std::to_string(normalisedLeastSquaresResidual(currentPredictions, x_tr)));
 	};
 
-	sdo.train(x_tr, y_tr, x0, &h, onTrainCallback);
+	sdo.train(x_tr, y_tr, x0, h, onTrainCallback);
+	sdo.train(x_tr, y_tr, x0, h_lambda, onTrainCallback);
 	appLogger.info("Finished training.");
 	/*
 	// Test the trained model:

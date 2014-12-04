@@ -261,7 +261,7 @@ public:
 		Mat currentX = x0;
 		for (auto&& regressor : regressors) {
 			// 1) Extract features where necessary
-			Mat features;
+			Mat features; // We should rename this. In case of pose estimation, these are not features, but the projected 2D landmark coordinates (using the current parameter estimate (x)).
 			for (int i = 0; i < currentX.rows; ++i) {
 				features.push_back(h(currentX.row(i)));
 			}
@@ -335,7 +335,7 @@ public:
 		Mat currentX = x0;
 		for (auto&& regressor : regressors) {
 			// calculate x_k = currentX - R * (h(currentX) - y):
-			cv::Mat myInside = h(currentX) - y;
+			cv::Mat myInside = h(currentX) - template_y;
 			Mat x_k = currentX - regressor.predict(myInside);
 			currentX = x_k;
 		}
