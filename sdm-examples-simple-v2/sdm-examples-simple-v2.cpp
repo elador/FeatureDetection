@@ -43,6 +43,7 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/property_tree/ptree.hpp"
 #include "boost/property_tree/info_parser.hpp"
+#include "boost/archive/text_oarchive.hpp"
 
 #include "render/matrixutils.hpp"
 #include "render/SoftwareRenderer.hpp"
@@ -372,9 +373,12 @@ int main(int argc, char *argv[])
 	appLogger.info("Result of last regressor: " + std::to_string(normalisedLeastSquaresResidual(res, x_ts_gt)));
 	
 	// Save the trained model to the filesystem:
+	// Todo: Encapsulate in a class PoseRegressor, with all the neccesary stuff (e.g. which landmarks etc.)
+	std::ofstream learnedModelFile("pose_regressor_11lms.txt");
+	boost::archive::text_oarchive oa(learnedModelFile);
+	oa << sdo;
 
-
-	appLogger.info("Finished. Exiting...");
+	appLogger.info("Saved learned regressor model. Exiting...");
 
 	return 0;
 }

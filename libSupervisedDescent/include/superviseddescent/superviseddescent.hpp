@@ -10,12 +10,13 @@
 #ifndef SUPERVISEDDESCENT_HPP_
 #define SUPERVISEDDESCENT_HPP_
 
+#include "matserialisation.hpp"
 #include "logging/LoggerFactory.hpp"
 
 #include "opencv2/core/core.hpp"
 #include "Eigen/Dense"
 
-#include "boost/lexical_cast.hpp"
+#include "boost/serialization/vector.hpp"
 
 #include <memory>
 #include <chrono>
@@ -23,7 +24,6 @@
 using logging::Logger; // Todo: Move to cpp as soon as finished
 using logging::LoggerFactory;
 using cv::Mat;
-using boost::lexical_cast;
 using std::string;
 
 namespace superviseddescent {
@@ -97,7 +97,7 @@ public:
 		default:
 			break;
 		}
-		logger.debug("Lambda is: " + lexical_cast<string>(lambda));
+		logger.debug("Lambda is: " + std::to_string(lambda));
 
 		Mat regulariser = Mat::eye(data.rows, data.cols, CV_32FC1) * lambda; // always symmetric
 
@@ -106,6 +106,16 @@ public:
 		}
 		return regulariser;
 	};
+
+	friend class boost::serialization::access;
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version)
+	{
+		ar & regularisationType;
+		ar & lambda;
+		ar & regulariseLastRow;
+	}
+
 private:
 	RegularisationType regularisationType;
 	float lambda; // param for RegularisationType. Can be lambda directly or a factor with which the lambda from MatrixNorm will be multiplied with.
@@ -149,7 +159,7 @@ public:
 		Eigen::FullPivLU<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> luOfAtAReg(AtAReg_Eigen);
 		// we could also print the smallest eigenvalue here, but that would take time to calculate (SelfAdjointEigenSolver, see above)
 		float rankOfAtAReg = luOfAtAReg.rank(); // Todo: Use auto?
-		logger.trace("Rank of the regularized AtA: " + lexical_cast<string>(rankOfAtAReg));
+		logger.trace("Rank of the regularized AtA: " + std::to_string(rankOfAtAReg));
 		if (luOfAtAReg.isInvertible()) {
 			logger.debug("The regularized AtA is invertible.");
 		}
@@ -157,7 +167,7 @@ public:
 			// Eigen will most likely return garbage here (according to their docu anyway). We have a few options:
 			// - Increase lambda
 			// - Calculate the pseudo-inverse. See: http://eigen.tuxfamily.org/index.php?title=FAQ#Is_there_a_method_to_compute_the_.28Moore-Penrose.29_pseudo_inverse_.3F
-			string msg("The regularised AtA is not invertible. We continued learning, but Eigen calculates garbage in this case according to their documentation. (The rank is " + lexical_cast<string>(rankOfAtAReg)+", full rank would be " + lexical_cast<string>(AtAReg_Eigen.rows()) + "). Increase lambda (or use the pseudo-inverse, which is not implemented yet).");
+			string msg("The regularised AtA is not invertible. We continued learning, but Eigen calculates garbage in this case according to their documentation. (The rank is " + std::to_string(rankOfAtAReg) + ", full rank would be " + std::to_string(AtAReg_Eigen.rows()) + "). Increase lambda (or use the pseudo-inverse, which is not implemented yet).");
 			logger.error(msg);
 		}
 		Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> AtARegInv_EigenFullLU = luOfAtAReg.inverse();
@@ -165,7 +175,7 @@ public:
 		Mat AtARegInvFullLU(AtARegInv_EigenFullLU.rows(), AtARegInv_EigenFullLU.cols(), CV_32FC1, AtARegInv_EigenFullLU.data()); // create an OpenCV Mat header for the Eigen data
 		std::chrono::time_point<std::chrono::system_clock> inverseTimeEnd = std::chrono::system_clock::now();
 		elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(inverseTimeEnd - inverseTimeStart).count();
-		logger.debug("Inverting the regularized AtA took " + lexical_cast<string>(elapsed_mseconds) + "ms.");
+		logger.debug("Inverting the regularized AtA took " + std::to_string(elapsed_mseconds) + "ms.");
 		//Mat AtARegInvOCV = AtAReg.inv(); // slow OpenCV inv() for comparison
 
 		// Todo(1): Moving AtA by lambda should move the eigenvalues by lambda, however, it does not. It did however on an early test (with rand maybe?).
@@ -209,6 +219,14 @@ public:
 		float prediction = value * x.at<float>(0);
 		return prediction;
 	};
+
+	friend class boost::serialization::access;
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version)
+	{
+		ar & x;
+		ar & regulariser;
+	}
 	
 	cv::Mat x; // move back to private once finished
 	// could rename to 'R' (as used in the SDM)
@@ -341,6 +359,13 @@ public:
 		}
 		return currentX;
 	};
+
+	friend class boost::serialization::access;
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version)
+	{
+		ar & regressors;
+	}
 
 private:
 	// Note/Todo:

@@ -28,6 +28,7 @@ message(STATUS "Eigen3 version: ${EIGEN3_VERSION}")
 set(HEADERS
 	include/superviseddescent/SdmLandmarkModel.hpp
 	include/superviseddescent/superviseddescent.hpp
+	include/superviseddescent/matserialisation.hpp
 	include/superviseddescent/LandmarkBasedSupervisedDescentTraining.hpp
 	include/superviseddescent/DescriptorExtractor.hpp
 	include/superviseddescent/hog.h
