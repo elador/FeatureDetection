@@ -16,6 +16,10 @@
 #include "opencv2/core/core.hpp"
 #include "Eigen/Dense"
 
+#ifdef WIN32
+	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
+	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
+#endif
 #include "boost/serialization/vector.hpp"
 
 #include <memory>
@@ -271,7 +275,7 @@ public:
 	{
 		// data = x = the parameters we want to learn, ground truth labels for them = y. x0 = c = initialisation
 		// Simple experiments with sin etc.
-		auto logger = Loggers->getLogger("superviseddescent");
+		auto logger = logging::Loggers->getLogger("superviseddescent");
 		Mat currentX = x0;
 		for (auto&& regressor : regressors) {
 			// 1) Extract features where necessary

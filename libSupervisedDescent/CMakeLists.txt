@@ -11,7 +11,7 @@ find_package(OpenCV 2.4.3 REQUIRED core imgproc features2d nonfree)
 message(STATUS "OpenCV include dir found at ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
-find_package(Boost 1.48.0 COMPONENTS program_options system filesystem REQUIRED)
+find_package(Boost 1.48.0 COMPONENTS system filesystem serialization REQUIRED)
 if(Boost_FOUND)
   message(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
 else(Boost_FOUND)
@@ -69,15 +69,15 @@ include_directories(${gtest_SOURCE_DIR}/include)
 
 set(TEST_LINREG1D test_LinearRegressor1D)
 add_executable(${TEST_LINREG1D} test/test_LinearRegressor1D.cpp)
-target_link_libraries(${TEST_LINREG1D} ${SUBPROJECT_NAME} gtest_main gtest)
+target_link_libraries(${TEST_LINREG1D} ${SUBPROJECT_NAME} ${Boost_LIBRARIES} gtest_main gtest)
 add_test(${TEST_LINREG1D} ${TEST_LINREG1D}) # testname exename
 
 set(TEST_LINREGND test_LinearRegressorND)
 add_executable(${TEST_LINREGND} test/test_LinearRegressorND.cpp)
-target_link_libraries(${TEST_LINREGND} ${SUBPROJECT_NAME} gtest_main gtest)
+target_link_libraries(${TEST_LINREGND} ${SUBPROJECT_NAME} ${Boost_LIBRARIES} gtest_main gtest)
 add_test(${TEST_LINREGND} ${TEST_LINREGND})
 
 set(TEST_SDO test_SupervisedDescentOptimiser)
 add_executable(${TEST_SDO} test/test_SupervisedDescentOptimiser.cpp)
-target_link_libraries(${TEST_SDO} ${SUBPROJECT_NAME} gtest_main gtest)
+target_link_libraries(${TEST_SDO} ${SUBPROJECT_NAME} ${Boost_LIBRARIES} gtest_main gtest)
 add_test(${TEST_SDO} ${TEST_SDO})
