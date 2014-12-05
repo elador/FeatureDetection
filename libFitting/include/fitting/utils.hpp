@@ -53,6 +53,10 @@ public:
 	// Camera parameters:
 	float focalLength;
 
+	// We need this too for the window transform / fov calculation?
+	// Maybe separate stuff into "ModelInstance" or "ModelFitting", and "ImageFittingResult" (bad name...) or something?
+	// int imageWidth, imageHeight
+
 	// AngleConvention (not needed when stored as quaternion?)
 	// ProjectionType?
 	// Texture information? Model information?

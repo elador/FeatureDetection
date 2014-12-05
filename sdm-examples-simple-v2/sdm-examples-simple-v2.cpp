@@ -67,9 +67,26 @@ using logging::Logger;
 using logging::LoggerFactory;
 using logging::LogLevel;
 
-cv::Mat unrollParameters(fitting::ModelFitting fittingResult)
+cv::Mat packParameters(fitting::ModelFitting modelFitting)
 {
-	return Mat();
+	Mat params(1, 5, CV_32FC1);
+	params.at<float>(0) = modelFitting.rotationX;
+	params.at<float>(1) = modelFitting.rotationY;
+	params.at<float>(2) = modelFitting.rotationZ;
+	params.at<float>(3) = modelFitting.tx;
+	params.at<float>(4) = modelFitting.ty;
+	return params;
+}
+
+fitting::ModelFitting unpackParameters(cv::Mat parameters)
+{
+	fitting::ModelFitting modelFitting;
+	modelFitting.rotationX = parameters.at<float>(0);
+	modelFitting.rotationY = parameters.at<float>(1);
+	modelFitting.rotationZ = parameters.at<float>(2);
+	modelFitting.tx = parameters.at<float>(3);
+	modelFitting.ty = parameters.at<float>(4);
+	return modelFitting;
 }
 
 template<typename ForwardIterator, typename T>
@@ -100,7 +117,26 @@ public:
 		//for (auto&& id : vertexIds) { // for data.len/2?
 		//	Vec3f vtx2d = render::utils::projectVertex(meanMesh.vertex[398].position, projectionMatrix * modelMatrix, screenWidth, screenHeight);
 		//}
-		return Mat();
+		fitting::ModelFitting unrolledParameters = unpackParameters(parameters);
+		Mat rotPitchX = render::matrixutils::createRotationMatrixX(render::utils::degreesToRadians(unrolledParameters.rotationX));
+		Mat rotYawY = render::matrixutils::createRotationMatrixY(render::utils::degreesToRadians(unrolledParameters.rotationY));
+		Mat rotRollZ = render::matrixutils::createRotationMatrixZ(render::utils::degreesToRadians(unrolledParameters.rotationZ));
+		Mat translation = render::matrixutils::createTranslationMatrix(unrolledParameters.tx, unrolledParameters.ty, -1900.0f);
+		Mat modelMatrix = translation * rotYawY * rotPitchX * rotRollZ;
+		const float aspect = static_cast<float>(640) / static_cast<float>(480);
+		float fovY = render::utils::focalLengthToFovy(1500.0f, 480);
+		Mat projectionMatrix = render::matrixutils::createPerspectiveProjectionMatrix(fovY, aspect, 0.1f, 5000.0f);
+
+		int numLandmarks = model.cols;
+		Mat new2dProjections(1, numLandmarks * 2, CV_32FC1);
+		for (int lm = 0; lm < numLandmarks; ++lm) {
+			Vec3f vtx2d = render::utils::projectVertex(cv::Vec4f(model.col(lm)), projectionMatrix * modelMatrix, 640, 480);
+			new2dProjections.at<float>(lm) = vtx2d[0]; // the x coord
+			new2dProjections.at<float>(lm + numLandmarks) = vtx2d[1]; // y coord
+		}
+
+		// Todo/Note: Write a fuction in libFitting: render(ModelFitting) ?
+		return new2dProjections;
 	};
 
 	cv::Mat model;
@@ -197,17 +233,17 @@ int main(int argc, char *argv[])
 
 	const auto pitchSeed = std::random_device()();
 	std::mt19937 enginePitch; enginePitch.seed(pitchSeed);
-	std::uniform_real_distribution<> distrRandPitch(-20, 20);
+	std::uniform_real_distribution<> distrRandPitch(-15, 15);
 	auto randRealPitch = std::bind(distrRandPitch, enginePitch);
 
 	const auto rollSeed = std::random_device()();
 	std::mt19937 engineRoll; engineRoll.seed(rollSeed);
-	std::uniform_real_distribution<> distrRandRoll(-20, 20);
+	std::uniform_real_distribution<> distrRandRoll(-15, 15);
 	auto randRealRoll = std::bind(distrRandRoll, engineRoll);
 
 	const auto txSeed = std::random_device()();
 	std::mt19937 engineTx; engineTx.seed(txSeed);
-	std::uniform_real_distribution<> distrRandTx(-20, 20); // millimetres, in model space
+	std::uniform_real_distribution<> distrRandTx(-20, 20); // millimetres, in model space. try ~20
 	auto randRealTx = std::bind(distrRandTx, engineTx);
 
 	const auto tySeed = std::random_device()();
@@ -220,7 +256,7 @@ int main(int argc, char *argv[])
 	vector<ModelFitting> fittings;
 	vector<vector<cv::Vec2f>> landmarks;
 
-	int numSamples = 5;
+	int numSamples = 500;
 	for (int i = 0; i < numSamples; ++i) {
 		// Generate a random pose:
 		ModelFitting fitting;
@@ -264,31 +300,45 @@ int main(int argc, char *argv[])
 	// Our data:
 	// Mat(numTr, numLms*2); (the 2D proj)
 	// vector<ModelFitting> bzw Mat(numTr, numParamsInUnrolledVec).
-	Mat y_tr(fittings.size(), vertexIds.size() * 2, CV_32FC1);
+	
+	// The landmark projections:
+	auto numLandmarks = vertexIds.size();
+	Mat y_tr(fittings.size(), numLandmarks * 2, CV_32FC1);
 	{
 		for (int r = 0; r < y_tr.rows; ++r) {
-
+			for (int lm = 0; lm < vertexIds.size(); ++lm) {
+				y_tr.at<float>(r, lm) = landmarks[r][lm][0]; // the x coord
+				y_tr.at<float>(r, lm + numLandmarks) = landmarks[r][lm][1]; // y coord
+			}
 		}
 	}
+
+	// The parameters:
 	Mat x_tr(fittings.size(), 5, CV_32FC1); // 5 params atm: rx, ry, rz, tx, ty
 	{
-		for (int r = 0; r < y_tr.rows; ++r) {
-
+		for (int r = 0; r < x_tr.rows; ++r) {
+			Mat parameterRow = packParameters(fittings[r]);
+			parameterRow.copyTo(x_tr.row(r));
 		}
 	}
 
 	Mat x0 = Mat::zeros(fittings.size(), 5, CV_32FC1); // fixed initialization, all params = 0
 
-	Mat test;
-	h_proj h(test);
-	//auto h_lambda = [&test](Mat parameters) { return parameters * test; };
+	// The reduced 3D model only consisting of the vertices we're using to learn the pose:
+	Mat reducedModel(4, vertexIds.size(), CV_32FC1); // each vertex is a Vec4f (homogenous coords)
+	for (int i = 0; i < vertexIds.size(); ++i) {
+		Mat vertexCoords = Mat(meanMesh.vertex[vertexIds[i]].position);
+		vertexCoords.copyTo(reducedModel.col(i));
+	}
+	h_proj h(reducedModel);
 
+	v2::Regulariser reg(v2::Regulariser::RegularisationType::MatrixNorm, 0.1f);
 	vector<v2::LinearRegressor> regressors;
-	regressors.emplace_back(v2::LinearRegressor());
-	regressors.emplace_back(v2::LinearRegressor());
-	regressors.emplace_back(v2::LinearRegressor());
-	regressors.emplace_back(v2::LinearRegressor());
-	regressors.emplace_back(v2::LinearRegressor());
+	regressors.emplace_back(v2::LinearRegressor(reg));
+	regressors.emplace_back(v2::LinearRegressor(reg));
+	regressors.emplace_back(v2::LinearRegressor(reg));
+	regressors.emplace_back(v2::LinearRegressor(reg));
+	regressors.emplace_back(v2::LinearRegressor(reg));
 	v2::SupervisedDescentOptimiser<v2::LinearRegressor> sdo(regressors);
 	
 	auto normalisedLeastSquaresResidual = [](const Mat& prediction, const Mat& groundtruth) {
@@ -300,7 +350,6 @@ int main(int argc, char *argv[])
 	};
 
 	sdo.train(x_tr, y_tr, x0, h, onTrainCallback);
-	sdo.train(x_tr, y_tr, x0, h_lambda, onTrainCallback);
 	appLogger.info("Finished training.");
 	/*
 	// Test the trained model:

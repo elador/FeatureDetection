@@ -255,7 +255,7 @@ H5::DataSet writeMatrixInt(const H5::CommonFG& fg, const string& name, const Mat
 		throw std::runtime_error(errorMsg);
 	}
 
-	hsize_t dims[2] = { static_cast<hsize_t>(matrix.rows), static_cast<hsize_t>(matrix.cols) };
+	hsize_t dims[2] = { static_cast<hsize_t>(matrix.rows), static_cast<hsize_t>(matrix.cols) }; // to suppress narrowing conversion errors on clang. However, we probably better check the size?
 	H5::DataSet ds = fg.createDataSet(name, H5::PredType::NATIVE_INT32, H5::DataSpace(2, dims));
 	ds.write(matrix.data, H5::PredType::NATIVE_INT32);
 	return ds;
