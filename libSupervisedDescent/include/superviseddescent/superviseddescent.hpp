@@ -10,20 +10,15 @@
 #define SUPERVISEDDESCENT_HPP_
 
 #include "regressors.hpp"
-#include "matserialisation.hpp"
-#include "logging/LoggerFactory.hpp"
+//#include "matserialisation.hpp"
 
 #include "opencv2/core/core.hpp"
-#include "Eigen/Dense"
 
 #ifdef WIN32
 	#define BOOST_ALL_DYN_LINK	// Link against the dynamic boost lib. Seems to be necessary because we use /MD, i.e. link to the dynamic CRT.
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
 #include "boost/serialization/vector.hpp"
-
-#include <memory>
-#include <chrono>
 
 namespace superviseddescent {
 	namespace v2 {

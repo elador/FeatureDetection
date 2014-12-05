@@ -75,7 +75,7 @@
 #include "render/matrixutils.hpp"
 #include "render/utils.hpp"
 
-#include "superviseddescent/superviseddescent.hpp"
+#include "superviseddescent/poseestimation.hpp"
 #include "fitting/utils.hpp"
 
 #include "imageio/ImageSource.hpp"
