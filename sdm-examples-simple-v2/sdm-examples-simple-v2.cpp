@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
 
 	const auto yawSeed = std::random_device()();
 	std::mt19937 engineYaw; engineYaw.seed(yawSeed);
-	std::uniform_real_distribution<> distrRandYaw(-35, 35);
+	std::uniform_real_distribution<> distrRandYaw(-45, 45);
 	auto randRealYaw = std::bind(distrRandYaw, engineYaw);
 
 	const auto pitchSeed = std::random_device()();
@@ -256,7 +256,8 @@ int main(int argc, char *argv[])
 	vector<ModelFitting> fittings;
 	vector<vector<cv::Vec2f>> landmarks;
 
-	int numSamples = 500;
+	int numSamples = 10;
+	int numTr = 7;
 	for (int i = 0; i < numSamples; ++i) {
 		// Generate a random pose:
 		ModelFitting fitting;
@@ -332,6 +333,14 @@ int main(int argc, char *argv[])
 	}
 	h_proj h(reducedModel);
 
+	// Split the training data into training and test:
+	Mat y_ts = y_tr.rowRange(numTr, y_tr.rows);
+	y_tr = y_tr.rowRange(0, numTr);
+	Mat x_ts_gt = x_tr.rowRange(numTr, x_tr.rows);
+	x_tr = x_tr.rowRange(0, numTr);
+	Mat x0_ts = x0.rowRange(numTr, x0.rows);
+	x0 = x0.rowRange(0, numTr);
+
 	v2::Regulariser reg(v2::Regulariser::RegularisationType::MatrixNorm, 0.1f);
 	vector<v2::LinearRegressor> regressors;
 	regressors.emplace_back(v2::LinearRegressor(reg));
@@ -351,28 +360,20 @@ int main(int argc, char *argv[])
 
 	sdo.train(x_tr, y_tr, x0, h, onTrainCallback);
 	appLogger.info("Finished training.");
-	/*
-	// Test the trained model:
-	float startIntervalTest = 1.0f; float stepSizeTest = 0.5f; int numValuesTest = 55; Mat y_ts(numValuesTest, 1, CV_32FC1); // exp: [1:0.5:28]
-	{
-		vector<float> values(numValuesTest);
-		strided_iota(std::begin(values), std::next(std::begin(values), numValuesTest), startIntervalTest, stepSizeTest);
-		y_ts = Mat(values, true);
-	}
-	Mat x_ts_gt(numValuesTest, 1, CV_32FC1); // Will be the inverse of y_ts
-	{
-		vector<float> values(numValuesTest);
-		std::transform(y_ts.begin<float>(), y_ts.end<float>(), begin(values), h_inv);
-		x_ts_gt = Mat(values, true);
-	}
-	Mat x0_ts = 0.5f * Mat::ones(numValuesTest, 1, CV_32FC1); // fixed initialization x0 = c = 0.5.
 	
+	// Test the trained model:
+	//Mat y_ts(numValuesTest, 1, CV_32FC1);
+	//Mat x_ts_gt(numValuesTest, 1, CV_32FC1);
+	//Mat x0_ts = 0.5f * Mat::ones(numValuesTest, 1, CV_32FC1); // We also just start in the center.
 	auto onTestCallback = [&](const cv::Mat& currentPredictions) {
 		appLogger.info(std::to_string(normalisedLeastSquaresResidual(currentPredictions, x_ts_gt)));
 	};
 	cv::Mat res = sdo.test(y_ts, x0_ts, h, onTestCallback);
-	appLogger.info(std::to_string(normalisedLeastSquaresResidual(res, x_ts_gt)));
-	*/
+	appLogger.info("Result of last regressor: " + std::to_string(normalisedLeastSquaresResidual(res, x_ts_gt)));
+	
+	// Save the trained model to the filesystem:
+
+
 	appLogger.info("Finished. Exiting...");
 
 	return 0;
