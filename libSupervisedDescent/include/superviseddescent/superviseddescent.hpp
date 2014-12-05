@@ -4,7 +4,6 @@
  *  Created on: 14.11.2014
  *      Author: Patrik Huber
  */
-
 #pragma once
 
 #ifndef SUPERVISEDDESCENT_HPP_
@@ -33,24 +32,52 @@ namespace superviseddescent {
  * Will be moved to separate files once finished
  */
 
+/**
+ * Abstract base class for regressor-like learning
+ * algorithms to be used with the SupervisedDescentOptimiser.
+ *
+ * Classes that implement this minimal set of functions
+ * can be used with the SupervisedDescentOptimiser.
+ */
 class Regressor
 {
 public:
 	virtual ~Regressor() {};
 
+	/**
+	 * Desc.
+	 *
+	 * @param[in] data Desc.
+	 * @param[in] labels Desc.
+	 * @return Todo.
+	 */
 	// or train()
 	// Returns whether the learning was successful.
 	// or maybe the prediction error? => no, for that case, we can use test() with the same data.
 	virtual bool learn(cv::Mat data, cv::Mat labels) = 0;
 
+	/**
+	 * Desc.
+	 *
+	 * @param[in] data Desc.
+	 * @param[in] labels Desc.
+	 * @return Todo.
+	 */
 	// maybe, for testing:
 	// return a results struct or something, like in tiny-cnn
 	// Or atm the normalised LS residual
 	virtual double test(cv::Mat data, cv::Mat labels) = 0;
 
+	/**
+	 * Desc.
+	 *
+	 * @param[in] values Desc.
+	 * @return Todo.
+	 */
 	virtual cv::Mat predict(cv::Mat values) = 0;
 
 	// overload for float, let's see if we can use it in this way
+	// I think I ended up not using this => delete if so
 	virtual float predict(float value) = 0;
 };
 
@@ -58,8 +85,8 @@ class Regulariser
 {
 public:
 	/**
-	* Todo: Description.
-	*/
+	 * Todo: Description.
+	 */
 	enum class RegularisationType
 	{
 		Manual, ///< use lambda

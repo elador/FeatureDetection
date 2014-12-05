@@ -43,21 +43,21 @@ public:
 	std::string other;
 
 	/**
-	* Desc.
-	*
-	* @param[in] in recordTree
-	* @return Todo.
-	*/
+	 * Desc.
+	 *
+	 * @param[in] in recordTree
+	 * @return Todo.
+	 */
 	static FaceRecord createFrom(boost::property_tree::ptree recordTree);
 
 	/**
-	* Desc.
-	* Note: The name is odd, i.e. ptree entry = facerecognition::FaceRecord::convertTo(faceRecord);
-	* doesn't make so much sense.
-	*
-	* @param[in] in faceRecord
-	* @return Todo.
-	*/
+	 * Desc.
+	 * Note: The name is odd, i.e. ptree entry = facerecognition::FaceRecord::convertTo(faceRecord);
+	 * doesn't make so much sense.
+	 *
+	 * @param[in] in faceRecord
+	 * @return Todo.
+	 */
 	static boost::property_tree::ptree convertTo(FaceRecord faceRecord);
 
 	friend class boost::serialization::access;
