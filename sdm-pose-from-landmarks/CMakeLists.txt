@@ -1,0 +1,63 @@
+set(SUBPROJECT_NAME sdm-pose-from-landmarks)
+project(${SUBPROJECT_NAME})
+cmake_minimum_required(VERSION 2.8.11)
+set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
+set(${SUBPROJECT_NAME}_VERSION_MINOR 1)
+
+message(STATUS "=== Configuring ${SUBPROJECT_NAME} ===")
+
+# find dependencies:
+find_package(OpenCV 2.4.3 REQUIRED core imgproc highgui)
+
+find_package(Boost 1.50.0 COMPONENTS program_options system filesystem serialization REQUIRED)
+if(Boost_FOUND)
+  message(STATUS "Boost found at ${Boost_INCLUDE_DIRS}")
+else(Boost_FOUND)
+  message(FATAL_ERROR "Boost not found")
+endif()
+
+# Todo: ifdef this or rather move to library anyway
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+find_package(Eigen3 REQUIRED)
+message(STATUS "Eigen3 found: ${EIGEN3_FOUND}")
+message(STATUS "Eigen3 include dir found at ${EIGEN3_INCLUDE_DIR}")
+message(STATUS "Eigen3 version: ${EIGEN3_VERSION}")
+include_directories(${EIGEN3_INCLUDE_DIR})
+
+set(CMAKE_AUTOMOC ON)
+find_package(Qt5Core REQUIRED)
+find_package(Qt5Gui REQUIRED)
+message(STATUS "Qt5 EGL include dir: ${Qt5Gui_EGL_INCLUDE_DIRS}")
+message(STATUS "Qt5 OpenGL include dir: ${Qt5Gui_OPENGL_INCLUDE_DIRS}")
+message(STATUS "Qt5 EGL library: ${Qt5Gui_EGL_LIBRARIES}")
+message(STATUS "Qt5 OpenGL library: ${Qt5Gui_OPENGL_LIBRARIES}")
+
+## OpenGL
+#FIND_PACKAGE(OpenGL REQUIRED)
+#if(NOT OPENGL_FOUND)
+#    message(ERROR " OPENGL not found!")
+#endif(NOT OPENGL_FOUND)
+
+# Source and header files:
+set(SOURCE
+	sdm-pose-from-landmarks.cpp
+	openglwindow.cpp
+)
+
+set(HEADERS
+	openglwindow.h
+)
+
+add_executable(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
+
+include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(${Logging_SOURCE_DIR}/include)
+include_directories(${ImageIO_SOURCE_DIR}/include)
+include_directories(${Render_SOURCE_DIR}/include)
+include_directories(${MorphableModel_SOURCE_DIR}/include)
+include_directories(${SupervisedDescent_SOURCE_DIR}/include)
+include_directories(${Fitting_SOURCE_DIR}/include)
+
+# Make the app depend on the libraries
+target_link_libraries(${SUBPROJECT_NAME} Fitting MorphableModel Render SupervisedDescent ImageIO Logging ${Boost_LIBRARIES} ${OpenCV_LIBS} Qt5::Core Qt5::Gui ${Qt5Gui_EGL_LIBRARIES} ${Qt5Gui_OPENGL_LIBRARIES}) # ${OPENGL_LIBRARIES}

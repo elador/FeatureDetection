@@ -115,10 +115,7 @@ public:
 	// Returns the transformed 2D coords
 	cv::Mat operator()(Mat parameters)
 	{
-		//project the 3D points using the current params
-		//for (auto&& id : vertexIds) { // for data.len/2?
-		//	Vec3f vtx2d = render::utils::projectVertex(meanMesh.vertex[398].position, projectionMatrix * modelMatrix, screenWidth, screenHeight);
-		//}
+		//project the 3D model points using the current params
 		fitting::ModelFitting unrolledParameters = unpackParameters(parameters);
 		Mat rotPitchX = render::matrixutils::createRotationMatrixX(render::utils::degreesToRadians(unrolledParameters.rotationX));
 		Mat rotYawY = render::matrixutils::createRotationMatrixY(render::utils::degreesToRadians(unrolledParameters.rotationY));
@@ -328,6 +325,7 @@ int main(int argc, char *argv[])
 	Mat x0 = Mat::zeros(fittings.size(), 5, CV_32FC1); // fixed initialization, all params = 0
 
 	// The reduced 3D model only consisting of the vertices we're using to learn the pose:
+	// ==> Todo this should be saved with the model! Including the vertexIds!
 	Mat reducedModel(4, vertexIds.size(), CV_32FC1); // each vertex is a Vec4f (homogenous coords)
 	for (int i = 0; i < vertexIds.size(); ++i) {
 		Mat vertexCoords = Mat(meanMesh.vertex[vertexIds[i]].position);
@@ -351,6 +349,10 @@ int main(int argc, char *argv[])
 	regressors.emplace_back(v2::LinearRegressor(reg));
 	regressors.emplace_back(v2::LinearRegressor(reg));
 	v2::SupervisedDescentOptimiser<v2::LinearRegressor> sdo(regressors);
+
+	v2::SupervisedDescentPoseEstimation<v2::LinearRegressor> sdp(regressors);
+	sdp.h.model = reducedModel;
+	sdp.vertexIds = vertexIds;
 	
 	auto normalisedLeastSquaresResidual = [](const Mat& prediction, const Mat& groundtruth) {
 		return cv::norm(prediction, groundtruth, cv::NORM_L2) / cv::norm(groundtruth, cv::NORM_L2);
@@ -361,6 +363,7 @@ int main(int argc, char *argv[])
 	};
 
 	sdo.train(x_tr, y_tr, x0, h, onTrainCallback);
+	sdp.train(x_tr, y_tr, x0, onTrainCallback);
 	appLogger.info("Finished training.");
 	
 	// Test the trained model:
@@ -371,13 +374,14 @@ int main(int argc, char *argv[])
 		appLogger.info(std::to_string(normalisedLeastSquaresResidual(currentPredictions, x_ts_gt)));
 	};
 	cv::Mat res = sdo.test(y_ts, x0_ts, h, onTestCallback);
+	cv::Mat res2 = sdp.test(y_ts, x0_ts, onTestCallback);
 	appLogger.info("Result of last regressor: " + std::to_string(normalisedLeastSquaresResidual(res, x_ts_gt)));
 	
 	// Save the trained model to the filesystem:
 	// Todo: Encapsulate in a class PoseRegressor, with all the neccesary stuff (e.g. which landmarks etc.)
 	std::ofstream learnedModelFile("pose_regressor_11lms.txt");
 	boost::archive::text_oarchive oa(learnedModelFile);
-	oa << sdo;
+	oa << sdp;
 
 	appLogger.info("Saved learned regressor model. Exiting...");
 

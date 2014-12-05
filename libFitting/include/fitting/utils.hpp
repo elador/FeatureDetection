@@ -74,7 +74,6 @@ public:
 		ar & shapeCoeffs;
 		ar & albedoCoeffs;
 	};
-
 };
 
 } /* namespace fitting */

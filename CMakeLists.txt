@@ -82,6 +82,7 @@ add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on
 add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
 add_subdirectory(sdm-examples-simple-v2)	# The simple examples with functions like sin(x) and x^2 from the SDM paper
 add_subdirectory(sdm-train-v2)			# Playground for supervised descent reimplementation (v2)
+add_subdirectory(sdm-pose-from-landmarks)	# Estimate the pose of a face (i.e. the camera parameters) from landmarks
 
 # 3DMM fitting:
 add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
