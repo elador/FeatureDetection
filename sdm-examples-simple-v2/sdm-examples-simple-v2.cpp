@@ -50,7 +50,7 @@
 #include "render/Camera.hpp"
 #include "render/utils.hpp"
 #include "morphablemodel/MorphableModel.hpp"
-#include "superviseddescent/superviseddescent.hpp" // v2 stuff
+#include "superviseddescent/poseestimation.hpp" // v2 stuff
 #include "fitting/utils.hpp"
 
 #include "logging/LoggerFactory.hpp"
