@@ -21,17 +21,12 @@
 #include <memory>
 #include <chrono>
 
-using logging::Logger; // Todo: Move to cpp as soon as finished
-using logging::LoggerFactory;
-using cv::Mat;
-using std::string;
-
 namespace superviseddescent {
 	namespace v2 {
 
 /**
  * Stuff for supervised descent v2
- * Will be moved to separate files / cpp files once finished
+ * Will be moved to separate files once finished
  */
 
 class Regressor
@@ -76,7 +71,7 @@ public:
 	// Might use the data to calculate an automatic value for lambda.
 	cv::Mat getMatrix(cv::Mat data, int numTrainingElements)
 	{
-		auto logger = Loggers->getLogger("superviseddescent");
+		auto logger = logging::Loggers->getLogger("superviseddescent");
 		// move regularisation to a separate function, so we can also test it separately. getRegulariser()?
 		// Actually all that stuff can go in a class Regulariser
 		switch (regularisationType)
@@ -99,7 +94,7 @@ public:
 		}
 		logger.debug("Lambda is: " + std::to_string(lambda));
 
-		Mat regulariser = Mat::eye(data.rows, data.cols, CV_32FC1) * lambda; // always symmetric
+		cv::Mat regulariser = cv::Mat::eye(data.rows, data.cols, CV_32FC1) * lambda; // always symmetric
 
 		if (!regulariseLastRow) {
 			regulariser.at<float>(regulariser.rows - 1, regulariser.cols - 1) = 0.0f; // no lambda for the bias
@@ -138,7 +133,8 @@ public:
 	// Returns if the learning was successful or not. I.e. in this case, if the matrix was invertible.
 	bool learn(cv::Mat data, cv::Mat labels)
 	{
-		Logger logger = Loggers->getLogger("superviseddescent");
+		using cv::Mat;
+		logging::Logger logger = logging::Loggers->getLogger("superviseddescent");
 		std::chrono::time_point<std::chrono::system_clock> start, end;
 		int elapsed_mseconds;
 
@@ -167,7 +163,7 @@ public:
 			// Eigen will most likely return garbage here (according to their docu anyway). We have a few options:
 			// - Increase lambda
 			// - Calculate the pseudo-inverse. See: http://eigen.tuxfamily.org/index.php?title=FAQ#Is_there_a_method_to_compute_the_.28Moore-Penrose.29_pseudo_inverse_.3F
-			string msg("The regularised AtA is not invertible. We continued learning, but Eigen calculates garbage in this case according to their documentation. (The rank is " + std::to_string(rankOfAtAReg) + ", full rank would be " + std::to_string(AtAReg_Eigen.rows()) + "). Increase lambda (or use the pseudo-inverse, which is not implemented yet).");
+			std::string msg("The regularised AtA is not invertible. We continued learning, but Eigen calculates garbage in this case according to their documentation. (The rank is " + std::to_string(rankOfAtAReg) + ", full rank would be " + std::to_string(AtAReg_Eigen.rows()) + "). Increase lambda (or use the pseudo-inverse, which is not implemented yet).");
 			logger.error(msg);
 		}
 		Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> AtARegInv_EigenFullLU = luOfAtAReg.inverse();
