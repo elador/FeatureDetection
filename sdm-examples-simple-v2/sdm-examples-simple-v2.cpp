@@ -71,12 +71,13 @@ using logging::LogLevel;
 
 cv::Mat packParameters(fitting::ModelFitting modelFitting)
 {
-	Mat params(1, 5, CV_32FC1);
+	Mat params(1, 6, CV_32FC1);
 	params.at<float>(0) = modelFitting.rotationX;
 	params.at<float>(1) = modelFitting.rotationY;
 	params.at<float>(2) = modelFitting.rotationZ;
 	params.at<float>(3) = modelFitting.tx;
 	params.at<float>(4) = modelFitting.ty;
+	params.at<float>(5) = modelFitting.tz.get();
 	return params;
 }
 
@@ -88,6 +89,7 @@ fitting::ModelFitting unpackParameters(cv::Mat parameters)
 	modelFitting.rotationZ = parameters.at<float>(2);
 	modelFitting.tx = parameters.at<float>(3);
 	modelFitting.ty = parameters.at<float>(4);
+	modelFitting.tz = parameters.at<float>(5);
 	return modelFitting;
 }
 
@@ -207,61 +209,73 @@ int main(int argc, char *argv[])
 	render::Mesh meanMesh = morphableModel.getMean();
 
 	vector<int> vertexIds;
-	/* Surrey full model: */
-	vertexIds.push_back(11389); // 177: left-eye-left - right.eye.corner_outer
-	vertexIds.push_back(25864/*10930*/); // 181: left-eye-right - right.eye.corner_inner
-	vertexIds.push_back(25868); // 614: right-eye-left - left.eye.corner_inner. But we take one a little bit more up
-	vertexIds.push_back(11395); // 610: right-eye-right - left.eye.corner_outer
-	vertexIds.push_back(398); // mouth-left - right.lips.corner
-	vertexIds.push_back(812); // mouth-right - left.lips.corner
-	vertexIds.push_back(11140); // bridge of the nose - // should use the new one from the reference, MnFMdl.obj
-	vertexIds.push_back(114); // nose-tip - center.nose.tip
-	vertexIds.push_back(270); // nasal septum - 
-	vertexIds.push_back(3284); // left-alare - right nose ...
-	vertexIds.push_back(572); // right-alare - left nose ...
+	// 17 iBug points, valid in both Surrey models:
+	vertexIds.push_back(35);
+	vertexIds.push_back(225);
+	vertexIds.push_back(233);
+	vertexIds.push_back(157);
+	vertexIds.push_back(590);
+	vertexIds.push_back(666);
+	vertexIds.push_back(658);
+	vertexIds.push_back(114);
+	vertexIds.push_back(270);
+	vertexIds.push_back(177);
+	vertexIds.push_back(181);
+	vertexIds.push_back(614);
+	vertexIds.push_back(610);
+	vertexIds.push_back(398);
+	vertexIds.push_back(329);
+	vertexIds.push_back(812);
+	vertexIds.push_back(411);
 
-	int screenWidth = 640;
-	int screenHeight = 480;
+	int screenWidth = 1000;
+	int screenHeight = 1000;
 	const float aspect = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
 	render::SoftwareRenderer renderer(screenWidth, screenHeight);
 
 	const auto yawSeed = std::random_device()();
 	std::mt19937 engineYaw; engineYaw.seed(yawSeed);
-	std::uniform_real_distribution<> distrRandYaw(-45, 45);
+	std::uniform_real_distribution<> distrRandYaw(-30, 30);
 	auto randRealYaw = std::bind(distrRandYaw, engineYaw);
 
 	const auto pitchSeed = std::random_device()();
 	std::mt19937 enginePitch; enginePitch.seed(pitchSeed);
-	std::uniform_real_distribution<> distrRandPitch(-15, 15);
+	std::uniform_real_distribution<> distrRandPitch(-30, 30);
 	auto randRealPitch = std::bind(distrRandPitch, enginePitch);
 
 	const auto rollSeed = std::random_device()();
 	std::mt19937 engineRoll; engineRoll.seed(rollSeed);
-	std::uniform_real_distribution<> distrRandRoll(-15, 15);
+	std::uniform_real_distribution<> distrRandRoll(-30, 30);
 	auto randRealRoll = std::bind(distrRandRoll, engineRoll);
 
 	const auto txSeed = std::random_device()();
 	std::mt19937 engineTx; engineTx.seed(txSeed);
-	std::uniform_real_distribution<> distrRandTx(-20, 20); // millimetres, in model space. try ~20
+	std::uniform_real_distribution<> distrRandTx(-400, 400); // millimetres, in model space. try ~20
 	auto randRealTx = std::bind(distrRandTx, engineTx);
 
 	const auto tySeed = std::random_device()();
 	std::mt19937 engineTy; engineTy.seed(tySeed);
-	std::uniform_real_distribution<> distrRandTy(-20, 20);
+	std::uniform_real_distribution<> distrRandTy(-400, 400);
 	auto randRealTy = std::bind(distrRandTy, engineTy);
+
+	const auto tzSeed = std::random_device()();
+	std::mt19937 engineTz; engineTz.seed(tzSeed);
+	std::uniform_real_distribution<> distrRandTz(-400, 400);
+	auto randRealTz = std::bind(distrRandTz, engineTz);
 
 	// Try both and compare: rnd tx, ty (, tz) and with alignment (t, maybe scale?) to eyes
 	using fitting::ModelFitting;
 	vector<ModelFitting> fittings;
 	vector<vector<cv::Vec2f>> landmarks;
 
-	int numSamples = 10;
-	int numTr = 7;
+	int numSamples = 1000;
+	int numTr = 700;
 	for (int i = 0; i < numSamples; ++i) {
 		// Generate a random pose:
 		ModelFitting fitting;
 		Mat modelMatrix;
 		{
+			// Might be better to also use 'h' here?
 			auto yaw = randRealYaw();
 			auto pitch = randRealPitch();
 			auto roll = randRealRoll();
@@ -272,20 +286,22 @@ int main(int argc, char *argv[])
 
 			auto tx = randRealTx();
 			auto ty = randRealTy();
-			Mat translation = render::matrixutils::createTranslationMatrix(tx, ty, -1900.0f); // move the model 1.9metres away from the camera
+			auto tz = -2000.0f + randRealTz();
+			// Todo: Hmm, in testing, we want to initialise, but then refine z as well
+			Mat translation = render::matrixutils::createTranslationMatrix(tx, ty, tz); // move the model 1.9metres away from the camera
 
 			modelMatrix = translation * rotYawY * rotPitchX * rotRollZ;
-			fitting = ModelFitting(pitch, yaw, roll, tx, ty, -1900.0f, {}, {}, 1500.0f);
+			fitting = ModelFitting(pitch, yaw, roll, tx, ty, tz, {}, {}, 1000.0f);
 		}
 		// Random tx, ty, tz, f, scale (camera-scale)
-		float fovY = render::utils::focalLengthToFovy(1500.0f, screenHeight); //
+		float fovY = render::utils::focalLengthToFovy(1000.0f, screenHeight); //
 		Mat projectionMatrix = render::matrixutils::createPerspectiveProjectionMatrix(fovY, aspect, 0.1f, 5000.0f);
 
 		// Test:
-	/*	renderer.clearBuffers();
+		renderer.clearBuffers();
 		Mat colorbuffer, depthbuffer;
 		std::tie(colorbuffer, depthbuffer) = renderer.render(meanMesh, modelMatrix, projectionMatrix);
-	*/
+	
 		// Project all LMs to 2D:
 		vector<cv::Vec2f> lms;
 		for (auto&& id : vertexIds) {
@@ -314,7 +330,7 @@ int main(int argc, char *argv[])
 	}
 
 	// The parameters:
-	Mat x_tr(fittings.size(), 5, CV_32FC1); // 5 params atm: rx, ry, rz, tx, ty
+	Mat x_tr(fittings.size(), 6, CV_32FC1); // 6 params atm: rx, ry, rz, tx, ty, tz
 	{
 		for (int r = 0; r < x_tr.rows; ++r) {
 			Mat parameterRow = packParameters(fittings[r]);
@@ -322,7 +338,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	Mat x0 = Mat::zeros(fittings.size(), 5, CV_32FC1); // fixed initialization, all params = 0
+	Mat x0 = Mat::zeros(fittings.size(), 6, CV_32FC1); // fixed initialisation of the parameters, all zero, except tz
+	x0.col(5) -= 2000.0f;
 
 	// The reduced 3D model only consisting of the vertices we're using to learn the pose:
 	// ==> Todo this should be saved with the model! Including the vertexIds!
@@ -331,8 +348,7 @@ int main(int argc, char *argv[])
 		Mat vertexCoords = Mat(meanMesh.vertex[vertexIds[i]].position);
 		vertexCoords.copyTo(reducedModel.col(i));
 	}
-	h_proj h(reducedModel);
-
+	
 	// Split the training data into training and test:
 	Mat y_ts = y_tr.rowRange(numTr, y_tr.rows);
 	y_tr = y_tr.rowRange(0, numTr);
@@ -348,11 +364,11 @@ int main(int argc, char *argv[])
 	regressors.emplace_back(v2::LinearRegressor(reg));
 	regressors.emplace_back(v2::LinearRegressor(reg));
 	regressors.emplace_back(v2::LinearRegressor(reg));
-	v2::SupervisedDescentOptimiser<v2::LinearRegressor> sdo(regressors);
 
 	v2::SupervisedDescentPoseEstimation<v2::LinearRegressor> sdp(regressors);
 	sdp.h.model = reducedModel;
-	sdp.vertexIds = vertexIds;
+	sdp.modelName = "Surrey"; // morphableModel.get...?
+	sdp.modelVertexIds = vertexIds;
 	
 	auto normalisedLeastSquaresResidual = [](const Mat& prediction, const Mat& groundtruth) {
 		return cv::norm(prediction, groundtruth, cv::NORM_L2) / cv::norm(groundtruth, cv::NORM_L2);
@@ -362,7 +378,6 @@ int main(int argc, char *argv[])
 		appLogger.info(std::to_string(normalisedLeastSquaresResidual(currentPredictions, x_tr)));
 	};
 
-	sdo.train(x_tr, y_tr, x0, h, onTrainCallback);
 	sdp.train(x_tr, y_tr, x0, onTrainCallback);
 	appLogger.info("Finished training.");
 	
@@ -373,8 +388,7 @@ int main(int argc, char *argv[])
 	auto onTestCallback = [&](const cv::Mat& currentPredictions) {
 		appLogger.info(std::to_string(normalisedLeastSquaresResidual(currentPredictions, x_ts_gt)));
 	};
-	cv::Mat res = sdo.test(y_ts, x0_ts, h, onTestCallback);
-	cv::Mat res2 = sdp.test(y_ts, x0_ts, onTestCallback);
+	cv::Mat res = sdp.test(y_ts, x0_ts, onTestCallback);
 	appLogger.info("Result of last regressor: " + std::to_string(normalisedLeastSquaresResidual(res, x_ts_gt)));
 	
 	// Save the trained model to the filesystem:

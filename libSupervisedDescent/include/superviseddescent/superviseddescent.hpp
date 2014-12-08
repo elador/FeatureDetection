@@ -75,7 +75,7 @@ public:
 			for (int i = 0; i < currentX.rows; ++i) {
 				features.push_back(h(currentX.row(i)));
 			}
-			Mat insideRegressor = features - y; // Todo: Find better name ;-)
+			Mat insideRegressor = features - y; // Todo: Find better name ;-) 'projection' or 'projectedParameters'?
 			// We got $\sum\|x_*^i - x_k^i + R_k(h(x_k^i)-y^i)\|_2^2 $
 			// That is: $-b + Ax = 0$, $Ax = b$, $x = A^-1 * b$
 			// Thus: $b = x_k^i - x_*^i$. 

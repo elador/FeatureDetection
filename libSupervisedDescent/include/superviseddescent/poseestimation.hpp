@@ -25,7 +25,8 @@ namespace superviseddescent {
 	namespace v2 {
 
 /**
- * T.
+ * Note/Todo: As a simple example for the library, remove this whole ModelFitting class
+ * as well as the (un)pack functions - it's not needed!
  *
  * @param[in] a B.
  * @return c.
@@ -81,7 +82,6 @@ public:
 	};
 };
 
-// Todo Move to its own file!
 // 6DOF esti? Document etc.
 // We could further abstract one layer, by defining this 'h' separately, and
 // then make a 6DOFSupervisedDescentPoseEsti class that combines the two classes. But...
@@ -99,12 +99,13 @@ public:
 
 	static cv::Mat packParameters(ModelFitting modelFitting)
 	{
-		Mat params(1, 5, CV_32FC1);
+		Mat params(1, 6, CV_32FC1);
 		params.at<float>(0) = modelFitting.rotationX;
 		params.at<float>(1) = modelFitting.rotationY;
 		params.at<float>(2) = modelFitting.rotationZ;
 		params.at<float>(3) = modelFitting.tx;
 		params.at<float>(4) = modelFitting.ty;
+		params.at<float>(4) = modelFitting.tz;
 		return params;
 	}
 
@@ -116,6 +117,7 @@ public:
 		modelFitting.rotationZ = parameters.at<float>(2);
 		modelFitting.tx = parameters.at<float>(3);
 		modelFitting.ty = parameters.at<float>(4);
+		modelFitting.tz = parameters.at<float>(5);
 		return modelFitting;
 	}
 
@@ -144,16 +146,16 @@ public:
 			Mat rotPitchX = render::matrixutils::createRotationMatrixX(render::utils::degreesToRadians(unrolledParameters.rotationX));
 			Mat rotYawY = render::matrixutils::createRotationMatrixY(render::utils::degreesToRadians(unrolledParameters.rotationY));
 			Mat rotRollZ = render::matrixutils::createRotationMatrixZ(render::utils::degreesToRadians(unrolledParameters.rotationZ));
-			Mat translation = render::matrixutils::createTranslationMatrix(unrolledParameters.tx, unrolledParameters.ty, -1900.0f);
+			Mat translation = render::matrixutils::createTranslationMatrix(unrolledParameters.tx, unrolledParameters.ty, unrolledParameters.tz.get());
 			Mat modelMatrix = translation * rotYawY * rotPitchX * rotRollZ;
-			const float aspect = static_cast<float>(640) / static_cast<float>(480);
-			float fovY = render::utils::focalLengthToFovy(1500.0f, 480);
+			const float aspect = static_cast<float>(1000) / static_cast<float>(1000);
+			float fovY = render::utils::focalLengthToFovy(1000.0f, 1000);
 			Mat projectionMatrix = render::matrixutils::createPerspectiveProjectionMatrix(fovY, aspect, 0.1f, 5000.0f);
 
 			int numLandmarks = model.cols;
 			Mat new2dProjections(1, numLandmarks * 2, CV_32FC1);
 			for (int lm = 0; lm < numLandmarks; ++lm) {
-				cv::Vec3f vtx2d = render::utils::projectVertex(cv::Vec4f(model.col(lm)), projectionMatrix * modelMatrix, 640, 480);
+				cv::Vec3f vtx2d = render::utils::projectVertex(cv::Vec4f(model.col(lm)), projectionMatrix * modelMatrix, 1000, 1000);
 				new2dProjections.at<float>(lm) = vtx2d[0]; // the x coord
 				new2dProjections.at<float>(lm + numLandmarks) = vtx2d[1]; // y coord
 			}
@@ -193,7 +195,7 @@ public:
 		return optimiser.test(y, x0, h, onRegressorIterationCallback);
 	};
 
-	//template<>
+	//template<> // Todo: Delete these?
 	cv::Mat test(cv::Mat y, cv::Mat x0)
 	{
 		return optimiser.test(y, x0, h);
@@ -208,7 +210,10 @@ public:
 	// Move to private
 	// Better store the landmark identifiers? Or names?
 	// Well, it's kind of model dependent, so this is ok?
-	std::vector<int> vertexIds;
+	// Todo: Not needed for the simple library example case. Remove from here?
+	// (see also comment about FittingResult. Maybe add a class MorphableModelSDPoseEsti in an extended (my) version of the library?)
+	std::string modelName;
+	std::vector<int> modelVertexIds;
 	
 	h_proj h; // getFunction() (const&?)
 
@@ -217,7 +222,8 @@ public:
 	void serialize(Archive & ar, const unsigned int version)
 	{
 		ar & optimiser;
-		ar & vertexIds;
+		ar & modelName;
+		ar & modelVertexIds;
 		ar & h;
 	};
 
