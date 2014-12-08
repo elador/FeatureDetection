@@ -268,8 +268,8 @@ int main(int argc, char *argv[])
 	vector<ModelFitting> fittings;
 	vector<vector<cv::Vec2f>> landmarks;
 
-	int numSamples = 1000;
-	int numTr = 700;
+	int numSamples = 15000;
+	int numTr = 10000;
 	for (int i = 0; i < numSamples; ++i) {
 		// Generate a random pose:
 		ModelFitting fitting;
@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
 			auto ty = randRealTy();
 			auto tz = -2000.0f + randRealTz();
 			// Todo: Hmm, in testing, we want to initialise, but then refine z as well
-			Mat translation = render::matrixutils::createTranslationMatrix(tx, ty, tz); // move the model 1.9metres away from the camera
+			Mat translation = render::matrixutils::createTranslationMatrix(tx, ty, tz); // move the model 2.0 metres away from the camera (plus tz)
 
 			modelMatrix = translation * rotYawY * rotPitchX * rotRollZ;
 			fitting = ModelFitting(pitch, yaw, roll, tx, ty, tz, {}, {}, 1000.0f);
@@ -298,14 +298,25 @@ int main(int argc, char *argv[])
 		Mat projectionMatrix = render::matrixutils::createPerspectiveProjectionMatrix(fovY, aspect, 0.1f, 5000.0f);
 
 		// Test:
+		/*
+		using render::utils::degreesToRadians;
+		Mat rotPitchX = render::matrixutils::createRotationMatrixX(degreesToRadians(0));
+		Mat rotYawY = render::matrixutils::createRotationMatrixY(degreesToRadians(0));
+		Mat rotRollZ = render::matrixutils::createRotationMatrixZ(degreesToRadians(0));
+		auto tz = -2400.0f;
+		Mat translation = render::matrixutils::createTranslationMatrix(0, 0, tz);
+		modelMatrix = translation * rotYawY * rotPitchX * rotRollZ;
+
 		renderer.clearBuffers();
 		Mat colorbuffer, depthbuffer;
 		std::tie(colorbuffer, depthbuffer) = renderer.render(meanMesh, modelMatrix, projectionMatrix);
-	
+		*/
+
 		// Project all LMs to 2D:
 		vector<cv::Vec2f> lms;
 		for (auto&& id : vertexIds) {
 			Vec3f vtx2d = render::utils::projectVertex(meanMesh.vertex[id].position, projectionMatrix * modelMatrix, screenWidth, screenHeight);
+			vtx2d = (vtx2d - Vec3f(500.0f, 500.0f)) / 1000.0f/*=f*/; // New: normalise the image coordinates of the projection
 			lms.emplace_back(cv::Vec2f(vtx2d[0], vtx2d[1]));
 		}
 	
@@ -393,7 +404,7 @@ int main(int argc, char *argv[])
 	
 	// Save the trained model to the filesystem:
 	// Todo: Encapsulate in a class PoseRegressor, with all the neccesary stuff (e.g. which landmarks etc.)
-	std::ofstream learnedModelFile("pose_regressor_11lms.txt");
+	std::ofstream learnedModelFile("pose_regressor_ibug_17lms_tmp.txt");
 	boost::archive::text_oarchive oa(learnedModelFile);
 	oa << sdp;
 

@@ -67,7 +67,6 @@ public:
 	{
 		// data = x = the parameters we want to learn, ground truth labels for them = y. x0 = c = initialisation
 		// Simple experiments with sin etc.
-		auto logger = logging::Loggers->getLogger("superviseddescent");
 		Mat currentX = x0;
 		for (auto&& regressor : regressors) {
 			// 1) Extract features where necessary

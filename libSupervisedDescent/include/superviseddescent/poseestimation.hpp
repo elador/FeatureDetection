@@ -156,6 +156,7 @@ public:
 			Mat new2dProjections(1, numLandmarks * 2, CV_32FC1);
 			for (int lm = 0; lm < numLandmarks; ++lm) {
 				cv::Vec3f vtx2d = render::utils::projectVertex(cv::Vec4f(model.col(lm)), projectionMatrix * modelMatrix, 1000, 1000);
+				vtx2d = (vtx2d - Vec3f(500.0f, 500.0f)) / 1000.0f/*=f*/; // New: normalise the image coordinates of the projection
 				new2dProjections.at<float>(lm) = vtx2d[0]; // the x coord
 				new2dProjections.at<float>(lm + numLandmarks) = vtx2d[1]; // y coord
 			}
