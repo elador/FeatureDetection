@@ -30,7 +30,7 @@ double normalisedLeastSquaresResidual(const Mat& prediction, const Mat& groundtr
 
 TEST(SupervisedDescentOptimiser, SinConvergence) {
 	// sin(x):
-	auto h = [](Mat value) { return std::sin(value.at<float>(0)); };
+	auto h = [](Mat value, size_t, int) { return std::sin(value.at<float>(0)); };
 	auto h_inv = [](float value) {
 		if (value >= 1.0f) // our upper border of y is 1.0f, but it can be a bit larger due to floating point representation. asin then returns NaN.
 			return std::asin(1.0f);
@@ -92,7 +92,7 @@ TEST(SupervisedDescentOptimiser, SinConvergence) {
 
 TEST(SupervisedDescentOptimiser, SinConvergenceCascade) {
 	// sin(x):
-	auto h = [](Mat value) { return std::sin(value.at<float>(0)); };
+	auto h = [](Mat value, size_t, int) { return std::sin(value.at<float>(0)); };
 	auto h_inv = [](float value) {
 		if (value >= 1.0f) // our upper border of y is 1.0f, but it can be a bit larger due to floating point representation. asin then returns NaN.
 			return std::asin(1.0f);
@@ -158,7 +158,7 @@ TEST(SupervisedDescentOptimiser, SinConvergenceCascade) {
 
 TEST(SupervisedDescentOptimiser, XCubeConvergence) {
 	// x^3:
-	auto h = [](Mat value) { return std::pow(value.at<float>(0), 3); };
+	auto h = [](Mat value, size_t, int) { return std::pow(value.at<float>(0), 3); };
 	auto h_inv = [](float value) { return std::cbrt(value); }; // cubic root
 
 	float startInterval = -27.0f; float stepSize = 3.0f; int numValues = 19; Mat y_tr(numValues, 1, CV_32FC1); // cube: [-27:3:27]
@@ -207,7 +207,7 @@ TEST(SupervisedDescentOptimiser, XCubeConvergence) {
 
 TEST(SupervisedDescentOptimiser, XCubeConvergenceCascade) {
 	// x^3:
-	auto h = [](Mat value) { return std::pow(value.at<float>(0), 3); };
+	auto h = [](Mat value, size_t, int) { return std::pow(value.at<float>(0), 3); };
 	auto h_inv = [](float value) { return std::cbrt(value); }; // cubic root
 
 	float startInterval = -27.0f; float stepSize = 3.0f; int numValues = 19; Mat y_tr(numValues, 1, CV_32FC1); // cube: [-27:3:27]
@@ -267,7 +267,7 @@ TEST(SupervisedDescentOptimiser, XCubeConvergenceCascade) {
 
 TEST(SupervisedDescentOptimiser, ErfConvergence) {
 	// erf(x):
-	auto h = [](Mat value) { return std::erf(value.at<float>(0)); };
+	auto h = [](Mat value, size_t, int) { return std::erf(value.at<float>(0)); };
 	auto h_inv = [](float value) { return boost::math::erf_inv(value); };
 
 	float startInterval = -0.99f; float stepSize = 0.11f; int numValues = 19; Mat y_tr(numValues, 1, CV_32FC1); // erf: [-0.99:0.11:0.99]
@@ -316,7 +316,7 @@ TEST(SupervisedDescentOptimiser, ErfConvergence) {
 
 TEST(SupervisedDescentOptimiser, ErfConvergenceCascade) {
 	// erf(x):
-	auto h = [](Mat value) { return std::erf(value.at<float>(0)); };
+	auto h = [](Mat value, size_t, int) { return std::erf(value.at<float>(0)); };
 	auto h_inv = [](float value) { return boost::math::erf_inv(value); };
 
 	float startInterval = -0.99f; float stepSize = 0.11f; int numValues = 19; Mat y_tr(numValues, 1, CV_32FC1); // erf: [-0.99:0.11:0.99]
@@ -376,7 +376,7 @@ TEST(SupervisedDescentOptimiser, ErfConvergenceCascade) {
 
 TEST(SupervisedDescentOptimiser, ExpConvergence) {
 	// exp(x):
-	auto h = [](Mat value) { return std::exp(value.at<float>(0)); };
+	auto h = [](Mat value, size_t, int) { return std::exp(value.at<float>(0)); };
 	auto h_inv = [](float value) { return std::log(value); };
 
 	float startInterval = 1.0f; float stepSize = 3.0f; int numValues = 10; Mat y_tr(numValues, 1, CV_32FC1); // exp: [1:3:28]
@@ -425,7 +425,7 @@ TEST(SupervisedDescentOptimiser, ExpConvergence) {
 
 TEST(SupervisedDescentOptimiser, ExpConvergenceCascade) {
 	// exp(x):
-	auto h = [](Mat value) { return std::exp(value.at<float>(0)); };
+	auto h = [](Mat value, size_t, int) { return std::exp(value.at<float>(0)); };
 	auto h_inv = [](float value) { return std::log(value); };
 
 	float startInterval = 1.0f; float stepSize = 3.0f; int numValues = 10; Mat y_tr(numValues, 1, CV_32FC1); // exp: [1:3:28]
@@ -496,7 +496,7 @@ TEST(SupervisedDescentOptimiser, SinErfConvergenceCascadeMultiY) {
 	auto h_erf = [](float value) { return std::erf(value); };
 	auto h_erf_inv = [](float value) { return boost::math::erf_inv(value); };
 
-	auto h = [&](Mat value) {
+	auto h = [&](Mat value, size_t, int) {
 		Mat result(1, 2, CV_32FC1);
 		result.at<float>(0) = h_sin(value.at<float>(0));
 		result.at<float>(1) = h_erf(value.at<float>(1));

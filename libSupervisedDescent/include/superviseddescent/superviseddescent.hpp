@@ -77,11 +77,11 @@ public:
 		// data = x = the parameters we want to learn, ground truth labels for them = y. x0 = c = initialisation
 		// Simple experiments with sin etc.
 		Mat currentX = x0;
-		for (auto&& regressor : regressors) {
+		for (size_t r = 0; r < regressors.size(); ++r) {
 			// 1) Extract features where necessary
 			Mat features; // We should rename this. In case of pose estimation, these are not features, but the projected 2D landmark coordinates (using the current parameter estimate (x)).
 			for (int i = 0; i < currentX.rows; ++i) {
-				features.push_back(h(currentX.row(i)));
+				features.push_back(h(currentX.row(i), r, i)); // calling h(data, regressorLevel, trainingIdx)
 			}
 			
 			Mat insideRegressor; // Todo: Find better name ;-) 'projection' or 'projectedParameters'? regressedValues?
@@ -99,7 +99,7 @@ public:
 			Mat b = currentX - x; // correct
 			
 			// 2) Learn using that data
-			regressor.learn(insideRegressor, b);
+			regressors[r].learn(insideRegressor, b);
 			// 3) If not finished, 
 			//    apply learned regressor, set data = newData or rather calculate new delta
 			//    use it to learn the next regressor in next loop iter
@@ -109,7 +109,7 @@ public:
 			Mat x_k; // x_k = currentX - R * (h(currentX) - y):
 			for (int i = 0; i < currentX.rows; ++i) {
 				// No need to re-extract the features, we already did so in step 1)
-				x_k.push_back(Mat(currentX.row(i) - regressor.predict(insideRegressor.row(i)))); // minus here is correct. CVPR paper got a '+'. See above for reason why.
+				x_k.push_back(Mat(currentX.row(i) - regressors[r].predict(insideRegressor.row(i)))); // minus here is correct. CVPR paper got a '+'. See above for reason why.
 			}
 			currentX = x_k;
 			onTrainingEpochCallback(currentX);
@@ -128,10 +128,10 @@ public:
 	cv::Mat test(cv::Mat y, cv::Mat x0, H h, OnRegressorIterationCallback onRegressorIterationCallback)
 	{
 		Mat currentX = x0;
-		for (auto&& regressor : regressors) {
+		for (size_t r = 0; r < regressors.size(); ++r) {
 			Mat features;
 			for (int i = 0; i < currentX.rows; ++i) {
-				features.push_back(h(currentX.row(i)));
+				features.push_back(h(currentX.row(i), r, i));
 			}
 			
 			Mat insideRegressor; // Todo: Find better name ;-)
@@ -146,7 +146,7 @@ public:
 			// For every test example:
 			// This calculates x_k = currentX - R * (h(currentX) - y):
 			for (int i = 0; i < currentX.rows; ++i) {
-				x_k.push_back(Mat(currentX.row(i) - regressor.predict(insideRegressor.row(i)))); // we need Mat() because the subtraction yields a (non-persistent) MatExpr
+				x_k.push_back(Mat(currentX.row(i) - regressors[r].predict(insideRegressor.row(i)))); // we need Mat() because the subtraction yields a (non-persistent) MatExpr
 			}
 			currentX = x_k;
 			onRegressorIterationCallback(currentX);
@@ -163,20 +163,20 @@ public:
 	// Predicts the result value for a single example, using all regressors.
 	// For the case where we have a template y (known y).
 	template<class H>
-	cv::Mat predict(cv::Mat x0, cv::Mat template_y, H h)
+	cv::Mat predict(cv::Mat x0, cv::Mat y, H h)
 	{
 		Mat currentX = x0;
-		for (auto&& regressor : regressors) {
+		for (size_t r = 0; r < regressors.size(); ++r) {
 			// calculate x_k = currentX - R * (h(currentX) - y):
 			Mat insideRegressor; // Todo: Find better name ;-)
 			if (y.empty()) { // unknown y training case
-				insideRegressor = h(currentX);
+				insideRegressor = h(currentX, r);
 			}
 			else { // known y
-				insideRegressor = h(currentX) - template_y;
+				insideRegressor = h(currentX, r) - y;
 			}
 
-			Mat x_k = currentX - regressor.predict(insideRegressor);
+			Mat x_k = currentX - regressors[r].predict(insideRegressor);
 			currentX = x_k;
 		}
 		return currentX;

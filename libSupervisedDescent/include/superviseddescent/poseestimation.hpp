@@ -139,7 +139,7 @@ public:
 		// the generic params of 'h', i.e. exampleId etc.
 		// Here: R, t. (, f)
 		// Returns the transformed 2D coords
-		cv::Mat operator()(cv::Mat parameters)
+		cv::Mat operator()(cv::Mat parameters, size_t regressorLevel, int trainingIndex = 0)
 		{
 			using cv::Mat;
 			//project the 3D model points using the current params
