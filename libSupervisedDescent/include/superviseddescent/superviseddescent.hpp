@@ -60,8 +60,17 @@ public:
 	// The input to this will be something different (e.g. only images? a templated class?)
 	// OnTrainingEpochCallback will get called
 	// The callback functions signature should look like:
+	// known y:
+	// Usually, in this case, x0 is a fixed initialisation, i.e. x0 = c (e.g. 0) for all examples
 	//
+	// unknown y (e.g. LMDet):
+	// H = e.g. HoG
+	// x0 = initialisation, e.g. initial landmarks
+	// x = groundtruth landmarks - the final location we want to be, i.e. our parameters
+	//
+	// param y, if y is unknown, pass an empty Mat (cv::Mat())
 	// $\mathbf{H}$ a function, should return a cv::Mat row-vector (1 row). Should process 1 training data. Optimally, whatever it is - float or a whole cv::Mat. But we can also simulate the 1D-case with a 1x1 cv::Mat for now.
+	// TODO: Move 'y' after x0 in the param-list
 	template<class H, class OnTrainingEpochCallback>
 	void train(cv::Mat x, cv::Mat y, cv::Mat x0, H h, OnTrainingEpochCallback onTrainingEpochCallback)
 	{
@@ -74,7 +83,14 @@ public:
 			for (int i = 0; i < currentX.rows; ++i) {
 				features.push_back(h(currentX.row(i)));
 			}
-			Mat insideRegressor = features - y; // Todo: Find better name ;-) 'projection' or 'projectedParameters'?
+			
+			Mat insideRegressor; // Todo: Find better name ;-) 'projection' or 'projectedParameters'?
+			if (y.empty()) { // unknown y training case
+				insideRegressor = features;
+			}
+			else { // known y
+				insideRegressor = features - y;
+			}
 			// We got $\sum\|x_*^i - x_k^i + R_k(h(x_k^i)-y^i)\|_2^2 $
 			// That is: $-b + Ax = 0$, $Ax = b$, $x = A^-1 * b$
 			// Thus: $b = x_k^i - x_*^i$. 
@@ -107,6 +123,7 @@ public:
 	};
 
 	// Returns the final prediction
+	// Known y
 	template<class H, class OnRegressorIterationCallback>
 	cv::Mat test(cv::Mat y, cv::Mat x0, H h, OnRegressorIterationCallback onRegressorIterationCallback)
 	{
