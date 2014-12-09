@@ -192,16 +192,16 @@ public:
 private:
 	// Note/Todo:
 	// Maybe we want a private function:
-	// getNextX(currentX, h, y, regressor); to eliminate duplicate code in predict() and test().
-	// Then, we could make an overload without y.
-	// However, it wouldn't solve the problem of with/without y at the learning stage.
+	// getNextX(currentX, h, y, regressor); to eliminate duplicate code in test() and predict() (and in train() as well?).
+	// Then, we could make an overload without y?
+	// However, it wouldn't solve the problem of with/without y at the learning stage. Or would it?
 
 	// I think at some point we should separate the optimiser and the model.
 	// But think about what depends on what, e.g. in the different cascade steps,
 	// and for a future parallel RCRC, etc.
 	std::vector<RegressorType> regressors;
 
-	//UpdateStrategy updateStrategy;
+	//UpdateStrategy updateStrategy; // For different x_k = ... update strategies: e.g. for a DynamicFaceSizeUpdate that depends on the IED.
 };
 
 	} /* namespace v2 */
