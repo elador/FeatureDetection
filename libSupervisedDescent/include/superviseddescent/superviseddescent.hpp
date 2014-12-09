@@ -84,7 +84,7 @@ public:
 				features.push_back(h(currentX.row(i)));
 			}
 			
-			Mat insideRegressor; // Todo: Find better name ;-) 'projection' or 'projectedParameters'?
+			Mat insideRegressor; // Todo: Find better name ;-) 'projection' or 'projectedParameters'? regressedValues?
 			if (y.empty()) { // unknown y training case
 				insideRegressor = features;
 			}
@@ -123,7 +123,7 @@ public:
 	};
 
 	// Returns the final prediction
-	// Known y
+	// Known y and unknown y
 	template<class H, class OnRegressorIterationCallback>
 	cv::Mat test(cv::Mat y, cv::Mat x0, H h, OnRegressorIterationCallback onRegressorIterationCallback)
 	{
@@ -133,13 +133,20 @@ public:
 			for (int i = 0; i < currentX.rows; ++i) {
 				features.push_back(h(currentX.row(i)));
 			}
-			Mat insideRegressor = features - y; // Todo: Find better name ;-)
+			
+			Mat insideRegressor; // Todo: Find better name ;-)
+			if (y.empty()) { // unknown y training case
+				insideRegressor = features;
+			}
+			else { // known y
+				insideRegressor = features - y;
+			}
+			
 			Mat x_k; // (currentX.rows, currentX.cols, currentX.type())
-			// For every training example:
+			// For every test example:
 			// This calculates x_k = currentX - R * (h(currentX) - y):
 			for (int i = 0; i < currentX.rows; ++i) {
-				Mat myInside = h(currentX.row(i)) - y.row(i);
-				x_k.push_back(Mat(currentX.row(i) - regressor.predict(myInside))); // we need Mat() because the subtraction yields a (non-persistent) MatExpr
+				x_k.push_back(Mat(currentX.row(i) - regressor.predict(insideRegressor.row(i)))); // we need Mat() because the subtraction yields a (non-persistent) MatExpr
 			}
 			currentX = x_k;
 			onRegressorIterationCallback(currentX);
@@ -161,8 +168,15 @@ public:
 		Mat currentX = x0;
 		for (auto&& regressor : regressors) {
 			// calculate x_k = currentX - R * (h(currentX) - y):
-			cv::Mat myInside = h(currentX) - template_y;
-			Mat x_k = currentX - regressor.predict(myInside);
+			Mat insideRegressor; // Todo: Find better name ;-)
+			if (y.empty()) { // unknown y training case
+				insideRegressor = h(currentX);
+			}
+			else { // known y
+				insideRegressor = h(currentX) - template_y;
+			}
+
+			Mat x_k = currentX - regressor.predict(insideRegressor);
 			currentX = x_k;
 		}
 		return currentX;
