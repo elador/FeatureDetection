@@ -210,7 +210,6 @@ int main(int argc, char *argv[])
 
 	vector<int> vertexIds;
 	// 17 iBug points, valid in both Surrey models:
-	vertexIds.push_back(35);
 	vertexIds.push_back(225);
 	vertexIds.push_back(233);
 	vertexIds.push_back(157);
@@ -250,17 +249,17 @@ int main(int argc, char *argv[])
 
 	const auto txSeed = std::random_device()();
 	std::mt19937 engineTx; engineTx.seed(txSeed);
-	std::uniform_real_distribution<> distrRandTx(-400, 400); // millimetres, in model space. try ~20
+	std::uniform_real_distribution<> distrRandTx(-125, 125); // millimetres, in model space. before: +-400
 	auto randRealTx = std::bind(distrRandTx, engineTx);
 
 	const auto tySeed = std::random_device()();
 	std::mt19937 engineTy; engineTy.seed(tySeed);
-	std::uniform_real_distribution<> distrRandTy(-400, 400);
+	std::uniform_real_distribution<> distrRandTy(-125, 125);
 	auto randRealTy = std::bind(distrRandTy, engineTy);
 
 	const auto tzSeed = std::random_device()();
 	std::mt19937 engineTz; engineTz.seed(tzSeed);
-	std::uniform_real_distribution<> distrRandTz(-400, 400);
+	std::uniform_real_distribution<> distrRandTz(-500, 500);
 	auto randRealTz = std::bind(distrRandTz, engineTz);
 
 	// Try both and compare: rnd tx, ty (, tz) and with alignment (t, maybe scale?) to eyes
@@ -286,16 +285,16 @@ int main(int argc, char *argv[])
 
 			auto tx = randRealTx();
 			auto ty = randRealTy();
-			auto tz = -2000.0f + randRealTz();
+			auto tz = -1200.0f + randRealTz();
 			// Todo: Hmm, in testing, we want to initialise, but then refine z as well
 			Mat translation = render::matrixutils::createTranslationMatrix(tx, ty, tz); // move the model 2.0 metres away from the camera (plus tz)
 
 			modelMatrix = translation * rotYawY * rotPitchX * rotRollZ;
-			fitting = ModelFitting(pitch, yaw, roll, tx, ty, tz, {}, {}, 1000.0f);
+			fitting = ModelFitting(pitch, yaw, roll, tx, ty, tz, {}, {}, 1800.0f);
 		}
 		// Random tx, ty, tz, f, scale (camera-scale)
-		float fovY = render::utils::focalLengthToFovy(1000.0f, screenHeight); //
-		Mat projectionMatrix = render::matrixutils::createPerspectiveProjectionMatrix(fovY, aspect, 0.1f, 5000.0f);
+		float fovY = render::utils::focalLengthToFovy(1800.0f, screenHeight); //
+		Mat projectionMatrix = render::matrixutils::createPerspectiveProjectionMatrix(fovY, aspect, 1.0f, 5000.0f);
 
 		// Test:
 		/*
@@ -303,8 +302,9 @@ int main(int argc, char *argv[])
 		Mat rotPitchX = render::matrixutils::createRotationMatrixX(degreesToRadians(0));
 		Mat rotYawY = render::matrixutils::createRotationMatrixY(degreesToRadians(0));
 		Mat rotRollZ = render::matrixutils::createRotationMatrixZ(degreesToRadians(0));
-		auto tz = -2400.0f;
-		Mat translation = render::matrixutils::createTranslationMatrix(0, 0, tz);
+		auto tz = -700.0f; // with f = 1800 ==> ied ~145
+		//auto tz = -1700.0f; // with f = 1800 ==> ied 68
+		Mat translation = render::matrixutils::createTranslationMatrix(125, 0, tz);
 		modelMatrix = translation * rotYawY * rotPitchX * rotRollZ;
 
 		renderer.clearBuffers();
@@ -316,7 +316,7 @@ int main(int argc, char *argv[])
 		vector<cv::Vec2f> lms;
 		for (auto&& id : vertexIds) {
 			Vec3f vtx2d = render::utils::projectVertex(meanMesh.vertex[id].position, projectionMatrix * modelMatrix, screenWidth, screenHeight);
-			vtx2d = (vtx2d - Vec3f(500.0f, 500.0f)) / 1000.0f/*=f*/; // New: normalise the image coordinates of the projection
+			vtx2d = (vtx2d - Vec3f(500.0f, 500.0f)) / 1800.0f/*=f*/; // New: normalise the image coordinates of the projection
 			lms.emplace_back(cv::Vec2f(vtx2d[0], vtx2d[1]));
 		}
 	
@@ -350,7 +350,7 @@ int main(int argc, char *argv[])
 	}
 
 	Mat x0 = Mat::zeros(fittings.size(), 6, CV_32FC1); // fixed initialisation of the parameters, all zero, except tz
-	x0.col(5) -= 2000.0f;
+	x0.col(5) -= 1200.0f;
 
 	// The reduced 3D model only consisting of the vertices we're using to learn the pose:
 	// ==> Todo this should be saved with the model! Including the vertexIds!
@@ -403,8 +403,8 @@ int main(int argc, char *argv[])
 	appLogger.info("Result of last regressor: " + std::to_string(normalisedLeastSquaresResidual(res, x_ts_gt)));
 	
 	// Save the trained model to the filesystem:
-	// Todo: Encapsulate in a class PoseRegressor, with all the neccesary stuff (e.g. which landmarks etc.)
-	std::ofstream learnedModelFile("pose_regressor_ibug_17lms_tmp.txt");
+	// Todo: Encapsulate in a class PoseRegressor, with all the necessary stuff (e.g. which landmarks etc.)
+	std::ofstream learnedModelFile("pose_regressor_ibug_17lms_tr10k.txt");
 	boost::archive::text_oarchive oa(learnedModelFile);
 	oa << sdp;
 

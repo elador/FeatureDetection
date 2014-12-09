@@ -223,6 +223,7 @@ int main(int argc, char *argv[])
 	Loggers->getLogger("morphablemodel").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("render").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("fitting").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
+	Loggers->getLogger("superviseddescent").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Loggers->getLogger("app").addAppender(make_shared<logging::ConsoleAppender>(logLevel));
 	Logger appLogger = Loggers->getLogger("app");
 
@@ -390,23 +391,54 @@ int main(int argc, char *argv[])
 
 		v2::SupervisedDescentPoseEstimation<v2::LinearRegressor> sdp;
 		{
-			std::ifstream poseRegressorFile("../sdm-examples-simple-v2/pose_regressor_11lms.txt");
+			std::ifstream poseRegressorFile("../sdm-examples-simple-v2/pose_regressor_ibug_17lms_tr10k.txt");
 			boost::archive::text_iarchive ia(poseRegressorFile);
 			ia >> sdp;
 		}
 
-		//sdp.predict(x0, y, h);
+		//cv::resize(img, img, cv::Size(512, 384));
+		auto numLandmarks = 16;
+		Mat y(1, numLandmarks * 2, CV_32FC1);
+		{
+			for (int lm = 0; lm < numLandmarks; ++lm) {
+				float lmX = landmarks[lm].getPoint2D().x;
+				float lmY = landmarks[lm].getPoint2D().y;
+				//y.at<float>(lm) = (lmX - 512.0f - 230.0f) / 1800.0f /*f*/; // Note: Very image specific
+				y.at<float>(lm) = (lmX - (img.cols / 2.0f)) / 1800.0f /*f*/; // Note: Very image specific
+				y.at<float>(lm + numLandmarks) = (lmY - (img.rows / 2.0f)) / 1800.0f/*f*/;
+				//y.at<float>(lm) = (landmarks[lm].getPoint2D().x - 500.0f - 230.0f) / 1000.0f;
+				//y.at<float>(lm + numLandmarks) = (landmarks[lm].getPoint2D().y - 500.0f - 230.0f) / 1000.0f;
+				appLogger.info((landmarks[lm].getName()));
+			}
+		}
 
+		Mat x0 = Mat::zeros(1, 6, CV_32FC1); // fixed initialisation of the parameters, all zero, except tz
+		x0.col(5) -= 1200.0f;
+		Mat params = sdp.predict(x0, y);
+		
 		// Finished! Now rendering:
 		Mesh mesh = morphableModel.getMean();
 		render::SoftwareRenderer softwareRenderer(img.cols, img.rows);
 		softwareRenderer.doBackfaceCulling = false;
-		/*
+		using render::utils::degreesToRadians;
+		Mat rotPitchX = render::matrixutils::createRotationMatrixX(degreesToRadians(params.at<float>(0)));
+		Mat rotYawY = render::matrixutils::createRotationMatrixY(degreesToRadians(params.at<float>(1)));
+		Mat rotRollZ = render::matrixutils::createRotationMatrixZ(degreesToRadians(params.at<float>(2)));
+		float ty = params.at<float>(4);// +(384.0f / 1800.0f);
+		Mat translation = render::matrixutils::createTranslationMatrix(params.at<float>(3), ty, params.at<float>(5));
+		Mat modelMatrix = translation * rotYawY * rotPitchX * rotRollZ;
+
+		//float screenWidth = img.cols;
+		//float screenHeight = img.rows;
+		float screenWidth = 1000.0f;
+		float screenHeight = 1000.0f;
+		const float aspect = static_cast<float>(img.cols) / static_cast<float>(img.rows);
+		float fovY = render::utils::focalLengthToFovy(1800.0f, screenHeight); //
+		Mat projectionMatrix = render::matrixutils::createPerspectiveProjectionMatrix(fovY, aspect, 1.0f, 5000.0f);
+
 		softwareRenderer.clearBuffers();
-		auto framebuffer = softwareRenderer.render(mesh, opengl_modelview, opengl_proj);
-		Mat renderedModel = framebuffer.first.clone(); // we save that later, and the framebuffer gets overwritten
-		Mat renderedModelZ = framebuffer.second.clone();
-		*/
+		Mat colorbuffer, depthbuffer;
+		std::tie(colorbuffer, depthbuffer) = softwareRenderer.render(mesh, modelMatrix, projectionMatrix);
 	
 
 		/*

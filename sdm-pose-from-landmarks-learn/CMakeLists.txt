@@ -1,4 +1,4 @@
-set(SUBPROJECT_NAME sdm-examples-simple-v2)
+set(SUBPROJECT_NAME sdm-pose-from-landmarks-learn)
 project(${SUBPROJECT_NAME})
 cmake_minimum_required(VERSION 2.8)
 set(${SUBPROJECT_NAME}_VERSION_MAJOR 0)
@@ -28,7 +28,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 # Source and header files:
 set(SOURCE
-	sdm-examples-simple-v2.cpp
+	sdm-pose-from-landmarks-learn.cpp
 )
 
 set(HEADERS

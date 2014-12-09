@@ -19,6 +19,7 @@
 	#define BOOST_ALL_NO_LIB	// Don't use the automatic library linking by boost with VS2010 (#pragma ...). Instead, we specify everything in cmake.
 #endif
 //#include "boost/serialization/vector.hpp" // only for the model coeffs, which we should remove anyway
+#include "boost/serialization/string.hpp"
 #include "boost/optional.hpp"
 
 namespace superviseddescent {
@@ -149,14 +150,14 @@ public:
 			Mat translation = render::matrixutils::createTranslationMatrix(unrolledParameters.tx, unrolledParameters.ty, unrolledParameters.tz.get());
 			Mat modelMatrix = translation * rotYawY * rotPitchX * rotRollZ;
 			const float aspect = static_cast<float>(1000) / static_cast<float>(1000);
-			float fovY = render::utils::focalLengthToFovy(1000.0f, 1000);
-			Mat projectionMatrix = render::matrixutils::createPerspectiveProjectionMatrix(fovY, aspect, 0.1f, 5000.0f);
+			float fovY = render::utils::focalLengthToFovy(1800.0f, 1000);
+			Mat projectionMatrix = render::matrixutils::createPerspectiveProjectionMatrix(fovY, aspect, 1.0f, 5000.0f);
 
 			int numLandmarks = model.cols;
 			Mat new2dProjections(1, numLandmarks * 2, CV_32FC1);
 			for (int lm = 0; lm < numLandmarks; ++lm) {
 				cv::Vec3f vtx2d = render::utils::projectVertex(cv::Vec4f(model.col(lm)), projectionMatrix * modelMatrix, 1000, 1000);
-				vtx2d = (vtx2d - Vec3f(500.0f, 500.0f)) / 1000.0f/*=f*/; // New: normalise the image coordinates of the projection
+				vtx2d = (vtx2d - Vec3f(500.0f, 500.0f)) / 1800.0f/*=f*/; // New: normalise the image coordinates of the projection
 				new2dProjections.at<float>(lm) = vtx2d[0]; // the x coord
 				new2dProjections.at<float>(lm + numLandmarks) = vtx2d[1]; // y coord
 			}

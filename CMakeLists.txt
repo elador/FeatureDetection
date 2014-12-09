@@ -80,9 +80,10 @@ add_subdirectory(detect-and-correct-faces) # Detect faces and validate them usin
 add_subdirectory(detect-landmarks)		# Run the SDM landmark detection on one or several images, the input is either images (V&J will be run) or images & faceboxes.
 add_subdirectory(sdmSimpleLandmarkDetection)	# Run the SDM landmark detection on just one image. Version without libImageIO. (well, libSupervisedDescentModel has a dependency on libImageIO now, but we could easily get rid of that with a CMake option)
 add_subdirectory(sdmTraining)			# Training of Supervised Descent Method landmark detection models
-add_subdirectory(sdm-examples-simple-v2)	# The simple examples with functions like sin(x) and x^2 from the SDM paper
-add_subdirectory(sdm-train-v2)			# Playground for supervised descent reimplementation (v2)
+add_subdirectory(sdm-train-v2)			# Playground for supervised descent reimplementation (v2) - landmark detection
+add_subdirectory(sdm-pose-from-landmarks-learn)	# sdm-pose-from-landmarks-learn. Includes code with the simple examples with functions like sin(x) and x^2 from the SDM paper
 add_subdirectory(sdm-pose-from-landmarks)	# Estimate the pose of a face (i.e. the camera parameters) from landmarks
+add_subdirectory(sdm-pose-fitting-learn) # 3DMM pose and shape fitting test using supervised descent
 
 # 3DMM fitting:
 add_subdirectory(fitter)			# Experimental command-line fitting app using the software renderer.
