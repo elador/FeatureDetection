@@ -51,6 +51,7 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/math/special_functions/erf.hpp"
+#include "boost/archive/text_oarchive.hpp"
 
 #include "imageio/ImageSource.hpp"
 #include "imageio/FileImageSource.hpp"
@@ -70,6 +71,7 @@
 
 using namespace imageio;
 using namespace superviseddescent;
+using namespace superviseddescent::v2;
 namespace po = boost::program_options;
 using std::cout;
 using std::endl;
@@ -85,6 +87,38 @@ using logging::Logger;
 using logging::LoggerFactory;
 using logging::LogLevel;
 
+class h_proj
+{
+public:
+	h_proj() // maybe change outer member to unique_ptr instead
+	{
+	};
+
+	// additional stuff needed by this specific 'h'
+	// M = 3d model, 3d points.
+	h_proj(std::vector<cv::Mat> images) : images(images)
+	{
+
+	};
+
+	// the generic params of 'h', i.e. exampleId etc.
+	// Here: R, t. (, f)
+	// Returns the transformed 2D coords
+	cv::Mat operator()(cv::Mat parameters, size_t regressorLevel, int trainingIndex = 0)
+	{
+		using cv::Mat;
+		return Mat();
+	};
+
+	std::vector<cv::Mat> images;
+
+	friend class boost::serialization::access;
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version)
+	{
+		
+	};
+};
 
 template<typename ForwardIterator, typename T>
 void strided_iota(ForwardIterator first, ForwardIterator last, T value, T stride)
@@ -469,6 +503,54 @@ int main(int argc, char *argv[])
 	end = std::chrono::system_clock::now();
 	int elapsed_mseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 	appLogger.debug("Finished after " + lexical_cast<string>(elapsed_mseconds) + "ms.");
+
+	// START NEW
+	v2::Regulariser reg(v2::Regulariser::RegularisationType::MatrixNorm, 0.1f);
+	vector<v2::LinearRegressor> regressors;
+	regressors.emplace_back(v2::LinearRegressor(reg));
+	regressors.emplace_back(v2::LinearRegressor(reg));
+	regressors.emplace_back(v2::LinearRegressor(reg));
+	regressors.emplace_back(v2::LinearRegressor(reg));
+	regressors.emplace_back(v2::LinearRegressor(reg));
+
+	v2::SupervisedDescentOptimiser<v2::LinearRegressor> sdo(regressors);
+	h_proj h(trainingImages);
+	Mat x_tr(trainingGroundtruthLandmarks.size(), 2 * modelLandmarks.size(), CV_32FC1);
+	for (auto&& e : trainingGroundtruthLandmarks) {
+		x_tr.push_back(e);
+	}
+	Mat x0;
+	
+	auto normalisedLeastSquaresResidual = [](const Mat& prediction, const Mat& groundtruth) {
+		return cv::norm(prediction, groundtruth, cv::NORM_L2) / cv::norm(groundtruth, cv::NORM_L2);
+	};
+	
+	auto onTrainCallback = [&](const cv::Mat& currentPredictions) {
+		appLogger.info(std::to_string(normalisedLeastSquaresResidual(currentPredictions, x_tr)));
+	};
+	
+	sdo.train(x_tr, Mat(), x0, onTrainCallback);
+	appLogger.info("Finished training.");
+	/*
+	// Test the trained model:
+	//Mat y_ts(numValuesTest, 1, CV_32FC1);
+	//Mat x_ts_gt(numValuesTest, 1, CV_32FC1);
+	//Mat x0_ts = 0.5f * Mat::ones(numValuesTest, 1, CV_32FC1); // We also just start in the center.
+	auto onTestCallback = [&](const cv::Mat& currentPredictions) {
+		appLogger.info(std::to_string(normalisedLeastSquaresResidual(currentPredictions, x_ts_gt)));
+	};
+	cv::Mat res = sdp.test(y_ts, x0_ts, onTestCallback);
+	appLogger.info("Result of last regressor: " + std::to_string(normalisedLeastSquaresResidual(res, x_ts_gt)));
+	
+	// Save the trained model to the filesystem:
+	// Todo: Encapsulate in a class PoseRegressor, with all the necessary stuff (e.g. which landmarks etc.)
+	std::ofstream learnedModelFile("pose_regressor_ibug_17lms_tr10k.txt");
+	boost::archive::text_oarchive oa(learnedModelFile);
+	oa << sdo;
+
+	appLogger.info("Saved learned regressor model. Exiting...");
+	// END NEW
+	*/
 
 	LandmarkBasedSupervisedDescentTraining tr;
 	tr.setNumSamplesPerImage(numSamplesPerImage);

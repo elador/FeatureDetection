@@ -51,6 +51,7 @@
 #include "render/utils.hpp"
 #include "morphablemodel/MorphableModel.hpp"
 #include "superviseddescent/poseestimation.hpp" // v2 stuff
+#include "superviseddescent/VlHogFilter.hpp"
 #include "fitting/utils.hpp"
 
 #include "logging/LoggerFactory.hpp"
@@ -267,8 +268,8 @@ int main(int argc, char *argv[])
 	vector<ModelFitting> fittings;
 	vector<vector<cv::Vec2f>> landmarks;
 
-	int numSamples = 15000;
-	int numTr = 10000;
+	int numSamples = 15;
+	int numTr = 10;
 	for (int i = 0; i < numSamples; ++i) {
 		// Generate a random pose:
 		ModelFitting fitting;
@@ -283,9 +284,9 @@ int main(int argc, char *argv[])
 			Mat rotYawY = render::matrixutils::createRotationMatrixY(degreesToRadians(yaw));
 			Mat rotRollZ = render::matrixutils::createRotationMatrixZ(degreesToRadians(roll));
 
-			auto tx = randRealTx();
-			auto ty = randRealTy();
-			auto tz = -1200.0f + randRealTz();
+			auto tx = 0.0f;// randRealTx();
+			auto ty = 0.0f;//randRealTy();
+			auto tz = -1200.0f;// + randRealTz();
 			// Todo: Hmm, in testing, we want to initialise, but then refine z as well
 			Mat translation = render::matrixutils::createTranslationMatrix(tx, ty, tz); // move the model 2.0 metres away from the camera (plus tz)
 
@@ -311,37 +312,12 @@ int main(int argc, char *argv[])
 		Mat colorbuffer, depthbuffer;
 		std::tie(colorbuffer, depthbuffer) = renderer.render(meanMesh, modelMatrix, projectionMatrix);
 		*/
-
-		// Project all LMs to 2D:
-		vector<cv::Vec2f> lms;
-		for (auto&& id : vertexIds) {
-			Vec3f vtx2d = render::utils::projectVertex(meanMesh.vertex[id].position, projectionMatrix * modelMatrix, screenWidth, screenHeight);
-			vtx2d = (vtx2d - Vec3f(500.0f, 500.0f)) / 1800.0f/*=f*/; // New: normalise the image coordinates of the projection
-			lms.emplace_back(cv::Vec2f(vtx2d[0], vtx2d[1]));
-		}
-	
 		fittings.emplace_back(fitting);
-		landmarks.emplace_back(lms);
 	}
 
-	// Our data:
-	// Mat(numTr, numLms*2); (the 2D proj)
-	// vector<ModelFitting> bzw Mat(numTr, numParamsInUnrolledVec).
-	
-	// The landmark projections:
 	auto numLandmarks = vertexIds.size();
-	Mat y_tr(fittings.size(), numLandmarks * 2, CV_32FC1);
-	{
-		for (int r = 0; r < y_tr.rows; ++r) {
-			for (int lm = 0; lm < vertexIds.size(); ++lm) {
-				y_tr.at<float>(r, lm) = landmarks[r][lm][0]; // the x coord
-				y_tr.at<float>(r, lm + numLandmarks) = landmarks[r][lm][1]; // y coord
-			}
-		}
-	}
-
 	// The parameters:
-	Mat x_tr(fittings.size(), 6, CV_32FC1); // 6 params atm: rx, ry, rz, tx, ty, tz
+	Mat x_tr(fittings.size(), 6, CV_32FC1); // 3 params atm: rx, ry, rz, (tx, ty, tz)
 	{
 		for (int r = 0; r < x_tr.rows; ++r) {
 			Mat parameterRow = packParameters(fittings[r]);

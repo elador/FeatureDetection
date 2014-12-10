@@ -41,6 +41,8 @@ inline void noEval(const cv::Mat& currentPredictions) // do nothing
 // Requirements on UpdateStrategy: A function Mat(...Mat.. Regressor...);
 //  for one sample. Also possibly (if a performance problem) an overload
 //  for several samples at once.
+// Note: 'H' is a mandatory argument for every (?) function of the SDO.
+// => Make it a class template parameter (and thus member variable)?
 template<class RegressorType, class UpdateStrategy=void>
 class SupervisedDescentOptimiser
 {
