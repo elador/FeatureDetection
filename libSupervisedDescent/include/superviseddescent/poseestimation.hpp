@@ -106,7 +106,7 @@ public:
 		params.at<float>(2) = modelFitting.rotationZ;
 		params.at<float>(3) = modelFitting.tx;
 		params.at<float>(4) = modelFitting.ty;
-		params.at<float>(4) = modelFitting.tz;
+		params.at<float>(5) = modelFitting.tz;
 		return params;
 	}
 

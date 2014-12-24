@@ -59,7 +59,7 @@ cv::Mat LandmarkBasedSupervisedDescentTraining::meanNormalizationUnitSumSquaredN
 	modelMeanY = modelMeanY - cy[0];
 	// scale so that the average norm is 1/numLandmarks (i.e.: the total norm of all vectors added is 1).
 	// note: that doesn't make too much sense, because it follows that the more landmarks we use, the smaller the mean-face will be.
-	float currentTotalSquaredNorm = 0.0f;
+	float currentTotalSquaredNorm = 0.0f; // I think a double would be more appropriate here
 	for (int p = 0; p < numLandmarks; ++p) {
 		float x = modelMeanX.at<float>(p);
 		float y = modelMeanY.at<float>(p);
@@ -147,9 +147,11 @@ LandmarkBasedSupervisedDescentTraining::AlignmentStatistics LandmarkBasedSupervi
 		Mat initialShapeEstimateX0_x = initialShapeEstimateX0.row(currentImage).colRange(0, numModelLandmarks);
 		Mat initialShapeEstimateX0_y = initialShapeEstimateX0.row(currentImage).colRange(numModelLandmarks, numModelLandmarks * 2);
 
+		// switch around params? and then change sign in rescaleMean(...)
 		delta_tx.at<float>(currentImage) = calculateMeanTranslation(groundtruth_x, initialShapeEstimateX0_x) / detectedFace.width; // mean translation in relation to the V&J face-box
 		delta_ty.at<float>(currentImage) = calculateMeanTranslation(groundtruth_y, initialShapeEstimateX0_y) / detectedFace.height;
 		
+		// switch around params? and then change division to multiplication in rescaleMean()
 		delta_sx.at<float>(currentImage) = calculateScaleRatio(groundtruth_x, initialShapeEstimateX0_x);
 		delta_sy.at<float>(currentImage) = calculateScaleRatio(groundtruth_y, initialShapeEstimateX0_y);
 
@@ -188,8 +190,8 @@ Mat LandmarkBasedSupervisedDescentTraining::rescaleModel(Mat modelMean, const Al
 {
 	Mat modelMean_x = modelMean.colRange(0, modelMean.cols / 2);
 	Mat modelMean_y = modelMean.colRange(modelMean.cols / 2, modelMean.cols);
-	modelMean_x = (modelMean_x - alignmentStatistics.tx.mu) / alignmentStatistics.sx.mu;
-	modelMean_y = (modelMean_y - alignmentStatistics.ty.mu) / alignmentStatistics.sy.mu;
+	modelMean_x = (modelMean_x / alignmentStatistics.sx.mu) - alignmentStatistics.tx.mu;
+	modelMean_y = (modelMean_y / alignmentStatistics.sy.mu) - alignmentStatistics.ty.mu;
 	return modelMean;
 }
 
@@ -221,7 +223,7 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 
 	// Calculate the mean:
 	Mat modelMean = calculateMean(groundtruthLandmarks, alignGroundtruth, meanNormalization, trainingFaceboxes);
-	//saveShapeInstanceToMatlab(modelMean, "mean.txt");
+	saveShapeInstanceToMatlab(modelMean, R"(C:\Users\Patrik\Documents\GitHub\superviseddescent\mean_raw.txt)");
 	
 	// FURTHER MEAN STUFF: Align the mean, calc variance, realign it. Move to calculateScaledMean(...) ?
 	// All a flag for this? rescaleMeanToData?
@@ -232,6 +234,10 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 		cv::Rect detectedFace = trainingFaceboxes[currentImage]; // Caution: Depending on flags selected earlier, we might not have detected faces yet!
 		Mat initialShapeEstimateX0 = alignMean(modelMean, detectedFace);
 		initialShapeEstimateX0.copyTo(initialShapeToRescaleMean.row(currentImage));
+		// dbg:
+	/*	Mat img = trainingImages[currentImage].clone();
+		cv::rectangle(img, detectedFace, { 255, 0, 0 });
+		drawLandmarks(img, initialShapeEstimateX0); */
 	}
 	// Calculate the mean and variances of the translational and scaling differences between the initial and true landmark locations. (used for generating the samples)
 	// This also includes the scaling/translation necessary to go from the unit-sqnorm normalized mean to one in a reasonably sized one w.r.t. the face-box.
@@ -246,10 +252,19 @@ SdmLandmarkModel LandmarkBasedSupervisedDescentTraining::train(vector<Mat> train
 		cv::Rect detectedFace = trainingFaceboxes[currentImage]; // Caution: Depending on flags selected earlier, we might not have detected faces yet!
 		Mat initialShapeEstimateX0 = alignMean(modelMean, detectedFace);
 		initialShapeEstimateX0.copyTo(initialShapeToRescaleMean.row(currentImage));
+		// dbg:
+	/*	Mat img = trainingImages[currentImage].clone();
+		cv::rectangle(img, detectedFace, { 255, 0, 0 });
+		drawLandmarks(img, initialShapeEstimateX0); */
 	}
-	// Note/Todo: tx_mu and ty_mu are not zero - why? See bug #66.
 	alignmentStatistics = calculateAlignmentStatistics(trainingFaceboxes, groundtruthLandmarks, initialShapeToRescaleMean);
 
+/*	std::ofstream f(R"(C:\Users\Patrik\Documents\GitHub\superviseddescent\mean.txt)");
+	for (int i = 0; i < modelMean.cols; ++i) {
+		f << modelMean.at<float>(i) << ", ";
+	}
+	f.close();
+*/
 	// 3. For every training image:
 	// Store the initial shape estimate (x_0) of the image (using the rescaled mean), plus generate 10 samples and store them as well
 	// Do the initial alignment: (different methods? depending if mean normalized or not?)

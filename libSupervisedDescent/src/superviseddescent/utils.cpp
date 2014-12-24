@@ -30,6 +30,8 @@ Mat alignMean(Mat mean, cv::Rect faceBox, float scalingX/*=1.0f*/, float scaling
 	return alignedMean;
 }
 
+// translation from gt to esti
+// rename params or add clear doc "from what to what".
 float calculateMeanTranslation(Mat groundtruth, Mat estimate)
 {
 	// calculate the centroid of the ground-truth and the estimate
@@ -39,6 +41,8 @@ float calculateMeanTranslation(Mat groundtruth, Mat estimate)
 	return (estMean[0] - gtMean[0]);
 }
 
+// scalar for from gt to esti
+// rename params or add clear doc "from what to what".
 float calculateScaleRatio(Mat groundtruth, Mat estimate)
 {
 	// calculate the scaling difference between the ground truth and the estimate

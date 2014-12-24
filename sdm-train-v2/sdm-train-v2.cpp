@@ -505,6 +505,7 @@ int main(int argc, char *argv[])
 	appLogger.debug("Finished after " + lexical_cast<string>(elapsed_mseconds) + "ms.");
 
 	// START NEW
+	/*
 	v2::Regulariser reg(v2::Regulariser::RegularisationType::MatrixNorm, 0.1f);
 	vector<v2::LinearRegressor> regressors;
 	regressors.emplace_back(v2::LinearRegressor(reg));
@@ -531,6 +532,7 @@ int main(int argc, char *argv[])
 	
 	sdo.train(x_tr, Mat(), x0, onTrainCallback);
 	appLogger.info("Finished training.");
+	*/
 	/*
 	// Test the trained model:
 	//Mat y_ts(numValuesTest, 1, CV_32FC1);
@@ -557,8 +559,9 @@ int main(int argc, char *argv[])
 	tr.setNumCascadeSteps(numCascadeSteps);
 	tr.setRegularisation(regularisation);
 	tr.setAlignGroundtruth(LandmarkBasedSupervisedDescentTraining::AlignGroundtruth::NONE); // TODO Read from config!
+	// MeanNormalization is actually quite useless, because we rescale the mean one step later anyway (to get the best x0, given data)
 	tr.setMeanNormalization(LandmarkBasedSupervisedDescentTraining::MeanNormalization::UNIT_SUM_SQUARED_NORMS); // TODO Read from config!
-	SdmLandmarkModel model = tr.train(trainingImages, trainingGroundtruthLandmarks, trainingFaceboxes, modelLandmarks, descriptorTypes, descriptorExtractors);
+ 	SdmLandmarkModel model = tr.train(trainingImages, trainingGroundtruthLandmarks, trainingFaceboxes, modelLandmarks, descriptorTypes, descriptorExtractors);
 	
 	std::time_t currentTime_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	string currentTime = std::ctime(&currentTime_t);
