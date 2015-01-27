@@ -72,6 +72,7 @@ add_subdirectory(fitter)			# Experimental command-line fitting app using the sof
 add_subdirectory(fittingRenderer)	# App to render fitting results
 add_subdirectory(fitterGUI)			# Experimental Fitting-app using the Software Renderer (for one image)
 add_subdirectory(fittingTools) # Tools for fitting and model-rendering (e.g. compare isomaps)
+add_subdirectory(poseNormApp) #App to detect face and landmarks and fit in one step
 
 # Tools:
 add_subdirectory(landmarkVisualiser)	# Simple app to read landmarks and images and display them
