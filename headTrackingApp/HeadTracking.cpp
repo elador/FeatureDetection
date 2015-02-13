@@ -802,7 +802,7 @@ void HeadTracking::onMouse(int event, int x, int y, int, void* userdata) {
 				int tries = 0;
 				while (tries < 10 && !tracking->adaptiveUsable) {
 					tries++;
-					tracking->adaptiveUsable = tracking->adaptiveTracker->initialize(tracking->frame, position);
+					tracking->adaptiveUsable = !!tracking->adaptiveTracker->initialize(tracking->frame, position);
 				}
 				if (tracking->adaptiveUsable) {
 					log.info("Initialized adaptive tracking after " + std::to_string(tries) + " tries");
@@ -890,7 +890,7 @@ void HeadTracking::run() {
 							Point(cvRound(floatBounds.br().x), cvRound(floatBounds.br().y)));
 					if (landmark->isVisible() && bounds.x >= 0 && bounds.y >= 0 && bounds.br().x < image.cols && bounds.br().y < image.rows) {
 						tries++;
-						adaptiveUsable = adaptiveTracker->initialize(frame, bounds);
+						adaptiveUsable = !!adaptiveTracker->initialize(frame, bounds);
 						drawTarget(image, optional<Rect>(bounds), true, true);
 						if (adaptiveUsable) {
 							log.info("Initialized adaptive tracking after " + std::to_string(tries) + " tries");
