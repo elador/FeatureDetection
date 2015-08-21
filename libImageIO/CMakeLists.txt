@@ -32,6 +32,7 @@ set(HEADERS
 	include/imageio/DidLandmarkSink.hpp
 	include/imageio/DirectoryImageSink.hpp
 	include/imageio/DirectoryImageSource.hpp
+	include/imageio/DlibImageSource.hpp
 	include/imageio/EmptyLandmarkSource.hpp
 	include/imageio/FddbLandmarkSink.hpp
 	include/imageio/FileImageSource.hpp
@@ -79,6 +80,7 @@ set(SOURCE
 	src/imageio/DidLandmarkSink.cpp
 	src/imageio/DirectoryImageSink.cpp
 	src/imageio/DirectoryImageSource.cpp
+	src/imageio/DlibImageSource.cpp
 	src/imageio/FddbLandmarkSink.cpp
 	src/imageio/FileImageSource.cpp
 	src/imageio/FileListImageSource.cpp
