@@ -661,9 +661,9 @@ vector<Mat> ExtendedHogBasedMeasurementModel::createGoodNegativeExamples(Rect ta
 		candidates.pop_back();
 		shared_ptr<Patch> patch = featureExtractor->extract(box.x + box.width / 2, box.y + box.height / 2, box.width, box.height);
 		examples.push_back(patch->getData());
-		std::remove_if(candidates.begin(), candidates.end(), [&](const pair<float, Rect>& elem) {
+		candidates.erase(std::remove_if(candidates.begin(), candidates.end(), [&](const pair<float, Rect>& elem) {
 			return computeOverlap(box, elem.second) > negativeOverlapThreshold;
-		});
+		}), candidates.end());
 	}
 	return examples;
 }
