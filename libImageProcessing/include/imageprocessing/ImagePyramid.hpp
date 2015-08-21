@@ -190,10 +190,28 @@ public:
 	}
 
 	/**
+	 * Changes the minimum scale factor.
+	 *
+	 * @param[in] scaleFactor The new minimum scale factor (the scale factor of the smallest scaled (last) image is bigger or equal).
+	 */
+	void setMinScaleFactor(double scaleFactor) {
+		minScaleFactor = scaleFactor;
+	}
+
+	/**
 	 * @return The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
 	 */
 	double getMaxScaleFactor() const {
 		return maxScaleFactor;
+	}
+
+	/**
+	 * Changes the maximum scale factor.
+	 *
+	 * @param[in] scaleFactor The new maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
+	 */
+	void setMaxScaleFactor(double scaleFactor) {
+		maxScaleFactor = scaleFactor;
 	}
 
 	/**

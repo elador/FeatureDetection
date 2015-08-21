@@ -33,8 +33,17 @@ public:
 	 * @param[in] height The original height.
 	 * @param[in] data The patch data (might be an image patch or a feature vector).
 	 */
-	explicit Patch(int x, int y, int width, int height, const cv::Mat& data) :
+	Patch(int x, int y, int width, int height, const cv::Mat& data) :
 			x(x), y(y), width(width), height(height), data(data) {}
+
+	/**
+	 * Constructs a new patch given its bounding rectangle.
+	 *
+	 * @param[in] bounds The bounding rectangle of the patch.
+	 * @param[in] data The patch data (might be an image patch or a feature vector).
+	 */
+	Patch(cv::Rect bounds, const cv::Mat& data) :
+		  x(bounds.x + bounds.width / 2), y(bounds.y + bounds.height / 2), width(bounds.width), height(bounds.height) {}
 
 	/**
 	 * Copy constructor that clones the patch data.

@@ -112,7 +112,7 @@ void ImagePyramid::update() {
 					layers.push_back(make_shared<ImagePyramidLayer>(i, scaleFactor, layerFilter->applyTo(scaledImage)));
 				Mat previousScaledImage = scaledImage;
 				scaleFactor *= 0.5;
-				for (size_t j = 1; scaleFactor >= minScaleFactor; ++j, scaleFactor *= 0.5) {
+				for (size_t j = 1; scaleFactor >= minScaleFactor && previousScaledImage.cols > 1; ++j, scaleFactor *= 0.5) {
 					Mat downSampledImage;
 					pyrDown(previousScaledImage, scaledImage);
 					if (scaleFactor <= maxScaleFactor)

@@ -20,11 +20,15 @@ ConvolutionFilter::ConvolutionFilter(const Mat& kernel, double delta, int depth)
 ConvolutionFilter::ConvolutionFilter(int depth) : kernels(), delta(0), depth(depth) {}
 
 Mat ConvolutionFilter::applyTo(const Mat& image, Mat& filtered) const {
+	if (image.empty()) {
+		filtered.create(0, 0, filtered.type());
+		return filtered;
+	}
 	cv::Point anchor = cv::Point(-1, -1);
 	vector<Mat> channels;
 	cv::split(image, channels);
 	if (channels.size() != kernels.size())
-		throw invalid_argument("the amount of channels of the kernel and the image have to be the same");
+		throw invalid_argument("ConvolutionFilter: the amount of channels of the kernel and the image have to be the same");
 	filtered.create(image.rows, image.cols, depth);
 	filtered = delta;
 	Mat tmp;
