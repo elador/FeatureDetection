@@ -100,6 +100,22 @@ public:
 	static std::shared_ptr<ProbabilisticSvmClassifier> load(const boost::property_tree::ptree& subtree);
 
 	/**
+	 * Creates a new probabilistic SVM from parameters (kernel, bias, coefficients, support vectors, logistic)
+	 * given in a text file.
+	 *
+	 * @param[in] file The file input stream to load the parameters from.
+	 * @return The newly created probabilistic SVM classifier.
+	 */
+	static std::shared_ptr<ProbabilisticSvmClassifier> load(std::ifstream& file);
+
+	/**
+	 * Stores the logistic and SVM parameters (kernel, bias, coefficients, support vectors) into a text file.
+	 *
+	 * @param[in] file The file output stream to store the parameters into.
+	 */
+	void store(std::ofstream& file);
+
+	/**
 	 * @return The actual SVM.
 	 */
 	std::shared_ptr<SvmClassifier> getSvm() {

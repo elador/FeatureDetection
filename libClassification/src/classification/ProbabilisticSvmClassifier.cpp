@@ -62,6 +62,21 @@ void ProbabilisticSvmClassifier::setLogisticParameters(double logisticA, double 
 	this->logisticB = logisticB;
 }
 
+void ProbabilisticSvmClassifier::store(std::ofstream& file) {
+	svm->store(file);
+	file << "Logistic " << logisticA << ' ' << logisticB << '\n';
+}
+
+std::shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::load(std::ifstream& file) {
+	shared_ptr<SvmClassifier> svm = SvmClassifier::load(file);
+	string tmp;
+	double logisticA, logisticB;
+	file >> tmp; // "Logistic"
+	file >> logisticA;
+	file >> logisticB;
+	return make_shared<ProbabilisticSvmClassifier>(svm, logisticA, logisticB);
+}
+
 shared_ptr<ProbabilisticSvmClassifier> ProbabilisticSvmClassifier::load(const ptree& subtree)
 {
 	path classifierFile = subtree.get<path>("classifierFile");
