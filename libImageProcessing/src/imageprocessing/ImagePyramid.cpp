@@ -40,7 +40,7 @@ static T createException(const string& file, int line, const string& message) {
 ImagePyramid::ImagePyramid(size_t octaveLayerCount, double minScaleFactor, double maxScaleFactor) :
 		octaveLayerCount(octaveLayerCount), incrementalScaleFactor(0),
 		minScaleFactor(minScaleFactor), maxScaleFactor(maxScaleFactor),
-		firstLayer(0), layers(), sourceImage(), sourcePyramid(), version(-1),
+		firstLayer(0), layers(), sourceImage(), sourcePyramid(), version(),
 		imageFilter(make_shared<ChainedFilter>()), layerFilter(make_shared<ChainedFilter>()) {
 	if (octaveLayerCount == 0)
 		throw createException<invalid_argument>(__FILE__, __LINE__, "the number of layers per octave must be greater than zero");
@@ -54,7 +54,7 @@ ImagePyramid::ImagePyramid(size_t octaveLayerCount, double minScaleFactor, doubl
 ImagePyramid::ImagePyramid(double incrementalScaleFactor, double minScaleFactor, double maxScaleFactor) :
 		octaveLayerCount(0), incrementalScaleFactor(0),
 		minScaleFactor(minScaleFactor), maxScaleFactor(maxScaleFactor),
-		firstLayer(0), layers(), sourceImage(), sourcePyramid(), version(-1),
+		firstLayer(0), layers(), sourceImage(), sourcePyramid(), version(),
 		imageFilter(make_shared<ChainedFilter>()), layerFilter(make_shared<ChainedFilter>()) {
 	if (incrementalScaleFactor <= 0 || incrementalScaleFactor >= 1)
 		throw createException<invalid_argument>(__FILE__, __LINE__, "the incremental scale factor must be greater than zero and smaller than one");
@@ -69,18 +69,17 @@ ImagePyramid::ImagePyramid(double incrementalScaleFactor, double minScaleFactor,
 ImagePyramid::ImagePyramid(double minScaleFactor, double maxScaleFactor) :
 		octaveLayerCount(0), incrementalScaleFactor(0),
 		minScaleFactor(minScaleFactor), maxScaleFactor(maxScaleFactor),
-		firstLayer(0), layers(), sourceImage(), sourcePyramid(), version(-1),
+		firstLayer(0), layers(), sourceImage(), sourcePyramid(), version(),
 		imageFilter(make_shared<ChainedFilter>()), layerFilter(make_shared<ChainedFilter>()) {}
 
 ImagePyramid::ImagePyramid(shared_ptr<ImagePyramid> pyramid, double minScaleFactor, double maxScaleFactor) :
 		octaveLayerCount(pyramid->octaveLayerCount), incrementalScaleFactor(pyramid->incrementalScaleFactor),
 		minScaleFactor(minScaleFactor), maxScaleFactor(maxScaleFactor),
-		firstLayer(0), layers(), sourceImage(), sourcePyramid(pyramid), version(-1),
+		firstLayer(0), layers(), sourceImage(), sourcePyramid(pyramid), version(),
 		imageFilter(make_shared<ChainedFilter>()), layerFilter(make_shared<ChainedFilter>()) {}
 
 void ImagePyramid::setSource(const Mat& image) {
 	setSource(make_shared<VersionedImage>(image));
-	version = -1;
 }
 
 void ImagePyramid::setSource(const shared_ptr<VersionedImage>& image) {
@@ -102,6 +101,7 @@ void ImagePyramid::update() {
 		if (version != sourceImage->getVersion()) {
 			layers.clear();
 			Mat filteredImage = imageFilter->applyTo(sourceImage->getData());
+
 			// TODO wenn maxscale <= 0.5 -> erstmal pyrdown auf bild (etc pp)
 			for (size_t i = 0; i < octaveLayerCount; ++i) {
 				double scaleFactor = pow(incrementalScaleFactor, i);
@@ -113,7 +113,6 @@ void ImagePyramid::update() {
 				Mat previousScaledImage = scaledImage;
 				scaleFactor *= 0.5;
 				for (size_t j = 1; scaleFactor >= minScaleFactor && previousScaledImage.cols > 1; ++j, scaleFactor *= 0.5) {
-					Mat downSampledImage;
 					pyrDown(previousScaledImage, scaledImage);
 					if (scaleFactor <= maxScaleFactor)
 						layers.push_back(make_shared<ImagePyramidLayer>(i + j * octaveLayerCount, scaleFactor, layerFilter->applyTo(scaledImage)));
@@ -123,12 +122,13 @@ void ImagePyramid::update() {
 			std::sort(layers.begin(), layers.end(), [](const shared_ptr<ImagePyramidLayer>& a, const shared_ptr<ImagePyramidLayer>& b) {
 				return a->getIndex() < b->getIndex();
 			});
+
 			if (!layers.empty())
 				firstLayer = layers.front()->getIndex();
 			version = sourceImage->getVersion();
 		}
 	} else if (sourcePyramid) {
-		if (version != sourcePyramid->getVersion()) {
+		if (version != sourcePyramid->version) {
 			incrementalScaleFactor = sourcePyramid->incrementalScaleFactor;
 			layers.clear();
 			for (const shared_ptr<ImagePyramidLayer>& layer : sourcePyramid->layers) {
@@ -141,7 +141,7 @@ void ImagePyramid::update() {
 			}
 			if (!layers.empty())
 				firstLayer = layers.front()->getIndex();
-			version = sourcePyramid->getVersion();
+			version = sourcePyramid->version;
 		}
 	} else { // neither source pyramid nor source image are set, therefore the other parameters are missing, too
 		Loggers->getLogger("ImageProcessing").warn("ImagePyramid: could not update because there is no source (image or pyramid)");
@@ -149,13 +149,7 @@ void ImagePyramid::update() {
 }
 
 void ImagePyramid::update(const Mat& image) {
-	if (sourcePyramid) {
-		sourcePyramid->update(image);
-		update();
-	} else {
-		setSource(image);
-		update();
-	}
+	update(make_shared<VersionedImage>(image));
 }
 
 void ImagePyramid::update(const shared_ptr<VersionedImage>& image) {

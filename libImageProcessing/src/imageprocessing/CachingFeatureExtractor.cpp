@@ -18,13 +18,7 @@ using std::invalid_argument;
 namespace imageprocessing {
 
 CachingFeatureExtractor::CachingFeatureExtractor(shared_ptr<FeatureExtractor> extractor, Strategy strategy) :
-		extractor(extractor), cache(), strategy(strategy), version(-1) {}
-
-void CachingFeatureExtractor::update(const Mat& image) {
-	extractor->update(image);
-	cache.clear();
-	version = -1;
-}
+		extractor(extractor), cache(), strategy(strategy), version() {}
 
 void CachingFeatureExtractor::update(shared_ptr<VersionedImage> image) {
 	extractor->update(image);

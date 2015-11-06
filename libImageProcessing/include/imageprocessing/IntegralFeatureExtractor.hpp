@@ -27,9 +27,7 @@ public:
 	 */
 	explicit IntegralFeatureExtractor(std::shared_ptr<FeatureExtractor> extractor) : extractor(extractor) {}
 
-	void update(const cv::Mat& image) {
-		extractor->update(image);
-	}
+	using FeatureExtractor::update;
 
 	void update(std::shared_ptr<VersionedImage> image) {
 		extractor->update(image);

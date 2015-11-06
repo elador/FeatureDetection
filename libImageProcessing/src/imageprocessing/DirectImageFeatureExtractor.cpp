@@ -19,7 +19,7 @@ using std::make_shared;
 namespace imageprocessing {
 
 DirectImageFeatureExtractor::DirectImageFeatureExtractor() :
-		version(-1),
+		version(),
 		image(),
 		imageFilter(make_shared<ChainedFilter>()),
 		patchFilter(make_shared<ChainedFilter>()) {}
@@ -30,11 +30,6 @@ void DirectImageFeatureExtractor::addImageFilter(shared_ptr<ImageFilter> filter)
 
 void DirectImageFeatureExtractor::addPatchFilter(shared_ptr<ImageFilter> filter) {
 	patchFilter->add(filter);
-}
-
-void DirectImageFeatureExtractor::update(const Mat& image) {
-	version = -1;
-	update(make_shared<VersionedImage>(image));
 }
 
 void DirectImageFeatureExtractor::update(shared_ptr<VersionedImage> image) {

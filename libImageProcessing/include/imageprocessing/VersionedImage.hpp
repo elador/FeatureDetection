@@ -8,6 +8,7 @@
 #ifndef VERSIONEDIMAGE_HPP_
 #define VERSIONEDIMAGE_HPP_
 
+#include "imageprocessing/Version.hpp"
 #include "opencv2/core/core.hpp"
 
 namespace imageprocessing {
@@ -19,16 +20,16 @@ class VersionedImage {
 public:
 
 	/**
-	 * Constructs a new empty versioned image with a version number of -1.
+	 * Constructs a new empty versioned image.
 	 */
-	VersionedImage() : data(), version(-1) {}
+	VersionedImage() : data(), version() {}
 
 	/**
-	 * Constructs a new versioned image with a version number of 0.
+	 * Constructs a new versioned image.
 	 *
 	 * @param[in] data The image data.
 	 */
-	explicit VersionedImage(const cv::Mat& data) : data(data), version(0) {}
+	explicit VersionedImage(const cv::Mat& data) : data(data), version() {}
 
 	/**
 	 * @return The image data.
@@ -49,20 +50,20 @@ public:
 	 */
 	void setData(const cv::Mat& data) {
 		this->data = data;
-		version++;
+		++version;
 	}
 
 	/**
-	 * @return The version number.
+	 * @return The version.
 	 */
-	int getVersion() const {
+	Version getVersion() const {
 		return version;
 	}
 
 private:
 
 	cv::Mat data; ///< The image data.
-	int version;  ///< The version number.
+	Version version; ///< The version.
 };
 
 } /* namespace imageprocessing */

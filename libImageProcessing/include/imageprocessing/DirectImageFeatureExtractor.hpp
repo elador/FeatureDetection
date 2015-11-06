@@ -9,13 +9,13 @@
 #define DIRECTIMAGEFEATUREEXTRACTOR_HPP_
 
 #include "imageprocessing/FeatureExtractor.hpp"
+#include "imageprocessing/Version.hpp"
 #include <memory>
 
 namespace imageprocessing {
 
 class ImageFilter;
 class ChainedFilter;
-class VersionedImage;
 
 /**
  * Feature extractor that extracts patches from images.
@@ -42,7 +42,7 @@ public:
 	 */
 	void addPatchFilter(std::shared_ptr<ImageFilter> filter);
 
-	void update(const cv::Mat& image);
+	using FeatureExtractor::update;
 
 	void update(std::shared_ptr<VersionedImage> image);
 
@@ -50,7 +50,7 @@ public:
 
 private:
 
-	int version; ///< The version number.
+	Version version; ///< The version.
 	cv::Mat image; ///< The filtered image.
 	std::shared_ptr<ChainedFilter> imageFilter; ///< Filter that is applied to the image.
 	std::shared_ptr<ChainedFilter> patchFilter; ///< Filter that is applied to the patches.

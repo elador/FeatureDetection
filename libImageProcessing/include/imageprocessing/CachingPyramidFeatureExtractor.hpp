@@ -9,6 +9,7 @@
 #define CACHINGPYRAMIDFEATUREEXTRACTOR_HPP_
 
 #include "imageprocessing/PyramidFeatureExtractor.hpp"
+#include "imageprocessing/Version.hpp"
 #include <unordered_map>
 
 namespace imageprocessing {
@@ -116,7 +117,7 @@ public:
 
 	explicit CachingPyramidFeatureExtractor(std::shared_ptr<PyramidFeatureExtractor> extractor, Strategy strategy = Strategy::COPYING);
 
-	void update(const cv::Mat& image);
+	using FeatureExtractor::update;
 
 	void update(std::shared_ptr<VersionedImage> image);
 
@@ -182,7 +183,7 @@ private:
 	mutable std::vector<CacheLayer> cache; ///< The current cache of stored patches.
 	mutable int firstCacheIndex;           ///< The index of the first stored cache layer.
 	Strategy strategy; ///< The caching strategy (copies of patches will be stored vs. patches will be shared).
-	int version; ///< The version number.
+	Version version; ///< The version.
 };
 
 } /* namespace imageprocessing */

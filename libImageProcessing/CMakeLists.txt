@@ -65,6 +65,7 @@ SET(HEADERS
 	include/imageprocessing/SpatialHistogramFilter.hpp
 	include/imageprocessing/SpatialPyramidHistogramFilter.hpp
 	include/imageprocessing/UnitNormFilter.hpp
+	include/imageprocessing/Version.hpp
 	include/imageprocessing/VersionedImage.hpp
 	include/imageprocessing/WhiteningFilter.hpp
 	include/imageprocessing/ZeroMeanUnitVarianceFilter.hpp
@@ -111,6 +112,7 @@ SET(SOURCE
 	src/imageprocessing/SpatialHistogramFilter.cpp
 	src/imageprocessing/SpatialPyramidHistogramFilter.cpp
 	src/imageprocessing/UnitNormFilter.cpp
+	src/imageprocessing/Version.cpp
 	src/imageprocessing/WhiteningFilter.cpp
 	src/imageprocessing/ZeroMeanUnitVarianceFilter.cpp
 )

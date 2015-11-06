@@ -24,7 +24,7 @@ using std::invalid_argument;
 namespace imageprocessing {
 
 CachingPyramidFeatureExtractor::CachingPyramidFeatureExtractor(shared_ptr<PyramidFeatureExtractor> extractor, Strategy strategy) :
-		extractor(extractor), cache(), firstCacheIndex(0), strategy(strategy), version(-1) {}
+		extractor(extractor), cache(), firstCacheIndex(0), strategy(strategy), version() {}
 
 void CachingPyramidFeatureExtractor::buildCache() {
 	cache.clear();
@@ -33,12 +33,6 @@ void CachingPyramidFeatureExtractor::buildCache() {
 		firstCacheIndex = scales[0].first;
 	for (const pair<int, double>& scale : scales)
 		cache.push_back(CacheLayer(scale.first, scale.second));
-}
-
-void CachingPyramidFeatureExtractor::update(const Mat& image) {
-	extractor->update(image);
-	buildCache();
-	version = -1;
 }
 
 void CachingPyramidFeatureExtractor::update(shared_ptr<VersionedImage> image) {

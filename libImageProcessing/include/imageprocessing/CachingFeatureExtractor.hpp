@@ -9,6 +9,7 @@
 #define CACHINGFEATUREEXTRACTOR_HPP_
 
 #include "imageprocessing/FeatureExtractor.hpp"
+#include "imageprocessing/Version.hpp"
 #include <unordered_map>
 
 namespace imageprocessing {
@@ -79,7 +80,7 @@ public:
 	 */
 	explicit CachingFeatureExtractor(std::shared_ptr<FeatureExtractor> extractor, Strategy strategy = Strategy::COPYING);
 
-	void update(const cv::Mat& image);
+	using FeatureExtractor::update;
 
 	void update(std::shared_ptr<VersionedImage> image);
 
@@ -98,7 +99,7 @@ private:
 	std::shared_ptr<FeatureExtractor> extractor; ///< The underlying feature extractor.
 	mutable std::unordered_map<CacheKey, std::shared_ptr<Patch>, KeyHash> cache; ///< The current cache of stored patches.
 	Strategy strategy; ///< The caching strategy (copies of patches will be stored vs. patches will be shared).
-	int version; ///< The version number.
+	Version version; ///< The version.
 };
 
 } /* namespace imageprocessing */

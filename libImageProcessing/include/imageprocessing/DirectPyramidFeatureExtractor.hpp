@@ -79,7 +79,7 @@ public:
 	 */
 	void addPatchFilter(std::shared_ptr<ImageFilter> filter);
 
-	void update(const cv::Mat& image);
+	using FeatureExtractor::update;
 
 	void update(std::shared_ptr<VersionedImage> image);
 

@@ -93,7 +93,7 @@ public:
 	 */
 	ExtendedHogFeatureExtractor(const ExtendedHogFeatureExtractor& other);
 
-	void update(const cv::Mat& image);
+	using FeatureExtractor::update;
 
 	void update(std::shared_ptr<VersionedImage> image);
 

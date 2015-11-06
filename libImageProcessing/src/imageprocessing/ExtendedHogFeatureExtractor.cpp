@@ -88,10 +88,6 @@ ExtendedHogFeatureExtractor::ExtendedHogFeatureExtractor(const ExtendedHogFeatur
 		patchWidth(other.patchWidth), patchHeight(other.patchHeight), cellSize(other.cellSize),
 		widthFactor(other.widthFactor), heightFactor(other.heightFactor) {}
 
-void ExtendedHogFeatureExtractor::update(const Mat& image) {
-	pyramid->update(image);
-}
-
 void ExtendedHogFeatureExtractor::update(shared_ptr<VersionedImage> image) {
 	pyramid->update(image);
 }

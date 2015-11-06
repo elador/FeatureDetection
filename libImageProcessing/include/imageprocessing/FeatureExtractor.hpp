@@ -9,11 +9,11 @@
 #define FEATUREEXTRACTOR_HPP_
 
 #include "opencv2/core/core.hpp"
+#include "imageprocessing/VersionedImage.hpp"
 #include <memory>
 
 namespace imageprocessing {
 
-class VersionedImage;
 class Patch;
 
 /**
@@ -29,7 +29,9 @@ public:
 	 *
 	 * @param[in] image The new source image of extracted patches.
 	 */
-	virtual void update(const cv::Mat& image) = 0;
+	void update(const cv::Mat& image) {
+		update(std::make_shared<VersionedImage>(image));
+	}
 
 	/**
 	 * May update this feature extractor depending on the version number of the given image. If updated, the

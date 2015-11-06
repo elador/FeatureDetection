@@ -23,7 +23,7 @@ public:
 
 	virtual ~PyramidFeatureExtractor() {}
 
-	virtual void update(const cv::Mat& image) = 0;
+	using FeatureExtractor::update;
 
 	virtual void update(std::shared_ptr<VersionedImage> image) = 0;
 

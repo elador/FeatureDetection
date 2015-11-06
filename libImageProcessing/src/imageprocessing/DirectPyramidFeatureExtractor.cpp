@@ -60,10 +60,6 @@ void DirectPyramidFeatureExtractor::addPatchFilter(shared_ptr<ImageFilter> filte
 	patchFilter->add(filter);
 }
 
-void DirectPyramidFeatureExtractor::update(const Mat& image) {
-	pyramid->update(image);
-}
-
 void DirectPyramidFeatureExtractor::update(shared_ptr<VersionedImage> image) {
 	pyramid->update(image);
 }

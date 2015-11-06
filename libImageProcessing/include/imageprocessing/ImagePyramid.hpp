@@ -10,6 +10,7 @@
 #ifndef IMAGEPYRAMID_HPP_
 #define IMAGEPYRAMID_HPP_
 
+#include "imageprocessing/Version.hpp"
 #include "opencv2/core/core.hpp"
 #include <vector>
 #include <memory>
@@ -59,13 +60,6 @@ public:
 	 * @param[in] maxScaleFactor The maximum scale factor (the scale factor of the biggest scaled (first) image is less or equal).
 	 */
 	explicit ImagePyramid(std::shared_ptr<ImagePyramid> pyramid, double minScaleFactor = 0, double maxScaleFactor = 1);
-
-	/**
-	 * @return The version number.
-	 */
-	int getVersion() const {
-		return version;
-	}
 
 	/**
 	 * Changes the source to the given image. The pyramid will not get updated, therefore for the source change to take
@@ -230,7 +224,7 @@ private:
 
 	std::shared_ptr<VersionedImage> sourceImage; ///< The source image.
 	std::shared_ptr<ImagePyramid> sourcePyramid; ///< The source pyramid.
-	int version; ///< The version number.
+	Version version; ///< The version.
 
 	std::shared_ptr<ChainedFilter> imageFilter; ///< Filter that is applied to the image before down-scaling.
 	std::shared_ptr<ChainedFilter> layerFilter; ///< Filter that is applied to the down-scaled images of the layers.

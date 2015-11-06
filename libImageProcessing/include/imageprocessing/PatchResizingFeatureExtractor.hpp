@@ -32,9 +32,7 @@ public:
 	PatchResizingFeatureExtractor(std::shared_ptr<FeatureExtractor> extractor, double factor, double yOffset = 0, double xOffset = 0) :
 			extractor(extractor), factor(factor), yOffset(yOffset), xOffset(xOffset) {}
 
-	void update(const cv::Mat& image) {
-		extractor->update(image);
-	}
+	using FeatureExtractor::update;
 
 	void update(std::shared_ptr<VersionedImage> image) {
 		extractor->update(image);
