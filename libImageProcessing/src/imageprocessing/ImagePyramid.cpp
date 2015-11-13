@@ -108,14 +108,20 @@ void ImagePyramid::update() {
 				Mat scaledImage;
 				Size scaledImageSize(cvRound(filteredImage.cols * scaleFactor), cvRound(filteredImage.rows * scaleFactor));
 				resize(filteredImage, scaledImage, scaledImageSize, 0, 0, cv::INTER_LINEAR);
+				double widthScaleFactor = static_cast<double>(scaledImage.cols) / static_cast<double>(filteredImage.cols);
+				double heightScaleFactor = static_cast<double>(scaledImage.rows) / static_cast<double>(filteredImage.rows);
 				if (scaleFactor <= maxScaleFactor && scaleFactor >= minScaleFactor)
-					layers.push_back(make_shared<ImagePyramidLayer>(i, scaleFactor, layerFilter->applyTo(scaledImage)));
+					layers.push_back(make_shared<ImagePyramidLayer>(i, scaleFactor,
+							widthScaleFactor, heightScaleFactor, layerFilter->applyTo(scaledImage)));
 				Mat previousScaledImage = scaledImage;
 				scaleFactor *= 0.5;
 				for (size_t j = 1; scaleFactor >= minScaleFactor && previousScaledImage.cols > 1; ++j, scaleFactor *= 0.5) {
 					pyrDown(previousScaledImage, scaledImage);
+					double widthScaleFactor = static_cast<double>(scaledImage.cols) / static_cast<double>(filteredImage.cols);
+					double heightScaleFactor = static_cast<double>(scaledImage.rows) / static_cast<double>(filteredImage.rows);
 					if (scaleFactor <= maxScaleFactor)
-						layers.push_back(make_shared<ImagePyramidLayer>(i + j * octaveLayerCount, scaleFactor, layerFilter->applyTo(scaledImage)));
+						layers.push_back(make_shared<ImagePyramidLayer>(i + j * octaveLayerCount, scaleFactor,
+								widthScaleFactor, heightScaleFactor, layerFilter->applyTo(scaledImage)));
 					previousScaledImage = scaledImage;
 				}
 			}
@@ -136,8 +142,7 @@ void ImagePyramid::update() {
 					continue;
 				if (layer->getScaleFactor() < minScaleFactor)
 					break;
-				layers.push_back(make_shared<ImagePyramidLayer>(
-						layer->getIndex(), layer->getScaleFactor(), layerFilter->applyTo(layer->getScaledImage())));
+				layers.push_back(layer->createFiltered(*layerFilter));
 			}
 			if (!layers.empty())
 				firstLayer = layers.front()->getIndex();
