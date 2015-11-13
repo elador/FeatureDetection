@@ -65,7 +65,7 @@ vector<Detection> NonMaximumSuppression::getMaxima(const vector<vector<Detection
 Detection NonMaximumSuppression::getMaximum(const vector<Detection>& cluster) const {
 	if (maximumType == MaximumType::MAX_SCORE) {
 		return cluster.front();
-	} else if (MaximumType::AVERAGE) {
+	} else if (maximumType == MaximumType::AVERAGE) {
 		double xSum = 0;
 		double ySum = 0;
 		double wSum = 0;
@@ -83,7 +83,7 @@ Detection NonMaximumSuppression::getMaximum(const vector<Detection>& cluster) co
 		float score = cluster.front().score;
 		Rect averageBounds(x, y, w, h);
 		return Detection{score, averageBounds};
-	} else if (MaximumType::WEIGHTED_AVERAGE) {
+	} else if (maximumType == MaximumType::WEIGHTED_AVERAGE) {
 		double weightSum = 0;
 		double xSum = 0;
 		double ySum = 0;
