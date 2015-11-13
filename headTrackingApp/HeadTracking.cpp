@@ -344,7 +344,7 @@ unique_ptr<ExampleManagement> HeadTracking::createExampleManagement(ptree& confi
 
 shared_ptr<TrainableSvmClassifier> HeadTracking::createLibSvmClassifier(ptree& config, shared_ptr<Kernel> kernel) {
 	if (config.get_value<string>() == "binary") {
-		shared_ptr<LibSvmClassifier> trainableSvm = make_shared<LibSvmClassifier>(kernel, config.get<double>("C"));
+		shared_ptr<LibSvmClassifier> trainableSvm = LibSvmClassifier::createBinarySvm(kernel, config.get<double>("C"));
 		trainableSvm->setPositiveExampleManagement(
 				unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm, true)));
 		trainableSvm->setNegativeExampleManagement(
@@ -356,7 +356,7 @@ shared_ptr<TrainableSvmClassifier> HeadTracking::createLibSvmClassifier(ptree& c
 		}
 		return trainableSvm;
 	} else if (config.get_value<string>() == "one-class") {
-		shared_ptr<LibSvmClassifier> trainableSvm = make_shared<LibSvmClassifier>(kernel, config.get<double>("nu"), true);
+		shared_ptr<LibSvmClassifier> trainableSvm = LibSvmClassifier::createOneClassSvm(kernel, config.get<double>("nu"));
 		trainableSvm->setPositiveExampleManagement(
 				unique_ptr<ExampleManagement>(createExampleManagement(config.get_child("positiveExamples"), trainableSvm, true)));
 		return trainableSvm;

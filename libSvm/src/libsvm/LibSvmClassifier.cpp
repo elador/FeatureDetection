@@ -30,24 +30,22 @@ using std::invalid_argument;
 
 namespace libsvm {
 
-LibSvmClassifier::LibSvmClassifier(shared_ptr<SvmClassifier> svm, double cnu, bool oneClass) :
-		TrainableSvmClassifier(svm), oneClass(oneClass), utils(), param(),
-		positiveExamples(new UnlimitedExampleManagement()), negativeExamples(), staticNegativeExamples() {
-	if (oneClass)
-		negativeExamples.reset(new EmptyExampleManagement());
-	else
-		negativeExamples.reset(new UnlimitedExampleManagement());
-	createParameters(svm->getKernel(), cnu, oneClass);
-}
+LibSvmClassifier::LibSvmClassifier(shared_ptr<Kernel> kernel, double cnu, bool oneClass, bool compensateImbalance) :
+		LibSvmClassifier(make_shared<SvmClassifier>(kernel), cnu, oneClass, compensateImbalance) {}
 
-LibSvmClassifier::LibSvmClassifier(shared_ptr<Kernel> kernel, double cnu, bool oneClass) :
-		TrainableSvmClassifier(kernel), oneClass(oneClass), utils(), param(),
-		positiveExamples(new UnlimitedExampleManagement()), negativeExamples(), staticNegativeExamples() {
+LibSvmClassifier::LibSvmClassifier(shared_ptr<SvmClassifier> svm, double cnu, bool oneClass, bool compensateImbalance) :
+		TrainableSvmClassifier(svm),
+		compensateImbalance(compensateImbalance),
+		utils(),
+		param(),
+		positiveExamples(new UnlimitedExampleManagement()),
+		negativeExamples(new UnlimitedExampleManagement()),
+		staticNegativeExamples() {
+	if (oneClass && compensateImbalance)
+		throw invalid_argument("LibSvmClassifier: a one-class SVM cannot have unbalanced data it needs to compensate for");
 	if (oneClass)
 		negativeExamples.reset(new EmptyExampleManagement());
-	else
-		negativeExamples.reset(new UnlimitedExampleManagement());
-	createParameters(kernel, cnu, oneClass);
+	createParameters(svm->getKernel(), cnu, oneClass);
 }
 
 void LibSvmClassifier::createParameters(const shared_ptr<Kernel> kernel, double cnu, bool oneClass) {
@@ -61,9 +59,19 @@ void LibSvmClassifier::createParameters(const shared_ptr<Kernel> kernel, double 
 		param->C = cnu;
 		param->svm_type = C_SVC;
 	}
-	param->nr_weight = 0;
-	param->weight_label = nullptr;
-	param->weight = nullptr;
+	if (compensateImbalance) {
+		param->nr_weight = 2;
+		param->weight_label = (int*)malloc(param->nr_weight * sizeof(int));
+		param->weight_label[0] = +1;
+		param->weight_label[1] = -1;
+		param->weight = (double*)malloc(param->nr_weight * sizeof(double));
+		param->weight[0] = 1;
+		param->weight[1] = 1;
+	} else {
+		param->nr_weight = 0;
+		param->weight_label = nullptr;
+		param->weight = nullptr;
+	}
 	param->shrinking = 0;
 	param->probability = 0;
 	param->gamma = 0; // necessary for kernels that do not use this parameter
@@ -116,6 +124,12 @@ bool LibSvmClassifier::retrain(const vector<Mat>& newPositiveExamples, const vec
 bool LibSvmClassifier::train() {
 	vector<unique_ptr<struct svm_node[], NodeDeleter>> positiveExamples = move(createNodes(this->positiveExamples.get()));
 	vector<unique_ptr<struct svm_node[], NodeDeleter>> negativeExamples = move(createNodes(this->negativeExamples.get()));
+	if (compensateImbalance) {
+		double positiveCount = positiveExamples.size();
+		double negativeCount = negativeExamples.size() + staticNegativeExamples.size();
+		param->weight[0] = negativeCount / positiveCount;
+		param->weight[1] = positiveCount / negativeCount;
+	}
 	unique_ptr<struct svm_problem, ProblemDeleter> problem = move(createProblem(
 			positiveExamples, negativeExamples, staticNegativeExamples));
 	const char* message = svm_check_parameter(problem.get(), param.get());

@@ -91,7 +91,7 @@ shared_ptr<Kernel> PartiallyAdaptiveTracking::createKernel(ptree config) {
 shared_ptr<TrainableSvmClassifier> PartiallyAdaptiveTracking::createTrainableSvm(shared_ptr<Kernel> kernel, ptree config) {
 	shared_ptr<LibSvmClassifier> trainableSvm;
 	if (config.get_value<string>() == "fixedsize") {
-		trainableSvm = make_shared<LibSvmClassifier>(
+		trainableSvm = LibSvmClassifier::createBinarySvm(
 					kernel, config.get<double>("constraintsViolationCosts"));
 		trainableSvm->setPositiveExampleManagement(unique_ptr<ExampleManagement>(
 				new ConfidenceBasedExampleManagement(trainableSvm, config.get<size_t>("positiveExamples"), config.get<size_t>("minPositiveExamples"))));
@@ -100,7 +100,7 @@ shared_ptr<TrainableSvmClassifier> PartiallyAdaptiveTracking::createTrainableSvm
 	} else if (config.get_value<string>() == "framebased") {
 		size_t frameLength = config.get<size_t>("frameLength");
 		size_t minExamples = round(frameLength * config.get<float>("minAvgSamples"));
-		trainableSvm = make_shared<LibSvmClassifier>(kernel, config.get<double>("constraintsViolationCosts"));
+		trainableSvm = LibSvmClassifier::createBinarySvm(kernel, config.get<double>("constraintsViolationCosts"));
 		trainableSvm->setPositiveExampleManagement(
 				unique_ptr<ExampleManagement>(new FrameBasedExampleManagement(frameLength, minExamples)));
 		trainableSvm->setNegativeExampleManagement(

@@ -25,14 +25,48 @@ class LibSvmClassifier : public classification::TrainableSvmClassifier {
 public:
 
 	/**
-	 * Constructs a new libSVM classifier.
+	 * Creates a new one-class support vector machine that will be trained with libSVM.
+	 *
+	 * @param[in] kernel The kernel function.
+	 * @param[in] nu The nu.
+	 */
+	static std::shared_ptr<LibSvmClassifier> createOneClassSvm(std::shared_ptr<classification::Kernel> kernel, double nu = 1) {
+		return std::make_shared<LibSvmClassifier>(kernel, nu, true, false);
+	}
+
+	/**
+	 * Creates a new one-class support vector machine that will be trained with libSVM.
 	 *
 	 * @param[in] svm The actual SVM.
-	 * @param[in] cnu The parameter C in case of an ordinary SVM, nu in case of a one-class SVM.
-	 * @param[in] oneClass Flag that indicates whether a one-class SVM should be trained.
+	 * @param[in] nu The nu.
 	 */
-	explicit LibSvmClassifier(
-			std::shared_ptr<classification::SvmClassifier> svm, double cnu = 1, bool oneClass = false);
+	static std::shared_ptr<LibSvmClassifier> createOneClassSvm(std::shared_ptr<classification::SvmClassifier> svm, double nu = 1) {
+		return std::make_shared<LibSvmClassifier>(svm, nu, true, false);
+	}
+
+	/**
+	 * Creates a new binary support vector machine that will be trained with libSVM.
+	 *
+	 * @param[in] kernel The kernel function.
+	 * @param[in] c The C.
+	 * @param[in] compensateImbalance Flag that indicates whether to adjust class weights to compensate for unbalanced data.
+	 */
+	static std::shared_ptr<LibSvmClassifier> createBinarySvm(
+			std::shared_ptr<classification::Kernel> kernel, double c = 1, bool compensateImbalance = false) {
+		return std::make_shared<LibSvmClassifier>(kernel, c, false, compensateImbalance);
+	}
+
+	/**
+	 * Creates a new binary support vector machine that will be trained with libSVM.
+	 *
+	 * @param[in] svm The actual SVM.
+	 * @param[in] c The C.
+	 * @param[in] compensateImbalance Flag that indicates whether to adjust class weights to compensate for unbalanced data.
+	 */
+	static std::shared_ptr<LibSvmClassifier> createBinarySvm(
+			std::shared_ptr<classification::SvmClassifier> svm, double c = 1, bool compensateImbalance = false) {
+		return std::make_shared<LibSvmClassifier>(svm, c, false, compensateImbalance);
+	}
 
 	/**
 	 * Constructs a new libSVM classifier.
@@ -40,9 +74,21 @@ public:
 	 * @param[in] kernel The kernel function.
 	 * @param[in] cnu The parameter C in case of an ordinary SVM, nu in case of a one-class SVM.
 	 * @param[in] oneClass Flag that indicates whether a one-class SVM should be trained.
+	 * @param[in] compensateImbalance Flag that indicates whether to adjust class weights to compensate for unbalanced data.
 	 */
-	explicit LibSvmClassifier(
-			std::shared_ptr<classification::Kernel> kernel, double cnu = 1, bool oneClass = false);
+	LibSvmClassifier(std::shared_ptr<classification::Kernel> kernel, double cnu, bool oneClass, bool compensateImbalance = false);
+
+	/**
+	 * Constructs a new libSVM classifier.
+	 *
+	 * @param[in] svm The actual SVM.
+	 * @param[in] cnu The parameter C in case of an ordinary SVM, nu in case of a one-class SVM.
+	 * @param[in] oneClass Flag that indicates whether a one-class SVM should be trained.
+	 * @param[in] compensateImbalance Flag that indicates whether to adjust class weights to compensate for unbalanced data.
+	 */
+	LibSvmClassifier(std::shared_ptr<classification::SvmClassifier> svm, double cnu, bool oneClass, bool compensateImbalance = false);
+
+public:
 
 	/**
 	 * Loads static negative training examples from a file.
@@ -110,7 +156,7 @@ private:
 			const std::vector<std::unique_ptr<struct svm_node[], NodeDeleter>>& negativeExamples,
 			const std::vector<std::unique_ptr<struct svm_node[], NodeDeleter>>& staticNegativeExamples);
 
-	bool oneClass; ///< Flag that indicates whether a one-class SVM should be trained.
+	bool compensateImbalance; ///< Flag that indicates whether to adjust class weights to compensate for unbalanced data.
 	LibSvmUtils utils; ///< Utils for using libSVM.
 	std::unique_ptr<struct svm_parameter, ParameterDeleter> param; ///< The libSVM parameters.
 	std::unique_ptr<classification::ExampleManagement> positiveExamples; ///< Storage of positive training examples.
