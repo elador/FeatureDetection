@@ -58,6 +58,9 @@ add_subdirectory(partiallyAdaptiveTrackingApp)	# Old adaptive tracking app.
 add_subdirectory(headTrackingApp)		# Adaptive head tracking app.
 add_subdirectory(VideoPlayerApp)		# App for playing videos, showing landmarks and storing videos.
 
+# Detector training apps:
+add_subdirectory(DetectorTrainingApp)	# Training app for cell-based detectors (aggregated channel features).
+
 # Face-detection apps:
 #add_subdirectory(ffpDetectApp)			# The classic MR-style face-detect app (4 stages, SvmOeWvmOe). (Note: Check if it still works)
 

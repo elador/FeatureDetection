@@ -20,16 +20,21 @@ MESSAGE(STATUS "OpenCV lib dir found at ${OpenCV_LIB_DIR}")
 
 # source and header files
 SET(HEADERS
+	include/detection/AggregatedFeaturesDetector.hpp
 	include/detection/ClassifiedPatch.hpp
 	include/detection/Detector.hpp
-	include/detection/SlidingWindowDetector.hpp
-	include/detection/OverlapElimination.hpp
 	include/detection/FiveStageSlidingWindowDetector.hpp
+	include/detection/NonMaximumSuppression.hpp
+	include/detection/OverlapElimination.hpp
+	include/detection/SimpleDetector.hpp
+	include/detection/SlidingWindowDetector.hpp
 )
 SET(SOURCE
-	src/detection/SlidingWindowDetector.cpp
-	src/detection/OverlapElimination.cpp
+	src/detection/AggregatedFeaturesDetector.cpp
 	src/detection/FiveStageSlidingWindowDetector.cpp
+	src/detection/NonMaximumSuppression.cpp
+	src/detection/OverlapElimination.cpp
+	src/detection/SlidingWindowDetector.cpp
 )
 
 include_directories("include")
@@ -44,4 +49,4 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 # make library
 add_library(${SUBPROJECT_NAME} ${SOURCE} ${HEADERS})
-target_link_libraries(${SUBPROJECT_NAME} Logging ImageLogging ${Boost_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(${SUBPROJECT_NAME} Logging ImageLogging ImageProcessing ${Boost_LIBRARIES} ${OpenCV_LIBS})

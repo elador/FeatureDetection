@@ -19,10 +19,38 @@ class Patch {
 public:
 
 	/**
+	 * Computes the bounds of a patch given by its center point and size.
+	 *
+	 * @param[in] center The center point of the patch.
+	 * @param[in] size The size of the patch.
+	 * @return The bounds of the patch.
+	 */
+	static cv::Rect computeBounds(cv::Point center, cv::Size size) {
+		return cv::Rect(
+				center.x - size.width / 2,
+				center.y - size.height / 2,
+				size.width,
+				size.height
+		);
+	}
+
+	/**
+	 * Computes the center point of a patch given its bounds.
+	 *
+	 * @param[in] bounds The bounds of the patch.
+	 * @return The center point of the patch.
+	 */
+	static cv::Point computeCenter(cv::Rect bounds) {
+		return cv::Point(
+				bounds.x + bounds.width / 2,
+				bounds.y + bounds.height / 2
+		);
+	}
+
+	/**
 	 * Constructs a new empty patch. All values will be zero and the data will be empty.
 	 */
-	Patch() :
-			x(0), y(0), width(0), height(0), data() {}
+	Patch() : center(0, 0), size(0, 0), data() {}
 
 	/**
 	 * Constructs a new patch.
@@ -34,7 +62,7 @@ public:
 	 * @param[in] data The patch data (might be an image patch or a feature vector).
 	 */
 	Patch(int x, int y, int width, int height, const cv::Mat& data) :
-			x(x), y(y), width(width), height(height), data(data) {}
+			center(x, y), size(width, height), data(data) {}
 
 	/**
 	 * Constructs a new patch given its bounding rectangle.
@@ -43,7 +71,7 @@ public:
 	 * @param[in] data The patch data (might be an image patch or a feature vector).
 	 */
 	Patch(cv::Rect bounds, const cv::Mat& data) :
-		  x(bounds.x + bounds.width / 2), y(bounds.y + bounds.height / 2), width(bounds.width), height(bounds.height) {}
+			center(computeCenter(bounds)), size(bounds.width, bounds.height), data(data) {}
 
 	/**
 	 * Copy constructor that clones the patch data.
@@ -51,7 +79,7 @@ public:
 	 * @param[in] other The patch that should be copied.
 	 */
 	Patch(const Patch& other) :
-			x(other.x), y(other.y), width(other.width), height(other.height), data(other.data.clone()) {}
+			center(other.center), size(other.size), data(other.data.clone()) {}
 
 	/**
 	 * Move constructor.
@@ -59,9 +87,9 @@ public:
 	 * @param[in] other The patch that should be moved.
 	 */
 	Patch(Patch&& other) :
-			x(other.x), y(other.y), width(other.width), height(other.height), data(other.data) {}
-
-	~Patch() {}
+			center(other.center), size(other.size), data(other.data) {
+		other.data = cv::Mat();
+	}
 
 	/**
 	 * Assignment operator that clones the patch data.
@@ -69,10 +97,8 @@ public:
 	 * @param[in] other The patch whose data should be assigned to this one.
 	 */
 	Patch& operator=(const Patch& other) {
-		x = other.x;
-		y = other.y;
-		width = other.width;
-		height = other.height;
+		center = other.center;
+		size = other.size;
 		data = other.data.clone();
 		return *this;
 	}
@@ -82,12 +108,11 @@ public:
 	 *
 	 * @param[in] other The patch whose data should be move assigned to this one.
 	 */
-	Patch& operator=(const Patch&& other) {
-		x = other.x;
-		y = other.y;
-		width = other.width;
-		height = other.height;
+	Patch& operator=(Patch&& other) {
+		center = other.center;
+		size = other.size;
 		data = other.data;
+		other.data = cv::Mat();
 		return *this;
 	}
 
@@ -99,84 +124,87 @@ public:
 	 * @return True if this patch is equal to the other one, false otherwise.
 	 */
 	bool operator==(const Patch& other) const {
-		return x == other.x && y == other.y && width == other.width && height == other.height;
+		return center.x == other.center.x
+				&& center.y == other.center.y
+				&& size.width == other.size.width
+				&& size.height == other.size.height;
 	}
 
 	/**
 	 * @return The bounding rectangle of this patch.
 	 */
 	cv::Rect getBounds() const {
-		return cv::Rect(x - width / 2, y - height / 2, width, height);
+		return computeBounds(center, size);
 	}
 
 	/**
 	 * @return The original x-coordinate of the center of this patch.
 	 */
 	int getX() const {
-		return x;
+		return center.x;
 	}
 
 	/**
 	 * @param[in] x The new original x-coordinate of the center of this patch.
 	 */
 	void setX(int x) {
-		this->x = x;
+		this->center.x = x;
 	}
 
 	/**
 	 * @return The original y-coordinate of the center of this patch.
 	 */
 	int getY() const {
-		return y;
+		return center.y;
 	}
 
 	/**
 	 * @param[in] y The new original y-coordinate of the center of this patch.
 	 */
 	void setY(int y) {
-		this->y = y;
+		this->center.y = y;
 	}
 
 	/**
 	 * @return The original width.
 	 */
 	int getWidth() const {
-		return width;
+		return size.width;
 	}
 
 	/**
 	 * @param[in] width The new original width.
 	 */
 	void setWidth(int width) {
-		this->width = width;
+		this->size.width = width;
 	}
 
 	/**
 	 * @return The original height.
 	 */
 	int getHeight() const {
-		return height;
+		return size.height;
 	}
 
 	/**
 	 * @param[in] height The new original height.
 	 */
 	void setHeight(int height) {
-		this->height = height;
+		this->size.height = height;
 	}
 
 	/**
 	 * @return The scale factor of the x-axis from the original size to the image data size.
 	 */
 	double getScaleFactorX() const {
-		return static_cast<double>(data.cols) / static_cast<double>(width);
+		return static_cast<double>(data.cols) / static_cast<double>(size.width);
 	}
 
 	/**
 	 * @return The scale factor of the y-axis from the original size to the image data size.
 	 */
 	double getScaleFactorY() const {
-		return static_cast<double>(data.rows) / static_cast<double>(height);
+		return static_cast<double>(data.rows) / static_cast<double>(size.height);
 	}
 
 	/**
@@ -200,20 +228,18 @@ public:
 		size_t operator()(const Patch& patch) const {
 			size_t prime = 31;
 			size_t hash = 1;
-			hash = prime * hash + std::hash<int>()(patch.x);
-			hash = prime * hash + std::hash<int>()(patch.y);
-			hash = prime * hash + std::hash<int>()(patch.width);
-			hash = prime * hash + std::hash<int>()(patch.height);
+			hash = prime * hash + std::hash<int>()(patch.center.x);
+			hash = prime * hash + std::hash<int>()(patch.center.y);
+			hash = prime * hash + std::hash<int>()(patch.size.width);
+			hash = prime * hash + std::hash<int>()(patch.size.height);
 			return hash;
 		}
 	};
 
 private:
 
-	int x;        ///< The original x-coordinate of the center of this patch.
-	int y;        ///< The original y-coordinate of the center of this patch.
-	int width;    ///< The original width.
-	int height;   ///< The original height.
+	cv::Point center; ///< The original center of this patch.
+	cv::Size size; ///< The original size of this patch.
 	cv::Mat data; ///< The patch data (might be an image patch or a feature vector).
 };
 

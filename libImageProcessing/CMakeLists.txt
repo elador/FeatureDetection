@@ -69,6 +69,7 @@ SET(HEADERS
 	include/imageprocessing/VersionedImage.hpp
 	include/imageprocessing/WhiteningFilter.hpp
 	include/imageprocessing/ZeroMeanUnitVarianceFilter.hpp
+	include/imageprocessing/extraction/AggregatedFeaturesExtractor.hpp
 )
 SET(SOURCE
 	src/imageprocessing/CachingFeatureExtractor.cpp
@@ -99,7 +100,6 @@ SET(SOURCE
 	src/imageprocessing/HistogramFilter.cpp
 	src/imageprocessing/HogFilter.cpp
 	src/imageprocessing/ImagePyramid.cpp
-	src/imageprocessing/ImagePyramidLayer.cpp
 	src/imageprocessing/IntegralChannelFeatureFilter.cpp
 	src/imageprocessing/IntegralChannelHistogramFilter.cpp
 	src/imageprocessing/IntegralGradientFilter.cpp
@@ -115,6 +115,7 @@ SET(SOURCE
 	src/imageprocessing/Version.cpp
 	src/imageprocessing/WhiteningFilter.cpp
 	src/imageprocessing/ZeroMeanUnitVarianceFilter.cpp
+	src/imageprocessing/extraction/AggregatedFeaturesExtractor.cpp
 )
 
 include_directories( "include" )
