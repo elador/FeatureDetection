@@ -20,6 +20,8 @@ namespace imageprocessing {
 class ImagePyramidLayer {
 public:
 
+	friend class ImagePyramid;
+
 	/**
 	 * Constructs a new pyramid layer.
 	 *

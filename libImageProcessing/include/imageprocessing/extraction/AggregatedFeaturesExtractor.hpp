@@ -23,13 +23,41 @@ namespace extraction {
 class AggregatedFeaturesExtractor : public FeatureExtractor {
 public:
 
+	/**
+	 * Constructs a new aggregated features extractor based on the given feature pyramid.
+	 *
+	 * @param[in] featurePyramid Image pyramid whose images contain the aggregated feature cells.
+	 * @param[in] patchSizeInCells
+	 * @param[in] cellSizeInPixels
+	 * @param[in] adjustMinScaleFactor Flag that indicates whether to adjust the pyramid's min scale factor to find the largest targets.
+	 */
+	AggregatedFeaturesExtractor(std::shared_ptr<ImagePyramid> featurePyramid,
+			cv::Size patchSizeInCells, int cellSizeInPixels, bool adjustMinScaleFactor);
+
+	/**
+	 * Constructs a new aggregated features extractor that builds a feature pyramid where the given filter is
+	 * applied to the downscaled images.
+	 *
+	 * @param[in] layerFilter Image filter that aggregates features over square cells.
+	 * @param[in] patchSizeInCells
+	 * @param[in] cellSizeInPixels
+	 * @param[in] octaveLayerCount The number of image pyramid layers per octave.
+	 */
 	AggregatedFeaturesExtractor(std::shared_ptr<ImageFilter> layerFilter,
 			cv::Size patchSizeInCells, int cellSizeInPixels, int octaveLayerCount);
 
+	/**
+	 * Constructs a new aggregated features extractor that builds a feature pyramid where the image filter is
+	 * applied to the image before downscaling and the layer filter is applied to the downscaled images.
+	 *
+	 * @param[in] imageFilter Image filter that is used on the whole image before downscaling.
+	 * @param[in] layerFilter Image filter that aggregates features over square cells and is applied after downscaling.
+	 * @param[in] patchSizeInCells
+	 * @param[in] cellSizeInPixels
+	 * @param[in] octaveLayerCount The number of image pyramid layers per octave.
+	 */
 	AggregatedFeaturesExtractor(std::shared_ptr<ImageFilter> imageFilter, std::shared_ptr<ImageFilter> layerFilter,
 			cv::Size patchSizeInCells, int cellSizeInPixels, int octaveLayerCount);
-
-	// TODO constructor that takes a pyramid - and sets a flag that prevents dynamic min scale factor adaptation
 
 	using FeatureExtractor::update;
 

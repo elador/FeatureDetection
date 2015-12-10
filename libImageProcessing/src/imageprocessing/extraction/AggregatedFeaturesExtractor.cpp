@@ -20,16 +20,17 @@ using std::shared_ptr;
 namespace imageprocessing {
 namespace extraction {
 
-AggregatedFeaturesExtractor::AggregatedFeaturesExtractor(shared_ptr<ImageFilter> layerFilter,
-		Size patchSizeInCells, int cellSizeInPixels, int octaveLayerCount) :
+AggregatedFeaturesExtractor::AggregatedFeaturesExtractor(
+		shared_ptr<ImagePyramid> featurePyramid, Size patchSizeInCells, int cellSizeInPixels, bool adjustMinScaleFactor) :
+				featurePyramid(featurePyramid),
 				patchSizeInCells(patchSizeInCells),
 				patchSizeInPixels(patchSizeInCells.width * cellSizeInPixels, patchSizeInCells.height * cellSizeInPixels),
 				cellSizeInPixels(cellSizeInPixels),
-				adjustMinScaleFactor(true) {
-	// TODO get patch and cell size from AggregationFilter somehow (or create AggregationFilter here?)
-	double minScaleFactor = 0.5; // will be reset when the image size is known
-	double maxScaleFactor = 1; // detect up to the smallest possible target size
-	featurePyramid = make_shared<ImagePyramid>(static_cast<size_t>(octaveLayerCount), minScaleFactor, maxScaleFactor);
+				adjustMinScaleFactor(adjustMinScaleFactor) {}
+
+AggregatedFeaturesExtractor::AggregatedFeaturesExtractor(shared_ptr<ImageFilter> layerFilter,
+		Size patchSizeInCells, int cellSizeInPixels, int octaveLayerCount) : AggregatedFeaturesExtractor(
+				make_shared<ImagePyramid>(static_cast<size_t>(octaveLayerCount), 0.5, 1), patchSizeInCells, cellSizeInPixels, true) {
 	featurePyramid->addLayerFilter(layerFilter);
 }
 

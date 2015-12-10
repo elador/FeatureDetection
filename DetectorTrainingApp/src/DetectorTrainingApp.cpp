@@ -34,6 +34,7 @@ using imageprocessing::CompleteExtendedHogFilter;
 using imageprocessing::ExtendedHogFeatureExtractor;
 using imageprocessing::GrayscaleFilter;
 using imageprocessing::ImagePyramid;
+using imageprocessing::extraction::AggregatedFeaturesExtractor;
 using std::cout;
 using std::endl;
 using std::make_shared;
@@ -59,13 +60,23 @@ void setEhogFeatures(DetectorTrainer& trainer, FeatureParams featureParams) {
 }
 
 shared_ptr<AggregatedFeaturesDetector> loadEhogDetector(const string& filename,
-		FeatureParams featureParams, shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount) {
+		FeatureParams featureParams, shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, bool approximate) {
 	shared_ptr<CompleteExtendedHogFilter> hogFilter = createEhogFilter(featureParams);
 	std::ifstream stream(filename);
 	shared_ptr<SvmClassifier> svm = SvmClassifier::load(stream);
 	stream.close();
-	return make_shared<AggregatedFeaturesDetector>(make_shared<GrayscaleFilter>(), hogFilter,
-			featureParams.cellSizeInPixels, featureParams.windowSizeInCells, octaveLayerCount, svm, nms);
+	if (approximate) {
+		vector<double> lambdas(31, 0.3);
+		auto featurePyramid = ImagePyramid::createApproximated(octaveLayerCount, 0.5, 1.0, lambdas);
+		featurePyramid->addImageFilter(make_shared<GrayscaleFilter>());
+		featurePyramid->addLayerFilter(hogFilter);
+		auto extractor = make_shared<AggregatedFeaturesExtractor>(featurePyramid,
+				featureParams.windowSizeInCells, featureParams.cellSizeInPixels, true);
+		return make_shared<AggregatedFeaturesDetector>(extractor, svm, nms);
+	} else {
+		return make_shared<AggregatedFeaturesDetector>(make_shared<GrayscaleFilter>(), hogFilter,
+				featureParams.cellSizeInPixels, featureParams.windowSizeInCells, octaveLayerCount, svm, nms);
+	}
 }
 
 void showDetections(const DetectorTester& tester, AggregatedFeaturesDetector& detector, LabeledImageSource& source) {
@@ -159,6 +170,15 @@ void printTestResult(const string& title, DetectorEvaluationResult result) {
 
 int main(int argc, char** argv) {
 	bool testOnly = argc > 1 && string(argv[1]) == "testonly";
+	bool approximate = argc > 2 && string(argv[2]) == "approximate";
+	if (testOnly) {
+		cout << "test detector";
+		if (approximate)
+			cout << " on approximated image pyramid";
+	} else {
+		cout << "train and test detector";
+	}
+	cout << endl;
 
 	TrainingParams trainingParams;
 	trainingParams.negativeScoreThreshold = -0.5;
@@ -175,7 +195,7 @@ int main(int argc, char** argv) {
 
 	shared_ptr<AggregatedFeaturesDetector> detector;
 	if (testOnly) {
-		detector = loadEhogDetector("svmdata", featureParams, nms, 5);
+		detector = loadEhogDetector("svmdata", featureParams, nms, 5, approximate);
 	} else {
 		DetectorTrainer trainer;
 		trainer.setTrainingParameters(trainingParams);
