@@ -70,6 +70,18 @@ SET(HEADERS
 	include/imageprocessing/WhiteningFilter.hpp
 	include/imageprocessing/ZeroMeanUnitVarianceFilter.hpp
 	include/imageprocessing/extraction/AggregatedFeaturesExtractor.hpp
+	include/imageprocessing/filtering/AggregationFilter.hpp
+	include/imageprocessing/filtering/BgrToLuvConverter.hpp
+	include/imageprocessing/filtering/BoxConvolutionFilter.hpp
+	include/imageprocessing/filtering/ChannelExtractor.hpp
+	include/imageprocessing/filtering/FpdwFeaturesFilter.hpp
+	include/imageprocessing/filtering/FilterTree.hpp
+	include/imageprocessing/filtering/GradientFilter.hpp
+	include/imageprocessing/filtering/GradientHistogramFilter.hpp
+	include/imageprocessing/filtering/GradientMagnitudeFilter.hpp
+	include/imageprocessing/filtering/GradientOrientationFilter.hpp
+	include/imageprocessing/filtering/HistogramFilter.hpp
+	include/imageprocessing/filtering/TriangularConvolutionFilter.hpp
 )
 SET(SOURCE
 	src/imageprocessing/CachingFeatureExtractor.cpp
@@ -116,6 +128,18 @@ SET(SOURCE
 	src/imageprocessing/WhiteningFilter.cpp
 	src/imageprocessing/ZeroMeanUnitVarianceFilter.cpp
 	src/imageprocessing/extraction/AggregatedFeaturesExtractor.cpp
+	src/imageprocessing/filtering/AggregationFilter.cpp
+	src/imageprocessing/filtering/BgrToLuvConverter.cpp
+	src/imageprocessing/filtering/BoxConvolutionFilter.cpp
+	src/imageprocessing/filtering/ChannelExtractor.cpp
+	src/imageprocessing/filtering/FpdwFeaturesFilter.cpp
+	src/imageprocessing/filtering/FilterTree.cpp
+	src/imageprocessing/filtering/GradientFilter.cpp
+	src/imageprocessing/filtering/GradientHistogramFilter.cpp
+	src/imageprocessing/filtering/GradientMagnitudeFilter.cpp
+	src/imageprocessing/filtering/GradientOrientationFilter.cpp
+	src/imageprocessing/filtering/HistogramFilter.cpp
+	src/imageprocessing/filtering/TriangularConvolutionFilter.cpp
 )
 
 include_directories( "include" )
