@@ -8,12 +8,12 @@
 #ifndef DETECTORTRAINER_HPP_
 #define DETECTORTRAINER_HPP_
 
+#include "LabeledImage.hpp"
 #include "classification/ExampleManagement.hpp"
 #include "detection/AggregatedFeaturesDetector.hpp"
 #include "detection/NonMaximumSuppression.hpp"
 #include "libsvm/LibSvmClassifier.hpp"
-#include "imageio/LabeledImageSource.hpp"
-#include "imageio/Landmark.hpp"
+#include "imageio/RectLandmark.hpp"
 #include "imageprocessing/extraction/AggregatedFeaturesExtractor.hpp"
 #include "imageprocessing/ImageFilter.hpp"
 #include "opencv2/core/core.hpp"
@@ -88,9 +88,9 @@ public:
 	 * The labeled images contain positive examples and fuzzy ones that will be ignored for training. Fuzzy training
 	 * examples must have a name that starts with "ignore". Bounding boxes with other names are considered positive.
 	 *
-	 * @param[in] images Images labeled with bounding boxes around positive examples (anything else is considered negative).
+	 * @param[in] images Images labeled with bounding boxes around positive and fuzzy examples (anything else is considered negative).
 	 */
-	void train(imageio::LabeledImageSource& images);
+	void train(std::vector<LabeledImage> images);
 
 	/**
 	 * Stores the SVM data into a file.
@@ -126,13 +126,13 @@ private:
 
 	void createEmptyClassifier();
 
-	void collectInitialTrainingExamples(imageio::LabeledImageSource& images);
+	void collectInitialTrainingExamples(std::vector<LabeledImage> images);
 
-	void collectHardTrainingExamples(imageio::LabeledImageSource& images);
+	void collectHardTrainingExamples(std::vector<LabeledImage> images);
 
 	void createHardNegativesDetector();
 
-	void collectTrainingExamples(imageio::LabeledImageSource& images, bool initial);
+	void collectTrainingExamples(std::vector<LabeledImage> images, bool initial);
 
 	/**
 	 * Adjusts the aspect ratio of the landmarks to fit the feature window size.
@@ -140,7 +140,7 @@ private:
 	 * @param[in] landmarks Labeled bounding boxes with potentially differing aspect ratios.
 	 * @return Labeled bounding boxes with the correct aspect ratio.
 	 */
-	std::vector<std::shared_ptr<imageio::Landmark>> adjustAspectRatio(const std::vector<std::shared_ptr<imageio::Landmark>>& landmarks) const;
+	std::vector<imageio::RectLandmark> adjustAspectRatio(const std::vector<imageio::RectLandmark>& landmarks) const;
 
 	/**
 	 * Adjusts the aspect ratio of a landmark to fit the feature window size.
@@ -148,18 +148,17 @@ private:
 	 * @param[in] landmark Labeled bounding box with potentially differing aspect ratio.
 	 * @return Labeled bounding box with the correct aspect ratio.
 	 */
-	std::shared_ptr<imageio::Landmark> adjustAspectRatio(const imageio::Landmark& landmark) const;
+	imageio::RectLandmark adjustAspectRatio(const imageio::RectLandmark& landmark) const;
 
-	void addMirroredTrainingExamples(const cv::Mat& image, const std::vector<std::shared_ptr<imageio::Landmark>>& landmarks, bool initial);
+	void addMirroredTrainingExamples(const cv::Mat& image, const std::vector<imageio::RectLandmark>& landmarks, bool initial);
 
 	cv::Mat flipHorizontally(const cv::Mat& image);
 
-	std::vector<std::shared_ptr<imageio::Landmark>> flipHorizontally(
-			const std::vector<std::shared_ptr<imageio::Landmark>>& landmarks, int imageWidth);
+	std::vector<imageio::RectLandmark> flipHorizontally(const std::vector<imageio::RectLandmark>& landmarks, int imageWidth);
 
-	std::shared_ptr<imageio::Landmark> flipHorizontally(const imageio::Landmark& landmark, int imageWidth);
+	imageio::RectLandmark flipHorizontally(const imageio::RectLandmark& landmark, int imageWidth);
 
-	void addTrainingExamples(const cv::Mat& image, const std::vector<std::shared_ptr<imageio::Landmark>>& landmarks, bool initial);
+	void addTrainingExamples(const cv::Mat& image, const std::vector<imageio::RectLandmark>& landmarks, bool initial);
 
 	void addTrainingExamples(const cv::Mat& image, const Annotations& annotations, bool initial);
 

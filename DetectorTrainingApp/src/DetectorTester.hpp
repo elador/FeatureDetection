@@ -9,9 +9,9 @@
 #define DETECTORTESTER_HPP_
 
 #include "Annotations.hpp"
+#include "LabeledImage.hpp"
 #include "detection/SimpleDetector.hpp"
-#include "imageio/LabeledImageSource.hpp"
-#include "imageio/Landmark.hpp"
+#include "imageio/RectLandmark.hpp"
 #include "opencv2/core/core.hpp"
 #include <chrono>
 #include <memory>
@@ -128,16 +128,16 @@ public:
 	 * @return Result containing correct, wrong, ignored and missed detections.
 	 */
 	DetectionResult detect(detection::SimpleDetector& detector,
-			const cv::Mat& image, const std::vector<std::shared_ptr<imageio::Landmark>>& landmarks) const;
+			const cv::Mat& image, const std::vector<imageio::RectLandmark>& landmarks) const;
 
 	/**
 	 * Evaluates a detector on several images.
 	 *
 	 * @param[in] detector Detector that should be evaluated.
-	 * @param[in] images Images with labeled bounding boxes. Will be reset before use.
+	 * @param[in] images Images with labeled bounding boxes.
 	 * @return Evaluation result for the images.
 	 */
-	DetectorEvaluationResult evaluate(detection::SimpleDetector& detector, imageio::LabeledImageSource& images) const;
+	DetectorEvaluationResult evaluate(detection::SimpleDetector& detector, std::vector<LabeledImage>& images) const;
 
 	/**
 	 * Evaluates a detector on a single image.
@@ -148,7 +148,7 @@ public:
 	 * @return Evaluation result for the single image.
 	 */
 	DetectorEvaluationResult evaluate(detection::SimpleDetector& detector,
-			const cv::Mat& image, const std::vector<std::shared_ptr<imageio::Landmark>>& landmarks) const;
+			const cv::Mat& image, const std::vector<imageio::RectLandmark>& landmarks) const;
 
 private:
 

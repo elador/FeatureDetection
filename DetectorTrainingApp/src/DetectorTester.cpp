@@ -7,15 +7,12 @@
 
 #include "Annotations.hpp"
 #include "DetectorTester.hpp"
-#include "imageio/LandmarkCollection.hpp"
 #include "imageprocessing/VersionedImage.hpp"
 
 using cv::Mat;
 using cv::Rect;
 using detection::SimpleDetector;
-using imageio::LabeledImageSource;
-using imageio::Landmark;
-using imageio::LandmarkCollection;
+using imageio::RectLandmark;
 using imageprocessing::VersionedImage;
 using std::chrono::duration_cast;
 using std::chrono::milliseconds;
@@ -26,8 +23,7 @@ using std::vector;
 
 DetectorTester::DetectorTester(double overlapThreshold) : overlapThreshold(overlapThreshold) {}
 
-DetectionResult DetectorTester::detect(SimpleDetector& detector,
-		const Mat& image, const vector<shared_ptr<Landmark>>& landmarks) const {
+DetectionResult DetectorTester::detect(SimpleDetector& detector, const Mat& image, const vector<RectLandmark>& landmarks) const {
 	vector<Rect> detections = detector.detect(image);
 	Annotations annotations(landmarks);
 	Status status = compareWithGroundTruth(detections, annotations);
@@ -49,18 +45,15 @@ DetectionResult DetectorTester::detect(SimpleDetector& detector,
 	return result;
 }
 
-DetectorEvaluationResult DetectorTester::evaluate(SimpleDetector& detector, LabeledImageSource& source) const {
+DetectorEvaluationResult DetectorTester::evaluate(SimpleDetector& detector, vector<LabeledImage>& images) const {
 	DetectorEvaluationResult result;
-	source.reset();
-	while (source.next()) {
-		const LandmarkCollection& collection = source.getLandmarks();
-		result += evaluate(detector, source.getImage(), collection.getLandmarks());
-	}
+	for (const LabeledImage& image : images)
+		result += evaluate(detector, image.image, image.landmarks);
 	return result;
 }
 
 DetectorEvaluationResult DetectorTester::evaluate(SimpleDetector& detector,
-		const Mat& image, const vector<shared_ptr<Landmark>>& landmarks) const {
+		const Mat& image, const vector<RectLandmark>& landmarks) const {
 	DetectorEvaluationResult result = DetectorEvaluationResult::single();
 	vector<Rect> detections = detectAndMeasureDuration(detector, image, result);
 	measurePerformance(detections, Annotations(landmarks), result);

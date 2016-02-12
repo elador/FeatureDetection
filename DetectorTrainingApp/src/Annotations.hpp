@@ -10,6 +10,7 @@
 
 #include "imageio/LabeledImageSource.hpp"
 #include "imageio/Landmark.hpp"
+#include "imageio/RectLandmark.hpp"
 #include "opencv2/core/core.hpp"
 #include <vector>
 
@@ -33,6 +34,15 @@ public:
 		extractBounds(landmarks);
 	}
 
+	/**
+	 * Constructs new annotations from the given rectangular landmarks.
+	 *
+	 * @param[in] landmarks Landmarks to construct annotations from.
+	 */
+	explicit Annotations(const std::vector<imageio::RectLandmark>& landmarks) {
+		extractBounds(landmarks);
+	}
+
 private:
 
 	void extractBounds(const std::vector<std::shared_ptr<imageio::Landmark>>& landmarks) {
@@ -40,6 +50,17 @@ private:
 			cv::Rect bounds = getBounds(*landmark);
 			nonNegatives.push_back(bounds);
 			if (isFuzzy(*landmark))
+				fuzzies.push_back(bounds);
+			else
+				positives.push_back(bounds);
+		}
+	}
+
+	void extractBounds(const std::vector<imageio::RectLandmark>& landmarks) {
+		for (const auto& landmark : landmarks) {
+			cv::Rect bounds = getBounds(landmark);
+			nonNegatives.push_back(bounds);
+			if (isFuzzy(landmark))
 				fuzzies.push_back(bounds);
 			else
 				positives.push_back(bounds);

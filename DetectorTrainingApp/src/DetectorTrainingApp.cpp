@@ -9,6 +9,7 @@
 #include "DetectorTester.hpp"
 #include "DetectorTrainer.hpp"
 #include "DilatedLabeledImageSource.hpp"
+#include "LabeledImage.hpp"
 #include "classification/SvmClassifier.hpp"
 #include "imageio/DlibImageSource.hpp"
 #include "imageprocessing/CellBasedPyramidFeatureExtractor.hpp"
@@ -55,12 +56,16 @@ using std::shared_ptr;
 using std::string;
 using std::vector;
 
-shared_ptr<LabeledImageSource> getDilatedAnnotations(shared_ptr<LabeledImageSource> source, FeatureParams featureParams) {
+vector<LabeledImage> getLabeledImages(shared_ptr<LabeledImageSource> source, FeatureParams featureParams) {
 	float dilationInPixels = 2.0f;
 	float dilationInCells = dilationInPixels / featureParams.cellSizeInPixels;
 	float widthScale = (featureParams.windowSizeInCells.width + dilationInCells) / featureParams.windowSizeInCells.width;
 	float heightScale = (featureParams.windowSizeInCells.height + dilationInCells) / featureParams.windowSizeInCells.height;
-	return make_shared<DilatedLabeledImageSource>(source, widthScale, heightScale);
+	auto dilatedSource = make_shared<DilatedLabeledImageSource>(source, widthScale, heightScale);
+	vector<LabeledImage> images;
+	while (dilatedSource->next())
+		images.emplace_back(dilatedSource->getImage(), dilatedSource->getLandmarks().getLandmarks());
+	return images;
 }
 
 shared_ptr<CompleteExtendedHogFilter> createEhogFilter(FeatureParams featureParams) {
@@ -154,17 +159,16 @@ shared_ptr<AggregatedFeaturesDetector> loadFpdwDetector(const string& filename,
 	}
 }
 
-void showDetections(const DetectorTester& tester, AggregatedFeaturesDetector& detector, LabeledImageSource& source) {
+void showDetections(const DetectorTester& tester, AggregatedFeaturesDetector& detector, vector<LabeledImage>& images) {
 	Mat output;
 	cv::Scalar correctDetectionColor(0, 255, 0);
 	cv::Scalar wrongDetectionColor(0, 0, 255);
 	cv::Scalar ignoredDetectionColor(255, 204, 0);
 	cv::Scalar missedDetectionColor(0, 153, 255);
 	int thickness = 2;
-	source.reset();
-	while (source.next()) {
-		DetectionResult result = tester.detect(detector, source.getImage(), source.getLandmarks().getLandmarks());
-		source.getImage().copyTo(output);
+	for (const LabeledImage& image : images) {
+		DetectionResult result = tester.detect(detector, image.image, image.landmarks);
+		image.image.copyTo(output);
 		for (const Rect& target : result.correctDetections)
 			cv::rectangle(output, target, correctDetectionColor, thickness);
 		for (const Rect& target : result.wrongDetections)
@@ -236,9 +240,9 @@ int main(int argc, char** argv) {
 	int octaveLayerCountForDetection = 5;
 	shared_ptr<NonMaximumSuppression> nms = make_shared<NonMaximumSuppression>(0.3, NonMaximumSuppression::MaximumType::WEIGHTED_AVERAGE);
 
-	auto trainingImages = getDilatedAnnotations(
+	vector<LabeledImage> trainingImages = getLabeledImages(
 			make_shared<DlibImageSource>("/home/poschmann/Bilder/FEI_Face_Database/training2/training.xml"), featureParams);
-	auto testingImages = getDilatedAnnotations(
+	vector<LabeledImage> testingImages = getLabeledImages(
 			make_shared<DlibImageSource>("/home/poschmann/Bilder/heads/testing/testing.xml"), featureParams);
 
 	shared_ptr<AggregatedFeaturesDetector> detector;
@@ -252,7 +256,7 @@ int main(int argc, char** argv) {
 			setGradientFeatures(trainer, featureParams);
 		else if (featureType == FeatureType::FPDW)
 			setFpdwFeatures(trainer, featureParams);
-		trainer.train(*trainingImages);
+		trainer.train(trainingImages);
 		trainer.storeClassifier(filename);
 		detector = trainer.getDetector(nms, octaveLayerCountForDetection);
 	} else {
@@ -270,9 +274,9 @@ int main(int argc, char** argv) {
 	}
 
 	DetectorTester tester;
-	printTestResult("Evaluation on training set", tester.evaluate(*detector, *trainingImages));
-	printTestResult("Evaluation on testing set", tester.evaluate(*detector, *testingImages));
-	showDetections(tester, *detector, *testingImages);
+	printTestResult("Evaluation on training set", tester.evaluate(*detector, trainingImages));
+	printTestResult("Evaluation on testing set", tester.evaluate(*detector, testingImages));
+	showDetections(tester, *detector, testingImages);
 
 	return 0;
 }

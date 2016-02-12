@@ -9,8 +9,6 @@
 #include "DetectorTrainer.hpp"
 #include "classification/LinearKernel.hpp"
 #include "classification/SvmClassifier.hpp"
-#include "imageio/LandmarkCollection.hpp"
-#include "imageio/RectLandmark.hpp"
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/Patch.hpp"
 #include <fstream>
@@ -24,8 +22,6 @@ using cv::Rect;
 using cv::Size;
 using detection::AggregatedFeaturesDetector;
 using detection::NonMaximumSuppression;
-using imageio::LabeledImageSource;
-using imageio::Landmark;
 using imageio::RectLandmark;
 using imageprocessing::ImageFilter;
 using imageprocessing::Patch;
@@ -89,7 +85,7 @@ void DetectorTrainer::setFeatures(FeatureParams params, const shared_ptr<ImageFi
 				params.windowSizeInCells, params.cellSizeInPixels, params.octaveLayerCount);
 }
 
-void DetectorTrainer::train(imageio::LabeledImageSource& images) {
+void DetectorTrainer::train(vector<LabeledImage> images) {
 	createEmptyClassifier();
 	collectInitialTrainingExamples(images);
 	trainClassifier();
@@ -101,13 +97,13 @@ void DetectorTrainer::createEmptyClassifier() {
 	classifier = LibSvmClassifier::createBinarySvm(make_shared<LinearKernel>(), trainingParams.C, trainingParams.compensateImbalance);
 }
 
-void DetectorTrainer::collectInitialTrainingExamples(LabeledImageSource& images) {
+void DetectorTrainer::collectInitialTrainingExamples(vector<LabeledImage> images) {
 	if (printProgressInformation)
 		std::cout << "collecting initial training examples" << std::endl;
 	collectTrainingExamples(images, true);
 }
 
-void DetectorTrainer::collectHardTrainingExamples(LabeledImageSource& images) {
+void DetectorTrainer::collectHardTrainingExamples(vector<LabeledImage> images) {
 	if (printProgressInformation)
 		std::cout << "collecting additional hard training examples" << std::endl;
 	createHardNegativesDetector();
@@ -120,26 +116,24 @@ void DetectorTrainer::createHardNegativesDetector() {
 	classifier->getSvm()->setThreshold(0);
 }
 
-void DetectorTrainer::collectTrainingExamples(LabeledImageSource& images, bool initial) {
-	images.reset();
-	while (images.next()) {
-		Mat image = images.getImage();
-		vector<shared_ptr<Landmark>> landmarks = adjustAspectRatio(images.getLandmarks().getLandmarks());
-		addTrainingExamples(image, landmarks, initial);
+void DetectorTrainer::collectTrainingExamples(vector<LabeledImage> images, bool initial) {
+	for (LabeledImage labeledImage : images) {
+		vector<RectLandmark> landmarks = adjustAspectRatio(labeledImage.landmarks);
+		addTrainingExamples(labeledImage.image, landmarks, initial);
 		if (trainingParams.mirrorTrainingData)
-			addMirroredTrainingExamples(image, landmarks, initial);
+			addMirroredTrainingExamples(labeledImage.image, landmarks, initial);
 	}
 }
 
-vector<shared_ptr<Landmark>> DetectorTrainer::adjustAspectRatio(const vector<shared_ptr<Landmark>>& landmarks) const {
-	vector<shared_ptr<Landmark>> adjustedLandmarks;
+vector<RectLandmark> DetectorTrainer::adjustAspectRatio(const vector<RectLandmark>& landmarks) const {
+	vector<RectLandmark> adjustedLandmarks;
 	adjustedLandmarks.reserve(landmarks.size());
-	for (const shared_ptr<Landmark>& landmark : landmarks)
-		adjustedLandmarks.push_back(adjustAspectRatio(*landmark));
+	for (const RectLandmark& landmark : landmarks)
+		adjustedLandmarks.push_back(adjustAspectRatio(landmark));
 	return adjustedLandmarks;
 }
 
-shared_ptr<Landmark> DetectorTrainer::adjustAspectRatio(const Landmark& landmark) const {
+RectLandmark DetectorTrainer::adjustAspectRatio(const RectLandmark& landmark) const {
 	const string& name = landmark.getName();
 	float x = landmark.getX();
 	float y = landmark.getY();
@@ -149,12 +143,12 @@ shared_ptr<Landmark> DetectorTrainer::adjustAspectRatio(const Landmark& landmark
 		width = aspectRatio * height;
 	else if (width > aspectRatio * height)
 		height = width * aspectRatioInv;
-	return make_shared<RectLandmark>(name, x, y, width, height);
+	return RectLandmark(name, x, y, width, height);
 }
 
-void DetectorTrainer::addMirroredTrainingExamples(const Mat& image, const vector<shared_ptr<Landmark>>& landmarks, bool initial) {
+void DetectorTrainer::addMirroredTrainingExamples(const Mat& image, const vector<RectLandmark>& landmarks, bool initial) {
 	Mat mirroredImage = flipHorizontally(image);
-	vector<shared_ptr<Landmark>> mirroredLandmarks = flipHorizontally(landmarks, image.cols);
+	vector<RectLandmark> mirroredLandmarks = flipHorizontally(landmarks, image.cols);
 	addTrainingExamples(mirroredImage, mirroredLandmarks, initial);
 }
 
@@ -164,25 +158,25 @@ Mat DetectorTrainer::flipHorizontally(const Mat& image) {
 	return flippedImage;
 }
 
-vector<shared_ptr<Landmark>> DetectorTrainer::flipHorizontally(const vector<shared_ptr<Landmark>>& landmarks, int imageWidth) {
-	vector<shared_ptr<Landmark>> flippedLandmarks;
+vector<RectLandmark> DetectorTrainer::flipHorizontally(const vector<RectLandmark>& landmarks, int imageWidth) {
+	vector<RectLandmark> flippedLandmarks;
 	flippedLandmarks.reserve(landmarks.size());
-	for (const shared_ptr<Landmark>& landmark : landmarks)
-		flippedLandmarks.push_back(flipHorizontally(*landmark, imageWidth));
+	for (const RectLandmark& landmark : landmarks)
+		flippedLandmarks.push_back(flipHorizontally(landmark, imageWidth));
 	return flippedLandmarks;
 }
 
-shared_ptr<Landmark> DetectorTrainer::flipHorizontally(const Landmark& landmark, int imageWidth) {
+RectLandmark DetectorTrainer::flipHorizontally(const RectLandmark& landmark, int imageWidth) {
 	const string& name = landmark.getName();
 	float x = landmark.getX();
 	float y = landmark.getY();
 	float width = landmark.getWidth();
 	float height = landmark.getHeight();
 	float mirroredX = imageWidth - x - 1;
-	return make_shared<RectLandmark>(name, mirroredX, y, width, height);
+	return RectLandmark(name, mirroredX, y, width, height);
 }
 
-void DetectorTrainer::addTrainingExamples(const Mat& image, const vector<shared_ptr<Landmark>>& landmarks, bool initial) {
+void DetectorTrainer::addTrainingExamples(const Mat& image, const vector<RectLandmark>& landmarks, bool initial) {
 	addTrainingExamples(image, Annotations(landmarks), initial);
 }
 
