@@ -67,6 +67,16 @@ public:
 
 	std::vector<cv::Rect> detect(std::shared_ptr<imageprocessing::VersionedImage> image) override;
 
+	/**
+	 * @return SVM score threshold that must be overcome for windows to be considered positive.
+	 */
+	float getScoreThreshold() const;
+
+	/**
+	 * @param[in] threshold SVM score threshold that must be overcome for windows to be considered positive.
+	 */
+	void setScoreThreshold(float threshold);
+
 private:
 
 	/**
@@ -102,6 +112,7 @@ private:
 	std::shared_ptr<imageprocessing::ImagePyramid> scorePyramid; ///< Classification score pyramid.
 	std::shared_ptr<detection::NonMaximumSuppression> nonMaximumSuppression;
 	cv::Size kernelSize;
+	float scoreThreshold; ///< SVM score threshold that must be overcome for windows to be considered positive.
 };
 
 } /* namespace detection */

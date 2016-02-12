@@ -48,7 +48,8 @@ AggregatedFeaturesDetector::AggregatedFeaturesDetector(shared_ptr<AggregatedFeat
 		shared_ptr<SvmClassifier> svm, shared_ptr<NonMaximumSuppression> nms) :
 				featureExtractor(featureExtractor),
 				nonMaximumSuppression(nms),
-				kernelSize(svm->getSupportVectors()[0].size()) {
+				kernelSize(svm->getSupportVectors()[0].size()),
+				scoreThreshold(0) {
 	if (!dynamic_cast<LinearKernel*>(svm->getKernel().get()))
 		throw std::invalid_argument("AggregatedFeaturesDetector: the SVM must use a LinearKernel");
 	shared_ptr<ConvolutionFilter> convolutionFilter = make_shared<ConvolutionFilter>(CV_32F);
@@ -84,7 +85,7 @@ std::vector<Detection> AggregatedFeaturesDetector::getPositiveWindows() {
 		for (int y = 0; y < validHeight; ++y) {
 			for (int x = 0; x < validWidth; ++x) {
 				float score = scoreMap.at<float>(y, x);
-				if (score > 0.0) {
+				if (score > scoreThreshold) {
 					Rect boundsInLayer = Rect(Point(x, y), kernelSize);
 					Rect boundsInImage = featureExtractor->computeBoundsInImagePixels(boundsInLayer, *layer);
 					positiveBounds.push_back({score, boundsInImage});
@@ -101,6 +102,14 @@ vector<Rect> AggregatedFeaturesDetector::extractBoundingBoxes(vector<Detection> 
 	for (const Detection& detection : detections)
 		boundingBoxes.push_back(detection.bounds);
 	return boundingBoxes;
+}
+
+float AggregatedFeaturesDetector::getScoreThreshold() const {
+	return scoreThreshold;
+}
+
+void AggregatedFeaturesDetector::setScoreThreshold(float threshold) {
+	scoreThreshold = threshold;
 }
 
 } /* namespace detection */
