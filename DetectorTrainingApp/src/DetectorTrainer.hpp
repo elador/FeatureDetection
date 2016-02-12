@@ -65,7 +65,7 @@ struct TrainingParams {
 class DetectorTrainer {
 public:
 
-	DetectorTrainer();
+	explicit DetectorTrainer(bool printProgressInformation = false);
 
 	/**
 	 * Sets some general training parameters.
@@ -181,6 +181,7 @@ private:
 
 	void trainClassifier();
 
+	bool printProgressInformation;
 	TrainingParams trainingParams;
 	std::shared_ptr<detection::NonMaximumSuppression> noSuppression;
 	FeatureParams featureParams;
@@ -189,14 +190,12 @@ private:
 	std::shared_ptr<imageprocessing::ImageFilter> imageFilter;
 	std::shared_ptr<imageprocessing::ImageFilter> filter;
 	std::shared_ptr<imageprocessing::extraction::AggregatedFeaturesExtractor> featureExtractor;
-
 	std::shared_ptr<libsvm::LibSvmClassifier> classifier;
 	std::shared_ptr<detection::AggregatedFeaturesDetector> hardNegativesDetector;
 	std::vector<cv::Mat> positiveTrainingExamples;
 	std::vector<cv::Mat> negativeTrainingExamples;
 	cv::Mat image;
 	cv::Size imageSize;
-
 	mutable std::mt19937 generator;
 };
 

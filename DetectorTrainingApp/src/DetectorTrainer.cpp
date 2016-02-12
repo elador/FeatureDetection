@@ -14,6 +14,7 @@
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/Patch.hpp"
 #include <fstream>
+#include <iostream>
 #include <stdexcept>
 
 using classification::LinearKernel;
@@ -38,7 +39,8 @@ using std::shared_ptr;
 using std::string;
 using std::vector;
 
-DetectorTrainer::DetectorTrainer() :
+DetectorTrainer::DetectorTrainer(bool printProgressInformation) :
+		printProgressInformation(printProgressInformation),
 		aspectRatio(1),
 		aspectRatioInv(1),
 		noSuppression(make_shared<NonMaximumSuppression>(1.0)),
@@ -100,10 +102,14 @@ void DetectorTrainer::createEmptyClassifier() {
 }
 
 void DetectorTrainer::collectInitialTrainingExamples(LabeledImageSource& images) {
+	if (printProgressInformation)
+		std::cout << "collecting initial training examples" << std::endl;
 	collectTrainingExamples(images, true);
 }
 
 void DetectorTrainer::collectHardTrainingExamples(LabeledImageSource& images) {
+	if (printProgressInformation)
+		std::cout << "collecting additional hard training examples" << std::endl;
 	createHardNegativesDetector();
 	collectTrainingExamples(images, false);
 }
@@ -254,6 +260,8 @@ double DetectorTrainer::computeOverlap(Rect a, Rect b) const {
 }
 
 void DetectorTrainer::trainClassifier() {
+	if (printProgressInformation)
+		std::cout << "training classifier (adding " << positiveTrainingExamples.size() << " positives and " << negativeTrainingExamples.size() << " negatives)" << std::endl;
 	if (!classifier->retrain(positiveTrainingExamples, negativeTrainingExamples))
 		throw runtime_error("DetectorTrainer: SVM is not usable after training");
 	if (classifier->getSvm()->getSupportVectors().size() != 1) // should never happen because of linear kernel
