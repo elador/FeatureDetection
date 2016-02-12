@@ -12,14 +12,20 @@
 #include "classification/SvmClassifier.hpp"
 #include "imageio/DlibImageSource.hpp"
 #include "imageprocessing/CellBasedPyramidFeatureExtractor.hpp"
+#include "imageprocessing/ChainedFilter.hpp"
 #include "imageprocessing/CompleteExtendedHogFilter.hpp"
 #include "imageprocessing/ExtendedHogFeatureExtractor.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
 #include "imageprocessing/ImagePyramid.hpp"
+#include "imageprocessing/filtering/AggregationFilter.hpp"
+#include "imageprocessing/filtering/FpdwFeaturesFilter.hpp"
+#include "imageprocessing/filtering/GradientFilter.hpp"
+#include "imageprocessing/filtering/GradientHistogramFilter.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 
 using cv::Mat;
 using cv::Rect;
@@ -30,13 +36,20 @@ using detection::NonMaximumSuppression;
 using imageio::DlibImageSource;
 using imageio::LabeledImageSource;
 using imageprocessing::CellBasedPyramidFeatureExtractor;
+using imageprocessing::ChainedFilter;
 using imageprocessing::CompleteExtendedHogFilter;
 using imageprocessing::ExtendedHogFeatureExtractor;
 using imageprocessing::GrayscaleFilter;
+using imageprocessing::ImageFilter;
 using imageprocessing::ImagePyramid;
 using imageprocessing::extraction::AggregatedFeaturesExtractor;
+using imageprocessing::filtering::AggregationFilter;
+using imageprocessing::filtering::FpdwFeaturesFilter;
+using imageprocessing::filtering::GradientFilter;
+using imageprocessing::filtering::GradientHistogramFilter;
 using std::cout;
 using std::endl;
+using std::invalid_argument;
 using std::make_shared;
 using std::shared_ptr;
 using std::string;
@@ -79,6 +92,68 @@ shared_ptr<AggregatedFeaturesDetector> loadEhogDetector(const string& filename,
 	}
 }
 
+shared_ptr<ImageFilter> createGradientFeaturesFilter(FeatureParams featureParams) {
+	auto gradientFilter = make_shared<GradientFilter>(1);
+//	auto gradientHistogramFilter = GradientHistogramFilter::full(12, true, 5); // 12 + 1
+//	auto gradientHistogramFilter = GradientHistogramFilter::half(6, true, 5); // 6 + 1
+	auto gradientHistogramFilter = GradientHistogramFilter::both(6, true, 5); // 12 + 6 + 1
+	auto aggregationFilter = make_shared<AggregationFilter>(featureParams.cellSizeInPixels, true, false);
+	return make_shared<ChainedFilter>(gradientFilter, gradientHistogramFilter, aggregationFilter);
+}
+
+void setGradientFeatures(DetectorTrainer& trainer, FeatureParams featureParams) {
+	trainer.setFeatures(featureParams, createGradientFeaturesFilter(featureParams), make_shared<GrayscaleFilter>());
+}
+
+shared_ptr<AggregatedFeaturesDetector> loadGradientFeaturesDetector(const string& filename,
+		FeatureParams featureParams, shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, bool approximate) {
+	shared_ptr<ImageFilter> gradientFeaturesFilter = createGradientFeaturesFilter(featureParams);
+	std::ifstream stream(filename);
+	shared_ptr<SvmClassifier> svm = SvmClassifier::load(stream);
+	stream.close();
+	if (approximate) {
+		vector<double> lambdas; // TODO
+		auto featurePyramid = ImagePyramid::createApproximated(octaveLayerCount, 0.5, 1.0, lambdas);
+		featurePyramid->addImageFilter(make_shared<GrayscaleFilter>());
+		featurePyramid->addLayerFilter(gradientFeaturesFilter);
+		auto extractor = make_shared<AggregatedFeaturesExtractor>(featurePyramid,
+				featureParams.windowSizeInCells, featureParams.cellSizeInPixels, true);
+		return make_shared<AggregatedFeaturesDetector>(extractor, svm, nms);
+	} else {
+		return make_shared<AggregatedFeaturesDetector>(make_shared<GrayscaleFilter>(), gradientFeaturesFilter,
+				featureParams.cellSizeInPixels, featureParams.windowSizeInCells, octaveLayerCount, svm, nms);
+	}
+}
+
+shared_ptr<ImageFilter> createFdpwFilter(FeatureParams featureParams) {
+	auto fpdwFeatures = make_shared<FpdwFeaturesFilter>(true, true, 5, 0.01);
+	auto aggregation = make_shared<AggregationFilter>(featureParams.cellSizeInPixels, true, false);
+	return make_shared<ChainedFilter>(fpdwFeatures, aggregation);
+}
+
+void setFpdwFeatures(DetectorTrainer& trainer, FeatureParams featureParams) {
+	trainer.setFeatures(featureParams, createFdpwFilter(featureParams));
+}
+
+shared_ptr<AggregatedFeaturesDetector> loadFpdwDetector(const string& filename,
+		FeatureParams featureParams, shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, bool approximate) {
+	shared_ptr<ImageFilter> filter = createFdpwFilter(featureParams);
+	std::ifstream stream(filename);
+	shared_ptr<SvmClassifier> svm = SvmClassifier::load(stream);
+	stream.close();
+	if (approximate) {
+		vector<double> lambdas; // TODO
+		auto featurePyramid = ImagePyramid::createApproximated(octaveLayerCount, 0.5, 1.0, lambdas);
+		featurePyramid->addLayerFilter(filter);
+		auto extractor = make_shared<AggregatedFeaturesExtractor>(featurePyramid,
+				featureParams.windowSizeInCells, featureParams.cellSizeInPixels, true);
+		return make_shared<AggregatedFeaturesDetector>(extractor, svm, nms);
+	} else {
+		return make_shared<AggregatedFeaturesDetector>(filter,
+				featureParams.cellSizeInPixels, featureParams.windowSizeInCells, octaveLayerCount, svm, nms);
+	}
+}
+
 void showDetections(const DetectorTester& tester, AggregatedFeaturesDetector& detector, LabeledImageSource& source) {
 	Mat output;
 	cv::Scalar correctDetectionColor(0, 255, 0);
@@ -105,54 +180,6 @@ void showDetections(const DetectorTester& tester, AggregatedFeaturesDetector& de
 	}
 }
 
-Mat drawEhogFeatures(const Mat& hog, size_t bins, bool fullHog) { // TODO remove or move to hog filter...
-	size_t cellRows = hog.rows;
-	size_t cellCols = hog.cols;
-	cv::Scalar white(1.0);
-	int thickness = 1;
-	vector<Mat> bars(bins);
-	bars[0] = Mat::zeros(20, 20, CV_32FC1);
-	cv::line(bars[0], cv::Point(10, 10 - 8), cv::Point(10, 10 + 8), white, thickness);
-	cv::Point2f center(10, 10);
-	for (size_t bin = 1; bin < bins; ++bin) {
-		double angle = bin * 180 / bins; // positive angle is clockwise, because y-axis points downwards
-		Mat rotation = cv::getRotationMatrix2D(center, -angle, 1.0); // expects positive angle to be counter-clockwise
-		cv::warpAffine(bars[0], bars[bin], rotation, bars[0].size(), cv::INTER_CUBIC);
-	}
-	Mat tmp = Mat::zeros(20 * cellRows, 20 * cellCols, CV_32FC1);
-	for (size_t cellRow = 0; cellRow < cellRows; ++cellRow) {
-		for (size_t cellCol = 0; cellCol < cellCols; ++cellCol) {
-			const float* histogramValues = hog.ptr<float>(cellRow, cellCol);
-			for (size_t bin = 0; bin < bins; ++bin) {
-				float weight;
-				if (fullHog)
-					weight = histogramValues[bin] + histogramValues[bin + bins] + histogramValues[bin + 2 * bins];
-				else
-					weight = histogramValues[bin];
-				if (weight > 0) {
-					Mat cell(tmp, Rect(20 * cellCol, 20 * cellRow, 20, 20));
-					cell = cv::max(cell, weight * bars[bin]);
-				}
-			}
-		}
-	}
-	double max;
-	cv::minMaxIdx(tmp, nullptr, &max);
-	float threshold = static_cast<float>(max);
-	Mat image(tmp.rows, tmp.cols, CV_8UC3);
-	for (int row = 0; row < tmp.rows; ++row) {
-		const float* tmpValues = tmp.ptr<float>(row);
-		cv::Vec3b* outputValues = image.ptr<cv::Vec3b>(row);
-		for (int col = 0; col < tmp.cols; ++col) {
-			uchar value = cv::saturate_cast<uchar>(std::round(255 * tmpValues[col] / threshold));
-			outputValues[col][0] = value;
-			outputValues[col][1] = value;
-			outputValues[col][2] = value;
-		}
-	}
-	return image;
-}
-
 void printTestResult(DetectorEvaluationResult result) {
 	cout << "F-Measure: " << result.getF1Measure() << endl;
 	cout << "Precision: " << result.getPrecision() << endl;
@@ -168,17 +195,37 @@ void printTestResult(const string& title, DetectorEvaluationResult result) {
 	printTestResult(result);
 }
 
+enum class TaskType { TRAIN, TEST, TEST_APPROXIMATE };
+enum class FeatureType { EHOG, GRADHIST, FPDW };
+
+TaskType getTaskType(const string& type) {
+	if (type == "train")
+		return TaskType::TRAIN;
+	if (type == "test")
+		return TaskType::TEST;
+	if (type == "test-approximate")
+		return TaskType::TEST_APPROXIMATE;
+	throw invalid_argument("expected train/test/test-approximate, but was " + type);
+}
+
+FeatureType getFeatureType(const string& type) {
+	if (type == "ehog")
+		return FeatureType::EHOG;
+	if (type == "gradhist")
+		return FeatureType::GRADHIST;
+	if (type == "fpdw")
+		return FeatureType::FPDW;
+	throw invalid_argument("expected ehog/gradhist/fpdw, but was " + type);
+}
+
 int main(int argc, char** argv) {
-	bool testOnly = argc > 1 && string(argv[1]) == "testonly";
-	bool approximate = argc > 2 && string(argv[2]) == "approximate";
-	if (testOnly) {
-		cout << "test detector";
-		if (approximate)
-			cout << " on approximated image pyramid";
-	} else {
-		cout << "train and test detector";
+	if (argc != 4) {
+		cout << "call: ./DetectorTrainingApp train/test/test-approximate ehog/gradhist/fpdw svmfile" << endl;
+		return 0;
 	}
-	cout << endl;
+	TaskType taskType = getTaskType(argv[1]);
+	FeatureType featureType = getFeatureType(argv[2]);
+	string filename = argv[3];
 
 	TrainingParams trainingParams;
 	trainingParams.negativeScoreThreshold = -0.5;
@@ -186,6 +233,7 @@ int main(int argc, char** argv) {
 	trainingParams.C = 10;
 	trainingParams.compensateImbalance = true;
 	FeatureParams featureParams{Size(5, 7), 8, 10}; // (width, height), cellsize, octave
+	int octaveLayerCountForDetection = 5;
 	shared_ptr<NonMaximumSuppression> nms = make_shared<NonMaximumSuppression>(0.3, NonMaximumSuppression::MaximumType::WEIGHTED_AVERAGE);
 
 	auto trainingImages = getDilatedAnnotations(
@@ -194,19 +242,31 @@ int main(int argc, char** argv) {
 			make_shared<DlibImageSource>("/home/poschmann/Bilder/heads/testing/testing.xml"), featureParams);
 
 	shared_ptr<AggregatedFeaturesDetector> detector;
-	if (testOnly) {
-		detector = loadEhogDetector("svmdata", featureParams, nms, 5, approximate);
-	} else {
-		DetectorTrainer trainer;
+	if (taskType == TaskType::TRAIN) {
+		cout << "train and test detector" << endl;
+		DetectorTrainer trainer(true);
 		trainer.setTrainingParameters(trainingParams);
-		setEhogFeatures(trainer, featureParams);
+		if (featureType == FeatureType::EHOG)
+			setEhogFeatures(trainer, featureParams);
+		else if (featureType == FeatureType::GRADHIST)
+			setGradientFeatures(trainer, featureParams);
+		else if (featureType == FeatureType::FPDW)
+			setFpdwFeatures(trainer, featureParams);
 		trainer.train(*trainingImages);
-		trainer.storeClassifier("svmdata");
-
-		Mat w = drawEhogFeatures(trainer.getWeightVector(), 9, true);
-		cv::imshow("FHOG", w);
-
-		detector = trainer.getDetector(nms, 5);
+		trainer.storeClassifier(filename);
+		detector = trainer.getDetector(nms, octaveLayerCountForDetection);
+	} else {
+		bool approximate = taskType == TaskType::TEST_APPROXIMATE;
+		cout << "test detector";
+		if (approximate)
+			cout << " on approximated image pyramid";
+		cout << endl;
+		if (featureType == FeatureType::EHOG)
+			detector = loadEhogDetector(filename, featureParams, nms, octaveLayerCountForDetection, approximate);
+		else if (featureType == FeatureType::GRADHIST)
+			detector = loadGradientFeaturesDetector(filename, featureParams, nms, octaveLayerCountForDetection, approximate);
+		else if (featureType == FeatureType::FPDW)
+			detector = loadFpdwDetector(filename, featureParams, nms, octaveLayerCountForDetection, approximate);
 	}
 
 	DetectorTester tester;
