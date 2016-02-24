@@ -9,12 +9,7 @@
 #include "imageprocessing/filtering/BoxConvolutionFilter.hpp"
 #include "imageprocessing/filtering/TriangularConvolutionFilter.hpp"
 
-using cv::FilterEngine;
 using cv::Mat;
-using cv::Point;
-using cv::Ptr;
-using cv::Rect;
-using cv::Size;
 using std::unique_ptr;
 
 namespace imageprocessing {

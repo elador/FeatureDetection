@@ -9,7 +9,6 @@
 #define IMAGEPROCESSING_FILTERING_AGGREGATIONFILTER_HPP_
 
 #include "imageprocessing/ImageFilter.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
 #include <memory>
 
 namespace imageprocessing {
@@ -32,7 +31,7 @@ public:
 	/**
 	 * Constructs a new aggregation filter.
 	 *
-	 * @param[in] cellSize Size of the square cells.
+	 * @param[in] cellSize Size of the square cells in pixels.
 	 * @param[in] interpolate Flag that indicates whether to bilinearly interpolate the pixel contributions.
 	 * @param[in] normalize Flag that indicates whether the sum should be normalized by the area, yielding the mean.
 	 */
