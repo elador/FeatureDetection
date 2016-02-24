@@ -74,8 +74,9 @@ SET(HEADERS
 	include/imageprocessing/filtering/BgrToLuvConverter.hpp
 	include/imageprocessing/filtering/BoxConvolutionFilter.hpp
 	include/imageprocessing/filtering/ChannelExtractor.hpp
-	include/imageprocessing/filtering/FpdwFeaturesFilter.hpp
+	include/imageprocessing/filtering/FhogAggregationFilter.hpp
 	include/imageprocessing/filtering/FilterTree.hpp
+	include/imageprocessing/filtering/FpdwFeaturesFilter.hpp
 	include/imageprocessing/filtering/GradientFilter.hpp
 	include/imageprocessing/filtering/GradientHistogramFilter.hpp
 	include/imageprocessing/filtering/GradientMagnitudeFilter.hpp
@@ -132,8 +133,9 @@ SET(SOURCE
 	src/imageprocessing/filtering/BgrToLuvConverter.cpp
 	src/imageprocessing/filtering/BoxConvolutionFilter.cpp
 	src/imageprocessing/filtering/ChannelExtractor.cpp
-	src/imageprocessing/filtering/FpdwFeaturesFilter.cpp
+	src/imageprocessing/filtering/FhogAggregationFilter.cpp
 	src/imageprocessing/filtering/FilterTree.cpp
+	src/imageprocessing/filtering/FpdwFeaturesFilter.cpp
 	src/imageprocessing/filtering/GradientFilter.cpp
 	src/imageprocessing/filtering/GradientHistogramFilter.cpp
 	src/imageprocessing/filtering/GradientMagnitudeFilter.cpp
