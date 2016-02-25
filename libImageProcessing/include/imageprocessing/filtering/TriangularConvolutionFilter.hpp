@@ -31,7 +31,7 @@ public:
 	 * @param[in] alpha Optional factor by which to scale the filtered values.
 	 * @param[in] delta Optional offset for the filtered values.
 	 */
-	explicit TriangularConvolutionFilter(int radius, int downScaling = 1, float alpha = 1, float delta = 0);
+	explicit TriangularConvolutionFilter(int size, int downScaling = 1, float alpha = 1, float delta = 0);
 
 	using ImageFilter::applyTo;
 
@@ -83,20 +83,22 @@ private:
 	 * @param[in] inputCol Column index of the input value that is about to be filtered.
 	 * @param[in,out] outputCol Column index of the output where the filtered value is stored. If stored, this index will be incremented.
 	 * @param[in] addCol1 Column index of the first input value that is added to the current output value.
+	 * @param[in] subCol Column index of the input value that is subtracted from the current output value.
 	 * @param[in] addCol2 Column index of the second input value that is added to the current output value.
-	 * @param[in] subCol1 Column index of the first input value that is subtracted from the current output value.
-	 * @param[in] subCol2 Column index of the second input value that is subtracted from the current output value.
-	 * @param[in,out] outputDifference Current difference between subsequent filtered values. Will store the newly computed difference.
-	 * @param[in,out] outputValue Current filtered value. Will store the computed filtered value.
+	 * @param[in,out] outputDifference2 Current 2nd order difference between subsequent filtered values.
+	 * @param[in,out] outputDifference1 Current 1st order difference between subsequent filtered values.
+	 * @param[in,out] outputValue Current filtered value.
 	 */
 	void filterNextValue(ConstRow input, Row output, int ch, int inputCol, int& outputCol,
-			int addCol1, int addCol2, int subCol1, int subCol2, float& outputDifference, float& outputValue) const;
+			int addCol1, int subCol, int addCol2, float& outputDifference2, float& outputDifference1, float& outputValue) const;
 
 	bool isRelevantForOutput(int inputIndex) const;
 
-	bool odd; ///< Flag that indicates whether the filter size is odd.
+	bool even; ///< Flag that indicates whether the filter size is even.
 	int size; ///< Size of the one-dimensional filter (two-dimensional filter is size x size).
-	int radius; ///< Half filter size (rounded down if odd).
+	int radius; ///< Radius of the odd filter kernel.
+	int addOffset1; ///< Offset (must be subtracted) of the first value that is added to the filtered value.
+	int addOffset2; ///< Offset (must be added) of the second value that is added to the filtered value.
 	int downScaleFactor; ///< Factor by which the filtered image should be smaller than the input image.
 	int downScaleOffset; ///< Offset of the rows and columns that should be kept when downscaling.
 	bool noDownScaling; ///< Flag that indicates whether the filtered image has the same size as the input image.
