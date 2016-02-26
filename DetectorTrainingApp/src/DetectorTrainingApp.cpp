@@ -12,20 +12,17 @@
 #include "LabeledImage.hpp"
 #include "classification/SvmClassifier.hpp"
 #include "imageio/DlibImageSource.hpp"
-#include "imageprocessing/CellBasedPyramidFeatureExtractor.hpp"
 #include "imageprocessing/ChainedFilter.hpp"
-#include "imageprocessing/CompleteExtendedHogFilter.hpp"
-#include "imageprocessing/ExtendedHogFeatureExtractor.hpp"
 #include "imageprocessing/GrayscaleFilter.hpp"
 #include "imageprocessing/ImagePyramid.hpp"
 #include "imageprocessing/extraction/AggregatedFeaturesExtractor.hpp"
 #include "imageprocessing/filtering/AggregationFilter.hpp"
 #include "imageprocessing/filtering/FhogAggregationFilter.hpp"
+#include "imageprocessing/filtering/FhogFilter.hpp"
 #include "imageprocessing/filtering/FpdwFeaturesFilter.hpp"
 #include "imageprocessing/filtering/GradientFilter.hpp"
 #include "imageprocessing/filtering/GradientHistogramFilter.hpp"
 #include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -38,16 +35,14 @@ using detection::AggregatedFeaturesDetector;
 using detection::NonMaximumSuppression;
 using imageio::DlibImageSource;
 using imageio::LabeledImageSource;
-using imageprocessing::CellBasedPyramidFeatureExtractor;
 using imageprocessing::ChainedFilter;
-using imageprocessing::CompleteExtendedHogFilter;
-using imageprocessing::ExtendedHogFeatureExtractor;
 using imageprocessing::GrayscaleFilter;
 using imageprocessing::ImageFilter;
 using imageprocessing::ImagePyramid;
 using imageprocessing::extraction::AggregatedFeaturesExtractor;
 using imageprocessing::filtering::AggregationFilter;
 using imageprocessing::filtering::FhogAggregationFilter;
+using imageprocessing::filtering::FhogFilter;
 using imageprocessing::filtering::FpdwFeaturesFilter;
 using imageprocessing::filtering::GradientFilter;
 using imageprocessing::filtering::GradientHistogramFilter;
@@ -71,49 +66,25 @@ vector<LabeledImage> getLabeledImages(shared_ptr<LabeledImageSource> source, Fea
 	return images;
 }
 
-shared_ptr<CompleteExtendedHogFilter> createEhogFilter(FeatureParams featureParams) {
-	return make_shared<CompleteExtendedHogFilter>(featureParams.cellSizeInPixels, 18, true, true, false, true, 0.2);
-}
-
-void setEhogFeatures(DetectorTrainer& trainer, FeatureParams featureParams) {
-	shared_ptr<CompleteExtendedHogFilter> hogFilter = createEhogFilter(featureParams);
-	trainer.setFeatures(featureParams, hogFilter, make_shared<GrayscaleFilter>());
-}
-
-shared_ptr<AggregatedFeaturesDetector> loadEhogDetector(const string& filename,
-		FeatureParams featureParams, shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, bool approximate) {
-	shared_ptr<CompleteExtendedHogFilter> hogFilter = createEhogFilter(featureParams);
-	std::ifstream stream(filename);
-	shared_ptr<SvmClassifier> svm = SvmClassifier::load(stream);
-	stream.close();
-	if (approximate) {
-		vector<double> lambdas(31, 0.3);
-		auto featurePyramid = ImagePyramid::createApproximated(octaveLayerCount, 0.5, 1.0, lambdas);
-		featurePyramid->addImageFilter(make_shared<GrayscaleFilter>());
-		featurePyramid->addLayerFilter(hogFilter);
-		auto extractor = make_shared<AggregatedFeaturesExtractor>(featurePyramid,
-				featureParams.windowSizeInCells, featureParams.cellSizeInPixels, true);
-		return make_shared<AggregatedFeaturesDetector>(extractor, svm, nms);
+shared_ptr<ImageFilter> createFhogFilter(FeatureParams featureParams, bool fast) {
+	auto gradientFilter = make_shared<GradientFilter>(1);
+	if (fast) {
+		auto fhogFilter = make_shared<FhogFilter>(featureParams.cellSizeInPixels, 9, false, true, 0.2f);
+		return make_shared<ChainedFilter>(gradientFilter, fhogFilter);
 	} else {
-		return make_shared<AggregatedFeaturesDetector>(make_shared<GrayscaleFilter>(), hogFilter,
-				featureParams.cellSizeInPixels, featureParams.windowSizeInCells, octaveLayerCount, svm, nms);
+		auto gradientHistogramFilter = make_shared<GradientHistogramFilter>(18, false, false, true, false, 0);
+		auto aggregationFilter = make_shared<FhogAggregationFilter>(featureParams.cellSizeInPixels, true, 0.2f);
+		return make_shared<ChainedFilter>(gradientFilter, gradientHistogramFilter, aggregationFilter);
 	}
 }
 
-shared_ptr<ImageFilter> createFhogFilter(FeatureParams featureParams) {
-	auto gradientFilter = make_shared<GradientFilter>(1);
-	auto gradientHistogramFilter = make_shared<GradientHistogramFilter>(18, false, false, true, false, 0);
-	auto aggregationFilter = make_shared<FhogAggregationFilter>(featureParams.cellSizeInPixels, true, 0.2f);
-	return make_shared<ChainedFilter>(gradientFilter, gradientHistogramFilter, aggregationFilter);
-}
-
-void setFhogFeatures(DetectorTrainer& trainer, FeatureParams featureParams) {
-	trainer.setFeatures(featureParams, createFhogFilter(featureParams), make_shared<GrayscaleFilter>());
+void setFhogFeatures(DetectorTrainer& trainer, FeatureParams featureParams, bool fast) {
+	trainer.setFeatures(featureParams, createFhogFilter(featureParams, fast), make_shared<GrayscaleFilter>());
 }
 
 shared_ptr<AggregatedFeaturesDetector> loadFhogDetector(const string& filename,
-		FeatureParams featureParams, shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, bool approximate) {
-	shared_ptr<ImageFilter> fhogFilter = createFhogFilter(featureParams);
+		FeatureParams featureParams, bool fast, shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, bool approximate) {
+	shared_ptr<ImageFilter> fhogFilter = createFhogFilter(featureParams, fast);
 	std::ifstream stream(filename);
 	shared_ptr<SvmClassifier> svm = SvmClassifier::load(stream);
 	stream.close();
@@ -235,7 +206,7 @@ void printTestResult(const string& title, DetectorEvaluationResult result) {
 }
 
 enum class TaskType { TRAIN, TEST, TEST_APPROXIMATE };
-enum class FeatureType { EHOG, FHOG, GRADHIST, FPDW };
+enum class FeatureType { FHOG, FAST_FHOG, GRADHIST, FPDW };
 
 TaskType getTaskType(const string& type) {
 	if (type == "train")
@@ -244,24 +215,24 @@ TaskType getTaskType(const string& type) {
 		return TaskType::TEST;
 	if (type == "test-approximate")
 		return TaskType::TEST_APPROXIMATE;
-	throw invalid_argument("expected train/test/test-approximate, but was " + type);
+	throw invalid_argument("expected train/test/test-approximate, but was '" + type + "'");
 }
 
 FeatureType getFeatureType(const string& type) {
-	if (type == "ehog")
-		return FeatureType::EHOG;
 	if (type == "fhog")
 		return FeatureType::FHOG;
+	if (type == "fastfhog")
+		return FeatureType::FAST_FHOG;
 	if (type == "gradhist")
 		return FeatureType::GRADHIST;
 	if (type == "fpdw")
 		return FeatureType::FPDW;
-	throw invalid_argument("expected ehog/fhog/gradhist/fpdw, but was " + type);
+	throw invalid_argument("expected fhog/gradhist/fpdw, but was '" + type + "'");
 }
 
 int main(int argc, char** argv) {
 	if (argc != 4) {
-		cout << "call: ./DetectorTrainingApp train/test/test-approximate ehog/fhog/gradhist/fpdw svmfile" << endl;
+		cout << "call: ./DetectorTrainingApp train/test/test-approximate fhog/gradhist/fpdw svmfile" << endl;
 		return 0;
 	}
 	TaskType taskType = getTaskType(argv[1]);
@@ -273,7 +244,7 @@ int main(int argc, char** argv) {
 	trainingParams.overlapThreshold = 0.3;
 	trainingParams.C = 10;
 	trainingParams.compensateImbalance = true;
-	FeatureParams featureParams{Size(5, 7), 8, 10}; // (width, height), cellsize, octave
+	FeatureParams featureParams{Size(5, 7), 7, 10}; // (width, height), cellsize, octave
 	int octaveLayerCountForDetection = 5;
 	shared_ptr<NonMaximumSuppression> nms = make_shared<NonMaximumSuppression>(0.3, NonMaximumSuppression::MaximumType::WEIGHTED_AVERAGE);
 
@@ -287,10 +258,10 @@ int main(int argc, char** argv) {
 		cout << "train and test detector" << endl;
 		DetectorTrainer trainer(true);
 		trainer.setTrainingParameters(trainingParams);
-		if (featureType == FeatureType::EHOG)
-			setEhogFeatures(trainer, featureParams);
-		else if (featureType == FeatureType::FHOG)
-			setFhogFeatures(trainer, featureParams);
+		if (featureType == FeatureType::FHOG)
+			setFhogFeatures(trainer, featureParams, false);
+		else if (featureType == FeatureType::FAST_FHOG)
+			setFhogFeatures(trainer, featureParams, true);
 		else if (featureType == FeatureType::GRADHIST)
 			setGradientFeatures(trainer, featureParams);
 		else if (featureType == FeatureType::FPDW)
@@ -304,10 +275,10 @@ int main(int argc, char** argv) {
 		if (approximate)
 			cout << " on approximated image pyramid";
 		cout << endl;
-		if (featureType == FeatureType::EHOG)
-			detector = loadEhogDetector(filename, featureParams, nms, octaveLayerCountForDetection, approximate);
-		else if (featureType == FeatureType::FHOG)
-			detector = loadFhogDetector(filename, featureParams, nms, octaveLayerCountForDetection, approximate);
+		if (featureType == FeatureType::FHOG)
+			detector = loadFhogDetector(filename, featureParams, false, nms, octaveLayerCountForDetection, approximate);
+		else if (featureType == FeatureType::FAST_FHOG)
+			detector = loadFhogDetector(filename, featureParams, true, nms, octaveLayerCountForDetection, approximate);
 		else if (featureType == FeatureType::GRADHIST)
 			detector = loadGradientFeaturesDetector(filename, featureParams, nms, octaveLayerCountForDetection, approximate);
 		else if (featureType == FeatureType::FPDW)
