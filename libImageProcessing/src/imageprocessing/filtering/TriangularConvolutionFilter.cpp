@@ -108,11 +108,10 @@ Mat TriangularConvolutionFilter::applyTo(const Mat& image, Mat& filtered) const 
 	}
 	// initialize intermediate result and its difference for even kernel
 	vector<float> difference2(valuesPerRow); // second order difference (for odd kernel)
-	const float* rowValues = image.ptr<float>(addOffset2);
-	for (int i = 0; i < valuesPerRow; ++i) {
-		difference2[i] = -firstRowValues[i] + rowValues[i];
-	}
 	if (even) {
+		const float* rowValues = image.ptr<float>(addOffset2);
+		for (int i = 0; i < valuesPerRow; ++i)
+			difference2[i] = -firstRowValues[i] + rowValues[i];
 		for (int i = 0; i < valuesPerRow; ++i) {
 			// first output value of even kernel is the sum of the zeroth and first output value of the odd kernel
 			float previousOutputValue = intermediate[i] - difference[i]; // zeroth output value of odd kernel
@@ -179,14 +178,16 @@ void TriangularConvolutionFilter::filterRow(const float* inputValues, float* out
 			outputDifference += input.value(col + 1, ch) - input.value(0, ch);
 		}
 		// initialize first output and difference for even kernel
-		float secondOrderDifference = -input.value(0, ch) + input.value(addOffset2, ch); // second order difference (for odd kernel)
 		if (even) {
 			// first output value of even kernel is the sum of the zeroth and first output value of the odd kernel
 			float previousOutputValue = outputValue - delta - outputDifference; // zeroth output value of odd kernel
 			outputValue += previousOutputValue; // sum of zeroth and first output value of odd kernel
 			// first output difference of even kernel is sum of zeroth and first output difference of odd kernel
-			float previousOutputDifference = outputDifference - secondOrderDifference; // zeroth output difference of odd kernel
+			float odd2ndOrderDifference = -input.value(0, ch) + input.value(addOffset2, ch); // second order difference (for odd kernel)
+			float previousOutputDifference = outputDifference - odd2ndOrderDifference; // zeroth output difference of odd kernel
 			outputDifference += previousOutputDifference; // sum of zeroth and first output difference of odd kernel
+			// compute output difference 1.5
+			outputDifference += odd2ndOrderDifference; // the second even-kernel difference needs the first odd-kernel 2nd order difference
 		}
 		// write first output value
 		int outputCol = 0;
@@ -203,32 +204,32 @@ void TriangularConvolutionFilter::filterRow(const float* inputValues, float* out
 			int subCol = inputCol - 1;
 			int addCol2 = inputCol + addOffset2;
 			filterNextValue(input, output, ch, inputCol, outputCol,
-					addCol1, subCol, addCol2, secondOrderDifference, outputDifference, outputValue);
+					addCol1, subCol, addCol2, outputDifference, outputValue);
 		}
 		for (int inputCol = addOffset1; inputCol < std::min(inputCols, input.cols - addOffset2); ++inputCol) {
 			int addCol1 = inputCol - addOffset1;
 			int subCol = inputCol - 1;
 			int addCol2 = inputCol + addOffset2;
 			filterNextValue(input, output, ch, inputCol, outputCol,
-					addCol1, subCol, addCol2, secondOrderDifference, outputDifference, outputValue);
+					addCol1, subCol, addCol2, outputDifference, outputValue);
 		}
 		for (int inputCol = input.cols - addOffset2; inputCol < inputCols; ++inputCol) {
 			int addCol1 = inputCol - addOffset1;
 			int subCol = inputCol - 1;
 			int addCol2 = lastInputCol;
 			filterNextValue(input, output, ch, inputCol, outputCol,
-					addCol1, subCol, addCol2, secondOrderDifference, outputDifference, outputValue);
+					addCol1, subCol, addCol2, outputDifference, outputValue);
 		}
 	}
 }
 
 void TriangularConvolutionFilter::filterNextValue(ConstRow input, Row output, int ch, int inputCol, int& outputCol,
-		int addCol1, int subCol, int addCol2, float& outputDifference2, float& outputDifference1, float& outputValue) const {
-	if (even)
-		outputDifference1 += outputDifference2;
-	outputDifference2 = input.value(addCol1, ch) - 2 * input.value(subCol, ch) + input.value(addCol2, ch);
-	outputDifference1 += outputDifference2;
-	outputValue += outputDifference1;
+		int addCol1, int subCol, int addCol2, float& outputDifference, float& outputValue) const {
+	float outputDifference2 = input.value(addCol1, ch) - 2 * input.value(subCol, ch) + input.value(addCol2, ch);
+	outputDifference += outputDifference2;
+	outputValue += outputDifference;
+	if (even) // the next even-kernel difference needs the current odd-kernel 2nd order difference
+		outputDifference += outputDifference2;
 	if (isRelevantForOutput(inputCol)) {
 		output.value(outputCol, ch) = normalizer * outputValue;
 		++outputCol;

@@ -85,12 +85,11 @@ private:
 	 * @param[in] addCol1 Column index of the first input value that is added to the current output value.
 	 * @param[in] subCol Column index of the input value that is subtracted from the current output value.
 	 * @param[in] addCol2 Column index of the second input value that is added to the current output value.
-	 * @param[in,out] outputDifference2 Current 2nd order difference between subsequent filtered values.
-	 * @param[in,out] outputDifference1 Current 1st order difference between subsequent filtered values.
+	 * @param[in,out] outputDifference Current difference between subsequent filtered values.
 	 * @param[in,out] outputValue Current filtered value.
 	 */
 	void filterNextValue(ConstRow input, Row output, int ch, int inputCol, int& outputCol,
-			int addCol1, int subCol, int addCol2, float& outputDifference2, float& outputDifference1, float& outputValue) const;
+			int addCol1, int subCol, int addCol2, float& outputDifference, float& outputValue) const;
 
 	bool isRelevantForOutput(int inputIndex) const;
 
