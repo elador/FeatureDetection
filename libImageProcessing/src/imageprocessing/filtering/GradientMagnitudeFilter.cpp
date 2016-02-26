@@ -20,6 +20,9 @@ namespace filtering {
 
 GradientMagnitudeFilter::GradientMagnitudeFilter(int normalizationRadius, double normalizationConstant) :
 		smoothingFilter(2 * normalizationRadius + 1, 1, 1, normalizationConstant) {
+	if (normalizationConstant <= 0)
+		throw invalid_argument("GradientMagnitudeFilter: normalizationConstant must be bigger than zero, but was "
+				+ std::to_string(normalizationConstant));
 	createMagnitudeLut();
 }
 

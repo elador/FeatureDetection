@@ -19,15 +19,15 @@ namespace imageprocessing {
 namespace filtering {
 
 FpdwFeaturesFilter::FpdwFeaturesFilter(bool fastGradient, bool interpolate, int normalizationRadius, double normalizationConstant) :
-				grayConverter(),
-				luvConverter(true),
-				gradientFilter(1),
-				magnitudeFilter(normalizationRadius, normalizationConstant),
-				orientationFilter(false, normalizationRadius, normalizationConstant),
-				fastGradient(fastGradient),
-				binCount(6),
-				value2bin(binCount / orientationFilter.getUpperBound()),
-				interpolate(interpolate) {
+		grayConverter(),
+		luvConverter(true),
+		gradientFilter(1),
+		magnitudeFilter(normalizationRadius, normalizationConstant),
+		orientationFilter(false, normalizationRadius, normalizationConstant),
+		fastGradient(fastGradient),
+		binCount(6),
+		value2bin(binCount / orientationFilter.getUpperBound()),
+		interpolate(interpolate) {
 	createGradientLut();
 }
 
@@ -40,7 +40,7 @@ void FpdwFeaturesFilter::createGradientLut() {
 	} gradientCode;
 	// build the look-up table for gradient images of depth CV_8U
 	// index of the look-up table is the binary concatanation of the gradients of x and y
-	// values inside the look-up table are the magnitude and bin weights
+	// values inside the look-up table are the bin indices and weights
 	gradientCode.gradient.x = 0;
 	for (int x = 0; x < 256; ++x) {
 		float gradientX = (x - 127.f) / 255.f;

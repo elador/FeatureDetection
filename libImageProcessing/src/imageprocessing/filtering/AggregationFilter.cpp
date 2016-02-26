@@ -8,14 +8,18 @@
 #include "imageprocessing/filtering/AggregationFilter.hpp"
 #include "imageprocessing/filtering/BoxConvolutionFilter.hpp"
 #include "imageprocessing/filtering/TriangularConvolutionFilter.hpp"
+#include <stdexcept>
 
 using cv::Mat;
+using std::invalid_argument;
 using std::unique_ptr;
 
 namespace imageprocessing {
 namespace filtering {
 
 AggregationFilter::AggregationFilter(int cellSize, bool interpolate, bool normalize) {
+	if (cellSize < 1)
+		throw invalid_argument("AggregationFilter: cellSize must be bigger than zero, but was " + std::to_string(cellSize));
 	int downScaling = cellSize;
 	float alpha = normalize ? 1 : (cellSize * cellSize);
 	if (interpolate) {

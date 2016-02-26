@@ -16,7 +16,12 @@ namespace imageprocessing {
 namespace filtering {
 
 HistogramFilter::HistogramFilter(int binCount, float upperBound, bool circular, bool interpolate) :
-		binCount(binCount), value2bin(binCount / upperBound), circular(circular), interpolate(binCount > 1 ? interpolate : false) {}
+		binCount(binCount), value2bin(binCount / upperBound), circular(circular), interpolate(binCount > 1 ? interpolate : false) {
+	if (binCount < 1)
+		throw invalid_argument("HistogramFilter: binCount must be bigger than zero, but was " + std::to_string(binCount));
+	if (upperBound <= 0)
+		throw invalid_argument("HistogramFilter: upperBound must be bigger than zero, but was " + std::to_string(upperBound));
+}
 
 Mat HistogramFilter::applyTo(const Mat& image, Mat& filtered) const {
 	if (image.depth() != CV_32F)

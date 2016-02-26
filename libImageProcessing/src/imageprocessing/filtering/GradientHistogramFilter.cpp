@@ -44,10 +44,13 @@ GradientHistogramFilter::GradientHistogramFilter(
 				descriptorSize(binCount + (fullAndHalf ? halfBinCount : 0) + (magnitude ? 1 : 0)),
 				value2bin(binCount / orientationFilter.getUpperBound()),
 				interpolate(interpolate) {
+	if (binCount < 1)
+		throw invalid_argument("GradientHistogramFilter: the binCount must be bigger than zero, but was " + std::to_string(binCount));
 	if (!half && !full)
 		throw invalid_argument("GradientHistogramFilter: either full or half (or both) must be true");
 	if (half && full && binCount % 2 != 0)
-		throw invalid_argument("GradientHistogramFilter: in case both full and half histograms should be computed, the bin count must be even");
+		throw invalid_argument("GradientHistogramFilter: if both full and half histograms should be computed, the bin count must be even, but was "
+				+ std::to_string(binCount));
 	createGradientLut();
 }
 
@@ -60,7 +63,7 @@ void GradientHistogramFilter::createGradientLut() {
 	} gradientCode;
 	// build the look-up table for gradient images of depth CV_8U
 	// index of the look-up table is the binary concatanation of the gradients of x and y
-	// values inside the look-up table are the magnitude and bin weights
+	// values inside the look-up table are the bin indices and weights
 	gradientCode.gradient.x = 0;
 	for (int x = 0; x < 256; ++x) {
 		float gradientX = (x - 127.f) / 255.f;
@@ -97,6 +100,9 @@ Mat GradientHistogramFilter::applyTo(const Mat& gradientImage, Mat& gradientHist
 	if (gradientImage.depth() != CV_8U && gradientImage.depth() != CV_32F)
 		throw invalid_argument("GradientHistogramFilter: the gradient image depth must be CV_8U or CV_32F, but was "
 				+ std::to_string(gradientImage.depth()));
+	if (gradientImage.channels() % 2 != 0)
+		throw invalid_argument("GradientHistogramFilter: the gradient image must have an even number of channels, but had "
+				+ std::to_string(gradientImage.channels()));
 	Mat singleGradientImage = reduceToStrongestGradient(gradientImage);
 	Mat magnitudeImage = magnitudeFilter.applyTo(singleGradientImage);
 	computeGradientHistogramImage(singleGradientImage, magnitudeImage, gradientHistogramImage);
@@ -147,6 +153,7 @@ Mat GradientHistogramFilter::reduceToStrongestGradient(const Mat& gradientImage)
 
 void GradientHistogramFilter::computeGradientHistogramImage(const Mat& singleGradientImage,
 		const Mat& magnitudeImage, Mat& gradientHistogramImage) const {
+	assert(singleGradientImage.channels() == 2);
 	int magnitudeChannelIndex = magnitude ? descriptorSize - 1 : -1;
 	gradientHistogramImage.create(singleGradientImage.rows, singleGradientImage.cols, CV_32FC(descriptorSize));
 	if (singleGradientImage.depth() == CV_8U) {
