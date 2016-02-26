@@ -20,7 +20,10 @@ namespace filtering {
 const float FhogAggregationFilter::eps = 1e-4;
 
 FhogAggregationFilter::FhogAggregationFilter(int cellSize, bool interpolate, float alpha) :
-		alpha(alpha), aggregationFilter(cellSize, interpolate, false) {}
+		alpha(alpha), aggregationFilter(cellSize, interpolate, false) {
+	if (alpha <= 0)
+		throw invalid_argument("FhogAggregationFilter: alpha must be bigger than zero, but was: " + std::to_string(alpha));
+}
 
 Mat FhogAggregationFilter::applyTo(const Mat& image, Mat& descriptors) const {
 	if (image.depth() != CV_32F)
@@ -28,13 +31,17 @@ Mat FhogAggregationFilter::applyTo(const Mat& image, Mat& descriptors) const {
 	if (image.channels() % 2 != 0)
 		throw invalid_argument("FhogAggregationFilter: the image must have an even number of channels, but had " + std::to_string(image.channels()));
 	Mat histograms = aggregationFilter.applyTo(image);
-	Mat energies = computeGradientEnergies(histograms);
-	computeDescriptors(descriptors, histograms, energies);
+	int signedBinCount = histograms.channels();
+	computeDescriptors(descriptors, histograms, signedBinCount);
 	return descriptors;
 }
 
-Mat FhogAggregationFilter::computeGradientEnergies(const Mat& histograms) const {
-	int signedBinCount = histograms.channels();
+void FhogAggregationFilter::computeDescriptors(Mat& descriptors, const Mat& histograms, int signedBinCount) const {
+	Mat energies = computeGradientEnergies(histograms, signedBinCount);
+	computeDescriptors(descriptors, histograms, energies, signedBinCount);
+}
+
+Mat FhogAggregationFilter::computeGradientEnergies(const Mat& histograms, int signedBinCount) const {
 	int unsignedBinCount = signedBinCount / 2;
 	Mat energies(histograms.rows, histograms.cols, CV_32FC1);
 	for (int row = 0; row < histograms.rows; ++row) {
@@ -56,8 +63,7 @@ float FhogAggregationFilter::computeGradientEnergy(const float* signedHistogram,
 	return energy;
 }
 
-void FhogAggregationFilter::computeDescriptors(Mat& descriptors, const Mat& histograms, const Mat& energies) const {
-	int signedBinCount = histograms.channels();
+void FhogAggregationFilter::computeDescriptors(Mat& descriptors, const Mat& histograms, const Mat& energies, int signedBinCount) const {
 	int unsignedBinCount = signedBinCount / 2;
 	int descriptorSize = signedBinCount + unsignedBinCount + 4;
 	descriptors.create(histograms.rows, histograms.cols, CV_32FC(descriptorSize));
@@ -120,12 +126,6 @@ void FhogAggregationFilter::computeDescriptor(float* descriptor, const float* si
 	// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 	array<float, 4> energy = { 0, 0, 0, 0 };
-	// signed orientation features (aka contrast-sensitive)
-	for (int bin = 0; bin < signedBinCount; ++bin) {
-		array<float, 4> normalizedValues = computeNormalizedValues(signedHistogram[bin], normalizers);
-		descriptor[bin] = 0.5 * computeSum(normalizedValues);
-		addTo(energy, normalizedValues);
-	}
 	// unsigned orientation features (aka contrast-insensitive)
 	for (int bin = 0; bin < unsignedBinCount; ++bin) {
 		int oppositeBin = bin + unsignedBinCount;
@@ -133,6 +133,12 @@ void FhogAggregationFilter::computeDescriptor(float* descriptor, const float* si
 		float unsignedBinValue = signedHistogram[bin] + signedHistogram[oppositeBin];
 		array<float, 4> normalizedValues = computeNormalizedValues(unsignedBinValue, normalizers);
 		descriptor[unsignedBin] = 0.5 * computeSum(normalizedValues);
+	}
+	// signed orientation features (aka contrast-sensitive)
+	for (int bin = 0; bin < signedBinCount; ++bin) {
+		array<float, 4> normalizedValues = computeNormalizedValues(signedHistogram[bin], normalizers);
+		descriptor[bin] = 0.5 * computeSum(normalizedValues);
+		addTo(energy, normalizedValues);
 	}
 	// energy features (aka texture features)
 	descriptor[signedBinCount + unsignedBinCount]     = 0.2357 * energy[0];

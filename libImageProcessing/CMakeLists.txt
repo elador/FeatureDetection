@@ -75,6 +75,7 @@ SET(HEADERS
 	include/imageprocessing/filtering/BoxConvolutionFilter.hpp
 	include/imageprocessing/filtering/ChannelExtractor.hpp
 	include/imageprocessing/filtering/FhogAggregationFilter.hpp
+	include/imageprocessing/filtering/FhogFilter.hpp
 	include/imageprocessing/filtering/FilterTree.hpp
 	include/imageprocessing/filtering/FpdwFeaturesFilter.hpp
 	include/imageprocessing/filtering/GradientFilter.hpp
@@ -134,6 +135,7 @@ SET(SOURCE
 	src/imageprocessing/filtering/BoxConvolutionFilter.cpp
 	src/imageprocessing/filtering/ChannelExtractor.cpp
 	src/imageprocessing/filtering/FhogAggregationFilter.cpp
+	src/imageprocessing/filtering/FhogFilter.cpp
 	src/imageprocessing/filtering/FilterTree.cpp
 	src/imageprocessing/filtering/FpdwFeaturesFilter.cpp
 	src/imageprocessing/filtering/GradientFilter.cpp

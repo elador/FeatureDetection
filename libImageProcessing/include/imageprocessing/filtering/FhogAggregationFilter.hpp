@@ -16,8 +16,8 @@ namespace imageprocessing {
 namespace filtering {
 
 /**
- * Image filter that computes FHOG descriptors over cells of pixels, as described in [1]. Implementation
- * details were taken from [2].
+ * Image filter that computes FHOG descriptors over cells of pixels given signed gradient histograms.
+ * FHOG is described in [1], implementation details were taken from [2].
  *
  * Expects an image of depth CV_32F with as many channels as there are bins inside the signed gradient
  * histogram. This filter then adds the unsigned gradient histogram (which has half as many bins) and
@@ -25,8 +25,8 @@ namespace filtering {
  * pre-defined threshold.
  *
  * The filtered image has a depth of CV_32F with as many channels as there are features, which are the
- * signed histogram bins, the unsigned histogram bins and the four gradient energy channels. In case of
- * 18 signed bins, the resulting descriptors have a length of 18 + 18/2 + 4 = 31.
+ * signed histogram bins, the unsigned histogram bins and four gradient energy channels. In case of 18
+ * signed bins, the resulting descriptors have a length of 18 + 18/2 + 4 = 31.
  *
  * [1] Felzenszwalb et al., Object Detection with Discriminatively Trained Part-Based Models, PAMI, 2010.
  * [2] https://github.com/rbgirshick/voc-dpm/blob/master/features/features.cc
@@ -38,7 +38,7 @@ public:
 	 * Constructs a new FHOG aggregation filter.
 	 *
 	 * @param[in] cellSize Size of the square cells in pixels.
-	 * @param[in] interpolate Flag that indicates whether to bilinearly interpolate the pixel contributions.
+	 * @param[in] interpolate Flag that indicates whether to bilinearly interpolate the pixel contributions to cells.
 	 * @param[in] alpha Truncation threshold of the histogram bin values (applied after normalization).
 	 */
 	explicit FhogAggregationFilter(int cellSize, bool interpolate = true, float alpha = 0.2f);
@@ -61,12 +61,22 @@ public:
 private:
 
 	/**
+	 * Computes the FHOG descriptors.
+	 *
+	 * @param[out] descriptors FHOG descriptors.
+	 * @param[in] histograms Signed gradient histograms. Can be same as descriptors if it has the correct channel count.
+	 * @param[in] signedBinCount Number of bins of the signed gradient histogram.
+	 */
+	void computeDescriptors(cv::Mat& descriptors, const cv::Mat& histograms, int signedBinCount) const;
+
+	/**
 	 * Computes the squared gradient energies for each gradient histogram.
 	 *
 	 * @param[in] histograms Signed gradient histograms.
+	 * @param[in] signedBinCount Number of bins of the signed gradient histogram.
 	 * @return Squared gradient energies.
 	 */
-	cv::Mat computeGradientEnergies(const cv::Mat& histograms) const;
+	cv::Mat computeGradientEnergies(const cv::Mat& histograms, int signedBinCount) const;
 
 	/**
 	 * Computes the squared gradient energy for a gradient histogram.
@@ -82,8 +92,9 @@ private:
 	 * @param[out] descriptors FHOG descriptors.
 	 * @param[in] histograms Signed gradient histograms.
 	 * @param[in] energies Squared gradient energies.
+	 * @param[in] signedBinCount Number of bins of the signed gradient histogram.
 	 */
-	void computeDescriptors(cv::Mat& descriptors, const cv::Mat& histograms, const cv::Mat& energies) const;
+	void computeDescriptors(cv::Mat& descriptors, const cv::Mat& histograms, const cv::Mat& energies, int signedBinCount) const;
 
 	/**
 	 * Computes the four normalizers for a histogram, that are computed from the squared gradient energy
@@ -158,6 +169,8 @@ private:
 	static const float eps; ///< The small value being added to the norm to prevent division by zero.
 	float alpha; ///< Truncation threshold of the histogram bin values (applied after normalization).
 	AggregationFilter aggregationFilter; ///< Filter that aggregates the histogram values over the cells.
+
+	friend class FhogFilter;
 };
 
 } /* namespace filtering */
