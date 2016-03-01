@@ -21,8 +21,8 @@ namespace filtering {
  * Image filter that computes a gradient histogram based descriptor per pixel given gradients.
  *
  * The gradient image is expected to have a depth of CV_8U or CV_32F with an even amount of channels. Odd channels
- * are x gradients, whereas even channels are y gradients. For each pixel, the gradients with the strongest magnitude
- * are chosen.
+ * are x gradients, whereas even channels are y gradients. For each pixel, the gradient with the strongest magnitude
+ * is chosen.
  *
  * The resulting image contains a gradient orientation histogram per pixel. The histogram can span full gradients
  * in [0;2*pi), half gradients in [0;pi) or both concatenated. Additionally, there might be a magnitude channel, which
@@ -121,7 +121,7 @@ private:
 	int computeHalfBin(int bin) const;
 
 	GradientMagnitudeFilter magnitudeFilter; ///< Image filter that computes the gradient magnitudes given image gradients.
-	GradientOrientationFilter orientationFilter; ///< Image filter that is used to compute gradient orientations.
+	GradientOrientationFilter orientationFilter; ///< Image filter that computes the gradient orientations given image gradients.
 	bool fullAndHalf; ///< Flag that indicates whether to add full and half gradient histograms to the descriptor.
 	bool magnitude; ///< Flag that indicates whether to append the magnitude to the descriptor.
 	int binCount; ///< Number of bins of the gradient histogram.

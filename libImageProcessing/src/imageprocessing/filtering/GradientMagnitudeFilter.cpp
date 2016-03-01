@@ -34,7 +34,7 @@ void GradientMagnitudeFilter::createMagnitudeLut() {
 		} gradient;
 	} gradientCode;
 	// build the look-up table for gradient images of depth CV_8U
-	// index of the look-up table is the binary concatanation of the gradients of x and y
+	// index of the look-up table is the binary concatenation of the gradients of x and y
 	// value inside the look-up table is magnitude
 	gradientCode.gradient.x = 0;
 	for (int x = 0; x < 256; ++x) {

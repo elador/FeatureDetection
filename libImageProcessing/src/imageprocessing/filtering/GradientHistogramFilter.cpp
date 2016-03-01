@@ -62,7 +62,7 @@ void GradientHistogramFilter::createGradientLut() {
 		} gradient;
 	} gradientCode;
 	// build the look-up table for gradient images of depth CV_8U
-	// index of the look-up table is the binary concatanation of the gradients of x and y
+	// index of the look-up table is the binary concatenation of the gradients of x and y
 	// values inside the look-up table are the bin indices and weights
 	gradientCode.gradient.x = 0;
 	for (int x = 0; x < 256; ++x) {
@@ -164,7 +164,7 @@ void GradientHistogramFilter::computeGradientHistogramImage(const Mat& singleGra
 				float* descriptor = gradientHistogramImage.ptr<float>(row, col);
 				for (int ch = 0; ch < descriptorSize; ++ch)
 					descriptor[ch] = 0;
-				const LutEntry& entry = binLut[gradientCode];
+				LutEntry entry = binLut[gradientCode];
 				if (interpolate) {
 					descriptor[entry.fullBins.bin1] = entry.fullBins.weight1 * magnitude;
 					descriptor[entry.fullBins.bin2] = entry.fullBins.weight2 * magnitude;
