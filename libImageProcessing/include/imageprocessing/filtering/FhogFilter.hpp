@@ -30,6 +30,13 @@ namespace filtering {
  * signed histogram bins, the unsigned histogram bins and four gradient energy channels. In case of 9
  * unsigned bins, the resulting descriptors have a length of 2*9 + 9 + 4 = 31.
  *
+ * This filter is equivalent to chaining the following filters, but faster:
+ *   imageprocessing::ConversionFilter (to float-image, normalize to 1 - without this conversion, the result differs slightly)
+ *   imageprocessing::filtering::GradientFilter (with a size of 1)
+ *   imageprocessing::filtering::GradientOrientationFilter (full orientations)
+ *   imageprocessing::filtering::HistogramFilter (two times unsigned bin count, circular)
+ *   imageprocessing::filtering::FhogAggregationFilter
+ *
  * [1] Felzenszwalb et al., Object Detection with Discriminatively Trained Part-Based Models, PAMI, 2010.
  * [2] https://github.com/rbgirshick/voc-dpm/blob/master/features/features.cc
  */
@@ -78,17 +85,19 @@ private:
 
 	void createGradientLut();
 
-	cv::Mat reduceToStrongestGradient(const cv::Mat& gradientImage) const;
-
+	template<bool singleChannel>
 	void computeSignedHistograms(const cv::Mat& singleGradientImage, cv::Mat& signedHistograms) const;
 
 	std::vector<Coefficients> computeInterpolationCoefficents(int size, int count) const;
 
+	template<bool singleChannel>
+	Coefficients getBinCoefficients(const cv::Mat& image, int row, int col) const;
+
+	void addToSignedHistograms(cv::Mat& signedHistograms, Coefficients rowCoeff, Coefficients colCoeff, Coefficients binCoeff) const;
+
 	float computeOrientation(float gradientX, float gradientY) const;
 
 	float computeMagnitude(float gradientX, float gradientY) const;
-
-	float computeSquaredMagnitude(float gradientX, float gradientY) const;
 
 	int computeBin(float value) const;
 
@@ -104,8 +113,98 @@ private:
 	float value2bin; ///< Factor that computes the corresponding (floating point) bin when multiplied by a value.
 	bool interpolateBins; ///< Flag that indicates whether to linearly interpolate between the neighboring bins.
 	bool interpolateCells; ///< Flag that indicates whether to bilinearly interpolate the pixel contributions to cells.
-	std::array<LutEntry, 256 * 256> binLut; ///< Look-up table for bin indices and weights of CV_8U gradient images.
+	std::array<LutEntry, 512 * 512> binLut; ///< Look-up table for bin indices and weights.
 };
+
+template<bool singleChannel>
+inline void FhogFilter::computeSignedHistograms(const cv::Mat& image, cv::Mat& signedHistograms) const {
+	assert(image.rows >= signedHistograms.rows * cellSize);
+	assert(image.cols >= signedHistograms.cols * cellSize);
+	std::vector<Coefficients> rowCoefficients = computeInterpolationCoefficents(signedHistograms.rows * cellSize, signedHistograms.rows);
+	std::vector<Coefficients> colCoefficients = computeInterpolationCoefficents(signedHistograms.cols * cellSize, signedHistograms.cols);
+	int channels = image.channels();
+	for (int imageRow = 0; imageRow < rowCoefficients.size(); ++imageRow) {
+		for (int imageCol = 0; imageCol < colCoefficients.size(); ++imageCol) {
+			Coefficients binCoeff = getBinCoefficients<singleChannel>(image, imageRow, imageCol);
+			addToSignedHistograms(signedHistograms, rowCoefficients[imageRow], colCoefficients[imageCol], binCoeff);
+		}
+	}
+}
+
+template<>
+inline FhogFilter::Coefficients FhogFilter::getBinCoefficients<true>(const cv::Mat& image, int row, int col) const {
+	int prevRow = std::max(row - 1, 0);
+	int nextRow = std::min(row + 1, image.rows - 1);
+	int prevCol = std::max(col - 1, 0);
+	int nextCol = std::min(col + 1, image.cols - 1);
+	int dx = image.at<uchar>(row, nextCol) - image.at<uchar>(row, prevCol) + 256;
+	int dy = image.at<uchar>(nextRow, col) - image.at<uchar>(prevRow, col) + 256;
+	return binLut[dy * 512 + dx].bins;
+}
+
+template<>
+inline FhogFilter::Coefficients FhogFilter::getBinCoefficients<false>(const cv::Mat& image, int row, int col) const {
+	int prevRow = std::max(row - 1, 0);
+	int nextRow = std::min(row + 1, image.rows - 1);
+	int prevCol = std::max(col - 1, 0);
+	int nextCol = std::min(col + 1, image.cols - 1);
+	const uchar* upValues = image.ptr<uchar>(prevRow, col);
+	const uchar* downValues = image.ptr<uchar>(nextRow, col);
+	const uchar* leftValues = image.ptr<uchar>(row, prevCol);
+	const uchar* rightValues = image.ptr<uchar>(row, nextCol);
+	int dx1 = rightValues[0] - leftValues[0] + 256;
+	int dy1 = downValues[0] - upValues[0] + 256;
+	int dx2 = rightValues[1] - leftValues[1] + 256;
+	int dy2 = downValues[1] - upValues[1] + 256;
+	int dx3 = rightValues[2] - leftValues[2] + 256;
+	int dy3 = downValues[2] - upValues[2] + 256;
+	int index1 = dy1 * 512 + dx1;
+	int index2 = dy2 * 512 + dx2;
+	int index3 = dy3 * 512 + dx3;
+	if (binLut[index1].magnitude > binLut[index2].magnitude) {
+		if (binLut[index1].magnitude > binLut[index3].magnitude)
+			return binLut[index1].bins;
+		else
+			return binLut[index3].bins;
+	} else {
+		if (binLut[index2].magnitude > binLut[index3].magnitude)
+			return binLut[index2].bins;
+		else
+			return binLut[index3].bins;
+	}
+}
+
+inline void FhogFilter::addToSignedHistograms(cv::Mat& signedHistograms, Coefficients rowCoeff, Coefficients colCoeff, Coefficients binCoeff) const {
+	if (interpolateCells) {
+		float* histogram11 = signedHistograms.ptr<float>(rowCoeff.index1, colCoeff.index1);
+		float* histogram12 = signedHistograms.ptr<float>(rowCoeff.index1, colCoeff.index2);
+		float* histogram21 = signedHistograms.ptr<float>(rowCoeff.index2, colCoeff.index1);
+		float* histogram22 = signedHistograms.ptr<float>(rowCoeff.index2, colCoeff.index2);
+		if (interpolateBins) {
+			histogram11[binCoeff.index1] += binCoeff.weight1 * rowCoeff.weight1 * colCoeff.weight1;
+			histogram11[binCoeff.index2] += binCoeff.weight2 * rowCoeff.weight1 * colCoeff.weight1;
+			histogram12[binCoeff.index1] += binCoeff.weight1 * rowCoeff.weight1 * colCoeff.weight2;
+			histogram12[binCoeff.index2] += binCoeff.weight2 * rowCoeff.weight1 * colCoeff.weight2;
+			histogram21[binCoeff.index1] += binCoeff.weight1 * rowCoeff.weight2 * colCoeff.weight1;
+			histogram21[binCoeff.index2] += binCoeff.weight2 * rowCoeff.weight2 * colCoeff.weight1;
+			histogram22[binCoeff.index1] += binCoeff.weight1 * rowCoeff.weight2 * colCoeff.weight2;
+			histogram22[binCoeff.index2] += binCoeff.weight2 * rowCoeff.weight2 * colCoeff.weight2;
+		} else {
+			histogram11[binCoeff.index1] += binCoeff.weight1 * rowCoeff.weight1 * colCoeff.weight1;
+			histogram12[binCoeff.index1] += binCoeff.weight1 * rowCoeff.weight1 * colCoeff.weight2;
+			histogram21[binCoeff.index1] += binCoeff.weight1 * rowCoeff.weight2 * colCoeff.weight1;
+			histogram22[binCoeff.index1] += binCoeff.weight1 * rowCoeff.weight2 * colCoeff.weight2;
+		}
+	} else {
+		float* histogram = signedHistograms.ptr<float>(rowCoeff.index1, colCoeff.index1);
+		if (interpolateBins) {
+			histogram[binCoeff.index1] += binCoeff.weight1;
+			histogram[binCoeff.index2] += binCoeff.weight2;
+		} else {
+			histogram[binCoeff.index1] += binCoeff.weight1;
+		}
+	}
+}
 
 } /* namespace filtering */
 } /* namespace imageprocessing */
