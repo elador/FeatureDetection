@@ -67,11 +67,10 @@ vector<LabeledImage> getLabeledImages(shared_ptr<LabeledImageSource> source, Fea
 }
 
 shared_ptr<ImageFilter> createFhogFilter(FeatureParams featureParams, bool fast) {
-	auto gradientFilter = make_shared<GradientFilter>(1);
 	if (fast) {
-		auto fhogFilter = make_shared<FhogFilter>(featureParams.cellSizeInPixels, 9, false, true, 0.2f);
-		return make_shared<ChainedFilter>(gradientFilter, fhogFilter);
+		return make_shared<FhogFilter>(featureParams.cellSizeInPixels, 9, false, true, 0.2f);
 	} else {
+		auto gradientFilter = make_shared<GradientFilter>(1);
 		auto gradientHistogramFilter = make_shared<GradientHistogramFilter>(18, false, false, true, false, 0);
 		auto aggregationFilter = make_shared<FhogAggregationFilter>(featureParams.cellSizeInPixels, true, 0.2f);
 		return make_shared<ChainedFilter>(gradientFilter, gradientHistogramFilter, aggregationFilter);
