@@ -52,7 +52,8 @@ public:
 	 * @param[in] interpolateCells Flag that indicates whether to bilinearly interpolate the pixel contributions to cells.
 	 * @param[in] alpha Truncation threshold of the histogram bin values (applied after normalization).
 	 */
-	FhogFilter(int cellSize, int unsignedBinCount, bool interpolateBins = false, bool interpolateCells = true, float alpha = 0.2f);
+	explicit FhogFilter(int cellSize = 8, int unsignedBinCount = 9,
+			bool interpolateBins = false, bool interpolateCells = true, float alpha = 0.2f);
 
 	using ImageFilter::applyTo;
 
