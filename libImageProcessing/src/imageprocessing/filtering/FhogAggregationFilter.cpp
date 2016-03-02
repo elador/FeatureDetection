@@ -6,6 +6,7 @@
  */
 
 #include "imageprocessing/filtering/FhogAggregationFilter.hpp"
+#include "imageprocessing/filtering/GradientHistogramFilter.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <stdexcept>
 
@@ -172,75 +173,7 @@ Mat FhogAggregationFilter::visualizeUnsignedHistograms(const Mat& descriptors, i
 		throw invalid_argument("FhogAggregationFilter: descriptors image must have at least 7 channels, but had "
 				+ std::to_string(descriptors.channels()));
 	int unsignedBinCount = (descriptors.channels() - 4) / 3;
-	vector<Mat> lines = drawLines(cellSize, unsignedBinCount);
-	Mat floatViz = drawFloatVisualization(descriptors, lines, unsignedBinCount);
-	return rescaleToUchar(floatViz, descriptors, unsignedBinCount);
-}
-
-vector<Mat> FhogAggregationFilter::drawLines(int cellSize, int unsignedBinCount) {
-	vector<Mat> bars(unsignedBinCount);
-	int cellHalfSize = cellSize / 2;
-	bool cellSizeIsEven = cellSize % 2 == 0;
-	int start = cellSizeIsEven ? 2 : 1;
-	int end = cellSize - 2;
-	bars[0] = Mat::zeros(cellSize, cellSize, CV_32FC1);
-	cv::line(bars[0], cv::Point(cellHalfSize, start), cv::Point(cellHalfSize, end), cv::Scalar(1.0), 1);
-	cv::Point2f center(cellHalfSize, cellHalfSize);
-	for (int bin = 1; bin < unsignedBinCount; ++bin) {
-		double angle = bin * 180 / unsignedBinCount; // positive angle is clockwise, because y-axis points downwards
-		Mat rotation = cv::getRotationMatrix2D(center, -angle, 1.0); // expects positive angle to be counter-clockwise
-		cv::warpAffine(bars[0], bars[bin], rotation, bars[0].size(), cv::INTER_CUBIC);
-	}
-	return bars;
-}
-
-Mat FhogAggregationFilter::drawFloatVisualization(const Mat& descriptors, const vector<Mat>& lines, int unsignedBinCount) {
-	int cellSize = lines[0].rows;
-	Mat floatViz = Mat::zeros(cellSize * descriptors.rows, cellSize * descriptors.cols, CV_32FC1);
-	for (int row = 0; row < descriptors.rows; ++row) {
-		for (int col = 0; col < descriptors.cols; ++col) {
-			const float* descriptor = descriptors.ptr<float>(row, col);
-			Mat cell(floatViz, cv::Rect(cellSize * col, cellSize * row, cellSize, cellSize));
-			mergeWeightedLines(cell, descriptor, lines, unsignedBinCount);
-		}
-	}
-	return floatViz;
-}
-
-void FhogAggregationFilter::mergeWeightedLines(Mat& cell, const float* descriptor, const vector<Mat>& lines, int unsignedBinCount) {
-	for (int bin = 0; bin < unsignedBinCount; ++bin) {
-		float weight = getWeight(descriptor, bin, unsignedBinCount);
-		if (weight > 0)
-			cell = cv::max(cell, weight * lines[bin]);
-	}
-}
-
-Mat FhogAggregationFilter::rescaleToUchar(const Mat& floatViz, const Mat& descriptors, int unsignedBinCount) {
-	Mat visualization;
-	floatViz.convertTo(visualization, CV_8U, 255.0 / getMaxWeight(descriptors, unsignedBinCount));
-	return visualization;
-}
-
-float FhogAggregationFilter::getMaxWeight(const Mat& descriptors, int unsignedBinCount) {
-	float maxWeight = 0;
-	for (int row = 0; row < descriptors.rows; ++row) {
-		for (int col = 0; col < descriptors.cols; ++col) {
-			const float* descriptor = descriptors.ptr<float>(row, col);
-			for (int bin = 0; bin < unsignedBinCount; ++bin) {
-				float weight = getWeight(descriptor, bin, unsignedBinCount);
-				if (weight < 0)
-					weight = -weight;
-				maxWeight = std::max(maxWeight, weight);
-			}
-		}
-	}
-	return maxWeight;
-}
-
-float FhogAggregationFilter::getWeight(const float* descriptor, int bin, int unsignedBinCount) {
-	int signedBinCount = 2 * unsignedBinCount;
-	int unsignedBin = signedBinCount + bin;
-	return descriptor[unsignedBin];
+	return GradientHistogramFilter::visualizeUnsignedHistograms(descriptors, unsignedBinCount, 2 * unsignedBinCount, cellSize);
 }
 
 } /* namespace filtering */

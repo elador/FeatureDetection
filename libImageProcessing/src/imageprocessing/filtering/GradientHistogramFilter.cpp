@@ -14,6 +14,7 @@ using cv::Vec2f;
 using std::make_shared;
 using std::invalid_argument;
 using std::shared_ptr;
+using std::vector;
 
 namespace imageprocessing {
 namespace filtering {
@@ -247,6 +248,80 @@ GradientHistogramFilter::Bins GradientHistogramFilter::computeInterpolatedBins(f
 
 int GradientHistogramFilter::computeHalfBin(int bin) const {
 	return bin < halfBinCount ? bin : bin - halfBinCount;
+}
+
+Mat GradientHistogramFilter::visualizeUnsignedHistograms(const Mat& descriptors, int unsignedBinCount, int offset, int cellSize) {
+	if (descriptors.channels() < offset + unsignedBinCount)
+		throw invalid_argument("GradientHistogramFilter: descriptors image must have at least ("
+				+ std::to_string(offset) + " + " + std::to_string(unsignedBinCount)
+				+ ") channels, but had only " + std::to_string(descriptors.channels()));
+	vector<Mat> lines = drawLines(cellSize, unsignedBinCount);
+	Mat floatViz = drawFloatVisualization(descriptors, lines, unsignedBinCount, offset);
+	return rescaleToUchar(floatViz, descriptors, unsignedBinCount, offset);
+}
+
+vector<Mat> GradientHistogramFilter::drawLines(int cellSize, int unsignedBinCount) {
+	vector<Mat> bars(unsignedBinCount);
+	int cellHalfSize = cellSize / 2;
+	bool cellSizeIsEven = cellSize % 2 == 0;
+	int start = cellSizeIsEven ? 2 : 1;
+	int end = cellSize - 2;
+	bars[0] = Mat::zeros(cellSize, cellSize, CV_32FC1);
+	cv::line(bars[0], cv::Point(cellHalfSize, start), cv::Point(cellHalfSize, end), cv::Scalar(1.0), 1);
+	cv::Point2f center(cellHalfSize, cellHalfSize);
+	for (int bin = 1; bin < unsignedBinCount; ++bin) {
+		double angle = bin * 180 / unsignedBinCount; // positive angle is clockwise, because y-axis points downwards
+		Mat rotation = cv::getRotationMatrix2D(center, -angle, 1.0); // expects positive angle to be counter-clockwise
+		cv::warpAffine(bars[0], bars[bin], rotation, bars[0].size(), cv::INTER_CUBIC);
+	}
+	return bars;
+}
+
+Mat GradientHistogramFilter::drawFloatVisualization(const Mat& descriptors, const vector<Mat>& lines, int unsignedBinCount, int offset) {
+	int cellSize = lines[0].rows;
+	Mat floatViz = Mat::zeros(cellSize * descriptors.rows, cellSize * descriptors.cols, CV_32FC1);
+	for (int row = 0; row < descriptors.rows; ++row) {
+		for (int col = 0; col < descriptors.cols; ++col) {
+			const float* descriptor = descriptors.ptr<float>(row, col);
+			Mat cell(floatViz, cv::Rect(cellSize * col, cellSize * row, cellSize, cellSize));
+			mergeWeightedLines(cell, descriptor, lines, unsignedBinCount, offset);
+		}
+	}
+	return floatViz;
+}
+
+void GradientHistogramFilter::mergeWeightedLines(Mat& cell, const float* descriptor, const vector<Mat>& lines, int unsignedBinCount, int offset) {
+	for (int bin = 0; bin < unsignedBinCount; ++bin) {
+		float weight = getWeight(descriptor, bin, offset);
+		if (weight > 0)
+			cell = cv::max(cell, weight * lines[bin]);
+	}
+}
+
+Mat GradientHistogramFilter::rescaleToUchar(const Mat& floatViz, const Mat& descriptors, int unsignedBinCount, int offset) {
+	Mat visualization;
+	floatViz.convertTo(visualization, CV_8U, 255.0 / getMaxWeight(descriptors, unsignedBinCount, offset));
+	return visualization;
+}
+
+float GradientHistogramFilter::getMaxWeight(const Mat& descriptors, int unsignedBinCount, int offset) {
+	float maxWeight = 0;
+	for (int row = 0; row < descriptors.rows; ++row) {
+		for (int col = 0; col < descriptors.cols; ++col) {
+			const float* descriptor = descriptors.ptr<float>(row, col);
+			for (int bin = 0; bin < unsignedBinCount; ++bin) {
+				float weight = getWeight(descriptor, bin, offset);
+				if (weight < 0)
+					weight = -weight;
+				maxWeight = std::max(maxWeight, weight);
+			}
+		}
+	}
+	return maxWeight;
+}
+
+float GradientHistogramFilter::getWeight(const float* descriptor, int bin, int offset) {
+	return descriptor[offset + bin];
 }
 
 } /* namespace filtering */

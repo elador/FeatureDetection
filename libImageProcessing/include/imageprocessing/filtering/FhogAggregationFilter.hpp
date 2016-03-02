@@ -134,38 +134,6 @@ private:
 	 */
 	void addTo(std::array<float, 4>& sums, const std::array<float, 4>& values) const;
 
-	/**
-	 * Draws square images with a line each, where the line visualizes the orientation of an unsigned histogram bin.
-	 */
-	static std::vector<cv::Mat> drawLines(int cellSize, int unsignedBinCount);
-
-	/**
-	 * Draws a visualization of the unsigned histogram part of FHOG descriptors into a float image.
-	 */
-	static cv::Mat drawFloatVisualization(const cv::Mat& descriptors, const std::vector<cv::Mat>& lines, int unsignedBinCount);
-
-	/**
-	 * Merges the line images by weighting them according to the unsigned histogram bin value and taking the
-	 * maximum of each pixel value.
-	 */
-	static void mergeWeightedLines(cv::Mat& cell, const float* descriptor, const std::vector<cv::Mat>& lines, int unsignedBinCount);
-
-	/**
-	 * Converts the float visualization of the FHOG descriptors into a uchar visualization and rescales
-	 * according to the highest weight. Takes into consideration negative weights.
-	 */
-	static cv::Mat rescaleToUchar(const cv::Mat& floatViz, const cv::Mat& descriptors, int unsignedBinCount);
-
-	/**
-	 * Determines the highest unsigned histogram bin value across all FHOG descriptors.
-	 */
-	static float getMaxWeight(const cv::Mat& descriptors, int unsignedBinCount);
-
-	/**
-	 * Determines the value of the given unsigned histogram bin.
-	 */
-	static float getWeight(const float* descriptor, int bin, int unsignedBinCount);
-
 	static const float eps; ///< The small value being added to the norm to prevent division by zero.
 	float alpha; ///< Truncation threshold of the histogram bin values (applied after normalization).
 	AggregationFilter aggregationFilter; ///< Filter that aggregates the histogram values over the cells.
