@@ -136,7 +136,7 @@ shared_ptr<AggregatedFeaturesDetector> loadGradientFeaturesDetector(const string
 }
 
 shared_ptr<ImageFilter> createFdpwFilter(FeatureParams featureParams) {
-	auto fpdwFeatures = make_shared<FpdwFeaturesFilter>(true, true, 5, 0.01);
+	auto fpdwFeatures = make_shared<FpdwFeaturesFilter>(true, false, featureParams.cellSizeInPixels, 0.01);
 	auto aggregation = make_shared<AggregationFilter>(featureParams.cellSizeInPixels, true, false);
 	return make_shared<ChainedFilter>(fpdwFeatures, aggregation);
 }
