@@ -24,8 +24,13 @@ namespace filtering {
  *
  * The resulting image is of depth CV_32F with half as many channels as the input image, where each channel is the
  * magnitude of a gradient channel. The magnitude may be normalized. In that case, it is divided by the smoothed
- * magnitude plus a small constant (to avoid division by zero). The smoothed magnitude is obtained by convolving
- * with a triangular filter kernel.
+ * magnitude plus a small constant. The smoothed magnitude is obtained by convolving with a triangular filter
+ * kernel. The small constant prevents division by zero and additionally reduces the impact of small magnitudes. The
+ * bigger the constant gets, the more smaller gradients are suppressed.
+ *
+ * After normalization, magnitudes that are equal to their vicinity will have a value around one, whereas magnitudes
+ * stronger than their vicinity will be bigger than one and magnitudes weaker than their vicinity will be less than
+ * one.
  */
 class GradientMagnitudeFilter : public ImageFilter {
 public:
@@ -33,7 +38,7 @@ public:
 	/**
 	 * Constructs a new gradient magnitude filter.
 	 *
-	 * @param[in] normalizationRadius Radius of the magnitude's triangular smoothing filter (filter size is 2 * radius + 1).
+	 * @param[in] normalizationRadius Radius of the magnitude's smoothing filter (size is 2 * radius + 1), 0 to prevent normalization.
 	 * @param[in] normalizationConstant Small constant that is added to the smoothed magnitude to prevent division by zero.
 	 */
 	explicit GradientMagnitudeFilter(int normalizationRadius = 0, double normalizationConstant = 0.005);
