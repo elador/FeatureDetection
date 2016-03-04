@@ -103,7 +103,7 @@ shared_ptr<AggregatedFeaturesDetector> loadFhogDetector(const string& filename,
 
 shared_ptr<ImageFilter> createGradientFeaturesFilter(FeatureParams featureParams) {
 	auto gradientFilter = make_shared<GradientFilter>(1);
-	int normalizationRadius = (featureParams.cellSizeInPixels + 2) / 2;
+	int normalizationRadius = featureParams.cellSizeInPixels;
 //	auto gradientHistogramFilter = GradientHistogramFilter::full(12, true, normalizationRadius); // 12 + 1
 //	auto gradientHistogramFilter = GradientHistogramFilter::half(6, true, normalizationRadius); // 6 + 1
 	auto gradientHistogramFilter = GradientHistogramFilter::both(6, true, normalizationRadius); // 12 + 6 + 1
