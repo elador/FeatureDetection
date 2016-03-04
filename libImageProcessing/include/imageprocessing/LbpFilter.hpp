@@ -74,7 +74,7 @@ private:
 			case CV_32S: return cv::Ptr<cv::BaseFilter>(new T<int>());
 			case CV_32F: return cv::Ptr<cv::BaseFilter>(new T<float>());
 			case CV_64F: return cv::Ptr<cv::BaseFilter>(new T<double>());
-			default: throw std::invalid_argument("LbpFilter: unsupported image type " + imageType);
+			default: throw std::invalid_argument("LbpFilter: unsupported image type " + std::to_string(imageType));
 		}
 	}
 

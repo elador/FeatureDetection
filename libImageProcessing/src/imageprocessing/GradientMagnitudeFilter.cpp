@@ -35,7 +35,7 @@ Mat GradientMagnitudeFilter::applyTo(const Mat& image, Mat& filtered) const {
 		case CV_32S: computeMagnitude<int>(image, filtered, rows, cols); break;
 		case CV_32F: computeMagnitude<float>(image, filtered, rows, cols); break;
 		case CV_64F: computeMagnitude<double>(image, filtered, rows, cols); break;
-		default: throw invalid_argument("GradientMagnitudeFilter: unsupported image depth " + image.depth());
+		default: throw invalid_argument("GradientMagnitudeFilter: unsupported image depth " + std::to_string(image.depth()));
 	}
 
 	return filtered;
