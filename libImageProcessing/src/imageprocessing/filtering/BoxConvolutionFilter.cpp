@@ -112,7 +112,7 @@ void BoxConvolutionFilter::filterRow(const float* inputValues, float* outputValu
 
 	for (int ch = 0; ch < channels; ++ch) {
 		// initialize first output value
-		float outputValue = delta + odd ? input.value(0, ch) : 0;
+		float outputValue = delta + (odd ? input.value(0, ch) : 0);
 		for (int col = 0; col < radius; ++col)
 			outputValue += input.value(0, ch) + input.value(col + 1, ch);
 		// write first output value
