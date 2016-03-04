@@ -47,8 +47,10 @@ bool RectLandmark::isEqual(const Landmark& landmark) const {
 	if (landmark.getType() != LandmarkType::RECT)
 		return false;
 	float eps = 1e-6;
-	return abs(getX() - landmark.getX()) < eps && abs(getY() - landmark.getY()) < eps
-			&& abs(getWidth() - landmark.getWidth()) < eps && abs(getHeight() - landmark.getHeight()) < eps;
+	return std::abs(getX() - landmark.getX()) < eps
+			&& std::abs(getY() - landmark.getY()) < eps
+			&& std::abs(getWidth() - landmark.getWidth()) < eps
+			&& std::abs(getHeight() - landmark.getHeight()) < eps;
 }
 
 bool RectLandmark::isClose(const Landmark& landmark, const float similarity) const {
