@@ -247,10 +247,8 @@ int main(int argc, char** argv) {
 	int octaveLayerCountForDetection = 5;
 	shared_ptr<NonMaximumSuppression> nms = make_shared<NonMaximumSuppression>(0.3, NonMaximumSuppression::MaximumType::WEIGHTED_AVERAGE);
 
-	vector<LabeledImage> trainingImages = getLabeledImages(
-			make_shared<DlibImageSource>("/home/poschmann/Bilder/FEI_Face_Database/training2/training.xml"), featureParams);
-	vector<LabeledImage> testingImages = getLabeledImages(
-			make_shared<DlibImageSource>("/home/poschmann/Bilder/heads/testing/testing.xml"), featureParams);
+	vector<LabeledImage> trainingImages = getLabeledImages(make_shared<DlibImageSource>("training.xml"), featureParams);
+	vector<LabeledImage> testingImages = getLabeledImages(make_shared<DlibImageSource>("testing.xml"), featureParams);
 
 	shared_ptr<AggregatedFeaturesDetector> detector;
 	if (taskType == TaskType::TRAIN) {
