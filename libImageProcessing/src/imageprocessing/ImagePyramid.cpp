@@ -280,7 +280,7 @@ Mat ImagePyramid::resize(const Mat& image, double scaleFactor, const vector<doub
 	cv::split(image, channels);
 	vector<Mat> resizedChannels(channels.size());
 	for (size_t i = 0; i < channels.size(); ++i) {
-		cv::resize(channels[i], resizedChannels[i], scaledSize, 0, 0, cv::INTER_AREA);
+		cv::resize(channels[i], resizedChannels[i], scaledSize, 0, 0, cv::INTER_LINEAR);
 		resizedChannels[i] *= std::pow(scaleFactor, -lambdas[i]);
 	}
 	Mat resizedImage;
