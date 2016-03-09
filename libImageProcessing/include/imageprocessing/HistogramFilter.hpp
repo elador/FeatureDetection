@@ -14,8 +14,8 @@
 namespace imageprocessing {
 
 /**
- * Filter whose results are histograms. Does only provide functions for creating and normalizing histograms, can not be
- * instantiated directly.
+ * Filter whose results are histograms created over a regular grid of cells. Does only provide functions for creating and
+ * normalizing histograms, can not be instantiated directly.
  */
 class HistogramFilter : public ImageFilter {
 public:
@@ -42,11 +42,11 @@ protected:
 	 * The input image must have a depth CV_8U containing bin information (bin indices and optionally weights). It must have
 	 * one, two or four channels. In case of one channel, it just contains the bin index. The second channel adds a weight
 	 * that will be divided by 255 to be between zero and one. The third channel is another bin index and the fourth channel
-	 * is the corresponding weight. The output will be a row vector of type CV_32F containing the concatenated histograms of
-	 * the cells in row-major order, the size (column count) will be cellRows * cellCols * bins.
+	 * is the corresponding weight. The output is an image of size rowCount x columnCount and depth CV_32F, where each pixel
+	 * contains one histogram with the bins each occupying one channel.
 	 *
 	 * @param[in] image Image containing bin data per pixel.
-	 * @param[out] histograms Row vector containing the histogram values of the cells in row-major order.
+	 * @param[out] histograms Matrix containing a histogram in each cell.
 	 * @param[in] binCount Bin count of the histogram.
 	 * @param[in] rowCount Row count of the cell grid.
 	 * @param[in] columnCount Column count of the cell grid.
