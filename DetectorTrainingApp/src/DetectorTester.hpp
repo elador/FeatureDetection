@@ -14,86 +14,22 @@
 #include "imageio/RectLandmark.hpp"
 #include "opencv2/core/core.hpp"
 #include <chrono>
-#include <memory>
 #include <vector>
 
 /**
- * Result of a detector evaluation.
+ * Summary of a detector evaluation.
  */
-class DetectorEvaluationResult {
-public:
-
-	/**
-	 * Creates a detector test result for a single image.
-	 */
-	static DetectorEvaluationResult single() {
-		DetectorEvaluationResult result;
-		result.images = 1;
-		return result;
-	}
-
-	int getTruePositives() const {
-		return truePositives;
-	}
-
-	int getFalsePositives() const {
-		return falsePositives;
-	}
-
-	int getFalseNegatives() const {
-		return falseNegatives;
-	}
-
-	double getPrecision() const {
-		if (selected == 0)
-			return 0;
-		return static_cast<double>(truePositives) / static_cast<double>(selected);
-	}
-
-	double getRecall() const {
-		if (relevant == 0)
-			return 0;
-		return static_cast<double>(truePositives) / static_cast<double>(relevant);
-	}
-
-	double getF1Measure() const {
-		return getFMeasure(1);
-	}
-
-	double getFMeasure(double beta) const {
-		double betaSquared = beta * beta;
-		double precision = getPrecision();
-		double recall = getRecall();
-		return ((1 + betaSquared) * precision * recall) / (betaSquared * precision + recall);
-	}
-
-	std::chrono::milliseconds getAverageDetectionDuration() const {
-		if (images == 0)
-			return std::chrono::milliseconds::zero();
-		return detectionDurationSum / images;
-	}
-
-	DetectorEvaluationResult& operator+=(const DetectorEvaluationResult& other) {
-		images += other.images;
-		truePositives += other.truePositives;
-		falsePositives += other.falsePositives;
-		falseNegatives += other.falseNegatives;
-		selected += other.selected;
-		relevant += other.relevant;
-		detectionDurationSum += other.detectionDurationSum;
-		return *this;
-	}
-
-protected:
-	friend class DetectorTester;
-
-	int images = 0;
-	int truePositives = 0;
-	int falsePositives = 0;
-	int falseNegatives = 0;
-	int selected = 0; // selected = true positives + false positives
-	int relevant = 0; // relevant = true positives + false negatives
-	std::chrono::milliseconds detectionDurationSum = std::chrono::milliseconds::zero();
+struct DetectorEvaluationSummary {
+	double defaultMissRate = std::numeric_limits<double>::quiet_NaN(); ///< Miss rate using the default threshold of zero.
+	double defaultFppiRate = std::numeric_limits<double>::quiet_NaN(); ///< False positive per image rate using the default threshold of zero.
+	double missRateAtFppi0 = std::numeric_limits<double>::quiet_NaN(); ///< Miss rate at a false positive per image rate of 1.
+	double missRateAtFppi1 = std::numeric_limits<double>::quiet_NaN(); ///< Miss rate at a false positive per image rate of 0.1.
+	double missRateAtFppi2 = std::numeric_limits<double>::quiet_NaN(); ///< Miss rate at a false positive per image rate of 0.01.
+	double thresholdAtFppi0 = std::numeric_limits<double>::quiet_NaN(); ///< SVM threshold at a false positive per image rate of 1.
+	double thresholdAtFppi1 = std::numeric_limits<double>::quiet_NaN(); ///< SVM threshold at a false positive per image rate of 0.1.
+	double thresholdAtFppi2 = std::numeric_limits<double>::quiet_NaN(); ///< SVM threshold at a false positive per image rate of 0.01.
+	double avgMissRate = std::numeric_limits<double>::quiet_NaN(); ///< Log-average miss rate.
+	std::chrono::milliseconds avgTime; ///< Average detection time per image.
 };
 
 /**
@@ -128,16 +64,15 @@ public:
 	 * @return Result containing correct, wrong, ignored and missed detections.
 	 */
 	DetectionResult detect(detection::SimpleDetector& detector,
-			const cv::Mat& image, const std::vector<imageio::RectLandmark>& landmarks) const;
+						   const cv::Mat& image, const std::vector<imageio::RectLandmark>& landmarks) const;
 
 	/**
 	 * Evaluates a detector on several images.
 	 *
 	 * @param[in] detector Detector that should be evaluated.
 	 * @param[in] images Images with labeled bounding boxes.
-	 * @return Evaluation result for the images.
 	 */
-	DetectorEvaluationResult evaluate(detection::SimpleDetector& detector, std::vector<LabeledImage>& images) const;
+	void evaluate(detection::SimpleDetector& detector, const std::vector<LabeledImage>& images);
 
 	/**
 	 * Evaluates a detector on a single image.
@@ -145,26 +80,116 @@ public:
 	 * @param[in] detector Detector that should be evaluated.
 	 * @param[in] image Image to detect targets in.
 	 * @param[in] landmarks Labeled bounding boxes that are either positive or should be ignored (neither positive, nor negative).
-	 * @return Evaluation result for the single image.
 	 */
-	DetectorEvaluationResult evaluate(detection::SimpleDetector& detector,
-			const cv::Mat& image, const std::vector<imageio::RectLandmark>& landmarks) const;
+	void evaluate(detection::SimpleDetector& detector, const cv::Mat& image, const std::vector<imageio::RectLandmark>& landmarks);
+
+	/**
+	 * @return Summary of the evaluation.
+	 */
+	DetectorEvaluationSummary getSummary() const;
+
+	/**
+	 * Stores the evaluation data into a file.
+	 *
+	 * @param[in] filename Name of the file to store the data into.
+	 */
+	void storeData(const std::string& filename) const;
+
+	/**
+	 * Loads evaluation data from a file, replacing the current data of this tester.
+	 *
+	 * @param[in] filename Name of the file to load the data from.
+	 */
+	void loadData(const std::string& filename);
+
+	/**
+	 * Writes the points of the precision recall curve into the given file.
+	 *
+	 * @param[in] filename Name of the file to write the points into.
+	 */
+	void writePrecisionRecallCurve(const std::string& filename) const;
+
+	/**
+	 * Writes the points of the ROC curve into the given file.
+	 *
+	 * @param[in] filename Name of the file to write the points into.
+	 * @param[in] falsePositivesPerImage Flag that indicates whether to write false positives per image instead of false positives.
+	 */
+	void writeRocCurve(const std::string& filename, bool falsePositivesPerImage = true) const;
+
+	/**
+	 * Writes the points of the DET curve into the given file.
+	 *
+	 * @param[in] filename Name of the file to write the points into.
+	 * @param[in] falsePositivesPerImage Flag that indicates whether to write false positives per image instead of false positives.
+	 */
+	void writeDetCurve(const std::string& filename, bool falsePositivesPerImage = true) const;
 
 private:
 
-	enum class DetectionStatus : uint8_t { FALSE_POSITIVE, TRUE_POSITIVE, IGNORED };
+	enum class DetectionStatus : uint8_t {
+		FALSE_POSITIVE, TRUE_POSITIVE, IGNORED
+	};
 
-	enum class PositiveStatus : uint8_t { FALSE_NEGATIVE, TRUE_POSITIVE };
+	enum class PositiveStatus : uint8_t {
+		FALSE_NEGATIVE, TRUE_POSITIVE
+	};
 
 	struct Status {
 		std::vector<DetectionStatus> detectionStatus;
 		std::vector<PositiveStatus> positiveStatus;
 	};
 
-	std::vector<cv::Rect> detectAndMeasureDuration(detection::SimpleDetector& detector,
-			const cv::Mat& image, DetectorEvaluationResult& result) const;
+	/**
+	 * Classifies the detection scores as either true positive or false positive.
+	 *
+	 * @param[in] detection Detected objects ordered by their score in descending order.
+	 * @param[in] annotations Annotated objects.
+	 * @return Detections scores in descending order with their binary classification label.
+	 */
+	std::vector<std::pair<float, bool>> classifyScores(
+			const std::vector<std::pair<cv::Rect, float>>& detections, Annotations annotations) const;
 
-	void measurePerformance(const std::vector<cv::Rect>& detections, const Annotations& annotations, DetectorEvaluationResult& result) const;
+	/**
+	 * Determines the annotation that overlaps the most with a detection.
+	 *
+	 * @param[in] detection Detected object.
+	 * @param[in] annotations Annotated objects.
+	 * @return Overlap ratio and iterator to the best matching annotation.
+	 */
+	std::pair<double, std::vector<cv::Rect>::const_iterator> getBestMatch(
+			cv::Rect detection, const std::vector<cv::Rect>& annotations) const;
+
+	/**
+	 * Determines whether a detection is a false positive by examining the overlaps with the best matching
+	 * annotations. A detection is considered a false positive if the overlap ratios are both less than the
+	 * overlap threshold.
+	 *
+	 * @param[in] Overlap ratio to the best matching positive annotation.
+	 * @param[in] Overlap ratio to the best matching fuzzy annotation.
+	 * @return True if the detection is a false positive, false otherwise.
+	 */
+	bool isFalsePositive(double bestPositiveOverlap, double bestFuzzyOverlap) const;
+
+	/**
+	 * Determines whether a detection is a true positive by examining the overlaps with the best matching
+	 * annotations. A detection is considered a true positive if the overlap ratio of the best matching
+	 * positive annotation is at least as high as the overlap threshold and the overlap ratio of the best
+	 * matching fuzzy annotation.
+	 *
+	 * @param[in] Overlap ratio to the best matching positive annotation.
+	 * @param[in] Overlap ratio to the best matching fuzzy annotation.
+	 * @return True if the detection is a true positive, false otherwise.
+	 */
+	bool isTruePositive(double bestPositiveOverlap, double bestFuzzyOverlap) const;
+
+	/**
+	 * Merges additional classified scores into an existing vector of classified scores.
+	 *
+	 * @param[in] scores Existing classified scores.
+	 * @param[in] additionalScores Additional classified scores that should be merged into the existing vector.
+	 */
+	void mergeInto(std::vector<std::pair<float, bool>>& scores, const std::vector<std::pair<float, bool>>& additionalScores) const;
 
 	Status compareWithGroundTruth(const std::vector<cv::Rect>& detections, const Annotations& annotations) const;
 
@@ -174,7 +199,13 @@ private:
 
 	void computeStatus(cv::Mat& positiveOverlaps, cv::Mat& ignoreOverlaps, DetectorTester::Status& status) const;
 
+	void writeCurve(std::string filename, std::function<double(int, int)> x, std::function<double(int, int)> y) const;
+
 	double overlapThreshold; ///< Minimum overlap necessary to assign a detection to a ground truth bounding box.
+	int imageCount = 0; ///< Number of evaluated images.
+	int positiveCount = 0; ///< Number of positive annotations.
+	std::vector<std::pair<float, bool>> classifiedScores; ///< Detection scores with flag that indicates whether the detection was a true positive.
+	std::chrono::milliseconds detectionTimeSum = std::chrono::milliseconds::zero(); ///< Sum of detection times.
 };
 
 #endif /* DETECTORTESTER_HPP_ */

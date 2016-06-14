@@ -19,6 +19,7 @@
 #include "opencv2/core/core.hpp"
 #include <memory>
 #include <random>
+#include <string>
 #include <vector>
 
 /**
@@ -52,8 +53,10 @@ struct FeatureParams {
  */
 struct TrainingParams {
 	bool mirrorTrainingData = true; ///< Flag that indicates whether to horizontally mirror the training data.
-	int randomNegativeCount = 20; ///< Number of random negatives per image.
-	float negativeScoreThreshold = -0.5; ///< SVM score threshold for retrieving strong negative examples.
+	int randomNegativeCount = 20; ///< Number of initial random negatives per image.
+	int maxHardNegativeCount = 100; ///< Maximum number of hard negatives per image.
+	int bootstrappingRounds = 3; ///< Number of bootstrapping rounds.
+	float negativeScoreThreshold = -1.0f; ///< SVM score threshold for retrieving strong negative examples.
 	double overlapThreshold = 0.3; ///< Maximum allowed overlap between negative examples and non-negative annotations.
 	double C = 1;
 	bool compensateImbalance = false; ///< Flag that indicates whether to adjust class weights to compensate for unbalanced data.
@@ -65,7 +68,7 @@ struct TrainingParams {
 class DetectorTrainer {
 public:
 
-	explicit DetectorTrainer(bool printProgressInformation = false);
+	explicit DetectorTrainer(bool printProgressInformation = false, std::string printPrefix = "");
 
 	/**
 	 * Sets some general training parameters.
@@ -118,9 +121,10 @@ public:
 	 *
 	 * @param[in] nms Non-maximum suppression algorithm.
 	 * @param[in] octaveLayerCount Number of image pyramid layers per octave.
+	 * @param[in] threshold SVM score threshold, defaults to zero.
 	 */
 	std::shared_ptr<detection::AggregatedFeaturesDetector> getDetector(
-			std::shared_ptr<detection::NonMaximumSuppression> nms, int octaveLayerCount) const;
+			std::shared_ptr<detection::NonMaximumSuppression> nms, int octaveLayerCount, float threshold = 0) const;
 
 private:
 
@@ -181,6 +185,7 @@ private:
 	void trainClassifier();
 
 	bool printProgressInformation;
+	std::string printPrefix;
 	TrainingParams trainingParams;
 	std::shared_ptr<detection::NonMaximumSuppression> noSuppression;
 	FeatureParams featureParams;

@@ -50,6 +50,16 @@ public:
 	 */
 	std::vector<Detection> eliminateRedundantDetections(std::vector<Detection> candidates) const;
 
+	/**
+	 * @return Maximum allowed overlap between two detections (everything closer is regarded as the same object).
+	 */
+	double getOverlapThreshold() const;
+
+	/**
+	 * @return Type of the maximum computation per cluster.
+	 */
+	MaximumType getMaximumType() const;
+
 private:
 
 	/**

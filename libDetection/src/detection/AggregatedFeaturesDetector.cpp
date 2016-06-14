@@ -49,13 +49,13 @@ AggregatedFeaturesDetector::AggregatedFeaturesDetector(shared_ptr<AggregatedFeat
 				featureExtractor(featureExtractor),
 				nonMaximumSuppression(nms),
 				kernelSize(svm->getSupportVectors()[0].size()),
-				scoreThreshold(0) {
+				scoreThreshold(svm->getThreshold()) {
 	if (!dynamic_cast<LinearKernel*>(svm->getKernel().get()))
 		throw std::invalid_argument("AggregatedFeaturesDetector: the SVM must use a LinearKernel");
 	shared_ptr<ConvolutionFilter> convolutionFilter = make_shared<ConvolutionFilter>(CV_32F);
 	convolutionFilter->setKernel(svm->getSupportVectors()[0]);
 	convolutionFilter->setAnchor(Point(0, 0));
-	convolutionFilter->setDelta(-svm->getBias() - svm->getThreshold());
+	convolutionFilter->setDelta(-svm->getBias());
 	scorePyramid = make_shared<ImagePyramid>(featureExtractor->getFeaturePyramid());
 	scorePyramid->addLayerFilter(convolutionFilter);
 }
@@ -63,6 +63,11 @@ AggregatedFeaturesDetector::AggregatedFeaturesDetector(shared_ptr<AggregatedFeat
 vector<Rect> AggregatedFeaturesDetector::detect(shared_ptr<VersionedImage> image) {
 	update(image);
 	return detect();
+}
+
+vector<pair<Rect, float>> AggregatedFeaturesDetector::detectWithScores(shared_ptr<VersionedImage> image) {
+	update(image);
+	return detectWithScores();
 }
 
 void AggregatedFeaturesDetector::update(shared_ptr<VersionedImage> image) {
@@ -76,7 +81,13 @@ vector<Rect> AggregatedFeaturesDetector::detect() {
 	return extractBoundingBoxes(detections);
 }
 
-std::vector<Detection> AggregatedFeaturesDetector::getPositiveWindows() {
+vector<pair<Rect, float>> AggregatedFeaturesDetector::detectWithScores() {
+	vector<Detection> candidates = getPositiveWindows();
+	vector<Detection> detections = nonMaximumSuppression->eliminateRedundantDetections(candidates);
+	return extractBoundingBoxesWithScores(detections);
+}
+
+vector<Detection> AggregatedFeaturesDetector::getPositiveWindows() {
 	vector<Detection> positiveBounds;
 	for (const shared_ptr<ImagePyramidLayer>& layer : scorePyramid->getLayers()) {
 		const Mat& scoreMap = layer->getScaledImage();
@@ -102,6 +113,14 @@ vector<Rect> AggregatedFeaturesDetector::extractBoundingBoxes(vector<Detection> 
 	for (const Detection& detection : detections)
 		boundingBoxes.push_back(detection.bounds);
 	return boundingBoxes;
+}
+
+vector<pair<Rect, float>> AggregatedFeaturesDetector::extractBoundingBoxesWithScores(vector<Detection> detections) {
+	vector<pair<Rect, float>> detectionsWithScores;
+	detectionsWithScores.reserve(detections.size());
+	for (Detection detection : detections)
+		detectionsWithScores.push_back(std::make_pair(detection.bounds, detection.score));
+	return detectionsWithScores;
 }
 
 float AggregatedFeaturesDetector::getScoreThreshold() const {

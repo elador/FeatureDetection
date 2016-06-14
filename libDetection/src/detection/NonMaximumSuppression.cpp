@@ -16,6 +16,14 @@ namespace detection {
 NonMaximumSuppression::NonMaximumSuppression(double overlapThreshold, MaximumType maximumType) :
 		overlapThreshold(overlapThreshold), maximumType(maximumType) {}
 
+double NonMaximumSuppression::getOverlapThreshold() const {
+	return overlapThreshold;
+}
+
+NonMaximumSuppression::MaximumType NonMaximumSuppression::getMaximumType() const {
+	return maximumType;
+}
+
 vector<Detection> NonMaximumSuppression::eliminateRedundantDetections(vector<Detection> candidates) const {
 	if (overlapThreshold == 1.0) // with this threshold, there would be an endless loop - this check assumes distinct bounding boxes
 		return candidates;

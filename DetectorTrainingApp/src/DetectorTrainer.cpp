@@ -35,8 +35,9 @@ using std::shared_ptr;
 using std::string;
 using std::vector;
 
-DetectorTrainer::DetectorTrainer(bool printProgressInformation) :
+DetectorTrainer::DetectorTrainer(bool printProgressInformation, std::string printPrefix) :
 		printProgressInformation(printProgressInformation),
+		printPrefix(printPrefix),
 		aspectRatio(1),
 		aspectRatioInv(1),
 		noSuppression(make_shared<NonMaximumSuppression>(1.0)),
@@ -46,15 +47,20 @@ shared_ptr<AggregatedFeaturesDetector> DetectorTrainer::getDetector(shared_ptr<N
 	return getDetector(nms, featureParams.octaveLayerCount);
 }
 
-shared_ptr<AggregatedFeaturesDetector> DetectorTrainer::getDetector(shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount) const {
+shared_ptr<AggregatedFeaturesDetector> DetectorTrainer::getDetector(
+		shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, float threshold) const {
 	if (!classifier->isUsable())
 		throw runtime_error("DetectorTrainer: must train a classifier first");
+	classifier->getSvm()->setThreshold(threshold);
+	shared_ptr<AggregatedFeaturesDetector> detector;
 	if (!imageFilter)
-		return make_shared<AggregatedFeaturesDetector>(filter, featureParams.cellSizeInPixels,
+		detector = make_shared<AggregatedFeaturesDetector>(filter, featureParams.cellSizeInPixels,
 				featureParams.windowSizeInCells, octaveLayerCount, classifier->getSvm(), nms);
 	else
-		return make_shared<AggregatedFeaturesDetector>(imageFilter, filter, featureParams.cellSizeInPixels,
+		detector = make_shared<AggregatedFeaturesDetector>(imageFilter, filter, featureParams.cellSizeInPixels,
 				featureParams.windowSizeInCells, octaveLayerCount, classifier->getSvm(), nms);
+	classifier->getSvm()->setThreshold(0);
+	return detector;
 }
 
 void DetectorTrainer::storeClassifier(const string& filename) const {
@@ -89,8 +95,10 @@ void DetectorTrainer::train(vector<LabeledImage> images) {
 	createEmptyClassifier();
 	collectInitialTrainingExamples(images);
 	trainClassifier();
-	collectHardTrainingExamples(images);
-	trainClassifier();
+	for (int round = 0; round < trainingParams.bootstrappingRounds; ++round) {
+		collectHardTrainingExamples(images);
+		trainClassifier();
+	}
 }
 
 void DetectorTrainer::createEmptyClassifier() {
@@ -99,13 +107,13 @@ void DetectorTrainer::createEmptyClassifier() {
 
 void DetectorTrainer::collectInitialTrainingExamples(vector<LabeledImage> images) {
 	if (printProgressInformation)
-		std::cout << "collecting initial training examples" << std::endl;
+		std::cout << printPrefix << "collecting initial training examples" << std::endl;
 	collectTrainingExamples(images, true);
 }
 
 void DetectorTrainer::collectHardTrainingExamples(vector<LabeledImage> images) {
 	if (printProgressInformation)
-		std::cout << "collecting additional hard training examples" << std::endl;
+		std::cout << printPrefix << "collecting additional hard negative training examples" << std::endl;
 	createHardNegativesDetector();
 	collectTrainingExamples(images, false);
 }
@@ -226,8 +234,13 @@ Rect DetectorTrainer::createRandomBounds() const {
 
 void DetectorTrainer::addHardNegativeExamples(const vector<Rect>& nonNegativeBoxes) {
 	vector<Rect> detections = hardNegativesDetector->detect(image);
-	for (const Rect& detection : detections)
-		addNegativeIfNotOverlapping(detection, nonNegativeBoxes);
+	auto detection = detections.begin();
+	int addedCount = 0;
+	while (detection != detections.end() && addedCount < trainingParams.maxHardNegativeCount) {
+		if (addNegativeIfNotOverlapping(*detection, nonNegativeBoxes))
+			++addedCount;
+		++detection;
+	}
 }
 
 bool DetectorTrainer::addNegativeIfNotOverlapping(Rect candidate, const vector<Rect>& nonNegativeBoxes) {
@@ -255,7 +268,7 @@ double DetectorTrainer::computeOverlap(Rect a, Rect b) const {
 
 void DetectorTrainer::trainClassifier() {
 	if (printProgressInformation)
-		std::cout << "training classifier (adding " << positiveTrainingExamples.size() << " positives and " << negativeTrainingExamples.size() << " negatives)" << std::endl;
+		std::cout << printPrefix << "training classifier (adding " << positiveTrainingExamples.size() << " positives and " << negativeTrainingExamples.size() << " negatives)" << std::endl;
 	if (!classifier->retrain(positiveTrainingExamples, negativeTrainingExamples))
 		throw runtime_error("DetectorTrainer: SVM is not usable after training");
 	if (classifier->getSvm()->getSupportVectors().size() != 1) // should never happen because of linear kernel

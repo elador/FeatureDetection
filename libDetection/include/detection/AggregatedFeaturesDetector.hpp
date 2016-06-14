@@ -67,6 +67,10 @@ public:
 
 	std::vector<cv::Rect> detect(std::shared_ptr<imageprocessing::VersionedImage> image) override;
 
+	using SimpleDetector::detectWithScores;
+
+	std::vector<std::pair<cv::Rect, float>> detectWithScores(std::shared_ptr<imageprocessing::VersionedImage> image) override;
+
 	/**
 	 * @return SVM score threshold that must be overcome for windows to be considered positive.
 	 */
@@ -94,6 +98,13 @@ private:
 	std::vector<cv::Rect> detect();
 
 	/**
+	 * Determines the position and score of targets using the score pyramid.
+	 *
+	 * @return Bounding boxes around the detected targets with their scores, ordered by score in descending order.
+	 */
+	std::vector<std::pair<cv::Rect, float>> detectWithScores();
+
+	/**
 	 * Searches the score pyramid for positive values to find all possible target candidates.
 	 *
 	 * @return Positive windows with their SVM score.
@@ -107,6 +118,14 @@ private:
 	 * @return Bounding boxes around the targets.
 	 */
 	std::vector<cv::Rect> extractBoundingBoxes(std::vector<Detection> detections);
+
+	/**
+	 * Extracts the bounding boxes and scores from the given detections.
+	 *
+	 * @param[in] detections Detected targets with their score.
+	 * @return Bounding boxes around the targets with their scores, ordered by score in descending order.
+	 */
+	std::vector<std::pair<cv::Rect, float>> extractBoundingBoxesWithScores(std::vector<Detection> detections);
 
 	std::shared_ptr<imageprocessing::extraction::AggregatedFeaturesExtractor> featureExtractor;
 	std::shared_ptr<imageprocessing::ImagePyramid> scorePyramid; ///< Classification score pyramid.
