@@ -64,16 +64,37 @@ using std::shared_ptr;
 using std::string;
 using std::vector;
 
-vector<LabeledImage> getLabeledImages(shared_ptr<LabeledImageSource> source, FeatureParams featureParams) {
-	float dilationInPixels = 2.0f;
-	float dilationInCells = dilationInPixels / featureParams.cellSizeInPixels;
-	float widthScale = (featureParams.windowSizeInCells.width + dilationInCells) / featureParams.windowSizeInCells.width;
-	float heightScale = (featureParams.windowSizeInCells.height + dilationInCells) / featureParams.windowSizeInCells.height;
-	auto dilatedSource = make_shared<DilatedLabeledImageSource>(source, widthScale, heightScale);
+vector<LabeledImage> getLabeledImages(shared_ptr<LabeledImageSource> source) {
 	vector<LabeledImage> images;
-	while (dilatedSource->next())
-		images.emplace_back(dilatedSource->getImage(), dilatedSource->getLandmarks().getLandmarks());
+	while (source->next())
+		images.emplace_back(source->getImage(), source->getLandmarks().getLandmarks());
 	return images;
+}
+
+shared_ptr<AggregatedFeaturesDetector> createDetector(const shared_ptr<SvmClassifier>& svm,
+		const shared_ptr<ImageFilter>& imageFilter, const shared_ptr<ImageFilter>& layerFilter,
+		FeatureParams featureParams, shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount) {
+	if (imageFilter)
+		return make_shared<AggregatedFeaturesDetector>(imageFilter, layerFilter,
+				featureParams.cellSizeInPixels, featureParams.windowSizeInCells, octaveLayerCount,
+				svm, nms, featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv());
+	else
+		return make_shared<AggregatedFeaturesDetector>(layerFilter,
+				featureParams.cellSizeInPixels, featureParams.windowSizeInCells, octaveLayerCount,
+				svm, nms, featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv());
+}
+
+shared_ptr<AggregatedFeaturesDetector> createApproximateDetector(const shared_ptr<SvmClassifier>& svm,
+		const shared_ptr<ImageFilter>& imageFilter, const shared_ptr<ImageFilter>& layerFilter,
+		FeatureParams featureParams, shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, vector<double> lambdas) {
+	auto featurePyramid = ImagePyramid::createApproximated(octaveLayerCount, 0.5, 1.0, lambdas);
+	if (imageFilter)
+		featurePyramid->addImageFilter(imageFilter);
+	featurePyramid->addLayerFilter(layerFilter);
+	auto extractor = make_shared<AggregatedFeaturesExtractor>(featurePyramid,
+			featureParams.windowSizeInCells, featureParams.cellSizeInPixels, true);
+	return make_shared<AggregatedFeaturesDetector>(extractor, svm, nms,
+			featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv());
 }
 
 shared_ptr<ImageFilter> createFhogFilter(FeatureParams featureParams, bool fast) {
@@ -87,31 +108,6 @@ shared_ptr<ImageFilter> createFhogFilter(FeatureParams featureParams, bool fast)
 	}
 }
 
-void setFhogFeatures(DetectorTrainer& trainer, FeatureParams featureParams, bool fast) {
-	trainer.setFeatures(featureParams, createFhogFilter(featureParams, fast), make_shared<GrayscaleFilter>());
-}
-
-shared_ptr<AggregatedFeaturesDetector> loadFhogDetector(const string& filename, FeatureParams featureParams,
-		bool fast, shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, bool approximate, float threshold = 0) {
-	shared_ptr<ImageFilter> fhogFilter = createFhogFilter(featureParams, fast);
-	std::ifstream stream(filename);
-	shared_ptr<SvmClassifier> svm = SvmClassifier::load(stream);
-	svm->setThreshold(threshold);
-	stream.close();
-	if (approximate) {
-		vector<double> lambdas; // TODO
-		auto featurePyramid = ImagePyramid::createApproximated(octaveLayerCount, 0.5, 1.0, lambdas);
-		featurePyramid->addImageFilter(make_shared<GrayscaleFilter>());
-		featurePyramid->addLayerFilter(fhogFilter);
-		auto extractor = make_shared<AggregatedFeaturesExtractor>(featurePyramid,
-				featureParams.windowSizeInCells, featureParams.cellSizeInPixels, true);
-		return make_shared<AggregatedFeaturesDetector>(extractor, svm, nms);
-	} else {
-		return make_shared<AggregatedFeaturesDetector>(make_shared<GrayscaleFilter>(), fhogFilter,
-				featureParams.cellSizeInPixels, featureParams.windowSizeInCells, octaveLayerCount, svm, nms);
-	}
-}
-
 shared_ptr<ImageFilter> createGradientFeaturesFilter(FeatureParams featureParams) {
 	auto gradientFilter = make_shared<GradientFilter>(1);
 	int normalizationRadius = featureParams.cellSizeInPixels;
@@ -122,59 +118,10 @@ shared_ptr<ImageFilter> createGradientFeaturesFilter(FeatureParams featureParams
 	return make_shared<ChainedFilter>(gradientFilter, gradientHistogramFilter, aggregationFilter);
 }
 
-void setGradientFeatures(DetectorTrainer& trainer, FeatureParams featureParams) {
-	trainer.setFeatures(featureParams, createGradientFeaturesFilter(featureParams), make_shared<GrayscaleFilter>());
-}
-
-shared_ptr<AggregatedFeaturesDetector> loadGradientFeaturesDetector(const string& filename, FeatureParams featureParams,
-		shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, bool approximate, float threshold = 0) {
-	shared_ptr<ImageFilter> gradientFeaturesFilter = createGradientFeaturesFilter(featureParams);
-	std::ifstream stream(filename);
-	shared_ptr<SvmClassifier> svm = SvmClassifier::load(stream);
-	svm->setThreshold(threshold);
-	stream.close();
-	if (approximate) {
-		vector<double> lambdas; // TODO
-		auto featurePyramid = ImagePyramid::createApproximated(octaveLayerCount, 0.5, 1.0, lambdas);
-		featurePyramid->addImageFilter(make_shared<GrayscaleFilter>());
-		featurePyramid->addLayerFilter(gradientFeaturesFilter);
-		auto extractor = make_shared<AggregatedFeaturesExtractor>(featurePyramid,
-				featureParams.windowSizeInCells, featureParams.cellSizeInPixels, true);
-		return make_shared<AggregatedFeaturesDetector>(extractor, svm, nms);
-	} else {
-		return make_shared<AggregatedFeaturesDetector>(make_shared<GrayscaleFilter>(), gradientFeaturesFilter,
-				featureParams.cellSizeInPixels, featureParams.windowSizeInCells, octaveLayerCount, svm, nms);
-	}
-}
-
 shared_ptr<ImageFilter> createFdpwFilter(FeatureParams featureParams) {
 	auto fpdwFeatures = make_shared<FpdwFeaturesFilter>(true, false, featureParams.cellSizeInPixels, 0.01);
 	auto aggregation = make_shared<AggregationFilter>(featureParams.cellSizeInPixels, true, false);
 	return make_shared<ChainedFilter>(fpdwFeatures, aggregation);
-}
-
-void setFpdwFeatures(DetectorTrainer& trainer, FeatureParams featureParams) {
-	trainer.setFeatures(featureParams, createFdpwFilter(featureParams));
-}
-
-shared_ptr<AggregatedFeaturesDetector> loadFpdwDetector(const string& filename, FeatureParams featureParams,
-		shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, bool approximate, float threshold = 0) {
-	shared_ptr<ImageFilter> filter = createFdpwFilter(featureParams);
-	std::ifstream stream(filename);
-	shared_ptr<SvmClassifier> svm = SvmClassifier::load(stream);
-	svm->setThreshold(threshold);
-	stream.close();
-	if (approximate) {
-		vector<double> lambdas; // TODO
-		auto featurePyramid = ImagePyramid::createApproximated(octaveLayerCount, 0.5, 1.0, lambdas);
-		featurePyramid->addLayerFilter(filter);
-		auto extractor = make_shared<AggregatedFeaturesExtractor>(featurePyramid,
-				featureParams.windowSizeInCells, featureParams.cellSizeInPixels, true);
-		return make_shared<AggregatedFeaturesDetector>(extractor, svm, nms);
-	} else {
-		return make_shared<AggregatedFeaturesDetector>(filter,
-				featureParams.cellSizeInPixels, featureParams.windowSizeInCells, octaveLayerCount, svm, nms);
-	}
 }
 
 bool showDetections(const DetectorTester& tester, AggregatedFeaturesDetector& detector, const vector<LabeledImage>& images) {
@@ -249,13 +196,27 @@ void storeParameters(const string& filename, TrainingParams trainingParams, Feat
 	file << "negativeScoreThreshold = " << trainingParams.negativeScoreThreshold << '\n';
 	file << "overlapThreshold = " << trainingParams.overlapThreshold << '\n';
 	file << "C = " << trainingParams.C << '\n';
-	file << "compensateImbalance = " << trainingParams.compensateImbalance << '\n';
+	file << "compensateImbalance = " << (trainingParams.compensateImbalance ? "true" : "false") << '\n';
 	file << '\n';
 	file << "FeatureParams:\n";
+	file << "type = ";
+	if (featureType == FeatureType::FHOG)
+		file << "fhog";
+	else if (featureType == FeatureType::FAST_FHOG)
+		file << "fastfhog";
+	else if (featureType == FeatureType::GRADHIST)
+		file << "gradhist";
+	else if (featureType == FeatureType::FPDW)
+		file << "fpdw";
+	else
+		file << "unknown";
+	file << '\n';
 	file << "windowWidthInCells = " << featureParams.windowSizeInCells.width << '\n';
 	file << "windowHeightInCells = " << featureParams.windowSizeInCells.height << '\n';
 	file << "cellSizeInPixels = " << featureParams.cellSizeInPixels << '\n';
 	file << "octaveLayerCount = " << featureParams.octaveLayerCount << '\n';
+	file << "widthScaleFactor = " << featureParams.widthScaleFactor << '\n';
+	file << "heightScaleFactor = " << featureParams.heightScaleFactor << '\n';
 	file << '\n';
 	file << "DetectionParams:\n";
 	file << "octaveLayerCount = " << octaveLayerCountForDetection << '\n';
@@ -263,17 +224,50 @@ void storeParameters(const string& filename, TrainingParams trainingParams, Feat
 	file.close();
 }
 
+void setFeatures(DetectorTrainer& detectorTrainer, FeatureType featureType, FeatureParams featureParams) {
+	if (featureType == FeatureType::FHOG)
+		detectorTrainer.setFeatures(featureParams, createFhogFilter(featureParams, false), make_shared<GrayscaleFilter>());
+	else if (featureType == FeatureType::FAST_FHOG)
+		detectorTrainer.setFeatures(featureParams, createFhogFilter(featureParams, true), make_shared<GrayscaleFilter>());
+	else if (featureType == FeatureType::GRADHIST)
+		detectorTrainer.setFeatures(featureParams, createGradientFeaturesFilter(featureParams), make_shared<GrayscaleFilter>());
+	else if (featureType == FeatureType::FPDW)
+		detectorTrainer.setFeatures(featureParams, createFdpwFilter(featureParams));
+	else
+		throw invalid_argument("unknown feature type");
+}
+
 shared_ptr<AggregatedFeaturesDetector> loadDetector(const string& filename, FeatureType featureType, FeatureParams featureParams,
 		shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, bool approximate, float threshold = 0) {
-	if (featureType == FeatureType::FHOG)
-		return loadFhogDetector(filename, featureParams, false, nms, octaveLayerCount, approximate, threshold);
-	else if (featureType == FeatureType::FAST_FHOG)
-		return loadFhogDetector(filename, featureParams, true, nms, octaveLayerCount, approximate, threshold);
-	else if (featureType == FeatureType::GRADHIST)
-		return loadGradientFeaturesDetector(filename, featureParams, nms, octaveLayerCount, approximate, threshold);
-	else if (featureType == FeatureType::FPDW)
-		return loadFpdwDetector(filename, featureParams, nms, octaveLayerCount, approximate, threshold);
-	throw invalid_argument("unknown feature type");
+	std::ifstream stream(filename);
+	shared_ptr<SvmClassifier> svm = SvmClassifier::load(stream);
+	svm->setThreshold(threshold);
+	stream.close();
+
+	shared_ptr<ImageFilter> imageFilter;
+	shared_ptr<ImageFilter> layerFilter;
+	vector<double> lambdas;
+	if (featureType == FeatureType::FHOG) {
+		imageFilter = make_shared<GrayscaleFilter>();
+		layerFilter = createFhogFilter(featureParams, false);
+		// TODO lambdas
+	} else if (featureType == FeatureType::FAST_FHOG) {
+		imageFilter = make_shared<GrayscaleFilter>();
+		layerFilter = createFhogFilter(featureParams, true);
+		// TODO lambdas
+	} else if (featureType == FeatureType::GRADHIST) {
+		imageFilter = make_shared<GrayscaleFilter>();
+		layerFilter = createGradientFeaturesFilter(featureParams);
+		// TODO lambdas
+	} else if (featureType == FeatureType::FPDW) {
+		layerFilter = createFdpwFilter(featureParams);
+		// TODO lambdas
+	} else {
+		throw invalid_argument("unknown feature type");
+	}
+	if (approximate)
+		return createApproximateDetector(svm, imageFilter, layerFilter, featureParams, nms, octaveLayerCount, lambdas);
+	return createDetector(svm, imageFilter, layerFilter, featureParams, nms, octaveLayerCount);
 }
 
 TaskType getTaskType(const string& type) {
@@ -338,10 +332,17 @@ int main(int argc, char** argv) {
 	trainingParams.overlapThreshold = 0.3;
 	trainingParams.C = 10;
 	trainingParams.compensateImbalance = true;
-	FeatureParams featureParams{Size(5, 7), 7, 10}; // (width, height), cellsize, octave
+
+	FeatureParams featureParams;
+	featureParams.windowSizeInCells = Size(5, 7);
+	featureParams.cellSizeInPixels = 7;
+	featureParams.octaveLayerCount = 10;
+	featureParams.widthScaleFactor = 1.0f;
+	featureParams.heightScaleFactor = 1.0f;
+
 	int octaveLayerCountForDetection = 5;
 	shared_ptr<NonMaximumSuppression> nms = make_shared<NonMaximumSuppression>(0.3, NonMaximumSuppression::MaximumType::MAX_SCORE);
-	vector<LabeledImage> imageSet = getLabeledImages(make_shared<DlibImageSource>(imagesFilename), featureParams);
+	vector<LabeledImage> imageSet = getLabeledImages(make_shared<DlibImageSource>(imagesFilename));
 
 	if (taskType == TaskType::TRAIN) {
 		if (exists(directory)) {
@@ -357,14 +358,7 @@ int main(int argc, char** argv) {
 	if (taskType == TaskType::TRAIN || taskType == TaskType::TRAIN_FULL) {
 		DetectorTrainer detectorTrainer(true, "  ");
 		detectorTrainer.setTrainingParameters(trainingParams);
-		if (featureType == FeatureType::FHOG)
-			setFhogFeatures(detectorTrainer, featureParams, false);
-		else if (featureType == FeatureType::FAST_FHOG)
-			setFhogFeatures(detectorTrainer, featureParams, true);
-		else if (featureType == FeatureType::GRADHIST)
-			setGradientFeatures(detectorTrainer, featureParams);
-		else if (featureType == FeatureType::FPDW)
-			setFpdwFeatures(detectorTrainer, featureParams);
+		setFeatures(detectorTrainer, featureType, featureParams);
 		steady_clock::time_point start = steady_clock::now();
 		cout << "train detector on ";
 		if (setCount == 1) { // no cross-validation, train on all images

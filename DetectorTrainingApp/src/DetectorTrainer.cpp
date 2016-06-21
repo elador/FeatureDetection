@@ -55,10 +55,12 @@ shared_ptr<AggregatedFeaturesDetector> DetectorTrainer::getDetector(
 	shared_ptr<AggregatedFeaturesDetector> detector;
 	if (!imageFilter)
 		detector = make_shared<AggregatedFeaturesDetector>(filter, featureParams.cellSizeInPixels,
-				featureParams.windowSizeInCells, octaveLayerCount, classifier->getSvm(), nms);
+				featureParams.windowSizeInCells, octaveLayerCount, classifier->getSvm(), nms,
+				featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv());
 	else
 		detector = make_shared<AggregatedFeaturesDetector>(imageFilter, filter, featureParams.cellSizeInPixels,
-				featureParams.windowSizeInCells, octaveLayerCount, classifier->getSvm(), nms);
+				featureParams.windowSizeInCells, octaveLayerCount, classifier->getSvm(), nms,
+				featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv());
 	classifier->getSvm()->setThreshold(0);
 	return detector;
 }
@@ -126,27 +128,27 @@ void DetectorTrainer::createHardNegativesDetector() {
 
 void DetectorTrainer::collectTrainingExamples(vector<LabeledImage> images, bool initial) {
 	for (LabeledImage labeledImage : images) {
-		vector<RectLandmark> landmarks = adjustAspectRatio(labeledImage.landmarks);
+		vector<RectLandmark> landmarks = adjustSizes(labeledImage.landmarks);
 		addTrainingExamples(labeledImage.image, landmarks, initial);
 		if (trainingParams.mirrorTrainingData)
 			addMirroredTrainingExamples(labeledImage.image, landmarks, initial);
 	}
 }
 
-vector<RectLandmark> DetectorTrainer::adjustAspectRatio(const vector<RectLandmark>& landmarks) const {
+vector<RectLandmark> DetectorTrainer::adjustSizes(const vector<RectLandmark>& landmarks) const {
 	vector<RectLandmark> adjustedLandmarks;
 	adjustedLandmarks.reserve(landmarks.size());
 	for (const RectLandmark& landmark : landmarks)
-		adjustedLandmarks.push_back(adjustAspectRatio(landmark));
+		adjustedLandmarks.push_back(adjustSize(landmark));
 	return adjustedLandmarks;
 }
 
-RectLandmark DetectorTrainer::adjustAspectRatio(const RectLandmark& landmark) const {
+RectLandmark DetectorTrainer::adjustSize(const RectLandmark& landmark) const {
 	const string& name = landmark.getName();
 	float x = landmark.getX();
 	float y = landmark.getY();
-	float width = landmark.getWidth();
-	float height = landmark.getHeight();
+	float width = featureParams.widthScaleFactor * landmark.getWidth();
+	float height = featureParams.heightScaleFactor * landmark.getHeight();
 	if (width < aspectRatio * height)
 		width = aspectRatio * height;
 	else if (width > aspectRatio * height)

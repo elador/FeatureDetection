@@ -29,6 +29,8 @@ struct FeatureParams {
 	cv::Size windowSizeInCells; ///< Detection window size in cells.
 	int cellSizeInPixels; ///< Cell size in pixels.
 	int octaveLayerCount; ///< Number of image pyramid layers per octave.
+	float widthScaleFactor = 1.0f; ///< Scale factor that is applied to the window width before training.
+	float heightScaleFactor = 1.0f; ///< Scale factor that is applied to the window height before training.
 
 	/**
 	 * @return Detection window size in pixels.
@@ -45,6 +47,20 @@ struct FeatureParams {
 	 */
 	double windowAspectRatio() const {
 		return static_cast<double>(windowSizeInCells.width) / static_cast<double>(windowSizeInCells.height);
+	}
+
+	/**
+	 * @return Scale factor that is applied to the window width after detection.
+	 */
+	float widthScaleFactorInv() const {
+		return 1.0f / widthScaleFactor;
+	}
+
+	/**
+	 * @return Scale factor that is applied to the window height after detection.
+	 */
+	float heightScaleFactorInv() const {
+		return 1.0f / heightScaleFactor;
 	}
 };
 
@@ -139,20 +155,20 @@ private:
 	void collectTrainingExamples(std::vector<LabeledImage> images, bool initial);
 
 	/**
-	 * Adjusts the aspect ratio of the landmarks to fit the feature window size.
+	 * Adjusts the size and aspect ratio of the landmarks to fit the feature window size.
 	 *
 	 * @param[in] landmarks Labeled bounding boxes with potentially differing aspect ratios.
 	 * @return Labeled bounding boxes with the correct aspect ratio.
 	 */
-	std::vector<imageio::RectLandmark> adjustAspectRatio(const std::vector<imageio::RectLandmark>& landmarks) const;
+	std::vector<imageio::RectLandmark> adjustSizes(const std::vector<imageio::RectLandmark>& landmarks) const;
 
 	/**
-	 * Adjusts the aspect ratio of a landmark to fit the feature window size.
+	 * Adjusts the size and aspect ratio of a landmark to fit the feature window size.
 	 *
 	 * @param[in] landmark Labeled bounding box with potentially differing aspect ratio.
 	 * @return Labeled bounding box with the correct aspect ratio.
 	 */
-	imageio::RectLandmark adjustAspectRatio(const imageio::RectLandmark& landmark) const;
+	imageio::RectLandmark adjustSize(const imageio::RectLandmark& landmark) const;
 
 	void addMirroredTrainingExamples(const cv::Mat& image, const std::vector<imageio::RectLandmark>& landmarks, bool initial);
 

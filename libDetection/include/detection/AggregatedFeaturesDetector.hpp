@@ -35,10 +35,13 @@ public:
 	 * @param[in] octaveLayerCount Number of layers per image pyramid octave.
 	 * @param[in] svm Linear support vector machine.
 	 * @param[in] nonMaximumSuppression Non-maximum suppression.
+	 * @param[in] widthScale Scaling factor to compute the actual bounding box width from positively classified windows.
+	 * @param[in] heightScale Scaling factor to compute the actual bounding box height from positively classified windows.
 	 */
 	AggregatedFeaturesDetector(std::shared_ptr<imageprocessing::ImageFilter> imageFilter,
 			std::shared_ptr<imageprocessing::ImageFilter> layerFilter, int cellSize, cv::Size windowSize, int octaveLayerCount,
-			std::shared_ptr<classification::SvmClassifier> svm, std::shared_ptr<detection::NonMaximumSuppression> nonMaximumSuppression);
+			std::shared_ptr<classification::SvmClassifier> svm, std::shared_ptr<detection::NonMaximumSuppression> nonMaximumSuppression,
+			float widthScale = 1.0f, float heightScale = 1.0f);
 
 	/**
 	 * Constructs a new aggregated features detector.
@@ -49,9 +52,12 @@ public:
 	 * @param[in] octaveLayerCount Number of layers per image pyramid octave.
 	 * @param[in] svm Linear support vector machine.
 	 * @param[in] nonMaximumSuppression Non-maximum suppression.
+	 * @param[in] widthScale Scaling factor to compute the actual bounding box width from positively classified windows.
+	 * @param[in] heightScale Scaling factor to compute the actual bounding box height from positively classified windows.
 	 */
 	AggregatedFeaturesDetector(std::shared_ptr<imageprocessing::ImageFilter> filter, int cellSize, cv::Size windowSize, int octaveLayerCount,
-			std::shared_ptr<classification::SvmClassifier> svm, std::shared_ptr<detection::NonMaximumSuppression> nonMaximumSuppression);
+			std::shared_ptr<classification::SvmClassifier> svm, std::shared_ptr<detection::NonMaximumSuppression> nonMaximumSuppression,
+			float widthScale = 1.0f, float heightScale = 1.0f);
 
 	/**
 	 * Constructs a new aggregated features detector.
@@ -59,9 +65,12 @@ public:
 	 * @param[in] featureExtractor Aggregated features extractor.
 	 * @param[in] svm Linear support vector machine.
 	 * @param[in] nonMaximumSuppression Non-maximum suppression.
+	 * @param[in] widthScale Scaling factor to compute the actual bounding box width from positively classified windows.
+	 * @param[in] heightScale Scaling factor to compute the actual bounding box height from positively classified windows.
 	 */
 	AggregatedFeaturesDetector(std::shared_ptr<imageprocessing::extraction::AggregatedFeaturesExtractor> featureExtractor,
-			std::shared_ptr<classification::SvmClassifier> svm, std::shared_ptr<detection::NonMaximumSuppression> nonMaximumSuppression);
+			std::shared_ptr<classification::SvmClassifier> svm, std::shared_ptr<detection::NonMaximumSuppression> nonMaximumSuppression,
+			float widthScale = 1.0f, float heightScale = 1.0f);
 
 	using SimpleDetector::detect;
 
@@ -112,6 +121,14 @@ private:
 	std::vector<Detection> getPositiveWindows();
 
 	/**
+	 * Rescales a positively classified window to the actual bounding box size.
+	 *
+	 * @param[in] boundingBox Positively classified window.
+	 * @return Rescaled bounding box.
+	 */
+	cv::Rect rescaleWindow(cv::Rect bounds) const;
+
+	/**
 	 * Extracts the bounding boxes from the given detections.
 	 *
 	 * @param[in] detections Detected targets with their score.
@@ -132,6 +149,8 @@ private:
 	std::shared_ptr<detection::NonMaximumSuppression> nonMaximumSuppression;
 	cv::Size kernelSize;
 	float scoreThreshold; ///< SVM score threshold that must be overcome for windows to be considered positive.
+	float widthScale; ///< Scaling factor to compute the actual bounding box width from positively classified windows.
+	float heightScale; ///< Scaling factor to compute the actual bounding box height from positively classified windows.
 };
 
 } /* namespace detection */

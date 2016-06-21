@@ -35,21 +35,24 @@ using std::vector;
 namespace detection {
 
 AggregatedFeaturesDetector::AggregatedFeaturesDetector(shared_ptr<ImageFilter> imageFilter, shared_ptr<ImageFilter> layerFilter,
-		int cellSize, Size windowSize, int octaveLayerCount, shared_ptr<SvmClassifier> svm, shared_ptr<NonMaximumSuppression> nms) :
+		int cellSize, Size windowSize, int octaveLayerCount, shared_ptr<SvmClassifier> svm, shared_ptr<NonMaximumSuppression> nms,
+		float widthScale, float heightScale) :
 				AggregatedFeaturesDetector(make_shared<AggregatedFeaturesExtractor>(
-						imageFilter, layerFilter, windowSize, cellSize, octaveLayerCount), svm, nms) {}
+						imageFilter, layerFilter, windowSize, cellSize, octaveLayerCount), svm, nms, widthScale, heightScale) {}
 
 AggregatedFeaturesDetector::AggregatedFeaturesDetector(shared_ptr<ImageFilter> filter, int cellSize, Size windowSize,
-		int octaveLayerCount, shared_ptr<SvmClassifier> svm, shared_ptr<NonMaximumSuppression> nms) :
+		int octaveLayerCount, shared_ptr<SvmClassifier> svm, shared_ptr<NonMaximumSuppression> nms, float widthScale, float heightScale) :
 				AggregatedFeaturesDetector(make_shared<AggregatedFeaturesExtractor>(
-						filter, windowSize, cellSize, octaveLayerCount), svm, nms) {}
+						filter, windowSize, cellSize, octaveLayerCount), svm, nms, widthScale, heightScale) {}
 
 AggregatedFeaturesDetector::AggregatedFeaturesDetector(shared_ptr<AggregatedFeaturesExtractor> featureExtractor,
-		shared_ptr<SvmClassifier> svm, shared_ptr<NonMaximumSuppression> nms) :
+		shared_ptr<SvmClassifier> svm, shared_ptr<NonMaximumSuppression> nms, float widthScale, float heightScale) :
 				featureExtractor(featureExtractor),
 				nonMaximumSuppression(nms),
 				kernelSize(svm->getSupportVectors()[0].size()),
-				scoreThreshold(svm->getThreshold()) {
+				scoreThreshold(svm->getThreshold()),
+				widthScale(widthScale),
+				heightScale(heightScale) {
 	if (!dynamic_cast<LinearKernel*>(svm->getKernel().get()))
 		throw std::invalid_argument("AggregatedFeaturesDetector: the SVM must use a LinearKernel");
 	shared_ptr<ConvolutionFilter> convolutionFilter = make_shared<ConvolutionFilter>(CV_32F);
@@ -99,12 +102,19 @@ vector<Detection> AggregatedFeaturesDetector::getPositiveWindows() {
 				if (score > scoreThreshold) {
 					Rect boundsInLayer = Rect(Point(x, y), kernelSize);
 					Rect boundsInImage = featureExtractor->computeBoundsInImagePixels(boundsInLayer, *layer);
-					positiveBounds.push_back({score, boundsInImage});
+					Rect scaledBoundsInImage = rescaleWindow(boundsInImage);
+					positiveBounds.push_back({score, scaledBoundsInImage});
 				}
 			}
 		}
 	}
 	return positiveBounds;
+}
+
+Rect AggregatedFeaturesDetector::rescaleWindow(Rect bounds) const {
+	Point center = Patch::computeCenter(bounds);
+	Size rescaledSize(widthScale * bounds.width, heightScale * bounds.height);
+	return Patch::computeBounds(center, rescaledSize);
 }
 
 vector<Rect> AggregatedFeaturesDetector::extractBoundingBoxes(vector<Detection> detections) {
