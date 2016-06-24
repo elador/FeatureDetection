@@ -7,6 +7,8 @@
 
 #include "stacktrace.hpp"
 #include "boost/filesystem.hpp"
+#include "boost/property_tree/info_parser.hpp"
+#include "boost/property_tree/ptree.hpp"
 #include "DetectorTester.hpp"
 #include "DetectorTrainer.hpp"
 #include "DilatedLabeledImageSource.hpp"
@@ -33,6 +35,9 @@
 using boost::filesystem::path;
 using boost::filesystem::exists;
 using boost::filesystem::create_directory;
+using boost::property_tree::ptree;
+using boost::property_tree::read_info;
+using boost::property_tree::write_info;
 using cv::Mat;
 using cv::Rect;
 using cv::Size;
@@ -182,49 +187,8 @@ void printTestSummary(const string& title, DetectorEvaluationSummary summary) {
 	printTestSummary(summary);
 }
 
-
 enum class TaskType { TRAIN, TRAIN_FULL, TEST, TEST_APPROXIMATE, SHOW, SHOW_APPROXIMATE };
 enum class FeatureType { FHOG, FAST_FHOG, GRADHIST, FPDW };
-
-void storeParameters(const string& filename, TrainingParams trainingParams, FeatureParams featureParams, FeatureType featureType,
-		int octaveLayerCountForDetection, double nmsOverlapThreshold) {
-	std::ofstream file(filename);
-	file << "TrainingParams:\n";
-	file << "mirrorTrainingData" << trainingParams.mirrorTrainingData << '\n';
-	file << "maxNegatives" << trainingParams.maxNegatives << '\n';
-	file << "randomNegativesPerImage = " << trainingParams.randomNegativesPerImage << '\n';
-	file << "maxHardNegativesPerImage = " << trainingParams.maxHardNegativesPerImage << '\n';
-	file << "bootstrappingRounds = " << trainingParams.bootstrappingRounds << '\n';
-	file << "negativeScoreThreshold = " << trainingParams.negativeScoreThreshold << '\n';
-	file << "overlapThreshold = " << trainingParams.overlapThreshold << '\n';
-	file << "C = " << trainingParams.C << '\n';
-	file << "compensateImbalance = " << (trainingParams.compensateImbalance ? "true" : "false") << '\n';
-	file << '\n';
-	file << "FeatureParams:\n";
-	file << "type = ";
-	if (featureType == FeatureType::FHOG)
-		file << "fhog";
-	else if (featureType == FeatureType::FAST_FHOG)
-		file << "fastfhog";
-	else if (featureType == FeatureType::GRADHIST)
-		file << "gradhist";
-	else if (featureType == FeatureType::FPDW)
-		file << "fpdw";
-	else
-		file << "unknown";
-	file << '\n';
-	file << "windowWidthInCells = " << featureParams.windowSizeInCells.width << '\n';
-	file << "windowHeightInCells = " << featureParams.windowSizeInCells.height << '\n';
-	file << "cellSizeInPixels = " << featureParams.cellSizeInPixels << '\n';
-	file << "octaveLayerCount = " << featureParams.octaveLayerCount << '\n';
-	file << "widthScaleFactor = " << featureParams.widthScaleFactor << '\n';
-	file << "heightScaleFactor = " << featureParams.heightScaleFactor << '\n';
-	file << '\n';
-	file << "DetectionParams:\n";
-	file << "octaveLayerCount = " << octaveLayerCountForDetection << '\n';
-	file << "nmsOverlapThreshold = " << nmsOverlapThreshold << '\n';
-	file.close();
-}
 
 void setFeatures(DetectorTrainer& detectorTrainer, FeatureType featureType, FeatureParams featureParams) {
 	if (featureType == FeatureType::FHOG)
@@ -300,9 +264,47 @@ FeatureType getFeatureType(const string& type) {
 	throw invalid_argument("expected fhog/gradhist/fpdw, but was '" + type + "'");
 }
 
-int main(int argc, char** argv) {
-	if (argc != 6) {
-		cout << "call: ./DetectorTrainingApp action images setcount features directory" << endl;
+FeatureType getFeatureType(const ptree& config) {
+	return getFeatureType(config.get<string>("type"));
+}
+
+FeatureParams getFeatureParams(const ptree& config) {
+	FeatureParams featureParams;
+	featureParams.windowSizeInCells = Size(config.get<int>("windowWidthInCells"), config.get<int>("windowHeightInCells"));
+	featureParams.cellSizeInPixels = config.get<int>("cellSizeInPixels");
+	featureParams.octaveLayerCount = config.get<int>("octaveLayerCount");
+	featureParams.widthScaleFactor = config.get<float>("widthScaleFactor");
+	featureParams.heightScaleFactor = config.get<float>("heightScaleFactor");
+	boost::optional<int> paddingInCells = config.get_optional<int>("paddingInCells");
+	if (!!paddingInCells && *paddingInCells > 0) {
+		int width = featureParams.windowSizeInCells.width;
+		int widthWithPadding = width + 2 * *paddingInCells;
+		int height = featureParams.windowSizeInCells.height;
+		int heightWithPadding = height + 2 * *paddingInCells;
+		featureParams.windowSizeInCells.width = widthWithPadding;
+		featureParams.windowSizeInCells.height = heightWithPadding;
+		featureParams.widthScaleFactor *= static_cast<float>(widthWithPadding) / width;
+		featureParams.heightScaleFactor *= static_cast<float>(heightWithPadding) / height;
+	}
+	return featureParams;
+}
+
+TrainingParams getTrainingParams(const ptree& config) {
+	TrainingParams trainingParams;
+	trainingParams.mirrorTrainingData = config.get<bool>("mirrorTrainingData");
+	trainingParams.maxNegatives = config.get<int>("maxNegatives");
+	trainingParams.randomNegativesPerImage = config.get<int>("randomNegativesPerImage");
+	trainingParams.maxHardNegativesPerImage = config.get<int>("maxHardNegativesPerImage");
+	trainingParams.bootstrappingRounds = config.get<int>("bootstrappingRounds");
+	trainingParams.negativeScoreThreshold = config.get<float>("negativeScoreThreshold");
+	trainingParams.overlapThreshold = config.get<double>("overlapThreshold");
+	trainingParams.C = config.get<double>("C");
+	trainingParams.compensateImbalance = config.get<bool>("compensateImbalance");
+	return trainingParams;
+}
+
+void printUsageInformation() {
+		cout << "call: ./DetectorTrainingApp action images setcount directory [trainingconfig featureconfig]" << endl;
 		cout << "action: what the program should do" << endl;
 		cout << "  train: train classifiers on subsets for cross-validation" << endl;
 		cout << "  train-full: train classifiers on subsets for cross-validation and one classifier on all images" << endl;
@@ -312,59 +314,58 @@ int main(int argc, char** argv) {
 		cout << "  show-approximate: show detection results of approximated classifiers on subsets" << endl;
 		cout << "images: DLib XML file of annotated images" << endl;
 		cout << "setcount: number of subsets for cross-validation (1 to use all images)" << endl;
-		cout << "features: type of features to use" << endl;
-		cout << "  fhog: FHOG descriptor" << endl;
-		cout << "  fastfhog: fast FHOG descriptor (almost no difference in descriptor to fhog)" << endl;
-		cout << "  gradhist: gradient histogram" << endl;
-		cout << "  fpdw: features proposed in the paper of the \"Fastest Pedestrian Detector in the West\"" << endl;
 		cout << "directory: directory to create or use for loading and storing SVM and evaluation data" << endl;
+		cout << "trainingconfig: configuration file containing training parameters, only used for training" << endl;
+		cout << "featureconfig: configuration file containing feature parameters, only used for training" << endl;
+}
+
+int main(int argc, char** argv) {
+	if (argc < 5 || argc > 7) {
+		printUsageInformation();
 		return 0;
 	}
 	TaskType taskType = getTaskType(argv[1]);
 	string imagesFilename = argv[2];
 	int setCount = std::stoi(argv[3]);
-	FeatureType featureType = getFeatureType(argv[4]);
-	path directory = argv[5];
-
-	TrainingParams trainingParams;
-	trainingParams.mirrorTrainingData = true;
-	trainingParams.maxNegatives = 50000;
-	trainingParams.randomNegativesPerImage = 20;
-	trainingParams.maxHardNegativesPerImage = 100;
-	trainingParams.bootstrappingRounds = 3;
-	trainingParams.negativeScoreThreshold = -1.0f;
-	trainingParams.overlapThreshold = 0.3;
-	trainingParams.C = 1;
-	trainingParams.compensateImbalance = true;
-
-	FeatureParams featureParams;
-	featureParams.windowSizeInCells = Size(5, 7);
-	featureParams.cellSizeInPixels = 7;
-	featureParams.octaveLayerCount = 10;
-	featureParams.widthScaleFactor = 1.0f;
-	featureParams.heightScaleFactor = 1.0f;
+	path directory = argv[4];
+	ptree trainingConfig, featureConfig;
 
 	int octaveLayerCountForDetection = 5;
 	shared_ptr<NonMaximumSuppression> nms = make_shared<NonMaximumSuppression>(0.3, NonMaximumSuppression::MaximumType::MAX_SCORE);
 	vector<LabeledImage> imageSet = getLabeledImages(make_shared<DlibImageSource>(imagesFilename));
 
-	if (taskType == TaskType::TRAIN) {
+	if (taskType == TaskType::TRAIN || taskType == TaskType::TRAIN_FULL) {
+		if (argc != 7) {
+			printUsageInformation();
+			return 0;
+		}
 		if (exists(directory)) {
 			cerr << "directory " << directory << " does already exist, exiting program" << endl;
 			return 0;
 		}
 		create_directory(directory);
-	} else if (!exists(directory)) {
-		cerr << "directory " << directory << " does not exist, exiting program" << endl;
-		return 0;
+		read_info(argv[5], trainingConfig);
+		read_info(argv[6], featureConfig);
+		write_info((directory / "trainingparams").string(), trainingConfig);
+		write_info((directory / "featureparams").string(), featureConfig);
+	} else {
+		if (!exists(directory)) {
+			cerr << "directory " << directory << " does not exist, exiting program" << endl;
+			return 0;
+		}
+		read_info((directory / "trainingparams").string(), trainingConfig);
+		read_info((directory / "featureparams").string(), featureConfig);
 	}
+	FeatureType featureType = getFeatureType(featureConfig);
+	FeatureParams featureParams = getFeatureParams(featureConfig);
 
 	if (taskType == TaskType::TRAIN || taskType == TaskType::TRAIN_FULL) {
+		TrainingParams trainingParams = getTrainingParams(trainingConfig);
 		DetectorTrainer detectorTrainer(true, "  ");
 		detectorTrainer.setTrainingParameters(trainingParams);
 		setFeatures(detectorTrainer, featureType, featureParams);
 		steady_clock::time_point start = steady_clock::now();
-		cout << "train detector on ";
+		cout << "train detector '" << directory.string() << "' on ";
 		if (setCount == 1) { // no cross-validation, train on all images
 			cout << "all images" << endl;
 			detectorTrainer.train(imageSet);
@@ -392,15 +393,12 @@ int main(int argc, char** argv) {
 		if (trainingTime.count() >= 60)
 			cout << (trainingTime.count() / 60) << " min ";
 		cout << (trainingTime.count() % 60) << " sec" << endl;
-		path parameterFile = directory / "parameters";
-		storeParameters(parameterFile.string(),
-				trainingParams, featureParams, featureType, octaveLayerCountForDetection, nms->getOverlapThreshold());
 	}
 	else if (taskType == TaskType::TEST || taskType == TaskType::TEST_APPROXIMATE) {
 		DetectorTester tester;
 		bool approximate = taskType == TaskType::TEST_APPROXIMATE;
 		string suffix = approximate ? "_approximate" : "";
-		cout << "test " << (approximate ? "approximated " : "") << "detector on ";
+		cout << "test " << (approximate ? "approximated " : "") << "detector '" << directory.string() << "' on ";
 		if (setCount == 1) // no cross-validation, test on all images at once
 			cout << "all images" << endl;
 		else // cross-validation, test on subsets
