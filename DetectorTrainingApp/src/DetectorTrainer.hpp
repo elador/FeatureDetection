@@ -9,7 +9,7 @@
 #define DETECTORTRAINER_HPP_
 
 #include "LabeledImage.hpp"
-#include "classification/ExampleManagement.hpp"
+#include "classification/ConfidenceBasedExampleManagement.hpp"
 #include "detection/AggregatedFeaturesDetector.hpp"
 #include "detection/NonMaximumSuppression.hpp"
 #include "libsvm/LibSvmClassifier.hpp"
@@ -69,13 +69,26 @@ struct FeatureParams {
  */
 struct TrainingParams {
 	bool mirrorTrainingData = true; ///< Flag that indicates whether to horizontally mirror the training data.
-	int randomNegativeCount = 20; ///< Number of initial random negatives per image.
-	int maxHardNegativeCount = 100; ///< Maximum number of hard negatives per image.
+	int maxNegatives = 0; ///< Maximum number of negative training examples (0 if not constrained).
+	int randomNegativesPerImage = 20; ///< Number of initial random negatives per image.
+	int maxHardNegativesPerImage = 100; ///< Maximum number of hard negatives per image and bootstrapping round.
 	int bootstrappingRounds = 3; ///< Number of bootstrapping rounds.
 	float negativeScoreThreshold = -1.0f; ///< SVM score threshold for retrieving strong negative examples.
 	double overlapThreshold = 0.3; ///< Maximum allowed overlap between negative examples and non-negative annotations.
 	double C = 1;
 	bool compensateImbalance = false; ///< Flag that indicates whether to adjust class weights to compensate for unbalanced data.
+};
+
+/**
+ * Management of negative training examples that only keeps the hardest examples.
+ */
+class HardNegativeExampleManagement : public classification::ConfidenceBasedExampleManagement {
+public:
+
+	HardNegativeExampleManagement(const std::shared_ptr<classification::BinaryClassifier>& classifier, size_t capacity) :
+			classification::ConfidenceBasedExampleManagement(classifier, false, capacity) {
+		setFirstExamplesToKeep(0);
+	}
 };
 
 /**
@@ -199,6 +212,10 @@ private:
 	double computeOverlap(cv::Rect a, cv::Rect b) const;
 
 	void trainClassifier();
+
+	void retrainClassifier();
+
+	void trainClassifier(bool initial);
 
 	bool printProgressInformation;
 	std::string printPrefix;

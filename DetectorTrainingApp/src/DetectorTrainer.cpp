@@ -15,6 +15,7 @@
 #include <iostream>
 #include <stdexcept>
 
+using classification::ExampleManagement;
 using classification::LinearKernel;
 using classification::SvmClassifier;
 using cv::Mat;
@@ -33,6 +34,7 @@ using std::make_shared;
 using std::runtime_error;
 using std::shared_ptr;
 using std::string;
+using std::unique_ptr;
 using std::vector;
 
 DetectorTrainer::DetectorTrainer(bool printProgressInformation, std::string printPrefix) :
@@ -99,12 +101,15 @@ void DetectorTrainer::train(vector<LabeledImage> images) {
 	trainClassifier();
 	for (int round = 0; round < trainingParams.bootstrappingRounds; ++round) {
 		collectHardTrainingExamples(images);
-		trainClassifier();
+		retrainClassifier();
 	}
 }
 
 void DetectorTrainer::createEmptyClassifier() {
 	classifier = LibSvmClassifier::createBinarySvm(make_shared<LinearKernel>(), trainingParams.C, trainingParams.compensateImbalance);
+	if (trainingParams.maxNegatives > 0)
+		classifier->setNegativeExampleManagement(unique_ptr<ExampleManagement>(
+				new HardNegativeExampleManagement(classifier, trainingParams.maxNegatives)));
 }
 
 void DetectorTrainer::collectInitialTrainingExamples(vector<LabeledImage> images) {
@@ -217,7 +222,7 @@ void DetectorTrainer::addPositiveExamples(const vector<Rect>& positiveBoxes) {
 
 void DetectorTrainer::addRandomNegativeExamples(const vector<Rect>& nonNegativeBoxes) {
 	int addedCount = 0;
-	while (addedCount < trainingParams.randomNegativeCount) {
+	while (addedCount < trainingParams.randomNegativesPerImage) {
 		if (addNegativeIfNotOverlapping(createRandomBounds(), nonNegativeBoxes))
 			++addedCount;
 	}
@@ -238,7 +243,7 @@ void DetectorTrainer::addHardNegativeExamples(const vector<Rect>& nonNegativeBox
 	vector<Rect> detections = hardNegativesDetector->detect(image);
 	auto detection = detections.begin();
 	int addedCount = 0;
-	while (detection != detections.end() && addedCount < trainingParams.maxHardNegativeCount) {
+	while (detection != detections.end() && addedCount < trainingParams.maxHardNegativesPerImage) {
 		if (addNegativeIfNotOverlapping(*detection, nonNegativeBoxes))
 			++addedCount;
 		++detection;
@@ -269,8 +274,20 @@ double DetectorTrainer::computeOverlap(Rect a, Rect b) const {
 }
 
 void DetectorTrainer::trainClassifier() {
-	if (printProgressInformation)
-		std::cout << printPrefix << "training classifier (adding " << positiveTrainingExamples.size() << " positives and " << negativeTrainingExamples.size() << " negatives)" << std::endl;
+	trainClassifier(true);
+}
+
+void DetectorTrainer::retrainClassifier() {
+	trainClassifier(false);
+}
+
+void DetectorTrainer::trainClassifier(bool initial) {
+	if (printProgressInformation) {
+		if (initial)
+			std::cout << printPrefix << "training classifier (with " << positiveTrainingExamples.size() << " positives and " << negativeTrainingExamples.size() << " negatives)" << std::endl;
+		else
+			std::cout << printPrefix << "re-training classifier (found " << negativeTrainingExamples.size() << " potential new negatives)" << std::endl;
+	}
 	if (!classifier->retrain(positiveTrainingExamples, negativeTrainingExamples))
 		throw runtime_error("DetectorTrainer: SVM is not usable after training");
 	if (classifier->getSvm()->getSupportVectors().size() != 1) // should never happen because of linear kernel

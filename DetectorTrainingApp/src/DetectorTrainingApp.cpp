@@ -190,8 +190,10 @@ void storeParameters(const string& filename, TrainingParams trainingParams, Feat
 		int octaveLayerCountForDetection, double nmsOverlapThreshold) {
 	std::ofstream file(filename);
 	file << "TrainingParams:\n";
-	file << "randomNegativeCount = " << trainingParams.randomNegativeCount << '\n';
-	file << "maxHardNegativeCount = " << trainingParams.maxHardNegativeCount << '\n';
+	file << "mirrorTrainingData" << trainingParams.mirrorTrainingData << '\n';
+	file << "maxNegatives" << trainingParams.maxNegatives << '\n';
+	file << "randomNegativesPerImage = " << trainingParams.randomNegativesPerImage << '\n';
+	file << "maxHardNegativesPerImage = " << trainingParams.maxHardNegativesPerImage << '\n';
 	file << "bootstrappingRounds = " << trainingParams.bootstrappingRounds << '\n';
 	file << "negativeScoreThreshold = " << trainingParams.negativeScoreThreshold << '\n';
 	file << "overlapThreshold = " << trainingParams.overlapThreshold << '\n';
@@ -325,12 +327,14 @@ int main(int argc, char** argv) {
 	path directory = argv[5];
 
 	TrainingParams trainingParams;
-	trainingParams.randomNegativeCount = 20;
-	trainingParams.maxHardNegativeCount = 100;
+	trainingParams.mirrorTrainingData = true;
+	trainingParams.maxNegatives = 50000;
+	trainingParams.randomNegativesPerImage = 20;
+	trainingParams.maxHardNegativesPerImage = 100;
 	trainingParams.bootstrappingRounds = 3;
 	trainingParams.negativeScoreThreshold = -1.0f;
 	trainingParams.overlapThreshold = 0.3;
-	trainingParams.C = 10;
+	trainingParams.C = 1;
 	trainingParams.compensateImbalance = true;
 
 	FeatureParams featureParams;

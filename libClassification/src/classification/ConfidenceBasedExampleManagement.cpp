@@ -19,13 +19,17 @@ namespace classification {
 
 ConfidenceBasedExampleManagement::ConfidenceBasedExampleManagement(
 		const shared_ptr<BinaryClassifier>& classifier, bool positive, size_t capacity, size_t requiredSize) :
-				VectorBasedExampleManagement(capacity, requiredSize), classifier(classifier), positive(positive) {}
+				VectorBasedExampleManagement(capacity, requiredSize), classifier(classifier), positive(positive), keep(1) {}
+
+void ConfidenceBasedExampleManagement::setFirstExamplesToKeep(size_t keep) {
+	this->keep = keep;
+}
 
 void ConfidenceBasedExampleManagement::add(const vector<Mat>& newExamples) {
 	// compute confidences of existing and new training examples and sort
 	vector<pair<size_t, double>> existingConfidences;
 	existingConfidences.reserve(examples.size());
-	for (size_t i = 1; i < examples.size(); ++i) {
+	for (size_t i = keep; i < examples.size(); ++i) {
 		pair<bool, double> result = classifier->getConfidence(examples[i]);
 		double score = result.second;
 		if (positive ^ result.first)
