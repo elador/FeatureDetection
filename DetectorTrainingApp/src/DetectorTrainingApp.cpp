@@ -69,6 +69,19 @@ using std::shared_ptr;
 using std::string;
 using std::vector;
 
+
+enum class TaskType { TRAIN, TRAIN_FULL, TEST, TEST_APPROXIMATE, SHOW, SHOW_APPROXIMATE };
+enum class FeatureType { FHOG, FAST_FHOG, GRADHIST, FPDW };
+
+/**
+ * Parameters of the detector test.
+ */
+struct TestingParams {
+	cv::Size minWindowSizeInPixels; ///< Smallest window size that is tested in pixels.
+	int octaveLayerCount; ///< Number of image pyramid layers per octave.
+	double nmsOverlapThreshold; ///< Maximum allowed overlap between two detections.
+};
+
 vector<LabeledImage> getLabeledImages(shared_ptr<LabeledImageSource> source) {
 	vector<LabeledImage> images;
 	while (source->next())
@@ -78,26 +91,27 @@ vector<LabeledImage> getLabeledImages(shared_ptr<LabeledImageSource> source) {
 
 shared_ptr<AggregatedFeaturesDetector> createDetector(const shared_ptr<SvmClassifier>& svm,
 		const shared_ptr<ImageFilter>& imageFilter, const shared_ptr<ImageFilter>& layerFilter,
-		FeatureParams featureParams, shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount) {
+		FeatureParams featureParams, shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, int minWindowWidth = 0) {
 	if (imageFilter)
 		return make_shared<AggregatedFeaturesDetector>(imageFilter, layerFilter,
 				featureParams.cellSizeInPixels, featureParams.windowSizeInCells, octaveLayerCount,
-				svm, nms, featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv());
+				svm, nms, featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv(), minWindowWidth);
 	else
 		return make_shared<AggregatedFeaturesDetector>(layerFilter,
 				featureParams.cellSizeInPixels, featureParams.windowSizeInCells, octaveLayerCount,
-				svm, nms, featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv());
+				svm, nms, featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv(), minWindowWidth);
 }
 
 shared_ptr<AggregatedFeaturesDetector> createApproximateDetector(const shared_ptr<SvmClassifier>& svm,
 		const shared_ptr<ImageFilter>& imageFilter, const shared_ptr<ImageFilter>& layerFilter,
-		FeatureParams featureParams, shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, vector<double> lambdas) {
+		FeatureParams featureParams, shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount,
+		vector<double> lambdas, int minWindowWidth = 0) {
 	auto featurePyramid = ImagePyramid::createApproximated(octaveLayerCount, 0.5, 1.0, lambdas);
 	if (imageFilter)
 		featurePyramid->addImageFilter(imageFilter);
 	featurePyramid->addLayerFilter(layerFilter);
 	auto extractor = make_shared<AggregatedFeaturesExtractor>(featurePyramid,
-			featureParams.windowSizeInCells, featureParams.cellSizeInPixels, true);
+			featureParams.windowSizeInCells, featureParams.cellSizeInPixels, true, minWindowWidth);
 	return make_shared<AggregatedFeaturesDetector>(extractor, svm, nms,
 			featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv());
 }
@@ -187,9 +201,6 @@ void printTestSummary(const string& title, DetectorEvaluationSummary summary) {
 	printTestSummary(summary);
 }
 
-enum class TaskType { TRAIN, TRAIN_FULL, TEST, TEST_APPROXIMATE, SHOW, SHOW_APPROXIMATE };
-enum class FeatureType { FHOG, FAST_FHOG, GRADHIST, FPDW };
-
 void setFeatures(DetectorTrainer& detectorTrainer, FeatureType featureType, FeatureParams featureParams) {
 	if (featureType == FeatureType::FHOG)
 		detectorTrainer.setFeatures(featureParams, createFhogFilter(featureParams, false), make_shared<GrayscaleFilter>());
@@ -204,7 +215,7 @@ void setFeatures(DetectorTrainer& detectorTrainer, FeatureType featureType, Feat
 }
 
 shared_ptr<AggregatedFeaturesDetector> loadDetector(const string& filename, FeatureType featureType, FeatureParams featureParams,
-		shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, bool approximate, float threshold = 0) {
+		shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, bool approximate, int minWindowWidth = 0, float threshold = 0) {
 	std::ifstream stream(filename);
 	shared_ptr<SvmClassifier> svm = SvmClassifier::load(stream);
 	svm->setThreshold(threshold);
@@ -232,8 +243,8 @@ shared_ptr<AggregatedFeaturesDetector> loadDetector(const string& filename, Feat
 		throw invalid_argument("unknown feature type");
 	}
 	if (approximate)
-		return createApproximateDetector(svm, imageFilter, layerFilter, featureParams, nms, octaveLayerCount, lambdas);
-	return createDetector(svm, imageFilter, layerFilter, featureParams, nms, octaveLayerCount);
+		return createApproximateDetector(svm, imageFilter, layerFilter, featureParams, nms, octaveLayerCount, lambdas, minWindowWidth);
+	return createDetector(svm, imageFilter, layerFilter, featureParams, nms, octaveLayerCount, minWindowWidth);
 }
 
 TaskType getTaskType(const string& type) {
@@ -325,14 +336,10 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 	TaskType taskType = getTaskType(argv[1]);
-	string imagesFilename = argv[2];
+	vector<LabeledImage> imageSet = getLabeledImages(make_shared<DlibImageSource>(argv[2]));
 	int setCount = std::stoi(argv[3]);
 	path directory = argv[4];
 	ptree trainingConfig, featureConfig;
-
-	int octaveLayerCountForDetection = 5;
-	shared_ptr<NonMaximumSuppression> nms = make_shared<NonMaximumSuppression>(0.3, NonMaximumSuppression::MaximumType::MAX_SCORE);
-	vector<LabeledImage> imageSet = getLabeledImages(make_shared<DlibImageSource>(imagesFilename));
 
 	if (taskType == TaskType::TRAIN || taskType == TaskType::TRAIN_FULL) {
 		if (argc != 7) {
@@ -358,6 +365,14 @@ int main(int argc, char** argv) {
 	}
 	FeatureType featureType = getFeatureType(featureConfig);
 	FeatureParams featureParams = getFeatureParams(featureConfig);
+	TestingParams testingParams;
+	testingParams.minWindowSizeInPixels = Size(); // no minimum window size
+//	testingParams.minWindowSizeInPixels = Size(28, 40); // cell size 4 pixels, 7x10 cells
+//	testingParams.minWindowSizeInPixels = Size(40, 40); // cell size 4 pixels, 10x10 cells
+	testingParams.octaveLayerCount = 5;
+	testingParams.nmsOverlapThreshold = 0.3;
+	shared_ptr<NonMaximumSuppression> nms = make_shared<NonMaximumSuppression>(
+			testingParams.nmsOverlapThreshold, NonMaximumSuppression::MaximumType::MAX_SCORE);
 
 	if (taskType == TaskType::TRAIN || taskType == TaskType::TRAIN_FULL) {
 		TrainingParams trainingParams = getTrainingParams(trainingConfig);
@@ -395,10 +410,15 @@ int main(int argc, char** argv) {
 		cout << (trainingTime.count() % 60) << " sec" << endl;
 	}
 	else if (taskType == TaskType::TEST || taskType == TaskType::TEST_APPROXIMATE) {
-		DetectorTester tester;
+		DetectorTester tester(testingParams.minWindowSizeInPixels);
 		bool approximate = taskType == TaskType::TEST_APPROXIMATE;
-		string suffix = approximate ? "_approximate" : "";
-		cout << "test " << (approximate ? "approximated " : "") << "detector '" << directory.string() << "' on ";
+		string windowSize = std::to_string(testingParams.minWindowSizeInPixels.width)
+				+ "x" + std::to_string(testingParams.minWindowSizeInPixels.height);
+		string suffix = "_min" + windowSize;
+		if (approximate)
+			suffix += "_approximate";
+		cout << "test " << (approximate ? "approximated " : "") << "detector '" << directory.string() << "' ";
+		cout << "with min window size of " << windowSize << " pixels on ";
 		if (setCount == 1) // no cross-validation, test on all images at once
 			cout << "all images" << endl;
 		else // cross-validation, test on subsets
@@ -411,7 +431,8 @@ int main(int argc, char** argv) {
 			if (setCount == 1) { // no cross-validation, test on all images at once
 				path svmFile = directory / "svm";
 				shared_ptr<AggregatedFeaturesDetector> detector = loadDetector(svmFile.string(),
-						featureType, featureParams, nms, octaveLayerCountForDetection, approximate, -1.0f);
+						featureType, featureParams, nms, testingParams.octaveLayerCount, approximate,
+						testingParams.minWindowSizeInPixels.width, -1.0f);
 				tester.evaluate(*detector, imageSet);
 			} else { // cross-validation, test on subsets
 				vector<vector<LabeledImage>> subsets = getSubsets(imageSet, setCount);
@@ -419,7 +440,8 @@ int main(int argc, char** argv) {
 					cout << "test on subset " << (testSetIndex + 1) << endl;
 					path svmFile = directory / ("svm" + std::to_string(testSetIndex + 1));
 					shared_ptr<AggregatedFeaturesDetector> detector = loadDetector(svmFile.string(),
-							featureType, featureParams, nms, octaveLayerCountForDetection, approximate, -1.0f);
+							featureType, featureParams, nms, testingParams.octaveLayerCount, approximate,
+							testingParams.minWindowSizeInPixels.width, -1.0f);
 					tester.evaluate(*detector, subsets[testSetIndex]);
 				}
 			}
@@ -430,19 +452,19 @@ int main(int argc, char** argv) {
 		printTestSummary("Evaluation summary", tester.getSummary());
 	}
 	else if (taskType == TaskType::SHOW || taskType == TaskType::SHOW_APPROXIMATE) {
-		DetectorTester tester;
+		DetectorTester tester(testingParams.minWindowSizeInPixels);
 		bool approximate = taskType == TaskType::SHOW_APPROXIMATE;
 		if (setCount == 1) { // no cross-validation, show same detector on all images
 			path svmFile = directory / "svm";
 			shared_ptr<AggregatedFeaturesDetector> detector = loadDetector(svmFile.string(),
-					featureType, featureParams, nms, octaveLayerCountForDetection, approximate);
+					featureType, featureParams, nms, testingParams.octaveLayerCount, approximate, testingParams.minWindowSizeInPixels.width);
 			showDetections(tester, *detector, imageSet);
 		} else { // cross-validation, show subset-detectors
 			vector<vector<LabeledImage>> subsets = getSubsets(imageSet, setCount);
 			for (int testSetIndex = 0; testSetIndex < subsets.size(); ++testSetIndex) {
 				path svmFile = directory / ("svm" + std::to_string(testSetIndex + 1));
 				shared_ptr<AggregatedFeaturesDetector> detector = loadDetector(svmFile.string(),
-						featureType, featureParams, nms, octaveLayerCountForDetection, approximate);
+						featureType, featureParams, nms, testingParams.octaveLayerCount, approximate, testingParams.minWindowSizeInPixels.width);
 				if (!showDetections(tester, *detector, subsets[testSetIndex]))
 					break;
 			}

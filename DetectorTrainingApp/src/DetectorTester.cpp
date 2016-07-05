@@ -24,7 +24,8 @@ using std::vector;
 
 using namespace std;
 
-DetectorTester::DetectorTester(double overlapThreshold) : overlapThreshold(overlapThreshold) {
+DetectorTester::DetectorTester(cv::Size minWindowSize, double overlapThreshold) :
+		minWindowSize(minWindowSize), overlapThreshold(overlapThreshold) {
 	if (overlapThreshold <= 0 || overlapThreshold > 1)
 		throw invalid_argument("the overlap threshold must be between zero (exclusive) and one (inclusive)");
 }
@@ -35,7 +36,7 @@ void DetectorTester::evaluate(SimpleDetector& detector, const vector<LabeledImag
 }
 
 void DetectorTester::evaluate(SimpleDetector& detector, const Mat& image, const vector<RectLandmark>& landmarks) {
-	Annotations annotations(landmarks);
+	Annotations annotations(landmarks, minWindowSize);
 	steady_clock::time_point start = steady_clock::now();
 	vector<pair<Rect, float>> detections = detector.detectWithScores(image);
 	steady_clock::time_point end = steady_clock::now();
@@ -97,7 +98,7 @@ void DetectorTester::mergeInto(vector<pair<float, bool>>& scores, const vector<p
 
 DetectionResult DetectorTester::detect(SimpleDetector& detector, const Mat& image, const vector<RectLandmark>& landmarks) const {
 	vector<Rect> detections = detector.detect(image);
-	Annotations annotations(landmarks);
+	Annotations annotations(landmarks, minWindowSize);
 	Status status = compareWithGroundTruth(detections, annotations);
 	DetectionResult result;
 	for (int i = 0; i < detections.size(); ++i) {

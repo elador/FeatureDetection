@@ -29,38 +29,40 @@ public:
 	 * Constructs new annotations from the given landmarks.
 	 *
 	 * @param[in] landmarks Landmarks to construct annotations from.
+	 * @param[in] minSize Minimum allowed size of positive bounding boxes (smaller ones are relabeled as fuzzy).
 	 */
-	explicit Annotations(const std::vector<std::shared_ptr<imageio::Landmark>>& landmarks) {
-		extractBounds(landmarks);
+	explicit Annotations(const std::vector<std::shared_ptr<imageio::Landmark>>& landmarks, cv::Size minSize = cv::Size()) {
+		extractBounds(landmarks, minSize);
 	}
 
 	/**
 	 * Constructs new annotations from the given rectangular landmarks.
 	 *
 	 * @param[in] landmarks Landmarks to construct annotations from.
+	 * @param[in] minSize Minimum allowed size of positive bounding boxes (smaller ones are relabeled as fuzzy).
 	 */
-	explicit Annotations(const std::vector<imageio::RectLandmark>& landmarks) {
-		extractBounds(landmarks);
+	explicit Annotations(const std::vector<imageio::RectLandmark>& landmarks, cv::Size minSize = cv::Size()) {
+		extractBounds(landmarks, minSize);
 	}
 
 private:
 
-	void extractBounds(const std::vector<std::shared_ptr<imageio::Landmark>>& landmarks) {
+	void extractBounds(const std::vector<std::shared_ptr<imageio::Landmark>>& landmarks, cv::Size minSize) {
 		for (const auto& landmark : landmarks) {
 			cv::Rect bounds = getBounds(*landmark);
 			nonNegatives.push_back(bounds);
-			if (isFuzzy(*landmark))
+			if (isFuzzy(*landmark, bounds, minSize))
 				fuzzies.push_back(bounds);
 			else
 				positives.push_back(bounds);
 		}
 	}
 
-	void extractBounds(const std::vector<imageio::RectLandmark>& landmarks) {
+	void extractBounds(const std::vector<imageio::RectLandmark>& landmarks, cv::Size minSize) {
 		for (const auto& landmark : landmarks) {
 			cv::Rect bounds = getBounds(landmark);
 			nonNegatives.push_back(bounds);
-			if (isFuzzy(landmark))
+			if (isFuzzy(landmark, bounds, minSize))
 				fuzzies.push_back(bounds);
 			else
 				positives.push_back(bounds);
@@ -76,8 +78,16 @@ private:
 		return cv::Rect(x, y, width, height);
 	}
 
-	bool isFuzzy(const imageio::Landmark& landmark) const {
+	bool isFuzzy(const imageio::Landmark& landmark, cv::Rect bounds, cv::Size minSize) const {
+		return nameStartsWithIgnore(landmark) || boundsAreTooSmall(bounds, minSize);
+	}
+
+	bool nameStartsWithIgnore(const imageio::Landmark& landmark) const {
 		return landmark.getName().compare(0, 6, "ignore") == 0;
+	}
+
+	bool boundsAreTooSmall(cv::Rect bounds, cv::Size minSize) const {
+		return bounds.width < minSize.width && bounds.height < minSize.height;
 	}
 
 public:

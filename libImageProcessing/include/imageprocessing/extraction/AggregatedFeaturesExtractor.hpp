@@ -30,9 +30,10 @@ public:
 	 * @param[in] patchSizeInCells
 	 * @param[in] cellSizeInPixels
 	 * @param[in] adjustMinScaleFactor Flag that indicates whether to adjust the pyramid's min scale factor to find the largest targets.
+	 * @param[in] minPatchWidthInPixels Width of the smallest patches that should be extracted in pixels (cannot be smaller than patch width).
 	 */
 	AggregatedFeaturesExtractor(std::shared_ptr<ImagePyramid> featurePyramid,
-			cv::Size patchSizeInCells, int cellSizeInPixels, bool adjustMinScaleFactor);
+			cv::Size patchSizeInCells, int cellSizeInPixels, bool adjustMinScaleFactor, int minPatchWidthInPixels = 0);
 
 	/**
 	 * Constructs a new aggregated features extractor that builds a feature pyramid where the given filter is
@@ -42,9 +43,10 @@ public:
 	 * @param[in] patchSizeInCells
 	 * @param[in] cellSizeInPixels
 	 * @param[in] octaveLayerCount The number of image pyramid layers per octave.
+	 * @param[in] minPatchWidthInPixels Width of the smallest patches that should be extracted in pixels (cannot be smaller than patch width).
 	 */
 	AggregatedFeaturesExtractor(std::shared_ptr<ImageFilter> layerFilter,
-			cv::Size patchSizeInCells, int cellSizeInPixels, int octaveLayerCount);
+			cv::Size patchSizeInCells, int cellSizeInPixels, int octaveLayerCount, int minPatchWidthInPixels = 0);
 
 	/**
 	 * Constructs a new aggregated features extractor that builds a feature pyramid where the image filter is
@@ -55,9 +57,10 @@ public:
 	 * @param[in] patchSizeInCells
 	 * @param[in] cellSizeInPixels
 	 * @param[in] octaveLayerCount The number of image pyramid layers per octave.
+	 * @param[in] minPatchWidthInPixels Width of the smallest patches that should be extracted in pixels (cannot be smaller than patch width).
 	 */
 	AggregatedFeaturesExtractor(std::shared_ptr<ImageFilter> imageFilter, std::shared_ptr<ImageFilter> layerFilter,
-			cv::Size patchSizeInCells, int cellSizeInPixels, int octaveLayerCount);
+			cv::Size patchSizeInCells, int cellSizeInPixels, int octaveLayerCount, int minPatchWidthInPixels = 0);
 
 	using FeatureExtractor::update;
 
@@ -81,12 +84,20 @@ public:
 private:
 
 	/**
+	 * Determines the maximum scale factor necessary to not detect targets smaller than the given width.
+	 *
+	 * @param[in] minPatchWidthInPixels Width of the smallest patches that should be extracted in pixels (cannot be smaller than patch width).
+	 * @return Maximum necessary scale factor.
+	 */
+	double getMaxScaleFactor(int minPatchWidthInPixels) const;
+
+	/**
 	 * Determines the minimum scale factor necessary to detect targets at the largest scale.
 	 *
 	 * @param[in] image Current image.
 	 * @return Minimum necessary scale factor.
 	 */
-	double getMinScaleFactor(const cv::Mat& image);
+	double getMinScaleFactor(const cv::Mat& image) const;
 
 	/**
 	 * Determines the maximum possible width of a target that still fits into an image.
@@ -94,7 +105,7 @@ private:
 	 * @param[in] image Current image.
 	 * @return Maximum possible target width.
 	 */
-	int getMaxWidth(const cv::Mat& image);
+	int getMaxWidth(const cv::Mat& image) const;
 
 	/**
 	 * Retrieves the image pyramid layer whose patches rescaled to the original image are close to the given width.

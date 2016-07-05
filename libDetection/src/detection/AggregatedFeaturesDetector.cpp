@@ -36,14 +36,15 @@ namespace detection {
 
 AggregatedFeaturesDetector::AggregatedFeaturesDetector(shared_ptr<ImageFilter> imageFilter, shared_ptr<ImageFilter> layerFilter,
 		int cellSize, Size windowSize, int octaveLayerCount, shared_ptr<SvmClassifier> svm, shared_ptr<NonMaximumSuppression> nms,
-		float widthScale, float heightScale) :
+		float widthScale, float heightScale, int minWindowWidth) :
 				AggregatedFeaturesDetector(make_shared<AggregatedFeaturesExtractor>(
-						imageFilter, layerFilter, windowSize, cellSize, octaveLayerCount), svm, nms, widthScale, heightScale) {}
+						imageFilter, layerFilter, windowSize, cellSize, octaveLayerCount, minWindowWidth), svm, nms, widthScale, heightScale) {}
 
 AggregatedFeaturesDetector::AggregatedFeaturesDetector(shared_ptr<ImageFilter> filter, int cellSize, Size windowSize,
-		int octaveLayerCount, shared_ptr<SvmClassifier> svm, shared_ptr<NonMaximumSuppression> nms, float widthScale, float heightScale) :
+		int octaveLayerCount, shared_ptr<SvmClassifier> svm, shared_ptr<NonMaximumSuppression> nms,
+		float widthScale, float heightScale, int minWindowWidth) :
 				AggregatedFeaturesDetector(make_shared<AggregatedFeaturesExtractor>(
-						filter, windowSize, cellSize, octaveLayerCount), svm, nms, widthScale, heightScale) {}
+						filter, windowSize, cellSize, octaveLayerCount, minWindowWidth), svm, nms, widthScale, heightScale) {}
 
 AggregatedFeaturesDetector::AggregatedFeaturesDetector(shared_ptr<AggregatedFeaturesExtractor> featureExtractor,
 		shared_ptr<SvmClassifier> svm, shared_ptr<NonMaximumSuppression> nms, float widthScale, float heightScale) :

@@ -51,9 +51,10 @@ public:
 	/**
 	 * Constructs a new detector tester.
 	 *
+	 * @param[in] minWindowSize Smallest window size that is tested in pixels.
 	 * @param[in] overlapThreshold Minimum overlap necessary to assign a detection to a ground truth bounding box.
 	 */
-	explicit DetectorTester(double overlapThreshold = 0.5);
+	explicit DetectorTester(cv::Size minWindowSize = cv::Size(), double overlapThreshold = 0.5);
 
 	/**
 	 * Detects targets inside an image using a detector.
@@ -201,6 +202,7 @@ private:
 
 	void writeCurve(std::string filename, std::function<double(int, int)> x, std::function<double(int, int)> y) const;
 
+	cv::Size minWindowSize; ///< Smallest window size that is tested in pixels.
 	double overlapThreshold; ///< Minimum overlap necessary to assign a detection to a ground truth bounding box.
 	int imageCount = 0; ///< Number of evaluated images.
 	int positiveCount = 0; ///< Number of positive annotations.
