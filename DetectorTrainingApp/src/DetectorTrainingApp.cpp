@@ -286,17 +286,6 @@ FeatureParams getFeatureParams(const ptree& config) {
 	parameters.octaveLayerCount = config.get<int>("octaveLayerCount");
 	parameters.widthScaleFactor = config.get<float>("widthScaleFactor");
 	parameters.heightScaleFactor = config.get<float>("heightScaleFactor");
-	boost::optional<int> paddingInCells = config.get_optional<int>("paddingInCells");
-	if (!!paddingInCells && *paddingInCells > 0) {
-		int width = parameters.windowSizeInCells.width;
-		int widthWithPadding = width + 2 * *paddingInCells;
-		int height = parameters.windowSizeInCells.height;
-		int heightWithPadding = height + 2 * *paddingInCells;
-		parameters.windowSizeInCells.width = widthWithPadding;
-		parameters.windowSizeInCells.height = heightWithPadding;
-		parameters.widthScaleFactor *= static_cast<float>(widthWithPadding) / width;
-		parameters.heightScaleFactor *= static_cast<float>(heightWithPadding) / height;
-	}
 	return parameters;
 }
 
