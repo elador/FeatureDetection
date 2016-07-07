@@ -70,15 +70,16 @@ using std::string;
 using std::vector;
 
 
-enum class TaskType { TRAIN, TRAIN_FULL, TEST, TEST_APPROXIMATE, SHOW, SHOW_APPROXIMATE };
+enum class TaskType { TRAIN, TRAIN_FULL, TEST, SHOW };
 enum class FeatureType { FHOG, FAST_FHOG, GRADHIST, FPDW };
 
 /**
- * Parameters of the detector test.
+ * Parameters of the detection.
  */
-struct TestingParams {
-	cv::Size minWindowSizeInPixels; ///< Smallest window size that is tested in pixels.
+struct DetectionParams {
+	cv::Size minWindowSizeInPixels; ///< Smallest window size that is detected in pixels.
 	int octaveLayerCount; ///< Number of image pyramid layers per octave.
+	bool approximatePyramid; ///< Flag that indicates whether to approximate all but one image pyramid layer per octave.
 	double nmsOverlapThreshold; ///< Maximum allowed overlap between two detections.
 };
 
@@ -91,27 +92,30 @@ vector<LabeledImage> getLabeledImages(shared_ptr<LabeledImageSource> source) {
 
 shared_ptr<AggregatedFeaturesDetector> createDetector(const shared_ptr<SvmClassifier>& svm,
 		const shared_ptr<ImageFilter>& imageFilter, const shared_ptr<ImageFilter>& layerFilter,
-		FeatureParams featureParams, shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, int minWindowWidth = 0) {
+		FeatureParams featureParams, DetectionParams detectionParams) {
+	shared_ptr<NonMaximumSuppression> nms = make_shared<NonMaximumSuppression>(
+			detectionParams.nmsOverlapThreshold, NonMaximumSuppression::MaximumType::MAX_SCORE);
 	if (imageFilter)
-		return make_shared<AggregatedFeaturesDetector>(imageFilter, layerFilter,
-				featureParams.cellSizeInPixels, featureParams.windowSizeInCells, octaveLayerCount,
-				svm, nms, featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv(), minWindowWidth);
+		return make_shared<AggregatedFeaturesDetector>(imageFilter, layerFilter, featureParams.cellSizeInPixels,
+				featureParams.windowSizeInCells, detectionParams.octaveLayerCount, svm, nms,
+				featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv(), detectionParams.minWindowSizeInPixels.width);
 	else
-		return make_shared<AggregatedFeaturesDetector>(layerFilter,
-				featureParams.cellSizeInPixels, featureParams.windowSizeInCells, octaveLayerCount,
-				svm, nms, featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv(), minWindowWidth);
+		return make_shared<AggregatedFeaturesDetector>(layerFilter, featureParams.cellSizeInPixels,
+				featureParams.windowSizeInCells, detectionParams.octaveLayerCount, svm, nms,
+				featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv(), detectionParams.minWindowSizeInPixels.width);
 }
 
 shared_ptr<AggregatedFeaturesDetector> createApproximateDetector(const shared_ptr<SvmClassifier>& svm,
 		const shared_ptr<ImageFilter>& imageFilter, const shared_ptr<ImageFilter>& layerFilter,
-		FeatureParams featureParams, shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount,
-		vector<double> lambdas, int minWindowWidth = 0) {
-	auto featurePyramid = ImagePyramid::createApproximated(octaveLayerCount, 0.5, 1.0, lambdas);
+		FeatureParams featureParams, DetectionParams detectionParams, vector<double> lambdas) {
+	auto featurePyramid = ImagePyramid::createApproximated(detectionParams.octaveLayerCount, 0.5, 1.0, lambdas);
 	if (imageFilter)
 		featurePyramid->addImageFilter(imageFilter);
 	featurePyramid->addLayerFilter(layerFilter);
-	auto extractor = make_shared<AggregatedFeaturesExtractor>(featurePyramid,
-			featureParams.windowSizeInCells, featureParams.cellSizeInPixels, true, minWindowWidth);
+	auto extractor = make_shared<AggregatedFeaturesExtractor>(featurePyramid, featureParams.windowSizeInCells,
+			featureParams.cellSizeInPixels, true, detectionParams.minWindowSizeInPixels.width);
+	shared_ptr<NonMaximumSuppression> nms = make_shared<NonMaximumSuppression>(
+			detectionParams.nmsOverlapThreshold, NonMaximumSuppression::MaximumType::MAX_SCORE);
 	return make_shared<AggregatedFeaturesDetector>(extractor, svm, nms,
 			featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv());
 }
@@ -214,8 +218,8 @@ void setFeatures(DetectorTrainer& detectorTrainer, FeatureType featureType, Feat
 		throw invalid_argument("unknown feature type");
 }
 
-shared_ptr<AggregatedFeaturesDetector> loadDetector(const string& filename, FeatureType featureType, FeatureParams featureParams,
-		shared_ptr<NonMaximumSuppression> nms, int octaveLayerCount, bool approximate, int minWindowWidth = 0, float threshold = 0) {
+shared_ptr<AggregatedFeaturesDetector> loadDetector(const string& filename, FeatureType featureType,
+		FeatureParams featureParams, DetectionParams detectionParams, float threshold = 0) {
 	std::ifstream stream(filename);
 	shared_ptr<SvmClassifier> svm = SvmClassifier::load(stream);
 	svm->setThreshold(threshold);
@@ -242,9 +246,10 @@ shared_ptr<AggregatedFeaturesDetector> loadDetector(const string& filename, Feat
 	} else {
 		throw invalid_argument("unknown feature type");
 	}
-	if (approximate)
-		return createApproximateDetector(svm, imageFilter, layerFilter, featureParams, nms, octaveLayerCount, lambdas, minWindowWidth);
-	return createDetector(svm, imageFilter, layerFilter, featureParams, nms, octaveLayerCount, minWindowWidth);
+
+	if (detectionParams.approximatePyramid)
+		return createApproximateDetector(svm, imageFilter, layerFilter, featureParams, detectionParams, lambdas);
+	return createDetector(svm, imageFilter, layerFilter, featureParams, detectionParams);
 }
 
 TaskType getTaskType(const string& type) {
@@ -254,13 +259,9 @@ TaskType getTaskType(const string& type) {
 		return TaskType::TRAIN_FULL;
 	if (type == "test")
 		return TaskType::TEST;
-	if (type == "test-approximate")
-		return TaskType::TEST_APPROXIMATE;
 	if (type == "show")
 		return TaskType::SHOW;
-	if (type == "show-approximate")
-		return TaskType::SHOW_APPROXIMATE;
-	throw invalid_argument("expected train/test/test-approximate/show/show-approximate, but was '" + (string)type + "'");
+	throw invalid_argument("expected train/train-full/test/show, but was '" + (string)type + "'");
 }
 
 FeatureType getFeatureType(const string& type) {
@@ -280,54 +281,64 @@ FeatureType getFeatureType(const ptree& config) {
 }
 
 FeatureParams getFeatureParams(const ptree& config) {
-	FeatureParams featureParams;
-	featureParams.windowSizeInCells = Size(config.get<int>("windowWidthInCells"), config.get<int>("windowHeightInCells"));
-	featureParams.cellSizeInPixels = config.get<int>("cellSizeInPixels");
-	featureParams.octaveLayerCount = config.get<int>("octaveLayerCount");
-	featureParams.widthScaleFactor = config.get<float>("widthScaleFactor");
-	featureParams.heightScaleFactor = config.get<float>("heightScaleFactor");
+	FeatureParams parameters;
+	parameters.windowSizeInCells.width = config.get<int>("windowWidthInCells");
+	parameters.windowSizeInCells.height = config.get<int>("windowHeightInCells");
+	parameters.cellSizeInPixels = config.get<int>("cellSizeInPixels");
+	parameters.octaveLayerCount = config.get<int>("octaveLayerCount");
+	parameters.widthScaleFactor = config.get<float>("widthScaleFactor");
+	parameters.heightScaleFactor = config.get<float>("heightScaleFactor");
 	boost::optional<int> paddingInCells = config.get_optional<int>("paddingInCells");
 	if (!!paddingInCells && *paddingInCells > 0) {
-		int width = featureParams.windowSizeInCells.width;
+		int width = parameters.windowSizeInCells.width;
 		int widthWithPadding = width + 2 * *paddingInCells;
-		int height = featureParams.windowSizeInCells.height;
+		int height = parameters.windowSizeInCells.height;
 		int heightWithPadding = height + 2 * *paddingInCells;
-		featureParams.windowSizeInCells.width = widthWithPadding;
-		featureParams.windowSizeInCells.height = heightWithPadding;
-		featureParams.widthScaleFactor *= static_cast<float>(widthWithPadding) / width;
-		featureParams.heightScaleFactor *= static_cast<float>(heightWithPadding) / height;
+		parameters.windowSizeInCells.width = widthWithPadding;
+		parameters.windowSizeInCells.height = heightWithPadding;
+		parameters.widthScaleFactor *= static_cast<float>(widthWithPadding) / width;
+		parameters.heightScaleFactor *= static_cast<float>(heightWithPadding) / height;
 	}
-	return featureParams;
+	return parameters;
 }
 
 TrainingParams getTrainingParams(const ptree& config) {
-	TrainingParams trainingParams;
-	trainingParams.mirrorTrainingData = config.get<bool>("mirrorTrainingData");
-	trainingParams.maxNegatives = config.get<int>("maxNegatives");
-	trainingParams.randomNegativesPerImage = config.get<int>("randomNegativesPerImage");
-	trainingParams.maxHardNegativesPerImage = config.get<int>("maxHardNegativesPerImage");
-	trainingParams.bootstrappingRounds = config.get<int>("bootstrappingRounds");
-	trainingParams.negativeScoreThreshold = config.get<float>("negativeScoreThreshold");
-	trainingParams.overlapThreshold = config.get<double>("overlapThreshold");
-	trainingParams.C = config.get<double>("C");
-	trainingParams.compensateImbalance = config.get<bool>("compensateImbalance");
-	return trainingParams;
+	TrainingParams parameters;
+	parameters.mirrorTrainingData = config.get<bool>("mirrorTrainingData");
+	parameters.maxNegatives = config.get<int>("maxNegatives");
+	parameters.randomNegativesPerImage = config.get<int>("randomNegativesPerImage");
+	parameters.maxHardNegativesPerImage = config.get<int>("maxHardNegativesPerImage");
+	parameters.bootstrappingRounds = config.get<int>("bootstrappingRounds");
+	parameters.negativeScoreThreshold = config.get<float>("negativeScoreThreshold");
+	parameters.overlapThreshold = config.get<double>("overlapThreshold");
+	parameters.C = config.get<double>("C");
+	parameters.compensateImbalance = config.get<bool>("compensateImbalance");
+	return parameters;
+}
+
+DetectionParams getDetectionParams(const ptree& config) {
+	DetectionParams parameters;
+	parameters.minWindowSizeInPixels.width = config.get<int>("minWindowWidthInPixels");
+	parameters.minWindowSizeInPixels.height = config.get<int>("minWindowHeightInPixels");
+	parameters.octaveLayerCount = config.get<int>("octaveLayerCount");
+	parameters.approximatePyramid = config.get<bool>("approximatePyramid");
+	parameters.nmsOverlapThreshold = config.get<double>("nmsOverlapThreshold");
+	return parameters;
 }
 
 void printUsageInformation() {
-		cout << "call: ./DetectorTrainingApp action images setcount directory [trainingconfig featureconfig]" << endl;
+		cout << "call: ./DetectorTrainingApp action images setcount directory [(trainingconfig featureconfig) / detectionconfig]" << endl;
 		cout << "action: what the program should do" << endl;
 		cout << "  train: train classifiers on subsets for cross-validation" << endl;
 		cout << "  train-full: train classifiers on subsets for cross-validation and one classifier on all images" << endl;
 		cout << "  test: test classifiers on subsets using cross-validation" << endl;
-		cout << "  test-approximate: test approximated classifiers on subsets using cross-validation" << endl;
 		cout << "  show: show detection results of classifiers on subsets" << endl;
-		cout << "  show-approximate: show detection results of approximated classifiers on subsets" << endl;
 		cout << "images: DLib XML file of annotated images" << endl;
 		cout << "setcount: number of subsets for cross-validation (1 to use all images)" << endl;
 		cout << "directory: directory to create or use for loading and storing SVM and evaluation data" << endl;
 		cout << "trainingconfig: configuration file containing training parameters, only used for training" << endl;
 		cout << "featureconfig: configuration file containing feature parameters, only used for training" << endl;
+		cout << "detectionconfig: configuration file containing detection parameters, only used for testing and showing" << endl;
 }
 
 int main(int argc, char** argv) {
@@ -339,7 +350,7 @@ int main(int argc, char** argv) {
 	vector<LabeledImage> imageSet = getLabeledImages(make_shared<DlibImageSource>(argv[2]));
 	int setCount = std::stoi(argv[3]);
 	path directory = argv[4];
-	ptree trainingConfig, featureConfig;
+	ptree trainingConfig, featureConfig, detectionConfig;
 
 	if (taskType == TaskType::TRAIN || taskType == TaskType::TRAIN_FULL) {
 		if (argc != 7) {
@@ -362,17 +373,10 @@ int main(int argc, char** argv) {
 		}
 		read_info((directory / "trainingparams").string(), trainingConfig);
 		read_info((directory / "featureparams").string(), featureConfig);
+		read_info(argv[5], detectionConfig);
 	}
 	FeatureType featureType = getFeatureType(featureConfig);
 	FeatureParams featureParams = getFeatureParams(featureConfig);
-	TestingParams testingParams;
-	testingParams.minWindowSizeInPixels = Size(); // no minimum window size
-//	testingParams.minWindowSizeInPixels = Size(28, 40); // cell size 4 pixels, 7x10 cells
-//	testingParams.minWindowSizeInPixels = Size(40, 40); // cell size 4 pixels, 10x10 cells
-	testingParams.octaveLayerCount = 5;
-	testingParams.nmsOverlapThreshold = 0.3;
-	shared_ptr<NonMaximumSuppression> nms = make_shared<NonMaximumSuppression>(
-			testingParams.nmsOverlapThreshold, NonMaximumSuppression::MaximumType::MAX_SCORE);
 
 	if (taskType == TaskType::TRAIN || taskType == TaskType::TRAIN_FULL) {
 		TrainingParams trainingParams = getTrainingParams(trainingConfig);
@@ -409,62 +413,55 @@ int main(int argc, char** argv) {
 			cout << (trainingTime.count() / 60) << " min ";
 		cout << (trainingTime.count() % 60) << " sec" << endl;
 	}
-	else if (taskType == TaskType::TEST || taskType == TaskType::TEST_APPROXIMATE) {
-		DetectorTester tester(testingParams.minWindowSizeInPixels);
-		bool approximate = taskType == TaskType::TEST_APPROXIMATE;
-		string windowSize = std::to_string(testingParams.minWindowSizeInPixels.width)
-				+ "x" + std::to_string(testingParams.minWindowSizeInPixels.height);
-		string suffix = "_min" + windowSize;
-		if (approximate)
-			suffix += "_approximate";
-		cout << "test " << (approximate ? "approximated " : "") << "detector '" << directory.string() << "' ";
-		cout << "with min window size of " << windowSize << " pixels on ";
+	else if (taskType == TaskType::TEST) {
+		DetectionParams detectionParams = getDetectionParams(detectionConfig);
+		string paramName = path(argv[5]).filename().replace_extension().string();
+		DetectorTester tester(detectionParams.minWindowSizeInPixels);
+		cout << "test detector '" << directory.string() << "' with parameters '" << paramName << "' on ";
 		if (setCount == 1) // no cross-validation, test on all images at once
 			cout << "all images" << endl;
 		else // cross-validation, test on subsets
 			cout << setCount << " sets" << endl;
-		path evaluationDataFile = directory / ("evaluation" + suffix);
+		path evaluationDataFile = directory / ("evaluation_" + paramName);
 		if (exists(evaluationDataFile)) {
 			cout << "loading evaluation data from " << evaluationDataFile << endl;
 			tester.loadData(evaluationDataFile.string());
 		} else {
 			if (setCount == 1) { // no cross-validation, test on all images at once
 				path svmFile = directory / "svm";
-				shared_ptr<AggregatedFeaturesDetector> detector = loadDetector(svmFile.string(),
-						featureType, featureParams, nms, testingParams.octaveLayerCount, approximate,
-						testingParams.minWindowSizeInPixels.width, -1.0f);
+				shared_ptr<AggregatedFeaturesDetector> detector = loadDetector(
+						svmFile.string(), featureType, featureParams, detectionParams, -1.0f);
 				tester.evaluate(*detector, imageSet);
 			} else { // cross-validation, test on subsets
 				vector<vector<LabeledImage>> subsets = getSubsets(imageSet, setCount);
 				for (int testSetIndex = 0; testSetIndex < subsets.size(); ++testSetIndex) {
 					cout << "test on subset " << (testSetIndex + 1) << endl;
 					path svmFile = directory / ("svm" + std::to_string(testSetIndex + 1));
-					shared_ptr<AggregatedFeaturesDetector> detector = loadDetector(svmFile.string(),
-							featureType, featureParams, nms, testingParams.octaveLayerCount, approximate,
-							testingParams.minWindowSizeInPixels.width, -1.0f);
+					shared_ptr<AggregatedFeaturesDetector> detector = loadDetector(
+							svmFile.string(), featureType, featureParams, detectionParams, -1.0f);
 					tester.evaluate(*detector, subsets[testSetIndex]);
 				}
 			}
 			tester.storeData(evaluationDataFile.string());
-			path detCurveFile = directory / ("det" + suffix);
+			path detCurveFile = directory / ("det_" + paramName);
 			tester.writeDetCurve(detCurveFile.string());
 		}
 		printTestSummary("Evaluation summary", tester.getSummary());
 	}
-	else if (taskType == TaskType::SHOW || taskType == TaskType::SHOW_APPROXIMATE) {
-		DetectorTester tester(testingParams.minWindowSizeInPixels);
-		bool approximate = taskType == TaskType::SHOW_APPROXIMATE;
+	else if (taskType == TaskType::SHOW) {
+		DetectionParams detectionParams = getDetectionParams(detectionConfig);
+		DetectorTester tester(detectionParams.minWindowSizeInPixels);
 		if (setCount == 1) { // no cross-validation, show same detector on all images
 			path svmFile = directory / "svm";
-			shared_ptr<AggregatedFeaturesDetector> detector = loadDetector(svmFile.string(),
-					featureType, featureParams, nms, testingParams.octaveLayerCount, approximate, testingParams.minWindowSizeInPixels.width);
+			shared_ptr<AggregatedFeaturesDetector> detector = loadDetector(
+					svmFile.string(), featureType, featureParams, detectionParams);
 			showDetections(tester, *detector, imageSet);
 		} else { // cross-validation, show subset-detectors
 			vector<vector<LabeledImage>> subsets = getSubsets(imageSet, setCount);
 			for (int testSetIndex = 0; testSetIndex < subsets.size(); ++testSetIndex) {
 				path svmFile = directory / ("svm" + std::to_string(testSetIndex + 1));
-				shared_ptr<AggregatedFeaturesDetector> detector = loadDetector(svmFile.string(),
-						featureType, featureParams, nms, testingParams.octaveLayerCount, approximate, testingParams.minWindowSizeInPixels.width);
+				shared_ptr<AggregatedFeaturesDetector> detector = loadDetector(
+						svmFile.string(), featureType, featureParams, detectionParams);
 				if (!showDetections(tester, *detector, subsets[testSetIndex]))
 					break;
 			}
