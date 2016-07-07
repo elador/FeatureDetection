@@ -70,7 +70,7 @@ using std::string;
 using std::vector;
 
 
-enum class TaskType { TRAIN, TRAIN_FULL, TEST, SHOW };
+enum class TaskType { TRAIN, TEST, SHOW };
 enum class FeatureType { FHOG, FAST_FHOG, GRADHIST, FPDW };
 
 /**
@@ -255,13 +255,11 @@ shared_ptr<AggregatedFeaturesDetector> loadDetector(const string& filename, Feat
 TaskType getTaskType(const string& type) {
 	if (type == "train")
 		return TaskType::TRAIN;
-	if (type == "train-full")
-		return TaskType::TRAIN_FULL;
 	if (type == "test")
 		return TaskType::TEST;
 	if (type == "show")
 		return TaskType::SHOW;
-	throw invalid_argument("expected train/train-full/test/show, but was '" + (string)type + "'");
+	throw invalid_argument("expected train/test/show, but was '" + (string)type + "'");
 }
 
 FeatureType getFeatureType(const string& type) {
@@ -326,24 +324,33 @@ DetectionParams getDetectionParams(const ptree& config) {
 	return parameters;
 }
 
-void printUsageInformation() {
-		cout << "call: ./DetectorTrainingApp action images setcount directory [(trainingconfig featureconfig) / detectionconfig]" << endl;
+void printUsageInformation(string applicationName) {
+		cout << "call: " << applicationName << " action images setcount directory configs" << endl;
 		cout << "action: what the program should do" << endl;
-		cout << "  train: train classifiers on subsets for cross-validation" << endl;
-		cout << "  train-full: train classifiers on subsets for cross-validation and one classifier on all images" << endl;
-		cout << "  test: test classifiers on subsets using cross-validation" << endl;
-		cout << "  show: show detection results of classifiers on subsets" << endl;
+		cout << "  train: train classifier(s)" << endl;
+		cout << "  test: test classifier(s)" << endl;
+		cout << "  show: show detection results of classifier(s)" << endl;
 		cout << "images: DLib XML file of annotated images" << endl;
-		cout << "setcount: number of subsets for cross-validation (1 to use all images)" << endl;
+		cout << "setcount: number of subsets for cross-validation (1 to use all images at once)" << endl;
 		cout << "directory: directory to create or use for loading and storing SVM and evaluation data" << endl;
-		cout << "trainingconfig: configuration file containing training parameters, only used for training" << endl;
-		cout << "featureconfig: configuration file containing feature parameters, only used for training" << endl;
-		cout << "detectionconfig: configuration file containing detection parameters, only used for testing and showing" << endl;
+		cout << "configs: configuration file(s) for features, training and detection, depends on action" << endl;
+		cout << "  train: [trainingconfig featureconfig] (only necessary if detector directory does not exist)" << endl;
+		cout << "    trainingconfig: configuration file containing training parameters" << endl;
+		cout << "    featureconfig: configuration file containing feature parameters" << endl;
+		cout << "  test: detectionconfig" << endl;
+		cout << "  show: detectionconfig" << endl;
+		cout << "    detectionconfig: configuration file containing detection parameters" << endl;
+		cout << endl;
+		cout << "Examples:" << endl;
+		cout << "Create four detectors for cross-validation:" << endl << "  " << applicationName << " train images.xml 4 mydetector featureconfig trainingconfig" << endl;
+		cout << "Train single detector in existing directory, re-using configs: " << endl << "  " << applicationName << " train images.xml 1 mydetector" << endl;
+		cout << "Evaluate detectors using cross-validation: " << endl << "  " << applicationName << " test images.xml 4 mydetector detectorconfig" << endl;
+		cout << "Show detections using cross-validation: " << endl << "  " << applicationName << " show images.xml 4 mydetector detectorconfig" << endl;
 }
 
 int main(int argc, char** argv) {
 	if (argc < 5 || argc > 7) {
-		printUsageInformation();
+		printUsageInformation(argv[0]);
 		return 0;
 	}
 	TaskType taskType = getTaskType(argv[1]);
@@ -352,23 +359,41 @@ int main(int argc, char** argv) {
 	path directory = argv[4];
 	ptree trainingConfig, featureConfig, detectionConfig;
 
-	if (taskType == TaskType::TRAIN || taskType == TaskType::TRAIN_FULL) {
-		if (argc != 7) {
-			printUsageInformation();
+	if (taskType == TaskType::TRAIN) {
+		if (argc == 5) { // re-use directory, read training and feature config contained in directory
+			if (exists(directory)) {
+				cout << "using existing directory '" << directory.string() << "'" << endl;
+				read_info((directory / "trainingparams").string(), trainingConfig);
+				read_info((directory / "featureparams").string(), featureConfig);
+			} else {
+				cerr << "directory '" << directory.string() << "' does not exist, exiting program" << endl;
+				cerr << "(to create new directory, do specify training and feature configurations)" << endl;
+				return 0;
+			}
+		} else if (argc == 7) { // create directory, copy training and feature config into directory
+			if (exists(directory)) {
+				cerr << "directory '" << directory.string() << "' already exists, exiting program" << endl;
+				cerr << "(to re-use directory and its configuration, do not specify training and feature configurations)" << endl;
+				return 0;
+			} else {
+				cout << "creating new directory '" << directory.string() << "'" << endl;
+				create_directory(directory);
+				read_info(argv[5], trainingConfig);
+				read_info(argv[6], featureConfig);
+				write_info((directory / "trainingparams").string(), trainingConfig);
+				write_info((directory / "featureparams").string(), featureConfig);
+			}
+		} else {
+			printUsageInformation(argv[0]);
 			return 0;
 		}
-		if (exists(directory)) {
-			cerr << "directory " << directory << " does already exist, exiting program" << endl;
-			return 0;
-		}
-		create_directory(directory);
-		read_info(argv[5], trainingConfig);
-		read_info(argv[6], featureConfig);
-		write_info((directory / "trainingparams").string(), trainingConfig);
-		write_info((directory / "featureparams").string(), featureConfig);
 	} else {
+		if (argc != 6) {
+			printUsageInformation(argv[0]);
+			return 0;
+		}
 		if (!exists(directory)) {
-			cerr << "directory " << directory << " does not exist, exiting program" << endl;
+			cerr << "directory '" << directory.string() << "' does not exist, exiting program" << endl;
 			return 0;
 		}
 		read_info((directory / "trainingparams").string(), trainingConfig);
@@ -378,40 +403,51 @@ int main(int argc, char** argv) {
 	FeatureType featureType = getFeatureType(featureConfig);
 	FeatureParams featureParams = getFeatureParams(featureConfig);
 
-	if (taskType == TaskType::TRAIN || taskType == TaskType::TRAIN_FULL) {
+	if (taskType == TaskType::TRAIN) {
 		TrainingParams trainingParams = getTrainingParams(trainingConfig);
 		DetectorTrainer detectorTrainer(true, "  ");
 		detectorTrainer.setTrainingParameters(trainingParams);
 		setFeatures(detectorTrainer, featureType, featureParams);
 		steady_clock::time_point start = steady_clock::now();
 		cout << "train detector '" << directory.string() << "' on ";
-		if (setCount == 1) { // no cross-validation, train on all images
+		if (setCount == 1) { // train on all images
 			cout << "all images" << endl;
-			detectorTrainer.train(imageSet);
 			path svmFile = directory / "svm";
-			detectorTrainer.storeClassifier(svmFile.string());
-		} else { // cross-validation, train on subsets
+			if (exists(svmFile)) {
+				cout << "  SVM file '" << svmFile.string() << "' already exists, skipping training" << endl;
+			} else {
+				detectorTrainer.train(imageSet);
+				detectorTrainer.storeClassifier(svmFile.string());
+			}
+		} else { // train on subsets for cross-validation
 			cout << setCount << " sets" << endl;
 			vector<vector<LabeledImage>> subsets = getSubsets(imageSet, setCount);
 			for (int testSetIndex = 0; testSetIndex < subsets.size(); ++testSetIndex) {
-				cout << "train on subset " << (testSetIndex + 1) << endl;
-				detectorTrainer.train(getTrainingSet(subsets, testSetIndex));
+				cout << "training on subset " << (testSetIndex + 1) << endl;
 				path svmFile = directory / ("svm" + std::to_string(testSetIndex + 1));
-				detectorTrainer.storeClassifier(svmFile.string());
-			}
-			if (taskType == TaskType::TRAIN_FULL) {
-				cout << "train on all images" << endl;
-				detectorTrainer.train(imageSet);
-				path svmFile = directory / "svm";
-				detectorTrainer.storeClassifier(svmFile.string());
+				if (exists(svmFile)) {
+					cout << "  SVM file '" << svmFile.string() << "' already exists, skipping training" << endl;
+				} else {
+					detectorTrainer.train(getTrainingSet(subsets, testSetIndex));
+					detectorTrainer.storeClassifier(svmFile.string());
+				}
 			}
 		}
 		steady_clock::time_point end = steady_clock::now();
 		seconds trainingTime = duration_cast<seconds>(end - start);
 		cout << "training finished after ";
-		if (trainingTime.count() >= 60)
-			cout << (trainingTime.count() / 60) << " min ";
-		cout << (trainingTime.count() % 60) << " sec" << endl;
+		int seconds = trainingTime.count();
+		if (seconds >= 60) {
+			int minutes = seconds / 60;
+			seconds = seconds % 60;
+			if (minutes >= 60) {
+				int hours = minutes / 60;
+				minutes = minutes % 60;
+				cout << hours << " h ";
+			}
+			cout << minutes << " min ";
+		}
+		cout << seconds << " sec " << endl;
 	}
 	else if (taskType == TaskType::TEST) {
 		DetectionParams detectionParams = getDetectionParams(detectionConfig);
@@ -435,7 +471,7 @@ int main(int argc, char** argv) {
 			} else { // cross-validation, test on subsets
 				vector<vector<LabeledImage>> subsets = getSubsets(imageSet, setCount);
 				for (int testSetIndex = 0; testSetIndex < subsets.size(); ++testSetIndex) {
-					cout << "test on subset " << (testSetIndex + 1) << endl;
+					cout << "testing on subset " << (testSetIndex + 1) << endl;
 					path svmFile = directory / ("svm" + std::to_string(testSetIndex + 1));
 					shared_ptr<AggregatedFeaturesDetector> detector = loadDetector(
 							svmFile.string(), featureType, featureParams, detectionParams, -1.0f);
