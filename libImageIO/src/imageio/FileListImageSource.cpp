@@ -78,7 +78,10 @@ const Mat FileListImageSource::getImage() const
 {
 	if (index < 0 || index >= static_cast<int>(files.size()))
 		return Mat();
-	return imread(files[index].string(), 1);
+	Mat image = imread(files[index].string(), CV_LOAD_IMAGE_COLOR);
+	if (image.empty())
+		throw runtime_error("image '" + files[index].string() + "' could not be loaded");
+	return image;
 }
 
 path FileListImageSource::getName() const

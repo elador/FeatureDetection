@@ -26,7 +26,9 @@ RepeatingFileImageSource::RepeatingFileImageSource(string filePath) : ImageSourc
 										  TIFF files (tiff, tif), png.
 		If specified: OpenEXR.
 	*/
-	image = imread(file.string(), 1);	// TODO: Look up what the "1" is
+	image = imread(file.string(), CV_LOAD_IMAGE_COLOR);
+	if (image.empty())
+		throw runtime_error("image '" + file.string() + "' could not be loaded");
 	this->file = file;
 }
 

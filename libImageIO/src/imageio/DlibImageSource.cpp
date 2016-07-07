@@ -9,6 +9,7 @@
 #include "imageio/RectLandmark.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "boost/property_tree/xml_parser.hpp"
+#include <stdexcept>
 
 using boost::property_tree::ptree;
 using std::pair;
@@ -38,6 +39,8 @@ bool DlibImageSource::next() {
 	imageFilepath /= imageFilename;
 	name = imageFilepath;
 	image = cv::imread(imageFilepath.string(), CV_LOAD_IMAGE_COLOR);
+	if (image.empty())
+		throw std::runtime_error("image '" + imageFilepath.string() + "' could not be loaded");
 	landmarks.clear();
 	int objectCount = 0;
 	int ignoreCount = 0;
