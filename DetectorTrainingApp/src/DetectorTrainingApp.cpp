@@ -96,34 +96,21 @@ vector<LabeledImage> getLabeledImages(shared_ptr<LabeledImageSource> source, Fea
 	return images;
 }
 
-shared_ptr<AggregatedFeaturesDetector> createDetector(const shared_ptr<SvmClassifier>& svm,
-		const shared_ptr<ImageFilter>& imageFilter, const shared_ptr<ImageFilter>& layerFilter,
-		FeatureParams featureParams, DetectionParams detectionParams) {
-	shared_ptr<NonMaximumSuppression> nms = make_shared<NonMaximumSuppression>(
-			detectionParams.nmsOverlapThreshold, NonMaximumSuppression::MaximumType::MAX_SCORE);
-	if (imageFilter)
-		return make_shared<AggregatedFeaturesDetector>(imageFilter, layerFilter, featureParams.cellSizeInPixels,
-				featureParams.windowSizeInCells, detectionParams.octaveLayerCount, svm, nms,
-				featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv(), detectionParams.minWindowSizeInPixels.width);
-	else
-		return make_shared<AggregatedFeaturesDetector>(layerFilter, featureParams.cellSizeInPixels,
-				featureParams.windowSizeInCells, detectionParams.octaveLayerCount, svm, nms,
-				featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv(), detectionParams.minWindowSizeInPixels.width);
+vector<vector<LabeledImage>> getSubsets(const vector<LabeledImage>& labeledImages, int setCount) {
+	vector<vector<LabeledImage>> subsets(setCount);
+	for (int i = 0; i < labeledImages.size(); ++i)
+		subsets[i % setCount].push_back(labeledImages[i]);
+	return subsets;
 }
 
-shared_ptr<AggregatedFeaturesDetector> createApproximateDetector(const shared_ptr<SvmClassifier>& svm,
-		const shared_ptr<ImageFilter>& imageFilter, const shared_ptr<ImageFilter>& layerFilter,
-		FeatureParams featureParams, DetectionParams detectionParams, vector<double> lambdas) {
-	auto featurePyramid = ImagePyramid::createApproximated(detectionParams.octaveLayerCount, 0.5, 1.0, lambdas);
-	if (imageFilter)
-		featurePyramid->addImageFilter(imageFilter);
-	featurePyramid->addLayerFilter(layerFilter);
-	auto extractor = make_shared<AggregatedFeaturesExtractor>(featurePyramid, featureParams.windowSizeInCells,
-			featureParams.cellSizeInPixels, true, detectionParams.minWindowSizeInPixels.width);
-	shared_ptr<NonMaximumSuppression> nms = make_shared<NonMaximumSuppression>(
-			detectionParams.nmsOverlapThreshold, NonMaximumSuppression::MaximumType::MAX_SCORE);
-	return make_shared<AggregatedFeaturesDetector>(extractor, svm, nms,
-			featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv());
+vector<LabeledImage> getTrainingSet(const vector<vector<LabeledImage>>& subsets, int testSetIndex) {
+	vector<LabeledImage> trainingSet;
+	for (int i = 0; i < subsets.size(); ++i) {
+		if (i != testSetIndex) {
+			std::copy(subsets[i].begin(), subsets[i].end(), std::back_inserter(trainingSet));
+		}
+	}
+	return trainingSet;
 }
 
 shared_ptr<ImageFilter> createFhogFilter(FeatureParams featureParams, bool fast) {
@@ -153,75 +140,34 @@ shared_ptr<ImageFilter> createFdpwFilter(FeatureParams featureParams) {
 	return make_shared<ChainedFilter>(fpdwFeatures, aggregation);
 }
 
-bool showDetections(const DetectorTester& tester, AggregatedFeaturesDetector& detector, const vector<LabeledImage>& images) {
-	Mat output;
-	cv::Scalar correctDetectionColor(0, 255, 0);
-	cv::Scalar wrongDetectionColor(0, 0, 255);
-	cv::Scalar ignoredDetectionColor(255, 204, 0);
-	cv::Scalar missedDetectionColor(0, 153, 255);
-	int thickness = 2;
-	for (const LabeledImage& image : images) {
-		DetectionResult result = tester.detect(detector, image.image, image.landmarks);
-		image.image.copyTo(output);
-		for (const Rect& target : result.correctDetections)
-			cv::rectangle(output, target, correctDetectionColor, thickness);
-		for (const Rect& target : result.wrongDetections)
-			cv::rectangle(output, target, wrongDetectionColor, thickness);
-		for (const Rect& target : result.ignoredDetections)
-			cv::rectangle(output, target, ignoredDetectionColor, thickness);
-		for (const Rect& target : result.missedDetections)
-			cv::rectangle(output, target, missedDetectionColor, thickness);
-		cv::imshow("Detections", output);
-		int key = cv::waitKey(0);
-		if (static_cast<char>(key) == 'q')
-			return false;
-	}
-	return true;
-}
-
-vector<vector<LabeledImage>> getSubsets(const vector<LabeledImage>& labeledImages, int setCount) {
-	vector<vector<LabeledImage>> subsets(setCount);
-	for (int i = 0; i < labeledImages.size(); ++i)
-		subsets[i % setCount].push_back(labeledImages[i]);
-	return subsets;
-}
-
-vector<LabeledImage> getTrainingSet(const vector<vector<LabeledImage>>& subsets, int testSetIndex) {
-	vector<LabeledImage> trainingSet;
-	for (int i = 0; i < subsets.size(); ++i) {
-		if (i != testSetIndex) {
-			std::copy(subsets[i].begin(), subsets[i].end(), std::back_inserter(trainingSet));
-		}
-	}
-	return trainingSet;
-}
-
-void printTestSummary(DetectorEvaluationSummary summary) {
-	cout << "Average time: " << summary.avgTime.count() << " ms" << endl;
-	cout << "Default FPPI rate: " << summary.defaultFppiRate << endl;
-	cout << "Default miss rate: " << summary.defaultMissRate << endl;
-	cout << "Miss rate at 1 FPPI: " << summary.missRateAtFppi0 << " (threshold " << summary.thresholdAtFppi0 << ")" << endl;
-	cout << "Miss rate at 0.1 FPPI: " << summary.missRateAtFppi1 << " (threshold " << summary.thresholdAtFppi1 << ")" << endl;
-	cout << "Miss rate at 0.01 FPPI: " << summary.missRateAtFppi2 << " (threshold " << summary.thresholdAtFppi2 << ")" << endl;
-	cout << "Log-average miss rate: " << summary.avgMissRate << endl;
-}
-
-void printTestSummary(const string& title, DetectorEvaluationSummary summary) {
-	cout << "=== " << title << " ===" << endl;
-	printTestSummary(summary);
-}
-
-void setFeatures(DetectorTrainer& detectorTrainer, FeatureType featureType, FeatureParams featureParams) {
-	if (featureType == FeatureType::FHOG)
-		detectorTrainer.setFeatures(featureParams, createFhogFilter(featureParams, false), make_shared<GrayscaleFilter>());
-	else if (featureType == FeatureType::FAST_FHOG)
-		detectorTrainer.setFeatures(featureParams, createFhogFilter(featureParams, true), make_shared<GrayscaleFilter>());
-	else if (featureType == FeatureType::GRADHIST)
-		detectorTrainer.setFeatures(featureParams, createGradientFeaturesFilter(featureParams), make_shared<GrayscaleFilter>());
-	else if (featureType == FeatureType::FPDW)
-		detectorTrainer.setFeatures(featureParams, createFdpwFilter(featureParams));
+shared_ptr<AggregatedFeaturesDetector> createDetector(const shared_ptr<SvmClassifier>& svm,
+		const shared_ptr<ImageFilter>& imageFilter, const shared_ptr<ImageFilter>& layerFilter,
+		FeatureParams featureParams, DetectionParams detectionParams) {
+	shared_ptr<NonMaximumSuppression> nms = make_shared<NonMaximumSuppression>(
+			detectionParams.nmsOverlapThreshold, NonMaximumSuppression::MaximumType::MAX_SCORE);
+	if (imageFilter)
+		return make_shared<AggregatedFeaturesDetector>(imageFilter, layerFilter, featureParams.cellSizeInPixels,
+				featureParams.windowSizeInCells, detectionParams.octaveLayerCount, svm, nms,
+				featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv(), detectionParams.minWindowSizeInPixels.width);
 	else
-		throw invalid_argument("unknown feature type");
+		return make_shared<AggregatedFeaturesDetector>(layerFilter, featureParams.cellSizeInPixels,
+				featureParams.windowSizeInCells, detectionParams.octaveLayerCount, svm, nms,
+				featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv(), detectionParams.minWindowSizeInPixels.width);
+}
+
+shared_ptr<AggregatedFeaturesDetector> createApproximateDetector(const shared_ptr<SvmClassifier>& svm,
+		const shared_ptr<ImageFilter>& imageFilter, const shared_ptr<ImageFilter>& layerFilter,
+		FeatureParams featureParams, DetectionParams detectionParams, vector<double> lambdas) {
+	auto featurePyramid = ImagePyramid::createApproximated(detectionParams.octaveLayerCount, 0.5, 1.0, lambdas);
+	if (imageFilter)
+		featurePyramid->addImageFilter(imageFilter);
+	featurePyramid->addLayerFilter(layerFilter);
+	auto extractor = make_shared<AggregatedFeaturesExtractor>(featurePyramid, featureParams.windowSizeInCells,
+			featureParams.cellSizeInPixels, true, detectionParams.minWindowSizeInPixels.width);
+	shared_ptr<NonMaximumSuppression> nms = make_shared<NonMaximumSuppression>(
+			detectionParams.nmsOverlapThreshold, NonMaximumSuppression::MaximumType::MAX_SCORE);
+	return make_shared<AggregatedFeaturesDetector>(extractor, svm, nms,
+			featureParams.widthScaleFactorInv(), featureParams.heightScaleFactorInv());
 }
 
 shared_ptr<AggregatedFeaturesDetector> loadDetector(const string& filename, FeatureType featureType,
@@ -256,6 +202,60 @@ shared_ptr<AggregatedFeaturesDetector> loadDetector(const string& filename, Feat
 	if (detectionParams.approximatePyramid)
 		return createApproximateDetector(svm, imageFilter, layerFilter, featureParams, detectionParams, lambdas);
 	return createDetector(svm, imageFilter, layerFilter, featureParams, detectionParams);
+}
+
+void setFeatures(DetectorTrainer& detectorTrainer, FeatureType featureType, FeatureParams featureParams) {
+	if (featureType == FeatureType::FHOG)
+		detectorTrainer.setFeatures(featureParams, createFhogFilter(featureParams, false), make_shared<GrayscaleFilter>());
+	else if (featureType == FeatureType::FAST_FHOG)
+		detectorTrainer.setFeatures(featureParams, createFhogFilter(featureParams, true), make_shared<GrayscaleFilter>());
+	else if (featureType == FeatureType::GRADHIST)
+		detectorTrainer.setFeatures(featureParams, createGradientFeaturesFilter(featureParams), make_shared<GrayscaleFilter>());
+	else if (featureType == FeatureType::FPDW)
+		detectorTrainer.setFeatures(featureParams, createFdpwFilter(featureParams));
+	else
+		throw invalid_argument("unknown feature type");
+}
+
+bool showDetections(const DetectorTester& tester, AggregatedFeaturesDetector& detector, const vector<LabeledImage>& images) {
+	Mat output;
+	cv::Scalar correctDetectionColor(0, 255, 0);
+	cv::Scalar wrongDetectionColor(0, 0, 255);
+	cv::Scalar ignoredDetectionColor(255, 204, 0);
+	cv::Scalar missedDetectionColor(0, 153, 255);
+	int thickness = 2;
+	for (const LabeledImage& image : images) {
+		DetectionResult result = tester.detect(detector, image.image, image.landmarks);
+		image.image.copyTo(output);
+		for (const Rect& target : result.correctDetections)
+			cv::rectangle(output, target, correctDetectionColor, thickness);
+		for (const Rect& target : result.wrongDetections)
+			cv::rectangle(output, target, wrongDetectionColor, thickness);
+		for (const Rect& target : result.ignoredDetections)
+			cv::rectangle(output, target, ignoredDetectionColor, thickness);
+		for (const Rect& target : result.missedDetections)
+			cv::rectangle(output, target, missedDetectionColor, thickness);
+		cv::imshow("Detections", output);
+		int key = cv::waitKey(0);
+		if (static_cast<char>(key) == 'q')
+			return false;
+	}
+	return true;
+}
+
+void printTestSummary(DetectorEvaluationSummary summary) {
+	cout << "Average time: " << summary.avgTime.count() << " ms" << endl;
+	cout << "Default FPPI rate: " << summary.defaultFppiRate << endl;
+	cout << "Default miss rate: " << summary.defaultMissRate << endl;
+	cout << "Miss rate at 1 FPPI: " << summary.missRateAtFppi0 << " (threshold " << summary.thresholdAtFppi0 << ")" << endl;
+	cout << "Miss rate at 0.1 FPPI: " << summary.missRateAtFppi1 << " (threshold " << summary.thresholdAtFppi1 << ")" << endl;
+	cout << "Miss rate at 0.01 FPPI: " << summary.missRateAtFppi2 << " (threshold " << summary.thresholdAtFppi2 << ")" << endl;
+	cout << "Log-average miss rate: " << summary.avgMissRate << endl;
+}
+
+void printTestSummary(const string& title, DetectorEvaluationSummary summary) {
+	cout << "=== " << title << " ===" << endl;
+	printTestSummary(summary);
 }
 
 TaskType getTaskType(const string& type) {
@@ -320,27 +320,27 @@ DetectionParams getDetectionParams(const ptree& config) {
 }
 
 void printUsageInformation(string applicationName) {
-		cout << "call: " << applicationName << " action images setcount directory configs" << endl;
+		cout << "call: " << applicationName << " action directory images setcount configs" << endl;
 		cout << "action: what the program should do" << endl;
 		cout << "  train: train classifier(s)" << endl;
 		cout << "  test: test classifier(s)" << endl;
 		cout << "  show: show detection results of classifier(s)" << endl;
+		cout << "directory: directory to create or use for loading and storing SVM and evaluation data" << endl;
 		cout << "images: DLib XML file of annotated images" << endl;
 		cout << "setcount: number of subsets for cross-validation (1 to use all images at once)" << endl;
-		cout << "directory: directory to create or use for loading and storing SVM and evaluation data" << endl;
 		cout << "configs: configuration file(s) for features, training and detection, depends on action" << endl;
-		cout << "  train: [trainingconfig featureconfig] (only necessary if detector directory does not exist)" << endl;
-		cout << "    trainingconfig: configuration file containing training parameters" << endl;
+		cout << "  train: [featureconfig trainingconfig] (only necessary if detector directory does not exist)" << endl;
 		cout << "    featureconfig: configuration file containing feature parameters" << endl;
+		cout << "    trainingconfig: configuration file containing training parameters" << endl;
 		cout << "  test: detectionconfig" << endl;
 		cout << "  show: detectionconfig" << endl;
 		cout << "    detectionconfig: configuration file containing detection parameters" << endl;
 		cout << endl;
 		cout << "Examples:" << endl;
-		cout << "Create four detectors for cross-validation:" << endl << "  " << applicationName << " train images.xml 4 mydetector featureconfig trainingconfig" << endl;
-		cout << "Train single detector in existing directory, re-using configs: " << endl << "  " << applicationName << " train images.xml 1 mydetector" << endl;
-		cout << "Evaluate detectors using cross-validation: " << endl << "  " << applicationName << " test images.xml 4 mydetector detectorconfig" << endl;
-		cout << "Show detections using cross-validation: " << endl << "  " << applicationName << " show images.xml 4 mydetector detectorconfig" << endl;
+		cout << "Create four detectors for cross-validation:" << endl << "  " << applicationName << " train mydetector images.xml 4 featureconfig trainingconfig" << endl;
+		cout << "Train single detector in existing directory, re-using configs: " << endl << "  " << applicationName << " train mydetector images.xml 1" << endl;
+		cout << "Evaluate detectors using cross-validation: " << endl << "  " << applicationName << " test mydetector images.xml 4 detectorconfig" << endl;
+		cout << "Show detections using cross-validation: " << endl << "  " << applicationName << " show mydetector images.xml 4 detectorconfig" << endl;
 }
 
 int main(int argc, char** argv) {
@@ -349,17 +349,17 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 	TaskType taskType = getTaskType(argv[1]);
-	auto imageSource = make_shared<DlibImageSource>(argv[2]);
-	int setCount = std::stoi(argv[3]);
-	path directory = argv[4];
-	ptree trainingConfig, featureConfig, detectionConfig;
+	path directory = argv[2];
+	auto imageSource = make_shared<DlibImageSource>(argv[3]);
+	int setCount = std::stoi(argv[4]);
+	ptree featureConfig, trainingConfig, detectionConfig;
 
 	if (taskType == TaskType::TRAIN) {
 		if (argc == 5) { // re-use directory, read training and feature config contained in directory
 			if (exists(directory)) {
 				cout << "using existing directory '" << directory.string() << "'" << endl;
-				read_info((directory / "trainingparams").string(), trainingConfig);
 				read_info((directory / "featureparams").string(), featureConfig);
+				read_info((directory / "trainingparams").string(), trainingConfig);
 			} else {
 				cerr << "directory '" << directory.string() << "' does not exist, exiting program" << endl;
 				cerr << "(to create new directory, do specify training and feature configurations)" << endl;
@@ -373,10 +373,10 @@ int main(int argc, char** argv) {
 			} else {
 				cout << "creating new directory '" << directory.string() << "'" << endl;
 				create_directory(directory);
-				read_info(argv[5], trainingConfig);
-				read_info(argv[6], featureConfig);
-				write_info((directory / "trainingparams").string(), trainingConfig);
+				read_info(argv[5], featureConfig);
+				read_info(argv[6], trainingConfig);
 				write_info((directory / "featureparams").string(), featureConfig);
+				write_info((directory / "trainingparams").string(), trainingConfig);
 			}
 		} else {
 			printUsageInformation(argv[0]);
@@ -391,8 +391,8 @@ int main(int argc, char** argv) {
 			cerr << "directory '" << directory.string() << "' does not exist, exiting program" << endl;
 			return 0;
 		}
-		read_info((directory / "trainingparams").string(), trainingConfig);
 		read_info((directory / "featureparams").string(), featureConfig);
+		read_info((directory / "trainingparams").string(), trainingConfig);
 		read_info(argv[5], detectionConfig);
 	}
 	FeatureType featureType = getFeatureType(featureConfig);
