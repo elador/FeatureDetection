@@ -46,6 +46,7 @@ using detection::AggregatedFeaturesDetector;
 using detection::NonMaximumSuppression;
 using imageio::DlibImageSource;
 using imageio::LabeledImageSource;
+using imageio::Landmark;
 using imageprocessing::ChainedFilter;
 using imageprocessing::GrayscaleFilter;
 using imageprocessing::ImageFilter;
@@ -83,10 +84,15 @@ struct DetectionParams {
 	double nmsOverlapThreshold; ///< Maximum allowed overlap between two detections.
 };
 
-vector<LabeledImage> getLabeledImages(shared_ptr<LabeledImageSource> source) {
+vector<LabeledImage> getLabeledImages(shared_ptr<LabeledImageSource> source, FeatureParams featureParams) {
 	vector<LabeledImage> images;
 	while (source->next())
 		images.emplace_back(source->getImage(), source->getLandmarks().getLandmarks());
+	double width = featureParams.windowSizeInCells.width / featureParams.widthScaleFactor;
+	double height = featureParams.windowSizeInCells.height / featureParams.heightScaleFactor;
+	double aspectRatio = width / height;
+	for (LabeledImage& image : images)
+		image.adjustSizes(aspectRatio);
 	return images;
 }
 
@@ -343,7 +349,7 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 	TaskType taskType = getTaskType(argv[1]);
-	vector<LabeledImage> imageSet = getLabeledImages(make_shared<DlibImageSource>(argv[2]));
+	auto imageSource = make_shared<DlibImageSource>(argv[2]);
 	int setCount = std::stoi(argv[3]);
 	path directory = argv[4];
 	ptree trainingConfig, featureConfig, detectionConfig;
@@ -391,6 +397,7 @@ int main(int argc, char** argv) {
 	}
 	FeatureType featureType = getFeatureType(featureConfig);
 	FeatureParams featureParams = getFeatureParams(featureConfig);
+	vector<LabeledImage> imageSet = getLabeledImages(imageSource, featureParams);
 
 	if (taskType == TaskType::TRAIN) {
 		TrainingParams trainingParams = getTrainingParams(trainingConfig);
@@ -432,6 +439,11 @@ int main(int argc, char** argv) {
 			if (minutes >= 60) {
 				int hours = minutes / 60;
 				minutes = minutes % 60;
+				if (hours >= 24) {
+					int days = hours / 24;
+					hours = hours % 24;
+					cout << days << " d ";
+				}
 				cout << hours << " h ";
 			}
 			cout << minutes << " min ";
