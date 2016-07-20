@@ -167,14 +167,21 @@ void DetectorTester::computeStatus(Mat& positiveOverlaps, Mat& ignoreOverlaps, D
 }
 
 DetectorEvaluationSummary DetectorTester::getSummary() const {
-	using std::pow;
 	DetectorEvaluationSummary summary;
 	if (imageCount > 0)
 		summary.avgTime = detectionTimeSum / imageCount;
 	bool defaultThresholdFound = false;
 	array<double, 9> fppiRates = {
-			pow(10, -2.0), pow(10, -1.75), pow(10, -1.5), pow(10, -1.25),
-			pow(10, -1.0), pow(10, -0.75), pow(10, -0.5), pow(10, -0.25), pow(10, 0.0) };
+			std::pow(10, -2.00),
+			std::pow(10, -1.75),
+			std::pow(10, -1.50),
+			std::pow(10, -1.25),
+			std::pow(10, -1.00),
+			std::pow(10, -0.75),
+			std::pow(10, -0.50),
+			std::pow(10, -0.25),
+			std::pow(10,  0.00)
+	};
 	array<double, 9> missRates;
 	array<double, 9> scoreThresholds;
 	int nextFppiIndex = 0;
@@ -217,7 +224,7 @@ DetectorEvaluationSummary DetectorTester::getSummary() const {
 		summary.thresholdAtFppi0 = scoreThresholds[8];
 	}
 	for (int i = nextFppiIndex; i < missRates.size(); ++i)
-		missRates[i] = missRates[nextFppiIndex - 1];
+		missRates[i] = missRate;
 	double missRateSum = 0;
 	for (int i = 0; i < missRates.size(); ++i)
 		missRateSum += missRates[i];
