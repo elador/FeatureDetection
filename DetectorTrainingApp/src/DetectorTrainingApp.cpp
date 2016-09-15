@@ -306,6 +306,7 @@ TrainingParams getTrainingParams(const ptree& config) {
 	parameters.overlapThreshold = config.get<double>("overlapThreshold");
 	parameters.C = config.get<double>("C");
 	parameters.compensateImbalance = config.get<bool>("compensateImbalance");
+	parameters.probabilistic = config.get<bool>("probabilistic");
 	return parameters;
 }
 
@@ -320,27 +321,27 @@ DetectionParams getDetectionParams(const ptree& config) {
 }
 
 void printUsageInformation(string applicationName) {
-		cout << "call: " << applicationName << " action directory images setcount configs" << endl;
-		cout << "action: what the program should do" << endl;
-		cout << "  train: train classifier(s)" << endl;
-		cout << "  test: test classifier(s)" << endl;
-		cout << "  show: show detection results of classifier(s)" << endl;
-		cout << "directory: directory to create or use for loading and storing SVM and evaluation data" << endl;
-		cout << "images: DLib XML file of annotated images" << endl;
-		cout << "setcount: number of subsets for cross-validation (1 to use all images at once)" << endl;
-		cout << "configs: configuration file(s) for features, training and detection, depends on action" << endl;
-		cout << "  train: [featureconfig trainingconfig] (only necessary if detector directory does not exist)" << endl;
-		cout << "    featureconfig: configuration file containing feature parameters" << endl;
-		cout << "    trainingconfig: configuration file containing training parameters" << endl;
-		cout << "  test: detectionconfig" << endl;
-		cout << "  show: detectionconfig" << endl;
-		cout << "    detectionconfig: configuration file containing detection parameters" << endl;
-		cout << endl;
-		cout << "Examples:" << endl;
-		cout << "Create four detectors for cross-validation:" << endl << "  " << applicationName << " train mydetector images.xml 4 featureconfig trainingconfig" << endl;
-		cout << "Train single detector in existing directory, re-using configs: " << endl << "  " << applicationName << " train mydetector images.xml 1" << endl;
-		cout << "Evaluate detectors using cross-validation: " << endl << "  " << applicationName << " test mydetector images.xml 4 detectorconfig" << endl;
-		cout << "Show detections using cross-validation: " << endl << "  " << applicationName << " show mydetector images.xml 4 detectorconfig" << endl;
+	cout << "call: " << applicationName << " action directory images setcount configs" << endl;
+	cout << "action: what the program should do" << endl;
+	cout << "  train: train detector(s)" << endl;
+	cout << "  test: test detector(s)" << endl;
+	cout << "  show: show detection results of detector(s)" << endl;
+	cout << "directory: directory to create or use for loading and storing SVM and evaluation data" << endl;
+	cout << "images: DLib XML file of annotated images" << endl;
+	cout << "setcount: number of subsets for cross-validation (1 to use all images at once)" << endl;
+	cout << "configs: configuration file(s) for features, training and detection, depends on action" << endl;
+	cout << "  train: [featureconfig trainingconfig] (only necessary if detector directory does not exist)" << endl;
+	cout << "    featureconfig: configuration file containing feature parameters" << endl;
+	cout << "    trainingconfig: configuration file containing training parameters" << endl;
+	cout << "  test: detectionconfig" << endl;
+	cout << "  show: detectionconfig" << endl;
+	cout << "    detectionconfig: configuration file containing detection parameters" << endl;
+	cout << endl;
+	cout << "Examples:" << endl;
+	cout << "Create four detectors for cross-validation:" << endl << "  " << applicationName << " train mydetector images.xml 4 featureconfig trainingconfig" << endl;
+	cout << "Train single detector in existing directory, re-using configs: " << endl << "  " << applicationName << " train mydetector images.xml 1" << endl;
+	cout << "Evaluate detectors using cross-validation: " << endl << "  " << applicationName << " test mydetector images.xml 4 detectorconfig" << endl;
+	cout << "Show detections using cross-validation: " << endl << "  " << applicationName << " show mydetector images.xml 4 detectorconfig" << endl;
 }
 
 int main(int argc, char** argv) {

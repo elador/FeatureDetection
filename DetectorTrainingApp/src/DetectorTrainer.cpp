@@ -69,7 +69,10 @@ shared_ptr<AggregatedFeaturesDetector> DetectorTrainer::getDetector(
 
 void DetectorTrainer::storeClassifier(const string& filename) const {
 	std::ofstream stream(filename);
-	classifier->getSvm()->store(stream);
+	if (trainingParams.probabilistic)
+		classifier->getProbabilisticSvm()->store(stream);
+	else
+		classifier->getSvm()->store(stream);
 	stream.close();
 }
 
@@ -106,7 +109,8 @@ void DetectorTrainer::train(vector<LabeledImage> images) {
 }
 
 void DetectorTrainer::createEmptyClassifier() {
-	classifier = LibSvmClassifier::createBinarySvm(make_shared<LinearKernel>(), trainingParams.C, trainingParams.compensateImbalance);
+	classifier = LibSvmClassifier::createBinarySvm(make_shared<LinearKernel>(),
+			trainingParams.C, trainingParams.compensateImbalance, trainingParams.probabilistic);
 	if (trainingParams.maxNegatives > 0)
 		classifier->setNegativeExampleManagement(unique_ptr<ExampleManagement>(
 				new HardNegativeExampleManagement(classifier, trainingParams.maxNegatives)));

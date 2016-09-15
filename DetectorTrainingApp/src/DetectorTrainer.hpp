@@ -77,6 +77,7 @@ struct TrainingParams {
 	double overlapThreshold = 0.3; ///< Maximum allowed overlap between negative examples and non-negative annotations.
 	double C = 1;
 	bool compensateImbalance = false; ///< Flag that indicates whether to adjust class weights to compensate for unbalanced data.
+	bool probabilistic = false; ///< Flag that indicates whether to compute logistic function parameters for probabilistic output.
 };
 
 /**
