@@ -8,6 +8,7 @@
 #ifndef LIBSVMCLASSIFIER_HPP_
 #define LIBSVMCLASSIFIER_HPP_
 
+#include "classification/ProbabilisticSvmClassifier.hpp"
 #include "classification/TrainableSvmClassifier.hpp"
 #include "libsvm/LibSvmUtils.hpp"
 #include <string>
@@ -50,10 +51,11 @@ public:
 	 * @param[in] kernel The kernel function.
 	 * @param[in] c The C.
 	 * @param[in] compensateImbalance Flag that indicates whether to adjust class weights to compensate for unbalanced data.
+	 * @param[in] probabilistic Flag that indicates whether to compute logistic parameters for probabilistic output.
 	 */
 	static std::shared_ptr<LibSvmClassifier> createBinarySvm(
-			std::shared_ptr<classification::Kernel> kernel, double c = 1, bool compensateImbalance = false) {
-		return std::make_shared<LibSvmClassifier>(kernel, c, false, compensateImbalance);
+			std::shared_ptr<classification::Kernel> kernel, double c = 1, bool compensateImbalance = false, bool probabilistic = false) {
+		return std::make_shared<LibSvmClassifier>(kernel, c, false, compensateImbalance, probabilistic);
 	}
 
 	/**
@@ -62,10 +64,11 @@ public:
 	 * @param[in] svm The actual SVM.
 	 * @param[in] c The C.
 	 * @param[in] compensateImbalance Flag that indicates whether to adjust class weights to compensate for unbalanced data.
+	 * @param[in] probabilistic Flag that indicates whether to compute logistic parameters for probabilistic output.
 	 */
 	static std::shared_ptr<LibSvmClassifier> createBinarySvm(
-			std::shared_ptr<classification::SvmClassifier> svm, double c = 1, bool compensateImbalance = false) {
-		return std::make_shared<LibSvmClassifier>(svm, c, false, compensateImbalance);
+			std::shared_ptr<classification::SvmClassifier> svm, double c = 1, bool compensateImbalance = false, bool probabilistic = false) {
+		return std::make_shared<LibSvmClassifier>(svm, c, false, compensateImbalance, probabilistic);
 	}
 
 	/**
@@ -75,8 +78,10 @@ public:
 	 * @param[in] cnu The parameter C in case of an ordinary SVM, nu in case of a one-class SVM.
 	 * @param[in] oneClass Flag that indicates whether a one-class SVM should be trained.
 	 * @param[in] compensateImbalance Flag that indicates whether to adjust class weights to compensate for unbalanced data.
+	 * @param[in] probabilistic Flag that indicates whether to compute logistic parameters for probabilistic output.
 	 */
-	LibSvmClassifier(std::shared_ptr<classification::Kernel> kernel, double cnu, bool oneClass, bool compensateImbalance = false);
+	LibSvmClassifier(std::shared_ptr<classification::Kernel> kernel, double cnu, bool oneClass,
+			bool compensateImbalance = false, bool probabilistic = false);
 
 	/**
 	 * Constructs a new libSVM classifier.
@@ -85,8 +90,10 @@ public:
 	 * @param[in] cnu The parameter C in case of an ordinary SVM, nu in case of a one-class SVM.
 	 * @param[in] oneClass Flag that indicates whether a one-class SVM should be trained.
 	 * @param[in] compensateImbalance Flag that indicates whether to adjust class weights to compensate for unbalanced data.
+	 * @param[in] probabilistic Flag that indicates whether to compute logistic parameters for probabilistic output.
 	 */
-	LibSvmClassifier(std::shared_ptr<classification::SvmClassifier> svm, double cnu, bool oneClass, bool compensateImbalance = false);
+	LibSvmClassifier(std::shared_ptr<classification::SvmClassifier> svm, double cnu, bool oneClass,
+			bool compensateImbalance = false, bool probabilistic = false);
 
 public:
 
@@ -115,6 +122,20 @@ public:
 	 */
 	void setNegativeExampleManagement(std::unique_ptr<classification::ExampleManagement> negativeExamples) {
 		this->negativeExamples = move(negativeExamples);
+	}
+
+	/**
+	 * @return The actual probabilistic SVM classifier.
+	 */
+	std::shared_ptr<classification::ProbabilisticSvmClassifier> getProbabilisticSvm() {
+		return probabilisticSvm;
+	}
+
+	/**
+	 * @return The actual probabilistic SVM classifier.
+	 */
+	const std::shared_ptr<classification::ProbabilisticSvmClassifier> getProbabilisticSvm() const {
+		return probabilisticSvm;
 	}
 
 private:
@@ -157,6 +178,8 @@ private:
 			const std::vector<std::unique_ptr<struct svm_node[], NodeDeleter>>& staticNegativeExamples);
 
 	bool compensateImbalance; ///< Flag that indicates whether to adjust class weights to compensate for unbalanced data.
+	bool probabilistic; ///< Flag that indicates whether to compute logistic parameters for probabilistic output.
+	std::shared_ptr<classification::ProbabilisticSvmClassifier> probabilisticSvm; ///< The actual probabilistic SVM classifier.
 	LibSvmUtils utils; ///< Utils for using libSVM.
 	std::unique_ptr<struct svm_parameter, ParameterDeleter> param; ///< The libSVM parameters.
 	std::unique_ptr<classification::ExampleManagement> positiveExamples; ///< Storage of positive training examples.

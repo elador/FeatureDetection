@@ -142,6 +142,24 @@ public:
 	 */
 	double extractBias(struct svm_model *model) const;
 
+	/**
+	 * Extracts parameter a from the logistic function that computes the probability
+	 * p(x) = 1 / (1 + exp(a * x + b)) with x being the hyperplane distance.
+	 *
+	 * @param[in] model The libSVM model.
+	 * @return The param a of the logistic function.
+	 */
+	double extractLogisticParamA(struct svm_model *model) const;
+
+	/**
+	 * Extracts parameter b from the logistic function that computes the probability
+	 * p(x) = 1 / (1 + exp(a * x + b)) with x being the hyperplane distance.
+	 *
+	 * @param[in] model The libSVM model.
+	 * @return The param b of the logistic function.
+	 */
+	double extractLogisticParamB(struct svm_model *model) const;
+
 private:
 
 	/**

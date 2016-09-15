@@ -153,6 +153,14 @@ double LibSvmUtils::extractBias(struct svm_model *model) const {
 	return model->rho[0];
 }
 
+double LibSvmUtils::extractLogisticParamA(struct svm_model *model) const {
+	return model->probA[0];
+}
+
+double LibSvmUtils::extractLogisticParamB(struct svm_model *model) const {
+	return model->probB[0];
+}
+
 NodeDeleter::NodeDeleter(unordered_map<const struct svm_node*, Mat>& map) : map(map) {}
 
 NodeDeleter::NodeDeleter(const NodeDeleter& other) : map(other.map) {}

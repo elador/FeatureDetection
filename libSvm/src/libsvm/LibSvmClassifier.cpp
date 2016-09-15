@@ -16,6 +16,7 @@
 
 using classification::Kernel;
 using classification::SvmClassifier;
+using classification::ProbabilisticSvmClassifier;
 using classification::ExampleManagement;
 using classification::UnlimitedExampleManagement;
 using classification::EmptyExampleManagement;
@@ -30,12 +31,14 @@ using std::invalid_argument;
 
 namespace libsvm {
 
-LibSvmClassifier::LibSvmClassifier(shared_ptr<Kernel> kernel, double cnu, bool oneClass, bool compensateImbalance) :
-		LibSvmClassifier(make_shared<SvmClassifier>(kernel), cnu, oneClass, compensateImbalance) {}
+LibSvmClassifier::LibSvmClassifier(shared_ptr<Kernel> kernel, double cnu, bool oneClass, bool compensateImbalance, bool probabilistic) :
+		LibSvmClassifier(make_shared<SvmClassifier>(kernel), cnu, oneClass, compensateImbalance, probabilistic) {}
 
-LibSvmClassifier::LibSvmClassifier(shared_ptr<SvmClassifier> svm, double cnu, bool oneClass, bool compensateImbalance) :
+LibSvmClassifier::LibSvmClassifier(shared_ptr<SvmClassifier> svm, double cnu, bool oneClass, bool compensateImbalance, bool probabilistic) :
 		TrainableSvmClassifier(svm),
 		compensateImbalance(compensateImbalance),
+		probabilistic(probabilistic),
+		probabilisticSvm(make_shared<ProbabilisticSvmClassifier>(svm)),
 		utils(),
 		param(),
 		positiveExamples(new UnlimitedExampleManagement()),
@@ -43,6 +46,8 @@ LibSvmClassifier::LibSvmClassifier(shared_ptr<SvmClassifier> svm, double cnu, bo
 		staticNegativeExamples() {
 	if (oneClass && compensateImbalance)
 		throw invalid_argument("LibSvmClassifier: a one-class SVM cannot have unbalanced data it needs to compensate for");
+	if (oneClass && probabilistic)
+		throw invalid_argument("LibSvmClassifier: a one-class SVM cannot have probabilistic output (yet)");
 	if (oneClass)
 		negativeExamples.reset(new EmptyExampleManagement());
 	createParameters(svm->getKernel(), cnu, oneClass);
@@ -73,7 +78,7 @@ void LibSvmClassifier::createParameters(const shared_ptr<Kernel> kernel, double 
 		param->weight = nullptr;
 	}
 	param->shrinking = 0;
-	param->probability = 0;
+	param->probability = probabilistic ? 1 : 0;
 	param->gamma = 0; // necessary for kernels that do not use this parameter
 	param->degree = 0; // necessary for kernels that do not use this parameter
 	utils.setKernelParams(*kernel, param.get());
@@ -140,6 +145,11 @@ bool LibSvmClassifier::train() {
 			utils.extractSupportVectors(model.get()),
 			utils.extractCoefficients(model.get()),
 			utils.extractBias(model.get()));
+	if (probabilistic) {
+		// order of A and B in libSVM is reverse of order in ProbabilisticSvmClassifier
+		// therefore ProbabilisticSvmClassifier.logisticA = libSVM.logisticB and vice versa
+		probabilisticSvm->setLogisticParameters(utils.extractLogisticParamB(model.get()), utils.extractLogisticParamA(model.get()));
+	}
 	return true;
 }
 
