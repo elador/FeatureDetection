@@ -323,14 +323,15 @@ void printUsageInformation(string applicationName) {
 	cout << "    featureconfig: configuration file containing feature parameters" << endl;
 	cout << "    trainingconfig: configuration file containing training parameters" << endl;
 	cout << "  test: detectionconfig" << endl;
-	cout << "  show: detectionconfig" << endl;
+	cout << "  show: detectionconfig [threshold]" << endl;
 	cout << "    detectionconfig: configuration file containing detection parameters" << endl;
+	cout << "    threshold: SVM score threshold (optional, defaults to 0.0)" << endl;
 	cout << endl;
 	cout << "Examples:" << endl;
 	cout << "Create four detectors for cross-validation:" << endl << "  " << applicationName << " train mydetector images.xml 4 featureconfig trainingconfig" << endl;
 	cout << "Train single detector in existing directory, re-using configs: " << endl << "  " << applicationName << " train mydetector images.xml 1" << endl;
 	cout << "Evaluate detectors using cross-validation: " << endl << "  " << applicationName << " test mydetector images.xml 4 detectorconfig" << endl;
-	cout << "Show detections using cross-validation: " << endl << "  " << applicationName << " show mydetector images.xml 4 detectorconfig" << endl;
+	cout << "Show detections using cross-validation: " << endl << "  " << applicationName << " show mydetector images.xml 4 detectorconfig 0.5" << endl;
 }
 
 int main(int argc, char** argv) {
@@ -373,7 +374,8 @@ int main(int argc, char** argv) {
 			return 0;
 		}
 	} else {
-		if (argc != 6) {
+		if ((taskType == TaskType::TEST && argc != 6)
+				|| (taskType == TaskType::SHOW && argc < 6)) {
 			printUsageInformation(argv[0]);
 			return 0;
 		}
@@ -482,19 +484,20 @@ int main(int argc, char** argv) {
 		summaryFileStream.close();
 	}
 	else if (taskType == TaskType::SHOW) {
+		float threshold = argc > 6 ? std::stof(argv[6]) : 0;
 		DetectionParams detectionParams = getDetectionParams(detectionConfig);
 		DetectorTester tester(detectionParams.minWindowSizeInPixels);
 		if (setCount == 1) { // no cross-validation, show same detector on all images
 			path svmFile = directory / "svm";
 			shared_ptr<AggregatedFeaturesDetector> detector = loadDetector(
-					svmFile.string(), featureType, featureParams, detectionParams);
+					svmFile.string(), featureType, featureParams, detectionParams, threshold);
 			showDetections(tester, *detector, imageSet);
 		} else { // cross-validation, show subset-detectors
 			vector<vector<LabeledImage>> subsets = getSubsets(imageSet, setCount);
 			for (int testSetIndex = 0; testSetIndex < subsets.size(); ++testSetIndex) {
 				path svmFile = directory / ("svm" + std::to_string(testSetIndex + 1));
 				shared_ptr<AggregatedFeaturesDetector> detector = loadDetector(
-						svmFile.string(), featureType, featureParams, detectionParams);
+						svmFile.string(), featureType, featureParams, detectionParams, threshold);
 				if (!showDetections(tester, *detector, subsets[testSetIndex]))
 					break;
 			}
