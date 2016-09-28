@@ -116,6 +116,10 @@ vector<LabeledImage> getTrainingSet(const vector<vector<LabeledImage>>& subsets,
 shared_ptr<ImageFilter> createFhogFilter(FeatureParams featureParams, bool fast) {
 	if (fast) {
 		return make_shared<FhogFilter>(featureParams.cellSizeInPixels, 9, false, true, 0.2f);
+//		return make_shared<FhogFilter>(featureParams.cellSizeInPixels, 8, false, true, 0.225f);
+//		return make_shared<FhogFilter>(featureParams.cellSizeInPixels, 7, false, true, 0.257f);
+//		return make_shared<FhogFilter>(featureParams.cellSizeInPixels, 6, false, true, 0.3f);
+//		return make_shared<FhogFilter>(featureParams.cellSizeInPixels, 5, false, true, 0.36f);
 	} else {
 		auto gradientFilter = make_shared<GradientFilter>(1);
 		auto gradientHistogramFilter = make_shared<GradientHistogramFilter>(18, false, false, true, false, 0);
