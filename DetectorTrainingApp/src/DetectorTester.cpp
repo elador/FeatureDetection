@@ -168,8 +168,10 @@ void DetectorTester::computeStatus(Mat& positiveOverlaps, Mat& ignoreOverlaps, D
 
 DetectorEvaluationSummary DetectorTester::getSummary() const {
 	DetectorEvaluationSummary summary;
-	if (imageCount > 0)
+	if (imageCount > 0) {
 		summary.avgTime = detectionTimeSum / imageCount;
+		summary.fps = 1000.0 * imageCount / detectionTimeSum.count();
+	}
 	bool defaultThresholdFound = false;
 	array<double, 9> fppiRates = {
 			std::pow(10, -2.00),

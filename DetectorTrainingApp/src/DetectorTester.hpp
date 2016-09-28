@@ -30,6 +30,23 @@ struct DetectorEvaluationSummary {
 	double thresholdAtFppi2 = std::numeric_limits<double>::quiet_NaN(); ///< SVM threshold at a false positive per image rate of 0.01.
 	double avgMissRate = std::numeric_limits<double>::quiet_NaN(); ///< Log-average miss rate.
 	std::chrono::milliseconds avgTime; ///< Average detection time per image.
+	double fps = std::numeric_limits<double>::quiet_NaN(); ///< Detection speed in frames per second.
+
+	/**
+	 * Writes the summary data into a stream.
+	 *
+	 * @param[in] out Stream to write the data into.
+	 */
+	void writeTo(std::ostream& out) {
+		out << "Speed: " << fps << " frames / second" << std::endl;
+		out << "Average time: " << avgTime.count() << " ms" << std::endl;
+		out << "Default FPPI rate: " << defaultFppiRate << std::endl;
+		out << "Default miss rate: " << defaultMissRate << std::endl;
+		out << "Miss rate at 1 FPPI: " << missRateAtFppi0 << " (threshold " << thresholdAtFppi0 << ")" << std::endl;
+		out << "Miss rate at 0.1 FPPI: " << missRateAtFppi1 << " (threshold " << thresholdAtFppi1 << ")" << std::endl;
+		out << "Miss rate at 0.01 FPPI: " << missRateAtFppi2 << " (threshold " << thresholdAtFppi2 << ")" << std::endl;
+		out << "Log-average miss rate: " << avgMissRate << std::endl;
+	}
 };
 
 /**

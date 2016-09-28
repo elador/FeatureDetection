@@ -247,21 +247,6 @@ bool showDetections(const DetectorTester& tester, AggregatedFeaturesDetector& de
 	return true;
 }
 
-void printTestSummary(DetectorEvaluationSummary summary) {
-	cout << "Average time: " << summary.avgTime.count() << " ms" << endl;
-	cout << "Default FPPI rate: " << summary.defaultFppiRate << endl;
-	cout << "Default miss rate: " << summary.defaultMissRate << endl;
-	cout << "Miss rate at 1 FPPI: " << summary.missRateAtFppi0 << " (threshold " << summary.thresholdAtFppi0 << ")" << endl;
-	cout << "Miss rate at 0.1 FPPI: " << summary.missRateAtFppi1 << " (threshold " << summary.thresholdAtFppi1 << ")" << endl;
-	cout << "Miss rate at 0.01 FPPI: " << summary.missRateAtFppi2 << " (threshold " << summary.thresholdAtFppi2 << ")" << endl;
-	cout << "Log-average miss rate: " << summary.avgMissRate << endl;
-}
-
-void printTestSummary(const string& title, DetectorEvaluationSummary summary) {
-	cout << "=== " << title << " ===" << endl;
-	printTestSummary(summary);
-}
-
 TaskType getTaskType(const string& type) {
 	if (type == "train")
 		return TaskType::TRAIN;
@@ -488,7 +473,13 @@ int main(int argc, char** argv) {
 			path detCurveFile = directory / ("det_" + paramName);
 			tester.writeDetCurve(detCurveFile.string());
 		}
-		printTestSummary("Evaluation summary", tester.getSummary());
+		DetectorEvaluationSummary summary = tester.getSummary();
+		cout << "=== Evaluation summary ===" << endl;
+		summary.writeTo(cout);
+		path summaryFile = directory / ("summary_" + paramName);
+		std::ofstream summaryFileStream(summaryFile.string());
+		summary.writeTo(summaryFileStream);
+		summaryFileStream.close();
 	}
 	else if (taskType == TaskType::SHOW) {
 		DetectionParams detectionParams = getDetectionParams(detectionConfig);
