@@ -81,11 +81,11 @@ add_subdirectory(landmarkVisualiser)	# Simple app to read landmarks and images a
 add_subdirectory(landmarkConverter)		# Simple app to convert landmarks from one format into another
 add_subdirectory(evaluate-landmarks)	# Read detected and ground-truth landmarks and perform an evaluation.
 
-# Face-recognition:
-add_subdirectory(facerecognitionTools) # Tools (e.g. create probe/gallery image-lists)
-add_subdirectory(frRunCogExp)		# App for doing face recognition tests with a gallery and probe images
-add_subdirectory(frDbTool)		# App for managing (creating and populating) the sqlite-database used for face-recognition experiments
-add_subdirectory(frDbExp)		# App for doing experiments with the face recognition scores in the database
+# Face-recognition (does not work because of hardcoded dependencies on proprietary software):
+#add_subdirectory(facerecognitionTools) # Tools (e.g. create probe/gallery image-lists)
+#add_subdirectory(frRunCogExp)		# App for doing face recognition tests with a gallery and probe images
+#add_subdirectory(frDbTool)		# App for managing (creating and populating) the sqlite-database used for face-recognition experiments
+#add_subdirectory(frDbExp)		# App for doing experiments with the face recognition scores in the database
 
 # ============================================================================
 # Experimental, non-working or deprecated:
