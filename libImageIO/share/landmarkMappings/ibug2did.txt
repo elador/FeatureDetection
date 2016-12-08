@@ -5,8 +5,12 @@
 landmarkMappings ; A mapping from input landmarks (iBug, lhs) to output landmarks (DID, rhs)
 {
 ;	 9    35 ; 9 is not the chin tip (4) - the DID point is much higher up
-	20   233 ; right eyebrow middle (20)
-	25   666 ; left eyebrow middle (24)
+	18	 225 ; right eyebrow outer-corner (18)
+	20   233 ; right eyebrow middle (top-of-eyebrow?) (20)
+	22	 157 ; right eyebrow inner-corner (top-of-eyebrow?) (19)
+	23	 590 ; left eyebrow inner-corner (top-of-eyebrow?) (23)
+	25   666 ; left eyebrow middle (top-of-eyebrow?) (24)
+	27	 658 ; left eyebrow outer-corner (22)
 	31   114 ; nose-tip (3)
 	34   270 ; nose-lip junction (28)
 	37   177 ; right eye outer-corner (1)
